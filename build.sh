@@ -25,7 +25,7 @@ usage() {
     echo $dotted_line
     echo "    -j<N>          Set the number of threads used for building ops_base, default is 8"
     echo "    -O<N>          Compile optimization options, support [O0 O1 O2 O3], default is O2"
-    echo "    --make_clean_all "
+    echo "    --make_clean "
     echo "                   Make clean and delete related file"
     echo "    --debug        Build with debug mode"
     echo "    --cann_3rd_lib_path=<PATH>"
@@ -58,7 +58,7 @@ checkopts() {
     CANN_3RD_LIB_PATH="$BASEPATH/third_party"
 
     # Process the options
-    parsed_args=$(getopt -a -o j:hvuO: -l help,verbose,cov,make_clean_all,debug,noexec,cann_3rd_lib_path: -- "$@") || {
+    parsed_args=$(getopt -a -o j:hvuO: -l help,verbose,cov,make_clean,debug,noexec,cann_3rd_lib_path: -- "$@") || {
     usage
     exit 1
     }
@@ -92,7 +92,7 @@ checkopts() {
         ENABLE_COVERAGE="on"
         shift
         ;;
-        --make_clean_all)
+        --make_clean)
         MAKE_CLEAN_ALL="on"
         shift
         ;;
