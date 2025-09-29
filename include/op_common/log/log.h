@@ -22,11 +22,10 @@
 #include <sys/syscall.h>
 #include "exe_graph/runtime/shape.h"
 #include "base/err_msg.h"
-#include "toolchain/dlog_pub.h"
+#include "dlog_pub.h"
 #include "graph/ge_error_codes.h"
 #include "graph/types.h"
 #include "op_common/op_host/util/opbase_export.h"
-#include "toolchain/slog.h"
 namespace Ops {
 namespace Base {
 
