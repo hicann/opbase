@@ -38,7 +38,7 @@ add_compile_options(
     -Wnon-virtual-dtor
     -Wwrite-strings -Wmissing-format-attribute -Wformat-nonliteral
     -Wdelete-non-virtual-dtor
-    -Wmissing-include-dirs -Wmissing-declarations -Wextra
+    -Wmissing-declarations -Wextra
     -Wredundant-decls -Wfloat-conversion
     -Wno-write-strings -Wall -Wno-dangling-else -Wno-comment -Wno-conversion-null -Wno-return-type
     -Wno-unknown-pragmas -Wno-sign-compare

@@ -49,6 +49,8 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         ${OPS_BASE_INCLUDE}/op_common
         ${ASCEND_HOME_PATH}/include
         ${ASCEND_HOME_PATH}/include/base
+        ${ASCEND_HOME_PATH}/include/toolchain
+        ${ASCEND_HOME_PATH}/pkg_inc/base
     )
 
     add_library(ops_base SHARED ${OPS_BASE_SRC})
@@ -113,6 +115,8 @@ else()
         ${OPS_BASE_INCLUDE}
         ${OPBASE_METADEF_INC}
         ${C_SEC_INCLUDE}
+        ${ASCEND_DIR}/include/toolchain
+        ${ASCEND_DIR}/pkg_inc/base
     )
     target_compile_options(ops_base_infer_objs
         PRIVATE
@@ -130,6 +134,8 @@ else()
         ${OPS_BASE_INCLUDE}
         ${OPBASE_METADEF_INC}
         ${C_SEC_INCLUDE}
+        ${ASCEND_DIR}/include/toolchain
+        ${ASCEND_DIR}/pkg_inc/base
     )
     target_compile_options(ops_base_tiling_objs
         PRIVATE
@@ -148,6 +154,8 @@ else()
         ${OPS_BASE_INCLUDE}
         ${OPBASE_METADEF_INC}
         ${C_SEC_INCLUDE}
+        ${ASCEND_DIR}/include/toolchain
+        ${ASCEND_DIR}/pkg_inc/base
     )
     target_compile_options(ops_base_util_objs
         PRIVATE
