@@ -7,6 +7,8 @@ include_directories(
     ${OPS_BASE_INCLUDE}/op_common
     ${ASCEND_HOME_PATH}/include
     ${ASCEND_HOME_PATH}/include/base
+    ${ASCEND_HOME_PATH}/include/toolchain
+    ${ASCEND_HOME_PATH}/pkg_inc/base
 )
 
 add_executable(ops_base_ut ${UT_SOURCES})
