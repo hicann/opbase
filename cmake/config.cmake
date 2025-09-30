@@ -24,6 +24,11 @@ endif()
 message(STATUS "ADD COMPILE_OPTIONS: ${COMPILE_OP_MODE}")
 add_compile_options(${COMPILE_OP_MODE})
 
+if(NOT "${COMPILE_OP_MODE}" STREQUAL "-O0")
+    message(STATUS "ADD COMPILE_OPTIONS: -D_FORTIFY_SOURCE=2")
+    add_compile_options(-D_FORTIFY_SOURCE=2 -fstack-protector-strong)
+endif()
+
 if(ENABLE_DEBUG OR ENABLE_UT)
     add_compile_options(-g)
     message(STATUS "ADD COMPILE_OPTIONS: -g")
@@ -43,6 +48,7 @@ add_compile_options(
     -Wno-write-strings -Wall -Wno-dangling-else -Wno-comment -Wno-conversion-null -Wno-return-type
     -Wno-unknown-pragmas -Wno-sign-compare
     -Wno-unused-const-variable
+    -ftrapv
 )
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(STATUS "Using LLVM Clang compiler, add more compile options")

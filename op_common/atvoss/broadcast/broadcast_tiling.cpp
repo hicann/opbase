@@ -205,7 +205,7 @@ ge::graphStatus DoBrodcastTiling(
         curProduct *= broadcastTilingData.dims.back()[i];
         if (curProduct > maxElemNum) {
             curProduct = curProduct / broadcastTilingData.dims.back()[i];
-            ubSplitAxes = i;
+            ubSplitAxes = static_cast<uint64_t>(i);
             flag = false;
             break;
         }
