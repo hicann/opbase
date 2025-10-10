@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(OPS_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(OPS_BASE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(NOT CANN_3RD_LIB_PATH)
     set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party)

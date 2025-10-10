@@ -95,8 +95,6 @@ target_compile_options(intf_pub_aicpu INTERFACE
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
 )
 target_compile_definitions(intf_pub_aicpu INTERFACE
-  $<$<NOT:$<STREQUAL:${PRODUCT_SIDE},device>>:_GLIBCXX_USE_CXX11_ABI=0>
-  $<$<STREQUAL:${PRODUCT_SIDE},device>:_GLIBCXX_USE_CXX11_ABI=1>
   $<$<CONFIG:Release>:CFG_BUILD_NDEBUG>
   $<$<CONFIG:Debug>:CFG_BUILD_DEBUG>
   WIN64=1

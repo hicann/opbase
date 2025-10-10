@@ -17,6 +17,16 @@ include(GNUInstallDirs)
 
 set(PROTOBUF_SRC_DIR ${CMAKE_BINARY_DIR}/protobuf-src)
 set(PROTOBUF_DL_DIR ${CMAKE_BINARY_DIR}/downloads)
+set(PROTOBUF_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_static)
+set(PROTOBUF_HOST_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_host_static)
+set(PROTOBUF_CXXFLAGS "-Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=1 -O2 -Dgoogle=ascend_private")
+set(HOST_PROTOBUF_CXXFLAGS "-Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=0 -O2 -Dgoogle=ascend_private")
+set(PROTOBUF_LDFLAGS "-Wl,-z,relro,-z,now,-z,noexecstack")
+
+# 使用设备端工具链生成 ascend_protobuf_static
+set(CMAKE_CXX_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
+set(CMAKE_C_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
+
 if (BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG_COMMUNITY)
 set(REQ_URL "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v3.13.0/protobuf-3.13.0.tar.gz")
 
@@ -54,7 +64,6 @@ else()
 
   set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
   set(SOURCE_DIR ${PROTOBUF_SRC_DIR})
-  set(PROTOBUF_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_static)
   ExternalProject_Add(protobuf_src
       DOWNLOAD_COMMAND ""
       COMMAND tar -zxf ${OPEN_SOURCE_DIR}/protobuf/protobuf-all-25.1.tar.gz --strip-components 1 -C ${SOURCE_DIR}
@@ -72,7 +81,8 @@ else()
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -G ${CMAKE_GENERATOR}
-        -DCMAKE_TOOLCHAIN_FILE=${toolchain_file}
+        -DTOOL_CHAIN_DIR=${TOOLCHAIN_DIR}
+        -DCMAKE_TOOLCHAIN_FILE=${OPS_BASE_DIR}/cmake/aarch64-hcc-toolchain.cmake
         -DCMAKE_INSTALL_LIBDIR=lib
         -DBUILD_SHARED_LIBS=OFF
         -Dprotobuf_WITH_ZLIB=OFF
@@ -82,6 +92,32 @@ else()
         -DCMAKE_CXX_FLAGS=${PROTOBUF_CXXFLAGS}
         -DCMAKE_INSTALL_PREFIX=${PROTOBUF_STATIC_PKG_DIR}
         -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
+        -DABSL_COMPILE_OBJ=TRUE
+        <SOURCE_DIR>
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND $(MAKE) install
+    EXCLUDE_FROM_ALL TRUE
+  )
+
+  ExternalProject_Add(protobuf_host_static_build
+    DEPENDS protobuf_src
+    SOURCE_DIR ${PROTOBUF_SRC_DIR}
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ${CMAKE_COMMAND}
+        -G ${CMAKE_GENERATOR}
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_INSTALL_LIBDIR=lib
+        -DBUILD_SHARED_LIBS=OFF
+        -Dprotobuf_WITH_ZLIB=OFF
+        -DLIB_PREFIX=host_ascend_
+        -DCMAKE_SKIP_RPATH=TRUE
+        -Dprotobuf_BUILD_TESTS=OFF
+        -DCMAKE_CXX_FLAGS=${HOST_PROTOBUF_CXXFLAGS}
+        -DCMAKE_INSTALL_PREFIX=${PROTOBUF_HOST_STATIC_PKG_DIR}
+        -Dprotobuf_BUILD_PROTOC_BINARIES=OFF
+        -DABSL_COMPILE_OBJ=TRUE
         <SOURCE_DIR>
     BUILD_COMMAND $(MAKE)
     INSTALL_COMMAND $(MAKE) install
@@ -112,25 +148,6 @@ set_target_properties(host_protoc PROPERTIES
 )
 add_dependencies(host_protoc protobuf_host_build)
 
-# 使用设备端工具链生成 ascend_protobuf_static
-if("x${PRODUCT_SIDE}" STREQUAL "xdevice")
-  message(STATUS "PRODUCT_SIDE is device")
-  if (MINRC)
-    set(CMAKE_CXX_COMPILER_ /usr/bin/aarch64-linux-gnu-g++)
-    set(CMAKE_C_COMPILER_ /usr/bin/aarch64-linux-gnu-gcc)
-  else()
-    set(CMAKE_CXX_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
-    set(CMAKE_C_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
-  endif()
-else()
-  set(CMAKE_CXX_COMPILER_ ${CMAKE_CXX_COMPILER})
-  set(CMAKE_C_COMPILER_ ${CMAKE_C_COMPILER})
-endif()
-set(PROTOBUF_STATIC_PKG_DIR ${CMAKE_BINARY_DIR}/protobuf_static)
-
-set(protobuf_CXXFLAGS "-Wno-maybe-uninitialized -Wno-unused-parameter -fPIC -fstack-protector-all -D_FORTIFY_SOURCE=2 -D_GLIBCXX_USE_CXX11_ABI=1 -O2 -Dgoogle=ascend_private")
-set(protobuf_LDFLAGS "-Wl,-z,relro,-z,now,-z,noexecstack")
-
 if (BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG_COMMUNITY)
   ExternalProject_Add(protobuf_static_build
     DEPENDS protobuf_src
@@ -146,9 +163,32 @@ if (BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG_COMMUNITY)
         -Dprotobuf_BUILD_TESTS=OFF
         -Dprotobuf_WITH_ZLIB=OFF
         -DLIB_PREFIX=base_ascend_
-        -DCMAKE_CXX_FLAGS=${protobuf_CXXFLAGS}
-        -DCMAKE_EXE_LINKER_FLAGS=${protobuf_LDFLAGS}
-        -DCMAKE_SHARED_LINKER_FLAGS=${protobuf_LDFLAGS}
+        -DCMAKE_CXX_FLAGS=${PROTOBUF_CXXFLAGS}
+        -DCMAKE_EXE_LINKER_FLAGS=${PROTOBUF_LDFLAGS}
+        -DCMAKE_SHARED_LINKER_FLAGS=${PROTOBUF_LDFLAGS}
+        <SOURCE_DIR>/cmake
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND $(MAKE) install
+    EXCLUDE_FROM_ALL TRUE
+  )
+
+  ExternalProject_Add(protobuf_host_static_build
+    DEPENDS protobuf_src
+    SOURCE_DIR ${PROTOBUF_SRC_DIR}
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ${CMAKE_COMMAND}
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_INSTALL_PREFIX=${PROTOBUF_HOST_STATIC_PKG_DIR}
+        -DCMAKE_INSTALL_LIBDIR=lib
+        -DCMAKE_INSTALL_CMAKEDIR=cmake/protobuf
+        -Dprotobuf_BUILD_TESTS=OFF
+        -Dprotobuf_WITH_ZLIB=OFF
+        -DLIB_PREFIX=host_ascend_
+        -DCMAKE_CXX_FLAGS=${HOST_PROTOBUF_CXXFLAGS}
+        -DCMAKE_EXE_LINKER_FLAGS=${PROTOBUF_LDFLAGS}
+        -DCMAKE_SHARED_LINKER_FLAGS=${PROTOBUF_LDFLAGS}
         <SOURCE_DIR>/cmake
     BUILD_COMMAND $(MAKE)
     INSTALL_COMMAND $(MAKE) install
@@ -165,3 +205,13 @@ add_library(ascend_protobuf_static INTERFACE)
 target_include_directories(ascend_protobuf_static INTERFACE ${PROTOBUF_STATIC_PKG_DIR}/include)
 target_link_libraries(ascend_protobuf_static INTERFACE ascend_protobuf_static_lib)
 add_dependencies(ascend_protobuf_static protobuf_static_build)
+
+add_library(host_protobuf_static_lib STATIC IMPORTED)
+set_target_properties(host_protobuf_static_lib PROPERTIES
+    IMPORTED_LOCATION ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
+)
+
+add_library(host_protobuf_static INTERFACE)
+target_include_directories(host_protobuf_static INTERFACE ${PROTOBUF_HOST_STATIC_PKG_DIR}/include)
+target_link_libraries(host_protobuf_static INTERFACE host_protobuf_static_lib)
+add_dependencies(host_protobuf_static protobuf_host_static_build)

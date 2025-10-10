@@ -37,6 +37,9 @@
         <file value="libaicpu_context.a" file_type="shared" pkg_inner_softlink="ops_base/lib64/libaicpu_context.a"/>
         <file value="libaicpu_nodedef.a" file_type="shared" pkg_inner_softlink="ops_base/lib64/libaicpu_nodedef.a"/>
         <file value="libbase_ascend_protobuf.a" file_type="shared" pkg_inner_softlink="ops_base/lib64/libbase_ascend_protobuf.a"/>
+        <file value="libaicpu_context_host.a" file_type="shared" pkg_inner_softlink="ops_base/lib64/libaicpu_context_host.a"/>
+        <file value="libaicpu_nodedef_host.a" file_type="shared" pkg_inner_softlink="ops_base/lib64/libaicpu_nodedef_host.a"/>
+        <file value="libhost_ascend_protobuf.a" file_type="shared" pkg_inner_softlink="ops_base/lib64/libhost_ascend_protobuf.a"/>
     </file_info>
     <block_info dependtree="false" dst_path="ops_base" block_conf_path="ascend">
         <block name="EngineeringCommon"/>

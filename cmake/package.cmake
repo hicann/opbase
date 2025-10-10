@@ -112,7 +112,13 @@ install(TARGETS aicpu_context
         ARCHIVE DESTINATION ops_base/lib/aicpu_common)
 install(TARGETS aicpu_nodedef
         ARCHIVE DESTINATION ops_base/lib/aicpu_common)
+install(TARGETS aicpu_context_host
+        ARCHIVE DESTINATION ops_base/lib/aicpu_common)
+install(TARGETS aicpu_nodedef_host
+        ARCHIVE DESTINATION ops_base/lib/aicpu_common)
 install(FILES ${PROTOBUF_STATIC_PKG_DIR}/lib/libbase_ascend_protobuf.a
+    DESTINATION ops_base/lib/aicpu_common)
+install(FILES ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
     DESTINATION ops_base/lib/aicpu_common)
 
 # ============= CPack =============
