@@ -1,6 +1,6 @@
 # opbase
 
-## 🔥Latest News
+## 🔥Latest News 
 
 - [2025/09] opbase项目首次上线。
 
