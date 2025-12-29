@@ -66,6 +66,20 @@ std::string ToString(const gert::Shape& shape)
     return ToString(ToVector(shape));
 }
 
+std::string ToString(const std::vector<const gert::Shape*>& v)
+{
+    std::ostringstream oss;
+    oss << "[";
+    if (v.size() > 0) {
+        for (size_t i = 0; i < v.size() - 1; ++i) {
+            oss << ToString(ToVector(*v[i])) << ", ";
+        }
+        oss << ToString(ToVector(*v[v.size() - 1]));
+    }
+    oss << "]";
+    return oss.str();
+}
+
 #ifdef BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG
 
 const static std::string g_msg = R"(

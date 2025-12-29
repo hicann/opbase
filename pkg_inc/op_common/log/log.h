@@ -253,6 +253,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
 OPBASE_API std::string ToString(ge::DataType type);
 OPBASE_API std::string ToString(ge::Format format);
 OPBASE_API std::string ToString(const gert::Shape& shape);
+OPBASE_API std::string ToString(const std::vector<const gert::Shape*>& v);
 } // namespace Base
 } // namespace Ops
 #endif // OP_COMMON_LOG_LOG_H

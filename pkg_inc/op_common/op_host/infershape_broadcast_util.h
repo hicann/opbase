@@ -24,7 +24,12 @@ namespace Base {
 
 // Do infershape for OP which is single-input single-output and in-shape equal out-shape.
 OPBASE_API ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context);
+// Do infershape for OP which is multi-input single-output.
+OPBASE_API ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context, size_t inputNum);
 
+OPBASE_API bool BroadcastShape(const gert::Shape* in1Shape, const gert::Shape* in2Shape, gert::Shape* outShape);
+
+OPBASE_API bool BroadcastShape(const std::vector<const gert::Shape*>& inShapes, gert::Shape* outShape);
 }  // namespace Base
 } // namespace Ops
 

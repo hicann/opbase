@@ -101,7 +101,7 @@ static bool BroadcastShapeToOutShape(const gert::Shape* shape, gert::Shape* shap
     return true;
 }
 
-static bool BroadcastShape(const gert::Shape* in1Shape, const gert::Shape* in2Shape, gert::Shape* outShape)
+bool BroadcastShape(const gert::Shape* in1Shape, const gert::Shape* in2Shape, gert::Shape* outShape)
 {
     *outShape = *in1Shape;
 
@@ -114,6 +114,22 @@ static bool BroadcastShape(const gert::Shape* in1Shape, const gert::Shape* in2Sh
     return true;
 }
 
+bool BroadcastShape(const std::vector<const gert::Shape*>& inShapes, gert::Shape* outShape)
+{
+    size_t size = inShapes.size();
+    OP_CHECK_IF(size == 0, OP_LOGE("BroadcastShape", "inShapes is empty!"), return false);
+    *outShape = *inShapes[0];
+
+    for (size_t i = 1UL; i < size; i++) {
+        OP_CHECK_IF(
+            !BroadcastShapeToOutShape(inShapes[i], outShape),
+            OP_LOGE(
+                "BroadcastShape", "intput shapes %s cannot broadcast!", ToString(inShapes).c_str()),
+            return false);
+    }
+
+    return true;
+}
 ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
 {
     auto inShape1 = context->GetInputShape(0);
@@ -129,6 +145,27 @@ ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
             context->GetNodeName(), "InferShape4Broadcast shape %s and %s cannot broadcast!",
             ToString(*inShape2).c_str(), ToString(*inShape1).c_str()),
         return ge::GRAPH_FAILED);
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context, size_t inputNum)
+{
+    if (inputNum == 0) {
+        OP_LOGE(context, "InferShape4Broadcast input num:%zu is invalid!", inputNum);
+        return ge::GRAPH_FAILED;
+    }
+    std::vector<const gert::Shape*> inShapes(inputNum);
+    for (size_t i = 0; i < inputNum; i++) {
+        auto inShape = context->GetInputShape(i);
+        OP_CHECK_NULL_WITH_CONTEXT(context, inShape);
+        inShapes[i] = inShape;
+    }
+    auto outShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
+
+    OP_CHECK_IF(
+        !BroadcastShape(inShapes, outShape), OP_LOGE(context, "BroadcastShape failed!"), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

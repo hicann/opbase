@@ -20,6 +20,8 @@ ops_base:
       - src/op_common/op_host/util/shape_util.cpp
       - src/nnopbase/aicpu/task_handler/
       - include/nnopbase/opdev/aicpu/
+      - src/op_common/log/log.cpp
+      - src/op_common/op_host/infershape_broadcast_util.cpp
   llt:
     ut_check: true
     st_check: false
