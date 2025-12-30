@@ -41,6 +41,6 @@ bash build.sh --help
 | --cov               | 可选    | 预留参数，开发者暂不需要关注。                                            |
 | --noexec            | 可选    | 仅编译单元测试二进制文件，不自动执行编译后的UT可执行文件。                             |
 | --make_clean    | 可选    | 执行完全清理操作（删除所有编译相关文件），执行后脚本退出。                              |
-| --cann_3rd_lib_path | 可选    | 设置提升第三方包安装路径，默认值为：./third_party。                            |
+| --cann_3rd_lib_path | 可选    | 离线编译场景下第三方库存放的目录。                            |
 | --pkg               | 可选    | 生成安装包。                           |
 | --asan              | 可选    | 开启host侧ASAN（AddressSanitizer）内存检测功能。                            |

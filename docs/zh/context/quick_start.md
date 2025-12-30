@@ -59,6 +59,8 @@ bash install_deps.sh
 
     进入项目根目录，执行如下编译命令：
 
+    > 说明：编译过程依赖第三方开源软件，联网场景会自动下载，离线编译场景需要自行安装，具体参考[离线编译](build_offline.md)。
+
     ```bash
     bash build.sh
     ```
