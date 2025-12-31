@@ -393,6 +393,8 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
 
 aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t tilingKey)
 {
+    static std::mutex getFunchandleMutex;
+    const std::lock_guard<std::mutex> lock(getFunchandleMutex);
     if (isLaunchWithTilingKey) {
         auto f = [this, tilingKey](aclrtFuncHandle &hdl) -> aclnnStatus {
             aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
