@@ -28,10 +28,14 @@ set(CMAKE_CXX_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
 set(CMAKE_C_COMPILER_ ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
 set(SOURCE_DIR ${PROTOBUF_SRC_DIR})
 
-set(PROTOBUF_PATH ${OPEN_SOURCE_DIR}/protobuf)
-set(ABSEIL_PATH ${OPEN_SOURCE_DIR}/abseil-cpp)
+if (EXISTS ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
+  set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
+else ()
+  set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
+endif ()
+set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp/abseil-cpp-20230802.1.tar.gz)
 
-if (NOT EXISTS "${PROTOBUF_PATH}/protobuf-all-25.1.tar.gz" OR NOT EXISTS "${ABSEIL_PATH}/abseil-cpp-20230802.1.tar.gz")
+if(NOT EXISTS "${PROTOBUF_PATH}")
   set(REQ_URL "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz")
   set(ABS_REQ_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz")
  
@@ -65,12 +69,13 @@ if (NOT EXISTS "${PROTOBUF_PATH}/protobuf-all-25.1.tar.gz" OR NOT EXISTS "${ABSE
 
   add_dependencies(protobuf_src protobuf_src_dl abseil_src_dl)
 else()
+  message("use protobuf cache") 
   set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
   ExternalProject_Add(protobuf_src
       DOWNLOAD_COMMAND ""
-      COMMAND tar -zxf ${PROTOBUF_PATH}/protobuf-all-25.1.tar.gz --strip-components 1 -C ${SOURCE_DIR}
-      COMMAND tar -zxf ${ABSEIL_PATH}/abseil-cpp-20230802.1.tar.gz --strip-components 1 -C ${SOURCE_DIR}/third_party/abseil-cpp
-      PATCH_COMMAND cd ${SOURCE_DIR} && patch -p1 < ${TOP_DIR}/cmake/function/protobuf_25.1_change_version.patch && cd ${SOURCE_DIR}/third_party/abseil-cpp && patch -p1 < ${TOP_DIR}/cmake/function/protobuf-hide_absl_symbols.patch
+      COMMAND tar -zxf ${PROTOBUF_PATH} --strip-components 1 -C ${SOURCE_DIR}
+      COMMAND tar -zxf ${ABSEIL_PATH} --strip-components 1 -C ${SOURCE_DIR}/third_party/abseil-cpp
+      PATCH_COMMAND cd ${SOURCE_DIR} && patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/protobuf_25.1_change_version.patch && cd ${SOURCE_DIR}/third_party/abseil-cpp && patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/protobuf-hide_absl_symbols.patch
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""

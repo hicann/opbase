@@ -18,8 +18,6 @@ else()
     option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build ops_base need cann source code" FALSE)
 endif()
 
-get_filename_component(OPEN_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../open_source" REALPATH)
-
 include(cmake/config.cmake)
 include(cmake/intf_pub_linux.cmake)
 include(cmake/variables.cmake)

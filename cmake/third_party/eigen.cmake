@@ -15,9 +15,9 @@ endif()
 set(EIGEN_DOWNLOAD_PATH ${CANN_3RD_PKG_PATH}/eigen)
 set(EIGEN_INSTALL_PATH ${CANN_3RD_LIB_PATH}/eigen)
 
-if (IS_DIRECTORY "${OPEN_SOURCE_DIR}/eigen")
-  message("eigen found in ${OPEN_SOURCE_DIR}/eigen, no need download")
-  set(REQ_URL "${OPEN_SOURCE_DIR}/eigen")
+if (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
+  message("eigen found in ${CANN_3RD_LIB_PATH}/eigen, no need download")
+  set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
   include(ExternalProject)
   ExternalProject_Add(external_eigen
     URL                 ${REQ_URL}
