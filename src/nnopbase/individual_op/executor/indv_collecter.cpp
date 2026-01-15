@@ -272,7 +272,7 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
     return verKey;
 }
 
-const NnopbaseChar *NnopbaseCollecterGetBinPath(const NnopbaseChar *const opType, const uint64_t key,
+const NnopbaseChar *NnopbaseCollecterGetSimplifiedKey(const NnopbaseChar *const opType, const uint64_t key,
                                                 const NnopbaseUChar *verbose, const uint32_t verbLen)
 {
     NnopbaseRegInfo *regInfo = NnopbaseCollecterFindRegInfoInTbl(gBinCollecter, opType, key);
@@ -285,7 +285,7 @@ const NnopbaseChar *NnopbaseCollecterGetBinPath(const NnopbaseChar *const opType
         return nullptr;
     }
     OP_LOGI("Found %s static kernel, verboseLen: %u, hashKey is: %zu.", opType, verbLen, hashKey);
-    return &(binInfo->binPath[0U]);
+    return binInfo->simplifiedKey.c_str();
 }
 
 aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingFun *const tiling, gert::OppImplVersionTag oppImplVersion)
@@ -600,7 +600,7 @@ aclnnStatus NnopbaseCollecterAddRepoInfo(NnopbaseBinCollecter *const collecter,
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterConvertDynamicVerbKey(key.c_str(), &(binKey[0U]), &keySize));
     } // isDynamic
 
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddBinInfo(regInfo, jsonInfo, &(binKey[0U]), keySize));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddBinInfo(key, regInfo, jsonInfo, &(binKey[0U]), keySize));
     return OK;
 }
 
@@ -638,7 +638,7 @@ aclnnStatus NnopbaseCollecterGcRegInfo(const void *const data)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus NnopbaseCollecterAddBinInfo(NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
+aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
     const NnopbaseUChar *const verbose, const uint32_t len)
 {
     OP_LOGD("Start to add %s binInfo, key size is %u.", regInfo->key.opType.c_str(), len);
@@ -656,6 +656,7 @@ aclnnStatus NnopbaseCollecterAddBinInfo(NnopbaseRegInfo *const regInfo, const Nn
     auto binInfo = std::make_unique<NnopbaseBinInfo>();
     NNOPBASE_ASSERT_NOTNULL_RETVAL(binInfo);
     NnopbaseBinInfoInit(binInfo.get());
+    binInfo->simplifiedKey = key;
     binInfo->coreType = jsonInfo.coreType;
     binInfo->isStaticShape = jsonInfo.isStaticShape;
     binInfo->blockDim = jsonInfo.blockDim;

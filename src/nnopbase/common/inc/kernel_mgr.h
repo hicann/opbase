@@ -116,12 +116,11 @@ public:
         }
     }
 
-    void ClearStaticBins()
+    void ReloadStaticBinJson()
     {
-        loadStaticBinJsonFlag_.reset();
+        loadStaticBinJsonFlag_.Reset();
         for (size_t i = 0; i < kernel_.size(); i++) {
-            initStaticKernelFlags_[i].reset();
-            kernel_[i].ClearStaticBins();
+            initStaticKernelFlags_[i].Reset();
         }
     }
 

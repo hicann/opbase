@@ -172,6 +172,7 @@ typedef struct {
     BinInfoKey binInfoKey;
     void* regInfo;
     NnopbaseUChar *bin;
+    std::string simplifiedKey;
     std::string binPath;
     void *binHandles[op::MAX_DEV_NUM] = {nullptr};
     bool hasReg[op::MAX_DEV_NUM] = {false};

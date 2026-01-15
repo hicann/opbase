@@ -181,6 +181,7 @@ target_link_libraries(nnopbase_utest PRIVATE
     ${ASCEND_HOME_PATH}/lib64/libexe_graph.so
     ${ASCEND_HOME_PATH}/lib64/libacl_rt.so
     ${ASCEND_HOME_PATH}/lib64/libmetadef.so
+    ${ASCEND_HOME_PATH}/lib64/liberror_manager.so
     ${ASCEND_HOME_PATH}/lib64/libopp_registry.so
     ${ASCEND_HOME_PATH}/lib64/libmmpa.so
     ${ASCEND_HOME_PATH}/lib64/libprofapi.so

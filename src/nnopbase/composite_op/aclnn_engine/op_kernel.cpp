@@ -393,8 +393,7 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
 
 aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t tilingKey)
 {
-    static std::mutex getFunchandleMutex;
-    const std::lock_guard<std::mutex> lock(getFunchandleMutex);
+    const std::lock_guard<std::mutex> getFuncHandleLock(funcHandleMutex_);
     if (isLaunchWithTilingKey) {
         auto f = [this, tilingKey](aclrtFuncHandle &hdl) -> aclnnStatus {
             aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
@@ -413,12 +412,14 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
         auto &opJson = binJson_.GetVar();
         CHECK_COND(
             opJson.contains("kernelName"), ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND, "json does not contain kernelName");
-        std::string kernelName = opJson["kernelName"].get<std::string>();
-        CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &hdl) == ACL_SUCCESS,
+        kernelNameOfNoFatBin_ = opJson["kernelName"].get<std::string>();
+        CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
             ACLNN_ERR_RUNTIME_ERROR,
             "aclrtBinaryGetFunction failed, kernel name: %s",
-            kernelName.c_str());
-        OP_LOGI("Get function handle by kernel name [%s] successfully, function handle: %p", kernelName.c_str(), hdl);
+            kernelNameOfNoFatBin_.c_str());
+        OP_LOGI(
+            "Get function handle by kernel name [%s] successfully, function handle: %p",
+            kernelNameOfNoFatBin_.c_str(), hdl);
         return ACLNN_SUCCESS;
     };
     return funcHandleWithKernelName_[currDevId_].InitVar(f);
@@ -1091,12 +1092,17 @@ aclnnStatus OpKernel::HashAndInsert(const string &binAndJsonDir,
         jsonPath.append(binOrJsonPathPrefix);
         jsonPath.append(JSON_SUFFIX);
         if (keyParams.binType == BinType::STATIC_BIN) {
-            auto hash = HashBinary(binPath.c_str(), binPath.size());
+            const std::string &simplifiedKey = key.key;
+            auto hash = HashBinary(simplifiedKey.c_str(), simplifiedKey.size());
             const std::lock_guard<std::mutex> lock(staticKernelsMutex_);
+            if (staticBins_.find(hash) != staticBins_.end()) {
+                OP_LOGD("This static bin has been added, key: %s", simplifiedKey.c_str());
+                continue;
+            }
             staticBins_.emplace(hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath,
                                                                     key, hash, keyParams.binType,
                                                                     keyParams.genPlaceholder, false, this));
-            OP_LOGD("Static bin: key: %s, json: %s, bin: %s", key.key.c_str(), jsonPath.c_str(), binPath.c_str());
+            OP_LOGD("Static bin: key: %s, json: %s, bin: %s", simplifiedKey.c_str(), jsonPath.c_str(), binPath.c_str());
             continue;
         }
 
@@ -1485,21 +1491,29 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string
     for (const auto &singleJson : *staticListIter) {
         auto binPathIter = singleJson.find(BIN_PATH);
         if (binPathIter == singleJson.end()) {
-            OP_LOGD("binPath does not exist.");
+            OP_LOGW("binPath does not exist.");
+            continue;
+        }
+
+        auto simplifiedKeyIter = singleJson.find(SIMPLIFIED_KEY);
+        if (simplifiedKeyIter == singleJson.end()) {
+            OP_LOGW("simplifiedKey does not exist.");
             continue;
         }
 
         const std::string &binPath = binPathIter->get<std::string>();
         auto pos = binPath.find(BIN_SUFFIX);
         if (pos == string::npos) {
-            OP_LOGD("binPath %s is not valid.", binPath.c_str());
+            OP_LOGW("binPath %s is not valid.", binPath.c_str());
             continue;
         }
+
+        const std::string &simplifiedKey = simplifiedKeyIter->get<std::string>();
 
         KeyParams keyParams;
         keyParams.binType = BinType::STATIC_BIN;
         keyParams.keys.emplace_back();
-        keyParams.keys.back().key = binPath;
+        keyParams.keys.back().key = simplifiedKey;
         if (HashAndInsert(binAndJsonDir, binPath, pos, keyParams) != ACLNN_SUCCESS) {
             return ACLNN_ERR_INNER_KEY_CONFILICT;
         }

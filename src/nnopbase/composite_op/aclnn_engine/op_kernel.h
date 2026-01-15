@@ -171,6 +171,27 @@ public:
 
     void SetExceptionDumpInfo(uint32_t blockDim, uint64_t tilingKey, void *tilingData, size_t tilingSize);
 
+    aclnnStatus DoLaunchKernel(RtsArg& rtsArg, aclrtStream stream, KernelLaunchConfig& launchCfg)
+    {
+        aclnnStatus ret = rtsArg.LaunchKernel(stream, launchCfg);
+        if (ret == ACLNN_ERR_INNER_RUNTIME_INVALID_HANDLE) {
+            {
+                const std::lock_guard<std::mutex> resetFuncHandleLock(funcHandleMutex_);
+                if (isFatbin_) {
+                    funcHandleWithTilingKey_[currDevId_][launchCfg.tilingKey].ResetOnceFlag();
+                } else {
+                    funcHandleWithKernelName_[currDevId_].ResetOnceFlag();
+                }
+            }
+            CHECK_RET_CODE(InitFunctionHandle(isFatbin_, launchCfg.tilingKey), "Init function handle failed.");
+            launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][launchCfg.tilingKey].GetVar() :
+                                               funcHandleWithKernelName_[currDevId_].GetVar();
+            ret = rtsArg.LaunchKernel(stream, launchCfg);
+        }
+        CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_RUNTIME_ERROR, "Launch kernel failed.");
+        return ret;
+    }
+
     aclnnStatus DoLaunch(const TilingCtxOutput *res, aclrtStream stream, bool isMemSet, OpArgContext *args,
                          std::vector<int32_t>& tensorOffset)
     {
@@ -197,12 +218,14 @@ public:
             }
             GetThreadLocalContext().blockDim_ = blockdim;
 
-            bool isLaunchWithTilingKey = isFatbin_ ? true : false;
-            CHECK_RET_CODE(InitFunctionHandle(isLaunchWithTilingKey, tilingkey), "Init function handle failed.");
-
+            CHECK_RET_CODE(InitFunctionHandle(isFatbin_, tilingkey), "Init function handle failed.");
             KernelLaunchConfig launchCfg;
-            launchCfg.funcHandle = isLaunchWithTilingKey ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
-                                                         : funcHandleWithKernelName_[currDevId_].GetVar();
+            launchCfg.isFatBin = isFatbin_;
+            launchCfg.binHandle = binHandle_[currDevId_].GetVar();
+            launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar() :
+                                               funcHandleWithKernelName_[currDevId_].GetVar();
+            launchCfg.tilingKey = tilingkey;
+            launchCfg.kernelNameOfNoFatBin = kernelNameOfNoFatBin_.c_str();
             launchCfg.blockDim = blockdim;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.localMemorySize = *(res->localMemorySize_);
@@ -210,11 +233,15 @@ public:
             launchCfg.engineType = isVectorCoreEnableScenario_ ? LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC
                                                                : LaunchKernelEngineType::NO_VECTOR_CORE;
 
-            aclnnStatus ret = rtsArg.LaunchKernel(stream, launchCfg);
+            rtsArg.ReportExceptionDumpInfo();
+            aclnnStatus ret = DoLaunchKernel(rtsArg, stream, launchCfg);
 
             LaunchArgCache *cache = rtsArg.DumpToCache();
             if (cache != nullptr) {
-                cache->SetRunParam(launchCfg);
+                if (cache->SetRunParam(launchCfg, kernelNameOfNoFatBin_) == false) {
+                    OpExecCache *opCache = GetOpCacheContext().GetOpCache();
+                    opCache->MarkOpCacheInvalid();
+                }
                 FVector<const aclTensor*> in;
                 FVector<const aclTensor*> out;
                 if (args->ContainsOpArgType(op::OP_INPUT_ARG)) {
@@ -457,12 +484,10 @@ public:
         RtsArg rtsArg(interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end()),
                     argInfo, res->tilingData_->capacity_);
 
-        bool isLaunchWithTilingKey = isFatbin_ ? true : false;
-        CHECK_RET_CODE(InitFunctionHandle(isLaunchWithTilingKey, tilingkey), "Init function handle failed.");
+        CHECK_RET_CODE(InitFunctionHandle(isFatbin_, tilingkey), "Init function handle failed.");
 
         int32_t ret;
         std::vector<int32_t> tensorOffset;
-
         {
             OpDfxGuard
                 kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
@@ -486,15 +511,16 @@ public:
 
             // mainStream kernel launch
             KernelLaunchConfig launchCfg;
-            launchCfg.funcHandle = isLaunchWithTilingKey ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
-                                                         : funcHandleWithKernelName_[currDevId_].GetVar();
+            launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar() :
+                                               funcHandleWithKernelName_[currDevId_].GetVar();
             launchCfg.blockDim = blockdimAic;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.blockDimOffset = 0;
             launchCfg.localMemorySize = 0;
             launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
 
-            ret = rtsArg.LaunchKernel(stream, launchCfg);
+            rtsArg.ReportExceptionDumpInfo();
+            ret = DoLaunchKernel(rtsArg, stream, launchCfg);
             if (ret != ACLNN_SUCCESS) {
                 OP_LOGW("main kernel launch with handle fail.");
                 return ret;
@@ -532,7 +558,7 @@ public:
 
             // secondStream kernel launch
             KernelLaunchConfig launchCfg;
-            launchCfg.funcHandle = isLaunchWithTilingKey ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
+            launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
                                                          : funcHandleWithKernelName_[currDevId_].GetVar();
             launchCfg.blockDim = blockdimAiv;
             launchCfg.schemMode = *(res->scheduleMode_);
@@ -540,7 +566,8 @@ public:
             launchCfg.localMemorySize = 0;
             launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIV;
 
-            ret = rtsArg.LaunchKernel(secondStream, launchCfg);
+            rtsArg.ReportExceptionDumpInfo();
+            ret = DoLaunchKernel(rtsArg, secondStream, launchCfg);
             if (ret != ACLNN_SUCCESS) {
                 OP_LOGW("second kernel launch fail.");
                 return ret;
@@ -1190,8 +1217,10 @@ private:
     }
 
     InitOnceVar<aclrtBinHandle> binHandle_[MAX_DEV_NUM];
-    std::array<std::unordered_map<uint64_t, InitOnceVar<aclrtFuncHandle>>, MAX_DEV_NUM> funcHandleWithTilingKey_;
-    std::array<InitOnceVar<aclrtFuncHandle>, MAX_DEV_NUM> funcHandleWithKernelName_;
+    std::array<std::unordered_map<uint64_t, InitOnceVarV2<aclrtFuncHandle>>, MAX_DEV_NUM> funcHandleWithTilingKey_;
+    std::array<InitOnceVarV2<aclrtFuncHandle>, MAX_DEV_NUM> funcHandleWithKernelName_;
+    std::mutex funcHandleMutex_;
+    std::string kernelNameOfNoFatBin_;
 
     thread_local static int currDevId_;
     std::vector<MemSetTensorInfo> memSetValue_;
@@ -1427,17 +1456,6 @@ public:
                 GetReadableKey(std::string(initAddr, integralKey - initAddr), len).c_str());
         op::internal::BlockPool::Free(initAddr);
         return iter->second.get();
-    }
-
-    void ClearStaticBins()
-    {
-        const std::lock_guard<std::mutex> lock(staticKernelsMutex_);
-        if (!staticBins_.empty()) {
-            for (auto &pair : staticBins_) {
-                abandonedStaticBins_.push_back(std::move(pair.second));
-            }
-            staticBins_.clear();
-        }
     }
 
     void ReleaseTilingParse()
@@ -1765,7 +1783,6 @@ private:
 protected:
     std::map<size_t, std::unique_ptr<OpKernelBin>> bins_;
     std::map<size_t, std::unique_ptr<OpKernelBin>> staticBins_;
-    std::vector<std::unique_ptr<OpKernelBin>> abandonedStaticBins_;
 
 private:
     std::mutex staticKernelsMutex_;

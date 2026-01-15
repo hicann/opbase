@@ -16,6 +16,7 @@
 
 #include "securec.h"
 #include "acl/acl_rt.h"
+
 #include "aclnn/acl_meta.h"
 #include "kernel_utils.h"
 #include "opdev/op_errno.h"
@@ -25,6 +26,8 @@
 
 namespace op::internal {
 
+constexpr size_t KERNEL_NAME_MAX_SIZE = 160;
+
 enum class LaunchKernelEngineType : uint8_t {
     NO_VECTOR_CORE = 0,
     VECTOR_CORE_ENGINE_AIC,
@@ -32,8 +35,12 @@ enum class LaunchKernelEngineType : uint8_t {
 };
 
 struct KernelLaunchConfig {
+    aclrtBinHandle binHandle;
     aclrtFuncHandle funcHandle;
+    uint64_t tilingKey;
+    const char *kernelNameOfNoFatBin;
     uint32_t blockDim;
+    bool isFatBin;
     uint8_t schemMode;
     uint32_t localMemorySize;
     uint32_t blockDimOffset;
@@ -50,6 +57,8 @@ using rtArgs_t = struct tagRtArgs {
     uint32_t placeHolderInfoNum{0};    // placeHolderInfo num
     uint8_t hasTiling{0};              // if has tiling: 0 means no tiling
 };
+
+bool IsNeedOverflowStatusAddr();
 
 class RtsApiFlag {
 public:
@@ -161,17 +170,36 @@ public:
         return rtsType_;
     }
 
-    void SetRunParam(KernelLaunchConfig &launchCfg)
+    bool SetRunParam(KernelLaunchConfig &launchCfg, std::string &kernelName)
     {
         launchCfg_ = launchCfg;
-        OP_LOGD("Save launch config to cache, engine type: %d, blockDim: %u, scheduleMode: %u, blockDimOffset: %u, "
-                "localMemorySize: %u, funcHandle: %p",
+        OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, blockDim: %u, "
+                "scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, funcHandle: %p, binHandle: %p",
             static_cast<int>(launchCfg_.engineType),
+            launchCfg_.isFatBin,
+            launchCfg_.tilingKey,
             launchCfg_.blockDim,
             launchCfg_.schemMode,
             launchCfg_.blockDimOffset,
             launchCfg_.localMemorySize,
-            launchCfg_.funcHandle);
+            launchCfg_.funcHandle,
+            launchCfg_.binHandle);
+        if (!launchCfg_.isFatBin) {
+            OP_CHECK(
+                kernelName.length() < KERNEL_NAME_MAX_SIZE,
+                OP_LOGW("kernel name is bigger than %zu", KERNEL_NAME_MAX_SIZE), return false);
+            auto rc =
+                strncpy_s(kernelNameOfNoFatBin_, KERNEL_NAME_MAX_SIZE - 1, kernelName.c_str(), kernelName.length());
+            OP_CHECK(rc == EOK, OP_LOGW("Copy kernel name to cache failed"), return false);
+            OP_LOGD("Kernel name of no fat bin is: %s", kernelNameOfNoFatBin_);
+        }
+        launchCfg_.kernelNameOfNoFatBin = kernelNameOfNoFatBin_;
+        return true;
+    }
+
+    const char *GetKernelNameOfNoFatBin() const
+    {
+        return kernelNameOfNoFatBin_;
     }
 
     void *GetRawRtsArg()
@@ -204,7 +232,7 @@ public:
         return tilingKey_;
     }
 
-    const KernelLaunchConfig &GetKernelLaunchConfig() const
+    KernelLaunchConfig &GetKernelLaunchConfig()
     {
         return launchCfg_;
     }
@@ -248,11 +276,13 @@ public:
         return hostArgNum_;
     }
 
-    static aclnnStatus LaunchKernelFromCache(aclrtStream stream, rtArgs_t &rtArg, const KernelLaunchConfig &launchCfg);
+    static aclnnStatus UpdateFunctionHandle(KernelLaunchConfig &launchCfg);
+    static aclnnStatus LaunchKernelFromCache(aclrtStream stream, rtArgs_t& rtArg, KernelLaunchConfig& launchCfg);
     static aclnnStatus RunFromCache(aclrtStream stream, void *cache);
 
 private:
-    char opType_[16];
+    char opType_[16] = {0};
+    char kernelNameOfNoFatBin_[KERNEL_NAME_MAX_SIZE] = {0};
     void *handle_{nullptr};
     KernelLaunchConfig launchCfg_;
 
@@ -280,6 +310,7 @@ public:
     aclnnStatus FillArgs(bool assertFlag = false);
     LaunchArgCache *DumpToCache();
 
+    void ReportExceptionDumpInfo() const;
     aclnnStatus LaunchKernel(aclrtStream stream, const KernelLaunchConfig &launchCfg);
 
     const rtArgs_t &GetRtsArg() const
@@ -298,7 +329,6 @@ private:
     aclnnStatus AppendFftsAddr();
     aclnnStatus FinalizeArg();
     void AppendExceptionDumpAddr(bool assertFlag = false);
-    void ReportExceptionDumpInfo() const;
     void AppendArg(void *arg)
     {
         *hostAddr_ = arg;
@@ -310,8 +340,9 @@ private:
     aclnnStatus AppendDevicePtrArg(const aclTensorList *tensors, size_t dataSize);
     void AppendOverflowStatusAddr()
     {
-        static void *overflowAddr = nullptr;
-        if (overflowAddr == nullptr) {
+        void *overflowAddr = nullptr;
+        static bool needOverflowAddr = IsNeedOverflowStatusAddr();
+        if (needOverflowAddr) {
             aclError rc = aclrtCtxGetFloatOverflowAddr(&overflowAddr);
             OP_CHECK(rc == ACL_RT_NO_ERROR,
                     OP_LOGW("aclrtCtxGetFloatOverflowAddr failed. %d", rc),

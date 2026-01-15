@@ -519,18 +519,11 @@ aclnnStatus aclGetRawTensorAddr(const aclTensor *tensor, void **addr)
     return OK;
 }
 
-constexpr uint32_t CALL_RESELECT_STATIC_KERNEL_MAX_COUNT = 100;
-
 aclnnStatus aclnnReselectStaticKernel()
 {
-    static std::atomic<uint32_t> callCount = 0;
-    CHECK_COND(callCount.load() < CALL_RESELECT_STATIC_KERNEL_MAX_COUNT,
-        ACLNN_ERR_INNER,
-        "Call count has exceeded 100, this api will not work");
-    callCount++;
     OP_LOGI("start reselect static kernel.");
     op::internal::ReinitOpCacheManager();
-    op::internal::gKernelMgr.ClearStaticBins();
+    op::internal::gKernelMgr.ReloadStaticBinJson();
     NnopbaseReloadStaticBinJsonInfos();
     return OK;
 }

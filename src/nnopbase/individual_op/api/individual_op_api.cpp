@@ -810,7 +810,7 @@ const NnopbaseChar *NnopbaseFindStaticKernel(const NnopbaseChar *opType,
     OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
     verKey = NnopbaseCollecterGenStaticKey(verKey, &regInfoKey, &tensorNumInfo, tensors,
                                            attrs, implMode, deterMode, valueDepend);
-    return NnopbaseCollecterGetBinPath(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
+    return NnopbaseCollecterGetSimplifiedKey(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
                                        uint32_t(verKey - verbose));
 }
 

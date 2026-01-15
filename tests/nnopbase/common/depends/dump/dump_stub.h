@@ -11,6 +11,7 @@
 #ifndef DUMP_STUB_H_
 #define DUMP_STUB_H_
 
+#include <memory>
 #include "acl/acl_base.h"
 #include "dump/adump_pub.h"
 #include "dump/adump_api.h"

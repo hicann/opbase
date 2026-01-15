@@ -473,12 +473,13 @@ aclnnStatus KernelMgr::AclOpKernelInit(uint32_t opType)
     static std::once_flag opFlag[MAX_OP_TYPE_COUNT];
     std::call_once(opFlag[opType], [&]() { rc = OpKernelLib::GetInstance().ParseKernelLibInfos(opType); });
     CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseKernelLibInfos.");
-    
+
     std::call_once(initDynKernelFlags_[opType],
         [&]() { rc = internal::gKernelMgr.ParseDynamicKernels(opType); });
     CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseDynamicKernels.");
 
     initStaticKernelFlags_[opType].CallOnce([&]() { rc = internal::gKernelMgr.ParseStaticKernels(opType); });
+    CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseStaticKernels.");
 
     return rc;
 }

@@ -587,13 +587,19 @@ void AddParamToBuf(const aclScalar* scalar)
     char *hashBuf = tlsData->hashBuf;
     uint64_t &hashOffset = tlsData->hashOffset;
 
-    if (CheckHashBufCapacity(hashOffset, scalar->Size() + sizeof(uint8_t)) == false) {
+    const size_t addSize = scalar->Size() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t);
+    if (CheckHashBufCapacity(hashOffset, addSize) == false) {
         return;
     }
+    // scalar data
     OP_CHECK(memcpy_s(hashBuf + hashOffset, K_HASH_BUF_SIZE - hashOffset, scalar->GetData(), scalar->Size()) == EOK,
              OP_LOGW("Failed to memcpy in op cache."),
              ;);
     hashOffset += scalar->Size();
+    OpCacheAddSeperator(hashBuf, hashOffset);
+    // datatype
+    op::DataType dataType = scalar->GetDataType();
+    OpCacheAdd4Byte(&dataType, hashBuf, hashOffset);
     OpCacheAddSeperator(hashBuf, hashOffset);
 };
 

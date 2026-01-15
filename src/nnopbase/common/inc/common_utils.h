@@ -12,6 +12,7 @@
 #define OP_API_OP_API_COMMON_INC_COMMON_UTILS_H
 
 #include <atomic>
+#include <thread>
 #include "opdev/op_log.h"
 
 namespace op {
@@ -47,7 +48,7 @@ public:
         }
     }
 
-    void reset()
+    void Reset()
     {
         while (onceFlag_.load() == FLAG_EXECUTING) {
             std::this_thread::yield();

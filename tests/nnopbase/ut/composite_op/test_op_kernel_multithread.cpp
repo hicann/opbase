@@ -66,28 +66,31 @@ protected:
 
     static void TearDownTestCase() {}
 
-    std::unique_ptr<OpKernelBin> CreateFakeOpKernelBin(bool genPlaceholder, bool hasDevPtrArg)
-    {
-        uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
-        const char *p = std::getenv("ASCEND_OPP_PATH");
-        EXPECT_NE(p, nullptr);
-        KeyAndDetail key;
-        key.key = "hahaha";
-        size_t hashKey = 123;
-        char jsonPath[1024];
-        char binPath[1024];
-        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
-            p);
-        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
-            p);
-
-        std::unique_ptr<OpKernelBin> kernelBin = std::make_unique<OpKernelBin>(
-            opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, genPlaceholder, hasDevPtrArg);
-        return std::move(kernelBin);
-    }
 };
+
+static std::unique_ptr<OpKernelBin> CreateFakeOpKernelBin(bool genPlaceholder, bool hasDevPtrArg)
+{
+    uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
+    const char *p = std::getenv("ASCEND_OPP_PATH");
+    EXPECT_NE(p, nullptr);
+    KeyAndDetail key;
+    key.key = "hahaha";
+    size_t hashKey = 123;
+    char jsonPath[1024];
+    char binPath[1024];
+    snprintf_s(
+        jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
+        p);
+    snprintf_s(
+        binPath, sizeof(binPath), sizeof(binPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
+        p);
+
+    std::unique_ptr<OpKernelBin> kernelBin = std::make_unique<OpKernelBin>(
+        opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, genPlaceholder, hasDevPtrArg);
+    return std::move(kernelBin);
+}
 
 static bool CheckRtKernelLaunchCfgSchemMode(aclrtLaunchKernelCfg *cfg, uint8_t schemMode)
 {
@@ -1697,9 +1700,101 @@ static void MultiDoLaunchAlignTest() {
     aclDestroyTensorList(workspace1);
 }
 
+
+class InvalidFunctionHandleAclrtStub : public AclrtStub {
+public:
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+        aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize, aclrtPlaceHolderInfo *placeHolderArray,
+        size_t placeHolderNum)
+    {
+        if (returnInvalidHandleFlag == true) {
+            OP_LOGI("return ACL_ERROR_RT_INVALID_HANDLE");
+            returnInvalidHandleFlag = false;
+            return ACL_ERROR_RT_INVALID_HANDLE;
+        }
+        return ACL_SUCCESS;
+    }
+
+    bool returnInvalidHandleFlag{false};
+};
+
+static void TestInvalidFunctionHandle() {
+    OP_LOGI("Start to run UT TestInvalidFunctionHandle -->");
+    // init OpArgContext
+    op::Shape selfShape{10};
+    op::Shape outShape{10};
+
+    aclOpExecutor exe;
+    int64_t inputData[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    auto self = exe.AllocIntArray(inputData, 10);
+    auto inputTensor = exe.ConvertToTensor(self, op::DataType::DT_INT64);
+    auto outputTensor = exe.AllocTensor(outShape, op::DataType::DT_INT32);
+
+    auto input_arg = OP_INPUT(inputTensor);
+    auto output_arg = OP_OUTPUT(outputTensor);
+    auto ctx = op::MakeOpArgContext(input_arg, output_arg);
+
+    // init op kernel bin
+    bool genPlaceholder = false, hasDevPtrArg = false;
+    auto kernelBin = CreateFakeOpKernelBin(genPlaceholder, hasDevPtrArg);
+    kernelBin->interCoreSync_ = false;
+    kernelBin->isFatbin_ = true;
+    kernelBin->currDevId_ = 0;
+    auto f = [](void *&hdl) -> aclnnStatus {
+        hdl = (void *)0x11223344;
+        return ACLNN_SUCCESS;
+    };
+    kernelBin->binHandle_[0].InitVar(f);
+
+    // init tiling res
+    TilingCtxOutput tilingOutput{};
+
+    int64_t tilingbuf[2000];
+    int64_t *tilingData = tilingbuf + 1000;
+    for (size_t i = 0; i < 21; i++) {
+        tilingData[i] = i;
+    }
+    size_t tilingDataLen = 8 * 21;
+
+    TilingData tilingDataStruct;
+    tilingDataStruct.capacity_ = 128 * 1024;
+    tilingDataStruct.data_ = tilingData;
+    tilingDataStruct.data_size_ = tilingDataLen;
+    uint64_t tilingKey = 10020;
+    int64_t blockDim = 16;
+    uint8_t scheduleMode = 1;
+    uint32_t localMemorySize = 888;
+
+    tilingOutput.tilingKey_ = &tilingKey;
+    tilingOutput.blockDim_ = &blockDim;
+    tilingOutput.tilingData_ = &tilingDataStruct;
+    tilingOutput.scheduleMode_ = &scheduleMode;
+    tilingOutput.localMemorySize_ = &localMemorySize;
+
+    InvalidFunctionHandleAclrtStub aclrtStub;
+    aclrtStub.returnInvalidHandleFlag = true;
+    AclrtStub::GetInstance()->Install(&aclrtStub);
+    std::vector<int32_t> tensorOffset;
+    auto opExecCache = new OpExecCache();
+    opExecCache->hashKey_ = 1;
+    opExecCache->SetCacheBuf(GetCacheBuf());
+    GetOpCacheContext().SetOpCache(opExecCache);
+    aclrtStream stream = 0;
+    auto rc = kernelBin->DoLaunch(&tilingOutput, stream, false, ctx, tensorOffset);
+    EXPECT_EQ(rc, ACLNN_SUCCESS);
+
+    aclrtStub.returnInvalidHandleFlag = true;
+    OpExecCacheWrap *cacheWrap = CreateCacheWrap(opExecCache);
+    cacheWrap->Run(nullptr, stream);
+    EXPECT_EQ(rc, ACLNN_SUCCESS);
+    AclrtStub::GetInstance()->UnInstall();
+
+    delete opExecCache;
+}
+
 TEST_F(OpKernelMultiThreadUT, SingleDoLaunchTest) {
     vector<Functional> funVec = {MultiDoLaunchAlignTest, MultiDoLaunchNormalTest2,
-        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4};
+        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4, TestInvalidFunctionHandle};
     for(int i = 0; i < funVec.size(); i++) {
         funVec[i]();
     }
@@ -1707,12 +1802,12 @@ TEST_F(OpKernelMultiThreadUT, SingleDoLaunchTest) {
 
 TEST_F(OpKernelMultiThreadUT, MultiDoLaunchTest) {
     vector<Functional> funVec = {MultiDoLaunchAlignTest, MultiDoLaunchNormalTest2, 
-        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4};
+        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4, TestInvalidFunctionHandle};
 
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(0, funVec.size()-1);
-    const uint64_t threadCount = funVec.size() * 100;
+    const uint64_t threadCount = funVec.size() * 150;
     vector<std::thread> threadVec;
     for (int i = 0; i<threadCount; i++) {
         threadVec.emplace_back(std::thread(funVec[distrib(gen)]));

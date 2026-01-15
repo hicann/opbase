@@ -19,6 +19,7 @@
 #include "aclnn/acl_meta.h"
 #include "opdev/op_log.h"
 #include "opdev/op_dfx.h"
+#include "common_utils.h"
 
 #include "mmpa/mmpa_api.h"
 
@@ -31,6 +32,8 @@
 
 namespace op {
 namespace internal {
+
+constexpr aclnnStatus ACLNN_ERR_INNER_RUNTIME_INVALID_HANDLE = 561201;
 
 constexpr uint32_t KERNEL_UTILS_THIRTY_TWO_BIT = 32;
 
@@ -105,6 +108,35 @@ private:
     T var_;
     aclnnStatus initRes_;
     std::once_flag onceFlag_;
+};
+
+template<typename T>
+class InitOnceVarV2 {
+public:
+    template<typename F>
+    aclnnStatus InitVar(const F &initFunc)
+    {
+        auto f = [&initFunc](aclnnStatus &res, T &var) {
+            res = initFunc(var);
+        };
+        resettableOnceFlag_.CallOnce(f, initRes_, var_);
+        return initRes_;
+    }
+
+    const T& GetVar() const
+    {
+        return var_;
+    }
+
+    void ResetOnceFlag()
+    {
+        resettableOnceFlag_.Reset();
+    }
+
+private:
+    T var_;
+    aclnnStatus initRes_;
+    ResettableOnceFlag resettableOnceFlag_;
 };
 
 gert::OppImplVersionTag GetOppImplVersion();

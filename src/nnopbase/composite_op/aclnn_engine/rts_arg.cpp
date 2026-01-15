@@ -45,6 +45,18 @@ constexpr size_t KERNEL_ATTRS_SIZE_THREE = 3;
 constexpr size_t KERNEL_ATTRS_SIZE_FOUR = 4;
 
 namespace op::internal {
+bool IsNeedOverflowStatusAddr()
+{
+    aclrtFloatOverflowMode floatOverflowMode = ACL_RT_OVERFLOW_MODE_SATURATION;
+    const aclError ret = aclrtGetDeviceSatMode(&floatOverflowMode);
+    OP_LOGI("Get DeviceSatMode ret = %d, mode = %d.", ret, static_cast<int>(floatOverflowMode));
+    if (floatOverflowMode == ACL_RT_OVERFLOW_MODE_SATURATION) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 static int HostDataType(uint32_t offset, const rtArgs_t &rtArg)
 {
     if (offset == rtArg.tilingAddrOffset) {
@@ -269,8 +281,6 @@ aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig &l
         launchCfg.funcHandle,
         PrintRtArg(rtArg_));
 
-    ReportExceptionDumpInfo();
-
     std::vector<aclrtLaunchKernelAttr> kernelAttrs;
     kernelAttrs.reserve(KERNEL_ATTRS_SIZE_THREE);
     kernelAttrs.emplace_back();
@@ -297,17 +307,13 @@ aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig &l
     aclrtLaunchCfg.attrs = kernelAttrs.data();
     aclrtLaunchCfg.numAttrs = kernelAttrs.size();
 
-    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle,
-        launchCfg.blockDim,
-        stream,
-        &aclrtLaunchCfg,
-        rtArg_.args,
-        rtArg_.argsSize,
-        rtArg_.placeHolderInfoPtr,
-        rtArg_.placeHolderInfoNum);
-    OP_CHECK(rc == ACL_SUCCESS,
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtLaunchKernelWithHostArgs failed: %d", rc),
-        return ACLNN_ERR_RUNTIME_ERROR);
+    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle, launchCfg.blockDim, stream, &aclrtLaunchCfg,
+        rtArg_.args, rtArg_.argsSize, rtArg_.placeHolderInfoPtr, rtArg_.placeHolderInfoNum);
+    OP_CHECK(
+        rc != ACL_ERROR_RT_INVALID_HANDLE,
+        OP_LOGW("aclrtLaunchKernelWithHostArgs return %d, need to update function handle", ACL_ERROR_RT_INVALID_HANDLE),
+        return ACLNN_ERR_INNER_RUNTIME_INVALID_HANDLE);
+    CHECK_COND(rc == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR, "aclrtLaunchKernelWithHostArgs failed, return: %d", rc);
     return ACLNN_SUCCESS;
 }
 
@@ -807,8 +813,30 @@ static void UpdateDFXInfoDumpAndTilingData(rtArgs_t &rtArg, const LaunchArgCache
         PrintAICErrorDFXInfo(newDFXInfoDumpAddr, launchCache->GetLaunchArgNum(), dumpSize));
 }
 
-aclnnStatus LaunchArgCache::LaunchKernelFromCache(
-    aclrtStream stream, rtArgs_t &rtArg, const KernelLaunchConfig &launchCfg)
+aclnnStatus LaunchArgCache::UpdateFunctionHandle(KernelLaunchConfig& launchCfg)
+{
+    aclrtFuncHandle funcHandle;
+    if (launchCfg.isFatBin) {
+        CHECK_COND(
+            aclrtBinaryGetFunctionByEntry(launchCfg.binHandle, launchCfg.tilingKey, &funcHandle) == ACL_SUCCESS,
+            ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryGetFunctionByEntry failed, bin handle: %p, tiling key: %lu",
+            launchCfg.binHandle, launchCfg.tilingKey);
+        OP_LOGI(
+            "Get function handle by tiling key [%lu] successfully, function handle: %p", launchCfg.tilingKey,
+            funcHandle);
+    } else {
+        CHECK_COND(
+            aclrtBinaryGetFunction(launchCfg.binHandle, launchCfg.kernelNameOfNoFatBin, &funcHandle) == ACL_SUCCESS,
+            ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryGetFunction failed, kernel name: %s", launchCfg.kernelNameOfNoFatBin);
+        OP_LOGI(
+            "Get function handle by kernel name [%s] successfully, function handle: %p",
+            launchCfg.kernelNameOfNoFatBin, funcHandle);
+    }
+    launchCfg.funcHandle = funcHandle;
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& rtArg, KernelLaunchConfig& launchCfg)
 {
     OP_LOGD("Launch kernel engine type: %d, blockDim: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
             "funcHandle: %p",
@@ -840,16 +868,18 @@ aclnnStatus LaunchArgCache::LaunchKernelFromCache(
     aclrtLaunchCfg.attrs = kernelAttrs.data();
     aclrtLaunchCfg.numAttrs = kernelAttrs.size();
 
-    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle,
-        launchCfg.blockDim,
-        stream,
-        &aclrtLaunchCfg,
-        rtArg.args,
-        rtArg.argsSize,
-        rtArg.placeHolderInfoPtr,
-        rtArg.placeHolderInfoNum);
-    OP_CHECK(rc == ACL_SUCCESS,
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtLaunchKernelWithHostArgs failed: %d", rc),
+    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle, launchCfg.blockDim, stream, &aclrtLaunchCfg,
+        rtArg.args, rtArg.argsSize, rtArg.placeHolderInfoPtr, rtArg.placeHolderInfoNum);
+    if (rc == ACL_ERROR_RT_INVALID_HANDLE) {
+        OP_LOGW("aclrtLaunchKernelWithHostArgs return %d, need to update function handle", ACL_ERROR_RT_INVALID_HANDLE);
+        OP_CHECK(
+            UpdateFunctionHandle(launchCfg) == ACL_SUCCESS,
+            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Update function handle failed"), return ACLNN_ERR_RUNTIME_ERROR);
+        rc = aclrtLaunchKernelWithHostArgs(
+            launchCfg.funcHandle, launchCfg.blockDim, stream, &aclrtLaunchCfg, rtArg.args, rtArg.argsSize,
+            rtArg.placeHolderInfoPtr, rtArg.placeHolderInfoNum);
+    }
+    OP_CHECK(rc == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtLaunchKernelWithHostArgs failed: %d", rc),
         return ACLNN_ERR_RUNTIME_ERROR);
     return ACLNN_SUCCESS;
 }
@@ -905,10 +935,12 @@ aclnnStatus LaunchArgCache::RunFromCache(aclrtStream stream, void *cache)
             placeHolderInfo.emplace_back(aclrtPlaceHolderInfo{rtArg.tilingAddrOffset, rtArg.tilingDataOffset});
         } else if (argInfo[i].type == LaunchArgCache::OVERFLOW_ADDR) {
             void *overflowAddr = nullptr;
-            aclError rc = aclrtCtxGetFloatOverflowAddr(&overflowAddr);
-            OP_CHECK(rc == ACL_SUCCESS,
-                OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtCtxGetFloatOverflowAddr failed: %d", rc),
-                return ACLNN_ERR_RUNTIME_ERROR);
+            static bool needOverflowAddr = IsNeedOverflowStatusAddr();
+            if (needOverflowAddr) {
+                aclError rc = aclrtCtxGetFloatOverflowAddr(&overflowAddr);
+                OP_CHECK(rc == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtCtxGetFloatOverflowAddr failed: %d", rc),
+                    return ACLNN_ERR_RUNTIME_ERROR);
+            }
             void **p = PtrCastTo<void *>(PtrShift(rawArg, sizeof(void *) * i));
             *p = overflowAddr;
         } else if (argInfo[i].type == LaunchArgCache::DEV_PTR_ADDR) {
