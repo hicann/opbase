@@ -33,18 +33,6 @@
     <file_info copy_type="source" src_path="" dst_path="ops_base/include" install_path="$(TARGET_ENV)/include" install_type="all">
         <file value="aicpu_common" install_mod="550" entity="true"/>
     </file_info>
-    <file_info copy_type="source" src_path="" dst_path="ops_base/include/aicpu_common/context/cust_op" install_path="$(TARGET_ENV)/include/aicpu" install_type="all">
-        <file value="cust_cpu_utils.h" install_mod="550"/>
-    </file_info>
-    <file_info copy_type="source" src_path="" dst_path="ops_base/include/aicpu_common/context/cpu_proto" install_path="$(TARGET_ENV)/include/aicpu" install_type="all">
-        <file value="cpu_attr_value.h" install_mod="550"/>
-        <file value="cpu_tensor.h" install_mod="550"/>
-        <file value="cpu_tensor_shape.h" install_mod="550"/>
-    </file_info>
-    <file_info copy_type="source" src_path="" dst_path="ops_base/include/aicpu_common/context/common" install_path="$(TARGET_ENV)/include/aicpu" install_type="all">
-        <file value="cpu_context.h" install_mod="550"/>
-        <file value="cpu_types.h" install_mod="550"/>
-    </file_info>
     <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc" install_path="$(TARGET_ENV)/pkg_inc" install_type="all">
         <file value="op_common" install_mod="550" entity="true"/>
     </file_info>
@@ -119,6 +107,7 @@
 
     <block_info dependtree="false" dst_path="ops_base" block_conf_path="ascend">
         <block name="EngineeringCommon"/>
+        <block name="AicpuCommonInc"/>
         <block name="EngineeringFiles"/>
     </block_info>
     <dir_info value="ops_base" install_path="opbase" install_mod="550" install_type="all">
