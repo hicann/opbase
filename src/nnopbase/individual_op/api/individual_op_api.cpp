@@ -106,6 +106,7 @@ void* NnopbaseGetExecutor(void *space, const NnopbaseChar *opType, NnopbaseChar 
             // 留出optype的偏移量后续生成key的时候用
             executor->ownArgs.keyLen = strlen(executor->opType);
             executor->ownArgs.remainKeyLen = NNOPBASE_MAX_ARGS_KEY_LEN - strlen(executor->opType);
+            executor->ownArgs.inputKey.resize(NNOPBASE_MAX_ARGS_KEY_LEN);
             return executor;
         }
     }

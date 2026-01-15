@@ -69,7 +69,8 @@ std::set<std::string> g_opTypeBlackList = {
     "MoeDistributeDispatchV2",
     "GatherV2",
     "GatherV3",
-    "ArgMaxWithValue"
+    "ArgMaxWithValue",
+    "Range"
 };
 
 constexpr int JSON_INDENT = 2;

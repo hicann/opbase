@@ -328,7 +328,7 @@ int32_t ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann:
     for (size_t irLoc = 0UL; irLoc < inputIr.size(); irLoc++) {
         nlohmann::json tmpJ = TransInputInstanceToJson(
             ctx, inputInstanceLoc, irLoc, inputIr[irLoc].first, inputIr[irLoc].second);
-        if (!tmpJ.is_null() && opImplFunc->IsInputDataDependency(irLoc) && inputInstanceLoc > 1) {
+        if (!tmpJ.is_null() && opImplFunc->IsInputDataDependency(irLoc) && inputInstanceLoc >= 1) {
             tmpJ["value_depend"] = true;
             const auto *inputTensor = ctx->GetInputTensor(inputInstanceLoc - 1);
             const auto funcIter = BIN_TO_JSON.find(inputTensor->GetDataType());
