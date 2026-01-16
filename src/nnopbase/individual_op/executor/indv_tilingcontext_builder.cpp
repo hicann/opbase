@@ -76,7 +76,7 @@ aclnnStatus NnopbaseExecutorPlatFormInfosInit(const std::string &socType)
     g_nnopbasePlatformMgr.infos = std::make_unique<fe::PlatFormInfos>();
     g_nnopbasePlatformMgr.memsetInfos = std::make_unique<fe::PlatFormInfos>();
     int32_t deviceId = -1;
-    NNOPBASE_ASSERT_RTOK_RETVAL(rtGetDevice(&deviceId));
+    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetDevice(&deviceId));
     NNOPBASE_ASSERT_RTOK_RETVAL(fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId,
         *g_nnopbasePlatformMgr.infos, true));
     NNOPBASE_ASSERT_RTOK_RETVAL(fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId,

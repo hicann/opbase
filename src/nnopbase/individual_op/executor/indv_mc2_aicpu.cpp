@@ -248,9 +248,7 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
     launchAttr[0].id = RT_LAUNCH_ATTRIBUTE_BLOCKDIM;
     launchAttr[0].value.blockDim = blockDim;
     rtLaunchConfig_t launchCfg = {launchAttr, 1U};
-    int32_t deviceId;
-    NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::GetCurDeviceIdInThread(deviceId));
-    rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->binHandles[deviceId], tilingKey, &launchCfg};
+    rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->binHandle, tilingKey, &launchCfg};
     rtFunsionTaskInfo_t fusionTaskInfo = {};
     rtCcuTaskGroup_t ccuTaskGroup = {};
     rtAicpuFusionInfo_t aicpuInfo = {};

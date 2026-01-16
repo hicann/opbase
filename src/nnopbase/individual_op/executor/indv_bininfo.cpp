@@ -60,7 +60,7 @@ static uint32_t NnopbaseGetBinaryMagic(const bool is19x1, NnopbaseBinInfo *binIn
     }
 }
 
-aclnnStatus NnopbaseAclrtBinaryLoad(const bool is19x1, NnopbaseBinInfo *binInfo, int32_t deviceId)
+aclnnStatus NnopbaseAclrtBinaryLoad(const bool is19x1, NnopbaseBinInfo *binInfo)
 {
     aclrtBinaryLoadOption aclrtBinaryLoadOp = aclrtBinaryLoadOption {
         .type = ACL_RT_BINARY_LOAD_OPT_LAZY_MAGIC,
@@ -72,8 +72,8 @@ aclnnStatus NnopbaseAclrtBinaryLoad(const bool is19x1, NnopbaseBinInfo *binInfo,
         .numOpt = 1U,
     };
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryLoadFromData(binInfo->bin, binInfo->binLen, &aclrtBinaryLoadOpts,
-        &binInfo->binHandles[deviceId]));
-    OP_LOGD("Finish kernel register for device Id %d.", deviceId);
+        &binInfo->binHandle));
+    OP_LOGD("Finish kernel register.");
     return OK;
 }
 
@@ -91,28 +91,22 @@ aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<NnopbaseMemsetBinInfo> &bi
         .options = &aclrtBinaryLoadOp,
         .numOpt = 1U,
     };
-    int32_t deviceId;
-    NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::GetCurDeviceIdInThread(deviceId));
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryLoadFromData(binInfo->bin, binInfo->binLen, &aclrtBinaryLoadOpts,
-        &binInfo->binHandles[deviceId]));
-    OP_LOGD("Finish memset kernel register for device Id %d.", deviceId);
+        &binInfo->binHandle));
+    OP_LOGD("Finish memset kernel register");
     return OK;
 }
 
-aclnnStatus GetFuncHandleByEntry(void* binHandles[], uint64_t funcEntry, aclrtFuncHandle *funcHandle)
+aclnnStatus GetFuncHandleByEntry(void* binHandle, uint64_t funcEntry, aclrtFuncHandle *funcHandle)
 {
-    int32_t deviceId;
-    NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::GetCurDeviceIdInThread(deviceId));
-    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryGetFunctionByEntry(binHandles[deviceId],
+    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryGetFunctionByEntry(binHandle,
                 funcEntry, funcHandle));
     return OK;
 }
 
-aclnnStatus GetFuncHandleByKernelName(void* binHandles[], const char *kernelName, aclrtFuncHandle *funcHandle)
+aclnnStatus GetFuncHandleByKernelName(void* binHandle, const char *kernelName, aclrtFuncHandle *funcHandle)
 {
-    int32_t deviceId;
-    NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::GetCurDeviceIdInThread(deviceId));
-    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryGetFunction(binHandles[deviceId],
+    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryGetFunction(binHandle,
             kernelName, funcHandle));
     return OK;
 }
@@ -416,12 +410,12 @@ aclnnStatus NnopbaseReadMemsetJsonInfo(const std::string &memsetBasePath, nlohma
 
 aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion)
 {
-    std::string memsetBasePath = oppPath + NNOPBASE_MEMSET_DEFAULT_PATH + socVersion + "/ops_legacy";
-    const std::string memsetDirPathV2 = memsetBasePath + NNOPBASE_MEMSET_JSON_PATH;
+    std::string memsetBasePath = oppPath + NNOPBASE_MEMSET_DEFAULT_PATH_V2 + socVersion + "/ops_legacy";
+    const std::string memsetDirPathV2 = oppPath + NNOPBASE_MEMSET_DEFAULT_PATH + socVersion + "/ops_legacy" + NNOPBASE_MEMSET_JSON_PATH;
     nlohmann::json memsetJsonInfo;
     if (NnopbaseReadJsonConfig(memsetDirPathV2, memsetJsonInfo) != OK) {
         OP_LOGW("Read %s failed, trying another path.", memsetDirPathV2.c_str());
-        memsetBasePath = oppPath + NNOPBASE_MEMSET_DEFAULT_PATH + socVersion;
+        memsetBasePath = oppPath + NNOPBASE_MEMSET_DEFAULT_PATH_V2 + socVersion;
         std::string memsetDirPath = memsetBasePath + NNOPBASE_MEMSET_JSON_PATH;
         CHECK_COND(NnopbaseReadJsonConfig(memsetDirPath, memsetJsonInfo) == OK,
         ACLNN_ERR_PARAM_INVALID,

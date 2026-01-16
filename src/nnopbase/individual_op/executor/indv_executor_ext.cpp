@@ -820,7 +820,7 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
         }
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetV2Args(executor));
         aclrtFuncHandle funcHandle;
-        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->memsetInfo->binInfo->binHandles,
+        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->memsetInfo->binInfo->binHandle,
             executor->args->binInfo->memsetInfo->memsetTilingKey, &funcHandle));
         std::vector<aclrtLaunchKernelAttr> attrs;
         aclrtLaunchKernelAttr schemModeAttr = {
@@ -844,7 +844,7 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetArgs(executor));
         aclrtFuncHandle funcHandle;
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(
-            executor->args->binInfo->memsetInfo->binInfo->binHandles,
+            executor->args->binInfo->memsetInfo->binInfo->binHandle,
             executor->args->binInfo->memsetInfo->binInfo->stubName.c_str(),
             &funcHandle));
 

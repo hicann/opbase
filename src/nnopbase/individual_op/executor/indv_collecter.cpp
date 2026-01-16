@@ -1346,7 +1346,7 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
         NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath);
     CHECK_COND((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
         "Get path and read binary_info_config.json failed, "
-            "please check if the opp_kernel package is installed!");
+            "please make sure that opp_kernel or ops package is properly installed!");
     OP_LOGI("[NnopbaseCollecter] Collecter work end.");
     return OK;
 }

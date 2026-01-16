@@ -25,12 +25,12 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
     NnopbaseBinInfo *p = new NnopbaseBinInfo;
     auto &binInfo = *p;
-    binInfo.binHandles[0] = (void *)0x0002;
+    binInfo.binHandle = (void *)0x0002;
     binInfo.bin = new unsigned char[10];
     binInfo.binLen = 1;
 
     binInfo.coreType = kMix;
-    binInfo.hasReg[0] = false;
+    binInfo.hasReg = false;
     binInfo.isStaticShape = false;
 
     nlohmann::json binJson = nlohmann::json::parse(R"(
@@ -70,21 +70,21 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     executor->collecter->socVersion = "ascend910b";
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
     EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "RT_DEV_BINARY_MAGIC_ELF");
-    EXPECT_EQ(binInfo.hasReg[0], true);
+    EXPECT_EQ(binInfo.hasReg, true);
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
 
     binInfo.coreType = kAicore;
-    binInfo.hasReg[0] = false;
+    binInfo.hasReg = false;
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
     EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "RT_DEV_BINARY_MAGIC_ELF_AICUBE");
 
     binInfo.coreType = kVectorcore;
-    binInfo.hasReg[0] = false;
+    binInfo.hasReg = false;
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
     EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "RT_DEV_BINARY_MAGIC_ELF_AIVEC");
 
     binInfo.coreType = kCoreTypeEnd;
-    binInfo.hasReg[0] = false;
+    binInfo.hasReg = false;
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
     NnopbaseBinInfoDestroy(&p);
     delete executor;
