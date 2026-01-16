@@ -38,45 +38,46 @@ const char KERNEL_MODULE[] = "AICPU";
   printf("[EVENT] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, \
          __FILE__, __FUNCTION__, __LINE__, aicpu::GetTid(), ##__VA_ARGS__)
 #else
-#define KERNEL_LOG_DEBUG(fmt, ...)                                                    \
-  do {                                                                                \
-    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {                    \
-      dlog_debug(AICPU, "[%s:%d][%s][tid:%ld]" fmt, __FILE__, __LINE__, __func__,     \
-                 aicpu::GetTid(), ##__VA_ARGS__);                                     \
-    }                                                                                 \
+#define KERNEL_LOG_DEBUG(fmt, ...)                                      \
+  do {                                                                  \
+    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {      \
+      dlog_debug(AICPU, "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(), \
+                 ##__VA_ARGS__);                                        \
+    }                                                                   \
   } while (0)
 
-#define KERNEL_LOG_INFO(fmt, ...)                                                     \
-  do {                                                                                \
-    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {                    \
-      dlog_info(AICPU, "[%s:%d][%s][tid:%ld]" fmt, __FILE__, __LINE__, __func__,      \
-                aicpu::GetTid(), ##__VA_ARGS__);                                      \
-    }                                                                                 \
+#define KERNEL_LOG_INFO(fmt, ...)                                      \
+  do {                                                                 \
+    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {     \
+      dlog_info(AICPU, "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(), \
+                ##__VA_ARGS__);                                        \
+    }                                                                  \
   } while (0)
 
-#define KERNEL_LOG_WARN(fmt, ...)                                                     \
-  do {                                                                                \
-    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {                    \
-      dlog_warn(AICPU, "[%s:%d][%s][tid:%ld]" fmt, __FILE__, __LINE__, __func__,      \
-                aicpu::GetTid(), ##__VA_ARGS__);                                      \
-    }                                                                                 \
+#define KERNEL_LOG_WARN(fmt, ...)                                      \
+  do {                                                                 \
+    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {     \
+      dlog_warn(AICPU, "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(), \
+                ##__VA_ARGS__);                                        \
+    }                                                                  \
   } while (0)
 
-#define KERNEL_LOG_ERROR(fmt, ...)                                                    \
-  do {                                                                                \
-    if (&DlogRecord != nullptr) {                                                     \
-      dlog_error(AICPU, "[%s:%d][%s][tid:%ld]" fmt, __FILE__, __LINE__, __func__,     \
-                 aicpu::GetTid(), ##__VA_ARGS__);                                     \
-    }                                                                                 \
+#define KERNEL_LOG_ERROR(fmt, ...)                                      \
+  do {                                                                  \
+    if (&DlogRecord != nullptr) {                                       \
+      dlog_error(AICPU, "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(), \
+                 ##__VA_ARGS__);                                        \
+    }                                                                   \
   } while (0)
 
-#define KERNEL_LOG_EVENT(fmt, ...)                                                    \
-  do {                                                                                \
-    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {                    \
-      dlog_info(static_cast<int32_t>(static_cast<uint32_t>(AICPU) |                   \
-                static_cast<uint32_t>(RUN_LOG_MASK)), "[%s:%d][%s][tid:%ld]" fmt,     \
-                __FILE__, __LINE__, __func__, aicpu::GetTid(), ##__VA_ARGS__);        \
-    }                                                                                 \
+#define KERNEL_LOG_EVENT(fmt, ...)                                         \
+  do {                                                                     \
+    if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {         \
+      dlog_info(static_cast<int32_t>(static_cast<uint32_t>(AICPU) |        \
+                                     static_cast<uint32_t>(RUN_LOG_MASK)), \
+                "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(),            \
+                ##__VA_ARGS__);                                            \
+    }                                                                      \
   } while (0)
 #endif
 
