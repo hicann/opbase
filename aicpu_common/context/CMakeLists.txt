@@ -7,6 +7,15 @@ set(proto_src_files
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu_proto/proto/cpu_tensor_shape.proto
 )
 
+if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+set(CMAKE_CXX_COMPILE_OBJECT
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+set(CMAKE_C_COMPILE_OBJECT
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+endif()
+
 set (local_context_src_files
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu_proto/node_def.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu_proto/node_def_impl.cc
