@@ -24,15 +24,15 @@ namespace internal {
 
 class JsonLoadManger {
 public:
-  static aclnnStatus LoadAicpuBinaryFromJson(const int32_t deviceId);
-  static aclrtBinHandle GetAicpuBinaryHandle(const int32_t deviceId)
+  static aclnnStatus LoadAicpuBinaryFromJson();
+  static aclrtBinHandle GetAicpuBinaryHandle()
   {
-    return aicpuBinHandle_[deviceId];
+    return aicpuBinHandle_;
   }
-  static aclnnStatus LoadTfBinaryFromJson(const int32_t deviceId);
-  static aclrtBinHandle GetTfBinaryHandle(const int32_t deviceId)
+  static aclnnStatus LoadTfBinaryFromJson();
+  static aclrtBinHandle GetTfBinaryHandle()
   {
-    return tfBinHandle_[deviceId];
+    return tfBinHandle_;
   }
   static bool IsSupportedNewLaunch()
   {
@@ -44,12 +44,11 @@ public:
     aclrtBinHandle binHandle;
   } CustomBinManager;
 
-  static aclrtBinHandle GetAicpuCustBinaryHandle(const std::string &kernelSoPath, const int32_t deviceId)
+  static aclrtBinHandle GetAicpuCustBinaryHandle(const std::string &kernelSoPath)
   {
-    return customBinhandleInfos_[kernelSoPath][deviceId].binHandle;
+    return customBinhandleInfos_[kernelSoPath].binHandle;
   }
-  static aclnnStatus LoadAicpuCustBinaryFromJson(const std::string &opType, std::string &kernelSoPath,
-                                                 const int32_t deviceId);
+  static aclnnStatus LoadAicpuCustBinaryFromJson(const std::string &opType, std::string &kernelSoPath);
   static aclnnStatus CustJsonLoadAndParse();
   static bool FindAndGetInCustomRegistry(const std::string &opType, std::string &kernelSo, std::string &functionName);
 private:
@@ -66,18 +65,18 @@ private:
   static aclnnStatus ParseCustOpInfo();
   static bool ReadBytesFromBinaryFile(const std::string &fileName, std::vector<char> &buffer);
   static std::shared_ptr<std::vector<char>> GetOrCreateBuffer(const std::string& filePath);
-  static bool hasAicpuLoadBin_[kMaxDeviceNum];
-  static aclrtBinHandle aicpuBinHandle_[kMaxDeviceNum];
-  static bool hasTfLoadBin_[kMaxDeviceNum];
-  static aclrtBinHandle tfBinHandle_[kMaxDeviceNum];
-  static std::mutex tfBinLoadMutex_[kMaxDeviceNum];
-  static std::mutex aicpuBinLoadMutex_[kMaxDeviceNum];
+  static bool hasAicpuLoadBin_;
+  static aclrtBinHandle aicpuBinHandle_;
+  static bool hasTfLoadBin_;
+  static aclrtBinHandle tfBinHandle_;
+  static std::mutex tfBinLoadMutex_;
+  static std::mutex aicpuBinLoadMutex_;
   static bool isSupportNewLaunch_;
   static std::string socVersion_;
   static std::mutex getSocVersionMutex_;
-  static bool hasAicpuCustLoadJson_;
+  static bool aicpuCustLoadFlag_;
   static std::mutex custMutex_;
-  static std::mutex aicpuCustBinLoadMutex_[kMaxDeviceNum];
+  static std::mutex aicpuCustBinLoadMutex_;
   static std::mutex bufferCacheMutex_;
   // Custom operator package repository
   static std::vector<std::pair<std::string, nlohmann::json>> custOpJsonInfo_;
@@ -85,7 +84,7 @@ private:
   static std::map<std::string, OpFullInfo> customOpsInfos_;
   // store operator's name and operator's register
   static std::map<std::string, std::string> custRegisterInfos_;
-  static std::map<std::string, std::map<int32_t, CustomBinManager>> customBinhandleInfos_;
+  static std::map<std::string, CustomBinManager> customBinhandleInfos_;
   static std::map<std::string, std::shared_ptr<std::vector<char>>> bufferCache_; // 文件路径到buffer的映射
 };
 

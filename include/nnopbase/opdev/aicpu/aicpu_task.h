@@ -27,7 +27,7 @@
 namespace op {
 namespace internal {
 static constexpr size_t kAicpuKeyBufLen = 1024U;
-constexpr const int32_t kMaxDeviceNum = 64;
+const std::string kDefaultFunctionName = "RunCpuKernel";
 void PrintAicpuAllTimeStampInfo(const char *opType);
 
 template<typename V>
@@ -266,7 +266,6 @@ public:
     }
     void SetVisit(bool visit);
 protected:
-    aclnnStatus GetCurDeviceIdInThread(int32_t &deviceId);
     const std::string opType_;
     const ge::UnknowShapeOpType unknownType_;
     std::unique_ptr<AicpuArgsHandler> argsHandle_;
@@ -294,8 +293,10 @@ public:
                      const AicpuAttrs &attrs);
     aclnnStatus Run(aclOpExecutor *executor, aclrtStream stream);
 private:
-    aclrtBinHandle tfBinHandle_[kMaxDeviceNum] = {nullptr};
-    aclrtFuncHandle funcHandle_[kMaxDeviceNum] = {nullptr};
+    aclnnStatus LaunchKernelByNewInterface(aclrtStream stream);
+    aclrtBinHandle tfBinHandle_ = nullptr;
+    aclrtFuncHandle funcHandle_ = nullptr;
+    bool useNewLaunchInterface_ = false;
 };
 
 class AicpuCCTask : public AicpuTask {
@@ -306,9 +307,13 @@ public:
                      const AicpuAttrs &attrs);
     aclnnStatus Run(aclOpExecutor *executor, aclrtStream stream);
 private:
-    aclnnStatus GetKernelNameAndSoName(std::string &kernelSoName, std::string &functionName);
-    aclrtBinHandle aicpuBinHandle_[kMaxDeviceNum] = {nullptr};
-    aclrtFuncHandle funcHandle_[kMaxDeviceNum] = {nullptr};
+    aclnnStatus GetKernelNameAndSoName(std::string &kernelSoName);
+    aclnnStatus LaunchKernelByNewInterface(aclrtStream stream);
+    aclrtBinHandle aicpuBinHandle_ = nullptr;
+    aclrtFuncHandle funcHandle_ = nullptr;
+    bool useNewLaunchInterface_ = false;
+    bool isCustomTask_ = false;
+    std::string functionName_ = kDefaultFunctionName;
 };
 
 class AicpuTaskSpace {
