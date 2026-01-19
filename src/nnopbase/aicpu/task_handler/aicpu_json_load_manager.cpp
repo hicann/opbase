@@ -35,35 +35,33 @@ const std::string kSplitSeparator = ":";
 const std::set<std::string> kCustomerWhiteList = {"cv", "math", "nn", "transformer"};
 }
 
-bool JsonLoadManger::hasAicpuLoadBin_[kMaxDeviceNum] = {false};
-bool JsonLoadManger::hasTfLoadBin_[kMaxDeviceNum] = {false};
-aclrtBinHandle JsonLoadManger::aicpuBinHandle_[kMaxDeviceNum] = {nullptr};
-aclrtBinHandle JsonLoadManger::tfBinHandle_[kMaxDeviceNum] = {nullptr};
-std::mutex JsonLoadManger::aicpuBinLoadMutex_[kMaxDeviceNum] = {std::mutex()};
-std::mutex JsonLoadManger::tfBinLoadMutex_[kMaxDeviceNum] = {std::mutex()};
+bool JsonLoadManger::hasAicpuLoadBin_ = false;
+bool JsonLoadManger::hasTfLoadBin_ = false;
+aclrtBinHandle JsonLoadManger::aicpuBinHandle_ = nullptr;
+aclrtBinHandle JsonLoadManger::tfBinHandle_ = nullptr;
+std::mutex JsonLoadManger::aicpuBinLoadMutex_ = std::mutex();
+std::mutex JsonLoadManger::tfBinLoadMutex_ = std::mutex();
 bool JsonLoadManger::isSupportNewLaunch_ = true;
 std::string JsonLoadManger::socVersion_ = "";
 std::mutex JsonLoadManger::getSocVersionMutex_ = std::mutex();
 std::mutex JsonLoadManger::custMutex_ = std::mutex();
-bool JsonLoadManger::hasAicpuCustLoadJson_ = false;
-std::mutex JsonLoadManger::aicpuCustBinLoadMutex_[kMaxDeviceNum] = {std::mutex()};
+bool JsonLoadManger::aicpuCustLoadFlag_ = false;
+std::mutex JsonLoadManger::aicpuCustBinLoadMutex_ = std::mutex();
 std::mutex JsonLoadManger::bufferCacheMutex_ = std::mutex();
 std::vector<std::pair<std::string, nlohmann::json>> JsonLoadManger::custOpJsonInfo_ = {};
 std::map<std::string, OpFullInfo> JsonLoadManger::customOpsInfos_ = {};
 std::map<std::string, std::string> JsonLoadManger::custRegisterInfos_ = {};
-std::map<std::string, std::map<int32_t, JsonLoadManger::CustomBinManager>> JsonLoadManger::customBinhandleInfos_ = {};
+std::map<std::string, JsonLoadManger::CustomBinManager> JsonLoadManger::customBinhandleInfos_ = {};
 std::map<std::string, std::shared_ptr<std::vector<char>>> JsonLoadManger::bufferCache_ = {};
 
 JsonLoadManger::~JsonLoadManger() {
-  for (int32_t deviceId = 0; deviceId < kMaxDeviceNum; deviceId++) {
-    hasAicpuLoadBin_[deviceId] = false;
-    aicpuBinHandle_[deviceId] = nullptr;
-    hasTfLoadBin_[deviceId] = false;
-    tfBinHandle_[deviceId] = nullptr;
-  }
+  hasAicpuLoadBin_ = false;
+  aicpuBinHandle_ = nullptr;
+  hasTfLoadBin_ = false;
+  tfBinHandle_ = nullptr;
   isSupportNewLaunch_ = true;
   socVersion_ = "";
-  hasAicpuCustLoadJson_ = false;
+  aicpuCustLoadFlag_ = false;
   customOpsInfos_.clear();
   custOpJsonInfo_.clear();
   custRegisterInfos_.clear();
@@ -102,30 +100,30 @@ aclnnStatus JsonLoadManger::LoadBinaryFromJson(const std::string &opsPath, aclrt
   return ACLNN_SUCCESS;
 }
 
-aclnnStatus JsonLoadManger::LoadAicpuBinaryFromJson(const int32_t deviceId)
+aclnnStatus JsonLoadManger::LoadAicpuBinaryFromJson()
 {
-  std::unique_lock<std::mutex> lk(aicpuBinLoadMutex_[deviceId]);
-  if (hasAicpuLoadBin_[deviceId]) {
+  std::unique_lock<std::mutex> lk(aicpuBinLoadMutex_);
+  if (hasAicpuLoadBin_) {
     OP_LOGI("Bin loaded from aicpu json successfully, no need to reload.");
     return ACLNN_SUCCESS;
   }
 
-  AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kAicpuOpsFileEnvPath, aicpuBinHandle_[deviceId]));
-  hasAicpuLoadBin_[deviceId] = true;
+  AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kAicpuOpsFileEnvPath, aicpuBinHandle_));
+  hasAicpuLoadBin_ = true;
   OP_LOGI("Aicpu bin loaded from json successfully.");
   return ACLNN_SUCCESS;
 }
 
-aclnnStatus JsonLoadManger::LoadTfBinaryFromJson(const int32_t deviceId)
+aclnnStatus JsonLoadManger::LoadTfBinaryFromJson()
 {
-  std::unique_lock<std::mutex> lk(tfBinLoadMutex_[deviceId]);
-  if (hasTfLoadBin_[deviceId]) {
+  std::unique_lock<std::mutex> lk(tfBinLoadMutex_);
+  if (hasTfLoadBin_) {
     OP_LOGI("Bin loaded from tf json successfully, no need to reload.");
     return ACLNN_SUCCESS;
   }
 
-  AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kTfOpsFileEnvPath, tfBinHandle_[deviceId]));
-  hasTfLoadBin_[deviceId] = true;
+  AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kTfOpsFileEnvPath, tfBinHandle_));
+  hasTfLoadBin_ = true;
   OP_LOGI("Tf bin loaded from json successfully.");
   return ACLNN_SUCCESS;
 }
@@ -152,10 +150,9 @@ aclnnStatus JsonLoadManger::SetSupportedNewLaunchFlag()
   return ACLNN_SUCCESS;
 }
 
-aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string &opType, std::string &kernelSoPath,
-                                                        const int32_t deviceId)
+aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string &opType, std::string &kernelSoPath)
 {
-  std::unique_lock<std::mutex> lk(aicpuCustBinLoadMutex_[deviceId]);
+  std::unique_lock<std::mutex> lk(aicpuCustBinLoadMutex_);
   const std::string custRegisterPath = custRegisterInfos_[opType];
   size_t lastUnderscore = custRegisterPath.find_last_of('_');
   if (lastUnderscore != std::string::npos) {
@@ -166,12 +163,12 @@ aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string &opTyp
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to extract the sub-repository so suffix, unable to construct the custom so path.");
     return ACLNN_ERR_PARAM_INVALID;
   }
-  if (customBinhandleInfos_[kernelSoPath][deviceId].hasLoad) {
+  if (customBinhandleInfos_[kernelSoPath].hasLoad) {
     OP_LOGI("The custom kernel so %s has loaded, no need to reload.", kernelSoPath.c_str());
     return ACLNN_SUCCESS;
   }
-  AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kernelSoPath, customBinhandleInfos_[kernelSoPath][deviceId].binHandle, true));
-  customBinhandleInfos_[kernelSoPath][deviceId].hasLoad = true;
+  AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kernelSoPath, customBinhandleInfos_[kernelSoPath].binHandle, true));
+  customBinhandleInfos_[kernelSoPath].hasLoad = true;
   OP_LOGI("The custom kernel so %s load successfully.", kernelSoPath.c_str());
   return ACLNN_SUCCESS;
 }
@@ -234,10 +231,11 @@ bool JsonLoadManger::ReadCustOpInfoFromJsonFile(const std::string &path) {
 aclnnStatus JsonLoadManger::CustJsonLoadAndParse()
 {
   std::unique_lock<std::mutex> lk(custMutex_);
-  if (hasAicpuCustLoadJson_) {
+  if (aicpuCustLoadFlag_) {
     OP_LOGI("The custom operator repository has already been loaded.");
     return ACLNN_SUCCESS;
   }
+  aicpuCustLoadFlag_ = true;
   const char* customPathEnv = nullptr;
   MM_SYS_GET_ENV(MM_ENV_ASCEND_CUSTOM_OPP_PATH, customPathEnv);
   // If ASCEND_CUSTOM_OPP_PATH is not set, it indicates there are no custom operators, return directly.
@@ -305,7 +303,6 @@ void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const Op
     }
   }
   OP_LOGI("The number of elements in the custom operator registry container is %zu.", custRegisterInfos_.size());
-  hasAicpuCustLoadJson_ = true;
   return;
 }
 

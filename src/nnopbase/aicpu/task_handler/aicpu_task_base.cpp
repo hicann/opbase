@@ -20,8 +20,6 @@ namespace op {
 namespace internal {
 namespace {
     constexpr size_t kMaxTotalHostLen = 1024U;
-    static thread_local int32_t gCurDeviceId;
-    static thread_local bool getDeviceFlag = false;
 }
 AicpuTimeStamp gAicpuTimeStamp = {};
 std::set<AicpuTaskSpace*> gAicpuTaskSpaceSet;
@@ -401,27 +399,6 @@ aclnnStatus AicpuTask::SetIoTensors(aclOpExecutor *executor, op::OpArgContext *a
     CreateTensorList(executor, *args->GetOpArg(op::OP_OUTPUT_ARG), outputs_);
     return extInfoHandle_->UpdateInputAndOutputShape(inputs_, outputs_, executor->GetStream(),
                                                      executor, deviceExtMemSize_, deviceCacheOffset_);
-}
-
-aclnnStatus AicpuTask::GetCurDeviceIdInThread(int32_t &deviceId)
-{
-    if (getDeviceFlag) {
-        deviceId = gCurDeviceId;
-        OP_LOGI("Device Id for this thread is %d", deviceId);
-        return OK;
-    }
-    if (aclrtGetDevice(&gCurDeviceId) != OK) {
-        OP_LOGE(ACLNN_ERR_INNER, "aclrtGetDevice failed.");
-        return ACLNN_ERR_INNER;
-    }
-    if (gCurDeviceId >= kMaxDeviceNum) {
-        OP_LOGE(ACLNN_ERR_INNER, "Invalid DeviceId %d. Max DeviceID: %d", gCurDeviceId, kMaxDeviceNum);
-        return ACLNN_ERR_INNER;
-    }
-    deviceId = gCurDeviceId;
-    getDeviceFlag = true;
-    OP_LOGI("Device Id for this thread is %d", deviceId);
-    return OK;
 }
 } // namespace internal
 } // namespace op
