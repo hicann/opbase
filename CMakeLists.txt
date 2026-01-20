@@ -60,8 +60,10 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         ${ASCEND_HOME_PATH}/include/base
         ${ASCEND_HOME_PATH}/include/toolchain
         ${ASCEND_HOME_PATH}/pkg_inc
+        ${ASCEND_HOME_PATH}/pkg_inc/aicpu
         ${ASCEND_HOME_PATH}/pkg_inc/base
         ${ASCEND_HOME_PATH}/pkg_inc/aicpu/aicpu_schedule
+        ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common
     )
 
     add_library(ops_base SHARED ${OPS_BASE_SRC})
@@ -111,7 +113,9 @@ else()
         ${METADEF_INCLUDE}/external
         ${METADEF_INCLUDE}/external/graph
         ${METADEF_INCLUDE}/external/exe_graph
-        ${METADEF_INCLUDE}/exe_graph)
+        ${METADEF_INCLUDE}/exe_graph
+        ${TOP_DIR}/runtime/pkg_inc
+ 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common)
 
     target_include_directories(ops_base_infer_objs
         PRIVATE

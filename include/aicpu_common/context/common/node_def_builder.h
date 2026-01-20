@@ -13,7 +13,7 @@
 #include "cpu_kernel.h"
 #include "status.h"
 #include "cpu_kernel_register.h"
-#include "aicpu/aicpu_task_struct.h"
+#include "aicpu_task_struct.h"
 #include "device_cpu_kernel.h"
 
 namespace aicpu {

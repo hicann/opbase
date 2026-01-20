@@ -20,6 +20,10 @@ set(AICPU_PROTO_INCLUDING_PATH
     ${NNOPBASE_PATH}/common/
     ${EXPERIMENT_INCLUDE_DIR}/datagw
     ${ASCEND_PATH}/pkg_inc/profiling
+    ${ASCEND_HOME_PATH}/pkg_inc
+    ${ASCEND_HOME_PATH}/pkg_inc/aicpu
+    ${ASCEND_HOME_PATH}/pkg_inc/profiling
+    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common
 )
 
 target_sources(nnopbase PRIVATE ${aicpu_files} ${PROTO_HDRS} ${CPU_PROTO_HDRS})

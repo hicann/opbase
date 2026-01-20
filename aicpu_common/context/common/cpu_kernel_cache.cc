@@ -11,7 +11,7 @@
 
 #include <climits>
 
-#include "aicpu/aicpu_engine_struct.h"
+#include "aicpu_engine_struct.h"
 #include "cpu_kernel.h"
 #include "cpu_kernel_register.h"
 #include "cpu_kernel_utils.h"

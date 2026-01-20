@@ -10,8 +10,8 @@
 #include "device_cpu_kernel.h"
 
 #include "aicpu_context.h"
-#include "aicpu/aicpu_engine_struct.h"
-#include "aicpu/fwk_adpt_struct.h"
+#include "aicpu_engine_struct.h"
+#include "fwk_adpt_struct.h"
 #include "cpu_kernel_cache.h"
 #include "log.h"
 #include "session_cache.h"

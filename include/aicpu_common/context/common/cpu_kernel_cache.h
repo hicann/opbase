@@ -13,8 +13,8 @@
 #include <map>
 #include <memory>
 
-#include "aicpu/aicpu_task_struct.h"
-#include "aicpu/fwk_adpt_struct.h"
+#include "aicpu_task_struct.h"
+#include "fwk_adpt_struct.h"
 #include "cpu_context.h"
 #include "cpu_node_def.h"
 #include "kernel_cache.h"
