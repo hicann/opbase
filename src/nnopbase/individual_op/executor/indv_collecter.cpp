@@ -22,6 +22,7 @@
 #include "utils/indv_debug_assert.h"
 #include "utils/indv_path.h"
 #include "indv_bininfo.h"
+#include "utils/indv_soc.h"
 #include "indv_executor.h"
 #include "opdev/data_type_utils.h"
 #include "op_dfx_util.h"
@@ -1194,7 +1195,8 @@ aclnnStatus NnopbaseCollecterGetDebugKernelPathAndReadConfig(NnopbaseBinCollecte
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
     NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
-    const std::string &binaryInfoPath = basePath + "/debug_kernel/config/" + collecter->socVersion +
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string &binaryInfoPath = basePath + "/debug_kernel/config/" + socVersion +
                                         "/binary_info_config.json";
     // 若不存在debug kernel的目录，会在NnopbaseReadJsonConfig里面的realpath判断返回error，不打error日志
     nlohmann::json binaryInfoConfig;
@@ -1241,7 +1243,7 @@ aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo)
 aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter)
 {
     if (collecter == nullptr) {
-        OP_LOGD("collector is nullptr.");
+        OP_LOGD("collecter is nullptr.");
         return OK;
     }
     // reload static kernel info
@@ -1253,7 +1255,8 @@ aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollect
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
     NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
-    const std::string &binaryInfoPath = basePath + "/static_kernel/ai_core/config/" + collecter->socVersion +
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string &binaryInfoPath = basePath + "/static_kernel/ai_core/config/" + socVersion +
                                         "/binary_info_config.json";
     OP_LOGI("Start read binary_info_config.json for static kernel. Path: %s", binaryInfoPath.c_str());
     // 若不存在静态kernel的目录，会在NnopbaseReadJsonConfig里面的realpath判断返回error，不打error日志
@@ -1269,10 +1272,10 @@ aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollec
 {
     OP_LOGI("Start get path and read binary_info_config json");
     bool readConfigSucc = false;
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     for (size_t i = 0U; i < basePath.size(); i++) {
         nlohmann::json binaryInfoConfig;
-        std::string binaryBasePath = basePath[i].first + "/op_impl/ai_core/tbe/kernel/config/" +
-                                            collecter->socVersion;
+        std::string binaryBasePath = basePath[i].first + "/op_impl/ai_core/tbe/kernel/config/" + socVersion;
         if (!GetBuiltInOpsPath(binaryBasePath)) {
             const std::string binaryInfoPath = binaryBasePath + "/binary_info_config.json";
             if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK &&
@@ -1345,66 +1348,22 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
         NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath);
     CHECK_COND((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
         "Get path and read binary_info_config.json failed, "
-            "please check if the opp_kernel package is installed!");
+            "please make sure that opp_kernel or ops package is properly installed!");
     OP_LOGI("[NnopbaseCollecter] Collecter work end.");
     return OK;
 }
 
-aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter *collecter, const std::string &socVersion)
+aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter *collecter)
 {
-    static const std::map<std::string, std::string> NNOPBASE_SOC_OPS_SUBPATH_MAP {
-        {SOC_NAME_ASCEND910A, OPS_SUBPATH_ASCEND910}, {SOC_NAME_ASCEND910B, OPS_SUBPATH_ASCEND910},
-        {SOC_NAME_ASCEND910PROA, OPS_SUBPATH_ASCEND910}, {SOC_NAME_ASCEND910PROB, OPS_SUBPATH_ASCEND910},
-        {SOC_NAME_ASCEND910B1, OPS_SUBPATH_ASCEND910B}, {SOC_NAME_ASCEND910B2, OPS_SUBPATH_ASCEND910B},
-        {SOC_NAME_ASCEND910B3, OPS_SUBPATH_ASCEND910B}, {SOC_NAME_ASCEND910B4, OPS_SUBPATH_ASCEND910B},
-        {SOC_NAME_ASCEND910_9391, OPS_SUBPATH_ASCEND910_93}, {SOC_NAME_ASCEND910_9381, OPS_SUBPATH_ASCEND910_93},
-        {SOC_NAME_ASCEND910_9372, OPS_SUBPATH_ASCEND910_93}, {SOC_NAME_ASCEND910_9382, OPS_SUBPATH_ASCEND910_93},
-        {SOC_NAME_ASCEND910_9392, OPS_SUBPATH_ASCEND910_93}, {SOC_NAME_ASCEND910_9362, OPS_SUBPATH_ASCEND910_93},
-        {SOC_NAME_ASCEND910PREMIUMA, OPS_SUBPATH_ASCEND910}, {SOC_NAME_ASCEND310P1, OPS_SUBPATH_ASCEND310P},
-        {SOC_NAME_ASCEND310P3, OPS_SUBPATH_ASCEND310P},  {SOC_NAME_ASCEND310P5, OPS_SUBPATH_ASCEND310P},
-        {SOC_NAME_ASCEND310P7, OPS_SUBPATH_ASCEND310P}, {SOC_NAME_ASCEND310P3VIR01, OPS_SUBPATH_ASCEND310P},
-        {SOC_NAME_ASCEND310P3VIR02, OPS_SUBPATH_ASCEND310P}, {SOC_NAME_ASCEND310P3VIR04, OPS_SUBPATH_ASCEND310P},
-        {SOC_NAME_ASCEND310P3VIR08, OPS_SUBPATH_ASCEND310P}, {SOC_NAME_ASCEND310B1, OPS_SUBPATH_ASCEND310B},
-        {SOC_NAME_BS9SX1AA, OPS_SUBPATH_BS9SX1A}, {SOC_NAME_ASCEND910B2C, OPS_SUBPATH_ASCEND910B},
-        {SOC_NAME_BS9SX2AA, OPS_SUBPATH_BS9SX2A}, {SOC_NAME_BS9SX2AB, OPS_SUBPATH_BS9SX2A},
-        {SOC_NAME_ASCEND310B2, OPS_SUBPATH_ASCEND310B}, {SOC_NAME_ASCEND310B3, OPS_SUBPATH_ASCEND310B},
-        {SOC_NAME_ASCEND310B4, OPS_SUBPATH_ASCEND310B}, {SOC_NAME_ASCEND610LITE, OPS_SUBPATH_ASCEND610LITE},
-        {SOC_NAME_ASCEND910B4_1, OPS_SUBPATH_ASCEND910B}, {SOC_NAME_ASCEND910_950Z, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_957B, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_957D, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9589, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_958A, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_958B, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9599, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_950Y, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_5591, OPS_SUBPATH_ASCEND910_55},
-        {SOC_NAME_MC61AM21A, OPS_SUBPATH_MC61AM21A}, {SOC_NAME_ASCEND910_9581, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9579, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9591, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9592, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9582, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9584, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9587, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9588, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9572, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9574, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9575, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9576, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9577, OPS_SUBPATH_ASCEND910_95},
-        {SOC_NAME_ASCEND910_9578, OPS_SUBPATH_ASCEND910_95}, {SOC_NAME_ASCEND910_9691, OPS_SUBPATH_ASCEND910_96},
-        {SOC_NAME_ASCEND910_9699, OPS_SUBPATH_ASCEND910_96}};
-    // 获取拼接路径中的socVersion
-    const auto &iter = NNOPBASE_SOC_OPS_SUBPATH_MAP.find(socVersion);
-    CHECK_COND(iter != NNOPBASE_SOC_OPS_SUBPATH_MAP.end(), ACLNN_ERR_PARAM_INVALID,
-               "Not supported socVersion %s.", socVersion.c_str());
-    collecter->socVersion = iter->second;
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    OP_LOGI("Get current soc version: %s", socVersion.c_str());
+    CHECK_COND(nnopbase::IndvSoc::GetInstance().SupportCurrentSoc(), ACLNN_ERR_PARAM_INVALID, "Not supported socVersion %s.", socVersion.c_str());
 
-    if ((collecter->socVersion == OPS_SUBPATH_ASCEND910B) || (collecter->socVersion == OPS_SUBPATH_ASCEND910_93)) {
-        collecter->isAscend19x1 = true;
-    }
-    if ((collecter->socVersion == OPS_SUBPATH_ASCEND910_95) || (collecter->socVersion == OPS_SUBPATH_ASCEND910_96)) {
-        collecter->isAscend19x1 = true;
+    collecter->useCoreTypeMagic = nnopbase::IndvSoc::GetInstance().UseCoreTypeMagic();
+    if (nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch()) {
+        collecter->useCoreTypeMagic = true;
         collecter->isMc2FusionLaunch = true;
-    }
-
-    // only 910_95 has MemSetV2
-    static const std::vector<std::string> SOC_LIST_NOT_SUPPORT_MEMSETV2 { OPS_SUBPATH_ASCEND910, OPS_SUBPATH_ASCEND910B,
-        OPS_SUBPATH_ASCEND910_93, OPS_SUBPATH_ASCEND310P, OPS_SUBPATH_ASCEND310B, OPS_SUBPATH_BS9SX1A, OPS_SUBPATH_BS9SX2A,
-        OPS_SUBPATH_ASCEND610LITE, OPS_SUBPATH_MC61AM21A, OPS_SUBPATH_ASCEND910_55
-    };
-    collecter->isMemsetV2 = std::find(SOC_LIST_NOT_SUPPORT_MEMSETV2.begin(), SOC_LIST_NOT_SUPPORT_MEMSETV2.end(),
-        collecter->socVersion) == SOC_LIST_NOT_SUPPORT_MEMSETV2.end();
-
+ 	}
     return OK;
 }
 

@@ -11,12 +11,13 @@
 #include <string.h>
 #include "graph/types.h"
 #include "utils/indv_debug_assert.h"
+#include "utils/indv_soc.h"
 #include "executor/indv_collecter.h"
 #include "executor/indv_executor.h"
 #include "op_stub.h"
 
 namespace {
-uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
 TensorDesc inputDesc1[3] = {{ge::DT_FLOAT, ge::FORMAT_ND},
                             {ge::DT_FLOAT, ge::FORMAT_ND},
                             {ge::DT_FLOAT, ge::FORMAT_ND}};

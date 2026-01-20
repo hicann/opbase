@@ -34,6 +34,7 @@ constexpr uint32_t NNOPBASE_MEMSET_V2_OP_INPUT_COUNT = 1;
 constexpr uint32_t NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT = 1;
 constexpr uint32_t NNOPBASE_MEMSET_V2_OP_ATTR_COUNT = 2;
 static const std::string NNOPBASE_MEMSET_DEFAULT_PATH = "/built-in/op_impl/ai_core/tbe/kernel/config/";
+static const std::string NNOPBASE_MEMSET_DEFAULT_PATH_V2 = "/built-in/op_impl/ai_core/tbe/kernel/";
 static const std::string NNOPBASE_MEMSET_JSON_PATH ="/mem_set.json";
 static const std::string NNOPBASE_MEMSET_V2_OP_NAME = "MemSetV2";
 constexpr size_t NNOPBASE_MEMSET_V2_OP_SIMPLIFIED_KEY_MAX_LEN = 256;
@@ -135,7 +136,7 @@ struct NnopbaseMemsetBinInfo {
     const NnopbaseChar *opType = nullptr;
     NnopbaseUChar *bin = nullptr;
     std::string binPath;
-    void *binHandles[op::MAX_DEV_NUM] = {nullptr};
+    void *binHandle = nullptr;
     uint32_t binLen = 0U;
     uint32_t magic = ACL_RT_BINARY_MAGIC_ELF_AICORE;
     std::string kernelName;
@@ -170,16 +171,17 @@ struct NnopbaseMemsetInfo {
 
 typedef struct {
     BinInfoKey binInfoKey;
-    void* regInfo;
+    void* regInfo = nullptr;
     NnopbaseUChar *bin;
+    std::string simplifiedKey;
     std::string binPath;
-    void *binHandles[op::MAX_DEV_NUM] = {nullptr};
-    bool hasReg[op::MAX_DEV_NUM] = {false};
-    uint32_t binLen;
+    void *binHandle = nullptr;
+    bool hasReg = false;
+    uint32_t binLen = 0U;
     DoubleListNode dllNode;
-    CoreType coreType;
+    CoreType coreType = kCoreTypeEnd;
     bool isStaticShape = false;
-    uint32_t blockDim;
+    uint32_t blockDim = 0U;
     uint8_t staticWorkspaceSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE];
     std::string kernelName;
     uint32_t multiKernelType = 0U;
@@ -195,10 +197,10 @@ typedef struct {
     std::unique_ptr<NnopbaseMemsetInfo> memsetInfo = nullptr;
 } NnopbaseBinInfo;
 
-aclnnStatus NnopbaseAclrtBinaryLoad(const bool is19x1, NnopbaseBinInfo *binInfo, int32_t deviceId);
+aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
 aclnnStatus NnopbaseInitMemsetV2Info(NnopbaseBinInfo *binInfo);
-aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, std::string &socVersion,
+aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion,
     bool isMemsetV2);
 aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, NnopbaseUChar *&bin, uint32_t *binLen);
 aclnnStatus NnopbaseKernelUnRegister(void **handle);
@@ -216,8 +218,8 @@ aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<NnopbaseMemsetBinInfo> &bi
 
 
 // getFunction Handle from binInfo
-aclnnStatus GetFuncHandleByEntry(void* binHandles[], uint64_t funcEntry, aclrtFuncHandle *funcHandle);
-aclnnStatus GetFuncHandleByKernelName(void* binHandles[], const char *kernelName, aclrtFuncHandle *funcHandle);
+aclnnStatus GetFuncHandleByEntry(void* binHandle, uint64_t funcEntry, aclrtFuncHandle *funcHandle);
+aclnnStatus GetFuncHandleByKernelName(void* binHandle, const char *kernelName, aclrtFuncHandle *funcHandle);
 static const std::map<std::string, NnopbaseTaskRation> TASK_RATION_MAP = {
     {"1:0", kRation10}, {"0:1", kRation01}, {"1:1", kRation11}, {"1:2", kRation12}};
 static const std::map<std::string, CoreType> g_nnopbaseKernelTypeMap = {
@@ -251,10 +253,9 @@ static inline void NnopbaseBinInfoDestroy(NnopbaseBinInfo **binInfo)
         delete[]((*binInfo)->bin);
         (*binInfo)->bin = nullptr;
     }
-    for (size_t i = 0U; i < op::MAX_DEV_NUM; ++i) {
-        if ((*binInfo)->hasReg[i]) {
-            (void)NnopbaseKernelUnRegister(&((*binInfo)->binHandles[i]));
-        }
+
+    if ((*binInfo)->hasReg) {
+        (void)NnopbaseKernelUnRegister(&((*binInfo)->binHandle));
     }
     if ((*binInfo)->memsetInfo != nullptr) {
         NnopbaseMemsetInfoDestroy((*binInfo)->memsetInfo);
@@ -275,10 +276,10 @@ static inline void NnopbaseBinInfoKeyCopy(BinInfoKey *dst, const BinInfoKey *src
 static inline void NnopbaseBinInfoInit(NnopbaseBinInfo *binInfo)
 {
     binInfo->bin = nullptr;
-    binInfo->binHandles[op::MAX_DEV_NUM] = {nullptr};
+    binInfo->binHandle = nullptr;
     binInfo->binLen = 0;
     binInfo->coreType = kCoreTypeEnd;
-    binInfo->hasReg[op::MAX_DEV_NUM] = {false};
+    binInfo->hasReg = false;
     binInfo->isStaticShape = false;
     binInfo->blockDim = 0;
     auto vec = (gert::ContinuousVector *)binInfo->staticWorkspaceSizes;
@@ -303,7 +304,7 @@ static inline aclnnStatus NnopbaseBinInfoSetOpBinInfoKey(NnopbaseBinInfo* binInf
 #endif
 
 namespace nnopbase {
-std::string GetMagicFormBin(const bool is19x1, NnopbaseBinInfo *binInfo);
+std::string GetMagicFormBin(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 } // nnopbase
 
 #endif

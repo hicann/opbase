@@ -16,6 +16,7 @@
 #include "op_cache_internal.h"
 #include "executor/indv_collecter.h"
 #include "utils/file_faker.h"
+#include "utils/indv_soc.h"
 #include "depends/dump/dump_stub.h"
 #include "depends/mmpa/mmpa_stub.h"
 #include "depends/op/op_stub.h"
@@ -613,7 +614,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunFailed)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     std::vector<int64_t> shape ={1, 1, 1, 1, 1};
@@ -680,7 +681,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseDynamicCheckFailed)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     size_t workspaceLen = 0U;
@@ -724,7 +725,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseCheckFailedWithUnsupportOutputDtype)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     size_t workspaceLen = 0U;
@@ -775,7 +776,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseNotFindKernel)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     size_t workspaceLen = 0U;
@@ -835,7 +836,7 @@ TEST_F(NnopbaseUnitTest, TestNNopbaseAddSupportList)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
     NnopbaseExecutorGcSpace(executorSpace);
 }
@@ -887,7 +888,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithNclFormat)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
@@ -970,7 +971,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseParamCheckFailed)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     size_t workspaceLen = 0U;

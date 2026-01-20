@@ -15,29 +15,9 @@
 #include "op_def.h"
 #include "indv_lib_wrapper.h"
 
-static thread_local int32_t curDeviceId;
-static thread_local bool getDeviceFlag = false;
 static thread_local uint32_t mc2RankId = 0U;
 namespace nnopbase {
 namespace utils {
-aclnnStatus ThreadVarContainer::GetCurDeviceIdInThread(int32_t &deviceId)
-{
-    if (getDeviceFlag) {
-        deviceId = curDeviceId;
-        OP_LOGD("Device Id for this thread is %d", deviceId);
-        return OK;
-    }
-    CHECK_RET_CODE(aclrtGetDevice(&curDeviceId), "aclrtGetDevice failed.");
-    if (curDeviceId >= op::MAX_DEV_NUM) {
-        OP_LOGE(ACLNN_ERR_INNER, "Invalid DeviceId %d. Max DeviceID: %d", curDeviceId, op::MAX_DEV_NUM);
-        return ACLNN_ERR_INNER;
-    }
-    deviceId = curDeviceId;
-    getDeviceFlag = true;
-    OP_LOGD("Device Id for this thread is %d", deviceId);
-    return OK;
-}
-
 aclnnStatus ThreadVarContainer::SetCurMc2RankIdInThread(HcclComm commHandle)
 {
     uint32_t rankId;

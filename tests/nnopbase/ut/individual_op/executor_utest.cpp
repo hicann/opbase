@@ -17,6 +17,7 @@
 #include "executor/indv_non_finite_check_op.h"
 #include "executor/indv_tilingcontext_builder.h"
 #include "utils/file_faker.h"
+#include "utils/indv_soc.h"
 #include "individual_op_api.h"
 #include "depends/op/op_stub.h"
 #include "depends/profiler/profiler_stub.h"
@@ -32,11 +33,6 @@
 #define private public
 #include "executor/indv_args_pool.h"
 #undef private
-
-namespace {
-static int64_t FAKE_HIDDEN_INPUT_MEM[4] = {1, 2, 3, 4};
-}
-
 
 class NnopbaseExecutorUnitTest : public testing::Test {
 protected:
@@ -1072,7 +1068,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseParamCheck)
     OpSocSupportInfo socSupportInfo1 = {supportInfo1, 1};
     OpSocSupportInfo opSocSupportList[2] = {socSupportInfo0, socSupportInfo1};
     OpSupportList supportList = {opSocSupportList, 2};
-    uint32_t socSupportList[] = {SOC_VERSION_910A, SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910A, nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     size_t workspaceLen = 0U;
@@ -1115,7 +1111,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseParamCheckNoSupportInfo)
     OpSocSupportInfo socSupportInfo0 = {supportInfo0, 1};
     OpSocSupportInfo opSocSupportList[1] = {socSupportInfo0};
     OpSupportList supportList = {opSocSupportList, 1};
-    uint32_t socSupportList[] = {SOC_VERSION_910B};
+    uint32_t socSupportList[] = {nnopbase::SOC_VERSION_ASCEND910B};
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 1), OK);
 
     size_t workspaceLen = 0U;
@@ -2199,14 +2195,14 @@ TEST_F(NnopbaseExecutorUnitTest, TestOutputAutomicCleanSuccessFor1971)
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
 
-    auto oriSocVersion = ((NnopbaseExecutor *)executor)->collecter->socVersion;
-    ((NnopbaseExecutor *)executor)->collecter->socVersion = OPS_SUBPATH_ASCEND910B;
+    auto oriSocVersion = nnopbase::IndvSoc::GetCurSocVersion();
+ 	MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910B)));
     ((NnopbaseExecutor *)executor)->args->binInfo->initValues.clear();
     NnopbaseInitValueInfo info = {2, op::DataType::DT_FLOAT, 0.0, 0, 0};
     ((NnopbaseExecutor *)executor)->args->binInfo->initValues.push_back(info);
     ASSERT_EQ(NnopbasePrepareInitValues((NnopbaseExecutor *)executor), OK);
     ASSERT_EQ(((NnopbaseExecutor *)executor)->args->binInfo->initValues[0].tensorDataSize, 4U);
-    ((NnopbaseExecutor *)executor)->collecter->socVersion = oriSocVersion;
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
 
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);

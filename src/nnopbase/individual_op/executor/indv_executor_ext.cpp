@@ -12,6 +12,7 @@
 #include "indv_args_pool.h"
 #include "indv_collecter.h"
 #include "utils/thread_var_container.h"
+#include "utils/indv_soc.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 #include "register/op_binary_resource_manager.h"
 #include "runtime/runtime/kernel.h"
@@ -432,15 +433,15 @@ aclnnStatus NnopbasePrepareInitValues(NnopbaseExecutor *executor)
 
             executor->args->binInfo->tensorNeedMemSetV2 += 1;
 
-            if (executor->collecter->socVersion == OPS_SUBPATH_ASCEND910B) {
-                executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
-            } else {
+            if (nnopbase::IndvSoc::GetInstance().NeedAlignInitValues()) {
                 executor->args->binInfo->initValues[i].tensorDataSize =
                     NNOPBASE_BLOCK_SIZE + op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE);
                 OP_LOGI("Size is %zu bytes, dypeSize is %d bytes, alignSize is %zu bytes.",
                     tensor->GetSize(),
                     ge::GetSizeByDataType(tensor->GetDataType()),
                     op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE));
+            } else {
+                executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
             }
             OP_LOGI("TensorDataSize is %zu bytes.", executor->args->binInfo->initValues[i].tensorDataSize);
         }
@@ -820,7 +821,7 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
         }
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetV2Args(executor));
         aclrtFuncHandle funcHandle;
-        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->memsetInfo->binInfo->binHandles,
+        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->memsetInfo->binInfo->binHandle,
             executor->args->binInfo->memsetInfo->memsetTilingKey, &funcHandle));
         std::vector<aclrtLaunchKernelAttr> attrs;
         aclrtLaunchKernelAttr schemModeAttr = {
@@ -844,7 +845,7 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetArgs(executor));
         aclrtFuncHandle funcHandle;
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(
-            executor->args->binInfo->memsetInfo->binInfo->binHandles,
+            executor->args->binInfo->memsetInfo->binInfo->binHandle,
             executor->args->binInfo->memsetInfo->binInfo->stubName.c_str(),
             &funcHandle));
 
@@ -932,7 +933,7 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
     if (executor->regInfo == nullptr) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
             "Get regInfo failed, The binary_info_config.json of socVersion [%s] does not support opType [%s].",
-            executor->collecter->socVersion.c_str(), opType);
+            nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str(), opType);
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (executor->opType == nullptr) {

@@ -50,7 +50,7 @@ aclnnStatus NnopbaseMemsetTilingContextInit(NnopbaseExecutor *executor);
 aclnnStatus NnopnbaseBuildMemsetTilingContext(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseGenMemsetV2TilingFunc(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseExecutorPlatFormInfosInit(const std::string &socType);
+aclnnStatus NnopbaseExecutorPlatFormInfosInit();
 void NnopbaseUpdatePlatformInfo(const NnopbaseExecutor *executor);
 static constexpr int32_t NNOPBASE_DYNAMIC_PARAM_DEF_NUM = 256;
 void NnopbaseTilingBuildOpInputs(NnopbaseExecutor *executor);

@@ -17,7 +17,9 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include "utils/file_faker.h"
+#include "utils/indv_soc.h"
 #include "register/op_binary_resource_manager.h"
+#include "mockcpp/mockcpp.hpp"
 
 using namespace std;
 
@@ -51,33 +53,14 @@ TEST_F(NnopbaseCollecterUnitTest, test_collecter_init_ok)
 TEST_F(NnopbaseCollecterUnitTest, test_get_soc_version_ok)
 {
     NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
-    NnopbaseChar socType[50];
-    rtGetSocVersion(socType, 50);
-    std::string socVersion = std::string(socType);
-    int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter, socVersion);
+    std::string socVersion = std::string(nnopbase::OPS_SUBPATH_ASCEND910B);
+    MOCKER_CPP(&op::PlatformInfo::GetSocVersion).stubs().will(returnValue(op::SocVersion::ASCEND910B));
+    nnopbase::IndvSoc::GetInstance().Reset();
+    ASSERT_EQ(socVersion, nnopbase::IndvSoc::GetInstance().GetCurSocVersion());
+    int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter);
     ASSERT_EQ(ret, OK);
     delete bin_collecter;
-}
-
-TEST_F(NnopbaseCollecterUnitTest, test_get_soc_version_910_96)
-{
-    NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
-    std::string socVersion = std::string(SOC_NAME_ASCEND910_9691);
-    int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter, socVersion);
-    ASSERT_EQ(ret, OK);
-    EXPECT_EQ(OPS_SUBPATH_ASCEND910_96, bin_collecter->socVersion);
-    EXPECT_EQ(true, bin_collecter->isAscend19x1);
-    EXPECT_EQ(true, bin_collecter->isMc2FusionLaunch);
-    delete bin_collecter;
-}
-
-TEST_F(NnopbaseCollecterUnitTest, test_get_soc_version_fail)
-{
-    NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
-    std::string socVersion;
-    int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter, socVersion);
-    ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
-    delete bin_collecter;
+    nnopbase::IndvSoc::GetInstance().Reset();
 }
 
 NnopbaseBinCollecter *bin_collecter = NULL;
@@ -594,24 +577,4 @@ TEST_F(NnopbaseCollecterUnitTest, test_read_custom_opapi_path_failed) {
     std::vector<std::string> basePath;
     NnopbaseGetCustomOpApiPath(basePath);
     ASSERT_EQ(basePath.size(), 0);
-}
-
-TEST_F(NnopbaseCollecterUnitTest, test_support_Ascend910_9579_ok) {
-    std::shared_ptr<NnopbaseBinCollecter> bin_collecter_ptr = std::make_shared<NnopbaseBinCollecter>();
-    NnopbaseBinCollecter *bin_collecter = bin_collecter_ptr.get();
-    std::string socVersion = "Ascend910_9579";
-    int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter, socVersion);
-    ASSERT_EQ(ret, OK);
-}
-
-TEST_F(NnopbaseCollecterUnitTest, test_support_Ascend910_95Versions_ok) {
-    std::shared_ptr<NnopbaseBinCollecter> bin_collecter_ptr = std::make_shared<NnopbaseBinCollecter>();
-    NnopbaseBinCollecter *bin_collecter = bin_collecter_ptr.get();
-    const std::vector<std::string> socVersions = {
-        "Ascend910_9591", "Ascend910_9592", "Ascend910_9582", "Ascend910_9584", "Ascend910_9587", "Ascend910_9588",
-        "Ascend910_9572", "Ascend910_9574", "Ascend910_9575", "Ascend910_9576", "Ascend910_9577", "Ascend910_9578"};
-    for (std::string socVersion : socVersions) {
-        int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter, socVersion);
-        ASSERT_EQ(ret, OK);
-    }
 }

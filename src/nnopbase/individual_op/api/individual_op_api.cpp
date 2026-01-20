@@ -15,6 +15,7 @@
 #include "utils/indv_debug_assert.h"
 #include "utils/indv_lib_wrapper.h"
 #include "utils/thread_var_container.h"
+#include "utils/indv_soc.h"
 #include "executor/indv_executor.h"
 #include "executor/indv_tilingcontext_builder.h"
 #include "executor/indv_bininfo.h"
@@ -827,11 +828,7 @@ aclnnStatus NnopbaseSetMc2(void *const executor)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     ((NnopbaseExecutor *)executor)->mc2OpCfg.isMc2 = true;
-    auto socVersion = (static_cast<NnopbaseExecutor *>(executor))->collecter->socVersion;
-    bool needLoadDavidHcclApi = false;
-    if ((socVersion == OPS_SUBPATH_ASCEND910_95) || (socVersion == OPS_SUBPATH_ASCEND910_96)) {
-        needLoadDavidHcclApi = true;
-    }
+    bool needLoadDavidHcclApi = nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch();
     static const aclnnStatus ret = nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit("libhccl.so",
         needLoadDavidHcclApi);
     CHECK_COND((ret == OK), ret, "Nnopbase load hccl module libhccl.so failed. ret = %d.", ret);
@@ -873,26 +870,20 @@ void NnopbaseSetHcclServerType(void *executor, NnopbaseHcclServerType sType)
 void NnopbaseSetHcclServerTypeList(void *executor, NnopbaseHcclServerType *hcclServerTypeList, 
                                    const uint32_t *socSupportList, size_t socSupportListLen)
 {
-    static const std::map<ge::AscendString, uint32_t> SOC_VERSION_MAP = {
-        {"Ascend910", SOC_VERSION_910A},
-        {"Ascend910B", SOC_VERSION_910B},
-        {"Ascend910_93", SOC_VERSION_910_93},
-        {"Ascend910_95", SOC_VERSION_910_95},
-        {"Ascend310B", SOC_VERSION_310B},
-        {"Ascend310P", SOC_VERSION_310P},
-        {"Ascend610Lite", SOC_VERSION_ASCEND610Lite}
-    };
     NNOPBASE_ASSERT_NOTNULL(executor);
     NNOPBASE_ASSERT_NOTNULL(hcclServerTypeList);
     NNOPBASE_ASSERT_NOTNULL(socSupportList);
-    auto currentSocVersion = op::ToString(op::GetCurrentPlatformInfo().GetSocVersion());
-    const auto &iter = SOC_VERSION_MAP.find(currentSocVersion);
-    if (iter != SOC_VERSION_MAP.cend()) {
-        for (size_t i = 0; i < socSupportListLen; i++) {
-            if (socSupportList[i] == iter->second) {
-                NnopbaseExecutorSetHcclServerType((NnopbaseExecutor *)executor, hcclServerTypeList[i]);
-                return;
-            }
+    NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    const auto supportHcclSocMap = nnopbase::IndvSoc::GetInstance().GetSupportHcclSocMap();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const auto &iter = supportHcclSocMap.find(socVersion);
+    if (iter == supportHcclSocMap.cend()) {
+        return;
+    }
+    for (size_t i = 0; i < socSupportListLen; i++) {
+        if (socSupportList[i] == iter->second) {
+            NnopbaseExecutorSetHcclServerType(nnopExecutor, hcclServerTypeList[i]);
+            return;
         }
     }
 }

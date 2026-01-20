@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include "indv_executor.h"
 #include "indv_non_finite_check_op.h"
+#include "utils/indv_soc.h"
 #include "opdev/fp16_t.h"
 #include "graph/types.h"
 #include "opdev/small_vector.h"
@@ -199,7 +200,7 @@ void NnopbaseCheckOverflowAndDump(NnopbaseExecutor *const executor, aclrtStream 
     bool isOverflow = false;
     if (overflowMode == ACL_RT_OVERFLOW_MODE_SATURATION) {
         NNOPBASE_ASSERT_OK(NnopbaseIsSaturationOverflow(
-            (executor->collecter->socVersion == OPS_SUBPATH_ASCEND910B), stream, isOverflow));
+            nnopbase::IndvSoc::GetInstance().NeedsExtraMemoryForOverflowDump(), stream, isOverflow));
     } else {
         NNOPBASE_ASSERT_OK(NnopbaseRunNonFiniteCheckOp(executor->args->outputs, stream, isOverflow));
         // 上述接口会修改日志打印里面的optype
@@ -300,7 +301,7 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor *const executor, a
         const std::string l0Name(executor->opType);
         const uint32_t blockDim = NnopbaseExecutorGetBlockDim(executor);
         const std::string &magic =
-            nnopbase::GetMagicFormBin(executor->collecter->isAscend19x1, executor->args->binInfo);
+            nnopbase::GetMagicFormBin(executor->collecter->useCoreTypeMagic, executor->args->binInfo);
         std::string devFunc;
         std::string kernelInfo;
         NnopbaseGetKernelInfoFromBin(executor->args->binInfo, kernelInfo, devFunc);
@@ -394,17 +395,16 @@ static uint64_t *NnopbaseAddWorkspaceExceptionInfo(NnopbaseExecutor *const execu
     return sizeInfoAddr;
 }
 
-static bool NnopbaseNeedL0ExceptionDump(const std::string &socVersion)
+static bool NnopbaseNeedL0ExceptionDump()
 {
-    static const bool ret = ((socVersion == OPS_SUBPATH_ASCEND910 ||
-                                 socVersion == OPS_SUBPATH_ASCEND310B) &&
+    static const bool ret = (nnopbase::IndvSoc::GetInstance().SupportL0ExceptionDump() &&
                              op::internal::IsArgExceptionDumpEnable());
     return ret;
 }
 
 aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor *const executor)
 {
-    if (executor->args->binInfo->dfxInfo.isAssertEnable || NnopbaseNeedL0ExceptionDump(executor->collecter->socVersion)) {
+    if (executor->args->binInfo->dfxInfo.isAssertEnable || NnopbaseNeedL0ExceptionDump()) {
         OP_LOGI("ArgExceptionDump is enable.");
         uint32_t atomicIndex = 0U;
         size_t mc2ContextNum = 0U;
@@ -423,7 +423,7 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor *const executor)
         *sizeInfoAddr = static_cast<uint64_t>(atomicIndex);
         sizeInfoAddr++;
         bool hasCtrlAddr = false;
-        if ((executor->collecter->isAscend19x1) && (executor->args->binInfo->coreType == kMix)) {
+        if ((executor->collecter->useCoreTypeMagic) && (executor->args->binInfo->coreType == kMix)) {
             hasCtrlAddr = true;
         }
         // 低32位表示inputs/outputs/workspaces nums

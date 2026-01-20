@@ -12,6 +12,7 @@
 #include <mutex>
 #include "indv_args_pool.h"
 #include "utils/thread_var_container.h"
+#include "utils/indv_soc.h"
 #include "indv_tilingcontext_builder.h"
 #include "graph/ge_error_codes.h"
 #include "thread_local_context.h"
@@ -137,8 +138,10 @@ static inline void NnopbaseAddTensorsInfo(const NnopbaseTensors &tensors, std::s
 static inline aclnnStatus NnopbaseGetSupportInfo(const NnopbaseExecutor *const executor, OpSocSupportInfo &supportInfo)
 {
     CHECK_COND((executor->supportList != nullptr), ACLNN_ERR_INNER_FIND_KERNEL_ERROR, "SupportList is nullptr!");
-    const auto &iter = nnopbase::SOC_TYPE_MAP.find(executor->collecter->socVersion);
-    if (iter != nnopbase::SOC_TYPE_MAP.end()) {
+    const auto socTypeMap = nnopbase::IndvSoc::GetInstance().GetSocTypeMap();
+    const auto socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const auto &iter = socTypeMap.find(socVersion);
+    if (iter != socTypeMap.end()) {
         for (size_t i = 0U; i < executor->socSupportListLen; i++) {
             if (executor->socSupportList[i] == iter->second) {
                 CHECK_COND((i < executor->supportList->num), ACLNN_ERR_INNER_FIND_KERNEL_ERROR,
@@ -150,7 +153,7 @@ static inline aclnnStatus NnopbaseGetSupportInfo(const NnopbaseExecutor *const e
     }
 
     OP_LOGE(ACLNN_ERR_INNER_FIND_KERNEL_ERROR, "Op %s not support soc version %s.", executor->opType,
-            executor->collecter->socVersion.c_str());
+            socVersion.c_str());
     return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
 }
 
@@ -503,8 +506,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         executor->argsExt.args = args;
     }
 
-    if (((executor->collecter->socVersion == OPS_SUBPATH_ASCEND910B) ||
-        (executor->collecter->socVersion == OPS_SUBPATH_ASCEND910_93)) &&
+    if (nnopbase::IndvSoc::GetInstance().UseCoreTypeMagic() &&
         (executor->args->binInfo->coreType == kMix)) {
         uint64_t ctrlAddr = 0U;
         uint32_t addrLen = 0U;
@@ -601,20 +603,19 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
 
 aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *binInfo)
 {
-    int32_t deviceId;
-    NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::GetCurDeviceIdInThread(deviceId));
-    if (binInfo->hasReg[deviceId]) {
+    if (binInfo->hasReg) {
         return OK;
     }
     const std::lock_guard<std::mutex> lock(g_nnopbaseRegisterMtx);
-    if (binInfo->hasReg[deviceId]) { return OK;}
+    if (binInfo->hasReg) { return OK;}
 
     if (binInfo->bin == nullptr) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), binInfo->bin, &binInfo->binLen));
     }
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadJsonFile(binInfo, executor->collecter->oppPath,
-        executor->collecter->socVersion, gBinCollecter->isMemsetV2));
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->isAscend19x1, binInfo, deviceId));
+        socVersion, gBinCollecter->isMemsetV2));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
     if (binInfo->initValues.size() > 0U) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbasePrepareInitValues(executor));
         if (gBinCollecter->isMemsetV2) {
@@ -628,7 +629,7 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMemsetTilingContextInit(executor));
         }
     }
-    binInfo->hasReg[deviceId] = true;
+    binInfo->hasReg = true;
     return OK;
 }
 
@@ -991,13 +992,13 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
 
     if (executor->args->binInfo->isStaticShape) {
         OP_LOGI("Launch static kernel %s task, blockDim is %u, scheMode is %u", executor->opType, blockDim, scheMode);
-        NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandles,
+        NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandle,
             executor->args->binInfo->kernelName.c_str(), &funcHandle));
     } else {
         const uint64_t tilingKey = executor->args->tilingInfo.tilingKey;
         OP_LOGI("Launch dynamic kernel %s task, tilingKey is %lu, scheMode is %u, blockDim is %u, stream is %p",
             executor->opType, tilingKey, scheMode, blockDim, stream);
-        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandles,
+        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandle,
             tilingKey, &funcHandle));
     }
 
@@ -1022,12 +1023,12 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
     aclrtFuncHandle funcHandle;
     if (executor->args->binInfo->isStaticShape) {
         OP_LOGI("%s blockDim is %u", executor->opType, blockDim);
-        NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandles,
+        NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandle,
             executor->args->binInfo->kernelName.c_str(), &funcHandle));
     } else {
         OP_LOGI(
             "%s tilingKey is %lu, blockDim is %u", executor->opType, executor->args->tilingInfo.tilingKey, blockDim);
-        NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandles,
+        NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandle,
             executor->args->tilingInfo.tilingKey, &funcHandle));
     }
 

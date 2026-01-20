@@ -12,6 +12,7 @@
 #include "indv_collecter.h"
 #include "utils/indv_base.h"
 #include "utils/indv_debug_assert.h"
+#include "utils/indv_soc.h"
 #include "securec.h"
 #include "mmpa/mmpa_api.h"
 #include "profiling/aprof_pub.h"
@@ -258,7 +259,7 @@ void NnopbaseReportAdditionInfo(void *const executor, uint32_t blockDim,
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
         NnopbaseExecutor *const opExecutor = (NnopbaseExecutor *)executor;
         if (opExecutor->args->binInfo->coreType == kMix) { // 310p没有mix类型coretype，不会走进来
-            OP_LOGI("Get soc version is %s, set mix op type.", opExecutor->collecter->socVersion.c_str());
+            OP_LOGI("Get soc version is %s, set mix op type.", nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str());
             NnopbaseReportContextIdInfoByRation(opExecutor, timeStamp, blockDim, taskType);
         }
         OP_LOGI("[Cann Profiling] node type is %s, taskType is %u", opExecutor->opType, taskType);

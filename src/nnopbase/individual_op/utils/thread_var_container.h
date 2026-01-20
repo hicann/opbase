@@ -16,7 +16,6 @@ namespace nnopbase {
 namespace utils {
 class ThreadVarContainer {
 public:
-    static aclnnStatus GetCurDeviceIdInThread(int32_t &deviceId);
     static aclnnStatus SetCurMc2RankIdInThread(HcclComm commHandle);
     static uint32_t GetCurMc2RankIdInThread();
 };

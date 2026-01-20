@@ -11,6 +11,7 @@
 #include "indv_non_finite_check_op.h"
 #include "indv_executor.h"
 #include "indv_collecter.h"
+#include "utils/indv_soc.h"
 #include "individual_op_api.h"
 
 namespace {
@@ -19,8 +20,8 @@ constexpr uint16_t kModelId = 61; // OP model
 constexpr float f05 = 0.5F;
 
 constexpr ge::DataType supportDtypes[] = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
-uint32_t socSupportList[] = {SOC_VERSION_910B, SOC_VERSION_910_93};
-constexpr uint32_t socSupportListLen = sizeof(socSupportList) / sizeof(uint32_t);
+uint32_t socSupportListLen = 0;
+uint32_t *socSupportList = nnopbase::IndvSoc::GetInstance().GetNonFiniteCheckSocSupportList(socSupportListLen);
 
 TensorDesc inputDesc0_0[] = {{ge::DT_FLOAT16, ge::FORMAT_ND}};
 TensorDesc inputDesc0_1[] = {{ge::DT_FLOAT, ge::FORMAT_ND}};

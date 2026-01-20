@@ -14,6 +14,7 @@
 #include "exe_graph/runtime/storage_format.h"
 #include "kernel_utils.h"
 #include "base/registry/op_impl_space_registry_v2.h"
+#include "utils/indv_soc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +68,7 @@ void NnopbaseUpdatePlatformInfo(const NnopbaseExecutor *executor)
     NnopbaseUpdateCoreNum(executor->coreNum.aicNum, executor->coreNum.aivNum);
 }
 
-aclnnStatus NnopbaseExecutorPlatFormInfosInit(const std::string &socType)
+aclnnStatus NnopbaseExecutorPlatFormInfosInit()
 {
     if (g_nnopbasePlatformMgr.isInit) {
         return OK;
@@ -76,12 +77,12 @@ aclnnStatus NnopbaseExecutorPlatFormInfosInit(const std::string &socType)
     g_nnopbasePlatformMgr.infos = std::make_unique<fe::PlatFormInfos>();
     g_nnopbasePlatformMgr.memsetInfos = std::make_unique<fe::PlatFormInfos>();
     int32_t deviceId = -1;
-    NNOPBASE_ASSERT_RTOK_RETVAL(rtGetDevice(&deviceId));
+    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetDevice(&deviceId));
     NNOPBASE_ASSERT_RTOK_RETVAL(fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId,
         *g_nnopbasePlatformMgr.infos, true));
     NNOPBASE_ASSERT_RTOK_RETVAL(fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId,
         *g_nnopbasePlatformMgr.memsetInfos, true));
-    if ((socType == OPS_SUBPATH_ASCEND310P) || (socType == OPS_SUBPATH_ASCEND910)) {
+    if (nnopbase::IndvSoc::GetInstance().IsCouplingArch()) {
         g_nnopbasePlatformMgr.infos->SetCoreNumByCoreType("AiCore");
     } else {
         g_nnopbasePlatformMgr.infos->SetCoreNumByCoreType("VectorCore");
@@ -191,7 +192,7 @@ static void NnopbaseTilingSetContextOutputStep2(NnopbaseExecutor *const executor
 aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor)
 {
     if (!g_nnopbasePlatformMgr.isInit) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit(executor->collecter->socVersion));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit());
     }
     NnopbaseAsyncAnyValue **values = executor->contextExt.context->values;
     // executor->args->inputs.nonDynamicCnt > executor->args->inputs.requiredCnt for option input
@@ -315,7 +316,7 @@ aclnnStatus NnopbaseMemsetV2TilingContextInit(NnopbaseExecutor *executor)
 aclnnStatus NnopbaseMemsetV2TilingContextBuild(NnopbaseExecutor *executor)
 {
     if (!g_nnopbasePlatformMgr.isInit) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit(executor->collecter->socVersion));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit());
     }
     NnopbaseKernelRunContextExt *contextExt = &executor->args->binInfo->memsetInfo->contextExt;
     NnopbaseAsyncAnyValue **values = contextExt->context->values;
@@ -649,7 +650,7 @@ aclnnStatus NnopbaseGenMemsetV2TilingFunc(NnopbaseExecutor *executor)
 
 aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(NnopbaseExecutor *executor)
 {
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit(executor->collecter->socVersion));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit());
     std::string coreType = executor->args->binInfo->memsetInfo->binInfo->coreType == kAicore ? "AiCore" : "VectorCore";
     g_nnopbasePlatformMgr.memsetInfos->SetCoreNumByCoreType(coreType);
 
