@@ -12,7 +12,7 @@
 #define OP_API_COMMON_INC_OPDEV_AICPU_AICPU_EXT_INFO_H_
 
 #include "aicpu_uitls.h"
-#include "aicpu/aicpu_engine_struct.h"
+#include "aicpu_engine_struct.h"
 #include "exe_graph/runtime/shape.h"
 #include "exe_graph/runtime/tensor.h"
 #include "aclnn/aclnn_base.h"

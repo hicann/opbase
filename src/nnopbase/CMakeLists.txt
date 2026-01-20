@@ -35,6 +35,7 @@ set(COMMON_INCLUDING_PATH
     ${ASCEND_INCLUDE_DIR}/external/
 
     ${ASCEND_HOME_PATH}/pkg_inc
+    ${ASCEND_HOME_PATH}/pkg_inc/aicpu
 )
 
 # nnopbase

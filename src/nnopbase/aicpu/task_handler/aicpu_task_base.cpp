@@ -9,7 +9,7 @@
  */
 
 #include "opdev/aicpu/aicpu_task.h"
-#include "aicpu/aicpu_engine_struct.h"
+#include "aicpu_engine_struct.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/fast_vector.h"
 #include "mmpa/mmpa_api.h"
