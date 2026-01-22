@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file elementwise_sch_16b.h
+ * \file elewise_sch_16b.h
  * \brief
  */
 #ifndef ELEWISE_SCH_16B_H_
@@ -456,6 +456,8 @@ class ElementwiseSch16B {
   }
 
   private:
+  constexpr static uint64_t BYTE_LENGTH = 8;
+  constexpr static uint64_t CACHE_LINE_BYTE_LENGTH = 512;
   constexpr static int inputNums = ElemDag::InputSize;
   constexpr static int outputNums = ElemDag::OutputSize;
   constexpr static auto bufferIds = ElemDag::template GetBufferIds<true, false>();

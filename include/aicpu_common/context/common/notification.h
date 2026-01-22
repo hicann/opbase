@@ -38,10 +38,6 @@ class Notification {
     }
   }
 
-  bool HasBeenNotified() const {
-    return notified_.load(std::memory_order_acquire);
-  }
-
   void WaitForNotification() {
     if (!HasBeenNotified()) {
       std::unique_lock<std::mutex> l(mu_);
@@ -50,7 +46,11 @@ class Notification {
       }
     }
   }
- 
+
+  bool HasBeenNotified() const {
+    return notified_.load(std::memory_order_acquire);
+  }
+
  private:
   std::mutex mu_;  // protects mutations of notified_
   std::condition_variable cv_;  // signaled when notified_ becomes non-zero

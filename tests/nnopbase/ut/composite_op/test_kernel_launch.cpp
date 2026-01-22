@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
  
 #include <array>
@@ -29,6 +29,7 @@
 #include "opdev/common_types.h"
 #include "opdev/op_arg_def.h"
 #include "opdev/op_errno.h"
+#include "op_ctx_def.h"
 #include "thread_local_context.h"
 #include "op_kernel.h"
 #include "memset_op.h"
@@ -626,14 +627,16 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     auto input_arg = OP_INPUT(inputTensor);
     auto output_arg = OP_OUTPUT(out);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf+100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
  
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -682,12 +685,14 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf+100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, true, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -720,12 +725,14 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
  
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf+100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;

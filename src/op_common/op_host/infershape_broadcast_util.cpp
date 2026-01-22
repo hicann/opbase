@@ -130,6 +130,7 @@ bool BroadcastShape(const std::vector<const gert::Shape*>& inShapes, gert::Shape
 
     return true;
 }
+
 ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
 {
     auto inShape1 = context->GetInputShape(0);
@@ -169,6 +170,5 @@ ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context, size_t in
 
     return ge::GRAPH_SUCCESS;
 }
-
 } // namespace Base
 } // namespace Ops

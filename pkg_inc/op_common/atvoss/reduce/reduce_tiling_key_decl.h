@@ -17,8 +17,6 @@
 #define _REDUCE_TILING_KEY_DECL_H_
 #include "ascendc/host_api/tiling/template_argument.h"
 
-namespace Ops {
-namespace Base {
 #define A1R0 10
 #define A2R0 20
 #define A3R0 30
@@ -143,7 +141,5 @@ namespace Base {
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R2, A1R3, A1R4, A1R5, A2R3, A2R4, A2R5, A2R6, A3R4, \
                              A3R5, A3R6, A3R7, A4R5, A4R6, A4R7, A4R8, A5R6, A5R7, A5R8, A5R9),                      \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_LIST, C0)
-} // namespace Base
-} // namespace Ops
 
 #endif

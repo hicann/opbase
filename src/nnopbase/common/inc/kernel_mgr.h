@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef __ACL_KERNEL_MGR_H__
@@ -81,7 +81,7 @@ public:
                              OpArgList &outputs,
                              OpArgList &attrs)
     {
-        OP_LOGI("#### Begin GetWorkspace, opType: %u", opType);
+        OP_LOGI("Begin GetWorkspace, opType: %u", opType);
         aclnnStatus ret = AclOpKernelInit(opType);
         if (ret != ACLNN_SUCCESS) {
             OP_LOGE(
@@ -116,12 +116,11 @@ public:
         }
     }
 
-    void ClearStaticBins()
+    void ReloadStaticBinJson()
     {
-        loadStaticBinJsonFlag_.reset();
+        loadStaticBinJsonFlag_.Reset();
         for (size_t i = 0; i < kernel_.size(); i++) {
-            initStaticKernelFlags_[i].reset();
-            kernel_[i].ClearStaticBins();
+            initStaticKernelFlags_[i].Reset();
         }
     }
 

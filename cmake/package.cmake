@@ -167,7 +167,7 @@ install(TARGETS dummy_tls
 )
 
 install(TARGETS stub_nnopbase
-   LIBRARY DESTINATION ops_base/stub
+   LIBRARY DESTINATION ${ARCH}-linux/devlib/linux/${ARCH}
 )
 
 # ============= CPack =============

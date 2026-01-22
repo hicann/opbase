@@ -24,6 +24,7 @@
 #include "broadcast_base_struct.h"
 namespace Ops{
 namespace Base {
+static constexpr uint64_t BYTE_LENGTH = 8;
 template <class BrcDag, bool UseNddma, int64_t R = -1>
 class BroadcastBaseSch {
 public:
@@ -55,7 +56,7 @@ protected:
         }
 
         int j = 1;
-        for (uint64_t i = tilingData_->ubSplitAxis + 1; i < static_cast<uint64_t>(tilingData_->shapeLen); i++) {
+        for (uint64_t i = tilingData_->ubSplitAxis + 1; i < tilingData_->shapeLen; i++) {
             ubFormershape[j] = oriShape[i];
             ubFormerLength *= oriShape[i];
             ubTailLength *= oriShape[i];
@@ -165,7 +166,7 @@ protected:
      * @return void
      */
     template <int idx = 0>
-    __aicore__ inline void SetScalar(uint32_t offset)
+    __aicore__ inline void SetScalar(int offset)
     {
         if constexpr (idx < BrcDag::VarSize) {
             using VarPlaceHolder = typename BrcDag::Vars::template At<idx>;
@@ -307,12 +308,11 @@ protected:
         using output = typename Op::Args::template At<0>;
         using inputType = typename Op::template FunInArgType<0>;
         static_assert(Placeholder::IsOutHolder<output>::Value, "output args should be out holder");
-        uint64_t BYTE8_MOVE = 3;
         if constexpr (std::is_same<typename output::DType, uint1_t>::value) {
             static_assert(std::is_same<inputType, uint8_t>::value,
                 "CopyOut data type is inconsistent with out holder data type.");
-            offset = offset >> BYTE8_MOVE;
-            tileLength = tileLength >> BYTE8_MOVE;
+            offset = offset / BYTE_LENGTH;
+            tileLength = tileLength / BYTE_LENGTH;
         } else {
             static_assert(std::is_same<typename output::DType, inputType>::value,
                 "CopyOut data type is inconsistent with Op data type.");

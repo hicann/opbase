@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
  
 #include "gtest/gtest.h"
@@ -172,20 +172,20 @@ TEST_F(OpCacheUt, CreateHashTest) {
         "0003000000000000002c0600000000000000030000000000000001000000000000002c0100000000000000020000000000000003000000"
         "000000002c030000002c00000000000000002c020000000100000000000000020000000000000003000000000000002c06000000000000"
         "00030000000000000001000000000000002c0100000000000000020000000000000003000000000000002c030000002c00000000000000"
-        "002c020000002c0400000000000000cdcc4c402ccdcc4c402c333353402c333353402c2c04000000000000000100010300000000000000"
-        "cdcc8c3fcdcc0c403333534003000000000000000100000000000000020000000000000003000000000000002c06000000000000000300"
-        "00000000000001000000000000002c0100000000000000020000000000000003000000000000002c030000002c00000000000000002c02"
-        "0000000100000000000000020000000000000003000000000000002c0600000000000000030000000000000001000000000000002c0100"
-        "000000000000020000000000000003000000000000002c030000002c00000000000000002c020000000100000000000000020000000000"
-        "000003000000000000002c0600000000000000030000000000000001000000000000002c01000000000000000200000000000000030000"
-        "00000000002c030000002c00000000000000002c020000002c04000000000000002c2c2c00000000010000000000000002000000000000"
-        "00030000000000000003000000000000003342334233420300000000000000010000000000000002000000000000000300000000000000"
-        "2c0600000000000000030000000000000001000000000000002c0100000000000000020000000000000003000000000000002c03000000"
-        "2c00000000000000002c02000000cdcc4c402c333353402c333353402c2c0400000000000000000000002c2c2c2c2c2c012c0000000000"
-        "00000000000000000000000100000000000000020000000000000000000000000000000100000000000000020000000000000001000000"
-        "00000000";
+        "002c020000002c0400000000000000cdcc4c402c000000002ccdcc4c402c000000002c333353402c000000002c333353402c000000002c"
+        "2c04000000000000000100010300000000000000cdcc8c3fcdcc0c40333353400300000000000000010000000000000002000000000000"
+        "0003000000000000002c0600000000000000030000000000000001000000000000002c0100000000000000020000000000000003000000"
+        "000000002c030000002c00000000000000002c020000000100000000000000020000000000000003000000000000002c06000000000000"
+        "00030000000000000001000000000000002c0100000000000000020000000000000003000000000000002c030000002c00000000000000"
+        "002c020000000100000000000000020000000000000003000000000000002c060000000000000003000000000000000100000000000000"
+        "2c0100000000000000020000000000000003000000000000002c030000002c00000000000000002c020000002c04000000000000002c2c"
+        "2c000000000100000000000000020000000000000003000000000000000300000000000000334233423342030000000000000001000000"
+        "00000000020000000000000003000000000000002c0600000000000000030000000000000001000000000000002c010000000000000002"
+        "0000000000000003000000000000002c030000002c00000000000000002c02000000cdcc4c402c000000002c333353402c000000002c33"
+        "3353402c000000002c2c0400000000000000000000002c2c2c2c2c2c012c00000000000000000000000000000000010000000000000002"
+        "000000000000000000000000000000010000000000000002000000000000000100000000000000";
     EXPECT_STREQ(key.ToString().GetString(), hashBuf);
-    EXPECT_EQ(key.len, 993);
+    EXPECT_EQ(key.len, 1028);
     auto cache = GetOpExecCache(key);
     EXPECT_EQ(cache, nullptr);
     auto cache1 = GetOpExecCache(11);
@@ -207,13 +207,15 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -249,13 +251,15 @@ TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -316,13 +320,15 @@ TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -351,12 +357,14 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
@@ -369,13 +377,28 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     EXPECT_NE(cacheCtx, nullptr);
 
     op::internal::KernelLaunchConfig launchCfg;
+    launchCfg.binHandle = (void *)0x12341234;
     launchCfg.funcHandle = (void *)0x12345678;
+    launchCfg.tilingKey = 1234;
     launchCfg.blockDim = 32;
     launchCfg.schemMode = 1;
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 0;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
-    cacheCtx->SetRunParam(launchCfg);
+    launchCfg.isFatBin = false;
+    std::string kernelName = "abs";
+    cacheCtx->SetRunParam(launchCfg, kernelName);
+
+    EXPECT_EQ(cacheCtx->launchCfg_.binHandle, launchCfg.binHandle);
+    EXPECT_EQ(cacheCtx->launchCfg_.funcHandle, launchCfg.funcHandle);
+    EXPECT_EQ(cacheCtx->launchCfg_.tilingKey, launchCfg.tilingKey);
+    EXPECT_EQ(cacheCtx->launchCfg_.blockDim, launchCfg.blockDim);
+    EXPECT_EQ(cacheCtx->launchCfg_.schemMode, launchCfg.schemMode);
+    EXPECT_EQ(cacheCtx->launchCfg_.localMemorySize, launchCfg.localMemorySize);
+    EXPECT_EQ(cacheCtx->launchCfg_.blockDimOffset, launchCfg.blockDimOffset);
+    EXPECT_EQ(cacheCtx->launchCfg_.engineType, launchCfg.engineType);
+    EXPECT_EQ(cacheCtx->launchCfg_.isFatBin, launchCfg.isFatBin);
+    EXPECT_STREQ(cacheCtx->launchCfg_.kernelNameOfNoFatBin, kernelName.c_str());
 
     aclrtStream stream = 0;
     auto res = op::internal::LaunchArgCache::RunFromCache(stream, nullptr);
@@ -496,12 +519,14 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, true, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
@@ -532,13 +557,15 @@ TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, 0, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -1069,12 +1096,14 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
@@ -1093,7 +1122,9 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 0;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::NO_VECTOR_CORE;
-    cacheCtx->SetRunParam(launchCfg);
+    launchCfg.isFatBin = false;
+    std::string kernelName = "abs";
+    cacheCtx->SetRunParam(launchCfg, kernelName);
 
     aclrtStream stream = 0;
     auto res = op::internal::LaunchArgCache::RunFromCache(stream, GetCacheBuf());

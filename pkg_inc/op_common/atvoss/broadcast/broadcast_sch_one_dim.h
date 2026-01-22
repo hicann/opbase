@@ -50,7 +50,7 @@ class BroadcastOneDimSch {
         "TilingData ubFormer: %d, ubTail: %d, blockFormer: %d, blockTail: %d, blockNum: %d, ubSplitAxis: %d, "
         "scalarFlag: %d",
         tilingData->ubFormer, tilingData->ubTail, tilingData->blockFormer, tilingData->blockTail, 
-        tilingData->blockNum, tilingData->ubSplitAxis, tilingData->scalarFag);
+        tilingData->blockNum, tilingData->ubSplitAxis, tilingData->scalarFlag);
     pipePtr->InitBuffer(buf, tilingData->ubFormer * ElemDag::MaxDtypeBytes * ElemDag::BufferNum);
     tensorPool = buf.Get<uint8_t>();
     blockEleLen = tilingData->ubFormer;
@@ -204,7 +204,11 @@ class BroadcastOneDimSch {
               inputType scalar = globalTensor.GetValue(0);
 
               GetTensor<TPosition::VECCALC>(bufId);
-              Vec::Duplicate(inTensor, scalar, tileLength);
+              if constexpr (std::is_same_v<inputType, double>) {
+                Vec::Duplicate(inTensor.template ReinterpretCast<int64_t>(), *reinterpret_cast<const int64_t*>(&scalar), tileLength);
+              } else {
+                Vec::Duplicate(inTensor, scalar, tileLength);
+              }
               ReleaseTensor<TPosition::VECCALC>(bufId);
           }
       } else {

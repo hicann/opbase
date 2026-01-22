@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 
@@ -1371,9 +1371,7 @@ int32_t CreateStubKernelFiles()
     // static
     std::string staticPrefix = OPP_PATH + "/static_kernel/ai_core/";
     ASSERT_SUCC(CreateBinFile(staticPrefix + "static_kernel_202307261051/Flash/flash.o"));
-    ASSERT_SUCC(CreateBinFile(staticPrefix + "static_kernel_202307261051/TestStatic/TestStatic_high_performance_0.o"));
     ASSERT_SUCC(CreateBinFile(staticPrefix + "static_kernel_202307261051/Flash/flash.json"));
-    ASSERT_SUCC(CreateBinFile(staticPrefix + "static_kernel_202307261051/TestStatic/TestStatic_high_performance_0.json"));
     ASSERT_SUCC(CreateStaticStubOpInfoConfig(staticPrefix + "config/ascend910b/binary_info_config.json"));
     ASSERT_SUCC(CreateStaticStubOpInfoConfig(staticPrefix + "config/ascend910/binary_info_config.json"));
 

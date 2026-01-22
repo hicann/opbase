@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -181,6 +181,7 @@ target_link_libraries(nnopbase_utest PRIVATE
     ${ASCEND_HOME_PATH}/lib64/libexe_graph.so
     ${ASCEND_HOME_PATH}/lib64/libacl_rt.so
     ${ASCEND_HOME_PATH}/lib64/libmetadef.so
+    ${ASCEND_HOME_PATH}/lib64/liberror_manager.so
     ${ASCEND_HOME_PATH}/lib64/libopp_registry.so
     ${ASCEND_HOME_PATH}/lib64/libmmpa.so
     ${ASCEND_HOME_PATH}/lib64/libprofapi.so

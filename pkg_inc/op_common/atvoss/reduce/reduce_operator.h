@@ -105,7 +105,7 @@ __aicore__ inline uint16_t CalcFolds(int32_t base)
 template <bool IsBlockPad, const AscendC::MicroAPI::RegTrait& Trait, typename InputT, typename T, class S, class P>
 __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, P& padding)
 {
-    const uint64_t dimR = shape.value[1];
+    const uint32_t dimR = shape.value[1];
     constexpr uint16_t dtypeSize = IsB64<T>() ? sizeof(float) : sizeof(T);
     constexpr uint64_t blkElems = BLOCK_SIZE / sizeof(InputT);
     constexpr uint64_t vLElems = VL_LEN / dtypeSize;
@@ -1454,10 +1454,10 @@ public:
     {
         PromteT padValue = GetPaddingValue<PromteT>();
         if constexpr (IsB64<PromteT>()) {
-            DoPadding<AscendC::MicroAPI::RegTraitNumTwo, false, Pattern, InputT, PromteT>(
+            DoPadding<AscendC::MicroAPI::RegTraitNumTwo, true, Pattern, InputT, PromteT>(
                 (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
         } else {
-            DoPadding<AscendC::MicroAPI::RegTraitNumOne, false, Pattern, InputT, PromteT>(
+            DoPadding<AscendC::MicroAPI::RegTraitNumOne, true, Pattern, InputT, PromteT>(
                 (__ubuf__ PromteT*)dst.GetPhyAddr(), padValue, shape, padding);
         }
     }

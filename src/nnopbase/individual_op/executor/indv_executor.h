@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef INDV_EXECUTOR_H_
 #define INDV_EXECUTOR_H_
@@ -99,6 +99,7 @@ typedef struct {
     uint32_t *blockDim;
     bool *needAtomic;
     uint32_t *scheMode;
+    uint32_t *dynUbufSize;
     uint32_t *aicpuBlockDim;
     NnopbaseExecutorArgs *args;
     NnopbaseExecutorArgs ownArgs;
@@ -303,11 +304,9 @@ aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(
 aclnnStatus NnopbaseSetMc2Tiling(NnopbaseExecutor *executor, const char *const group);
 static inline void NnopbaseExecutorSetHcclServerType(NnopbaseExecutor *executor, NnopbaseHcclServerType sType)
 {
-    if (executor->mc2OpCfg.sType == NnopbaseHcclServerType::NNOPBASE_HCCL_SERVER_TYPE_MTE) {
-        executor->collecter->isMc2FusionLaunch = false;
-    }
     executor->mc2OpCfg.sType = sType;
 }
+
 
 aclnnStatus NnopbaseSetRefTensorAddr(NnopbaseExecutor *executor, const size_t index, const void *const addr,
     const std::vector<NnopbaseParamInstance> &inInstances, const std::vector<NnopbaseParamInstance> &outInstances);
@@ -337,9 +336,9 @@ inline bool NnopbaseIsExceptionDumpEnable()
     return ret;
 }
 
-inline bool NnopbaseIsEnableZeroeleOutputLaunch(const NnopbaseExecutor *executor)
+inline bool NnopbaseSkipKernelLaunch(const NnopbaseExecutor *executor)
 {
-    return !executor->isOutEmpty || executor->isZeroEleOutputLaunch;
+    return executor->isOutEmpty && !executor->isZeroEleOutputLaunch;
 }
 
 inline void RecordNnopbaseTime(NnopbaseExecutor *const executor, const size_t index)

@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "indv_bininfo.h"
 #include <mutex>
@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
-#include "runtime/rt_external.h"
+#include "runtime/runtime/kernel.h"
 #include "mmpa/mmpa_api.h"
 #include "utils/indv_base.h"
 #include "utils/thread_var_container.h"
@@ -60,6 +60,17 @@ static uint32_t NnopbaseGetBinaryMagic(const bool useCoreTypeMagic, NnopbaseBinI
     }
 }
 
+aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo)
+{
+    rtDevBinary_t binary;
+    binary.magic = NnopbaseGetBinaryMagic(useCoreTypeMagic, binInfo);
+    binary.data = binInfo->bin;
+    binary.length = binInfo->binLen;
+    NNOPBASE_ASSERT_RTOK_RETVAL(rtRegisterAllKernel(&binary, &binInfo->ccuBinHandle));
+    OP_LOGD("Finish mc2 kernel register.");
+    return OK;
+}
+
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo)
 {
     aclrtBinaryLoadOption aclrtBinaryLoadOp = aclrtBinaryLoadOption {
@@ -93,7 +104,7 @@ aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<NnopbaseMemsetBinInfo> &bi
     };
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtBinaryLoadFromData(binInfo->bin, binInfo->binLen, &aclrtBinaryLoadOpts,
         &binInfo->binHandle));
-    OP_LOGD("Finish memset kernel register");
+    OP_LOGD("Finish memset kernel register.");
     return OK;
 }
 
@@ -440,7 +451,7 @@ aclnnStatus NnopbaseInitMemsetV2Info(NnopbaseBinInfo *binInfo)
     return OK;
 }
 
-aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion,
+aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, std::string &socVersion,
     bool isMemsetV2)
 {
     std::string dirPath;

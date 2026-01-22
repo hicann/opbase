@@ -37,27 +37,56 @@ struct CheckVecBrc {
 };
 
 /*
+* Check `CopyIn` node
+*/
+template <class Target, class T>
+struct CheckCopyInTrait {
+  constexpr static bool Value = Vec::IsCopyInOp<typename T::Fun>::Value;
+};
+
+/*
+* 过滤出@ToFilterList中，直连@ConnectToList列表
+* 模板参数：
+*   1. ConnectToList:  直连目标列表
+*   2. ToFilterList:   待筛选节点列表
+*/
+template <typename ConnectToList, typename ToFilterList>
+struct FilterNodesConnectTo {
+  protected:
+    template <class Target, class T>
+    struct ConnectTo {
+      constexpr static bool Value = __aux::CheckIsInput<ConnectToList, 0, T>();
+    };
+  public:
+    using Type = typename ToFilterList::template Filter< ConnectTo >;
+};
+
+/*
 * 统计首个计算节点之前，从GM搬运数据的次数
 * 模板参数：
 *   1. FunList:   计算顺序列表
-*   2. start：    递归调用时，当前节点索引
-*   3. Acc:       存放已经统计到的搬运Bind
+*   2. RsvList:   永久存活节点
+*   3. start：    递归调用时，当前节点索引
+*   4. Acc:       存放已经统计到的搬运Bind
 */
-template <typename FunList, int start = 0, typename Acc = Elems<>>
-constexpr int GetCopyInCountBeforeFirstCalcNode() {
+template <typename FunList, typename RsvList = Elems<>,
+          int start = 0, typename Acc = Elems<>>
+__aicore__ constexpr int GetCopyInCountBeforeFirstCalcNode() {
   /**
    * 获取首个计算节点前，搬入次数。不需要对Cast做特殊处理
-   * 但需要跳过 ScalarOp 节点
+   * 但需要跳过 ScalarOp 节点; 剔除永久存活节点后计数
    */
   if constexpr (start < FunList::Size) {
     using func = typename FunList::template At<start>;
     if constexpr (func::IsScalarOp) {
-      return GetCopyInCountBeforeFirstCalcNode<FunList, start + 1, Acc>();
+      return GetCopyInCountBeforeFirstCalcNode<FunList, RsvList, start + 1, Acc>();
     } else if constexpr (Vec::IsCopyInOp<typename func::Fun>::Value) {
-      using Next = typename Acc::template Append<func>;
-      return GetCopyInCountBeforeFirstCalcNode<FunList, start + 1, Next>();
+      using Next = __aux::Condition<
+        RsvList::template IsExist<func>(),
+        Acc, typename Acc::template Append<func>>;
+      return GetCopyInCountBeforeFirstCalcNode<FunList, RsvList, start + 1, Next>();
     } else if constexpr (__aux::IsSameTemplateType<typename func::Fun, Vec::CopyOut>::Value) {
-      return GetCopyInCountBeforeFirstCalcNode<FunList, start + 1, Acc>();
+      return GetCopyInCountBeforeFirstCalcNode<FunList, RsvList, start + 1, Acc>();
     } else {
       return Acc::Size;
     }
@@ -99,17 +128,19 @@ public:
   using InHolders = typename __aux::GetInHolder<FunList>::Type;
   using OutHolders = typename __aux::GetOutHolder<FunList>::Type;
 
-  // Collect CopyInBrc & VecBrc Nodes.
-  using CopyBrcNodes = typename __aux::Condition<supportBrc,
-    typename FunList::template Filter<CheckCopyInBrc>, Elems<> >;
-  using VecBrcNodes =  typename  __aux::Condition<supportBrc,
-    typename FunList::template Filter<CheckVecBrc>, Elems<> >;
-
   // Collect InScalarHolders (Scalar tensor)
   using InScalarHolders = typename InHolders::template Filter<__aux::TypeIsInScalarHolder>::Unique;
 
   // Collect Scalar operations in @FunList
   using ScalarOpNodes = typename FunList::template Filter<__aux::TypeIsScalarBind>;
+
+  // Collect CopyInBrc & VecBrc Nodes.
+  using CopyBrcNodes = typename __aux::Condition<supportBrc,
+    typename FunList::template Filter<CheckCopyInBrc>, Elems<> 
+  >::Type::template Remove<ScalarOpNodes>;
+  using VecBrcNodes =  typename  __aux::Condition<supportBrc,
+    typename FunList::template Filter<CheckVecBrc>, Elems<>
+  >;
 
   // Input/Output GM size
   constexpr static uint32_t InputSize = InHolders::Size;
@@ -154,15 +185,25 @@ private:
     }
   }
 
+  // Collect CopyInBrc & VecBrc Nodes connecting to CopyOut Nodes.
+  using CopyBrcNodesLinkCopyOut = typename FilterNodesConnectTo<OutList, CopyBrcNodes>::Type;
+  using VecBrcNodesLinkCopyOut = typename FilterNodesConnectTo<OutList, VecBrcNodes>::Type;
+
+  // CopyInNodes without Scalar-CopyIn
+  using CopyInNodes = typename FunList::template Filter< CheckCopyInTrait >::Type::template Remove< ScalarOpNodes >;
+  // Collect CopyIn Nodes connecting to CopyOut Nodes.
+  using CopyInNodesLinkCopyOut = typename FilterNodesConnectTo<OutList, CopyInNodes>::Type;
+
 public:
   // Max alive node information for CacheBrc scenario.
   constexpr static auto MaxAliveNodeInfoForCacheBrc = GetAliveNodeInfoForCacheBrc();
 
-  // Count of CopyIn before first Vector calculation node
-  constexpr static uint32_t GMCountBeforeFirstCalcNode = GetCopyInCountBeforeFirstCalcNode<FunList>();
-
+#ifdef __ATP_UT__
+public:
+#else
 private:
-  // Get max alive node size according to the scenario.
+#endif
+  // Get max alive node (without Cache) size according to the scenario.
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetMaxAliveNodeSize() {
     if constexpr (use_nddma && cache_brc) {
@@ -176,8 +217,48 @@ private:
     }
   }
 
+  template <bool use_nddma = true, bool cache_brc = false>
+  __aicore__ constexpr static uint32_t GetNonPersistInputSize() {
+    return cache_brc ? (InputSizeWoScalar - CopyBrcSize) : InputSizeWoScalar;
+  }
+
 public:
-  // Get temp calculation node (without CopyIn/Out) size according to the scenario.
+  // Get GM count before first calc node skipping Cached CopyInBrc
+  template <bool use_nddma = true, bool cache_brc = false>
+  __aicore__ constexpr static uint32_t GetGMCountBeforeFirstCalcNode() {
+    if constexpr (cache_brc) {
+      return GetCopyInCountBeforeFirstCalcNode<FunList,
+              typename CopyBrcNodes::template Union<VecBrcNodes>>();
+    } else {
+      return GetCopyInCountBeforeFirstCalcNode<FunList>();
+    }
+  }
+
+  // Get Persist MTE2 number
+  template <bool use_nddma = true, bool cache_brc = false>
+  __aicore__ constexpr static uint32_t GetPersistMte2Num() {
+    return cache_brc ? CopyBrcSize : 0;
+  }
+
+  // Get Persist MTE3 number
+  template <bool use_nddma = true, bool cache_brc = false>
+  __aicore__ constexpr static uint32_t GetPersistMte3Num() {
+    constexpr uint32_t vecBrcLinkOutCount = VecBrcNodesLinkCopyOut::Size;
+    // Mte2 will be used when NDDMA-CopyInBrc links to CopyOut.
+    constexpr uint32_t copyBrcLinkOutCount = use_nddma ? 0 : CopyBrcNodesLinkCopyOut::Size;
+    return cache_brc ? (copyBrcLinkOutCount + vecBrcLinkOutCount) : 0;
+  }
+
+  //Get Persist Temp buffer number
+  template <bool use_nddma = true, bool cache_brc = false>
+  __aicore__ constexpr static uint32_t GetPersistTempCalcBufNum() {
+    // cached template calc nodes within CopyInBrc & VecBrc
+    constexpr uint32_t cachedTempNodeSize1 = use_nddma ? 0 : (cache_brc ? CopyBrcSize : 0);
+    constexpr uint32_t cachedTempNodeSize2 = cache_brc ? VecBrcSize : 0;
+    return cachedTempNodeSize1 + cachedTempNodeSize2 - GetPersistMte3Num<use_nddma, cache_brc>();
+  }
+
+  // Get temp calculation node (without CopyIn/Out/Cache) size according to the scenario.
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetTempCalcNodeSize() {
     if constexpr (use_nddma && cache_brc) {
@@ -191,63 +272,76 @@ public:
     }
   }
 
-  // Get the count of CopyOut node before first CopyOut node. Normally it is 1.
+  // Get the count of CopyOut node before first CopyOut node without considering Cache Nodes.
+  // Normally it is 1.
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetFirstCopyOutNodeGMCount() {
     constexpr uint32_t maxAliveNodeSize = GetMaxAliveNodeSize<use_nddma, cache_brc>();
-    return maxAliveNodeSize > GMCountBeforeFirstCalcNode ? 1 : 0;
+    return maxAliveNodeSize > GetGMCountBeforeFirstCalcNode<use_nddma, cache_brc>() ? 1 : 0;
   }
 
-  // Get the count of L1/L2 MTE3 according to the scenario.
+  // Get the count of L1/L2 MTE3 according to the scenario. (without Cache)
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetLvl12Mte3Count() {
-    // all CopyIn connects to CopyOut, so no MTE3 is needed.
-    // NOTE: Scenario [some CopyIn connects to CopyOut, some not] is not considered.
-    return FunList::Size == (InputSizeWoScalar + ScalarOpNodes::Size + OutList::Size) ? 0 : OutList::Size;
+    constexpr uint32_t allOutSize = OutList::Size;
+    constexpr uint32_t persistMte3Size = GetPersistMte3Num<use_nddma, cache_brc>();
+    constexpr uint32_t mte2AsMte3Size = CopyInNodesLinkCopyOut::Size - \
+                                        (use_nddma ? 0 : CopyBrcNodesLinkCopyOut::Size);
+    return allOutSize - persistMte3Size - mte2AsMte3Size;
   }
 
-  // Get the count of L1 temp calculation nodes.
+  // Get the count of L1 temp calculation nodes (without CopyIn/Out/Cache).
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetLvl1TmpSize() {
     constexpr uint32_t maxAliveNodeSize = GetMaxAliveNodeSize<use_nddma, cache_brc>();
     constexpr uint32_t tempCalcNodeSize = GetTempCalcNodeSize<use_nddma, cache_brc>();
+    constexpr uint32_t nonPersistInputSize = GetNonPersistInputSize<use_nddma, cache_brc>();
     return tempCalcNodeSize > 0 ? (
-            maxAliveNodeSize > InputSizeWoScalar ? maxAliveNodeSize - InputSizeWoScalar : 0
+            maxAliveNodeSize > nonPersistInputSize ? maxAliveNodeSize - nonPersistInputSize : 0
           ) : 0;
   }
 
-  // Get the count of L0 temp calculation nodes.
+  // Get the count of L0 temp calculation nodes (without CopyIn/Out/Cache).
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetLvl0TmpSize() {
     constexpr uint32_t maxAliveNodeSize = GetMaxAliveNodeSize<use_nddma, cache_brc>();
     constexpr uint32_t firstCopyOutNodeGMCount = GetFirstCopyOutNodeGMCount<use_nddma, cache_brc>();
-    return maxAliveNodeSize - (GMCountBeforeFirstCalcNode + firstCopyOutNodeGMCount);
+    return maxAliveNodeSize - \
+          (GetGMCountBeforeFirstCalcNode<use_nddma, cache_brc>() + firstCopyOutNodeGMCount);
   }
 
-  // Get the total count of L0 buffer.
+  // Get the total count of L0 buffer (with Cache).
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetBufferNumLevel0() {
-    constexpr uint32_t maxAliveNodeSize = GetMaxAliveNodeSize<use_nddma, cache_brc>();
-    constexpr uint32_t firstCopyOutNodeGMCount = GetFirstCopyOutNodeGMCount<use_nddma, cache_brc>();
-    return maxAliveNodeSize + GMCountBeforeFirstCalcNode + firstCopyOutNodeGMCount;
+    // 2 means ping-pong
+    return GetMaxAliveNodeSize<use_nddma, cache_brc>() + \
+            GetPersistTempCalcBufNum<use_nddma, cache_brc>() + \
+            GetGMCountBeforeFirstCalcNode<use_nddma, cache_brc>() + \
+            GetPersistMte2Num<use_nddma, cache_brc>() * 2 + \
+            GetFirstCopyOutNodeGMCount<use_nddma, cache_brc>() + \
+            GetPersistMte3Num<use_nddma, cache_brc>() * 2;
   }
 
-  // Get the total count of L1 buffer.
+  // Get the total count of L1 buffer (with Cache).
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetBufferNumLevel1() {
     // 2 means ping-pong
     return GetLvl1TmpSize<use_nddma, cache_brc>() + \
+            GetPersistTempCalcBufNum<use_nddma, cache_brc>() + \
             InputSizeWoScalar * 2 + \
-            GetLvl12Mte3Count<use_nddma, cache_brc>() * 2;
+            GetLvl12Mte3Count<use_nddma, cache_brc>() * 2 + \
+            GetPersistMte3Num<use_nddma, cache_brc>() * 2;
   }
 
-  // Get the total count of L2 buffer.
+  // Get the total count of L2 buffer (with Cache).
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetBufferNumLevel2() {
-    constexpr uint32_t tempCalcNodeSize = GetTempCalcNodeSize<use_nddma, cache_brc>();
-    constexpr uint32_t lvl12Mte3Count = GetLvl12Mte3Count<use_nddma, cache_brc>();
     // 2 means ping-pong
-    return tempCalcNodeSize + InputSizeWoScalar * 2 + lvl12Mte3Count * 2;
+    return GetTempCalcNodeSize<use_nddma, cache_brc>() + \
+            GetPersistTempCalcBufNum<use_nddma, cache_brc>() + \
+            InputSizeWoScalar * 2 + \
+            GetLvl12Mte3Count<use_nddma, cache_brc>() * 2 + \
+            GetPersistMte3Num<use_nddma, cache_brc>() * 2;
   }
 };
 

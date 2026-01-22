@@ -39,7 +39,7 @@ constexpr static int32_t AXES_STEP = 2; // A轴和R轴循环遍历的步长
 inline const gert::Shape& EnsureNotScalar(const gert::Shape& inShape)
 {
     if (inShape.IsScalar()) {
-        static const gert::Shape scalarShape= {1};
+        static const gert::Shape scalarShape = {1};
         return scalarShape;
     }
     return inShape;
@@ -54,23 +54,79 @@ static bool CheckAllReduce(gert::TilingContext* context, int32_t outIdx)
     return (outShape.GetShapeSize() == 1L);
 }
 
+static bool CheckIsContiguous(ReduceOpInputParam& opInput)
+{   
+    bool isContiguous{false};
+    for (size_t i = 0; i < opInput.shape.size(); i++) {
+        if (i != opInput.shape.size() - 1) {
+            isContiguous = (opInput.dimStrides[i] == opInput.dimStrides[i + 1] * opInput.shape[i + 1]);
+        } else {
+            isContiguous = (opInput.dimStrides[i] == 1UL);
+        }
+    }
+    return isContiguous;
+}
+
 ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t idx, std::vector<int64_t>& shape)
 {
     auto xInput = context->GetInputShape(idx);
     OP_CHECK_NULL_WITH_CONTEXT(context, xInput);
-    gert::Shape xInputShape = EnsureNotScalar(xInput->GetStorageShape());
+    gert::Shape xInputShape;
+    if (context->InputIsView(idx)) {
+        xInputShape = EnsureNotScalar(xInput->GetShape());
+    } else {
+        xInputShape = EnsureNotScalar(xInput->GetStorageShape());
+    }
     size_t shapeSize = xInputShape.GetDimNum();
     OP_CHECK_IF(
         (shapeSize >= static_cast<size_t>(MAX_DIM)),
-        OP_LOGE(context->GetNodeName(), "shape dim size:%zu is over max dim, cannot support.", shapeSize),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context, "shape dim size:%zu is over max dim, cannot support.", shapeSize), return ge::GRAPH_FAILED);
 
     shape.resize(shapeSize);
     for (size_t i = 0; i < shapeSize; i++) {
         shape[i] = xInputShape.GetDim(i);
         if (shape[i] < 0) {
-            OP_LOGE(context->GetNodeName(), "shape dim:%zu size:%ld cannot support dynamic.", i, shape[i]);
+            OP_LOGE(context, "shape dim:%zu size:%ld cannot support dynamic.", i, shape[i]);
             return ge::GRAPH_FAILED;
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus GetInputStride(gert::TilingContext* context, int32_t idx, std::vector<int64_t>& dimStrides)
+{
+    auto xStride = context->GetInputStride(idx);
+    size_t shapeSize = 0UL;
+    if (xStride != nullptr) {
+        shapeSize = xStride->GetDimNum();
+        OP_CHECK_IF(
+            (shapeSize >= static_cast<size_t>(MAX_DIM)),
+            OP_LOGE(context, "slice dim size:%zu is over max slice dim:%d, cannot support.", shapeSize, MAX_DIM),
+            return ge::GRAPH_FAILED);
+    }
+    if (shapeSize == 0UL || !context->InputIsView(idx)) {
+        // contiguous case, xStride == nullptr or xStride->GetDimNum() == 0
+        auto xInput = context->GetInputShape(idx);
+        OP_CHECK_NULL_WITH_CONTEXT(context, xInput);
+        gert::Shape xInputShape = EnsureNotScalar(xInput->GetStorageShape());
+        dimStrides.resize(xInputShape.GetDimNum());
+        int64_t stride = 1L;
+        for (int32_t i = xInputShape.GetDimNum() - 1; i >= 0; i--) {
+            dimStrides[i] = stride;
+            if (dimStrides[i] < 0) {
+                OP_LOGE(context, "dimStrides dim:%d size:%ld cannot support dynamic.", i, dimStrides[i]);
+                return ge::GRAPH_FAILED;
+            }
+            stride = stride * xInputShape.GetDim(i);
+        }
+    } else {
+        dimStrides.resize(shapeSize);
+        for (size_t i = 0; i < shapeSize; i++) {
+            dimStrides[i] = xStride->GetStride(i);
+            if (dimStrides[i] < 0) {
+                OP_LOGE(context, "dimStrides dim:%zu size:%ld cannot support dynamic.", i, dimStrides[i]);
+                return ge::GRAPH_FAILED;
+            }
         }
     }
     return ge::GRAPH_SUCCESS;
@@ -88,11 +144,15 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
 {
     OP_CHECK_IF(
         (GetInputDtype(context, inputIdx, opInput.inputDtype) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
+        OP_LOGE(context, "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(
         (GetInputShape(context, inputIdx, opInput.shape) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
+        OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(
+        (GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
+        OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -102,15 +162,17 @@ ge::graphStatus GetInputParam(
     ge::DataType axesDtype;
     ge::graphStatus status = GetInputDtype(context, axesIdx, axesDtype);
     OP_CHECK_IF(
-        (status == ge::GRAPH_FAILED), OP_LOGE(context->GetNodeName(), "ReduceOpTmpl get axes dtype failed"),
-        return ge::GRAPH_FAILED);
+        (status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes dtype failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         (GetInputDtype(context, inputIdx, opInput.inputDtype) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
+        OP_LOGE(context, "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         (GetInputShape(context, inputIdx, opInput.shape) == ge::GRAPH_FAILED),
-        OP_LOGE(context->GetNodeName(), "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
-    if (CheckAllReduce(context, outIdx)) {
+        OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
+        OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
+    if (CheckAllReduce(context, outIdx) && CheckIsContiguous(opInput)) {
         // all reduce 场景不读取const data
         opInput.axes.resize(opInput.shape.size());
         for (size_t i = 0; i < opInput.shape.size(); i++) {
@@ -122,11 +184,11 @@ ge::graphStatus GetInputParam(
         } else if (axesDtype == ge::DT_INT64) {
             status = GetConstInputData<int64_t>(context, axesIdx, opInput.axes);
         } else {
-            OP_LOGE(context->GetNodeName(), "only support const input dtype in [int32, int64]");
+            OP_LOGE(context, "only support const input dtype in [int32, int64]");
             status = ge::GRAPH_FAILED;
         }
         OP_CHECK_IF(
-            (status == ge::GRAPH_FAILED), OP_LOGE(context->GetNodeName(), "ReduceOpTmpl get axes const input failed"),
+            (status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes const input failed"),
             return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
@@ -167,14 +229,24 @@ bool ReduceOpTiling::IsAxisA(int32_t idx)
 void ReduceOpTiling::PrintTilingData()
 {
     OP_LOGI(
-        context_->GetNodeName(),
+        context_,
         "TilingData: factorACntPerCore:%lu, factorATotalCnt:%lu, ubFactorA:%lu, factorRCntPerCore:%lu, "
         "factorRTotalCnt:%lu, ubFactorR:%lu, groupR:%lu, outSize:%lu, basicBlock:%lu, resultBlock:%lu, "
-        "meanVar:%lf, blockDim:%u",
+        "coreNum:%u, useNddma:%u, meanVar:%lf",
         tilingData_->factorACntPerCore, tilingData_->factorATotalCnt, tilingData_->ubFactorA,
         tilingData_->factorRCntPerCore, tilingData_->factorRTotalCnt, tilingData_->ubFactorR, tilingData_->groupR,
-        tilingData_->outSize, tilingData_->basicBlock, tilingData_->resultBlock, tilingData_->meanVar,
-        context_->GetBlockDim());
+        tilingData_->outSize, tilingData_->basicBlock, tilingData_->resultBlock, context_->GetBlockDim(),
+        tilingData_->useNddma, tilingData_->meanVar);
+
+    OP_LOGI(
+        context_,
+        "TilingData: shape is:%s, stride is:%s, dstStride is:%s, sliceNum is:%s, sliceShape is:%s, sliceStride is:%s",
+        ReduceOpTmpl::VectorToString(tilingData_->shape, MAX_DIM).c_str(),
+        ReduceOpTmpl::VectorToString(tilingData_->stride, MAX_DIM).c_str(),
+        ReduceOpTmpl::VectorToString(tilingData_->dstStride, MAX_DIM).c_str(),
+        ReduceOpTmpl::VectorToString(tilingData_->sliceNum, MAX_DIM).c_str(),
+        ReduceOpTmpl::VectorToString(tilingData_->sliceShape, MAX_DIM).c_str(),
+        ReduceOpTmpl::VectorToString(tilingData_->sliceStride, MAX_DIM).c_str());
 }
 
 uint64_t ReduceOpTiling::Ratio()
@@ -191,15 +263,13 @@ ge::graphStatus ReduceOpTiling::AxesCheck(const std::vector<int64_t>& shape, con
     int64_t shapeSize = static_cast<int64_t>(shape.size());
     int64_t axesSize = static_cast<int64_t>(axes.size());
     OP_CHECK_IF(
-        (axesSize > shapeSize),
-        OP_LOGE(context_->GetNodeName(), "illegal axes size:%ld over shape size:%ld", axesSize, shapeSize),
+        (axesSize > shapeSize), OP_LOGE(context_, "illegal axes size:%ld over shape size:%ld", axesSize, shapeSize),
         return ge::GRAPH_FAILED);
 
     for (int64_t i = 0; i < axesSize; i++) {
         OP_CHECK_IF(
             (axes[i] >= shapeSize || axes[i] < 0),
-            OP_LOGE(
-                context_->GetNodeName(), "illegal axis:%ld dim:%ld out of shape range:[0, %ld)", i, axes[i], shapeSize),
+            OP_LOGE(context_, "illegal axis:%ld dim:%ld out of shape range:[0, %ld)", i, axes[i], shapeSize),
             return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
@@ -208,13 +278,13 @@ ge::graphStatus ReduceOpTiling::AxesCheck(const std::vector<int64_t>& shape, con
 ge::graphStatus ReduceOpTiling::ParamCheck(ReduceOpInputParam& opInput)
 {
     int32_t dtypeSize = ge::GetSizeByDataType(opInput.inputDtype);
-    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context_->GetNodeName(), "illegal dtype"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context_, "illegal dtype"), return ge::GRAPH_FAILED);
     OP_LOGD(
-        context_->GetNodeName(), "origin shape is:%s, axes:%s", ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
-        ReduceOpTmpl::VectorToString(opInput.axes).c_str());
+        context_, "view shape is:%s, strides:%s, axes:%s", ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
+        ReduceOpTmpl::VectorToString(opInput.dimStrides).c_str(), ReduceOpTmpl::VectorToString(opInput.axes).c_str());
     MakeWrapDim(opInput.shape, opInput.axes);
     OP_CHECK_IF(
-        (AxesCheck(opInput.shape, opInput.axes) == ge::GRAPH_FAILED), OP_LOGE(context_->GetNodeName(), "illegal axes"),
+        (AxesCheck(opInput.shape, opInput.axes) == ge::GRAPH_FAILED), OP_LOGE(context_, "illegal axes"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -223,96 +293,180 @@ ge::graphStatus ReduceOpTiling::PreProcessOptionalParam()
 {
     if (tilingData_ == nullptr) {
         tilingData_ = context_->GetTilingData<ReduceOpTilingData>();
-        OP_CHECK_IF(
-            tilingData_ == nullptr, OP_LOGE(context_->GetNodeName(), "get tilingdata ptr failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(tilingData_ == nullptr, OP_LOGE(context_, "get tilingdata ptr failed"), return ge::GRAPH_FAILED);
     }
     OP_CHECK_IF(
         (memset_s(tilingData_, sizeof(ReduceOpTilingData), 0, sizeof(ReduceOpTilingData)) != EOK),
-        OP_LOGE(context_->GetNodeName(), "memset tilingdata failed"), return ge::GRAPH_FAILED);
+        OP_LOGE(context_, "memset tilingdata failed"), return ge::GRAPH_FAILED);
+
+    if (opInput_.dimStrides.empty()) {
+        size_t shapeSize = opInput_.shape.size();
+        opInput_.dimStrides.resize(shapeSize);
+        int64_t stride = 1L;
+        for (int32_t i = shapeSize - 1; i >= 0; i--) {
+            opInput_.dimStrides[i] = stride;
+            stride = stride * opInput_.shape[i];
+        }
+    }
 
     if (compileInfo_ == nullptr) {
-        ReduceOpCompileInfo* compileInfo = new ReduceOpCompileInfo();
-        compileInfoMalloc_ = true;
-        compileInfo->vectorCoreNum = GetAivCoreNum(context_);
-        OP_CHECK_IF(compileInfo->vectorCoreNum == 0, OP_LOGE(context_, "aiv core num is 0"), return ge::GRAPH_FAILED);
-        compileInfo->ubSize = GetUbSize(context_);
-        OP_CHECK_IF(compileInfo->ubSize == 0, OP_LOGE(context_, "ub size is 0"), return ge::GRAPH_FAILED);
-        compileInfo->cacheLineSize = GetCacheLineSize(context_);
-        OP_CHECK_IF(compileInfo->cacheLineSize == 0, OP_LOGE(context_, "cacheline is 0"), return ge::GRAPH_FAILED);
-        compileInfo->ubBlockSize = GetUbBlockSize(context_);
-        OP_CHECK_IF(compileInfo->ubBlockSize == 0, OP_LOGE(context_, "ub block size is 0"), return ge::GRAPH_FAILED);
-        compileInfo->vRegSize = GetVRegSize(context_);
-        OP_CHECK_IF(compileInfo->vRegSize == 0, OP_LOGE(context_, "vreg is 0"), return ge::GRAPH_FAILED);
-        compileInfo_ = compileInfo;
+        compileInfoPtr_ = std::make_unique<ReduceOpCompileInfo>();
+        OP_CHECK_IF(
+            compileInfoPtr_ == nullptr, OP_LOGE(context_, "New compile info ptr failed"), return ge::GRAPH_FAILED);
+        compileInfo_ = compileInfoPtr_.get();
     }
+    compileInfo_->vectorCoreNum = GetAivCoreNum(context_);
+    OP_CHECK_IF(compileInfo_->vectorCoreNum == 0, OP_LOGE(context_, "aiv core num is 0"), return ge::GRAPH_FAILED);
+    compileInfo_->ubSize = GetUbSize(context_);
+    OP_CHECK_IF(compileInfo_->ubSize == 0, OP_LOGE(context_, "ub size is 0"), return ge::GRAPH_FAILED);
+    compileInfo_->cacheLineSize = GetCacheLineSize(context_);
+    OP_CHECK_IF(compileInfo_->cacheLineSize == 0, OP_LOGE(context_, "cacheline is 0"), return ge::GRAPH_FAILED);
+    compileInfo_->ubBlockSize = GetUbBlockSize(context_);
+    OP_CHECK_IF(compileInfo_->ubBlockSize == 0, OP_LOGE(context_, "ub block size is 0"), return ge::GRAPH_FAILED);
+    compileInfo_->vRegSize = GetVRegSize(context_);
+    OP_CHECK_IF(compileInfo_->vRegSize == 0, OP_LOGE(context_, "vreg is 0"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 // elimniate dim and axes where dim = 1
-void ReduceOpTiling::EliminateOne(
-    const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape, int32_t& shapeSize)
+void ReduceOpTiling::EliminateOne(uint64_t* viewShape, int64_t* viewStride, int32_t& shapeSize)
 {
     int32_t dstIdx = 1; // shape中第一个数给了1, 跳过第一个数
-    for (size_t i = 0; i < axes.size(); i++) {
+    for (size_t i = 0; i < opInput_.axes.size(); i++) {
         // 前面补了一维，所有的axes需要加1
-        axes[i] = axes[i] + 1;
+        opInput_.axes[i] = opInput_.axes[i] + 1;
     }
     int32_t eraseNum = 0;
-    for (size_t i = 0; i < oriShape.size(); i++) {
-        auto iter = std::find(axes.begin(), axes.end(), i + 1);
-        if (oriShape[i] != 1) {
-            shape[dstIdx++] = oriShape[i];
-            if (iter != axes.end()) {
+    for (size_t i = 0; i < opInput_.shape.size(); i++) {
+        auto iter = std::find(opInput_.axes.begin(), opInput_.axes.end(), i + 1);
+        bool isContiguous{false};
+        if (i != opInput_.shape.size() - 1) {
+            isContiguous = (opInput_.dimStrides[i] == opInput_.dimStrides[i + 1] * opInput_.shape[i + 1]);
+        } else {
+            isContiguous = (opInput_.dimStrides[i] == 1UL);
+        }
+        if (opInput_.shape[i] != 1L || !isContiguous) {
+            viewShape[dstIdx] = opInput_.shape[i];
+            viewStride[dstIdx] = opInput_.dimStrides[i];
+            if (iter != opInput_.axes.end()) {
                 *iter = *iter - eraseNum;
             }
+            dstIdx++;
         } else {
             eraseNum++;
-            if (iter != axes.end()) {
-                axes.erase(iter);
+            if (iter != opInput_.axes.end()) {
+                opInput_.axes.erase(iter);
             }
         }
     }
     shapeSize = dstIdx;
-    OP_LOGD(
-        context_->GetNodeName(), "after EliminateOne, shape is:%s, axes:%s",
-        ReduceOpTmpl::VectorToString(shape, shapeSize).c_str(), ReduceOpTmpl::VectorToString(axes).c_str());
+    viewStride[0] = opInput_.dimStrides[0] * opInput_.shape[0];
+    OP_LOGI(
+        context_, "after EliminateOne, viewShape is:%s, viewStride is:%s, axes:%s",
+        ReduceOpTmpl::VectorToString(viewShape, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(viewStride, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(opInput_.axes).c_str());
+}
+
+// For NonContiguous scene, pad dim one after non-contiguous axis
+void ReduceOpTiling::PadDimForNonContiguous(uint64_t* viewShape, int64_t* viewStride, int32_t& shapeSize)
+{
+    int32_t nonContiguousNum = 0;
+    // last dim non-contiguous, no need pad
+    for (int32_t i = 0; i < shapeSize - 1; i++) {
+        bool isContiguous = (viewStride[i] == viewStride[i + 1] * static_cast<int64_t>(viewShape[i + 1]));
+        if (!isContiguous) {
+            nonContiguousNum++;
+        }
+    }
+    int32_t j = nonContiguousNum + shapeSize - 1;
+    for (int32_t i = shapeSize - 1; i >= 0; i--) {
+        bool isContiguous{false};
+        if (i != shapeSize - 1) {
+            isContiguous = (viewStride[i] == viewStride[i + 1] * static_cast<int64_t>(viewShape[i + 1]));
+        } else {
+            isContiguous = (viewStride[i] == 1UL);
+        }
+        auto iter = std::find(opInput_.axes.begin(), opInput_.axes.end(), i);
+        bool isReduce = (iter != opInput_.axes.end());
+        if (!isContiguous && i != shapeSize - 1) {
+            // 非尾轴的非连续轴后加1
+            viewShape[j] = 1UL;
+            viewStride[j] = viewStride[j + 1] * static_cast<int64_t>(viewShape[j + 1]);
+            if (!isReduce) {
+                opInput_.axes.emplace_back(j);
+            }
+            j--;
+        }
+        viewShape[j] = viewShape[i];
+        viewStride[j] = viewStride[i];
+        if (isReduce) {
+            *iter = j;
+        }
+        j--;
+    }
+    std::sort(opInput_.axes.begin(), opInput_.axes.end());
+    shapeSize = nonContiguousNum + shapeSize;
+    OP_LOGI(
+        context_, "after PadDimForNonContiguous, viewShape is:%s, viewStride is:%s, axes:%s",
+        ReduceOpTmpl::VectorToString(viewShape, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(viewStride, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(opInput_.axes).c_str());
 }
 
 // merge continuous r axes and a axes
-void ReduceOpTiling::MergeAxis(std::vector<int64_t>& axes, uint64_t* shape, int32_t& shapeSize)
+void ReduceOpTiling::MergeAxis(uint64_t* viewShape, int64_t* viewStride, int32_t& shapeSize)
 {
     int32_t tmpSize = 0;
     for (int32_t i = 0; i < shapeSize;) {
-        auto iter0 = std::find(axes.begin(), axes.end(), i);
-        bool isRAxis0 = iter0 != axes.end();
-        uint64_t s = shape[i];
+        sliceNum_[tmpSize] = 1UL;
+        sliceShape_[tmpSize] = viewShape[i];
+        sliceStride_[tmpSize] = viewStride[i];
+        viewStride_[tmpSize] = viewStride[i];
+        auto iter0 = std::find(opInput_.axes.begin(), opInput_.axes.end(), i);
+        bool isRAxis0 = iter0 != opInput_.axes.end();
+        uint64_t s = viewShape[i];
         int32_t j = i + 1;
         for (; j < shapeSize; j++) {
-            auto iter1 = std::find(axes.begin(), axes.end(), j);
-            bool isRAxis1 = iter1 != axes.end();
+            int64_t curContiguousStride = (j == shapeSize - 1 ? 1L : viewStride[j + 1] * viewShape[j + 1]);
+            bool isContiguous1 = (viewStride[j] == curContiguousStride);
+            auto iter1 = std::find(opInput_.axes.begin(), opInput_.axes.end(), j);
+            bool isRAxis1 = iter1 != opInput_.axes.end();
             if (isRAxis0 != isRAxis1) {
                 break;
             }
-            s *= shape[j];
+            if (!isContiguous1) {
+                sliceNum_[tmpSize] = s; // sliceNum 更新为非连续的非尾轴大小
+            }
+            s *= viewShape[j];
+            sliceShape_[tmpSize] =
+                isContiguous1 ? sliceShape_[tmpSize] * viewShape[j] : viewShape[j]; // sliceShape 更新为非连续的尾轴大小
+            sliceStride_[tmpSize] = isContiguous1 ? curContiguousStride : sliceStride_[tmpSize];
+            viewStride_[tmpSize] = viewStride[j];
             if (isRAxis1) {
                 // 连续的R轴, 需要擦除后续R轴的索引
-                axes.erase(iter1);
+                opInput_.axes.erase(iter1);
             }
         }
         i = j;
-        shape[tmpSize++] = s;
+        viewShape[tmpSize] = s;
+        tmpSize++;
         if (isRAxis0) {
             *iter0 = tmpSize - 1;
         }
     }
     for (int32_t i = tmpSize; i < shapeSize; i++) {
-        shape[i] = 0;
+        viewShape[i] = 0;
     }
     shapeSize = tmpSize;
-    OP_LOGD(
-        context_->GetNodeName(), "after MergeAxis, shape is:%s, axes:%s",
-        ReduceOpTmpl::VectorToString(shape, shapeSize).c_str(), ReduceOpTmpl::VectorToString(axes).c_str());
+    OP_LOGI(
+        context_, "after merge axis, viewShape:%s, viewStride:%s, sliceNum:%s, sliceShape:%s, sliceStride:%s, axes:%s",
+        ReduceOpTmpl::VectorToString(viewShape, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(viewStride_, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(sliceNum_, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(sliceShape_, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(sliceStride_, shapeSize).c_str(),
+        ReduceOpTmpl::VectorToString(opInput_.axes).c_str());
 }
 
 template <class Pattern>
@@ -355,25 +509,36 @@ void ReduceOpTiling::PadDimOne(uint64_t* shape)
     }
     for (int32_t i = 0; i < Pattern::Dim; ++i) {
         shape[maxDim - 1 - i] = shape[Pattern::Dim - 1 - i];
+        viewStride_[maxDim - 1 - i] = viewStride_[Pattern::Dim - 1 - i];
+        sliceNum_[maxDim - 1 - i] = sliceNum_[Pattern::Dim - 1 - i];
+        sliceShape_[maxDim - 1 - i] = sliceShape_[Pattern::Dim - 1 - i];
+        sliceStride_[maxDim - 1 - i] = sliceStride_[Pattern::Dim - 1 - i];
     }
     for (int32_t i = 0; i < padNum; ++i) {
-        shape[i] = 1;
+        shape[i] = 1UL;
+        sliceNum_[i] = 1UL;
+        sliceShape_[i] = 1UL;
+        viewStride_[i] = viewStride_[padNum] * shape[padNum];
+        sliceStride_[i] = sliceStride_[padNum] * sliceNum_[padNum];
     }
 }
 
-void ReduceOpTiling::TransformShape(
-    const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape, int32_t& shapeSize)
+void ReduceOpTiling::TransformShape(uint64_t* shape, int64_t* viewStride, int32_t& shapeSize)
 {
     shape[0] = 1UL;
-    EliminateOne(oriShape, axes, shape, shapeSize);
-    MergeAxis(axes, shape, shapeSize);
+    EliminateOne(shape, viewStride, shapeSize);
+
+    PadDimForNonContiguous(shape, viewStride, shapeSize);
+
+    MergeAxis(shape, viewStride, shapeSize);
 }
 
 void ReduceOpTiling::DoReduceTiling(ReduceTilingKey& key)
 {
     uint64_t newShape[MAX_DIM] = {0};
+    int64_t newStride[MAX_DIM] = {0};
     int32_t newShapeSize = 0;
-    TransformShape(opInput_.shape, opInput_.axes, newShape, newShapeSize);
+    TransformShape(newShape, newStride, newShapeSize);
 
     DoTilingMatchPattern(newShape, newShapeSize);
 
@@ -395,18 +560,24 @@ void ReduceOpTiling::ComputeCacheLineBlock(const uint64_t* shape)
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
     uint64_t cacheSize = compileInfo_->cacheLineSize / dSize;
     uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
-    uint64_t cacheLineShape = 1;
-    uint64_t cacheLineStep = 1;
-    uint64_t cacheLineOuter = 1;
-    uint64_t aInCacheLine = 1;
-    uint64_t rInCacheLine = 1;
+    uint64_t cacheLineShape = 1UL;
+    uint64_t cacheLineStep = 1UL;
+    uint64_t cacheLineOuter = 1UL;
+    uint64_t aInCacheLine = 1UL;
+    uint64_t rInCacheLine = 1UL;
+
     for (int32_t i = Pattern::Dim - 1; i > -1; --i) {
         cacheLineShape *= shape[i];
         if (cacheLineShape > cacheSize) {
             cacheLineShape /= shape[i];
-            cacheLineStep = CeilDiv(cacheSize, cacheLineShape);
-            cacheLineShape *= cacheLineStep;
-            cacheLineOuter = CeilDiv(shape[i], cacheLineStep);
+            cacheLineStep = CeilDiv(cacheSize, cacheLineShape); // sliceshape
+            // 非连续与sliceShape对齐
+            cacheLineStep = cacheLineStep > sliceShape_[i] ? FloorAlign(cacheLineStep, sliceShape_[i]) : cacheLineStep;
+            if (cacheLineStep >= sliceShape_[i]) {
+                cacheLineOuter = CeilDiv(shape[i], cacheLineStep);
+            } else {
+                cacheLineOuter = sliceNum_[i] * CeilDiv(sliceShape_[i], cacheLineStep);
+            }
             cBlock_.axis = i;
             break;
         } else {
@@ -430,19 +601,14 @@ void ReduceOpTiling::ComputeCacheLineBlock(const uint64_t* shape)
             }
         }
     }
-    if (IsAxisA<Pattern>(cBlock_.axis)) {
-        aInCacheLine *= cacheLineStep;
-    } else {
-        rInCacheLine *= cacheLineStep;
-    }
 
     cBlock_.cacheLineStep = cacheLineStep;
     cBlock_.cacheLineOuter = cacheLineOuter;
     cBlock_.aSize = aInCacheLine;
     cBlock_.rSize = rInCacheLine;
     OP_LOGD(
-        context_->GetNodeName(), "cacheLine Block axis:%d, cacheLineStep:%lu, cacheLineOuter:%lu, aSize:%lu, rSize:%lu",
-        cBlock_.axis, cBlock_.cacheLineStep, cBlock_.cacheLineOuter, cBlock_.aSize, cBlock_.rSize);
+        context_, "cacheLine Block axis:%d, cacheLineStep:%lu, cacheLineOuter:%lu, aSize:%lu, rSize:%lu", cBlock_.axis,
+        cBlock_.cacheLineStep, cBlock_.cacheLineOuter, cBlock_.aSize, cBlock_.rSize);
 }
 
 template <class Pattern>
@@ -455,7 +621,6 @@ void ReduceOpTiling::InitUnit(const uint64_t* shape)
     for (int32_t i = Pattern::FirstA ? 1 : 0; i < axisInCacheLine; i += AXES_STEP) {
         unitR_.outer *= shape[i];
     }
-
     bool basicSplitA = IsAxisA<Pattern>(axisInCacheLine);
     if (basicSplitA) {
         unitA_.outer *= cBlock_.cacheLineOuter;
@@ -481,48 +646,56 @@ template <class Pattern>
 void ReduceOpTiling::ComputeUnitA(const uint64_t* shape)
 {
     int32_t axisInCacheLine = cBlock_.axis;
-    uint64_t outerA = unitA_.outer;
+    bool basicSplitA = IsAxisA<Pattern>(axisInCacheLine);
+    uint64_t outerA = (basicSplitA ? unitA_.outer / cBlock_.cacheLineOuter * shape[axisInCacheLine] : unitA_.outer);
     uint64_t innerA = unitA_.inner;
     uint64_t maxCacheA = MAX_INNER_A / opDag_.maxInputBytes;
     uint64_t maxInnerA = Pattern::ID == PATTERN_A ? basicBlock_ * Ratio() / opDag_.maxInputBytes : maxCacheA;
     uint64_t stepLen = Pattern::ID == PATTERN_A ? A_STEP_LEN : 1; // 纯A的步长为4, 减少循环次数
-    bool basicSplitA = IsAxisA<Pattern>(axisInCacheLine);
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
+    uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
+    uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
     uint64_t step = 1;
     int32_t iA;
     for (iA = basicSplitA ? axisInCacheLine : axisInCacheLine - 1; iA > -1; iA -= AXES_STEP) {
-        uint64_t axisLen = ((iA == axisInCacheLine) ? cBlock_.cacheLineOuter : shape[iA]);
+        uint64_t axisLen = shape[iA];
+        // cacheline切分轴从cacheLineStep开始找，非cacheline切分轴从1开始
+        step = (iA == axisInCacheLine ? cBlock_.cacheLineStep : 1UL);
+        uint64_t maxStep = (iA == axisInCacheLine ? cBlock_.cacheLineStep : 1UL);
         bool splitHere = false;
-        uint64_t maxStep = 0;
         double maxRate = 0.0f;
-        for (step = 2UL; step <= axisLen / stepLen; step++) { // 从2开始查找，1的切分没有意义
-            uint64_t s = step * stepLen;
-            uint64_t tmpInnerA = innerA * s;
-            uint64_t tmpOuterA = outerA / axisLen * CeilDiv(axisLen, s);
-            uint64_t aSize = tmpInnerA * cBlock_.aSize;
-            if (iA == axisInCacheLine) {
-                aSize = (cBlock_.aSize / cBlock_.cacheLineStep) * std::min(cBlock_.cacheLineStep * s, shape[iA]);
+        for (; step <= axisLen; step = step + stepLen) {
+            uint64_t s = step > sliceShape_[iA] ? FloorAlign(step, sliceShape_[iA]) : step; // 非连续与sliceShape对齐
+            if (iA == Pattern::Dim - 1 && s != sliceShape_[iA]) {
+                s = FloorAlign(s, ubBlockSize);
             }
+            uint64_t tmpInnerA = innerA * s;
+            uint64_t tmpOuterA =
+                (s >= sliceShape_[iA] ? outerA / axisLen * CeilDiv(axisLen, s) :
+                                        outerA / axisLen * sliceNum_[iA] * CeilDiv(sliceShape_[iA], s));
+            uint64_t aSize = tmpInnerA * cBlock_.aSize;
             if (aSize <= maxInnerA && aSize * cBlock_.rSize <= bBlockNum) {
                 uint64_t tempCoreNum =
                     (tmpOuterA * unitR_.outer) / CeilDiv(tmpOuterA * unitR_.outer, compileInfo_->vectorCoreNum);
                 tempCoreNum = tempCoreNum > tmpOuterA ? FloorAlign(tempCoreNum, tmpOuterA) : tempCoreNum;
                 double rate = static_cast<double>(tempCoreNum) / static_cast<double>(compileInfo_->vectorCoreNum);
-                maxStep = (rate > THRES_HOLD && rate > maxRate) ? step : maxStep;
+                maxStep = (rate > THRES_HOLD && rate > maxRate) ? s : maxStep;
                 maxRate = rate > maxRate ? rate : maxRate;
             } else {
                 splitHere = true;
                 break;
             }
         }
-        if (splitHere || maxStep != axisLen / stepLen || iA - AXES_STEP < 0) {
+        if (splitHere || maxStep != axisLen || iA - AXES_STEP < 0) {
             // A轴最大、分核最大或者无法继续迭代
-            step = maxStep == 0 ? 1 : maxStep * stepLen;
+            step = maxStep == 0 ? 1UL : maxStep;
             innerA = innerA * step;
-            outerA = outerA / axisLen * CeilDiv(axisLen, step);
+            outerA =
+                (step >= sliceShape_[iA] ? outerA / axisLen * CeilDiv(axisLen, step) :
+                                           outerA / axisLen * sliceNum_[iA] * CeilDiv(sliceShape_[iA], step));
             break;
         }
-        innerA *= axisLen;
+        innerA *= (iA == Pattern::Dim - 1 ? CeilAlign(axisLen, ubBlockSize) : axisLen);
         outerA /= axisLen;
     }
     AssembleUnit(unitA_, iA, innerA, outerA, step);
@@ -536,38 +709,56 @@ template <class Pattern>
 void ReduceOpTiling::ComputeUnitR(const uint64_t* shape)
 {
     int32_t axisInCacheLine = cBlock_.axis;
-    uint64_t outerR = unitR_.outer;
+    bool basicSplitA = IsAxisA<Pattern>(axisInCacheLine);
+    uint64_t outerR = (basicSplitA ? unitR_.outer : unitR_.outer / cBlock_.cacheLineOuter * shape[axisInCacheLine]);
     uint64_t innerR = unitR_.inner;
     uint64_t outerA = unitA_.outer;
     uint64_t innerA = unitA_.inner;
     uint64_t step = 1UL;
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
-    bool basicSplitA = IsAxisA<Pattern>(axisInCacheLine);
+    uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
+    uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
     int32_t iR;
     for (iR = basicSplitA ? axisInCacheLine - 1 : axisInCacheLine; iR > -1; iR -= AXES_STEP) {
-        uint64_t axisLen = ((iR == axisInCacheLine) ? cBlock_.cacheLineOuter : shape[iR]);
-        innerR *= axisLen;
-        if (innerA * innerR * cBlock_.aSize * cBlock_.rSize <= bBlockNum) {
+        uint64_t axisLen = shape[iR];
+        if (innerA * innerR * cBlock_.aSize * cBlock_.rSize * axisLen <= bBlockNum) {
             outerR = outerR / axisLen;
+            innerR *= (iR == Pattern::Dim - 1 ? CeilAlign(axisLen, ubBlockSize) : axisLen);
             continue;
         }
 
-        innerR /= axisLen;
         // maybe bBlockNum not full
         step = std::min(bBlockNum / (innerA * innerR * cBlock_.aSize * cBlock_.rSize), axisLen);
-        for (uint64_t s = step; s > 1UL; s--) {
-            auto tmpOuterR = outerR / axisLen * CeilDiv(axisLen, s);
+        if (step > sliceShape_[iR]) {
+            step = FloorAlign(step, sliceShape_[iR]);
+        }
+        if (iR == Pattern::Dim - 1) {
+            step = FloorAlign(step, ubBlockSize);
+        }
+        uint64_t minStep = (iR == axisInCacheLine ? cBlock_.cacheLineStep : 1UL);
+        for (uint64_t s = step; s > minStep; s--) {
+            uint64_t tmpS = (s > sliceShape_[iR] ? FloorAlign(s, sliceShape_[iR]) : s); // 非连续与sliceShape对齐
+            if (iR == Pattern::Dim - 1 && tmpS != sliceShape_[iR]) {
+                // 尾轴R场景，尽可能保证尾轴切分block对齐，减少kernel侧补pad
+                tmpS = FloorAlign(tmpS, ubBlockSize);
+            }
+            auto tmpOuterR =
+                (tmpS >= sliceShape_[iR] ? outerR / axisLen * CeilDiv(axisLen, tmpS) :
+                                           outerR / axisLen * sliceNum_[iR] * CeilDiv(sliceShape_[iR], tmpS));
+
             uint64_t tempCoreNum = (outerA * tmpOuterR) / CeilDiv(outerA * tmpOuterR, compileInfo_->vectorCoreNum);
             tempCoreNum = tempCoreNum > outerA ? FloorAlign(tempCoreNum, outerA) : tempCoreNum;
             double rate = static_cast<double>(tempCoreNum) / static_cast<double>(compileInfo_->vectorCoreNum);
             if (rate > THRES_HOLD) {
                 // 找不到合适的rate，就不刷新step
-                step = s;
+                step = tmpS;
                 break;
             }
         }
-        innerR *= step;
-        outerR = outerR / axisLen * CeilDiv(axisLen, step);
+        innerR = innerR * step;
+        outerR =
+            (step >= sliceShape_[iR] ? outerR / axisLen * CeilDiv(axisLen, step) :
+                                       outerR / axisLen * sliceNum_[iR] * CeilDiv(sliceShape_[iR], step));
         break;
     }
     AssembleUnit(unitR_, iR, innerR, outerR, step);
@@ -583,37 +774,44 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
     if (unitR_.idx != -1) {
         return;
     }
-    uint64_t axisLen = (unitA_.idx == cBlock_.axis ? cBlock_.cacheLineOuter : shape[unitA_.idx]);
     uint64_t innerA = unitA_.inner / unitA_.step; // restore original innerA
-    uint64_t outerA = unitA_.outer / CeilDiv(axisLen, unitA_.step) * axisLen;
+    uint64_t outerA = unitA_.outer / CeilDiv(shape[unitA_.idx], unitA_.step) * shape[unitA_.idx];
+    if (unitA_.step >= sliceShape_[unitA_.idx]) {
+        outerA =
+            unitA_.outer / sliceNum_[unitA_.idx] / CeilDiv(sliceShape_[unitA_.idx], unitA_.step) * shape[unitA_.idx];
+    }
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
     uint64_t maxInnerA = resultBlock_ / opDag_.maxInputBytes;
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
-    if (dSize == 0) {
-        OP_LOGE(context_->GetNodeName(), "dSize:%lu is equal to 0, not support.", dSize);
-        return;
-    }
+    uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
     uint64_t cacheSize = compileInfo_->cacheLineSize / dSize;
     uint64_t innerR = unitR_.inner;
     uint64_t step = 1;
     int32_t iA;
     for (iA = unitA_.idx; iA > -1; iA -= AXES_STEP) {
-        axisLen = (iA == cBlock_.axis ? cBlock_.cacheLineOuter : shape[iA]);
+        uint64_t axisLen = shape[iA];
         bool splitHere = false;
-        step = (iA == unitA_.idx ? unitA_.step : 1UL);
-        uint64_t maxStep = step;
-        for (uint64_t s = step + 1UL; s <= axisLen; s++) {
-            uint64_t tmpInnerA = innerA * s;
-            uint64_t tmpOuterA = outerA / axisLen * CeilDiv(axisLen, s);
-            double rate = (double)tmpOuterA / (double)(CeilAlign(tmpOuterA, compileInfo_->vectorCoreNum));
+        uint64_t s = (iA == unitA_.idx ? unitA_.step + 1UL : 1UL);
+        uint64_t maxStep = (iA == unitA_.idx ? unitA_.step : 1UL);
+        for (; s <= axisLen; s++) {
+            uint64_t tmpS = s > sliceShape_[iA] ? FloorAlign(s, sliceShape_[iA]) : s; // 非连续与sliceShape对齐
+            if (iA == Pattern::Dim - 1 && tmpS != sliceShape_[iA]) {
+                tmpS = FloorAlign(tmpS, ubBlockSize);
+            }
+            uint64_t tmpInnerA = innerA * tmpS;
+            uint64_t tmpOuterA =
+                (tmpS >= sliceShape_[iA] ? outerA / axisLen * CeilDiv(axisLen, tmpS) :
+                                           outerA / axisLen * sliceNum_[iA] * CeilDiv(sliceShape_[iA], tmpS));
+            double rate =
+                static_cast<double>(tmpOuterA) / static_cast<double>(CeilAlign(tmpOuterA, compileInfo_->vectorCoreNum));
             bool isContinue =
                 (tmpInnerA * innerR * cBlock_.aSize * cBlock_.rSize <= bBlockNum &&
                  tmpInnerA * cBlock_.aSize <= maxInnerA);
             if (isContinue) {
                 if (tmpInnerA * cBlock_.aSize <= cacheSize) {
-                    maxStep = s;
+                    maxStep = tmpS;
                 } else {
-                    maxStep = rate >= THRES_HOLD ? s : maxStep;
+                    maxStep = rate >= THRES_HOLD ? tmpS : maxStep;
                 }
                 continue;
             } else {
@@ -624,10 +822,12 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
         if (splitHere || iA - AXES_STEP < 0) {
             step = maxStep;
             innerA *= step;
-            outerA = outerA / axisLen * CeilDiv(axisLen, step);
+            outerA =
+                (step >= sliceShape_[iA] ? outerA / axisLen * CeilDiv(axisLen, step) :
+                                           outerA / axisLen * sliceNum_[iA] * CeilDiv(sliceShape_[iA], step));
             break;
         }
-        innerA *= axisLen;
+        innerA *= (iA == Pattern::Dim - 1 ? CeilAlign(axisLen, ubBlockSize) : axisLen);
         outerA /= axisLen;
     }
     AssembleUnit(unitA_, iA, innerA, outerA, step);
@@ -655,7 +855,7 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
     OP_CHECK_IF(
         compileInfo_->ubSize <= CACHE_BUF_SIZE + opInput_.reservedSize,
         OP_LOGE(
-            context_->GetNodeName(), "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_->ubSize,
+            context_, "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_->ubSize,
             CACHE_BUF_SIZE + opInput_.reservedSize),
         return ge::GRAPH_FAILED);
 
@@ -689,7 +889,7 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
         OP_CHECK_IF(
             ubAvilSize <= resultBlock_ * postBufferNum,
             OP_LOGE(
-                context_->GetNodeName(), "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_->ubSize,
+                context_, "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_->ubSize,
                 CACHE_BUF_SIZE + opInput_.reservedSize + resultBlock_ * postBufferNum),
             return ge::GRAPH_FAILED);
         uint64_t preBufSize = ubAvilSize - resultBlock_ * postBufferNum;
@@ -699,11 +899,9 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
     }
     OP_CHECK_IF(
         basicBlock_ < compileInfo_->vRegSize,
-        OP_LOGE(context_->GetNodeName(), "basic block:%lu is too small, not support.", basicBlock_),
-        return ge::GRAPH_FAILED);
+        OP_LOGE(context_, "basic block:%lu is too small, not support.", basicBlock_), return ge::GRAPH_FAILED);
     OP_LOGI(
-        context_->GetNodeName(),
-        "preInputBufferNum:%lu, preRestBufferNum:%lu, postBufferNum:%lu, basicBlock:%ld, resBlock:%ld",
+        context_, "preInputBufferNum:%lu, preRestBufferNum:%lu, postBufferNum:%lu, basicBlock:%ld, resBlock:%ld",
         preInputBufferNum, preRestBufferNum, postBufferNum, basicBlock_, resultBlock_);
 
     CalcUserBasicBlock(Pattern::ID == PATTERN_A);
@@ -748,7 +946,7 @@ ge::graphStatus ReduceOpTiling::ComputeTiling(uint64_t* shape)
     dimNum_ = Pattern::Dim;
     OP_CHECK_IF(
         (CalcBasicBlock<Pattern>(shape) == ge::GRAPH_FAILED),
-        OP_LOGE(context_->GetNodeName(), "calc basic block failed, maybe unsupport ubsize"), return ge::GRAPH_FAILED);
+        OP_LOGE(context_, "calc basic block failed, maybe unsupport ubsize"), return ge::GRAPH_FAILED);
     if (IsEmtpyTensor<Pattern>(shape)) {
         return ComputeEmptyTiling<Pattern>(shape);
     }
@@ -762,8 +960,7 @@ ge::graphStatus ReduceOpTiling::ComputeTiling(uint64_t* shape)
     ComputeProgressUnitA<Pattern>(shape);
 
     OP_LOGI(
-        context_->GetNodeName(),
-        "tiling step outerA:%lu, innerA:%lu, stepA:%lu, idxA:%d, outerR:%lu, innerR:%lu, stepR:%lu, idxR:%d",
+        context_, "tiling step outerA:%lu, innerA:%lu, stepA:%lu, idxA:%d, outerR:%lu, innerR:%lu, stepR:%lu, idxR:%d",
         unitA_.outer, unitA_.inner, unitA_.step, unitA_.idx, unitR_.outer, unitR_.inner, unitR_.step, unitR_.idx);
 
     SetTilingData<Pattern>(shape);
@@ -774,13 +971,8 @@ ge::graphStatus ReduceOpTiling::ComputeTiling(uint64_t* shape)
 template <class Pattern>
 void ReduceOpTiling::SetTilingData(const uint64_t* shape)
 {
-    uint64_t cacheStep = cBlock_.cacheLineStep;
-    int32_t axis = cBlock_.axis;
     uint64_t perCoreNum = CeilDiv(unitA_.outer * unitR_.outer, compileInfo_->vectorCoreNum);
     uint64_t blockDim = CeilDiv(unitA_.outer * unitR_.outer, perCoreNum);
-    uint64_t factorA = unitA_.idx == axis ? unitA_.step * cacheStep : unitA_.step;
-    uint64_t factorR = unitR_.idx == axis ? unitR_.step * cacheStep : unitR_.step;
-
     if (unitA_.outer < blockDim) {
         auto tmpBlockDim = CeilAlign(blockDim, unitA_.outer);
         if (tmpBlockDim <= compileInfo_->vectorCoreNum) {
@@ -790,19 +982,28 @@ void ReduceOpTiling::SetTilingData(const uint64_t* shape)
         }
     }
 
-    tilingData_->ubFactorA = factorA;
+    tilingData_->ubFactorA = unitA_.step;
     uint64_t factorACntPerCore = CeilDiv(unitA_.outer, blockDim);
     tilingData_->factorACntPerCore = factorACntPerCore;
     tilingData_->factorATotalCnt = unitA_.outer;
 
-    tilingData_->ubFactorR = factorR;
+    tilingData_->ubFactorR = unitR_.step;
     uint64_t factorRCntPerCore = CeilDiv(unitR_.outer, CeilDiv(blockDim, unitA_.outer));
     tilingData_->factorRCntPerCore = factorRCntPerCore;
     tilingData_->factorRTotalCnt = unitR_.outer;
     tilingData_->groupR = CeilDiv(unitR_.outer, factorRCntPerCore);
-    OP_CHECK_IF(
-        (memcpy_s(tilingData_->shape, sizeof(tilingData_->shape), shape, sizeof(tilingData_->shape)) != EOK),
-        OP_LOGE(context_->GetNodeName(), "memcpy shape failed"), return );
+    if (tilingData_->groupR > 1) {
+        OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
+                    return );
+    }
+    for (int32_t i = 0; i < MAX_DIM; i++) {
+        tilingData_->shape[i] = shape[i];
+        tilingData_->stride[i] = viewStride_[i];
+        tilingData_->sliceNum[i] = sliceNum_[i];
+        tilingData_->sliceShape[i] = sliceShape_[i];
+        tilingData_->sliceStride[i] = sliceStride_[i];
+    }
     tilingData_->basicBlock = basicBlock_;
     tilingData_->resultBlock = resultBlock_;
     tilingData_->coreNum = static_cast<int32_t>(compileInfo_->vectorCoreNum);
@@ -819,6 +1020,10 @@ int32_t ReduceOpTiling::IsUseNddma(const uint64_t* shape)
     int32_t axis = cBlock_.axis;
     uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);
     uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
+    if (viewStride_[Pattern::Dim - 1] != 1UL) {
+        // 尾轴非连续, 做NDDMA
+        return 1;
+    }
     if (shape[Pattern::Dim - 1] >= ubBlockSize) {
         // last dim 大于ubblock, 不做NDDMA
         return 0;
@@ -855,7 +1060,6 @@ void ReduceOpTiling::ComputeStride(const uint64_t* shape)
     uint64_t s = 1UL;
     uint64_t ds = 1UL;
     for (int32_t dim = Pattern::Dim - 1; dim > -1; dim--) {
-        tilingData_->stride[dim] = s;
         tilingData_->dstStride[dim] = ds;
         s *= shape[dim];
         if (IsAxisA<Pattern>(dim)) {
@@ -891,8 +1095,8 @@ void ReduceOpTiling::SetTilingKey()
     tilingKey_.loopARCount = static_cast<uint32_t>(aCount * CONST10 + rCount);
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * CONST10 + innerRCount);
     OP_LOGI(
-        context_->GetNodeName(), "patternID:%u, loopARCount:%u, loopInnerARCount:%u", tilingKey_.patternID,
-        tilingKey_.loopARCount, tilingKey_.loopInnerARCount);
+        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u", tilingKey_.patternID, tilingKey_.loopARCount,
+        tilingKey_.loopInnerARCount);
 }
 
 void ReduceOpTiling::GetTilingKey(ReduceTilingKey& key)
@@ -938,7 +1142,7 @@ ge::graphStatus ReduceOpTiling::DoTilingMatchPattern(uint64_t* shape, int32_t sh
         case CONST9:
             return ComputeTiling<__reducePattern::ARARARARA>(shape);
         default:
-            OP_LOGE(context_->GetNodeName(), "unsupport pattern");
+            OP_LOGE(context_, "unsupport pattern");
             return ge::GRAPH_FAILED;
     }
 }

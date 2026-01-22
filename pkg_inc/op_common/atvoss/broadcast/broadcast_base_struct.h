@@ -21,6 +21,7 @@
 namespace Ops {
 namespace Base {
 constexpr uint64_t BROADCAST_MAX_DIMS_NUM = 8;
+constexpr uint64_t BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM = 4;
 constexpr int64_t BROADCAST_BITS_NUM = 8;
 constexpr uint64_t BROADCAST_MAX_COPYIN_NUM = 8;
 constexpr uint64_t BROADCAST_MAX_COPYINBRC_NUM = 8;
@@ -37,11 +38,18 @@ struct BroadcastOneDimTilingData {
     int32_t ubSplitAxis;
     int32_t ubFormer;
     int32_t ubTail;
-    int64_t blockNum;
+    int32_t blockNum;
     int64_t blockFormer;
     int64_t blockTail;
 
     char scalarData[BROADCAST_MAX_SCALAR_BYTES];
+};
+
+struct BroadcastOneDimTilingDataAdvance {
+    int64_t dimLen;
+    int32_t tileNum;
+    int16_t blockNum;
+    int16_t scalarFlag;
 };
 
 template <class BrcDag>
@@ -70,15 +78,77 @@ struct BroadcastBaseTilingData {
     char scalarData[BROADCAST_MAX_SCALAR_BYTES];
 };
 
-#define BRC_NDDMA_SCH_MODE_KEY_DECL(schMode) ASCENDC_TPL_UINT_DECL(schMode, 8, ASCENDC_TPL_UI_LIST, 1, 2, 201)
-#define BRC_NDDMA_SCH_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 1, 2, 201)
-#define BRC_VEC_SCH_MODE_KEY_DECL(schMode) \
-    ASCENDC_TPL_UINT_DECL(schMode, 8, ASCENDC_TPL_UI_LIST, 101, 102, 103, 104, 109, 201)
-#define BRC_VEC_SCH_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 101, 102, 103, 104, 109, 201)
+template <class BrcDag>
+struct BroadcastLastTransposeTilingData {
+    int32_t scheMode;
+    int32_t shapeLen;
+    int32_t ubSplitAxis;
+    int32_t ubFormer;
+    int32_t ubTail;
+    int32_t ubFormerLastAxis;
+    int32_t ubTailLastAxis;
+    int32_t minDtypeBlockAlignSize;
+    int64_t ubOuter;
+    int64_t ubOuterLastAxis;
+    int64_t blockFormer;
+    int64_t blockTail;
+    int64_t dimProductBeforeUbInner;
+    int64_t elemNum;
+    int64_t blockNum;
+
+    int64_t outputDims[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t outputStrides[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t outputStridesWithPad[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputDims[BrcDag::InputSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputBrcDims[BrcDag::CopyBrcSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputVecBrcDims[BrcDag::VecBrcSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputStrides[BrcDag::InputSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputBrcStrides[BrcDag::CopyBrcSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputVecBrcStrides[BrcDag::VecBrcSize];
+
+    char scalarData[BROADCAST_MAX_SCALAR_BYTES];
+};
+
+template <class BrcDag>
+struct BroadcastNlastTransposeTilingData {
+    int32_t scheMode;
+    int32_t shapeLen;
+    int32_t ubSplitAxis;
+    int32_t ubFormer;
+    int32_t ubTail;
+    int64_t ubOuter;
+    int64_t blockFormer;
+    int64_t blockTail;
+    int64_t dimProductBeforeUbInner;
+    int64_t elemNum;
+    int64_t blockNum;
+    int32_t minDtypeBlockAlignSize;
+
+    int64_t outputDims[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t outputStrides[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t outputStridesWithPad[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputDims[BrcDag::InputSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputBrcDims[BrcDag::CopyBrcSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputVecBrcDims[BrcDag::VecBrcSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputStrides[BrcDag::InputSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputBrcStrides[BrcDag::CopyBrcSize][BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM];
+    int64_t inputVecBrcStrides[BrcDag::VecBrcSize];
+
+    char scalarData[BROADCAST_MAX_SCALAR_BYTES];
+};
+
+#define BRC_NDDMA_SCH_MODE_KEY_DECL(schMode) ASCENDC_TPL_UINT_DECL(schMode, 16, ASCENDC_TPL_UI_LIST, 1, 2, 201, 202, 301, 303, 304, 305, 999)
+#define BRC_NDDMA_SCH_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 1, 2, 201, 202, 301, 303, 304, 305)
+#define BRC_NDDMA_SCH_CUSTOM_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 999)
+#define BRC_VEC_SCH_CUSTOM_MODE_KEY_DECL(schMode) \
+    ASCENDC_TPL_UINT_DECL(schMode, 16, ASCENDC_TPL_UI_LIST, 101, 102, 103, 104, 109, 201, 202, 301, 302, 303, 304, 305, 999)
+#define BRC_VEC_SCH_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 101, 102, 103, 104, 109, 201, 202, 301, 302, 303, 304, 305)
+#define BRC_VEC_SCH_CUSTOM_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 999)
 #define BRC_TEMP_SCH_MODE_KEY_DECL(schMode) \
-    ASCENDC_TPL_UINT_DECL(schMode, 16, ASCENDC_TPL_UI_LIST, 1, 2, 101, 102, 103, 104, 109, 201)
+    ASCENDC_TPL_UINT_DECL(schMode, 16, ASCENDC_TPL_UI_LIST, 1, 2, 101, 102, 103, 104, 109, 201, 202, 301, 302, 303, 304, 305, 999)
 #define BRC_TEMP_SCH_MODE_KEY_SEL(schMode) \
-    ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 1, 2, 101, 102, 103, 104, 109, 201)
+    ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 1, 2, 101, 102, 103, 104, 109, 201, 202, 301, 302, 303, 304, 305)
+#define BRC_TEMP_SCH_CUSTOM_MODE_KEY_SEL(schMode) ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, 999)
 } // namespace Base
 } // namespace Ops
 #endif // BROADCAST_BASE_STRUCT_H_

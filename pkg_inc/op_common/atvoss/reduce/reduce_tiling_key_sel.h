@@ -17,8 +17,7 @@
 #define _REDUCE_TILING_KEY_SEL_H_
 
 #include "reduce_tiling_key_decl.h"
-namespace Ops {
-namespace Base {
+
 ASCENDC_TPL_SEL(
     // Empty
     ASCENDC_TPL_ARGS_SEL(REDUCE_TPL_KEY_SEL_EMPTY()),
@@ -40,6 +39,5 @@ ASCENDC_TPL_SEL(
     ASCENDC_TPL_ARGS_SEL(REDUCE_TPL_KEY_SEL_ARARARARA_NORMAL()),
     ASCENDC_TPL_ARGS_SEL(REDUCE_TPL_KEY_SEL_ARARARARA_GROUP())
 );
-} // namespace Base
-} // namespace Ops
+
 #endif

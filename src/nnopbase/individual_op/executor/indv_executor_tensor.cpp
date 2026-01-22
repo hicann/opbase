@@ -1,16 +1,17 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "indv_executor.h"
 #include "indv_tilingcontext_builder.h"
 #include "indv_args_pool.h"
+#include "op_dfx_internal.h"
 
 namespace nnopbase {
 static const std::set<ge::Format> FormatsLikeND {
@@ -350,7 +351,6 @@ void NnopbaseExecutorClearUnContiguousTensors(NnopbaseTensors *tensors)
     tensors->unContiguousTensors.refIdxs.clear();
 }
 
-
 void NnopbaseGetRealIndex(const NnopbaseParamDesc &paramDescs, size_t *realIndex)
 {
     for (size_t i = 0U; i < paramDescs.count; i++) {
@@ -535,7 +535,7 @@ aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, void *const attr
     }
     OP_LOGI("Add %s attr index %zu, attrLen %zu", nnopbase::ToStr(dtype).c_str(), index, attrLen);
     if ((op::internal::PtrCastTo<NnopbaseExecutor>(executor)->matchArgsV2) && (g_nnopbaseSysCfgParams.enableArgsCache) &&
-        !op::internal::opProfilingSwitch.recordOpArgFlag) {
+        !op::internal::GetOpProfilingRecordArgFlag()) {
         NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data()) + executor->ownArgs.keyLen;
         // 第0个属性和输入中间用占位符隔开
         if (index == 0) {

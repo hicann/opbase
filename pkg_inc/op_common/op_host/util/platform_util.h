@@ -111,6 +111,15 @@ uint32_t GetCacheLineSize([[maybe_unused]] const T *context)
 }
 
 /**
+ * Get the sector cache line size in bytes
+ */
+template <typename T>
+uint32_t GetSectorCacheLineSize([[maybe_unused]] const T* context)
+{
+    return GetCacheLineSize(context) / 2U;
+}
+
+/**
  * Get the dcache size of nddma
  */
 template <typename T>

@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <atomic>
@@ -519,18 +519,11 @@ aclnnStatus aclGetRawTensorAddr(const aclTensor *tensor, void **addr)
     return OK;
 }
 
-constexpr uint32_t CALL_RESELECT_STATIC_KERNEL_MAX_COUNT = 100;
-
 aclnnStatus aclnnReselectStaticKernel()
 {
-    static std::atomic<uint32_t> callCount = 0;
-    CHECK_COND(callCount.load() < CALL_RESELECT_STATIC_KERNEL_MAX_COUNT,
-        ACLNN_ERR_INNER,
-        "Call count has exceeded 100, this api will not work");
-    callCount++;
     OP_LOGI("start reselect static kernel.");
     op::internal::ReinitOpCacheManager();
-    op::internal::gKernelMgr.ClearStaticBins();
+    op::internal::gKernelMgr.ReloadStaticBinJson();
     NnopbaseReloadStaticBinJsonInfos();
     return OK;
 }

@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "opdev/op_executor.h"
@@ -977,8 +977,22 @@ aclTensor *aclOpExecutor::CreateView(const aclTensor *tensor, const op::Shape &s
 aclTensor *aclOpExecutor::CreateView(const aclTensor *tensor, const op::Shape &oriShape, const op::Shape &storageShape, const op::Strides &oriStride, int64_t offset)
 {
     aclTensor *viewTensor = nullptr;
+
+    op::Shape storageShapeCorrect{1};
+    int64_t storageSize = 1;
+    for (uint64_t i = 0; i < storageShape.GetDimNum(); i++) {
+        storageSize *= storageShape.GetDim(i);
+    }
+    int64_t actualShapeLen = storageSize - offset;
+    OP_CHECK((actualShapeLen >= 0 && actualShapeLen <= storageSize),
+             OP_LOGE(ACLNN_ERR_INNER, "The tensor's offset is invalid with the specified storageShape"),
+             return nullptr;);
+    // 在非连续场景下，传入tiling的storageshape会被oom用来计算合法内存大小，aclnn在下发时会将gm地址加上offset偏移，此时算子合法内存大小应为原始内存大小减offset
+    storageShapeCorrect.SetDim(0, actualShapeLen);
+    OP_LOGI("storageSize: %lu, actualShapeLen: %lu", storageSize, actualShapeLen);
+
     ADD_TRY_CATCH(
-        viewTensor = new aclTensor(*tensor, oriShape, storageShape, oriStride, offset);
+        viewTensor = new aclTensor(*tensor, oriShape, storageShapeCorrect, oriStride, offset);
         allocatedObjList_.push_back(viewTensor);
         allocatedTensorList_.push_back(viewTensor);
         return viewTensor;    
@@ -1319,9 +1333,10 @@ UniqueExecutor::UniqueExecutor(const char *funcName) : funcName_(funcName), uniq
     OP_CHECK(uniqueExecutor_ != nullptr, 
              OP_LOGE(ACLNN_ERR_INNER, "executor constructed failed."),
              throw std::bad_alloc());
-    uniqueExecutor_->SetLogInfo(GetThreadLocalContext().logInfo_);
-    uniqueExecutor_->SetOpConfigInfo(GetThreadLocalContext().opConfigInfo_);
-    if (IsDumpEnable()) {
+    auto &threadLocalCtx = op::internal::GetThreadLocalContext();
+    uniqueExecutor_->SetLogInfo(threadLocalCtx.logInfo_);
+    uniqueExecutor_->SetOpConfigInfo(threadLocalCtx.opConfigInfo_);
+    if (threadLocalCtx.opConfigInfo_.isOpDumpEnable_) {
         uniqueExecutor_->SetIOTensorList();
     }
 }
@@ -1434,6 +1449,10 @@ void InitL2Phase1Context(const char *l2Name, [[maybe_unused]] aclOpExecutor **ex
         controlCoreNum = op::GetCurrentPlatformInfo().GetVectorCoreNum());
     opTlsCtx.opConfigInfo_.aivNum_ = controlCoreNum;
     opTlsCtx.opConfigInfo_.isDeterministicOn_ = false;
+    opTlsCtx.opConfigInfo_.isOpDumpEnable_ = op::internal::IsDumpEnable();
+    OP_LOGI("aic num: %u, aiv num: %u, is deterministic on: %d, is op dump enable: %d",
+        opTlsCtx.opConfigInfo_.aicNum_, opTlsCtx.opConfigInfo_.aivNum_,
+        opTlsCtx.opConfigInfo_.isDeterministicOn_, opTlsCtx.opConfigInfo_.isOpDumpEnable_);
 }
 
 void InitL2Phase2Context([[maybe_unused]] const char *l2Name, aclOpExecutor *executor)

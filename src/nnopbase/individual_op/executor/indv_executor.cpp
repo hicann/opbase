@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "indv_executor.h"
 #include <string>
@@ -31,6 +31,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 NnopbaseSysGlobalParams g_nnopbaseSysCfgParams = {nullptr, false, 0U, true, false, "", false};
 static std::mutex g_nnopbaseRegisterMtx;
 namespace {
@@ -38,6 +39,34 @@ constexpr uint32_t NNOPBASE_MAX_TENSOR_NUM = 50U;
 constexpr int32_t NNOPBASE_MODULE_TYPE_AICORE = 4;
 constexpr int32_t NNOPBASE_MODULE_TYPE_VECTOR_CORE = 7;
 static constexpr size_t NNOPBASE_GERT_SHAPE_MAX_DIMS = 8U;
+std::vector<aclrtLaunchKernelAttr> CreateRtsLaunchCfgAttrs(uint8_t scheMode, uint32_t dynUbufSize, bool is195x)
+{
+    std::vector<aclrtLaunchKernelAttr> attrs;
+    aclrtLaunchKernelAttr schemModeAttr = {
+        .id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE,
+        .value = { .schemMode = scheMode },
+    };
+    attrs.push_back(schemModeAttr);
+    if (is195x) {
+        aclrtLaunchKernelAttr engineTypeAttr = {
+            .id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
+            .value = { .engineType = ACL_RT_ENGINE_TYPE_AIC },
+        };
+        attrs.push_back(engineTypeAttr);
+        aclrtLaunchKernelAttr blockDimOffsetAttr = {
+            .id = ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
+            .value = { .blockDimOffset = 0 },
+        };
+        attrs.push_back(blockDimOffsetAttr);
+    } else {
+        aclrtLaunchKernelAttr simtModeAttr = {
+            .id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE,
+            .value = { .localMemorySize = dynUbufSize },
+        };
+        attrs.push_back(simtModeAttr);
+    }
+    return attrs;
+}
 }
 
 void NnopbaseExecutorClearSet(NnopbaseExecutorSpaceSet *set)
@@ -49,9 +78,7 @@ void NnopbaseExecutorClearSet(NnopbaseExecutorSpaceSet *set)
     set->isVist = false;
 }
 
-aclnnStatus NnopbaseExecutorGetAttr(NnopbaseExecutor *executor,
-                                    const size_t index,
-                                    NnopbaseAttrAddr **attr)
+aclnnStatus NnopbaseExecutorGetAttr(NnopbaseExecutor *executor, const size_t index, NnopbaseAttrAddr **attr)
 {
     NnopbaseAttrs *opAttrs = &executor->attrs;
     NNOPBASE_ASSERT_TRUE_RETVAL(index < opAttrs->num);
@@ -141,7 +168,7 @@ static inline aclnnStatus NnopbaseGetSupportInfo(const NnopbaseExecutor *const e
     const auto socTypeMap = nnopbase::IndvSoc::GetInstance().GetSocTypeMap();
     const auto socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const auto &iter = socTypeMap.find(socVersion);
-    if (iter != socTypeMap.end()) {
+    if (iter != socTypeMap.cend()) {
         for (size_t i = 0U; i < executor->socSupportListLen; i++) {
             if (executor->socSupportList[i] == iter->second) {
                 CHECK_COND((i < executor->supportList->num), ACLNN_ERR_INNER_FIND_KERNEL_ERROR,
@@ -416,7 +443,7 @@ static aclnnStatus NnopbaseExecutorUpdateAddr(
 
 aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStream_t const stream)
 {
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseSkipKernelLaunch(executor)) {
         return OK;
     }
     NnopbaseHcclCommParamDesc paramDesc = {0, 0, 0, 0, 0};
@@ -496,6 +523,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         if (executor->collecter->isMc2FusionLaunch) {
             addr = (void **)args;
             executor->fusionArgs.args = args;
+            executor->argsExt.args = args;
         } else {
             addr = (void **)(reinterpret_cast<NnopbaseUChar *>(args) + sizeof(void *));
             executor->aicpuArgs.args = args;
@@ -511,7 +539,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         uint64_t ctrlAddr = 0U;
         uint32_t addrLen = 0U;
         NNOPBASE_ASSERT_RTOK_RETVAL(rtGetC2cCtrlAddr(&ctrlAddr, &addrLen));
-        addr[0] = reinterpret_cast<void*>(ctrlAddr);
+        addr[0] = reinterpret_cast<void *>(ctrlAddr);
         addr++;
         argsAddr.hcclDesc->hasFfts = 1U;
     }
@@ -554,7 +582,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         executor->argsExt.tilingAddrOffset =
             static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(addr) - reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args));
         executor->argsExt.tilingDataOffset =
-            static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) -
+            static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) - 
                 reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args));
         if (executor->mc2OpCfg.isMc2) {
             if (executor->collecter->isMc2FusionLaunch) {
@@ -587,7 +615,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
     *addr = g_nnopbaseSysCfgParams.overflowAddr;
     /* tiling data has been encode in tiling func. */
     /* host input data and data have been encoded. */
-    executor->argsExt.argsSize = static_cast<uint32_t>(argsAddr.ptr - reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args))
+    executor->argsExt.argsSize = static_cast<uint32_t>(argsAddr.ptr - reinterpret_cast<NnopbaseUChar*>(executor->argsExt.args))
         + NNOPBASE_PARAM_EXT_LEN + static_cast<uint32_t>(sizeof(aclrtPlaceHolderInfo));
     if (executor->mc2OpCfg.isMc2) {
         NnopbasePrepareMC2Params(executor, &argsAddr);
@@ -612,10 +640,17 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
     if (binInfo->bin == nullptr) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), binInfo->bin, &binInfo->binLen));
     }
-    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+
+    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadJsonFile(binInfo, executor->collecter->oppPath,
         socVersion, gBinCollecter->isMemsetV2));
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
+    if (executor->mc2OpCfg.isMc2 && executor->collecter->isMc2FusionLaunch) {
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collecter->useCoreTypeMagic, binInfo));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
+    } else {
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
+    }
+    
     if (binInfo->initValues.size() > 0U) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbasePrepareInitValues(executor));
         if (gBinCollecter->isMemsetV2) {
@@ -654,7 +689,7 @@ bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor *executor)
 
 static void NnopbaseExecutorGetWorkspaceSizes(NnopbaseExecutor *executor, uint64_t *workspaceLen)
 {
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseSkipKernelLaunch(executor)) {
         executor->workspaces.num = 0U;
         *workspaceLen = 0U;
         executor->workspaces.length = 0U;
@@ -678,7 +713,6 @@ static void NnopbaseExecutorGetWorkspaceSizes(NnopbaseExecutor *executor, uint64
     if (executor->args->outputs.outPutShapeSize != 0U) {
         *workspaceLen += executor->args->outputs.outPutShapeSize;
     }
-
     executor->workspaces.length = *workspaceLen;
     OP_LOGI("Op[%s] workspace num is %zu, workspaceLen is %lu bytes, bin path is %s.", executor->opType,
             executor->workspaces.num, executor->workspaces.length, executor->args->binInfo->binPath.c_str());
@@ -686,7 +720,7 @@ static void NnopbaseExecutorGetWorkspaceSizes(NnopbaseExecutor *executor, uint64
 
 static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
 {
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseSkipKernelLaunch(executor)) {
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kTilingStart);
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kTilingEnd);
         return OK;
@@ -724,11 +758,16 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->blockDim);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->scheMode);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->needAtomic);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->dynUbufSize);
     tilingInfo.tilingKey = *(executor->tilingKey);
     tilingInfo.blockDim = *(executor->blockDim);
     tilingInfo.scheMode = *(executor->scheMode);
     tilingInfo.needAtomic = *(executor->needAtomic);
     tilingInfo.aicpuBlockDim = *(executor->aicpuBlockDim);
+    tilingInfo.dynUbufSize = *(executor->dynUbufSize);
+    OP_LOGI("Tiling outputs of %s are [tilingKey: %llu, blockDim: %u, scheMode: %u, needAtomic: %u, aicpuBlockDim: %u, dynBufSize: %u].",
+        executor->opType, tilingInfo.tilingKey, tilingInfo.blockDim, tilingInfo.scheMode, tilingInfo.needAtomic, tilingInfo.aicpuBlockDim,
+        tilingInfo.dynUbufSize);
     return OK;
 }
 
@@ -854,7 +893,7 @@ void NnopbaseExecutorCopyCacheAttr(NnopbaseExecutor *executor)
     if (op::internal::opProfilingSwitch.level2ProfilingFlag) {
         size_t offset = 0;
         for (size_t i = 0; i < executor->attrs.num; i++) {
-            executor->attrs.attrs[i].addr.addr = reinterpret_cast<void*>(executor->args->attrsData.data() + offset);
+            executor->attrs.attrs[i].addr.addr = reinterpret_cast<void *>(executor->args->attrsData.data() + offset);
             offset += executor->attrs.attrs[i].addr.size;
         }
     }
@@ -887,7 +926,6 @@ static bool NnopbaseExecutorCachedArgs(NnopbaseExecutor *executor)
             executor->hasMemset =
                 executor->args->binInfo->isStaticShape ? true : executor->args->tilingInfo.needAtomic;
         }
-
         NnopbaseExecutorCopyCacheAttr(executor);
         return true;
     }
@@ -901,7 +939,7 @@ aclnnStatus NnopbaseExecutorMatchCache(NnopbaseExecutor *executor)
         (executor->ownArgs.outputs.paramDescs.emptyNum == executor->ownArgs.outputs.paramDescs.count)) {
         executor->isOutEmpty = true;
     }
-    if(!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if(NnopbaseSkipKernelLaunch(executor)) {
         executor->hasTiling = false;
     }
 
@@ -912,7 +950,7 @@ aclnnStatus NnopbaseExecutorMatchCache(NnopbaseExecutor *executor)
     }
 
     // 开启dump不使能缓存匹配
-    if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::opProfilingSwitch.recordOpArgFlag) {
+    if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         executor->ownArgs.enableCache = false;
     } else if (NnopbaseExecutorCachedArgs(executor)) {
         return OK;
@@ -949,7 +987,7 @@ aclnnStatus NnopbaseExecutorRunForWorkspace(NnopbaseExecutor *executor, uint64_t
 
 static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
 {
-    if ((op::internal::opProfilingSwitch.recordOpArgFlag) && (!executor->mc2OpCfg.isMc2)) {
+    if ((op::internal::GetOpProfilingRecordArgFlag()) && (!executor->mc2OpCfg.isMc2)) {
         int8_t binType = 1; // 1表示dynamic
         if (executor->args->binInfo->isStaticShape) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseTilingContextBuild(executor));
@@ -970,28 +1008,11 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
                                                 const uint32_t blockDim, const bool is195x = false)
 {
     aclrtFuncHandle funcHandle;
-    std::vector<aclrtLaunchKernelAttr> attrs;
     uint8_t scheMode = static_cast<uint8_t>(executor->args->tilingInfo.scheMode);
-    aclrtLaunchKernelAttr schemModeAttr = {
-        .id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE,
-        .value = { .schemMode = scheMode },
-    };
-    attrs.push_back(schemModeAttr);
-    if (is195x) {
-        aclrtLaunchKernelAttr engineTypeAttr = {
-            .id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
-            .value = { .engineType = ACL_RT_ENGINE_TYPE_AIC },
-        };
-        attrs.push_back(engineTypeAttr);
-        aclrtLaunchKernelAttr blockDimOffsetAttr = {
-            .id = ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
-            .value = { .blockDimOffset = 0 },
-        };
-        attrs.push_back(blockDimOffsetAttr);
-    }
-
+    uint32_t dynUbufSize = executor->args->tilingInfo.dynUbufSize;
+    auto attrs = CreateRtsLaunchCfgAttrs(scheMode, dynUbufSize, is195x);
     if (executor->args->binInfo->isStaticShape) {
-        OP_LOGI("Launch static kernel %s task, blockDim is %u, scheMode is %u", executor->opType, blockDim, scheMode);
+        OP_LOGI("Launch static kernel %s task, blockDim is %u, scheMode is %u.", executor->opType, blockDim, scheMode);
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandle,
             executor->args->binInfo->kernelName.c_str(), &funcHandle));
     } else {
@@ -1160,7 +1181,7 @@ static inline void NnopbaseExecutorSetWorkspaces(NnopbaseExecutor *executor, voi
 aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, rtStream_t stream)
 {
     OP_LOGI("Launch kernel.");
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseSkipKernelLaunch(executor)) {
         return OK;
     }
     CoreType coreType = executor->args->binInfo->coreType;

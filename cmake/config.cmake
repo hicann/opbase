@@ -39,16 +39,15 @@ if(NOT "${COMPILE_OP_MODE}" STREQUAL "-O0")
 endif()
 
 add_compile_options(
-    -Wall -Wundef -Wcast-qual -Wpointer-arith -Wdate-time -fno-strict-aliasing
+    -Wall -Wcast-qual -Wpointer-arith -Wdate-time -fno-strict-aliasing
     -fno-common -fno-builtin -fno-omit-frame-pointer -fsigned-char -Wfloat-equal -Wformat=2 -Wshadow
     -Wsign-compare -Wunused-macros -Wvla -Wdisabled-optimization -Wempty-body -Wignored-qualifiers
     -Wtype-limits -Wshift-negative-value -Wswitch-default
-    -Wframe-larger-than=8192 -Woverloaded-virtual -fno-sized-deallocation
+    -Woverloaded-virtual -fno-sized-deallocation
     -Wnon-virtual-dtor
     -Wwrite-strings -Wmissing-format-attribute -Wformat-nonliteral
     -Wdelete-non-virtual-dtor
-    -Wmissing-declarations -Wextra
-    -Wredundant-decls -Wfloat-conversion
+    -Wextra
     -Wno-write-strings -Wall -Wno-dangling-else -Wno-comment -Wno-conversion-null -Wno-return-type
     -Wno-unknown-pragmas -Wno-sign-compare
     -Wno-unused-const-variable

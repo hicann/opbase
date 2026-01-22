@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <set>
@@ -83,7 +83,7 @@ aclnnStatus JsonLoadManger::LoadBinaryFromJson(const std::string &opsPath, aclrt
   } else {
     filePath = opsPath;
   }
-  OP_LOGI("Get ops json or so path [%s] successfully.", filePath.c_str());
+  OP_LOGI("Ops json or so path [%s] loaded successfully.", filePath.c_str());
   auto loadBinOption = std::make_unique<aclrtBinaryLoadOption>();
   AICPU_ASSERT_NOTNULL_RETVAL(loadBinOption);
   loadBinOption->type = ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE;
@@ -275,7 +275,7 @@ void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const Op
   if (lastUnderscore != std::string::npos) {
     const std::string suffix = opsRegisterName.substr(lastUnderscore + 1);
     if (kCustomerWhiteList.count(suffix) == 0U) {
-      OP_LOGI("suffix[%s] is not in customer white list, skip to insert customer ops info. opsRegisterName is %s",
+      OP_LOGI("suffix[%s] is not in customer white list, skip to insert customer ops info. ops register name is %s",
               suffix.c_str(), opsRegisterName.c_str());
       return;
     }
@@ -283,7 +283,7 @@ void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const Op
     OP_LOGW("Failed to extract the sub-repository so suffix, unable to construct the custom so path.");
     return;
   }
-
+  // const std::lock_guard<std::mutex> lock(custMutex_);
   for (const auto &opDesc : infoDesc.opInfos) {
     if (opDesc.opType.empty()) {
       continue;
@@ -307,10 +307,6 @@ void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const Op
 }
 
 bool JsonLoadManger::FindAndGetInCustomRegistry(const std::string &opType, std::string &kernelSo, std::string &functionName) {
-  if (!IsSupportedNewLaunch()) {
-    OP_LOGI("Custom processes are not supported on this device.");
-    return false;
-  }
   auto iter = customOpsInfos_.find(opType);
   if (iter == customOpsInfos_.end()) {
     OP_LOGI("The operator %s not found in custom registry.", opType.c_str());
@@ -318,6 +314,8 @@ bool JsonLoadManger::FindAndGetInCustomRegistry(const std::string &opType, std::
   }
   kernelSo = iter->second.kernelSo;
   functionName = iter->second.functionName;
+  OP_LOGI("Found custom operator %s from the custom operator information library %s with function name %s.", 
+          opType.c_str(), kernelSo.c_str(), functionName.c_str());
   return true;
 }
 

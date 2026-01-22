@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "tiling_context_to_json.h"
@@ -111,6 +111,7 @@ const std::map<std::string, std::function<nlohmann::json(
     {"bool", BoolAttrsToJson},
     {"int", IntAttrsToJson},
     {"int32", IntAttrsToJson},
+    {"int64", IntAttrsToJson},
     {"float", FloatAttrsToJson},
     {"float32", FloatAttrsToJson},
     {"list_int", ListIntAttrsToJson},
@@ -226,7 +227,6 @@ nlohmann::json TransInputInstanceToJson(const gert::TilingContext *ctx, size_t &
     const auto inputInstanceInfo = computeNodeInfo->GetInputInstanceInfo(irLoc);
     OP_LOGD("ctx:%p, instanceLoc:%zu, irLoc:%zu, irName:%s, irType:%s, computeNodeInfo:%p, inputInstanceInfo:%p",
         ctx, instanceLoc, irLoc, irName.c_str(), irType.c_str(), computeNodeInfo, inputInstanceInfo);
-
     if (inputInstanceInfo != nullptr) {
         OP_LOGD("instanceNum:%zu, inputTdInfo:%p, inputShape:%p",
             inputInstanceInfo->GetInstanceNum(), computeNodeInfo->GetInputTdInfo(instanceLoc),
@@ -328,7 +328,7 @@ int32_t ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann:
     for (size_t irLoc = 0UL; irLoc < inputIr.size(); irLoc++) {
         nlohmann::json tmpJ = TransInputInstanceToJson(
             ctx, inputInstanceLoc, irLoc, inputIr[irLoc].first, inputIr[irLoc].second);
-        if (!tmpJ.is_null() && opImplFunc->IsInputDataDependency(irLoc) && inputInstanceLoc > 1) {
+        if (!tmpJ.is_null() && opImplFunc->IsInputDataDependency(irLoc) && inputInstanceLoc >= 1) {
             tmpJ["value_depend"] = true;
             const auto *inputTensor = ctx->GetInputTensor(inputInstanceLoc - 1);
             const auto funcIter = BIN_TO_JSON.find(inputTensor->GetDataType());

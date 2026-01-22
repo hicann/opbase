@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <gtest/gtest.h>
 #include "mockcpp/mockcpp.hpp"
@@ -101,7 +101,7 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310P)
         workspace = (void *) malloc(workspaceLen);
     }
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
- 	MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND310P)));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND310P)));
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
     if (workspaceLen > 0U) {
@@ -497,7 +497,7 @@ void RunCommonOp(std::string opName, CoreType coreType, std::string socVersion, 
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     auto oriCoreType = ((NnopbaseExecutor *)executor)->args->binInfo->coreType;
     auto oriTilingKey = ((NnopbaseExecutor *)executor)->args->tilingInfo.tilingKey;
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion)); //OPS_SUBPATH_ASCEND310P;
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion)); //nnopbase::nnopbase::nnopbase::OPS_SUBPATH_ASCEND310P;
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = coreType;// kMixAiv;
     ((NnopbaseExecutor *)executor)->args->tilingInfo.tilingKey = tilingKey; // tilingKey
     if (flag) {
@@ -934,7 +934,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccess02)
     }
 
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
- 	MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910B)));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910B)));
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
     NnopbaseExecutorGcSpace(executorSpace);
@@ -2569,8 +2569,7 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void *)> setHccl
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion));
-    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND910_95 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96) &&
-        ((NnopbaseExecutor *)executor)->mc2OpCfg.sType != NNOPBASE_HCCL_SERVER_TYPE_MTE) {
+    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND910_95 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
         ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
     } else {
         ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = false;
@@ -2643,14 +2642,6 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypDefault)
     }, nnopbase::OPS_SUBPATH_ASCEND910_95);
 }
 
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeMTE)
-{
-    MOCKER(rtFusionLaunch).expects(atLeast(0)).will(returnValue(0));
-    TestHcclServerType([](void *executor){
-        NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_MTE);
-    }, nnopbase::OPS_SUBPATH_ASCEND910_95);
-}
-
 TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeCCU)
 {
     MOCKER(rtFusionLaunch).expects(atLeast(1)).will(returnValue(0));
@@ -2681,7 +2672,7 @@ TEST_F(NnopbaseExtUnitTest, TestCustomOpWithMemSetV2)
     ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
 
     std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
- 	MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910_95)));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910_95)));
     gBinCollecter->isMemsetV2 = true;
 
     NnopbaseExecutor *executor = (NnopbaseExecutor *)NnopbaseGetExecutor(executorSpace, opType, inputDesc,
@@ -3233,9 +3224,6 @@ HcclResult HcomGetCommHandleByGroupNorma(const char *group, HcclComm *commHandle
     *commHandle = (HcclComm *)(&x);
     return HCCL_SUCCESS;
 }
-
-std::shared_ptr<Adx::MmpaStub> Adx::MmpaStub::instance_;
-Adx::MmpaStub *Adx::MmpaStub::fake_instance_;
 
 class MmpaExceptionStub : public Adx::MmpaStub {
 public:

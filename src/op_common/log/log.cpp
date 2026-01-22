@@ -61,11 +61,6 @@ static std::string ToString(const std::vector<T>& v)
     return oss.str();
 }
 
-std::string ToString(const gert::Shape& shape)
-{
-    return ToString(ToVector(shape));
-}
-
 std::string ToString(const std::vector<const gert::Shape*>& v)
 {
     std::ostringstream oss;
@@ -78,6 +73,11 @@ std::string ToString(const std::vector<const gert::Shape*>& v)
     }
     oss << "]";
     return oss.str();
+}
+
+std::string ToString(const gert::Shape& shape)
+{
+    return ToString(ToVector(shape));
 }
 
 #ifdef BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG

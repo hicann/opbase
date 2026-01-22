@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef OP_API_COMMON_INC_OPDEV_INTERNAL_RTS_LAUNCHER_H
@@ -16,14 +16,18 @@
 
 #include "securec.h"
 #include "acl/acl_rt.h"
+
 #include "aclnn/acl_meta.h"
 #include "kernel_utils.h"
 #include "opdev/op_errno.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_cache.h"
 #include "kernel_arg.h"
+#include "op_ctx_def.h"
 
 namespace op::internal {
+
+constexpr size_t KERNEL_NAME_MAX_SIZE = 160;
 
 enum class LaunchKernelEngineType : uint8_t {
     NO_VECTOR_CORE = 0,
@@ -32,8 +36,12 @@ enum class LaunchKernelEngineType : uint8_t {
 };
 
 struct KernelLaunchConfig {
+    aclrtBinHandle binHandle;
     aclrtFuncHandle funcHandle;
+    uint64_t tilingKey;
+    const char *kernelNameOfNoFatBin;
     uint32_t blockDim;
+    bool isFatBin;
     uint8_t schemMode;
     uint32_t localMemorySize;
     uint32_t blockDimOffset;
@@ -50,6 +58,8 @@ using rtArgs_t = struct tagRtArgs {
     uint32_t placeHolderInfoNum{0};    // placeHolderInfo num
     uint8_t hasTiling{0};              // if has tiling: 0 means no tiling
 };
+
+bool IsNeedOverflowStatusAddr();
 
 class RtsApiFlag {
 public:
@@ -161,17 +171,36 @@ public:
         return rtsType_;
     }
 
-    void SetRunParam(KernelLaunchConfig &launchCfg)
+    bool SetRunParam(KernelLaunchConfig &launchCfg, std::string &kernelName)
     {
         launchCfg_ = launchCfg;
-        OP_LOGD("Save launch config to cache, engine type: %d, blockDim: %u, scheduleMode: %u, blockDimOffset: %u, "
-                "localMemorySize: %u, funcHandle: %p",
+        OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, blockDim: %u, "
+                "scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, funcHandle: %p, binHandle: %p",
             static_cast<int>(launchCfg_.engineType),
+            launchCfg_.isFatBin,
+            launchCfg_.tilingKey,
             launchCfg_.blockDim,
             launchCfg_.schemMode,
             launchCfg_.blockDimOffset,
             launchCfg_.localMemorySize,
-            launchCfg_.funcHandle);
+            launchCfg_.funcHandle,
+            launchCfg_.binHandle);
+        if (!launchCfg_.isFatBin) {
+            OP_CHECK(
+                kernelName.length() < KERNEL_NAME_MAX_SIZE,
+                OP_LOGW("kernel name is bigger than %zu", KERNEL_NAME_MAX_SIZE), return false);
+            auto rc =
+                strncpy_s(kernelNameOfNoFatBin_, KERNEL_NAME_MAX_SIZE - 1, kernelName.c_str(), kernelName.length());
+            OP_CHECK(rc == EOK, OP_LOGW("Copy kernel name to cache failed"), return false);
+            OP_LOGD("Kernel name of no fat bin is: %s", kernelNameOfNoFatBin_);
+        }
+        launchCfg_.kernelNameOfNoFatBin = kernelNameOfNoFatBin_;
+        return true;
+    }
+
+    const char *GetKernelNameOfNoFatBin() const
+    {
+        return kernelNameOfNoFatBin_;
     }
 
     void *GetRawRtsArg()
@@ -204,7 +233,7 @@ public:
         return tilingKey_;
     }
 
-    const KernelLaunchConfig &GetKernelLaunchConfig() const
+    KernelLaunchConfig &GetKernelLaunchConfig()
     {
         return launchCfg_;
     }
@@ -248,11 +277,13 @@ public:
         return hostArgNum_;
     }
 
-    static aclnnStatus LaunchKernelFromCache(aclrtStream stream, rtArgs_t &rtArg, const KernelLaunchConfig &launchCfg);
+    static aclnnStatus UpdateFunctionHandle(KernelLaunchConfig &launchCfg);
+    static aclnnStatus LaunchKernelFromCache(aclrtStream stream, rtArgs_t& rtArg, KernelLaunchConfig& launchCfg);
     static aclnnStatus RunFromCache(aclrtStream stream, void *cache);
 
 private:
-    char opType_[16];
+    char opType_[16] = {0};
+    char kernelNameOfNoFatBin_[KERNEL_NAME_MAX_SIZE] = {0};
     void *handle_{nullptr};
     KernelLaunchConfig launchCfg_;
 
@@ -276,10 +307,12 @@ private:
 // ffts_addr, input_addrs, output_addrs, outshape_addrs, workspace_addrs, tiling_addr, overflow_addr, host_data...
 class RtsArg {
 public:
-    explicit RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, size_t hostDataCap);
+    explicit RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, size_t hostDataCap, ExtendedTilingBuffer *buffer);
+    ~RtsArg();
     aclnnStatus FillArgs(bool assertFlag = false);
     LaunchArgCache *DumpToCache();
 
+    void ReportExceptionDumpInfo() const;
     aclnnStatus LaunchKernel(aclrtStream stream, const KernelLaunchConfig &launchCfg);
 
     const rtArgs_t &GetRtsArg() const
@@ -298,7 +331,6 @@ private:
     aclnnStatus AppendFftsAddr();
     aclnnStatus FinalizeArg();
     void AppendExceptionDumpAddr(bool assertFlag = false);
-    void ReportExceptionDumpInfo() const;
     void AppendArg(void *arg)
     {
         *hostAddr_ = arg;
@@ -310,8 +342,9 @@ private:
     aclnnStatus AppendDevicePtrArg(const aclTensorList *tensors, size_t dataSize);
     void AppendOverflowStatusAddr()
     {
-        static void *overflowAddr = nullptr;
-        if (overflowAddr == nullptr) {
+        void *overflowAddr = nullptr;
+        static bool needOverflowAddr = IsNeedOverflowStatusAddr();
+        if (needOverflowAddr) {
             aclError rc = aclrtCtxGetFloatOverflowAddr(&overflowAddr);
             OP_CHECK(rc == ACL_RT_NO_ERROR,
                     OP_LOGW("aclrtCtxGetFloatOverflowAddr failed. %d", rc),
@@ -319,6 +352,11 @@ private:
         }
         *hostAddr_ = overflowAddr;
         hostAddr_++;
+    }
+
+    ExtendedTilingBuffer *GetExtendedTilingBuffer()
+    {
+        return buffer_;
     }
 
     void AddExceptionDumpDataToCache(
@@ -331,13 +369,13 @@ private:
     size_t argNum_;
 
     void **hostAddr_{nullptr};
-    void *hostValue_{nullptr};
     std::vector<int32_t> tensorOffset_;
 
     const void *tilingData_{nullptr};
-    void *hostValueEnd_{nullptr};
     void *exceptionDumpAddr_{nullptr};
     uint32_t exceptionDumpIndex_{0};
+
+    ExtendedTilingBuffer *buffer_{nullptr};
 
     static constexpr size_t MAX_HOST_INFO_NUM = 16;
     static constexpr size_t PTR_SIZE = 8;

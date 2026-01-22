@@ -35,6 +35,7 @@ target_link_options(intf_pub INTERFACE
   -Wl,-z,now
   -Wl,-z,noexecstack
   $<$<CONFIG:Release>:-Wl,--build-id=none>
+  $<$<CONFIG:Release>:-s>
   $<$<BOOL:${ENABLE_PKG_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
   $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
 )
@@ -67,6 +68,7 @@ target_link_options(intf_pub_cxx14 INTERFACE
   -Wl,-z,now
   -Wl,-z,noexecstack
   $<$<CONFIG:Release>:-Wl,--build-id=none>
+  $<$<CONFIG:Release>:-s>
   $<$<BOOL:${ENABLE_PKG_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
   $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
 )
@@ -98,6 +100,7 @@ target_link_options(intf_pub_cxx17 INTERFACE
     -Wl,-z,now
     -Wl,-z,noexecstack
     $<$<CONFIG:Release>:-Wl,--build-id=none>
+    $<$<CONFIG:Release>:-s>
     $<$<BOOL:${ENABLE_PKG_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
     $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
 )
@@ -128,6 +131,7 @@ target_link_options(intf_pub_aicpu INTERFACE
   -Wl,-z,now
   -Wl,-z,noexecstack
   $<$<CONFIG:Release>:-Wl,--build-id=none>
+  $<$<CONFIG:Release>:-s>
   $<$<BOOL:${ENABLE_PKG_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
   $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
 )

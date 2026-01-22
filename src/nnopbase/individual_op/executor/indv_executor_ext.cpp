@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "indv_executor.h"
 #include "indv_tilingcontext_builder.h"
@@ -269,6 +269,7 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInf
     executor->blockDim = nullptr;
     executor->needAtomic = nullptr;
     executor->scheMode = nullptr;
+    executor->dynUbufSize = nullptr;
     executor->collecter = nullptr;
     executor->workspaces.num = 0U;
     executor->workspaces.length = 0U;
@@ -434,14 +435,14 @@ aclnnStatus NnopbasePrepareInitValues(NnopbaseExecutor *executor)
             executor->args->binInfo->tensorNeedMemSetV2 += 1;
 
             if (nnopbase::IndvSoc::GetInstance().NeedAlignInitValues()) {
+                executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
+            } else {
                 executor->args->binInfo->initValues[i].tensorDataSize =
                     NNOPBASE_BLOCK_SIZE + op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE);
                 OP_LOGI("Size is %zu bytes, dypeSize is %d bytes, alignSize is %zu bytes.",
                     tensor->GetSize(),
                     ge::GetSizeByDataType(tensor->GetDataType()),
                     op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE));
-            } else {
-                executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
             }
             OP_LOGI("TensorDataSize is %zu bytes.", executor->args->binInfo->initValues[i].tensorDataSize);
         }

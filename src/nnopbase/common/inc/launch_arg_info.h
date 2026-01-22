@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef LAUNCH_ARG_INFO_H_
@@ -94,14 +94,15 @@ constexpr wchar_t COMMA = ',';
 constexpr size_t PTR_OFFSET_SIZE = 8;    // ptr_offset(8B)
 constexpr size_t PRT_DIM_SIZE = 8;           // dim(4B) + cnt(4B)
 constexpr size_t UINT64_BYTES = sizeof(uint64_t);
+constexpr size_t ARG_VECTOR_CAP_SIZE = 32;
 
 class LaunchArgInfo {
 public:
     LaunchArgInfo(void *tilingData, size_t tilingDataLen, bool genPlaceholder, bool hasDevPtrArg, OpArgContext *args)
         : allArg_(addrInfo), tilingData_(tilingData), tilingDataLen_(tilingDataLen), genPlaceholder_(genPlaceholder),
-          hasDevPtrArg_(hasDevPtrArg)
+          argSize_(0), hasDevPtrArg_(hasDevPtrArg)
     {
-        allArg_.clear();
+        allArg_.reserve(ARG_VECTOR_CAP_SIZE);
         if (args->ContainsOpArgType(OpArgDef::OP_INPUT_ARG)) {
             args->GetOpArg(OpArgDef::OP_INPUT_ARG)->VisitByNoReturn(
                 [this]([[maybe_unused]] size_t idx, OpArg &elem) {
@@ -224,6 +225,11 @@ public:
         return allArg_;
     }
 
+    const size_t GetArgSize() const
+    {
+        return argSize_;
+    }
+
     size_t GetFirstWorkspaceIdx() const
     {
         return firstWorkspaceIdx_;
@@ -231,6 +237,7 @@ public:
 
 private:
     std::vector<ArgAddr> &allArg_;
+    size_t argSize_;
     void *tilingData_{nullptr};
     size_t tilingDataLen_{0};
     size_t devArgNum_{0};
@@ -258,13 +265,58 @@ private:
         return dfxInfoDumpSize;
     }
 
+    void AddDeviceArg(const aclTensor *tensor, void *devAddr, bool isOutShapeTensor = false)
+    {
+        if (argSize_ >= allArg_.size()) {
+            allArg_.emplace_back(tensor, devAddr, isOutShapeTensor);
+        } else {
+            ArgAddr &argAddr = allArg_.at(argSize_);
+            argAddr.devAddr_.tensor = tensor;
+            argAddr.devAddr_.devAddr = devAddr;
+            argAddr.tag_ = ArgAddr::ArgTag::DEVICE_ARG;
+            argAddr.hostTensor_ = nullptr;
+            argAddr.isOutShapeTensor_ = isOutShapeTensor;
+        }
+        argSize_++;
+    }
+
+    void AddHostArg(void *hostAddr, size_t hostDataLen, const aclTensor *tensor=nullptr)
+    {
+        if (argSize_ >= allArg_.size()) {
+            allArg_.emplace_back(hostAddr, hostDataLen, tensor);
+        } else {
+            ArgAddr &argAddr = allArg_.at(argSize_);
+            argAddr.hostAddr_.hostAddr = hostAddr;
+            argAddr.hostAddr_.hostDataLen = hostDataLen;
+            argAddr.tag_ = ArgAddr::ArgTag::HOST_ARG;
+            argAddr.hostTensor_ = tensor;
+            argAddr.isOutShapeTensor_ = false;
+        }
+        argSize_++;
+    }
+
+    void AddDevicePtrArg(const aclTensorList *tensors, size_t ptrListLen)
+    {
+        if (argSize_ >= allArg_.size()) {
+            allArg_.emplace_back(tensors, ptrListLen);
+        } else {
+            ArgAddr &argAddr = allArg_.at(argSize_);
+            argAddr.devPtrAddr_.tensors = tensors;
+            argAddr.devPtrAddr_.ptrListLen = ptrListLen;
+            argAddr.tag_ = ArgAddr::ArgTag::DEVICE_PTR_ARG;
+            argAddr.hostTensor_ = nullptr;
+            argAddr.isOutShapeTensor_ = false;
+        }
+        argSize_++;
+    }
+
     void AppendInputLaunchArg(const aclTensor *arg)
     {
         if (arg == nullptr) {
             // This is somewhat inconsitence here: null inputs are needed in op tiling, but no in kernel larunching.
             OP_LOGW("Append Launch NULL aclTensor");
             if (genPlaceholder_) {
-                allArg_.emplace_back(nullptr, nullptr);
+                AddDeviceArg(nullptr, nullptr);
                 devArgNum_++;
                 tensorNum_++;
                 dfxInfoDumpSize_ += UINT64_BYTES;
@@ -273,7 +325,7 @@ private:
             return;
         }
         if (arg->GetPlacement() == gert::kOnDeviceHbm) {
-            allArg_.emplace_back(arg, arg->GetData());
+            AddDeviceArg(arg, arg->GetData());
             devArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
@@ -290,7 +342,7 @@ private:
 #endif
         } else {
             size_t size = arg->Size() * ge::GetSizeByDataType(arg->GetDataType());
-            allArg_.emplace_back(arg->GetData(), size, arg);
+            AddHostArg(arg->GetData(), size, arg);
             hostArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
@@ -323,7 +375,7 @@ private:
                     dataSize += (*arg)[i]->GetStorageShape().GetDimNum() * sizeof(int64_t);
                 }
             }
-            allArg_.emplace_back(arg, dataSize);
+            AddDevicePtrArg(arg, dataSize);
             devArgNum_++;
             tensorNum_ += arg->Size() + 1;
             dfxInfoDumpSize_ += UINT64_BYTES;
@@ -352,7 +404,7 @@ private:
             OP_LOGW("Append Launch NULL aclTensor");
             return;
         }
-        allArg_.emplace_back(arg, arg->GetData());
+        AddDeviceArg(arg, arg->GetData());
         devArgNum_++;
         tensorNum_++;
         dfxInfoDumpSize_ += CalAdumpDFXInfoSize(arg);
@@ -379,7 +431,7 @@ private:
                     dataSize += (*arg)[i]->GetStorageShape().GetDimNum() * sizeof(int64_t);
                 }
             }
-            allArg_.emplace_back(arg, dataSize);
+            AddDevicePtrArg(arg, dataSize);
             devArgNum_++;
             tensorNum_ += arg->Size() + 1;
             dfxInfoDumpSize_ += UINT64_BYTES;
@@ -404,7 +456,7 @@ private:
 
     void AppendOutshapeLaunchArg(const aclTensor *arg)
     {
-        allArg_.emplace_back(arg, arg->GetData(), true);
+        AddDeviceArg(arg, arg->GetData(), true);
         devArgNum_++;
         tensorNum_++;
         dfxInfoDumpSize_ += UINT64_BYTES;
@@ -442,7 +494,7 @@ private:
             if (std::get<1>(elem) == nullptr) {
                 OP_LOGW("Memset tensor is nullptr.");
             }
-            allArg_.emplace_back(std::get<1>(elem), std::get<0>(elem));
+            AddDeviceArg(std::get<1>(elem), std::get<0>(elem));
             devArgNum_++;
             tensorNum_++;
             dfxInfoDumpSize_ += CalAdumpDFXInfoSize(std::get<1>(elem));
@@ -452,7 +504,7 @@ private:
     void AppendWorkspaceLaunchArg(OpArg &arg)
     {
         if (firstWorkspaceIdx_ == 0) {
-            firstWorkspaceIdx_ = allArg_.size();
+            firstWorkspaceIdx_ = argSize_;
         }
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
             AppendLaunchArg(reinterpret_cast<aclTensor *>(arg->pointer));
@@ -465,6 +517,7 @@ private:
     }
 
     thread_local static std::vector<ArgAddr> addrInfo;
+
 };
 }
 }  // namespace op

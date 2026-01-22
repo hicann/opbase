@@ -35,7 +35,7 @@ else ()
 endif ()
 set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp/abseil-cpp-20230802.1.tar.gz)
 
-if(NOT EXISTS "${PROTOBUF_PATH}")
+if (NOT EXISTS "${ABSEIL_PATH}")
   set(REQ_URL "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz")
   set(ABS_REQ_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz")
  
@@ -69,8 +69,7 @@ if(NOT EXISTS "${PROTOBUF_PATH}")
 
   add_dependencies(protobuf_src protobuf_src_dl abseil_src_dl)
 else()
-  message("use protobuf cache") 
-  set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
+  message("use protobuf cache")
   ExternalProject_Add(protobuf_src
       DOWNLOAD_COMMAND ""
       COMMAND tar -zxf ${PROTOBUF_PATH} --strip-components 1 -C ${SOURCE_DIR}
@@ -95,6 +94,7 @@ ExternalProject_Add(protobuf_static_build
     -DCMAKE_TOOLCHAIN_FILE=${OPS_BASE_DIR}/cmake/aarch64-hcc-toolchain.cmake
     -DCMAKE_INSTALL_LIBDIR=lib
     -DBUILD_SHARED_LIBS=OFF
+    -DCMAKE_CXX_STANDARD=14
     -Dprotobuf_WITH_ZLIB=OFF
     -DLIB_PREFIX=base_ascend_
     -DCMAKE_SKIP_RPATH=TRUE
@@ -122,6 +122,7 @@ ExternalProject_Add(protobuf_host_static_build
       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
       -DCMAKE_INSTALL_LIBDIR=lib
       -DBUILD_SHARED_LIBS=OFF
+      -DCMAKE_CXX_STANDARD=14
       -Dprotobuf_WITH_ZLIB=OFF
       -DLIB_PREFIX=host_ascend_
       -DCMAKE_SKIP_RPATH=TRUE
@@ -148,6 +149,7 @@ ExternalProject_Add(protobuf_host_build
       -DCMAKE_INSTALL_PREFIX=${PROTOBUF_HOST_DIR}
       -Dprotobuf_BUILD_TESTS=OFF
       -Dprotobuf_WITH_ZLIB=OFF
+      -DCMAKE_CXX_STANDARD=14
       <SOURCE_DIR>
   BUILD_COMMAND $(MAKE)
   INSTALL_COMMAND $(MAKE) install

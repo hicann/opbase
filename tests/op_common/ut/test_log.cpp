@@ -18,7 +18,6 @@ class TestOpsBaseLog : public ::testing::Test {
     }
 };
 
-
 TEST_F(TestOpsBaseLog, TestLog1)
 {
     OP_LOGD("TestContent", "TestContent of value is %d", 1);

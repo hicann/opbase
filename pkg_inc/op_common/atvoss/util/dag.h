@@ -21,7 +21,12 @@
 namespace Ops {
 namespace Base {
 
+#ifdef __ATP_UT__
+// force to Level_X as specified for Level0
+constexpr static int MAX_BUFFER_NUMBER = 0;
+#else
 constexpr static int MAX_BUFFER_NUMBER = 10;
+#endif
 
 /*
 * 若非Bind类型，则原封返回
@@ -261,16 +266,13 @@ public:
   constexpr static uint32_t MaxAliveNodeForNddma = MaxAliveNodeInfo.aliveNodeNoCopyBrcTmpBuf;
   constexpr static uint32_t TempCalcNodeForNddma = MaxAliveNodeInfo.tempCalcNodeNoCopyBrcTmpBuf;
 
-  // 首个计算节点前，搬运GM的节点数量
-  constexpr static uint32_t GMCountBeforeFirstCalcNode = FullNodeInfo::GMCountBeforeFirstCalcNode;
-
 private:
   constexpr static auto MaxAliveNodeInfoForCacheBrc = FullNodeInfo::MaxAliveNodeInfoForCacheBrc;
   constexpr static auto MaxAliveNodeInfoForPreReduce = PreReduceNodeInfo::MaxAliveNodeInfo;
   constexpr static auto MaxAliveNodeInfoForPostReduce = PostReduceNodeInfo::MaxAliveNodeInfo;
 
 public:
-  // CacheBrc场景下 存活节点/中间计算占用的临时节点数量统计
+  // CacheBrc场景下 存活节点/中间计算占用的临时节点数量统计 (without Cache Nodes)
   constexpr static uint32_t MaxAliveNodeForCacheBrc = MaxAliveNodeInfoForCacheBrc.aliveNode;
   constexpr static uint32_t TempCalcNodeForCacheBrc = MaxAliveNodeInfoForCacheBrc.tempCalcNode;
   constexpr static uint32_t MaxAliveNodeForNddmaCacheBrc = MaxAliveNodeInfoForCacheBrc.aliveNodeNoCopyBrcTmpBuf;
@@ -284,41 +286,6 @@ public:
 public:
 #else
 private:
-#endif
-  template <bool use_nddma = true, bool cache_brc = false>
-  __aicore__ constexpr static uint32_t GetMaxAliveNodeSize() {
-    if constexpr (use_nddma && cache_brc) {
-      return MaxAliveNodeForNddmaCacheBrc;
-    } else if constexpr (use_nddma && !cache_brc) {
-      return MaxAliveNodeForNddma;
-    } else if constexpr (!use_nddma && cache_brc) {
-      return MaxAliveNodeForCacheBrc;
-    } else { // !use_nddma && !cache_brc
-      return MaxAliveNode;
-    }
-  }
-
-  template <bool use_nddma = true, bool cache_brc = false>
-  __aicore__ constexpr static uint32_t GetTempCalcNodeSize() {
-    if constexpr (use_nddma && cache_brc) {
-      return TempCalcNodeForNddmaCacheBrc;
-    } else if constexpr (use_nddma && !cache_brc) {
-      return TempCalcNodeForNddma;
-    } else if constexpr (!use_nddma && cache_brc) {
-      return TempCalcNodeForCacheBrc;
-    } else { // !use_nddma && !cache_brc
-      return TempCalcNode;
-    }
-  }
-
-  template <bool use_nddma = true, bool cache_brc = false>
-  __aicore__ constexpr static uint32_t GetFirstCopyOutNodeGMCount() {
-    constexpr uint32_t maxAliveNodeSize = GetMaxAliveNodeSize<use_nddma, cache_brc>();
-    return maxAliveNodeSize > GMCountBeforeFirstCalcNode ? 1 : 0;
-  }
-
-#ifdef __ATP_UT__
-public:
 #endif
   template <typename NodeInfo,
             bool use_nddma = true, bool cache_brc = false>
@@ -341,55 +308,66 @@ public:
 public:
   constexpr static MemLevel BufLevel = ChooseBufferLevelImpl<FullNodeInfo, true, false>();
 
+  // Get All Mte2 Num including Persist ones in @NodeInfo.
   template <typename NodeInfo,
             bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetMte2NumImpl() {
     if constexpr (ChooseBufferLevelImpl<NodeInfo, use_nddma, cache_brc>() == MemLevel::LEVEL_0) {
-      return NodeInfo::GMCountBeforeFirstCalcNode;
+      return (NodeInfo::template GetGMCountBeforeFirstCalcNode<use_nddma, cache_brc>()) + \
+              (NodeInfo::template GetPersistMte2Num<use_nddma, cache_brc>());
     } else {
       return NodeInfo::InputSizeWoScalar;
     }
   }
 
+  // Get All Mte2 Num including Persist ones in `FullNodeInfo`
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetMte2Num() {
     return GetMte2NumImpl<FullNodeInfo, use_nddma, cache_brc>();
   }
 
+  // Get All Mte3 Num including Persist ones in @NodeInfo.
   template <typename NodeInfo,
             bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetMte3NumImpl() {
+    constexpr uint32_t persistMte3Num = NodeInfo::template GetPersistMte3Num<use_nddma, cache_brc>();
     if constexpr (ChooseBufferLevelImpl<NodeInfo, use_nddma, cache_brc>() == MemLevel::LEVEL_0) {
-      return NodeInfo::template GetFirstCopyOutNodeGMCount<use_nddma, cache_brc>();
+      return NodeInfo::template GetFirstCopyOutNodeGMCount<use_nddma, cache_brc>() + persistMte3Num;
     } else {
-      return NodeInfo::template GetLvl12Mte3Count<use_nddma, cache_brc>();
+      return NodeInfo::template GetLvl12Mte3Count<use_nddma, cache_brc>() + persistMte3Num;
     }
   }
 
+  // Get All Mte3 Num including Persist ones in `FullNodeInfo`
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetMte3Num() {
     return GetMte3NumImpl<FullNodeInfo, use_nddma, cache_brc>();
   }
 
+  // Get All Temp Buff Num including Persist ones in @NodeInfo.
   template <typename NodeInfo,
             bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetTempBufNumImpl() {
     constexpr MemLevel bufferLvl = ChooseBufferLevelImpl<NodeInfo, use_nddma, cache_brc>();
+    constexpr uint32_t persistTempCalcBufNum = \
+      NodeInfo::template GetPersistTempCalcBufNum<use_nddma, cache_brc>();
     if constexpr (bufferLvl == MemLevel::LEVEL_0) {
-      return NodeInfo::template GetLvl0TmpSize<use_nddma, cache_brc>();
+      return (NodeInfo::template GetLvl0TmpSize<use_nddma, cache_brc>()) + persistTempCalcBufNum;
     } else if constexpr (bufferLvl == MemLevel::LEVEL_1) {
-      return NodeInfo::template GetLvl1TmpSize<use_nddma, cache_brc>();
+      return (NodeInfo::template GetLvl1TmpSize<use_nddma, cache_brc>()) + persistTempCalcBufNum;
     } else {
-      return NodeInfo::template GetTempCalcNodeSize<use_nddma, cache_brc>();
+      return (NodeInfo::template GetTempCalcNodeSize<use_nddma, cache_brc>()) + persistTempCalcBufNum;
     }
   }
 
+  // Get All Temp Buff including Persist ones in `FullNodeInfo`
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetTempBufNum() {
     return GetTempBufNumImpl<FullNodeInfo, use_nddma, cache_brc>();
   }
 
 public:
+  // Get All Buff Num including Persist ones in @NodeInfo.
   template <typename NodeInfo,
             bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetBufferNumImpl() {
@@ -403,6 +381,7 @@ public:
     }
   }
 
+  // Get All Buff Num including Persist ones in `FullNodeInfo`.
   template <bool use_nddma = true, bool cache_brc = false>
   __aicore__ constexpr static uint32_t GetBufferNum() {
     return GetBufferNumImpl<FullNodeInfo, use_nddma, cache_brc>();
@@ -419,24 +398,45 @@ public:
   __aicore__ constexpr static const int32_t* const *GetBufferIdsImpl() {
     // |mte2|mte3|tmp|mte2|mte3|
     constexpr MemLevel bufferLvl = ChooseBufferLevelImpl<NodeInfo, use_nddma, cache_brc>();
+    // Total Mte2 Count including Persist Mte2 in CopyInBrc
     constexpr uint32_t mte2Count = GetMte2NumImpl<NodeInfo, use_nddma, cache_brc>();
+    // Total Mte3 Count including Persist Mte3 if CopyInBrc or VecBrc connects to CopyOut
     constexpr uint32_t mte3Count = GetMte3NumImpl<NodeInfo, use_nddma, cache_brc>();
+    // Total Temp Buf Count including Cache Temp buf in CopyInBrc & VecBrc
     constexpr uint32_t tempBufCount = GetTempBufNumImpl<NodeInfo, use_nddma, cache_brc>();
     static_assert(((mte2Count + mte3Count) * BUF_PING_PONG + tempBufCount) <= BUF_MAX_COUNT,
                   "Buffer count exceeded 32. Please try to switch MemLevel to LEVEL_1 or LEVEL_0.");
     constexpr uint32_t PongOffset = mte2Count + mte3Count + tempBufCount;
-    using Mte2Es = typename GenerateBufferWrappers<mte2Count, BUF_TYPE_MTE2>::Type;
-    using Mte3Es = typename GenerateBufferWrappers<mte3Count, BUF_TYPE_MTE3, mte2Count>::Type;
-    using TmpEs = typename GenerateBufferWrappers<tempBufCount, BUF_TYPE_TEMP,
-                                                  mte2Count + mte3Count >::Type;
+    // Persist Mte2 Count
+    constexpr uint32_t persistMte2Count = NodeInfo::template GetPersistMte2Num<use_nddma, cache_brc>();
+    // Persist Mte3 Count
+    constexpr uint32_t persistMte3Count = NodeInfo::template GetPersistMte3Num<use_nddma, cache_brc>();
+    // Persist Temp Buf Count
+    constexpr uint32_t persistTempBufCount = NodeInfo::template GetPersistTempCalcBufNum<use_nddma, cache_brc>();
+    // Generate Buffer ID List.
+    using PersistMte2Es = typename GenerateBufferWrappers<persistMte2Count, BUF_TYPE_MTE2,
+                            /*Offset=*/0>::Type;
+    using Mte2Es = typename GenerateBufferWrappers<mte2Count - persistMte2Count, BUF_TYPE_MTE2,
+                            /*Offset=*/persistMte2Count>::Type;
+    using PersistMte3Es = typename GenerateBufferWrappers<persistMte3Count, BUF_TYPE_MTE3,
+                            /*Offset=*/mte2Count>::Type;
+    using Mte3Es = typename GenerateBufferWrappers<mte3Count - persistMte3Count, BUF_TYPE_MTE3, 
+                            /*Offset=*/mte2Count + persistMte3Count>::Type;
+    using PersistTmpEs = typename GenerateBufferWrappers<persistTempBufCount, BUF_TYPE_TEMP,
+                            /*Offset=*/mte2Count + mte3Count>::Type;
+    using TmpEs = typename GenerateBufferWrappers<tempBufCount - persistTempBufCount, BUF_TYPE_TEMP,
+                            /*Offset=*/mte2Count + mte3Count + persistTempBufCount>::Type;
     using PongMte3Es = __aux::Condition<bufferLvl == MemLevel::LEVEL_0,
                                         typename GenerateBufferWrappers<
-                                            mte3Count, BUF_TYPE_MTE3,
-                                            mte2Count * BUF_PING_PONG + mte3Count + tempBufCount,
+                                            mte3Count - persistMte3Count, BUF_TYPE_MTE3,
+                                            /*Offset=*/mte2Count * BUF_PING_PONG + mte3Count + tempBufCount + persistMte3Count,
                                             BUF_PONG>::Type,
                                         Elems<> >;
     return GenerateBufferIdOrder<typename NodeInfo::SavedFunList,
-                                 Elems<Mte2Es, Mte3Es, TmpEs, PongMte3Es>,
+                                 Elems<PersistMte2Es, Mte2Es, 
+                                       PersistMte3Es, Mte3Es, 
+                                       PersistTmpEs, TmpEs, 
+                                       PongMte3Es>,
                                  PongOffset, bufferLvl,
                                  use_nddma, cache_brc>();
   }

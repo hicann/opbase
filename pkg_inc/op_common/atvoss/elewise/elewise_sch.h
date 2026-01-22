@@ -25,8 +25,6 @@
 namespace Ops {
 namespace Base {
 
-constexpr uint64_t BYTE_LENGTH = 8;
-
 template <uint64_t schMode, class ElemDag>
 class ElementwiseSch {
  public:
@@ -452,6 +450,7 @@ class ElementwiseSch {
   }
 
   private:
+  constexpr static uint64_t BYTE_LENGTH = 8;
   constexpr static int inputNums = ElemDag::InputSize;
   constexpr static int outputNums = ElemDag::OutputSize;
   constexpr static auto bufferIds = ElemDag::template GetBufferIds<true, false>();

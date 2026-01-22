@@ -169,8 +169,7 @@ struct Duplicate : public ElemwiseUnaryOP<T, T> {
 
 template <class T>
 struct Reciprocal : public ElemwiseUnaryOP<T, T> {
-    __aicore__ inline Reciprocal(
-        const LocalTensor<T>& dstLocal, const LocalTensor<T>& src, const int32_t& count)
+    __aicore__ inline Reciprocal(const LocalTensor<T>& dstLocal, const LocalTensor<T>& src, const int32_t& count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Reciprocal(dstLocal, src, count);
@@ -216,7 +215,8 @@ struct Cast : public ElemwiseUnaryOP<R, T> {
         AscendC::Cast(dst, src, static_cast<AscendC::RoundMode>(roundMode), count);
 #endif
     }
-    __aicore__ inline Cast(R& dst, T& scalar, int count) {
+    __aicore__ inline Cast(R& dst, T& scalar, int count)
+    {
         dst = static_cast<R>(scalar);
     }
 };
@@ -254,6 +254,28 @@ struct Cos : public ElemwiseUnaryOP<T, T, 0, 0, true> {
 };
 
 template <class T>
+struct AtanPolyApprox : public ElemwiseUnaryOP<T, T, 0, 0, true> {
+    __aicore__ inline AtanPolyApprox(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
+    {
+#ifdef __CCE_AICORE__
+        static constexpr AscendC::AtanConfig config = {AscendC::AtanAlgo::POLYNOMIAL_APPROXIMATION};
+        AscendC::Atan<T, false, config>(dst, src, count);
+#endif
+    }
+};
+
+template <class T>
+struct Erf : public ElemwiseUnaryOP<T, T, 0, 0, true> {
+    __aicore__ inline Erf(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
+    {
+#ifdef __CCE_AICORE__
+        static constexpr AscendC::ErfConfig config = {AscendC::ErfAlgo::SUBSECTION_POLYNOMIAL_APPROXIMATION};
+        AscendC::Erf<T, false, config>(dst, src, count);
+#endif
+    }
+};
+
+template <class T>
 struct Sqrt : public ElemwiseUnaryOP<T, T> {
     __aicore__ inline Sqrt(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
     {
@@ -263,10 +285,26 @@ struct Sqrt : public ElemwiseUnaryOP<T, T> {
     }
 };
 
+template <class U, class T>
+struct Sqrt0ULP : public ElemwiseUnaryOP<T, T> {
+    __aicore__ inline Sqrt0ULP(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
+    {
+#ifdef __CCE_AICORE__
+        if constexpr (std::is_same_v<U, float>) {
+            static constexpr AscendC::SqrtConfig config = {AscendC::SqrtAlgo::PRECISION_0ULP_FTZ_FALSE};
+            AscendC::Sqrt<T, config>(dst, src, count);
+        } else {
+            AscendC::Sqrt(dst, src, count);
+        }
+#endif
+    }
+};
+
 template <class T>
 struct ReduceOp : public ElemwiseUnaryOP<T, T> {
     constexpr static int FuncType = 1;
-    __aicore__ inline ReduceOp() {}
+    __aicore__ inline ReduceOp()
+    {}
 
     __aicore__ inline ReduceOp(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
     {
@@ -290,9 +328,7 @@ struct Truncate : public ElemwiseUnaryOP<T, T> {
 
 template <class T>
 struct Add : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Add(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2,
-        int count)
+    __aicore__ inline Add(const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Add(dst, src1, src2, count);
@@ -302,12 +338,22 @@ struct Add : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Fmod : public ElemwiseBinaryOP<T, T, T, 0, 0, true> {
-    __aicore__ inline Fmod(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2,
-        int count)
+    __aicore__ inline Fmod(const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Fmod(dst, src1, src2, count);
+#endif
+    }
+};
+
+template <class T>
+struct FmodHighPrecision : public ElemwiseBinaryOP<T, T, T, 0, 0, true> {
+    __aicore__ inline FmodHighPrecision(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
+    {
+#ifdef __CCE_AICORE__
+        static constexpr uint32_t ITERATION_NUM = 11;
+        static constexpr AscendC::FmodConfig config = {AscendC::FmodAlgo::ITERATION_COMPENSATION, ITERATION_NUM};
+        AscendC::Fmod<T, false, config>(dst, src1, src2, count);
 #endif
     }
 };
@@ -345,9 +391,7 @@ struct Relu : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Max : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Max(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2,
-        int count)
+    __aicore__ inline Max(const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Max(dst, src1, src2, count);
@@ -374,9 +418,7 @@ struct Maxs : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Min : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Min(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2,
-        int count)
+    __aicore__ inline Min(const LocalTensor<T>& dst, const LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Min(dst, src1, src2, count);
@@ -402,8 +444,7 @@ struct Mins : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Sub : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Sub(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
+    __aicore__ inline Sub(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Sub(dst, src1, src2, count);
@@ -413,8 +454,7 @@ struct Sub : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Mul : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Mul(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
+    __aicore__ inline Mul(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Mul(dst, src1, src2, count);
@@ -424,15 +464,13 @@ struct Mul : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Muls : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Muls(
-        const LocalTensor<T>& dst, const T& scalar, const LocalTensor<T>& src, int count)
+    __aicore__ inline Muls(const LocalTensor<T>& dst, const T& scalar, const LocalTensor<T>& src, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Muls(dst, src, scalar, count);
 #endif
     }
-    __aicore__ inline Muls(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src, const T& scalar, int count)
+    __aicore__ inline Muls(const LocalTensor<T>& dst, const LocalTensor<T>& src, const T& scalar, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Muls(dst, src, scalar, count);
@@ -447,8 +485,7 @@ struct Muls : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Div : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Div(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
+    __aicore__ inline Div(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Div(dst, src1, src2, count);
@@ -458,8 +495,7 @@ struct Div : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct DivHighPrecision : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline DivHighPrecision(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
+    __aicore__ inline DivHighPrecision(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         static constexpr AscendC::DivConfig config = {AscendC::DivAlgo::DIFF_COMPENSATION};
@@ -527,16 +563,14 @@ struct LeakyRelu : public ElemwiseBinaryOP<T, T, T> {
 template <class R, class T, int cmpMode>
 struct Compare : public ElemwiseBinaryOP<R, T, T> {
     __aicore__ inline Compare(
-        LocalTensor<R>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local,
-        uint32_t count)
+        LocalTensor<R>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Compare(dstLocal, src0Local, src1Local, static_cast<AscendC::CMPMODE>(cmpMode), count);
 #endif
     }
 
-    __aicore__ inline Compare(
-        LocalTensor<R>& dstLocal, LocalTensor<T>& src0Local, T src1Scalar, uint32_t count)
+    __aicore__ inline Compare(LocalTensor<R>& dstLocal, LocalTensor<T>& src0Local, T src1Scalar, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::CompareScalar(dstLocal, src0Local, src1Scalar, static_cast<AscendC::CMPMODE>(cmpMode), count);
@@ -546,9 +580,7 @@ struct Compare : public ElemwiseBinaryOP<R, T, T> {
 
 template <class T>
 struct And : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline And(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2,
-        const int32_t& count)
+    __aicore__ inline And(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, const int32_t& count)
     {
 #ifdef __CCE_AICORE__
         AscendC::And(dst, src1, src2, count);
@@ -574,9 +606,7 @@ struct Ands : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Or : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Or(
-        LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2,
-        const int32_t& count)
+    __aicore__ inline Or(LocalTensor<T>& dst, LocalTensor<T>& src1, LocalTensor<T>& src2, const int32_t& count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Or(dst, src1, src2, count);
@@ -603,8 +633,7 @@ struct Ors : public ElemwiseBinaryOP<T, T, T> {
 template <class T>
 struct Power : public ElemwiseBinaryOP<T, T, T> {
     __aicore__ inline Power(
-        LocalTensor<T>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local,
-        uint32_t count)
+        LocalTensor<T>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         static constexpr AscendC::PowerConfig config = {AscendC::PowerAlgo::DOUBLE_FLOAT_TECH};
@@ -612,8 +641,7 @@ struct Power : public ElemwiseBinaryOP<T, T, T> {
 #endif
     }
 
-    __aicore__ inline Power(
-        LocalTensor<T>& dstLocal, LocalTensor<T>& src0Local, T& src1Scalar, uint32_t count)
+    __aicore__ inline Power(LocalTensor<T>& dstLocal, LocalTensor<T>& src0Local, T& src1Scalar, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         static constexpr AscendC::PowerConfig config = {AscendC::PowerAlgo::DOUBLE_FLOAT_TECH};
@@ -621,8 +649,7 @@ struct Power : public ElemwiseBinaryOP<T, T, T> {
 #endif
     }
 
-    __aicore__ inline Power(
-        LocalTensor<T>& dstLocal, T& src0Scalar, LocalTensor<T>& src1Local, uint32_t count)
+    __aicore__ inline Power(LocalTensor<T>& dstLocal, T& src0Scalar, LocalTensor<T>& src1Local, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         static constexpr AscendC::PowerConfig config = {AscendC::PowerAlgo::DOUBLE_FLOAT_TECH};
@@ -634,8 +661,8 @@ struct Power : public ElemwiseBinaryOP<T, T, T> {
 template <class U, class T, int selMode>
 struct Select : public ElemwiseTernaryOP<T, U, T, T> {
     __aicore__ inline Select(
-        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask,
-        const LocalTensor<T>& src0Local, const LocalTensor<T>& src1Local, uint32_t count)
+        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, const LocalTensor<T>& src0Local,
+        const LocalTensor<T>& src1Local, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Select(dstLocal, selMask, src0Local, src1Local, static_cast<AscendC::SELMODE>(selMode), count);
@@ -643,8 +670,8 @@ struct Select : public ElemwiseTernaryOP<T, U, T, T> {
     }
 
     __aicore__ inline Select(
-        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask,
-        const LocalTensor<T>& src0Local, T src1Scalar, uint32_t count)
+        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, const LocalTensor<T>& src0Local, T src1Scalar,
+        uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Select(dstLocal, selMask, src0Local, src1Scalar, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, count);
@@ -652,8 +679,8 @@ struct Select : public ElemwiseTernaryOP<T, U, T, T> {
     }
 
     __aicore__ inline Select(
-        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, T src0Scalar,
-        const LocalTensor<T>& src1Local, uint32_t count)
+        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, T src0Scalar, const LocalTensor<T>& src1Local,
+        uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Select(dstLocal, selMask, src0Scalar, src1Local, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, count);
@@ -667,8 +694,8 @@ struct Select : public ElemwiseTernaryOP<T, U, T, T> {
 template <class T>
 struct FusedMulAdd : public ElemwiseTernaryOP<T, T, T, T> {
     __aicore__ inline FusedMulAdd(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2,
-        const LocalTensor<T>& alpha, int count)
+        const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2, const LocalTensor<T>& alpha,
+        int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::FusedMulAdd(src2, alpha, src1, count);
@@ -683,8 +710,7 @@ struct FusedMulAdd : public ElemwiseTernaryOP<T, T, T, T> {
 template <class T>
 struct Axpy : public ElemwiseTernaryOP<T, T, T, T> {
     __aicore__ inline Axpy(
-        const LocalTensor<T>& dst, const T& scalar, const LocalTensor<T>& src1,
-        const LocalTensor<T>& src2, int count)
+        const LocalTensor<T>& dst, const T& scalar, const LocalTensor<T>& src1, const LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Axpy(src1, src2, scalar, count);
@@ -692,8 +718,7 @@ struct Axpy : public ElemwiseTernaryOP<T, T, T, T> {
 #endif
     }
     __aicore__ inline Axpy(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2,
-        const T& scalar, int count)
+        const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2, const T& scalar, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Axpy(src1, src2, scalar, count);
@@ -836,7 +861,7 @@ struct IsCopyOutOp<CopyOut<T>> {
 
 template <typename U, template <typename, int...> typename T>
 struct IsCopyOutOp<T<U>> {
-  constexpr static bool Value = T<U>::FuncType == 1;
+    constexpr static bool Value = T<U>::FuncType == 1;
 };
 
 template <class... T>
@@ -846,9 +871,8 @@ struct IsReduceOp {
 
 template <typename U, template <typename, int...> typename T>
 struct IsReduceOp<T<U>> {
-  constexpr static bool Value = T<U>::FuncType == 1;
+    constexpr static bool Value = T<U>::FuncType == 1;
 };
-
 
 template <class... T>
 struct IsDuplicateOp {

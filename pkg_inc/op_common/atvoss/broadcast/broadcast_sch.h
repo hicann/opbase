@@ -14,8 +14,13 @@
 #include "kernel_operator.h"
 #include "broadcast_sch_nddma.h"
 #include "broadcast_sch_one_dim.h"
+#include "broadcast_sch_one_dim_advance.h"
 #include "broadcast_sch_ub_broadcast.h"
+#include "noncontiguous/last_transpose/broadcast_sch_last_transpose.h"
+#include "noncontiguous/nlast_transpose/broadcast_sch_nlast_transpose_nddma.h"
+#include "noncontiguous/nlast_transpose/broadcast_sch_nlast_transpose_ub_broadcast.h"
 #include "broadcast_base_struct.h"
+#include "noncontiguous/transpose/broadcast_sch_nddma_transpose.h"
 
 namespace Ops {
 namespace Base {
@@ -34,46 +39,89 @@ public:
     template <class... Args>
     __aicore__ inline void Process(Args... args)
     {
-        TPipe pipe;
-        REGISTER_TILING_DEFAULT(BroadcastFakeTilingData);
+        REGISTER_NONE_TILING;
+        KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
         if constexpr (schMode == 1) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastNddmaSch<BrcDag, false> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 2) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastNddmaSch<BrcDag, true> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 101) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastUbSch<BrcDag, 1> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 102) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastUbSch<BrcDag, 2> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 103) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastUbSch<BrcDag, 3> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 104) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastUbSch<BrcDag, 4> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 109) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
             BroadcastUbSch<BrcDag, -1> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         } else if constexpr (schMode == 201) {
             GET_TILING_DATA_WITH_STRUCT(BroadcastOneDimTilingData, tilingData, tiling);
+            TPipe pipe;
             BroadcastOneDimSch<BrcDag> sch(&tilingData); // 获取Schedule
+            sch.Init(&pipe, args...);
+            sch.Process();
+        } else if constexpr (schMode == 202) {
+            GET_TILING_DATA_PTR_WITH_STRUCT(BroadcastOneDimTilingDataAdvance, tilingDataPtr, tiling);
+            BroadcastOneDimAdvanceSch<BrcDag> sch(tilingDataPtr); // 获取Schedule
+            sch.Init(args...);
+            sch.Process();
+        } else if constexpr (schMode == 301) {
+            GET_TILING_DATA_WITH_STRUCT(BroadcastNlastTransposeTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
+            BroadcastNlastTransposeNddmaSch<BrcDag, false> sch(&tilingData); // 获取Schedule
+            sch.Init(&pipe, args...);
+            sch.Process();
+        } else if constexpr (schMode == 302) {
+            GET_TILING_DATA_WITH_STRUCT(BroadcastNlastTransposeTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
+            BroadcastNlastTransposeUbBrcSch<BrcDag, 4> sch(&tilingData); // 获取Schedule
+            sch.Init(&pipe, args...);
+            sch.Process();
+        } else if constexpr (schMode == 303) {
+            GET_TILING_DATA_WITH_STRUCT(BroadcastLastTransposeTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
+            BroadcastLastTransposeSch<BrcDag> sch(&tilingData); // 获取Schedule
+            sch.Init(&pipe, args...);
+            sch.Process();
+        } else if constexpr (schMode == 304) {
+            GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
+            BroadcastNonContiguousNddmaSch<BrcDag, false> sch(&tilingData); // 获取Schedule
+            sch.Init(&pipe, args...);
+            sch.Process();
+        } else if constexpr (schMode == 305) {
+            GET_TILING_DATA_WITH_STRUCT(BroadcastBaseTilingData<BrcDag>, tilingData, tiling);
+            TPipe pipe;
+            BroadcastNonContiguousNddmaSch<BrcDag, true> sch(&tilingData); // 获取Schedule
             sch.Init(&pipe, args...);
             sch.Process();
         }

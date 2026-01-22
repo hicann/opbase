@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "gtest/gtest.h"
@@ -25,6 +25,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_arg_def.h"
 #include "opdev/op_errno.h"
+#include "op_ctx_def.h"
 #include "register/op_impl_registry.h"
 #include "thread_local_context.h"
 #include "depends/op/aclnn_mul_stub.h"
@@ -271,12 +272,14 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -308,12 +311,14 @@ TEST_F(KernelLaunchUT, TestWithHandleBlockDimOffset1)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -345,12 +350,14 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900);
+    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;

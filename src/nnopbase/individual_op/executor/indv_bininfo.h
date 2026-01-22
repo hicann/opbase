@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef INDV_BIN_INFO_H_
 #define INDV_BIN_INFO_H_
@@ -161,6 +161,7 @@ struct NnopbaseMemsetInfo {
     uint32_t *blockDim = nullptr;
     uint32_t memsetBlockDim = 0U;
     uint32_t *scheMode = nullptr;
+    uint32_t *dynUbufSize = nullptr;
     uint32_t memsetScheMode = 0U;
 
     // MemSetV2 attributes
@@ -176,6 +177,7 @@ typedef struct {
     std::string simplifiedKey;
     std::string binPath;
     void *binHandle = nullptr;
+    void *ccuBinHandle = nullptr;
     bool hasReg = false;
     uint32_t binLen = 0U;
     DoubleListNode dllNode;
@@ -197,10 +199,11 @@ typedef struct {
     std::unique_ptr<NnopbaseMemsetInfo> memsetInfo = nullptr;
 } NnopbaseBinInfo;
 
+aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
 aclnnStatus NnopbaseInitMemsetV2Info(NnopbaseBinInfo *binInfo);
-aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion,
+aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, std::string &socVersion,
     bool isMemsetV2);
 aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, NnopbaseUChar *&bin, uint32_t *binLen);
 aclnnStatus NnopbaseKernelUnRegister(void **handle);
@@ -253,7 +256,6 @@ static inline void NnopbaseBinInfoDestroy(NnopbaseBinInfo **binInfo)
         delete[]((*binInfo)->bin);
         (*binInfo)->bin = nullptr;
     }
-
     if ((*binInfo)->hasReg) {
         (void)NnopbaseKernelUnRegister(&((*binInfo)->binHandle));
     }
@@ -277,6 +279,7 @@ static inline void NnopbaseBinInfoInit(NnopbaseBinInfo *binInfo)
 {
     binInfo->bin = nullptr;
     binInfo->binHandle = nullptr;
+    binInfo->ccuBinHandle = nullptr;
     binInfo->binLen = 0;
     binInfo->coreType = kCoreTypeEnd;
     binInfo->hasReg = false;

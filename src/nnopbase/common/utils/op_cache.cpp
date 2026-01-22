@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "opdev/op_cache.h"
@@ -415,12 +415,15 @@ inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed =
 static inline bool CheckHashBufCapacity(uint64_t &hashOffset, size_t addSize) {
     if (hashOffset + addSize > K_HASH_BUF_SIZE) {
         hashOffset = K_INVALID_HASH_OFFSET;
+        OP_LOGW(
+            "Hash buffer size is overflow, cur size: %lu, add size: %zu, capacity: %lu",
+            hashOffset, addSize, K_HASH_BUF_SIZE);
         return false;
     }
     return true;
 }
 
-static inline void OpCacheAddSeperator(char *hashBuf, uint64_t &hashOffset)
+static inline void OpCacheAddSeparator(char *hashBuf, uint64_t &hashOffset)
 {
     hashBuf[hashOffset] = ',';
     hashOffset += 1;
@@ -436,17 +439,6 @@ static inline void OpCacheAdd8Byte(const void *buf, char *hashBuf, uint64_t &has
 {
     *PtrCastTo<uint64_t>(hashBuf + hashOffset) = *PtrCastTo<uint64_t>(buf);
     hashOffset += sizeof(uint64_t);
-}
-
-static inline bool OpCahceAddShapeInfo(const op::Shape &shape, char *hashBuf, uint64_t &hashOffset) {
-    if (CheckHashBufCapacity(hashOffset, sizeof(int64_t) * shape.GetDimNum() + sizeof(uint8_t)) == false) {
-        return false;
-    }
-    for (size_t i = 0; i < shape.GetDimNum(); i++) {
-        OpCacheAdd8Byte(&shape[i], hashBuf, hashOffset);
-    }
-    OpCacheAddSeperator(hashBuf, hashOffset);
-    return true;
 }
 
 template <typename T>
@@ -499,17 +491,6 @@ void AddOpConfigInfoToBuf() {
     }
 }
 
-void AddSeperator()
-{
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
-    if (tlsData->hashOffset + 1 > K_HASH_BUF_SIZE) {
-        tlsData->hashOffset = K_INVALID_HASH_OFFSET;
-        return;
-    }
-    tlsData->hashBuf[tlsData->hashOffset] = ',';
-    tlsData->hashOffset += 1;
-}
-
 static void AddSeperator(OpCacheThreadLocalData *tlsData)
 {
     if (tlsData->hashOffset + 1 > K_HASH_BUF_SIZE) {
@@ -518,6 +499,12 @@ static void AddSeperator(OpCacheThreadLocalData *tlsData)
     }
     tlsData->hashBuf[tlsData->hashOffset] = ',';
     tlsData->hashOffset += 1;
+}
+
+void AddSeperator()
+{
+    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    AddSeperator(tlsData);
 }
 
 static void AddParamToBuf(const aclTensor *tensor, OpCacheThreadLocalData *tlsData)
@@ -529,37 +516,43 @@ static void AddParamToBuf(const aclTensor *tensor, OpCacheThreadLocalData *tlsDa
     char *hashBuf = tlsData->hashBuf;
     uint64_t &hashOffset = tlsData->hashOffset;
     AddAclTensorToCachedList(tensor, tlsData);
-    // view shape
-    if (OpCahceAddShapeInfo(tensor->GetViewShape(), hashBuf, hashOffset) == false) {
-        return;
-    }
-    // view stride
-    auto &strides = tensor->GetViewStrides();
-    if (CheckHashBufCapacity(hashOffset, sizeof(int64_t) * strides.size() + sizeof(uint8_t)) == false) {
-        return;
-    }
-    for (size_t i = 0; i < strides.size(); i++) {
-        OpCacheAdd8Byte(&strides[i], hashBuf, hashOffset);
-    }
-    OpCacheAddSeperator(hashBuf, hashOffset);
-    // storage shape
-    if (OpCahceAddShapeInfo(tensor->GetStorageShape(), hashBuf, hashOffset) == false) {
+
+    const op::Shape &viewShape = tensor->GetViewShape();
+    const op::Strides &strides = tensor->GetViewStrides();
+    const op::Shape &storageShape = tensor->GetStorageShape();
+    // view shape + separator + strides + separator + storage shape + separator
+    size_t shapeStridesInfoSize = viewShape.GetDimNum() * sizeof(int64_t) + sizeof(uint8_t) +
+                                  strides.size() * sizeof(int64_t) + sizeof(uint8_t) +
+                                  storageShape.GetDimNum() * sizeof(int64_t) + sizeof(uint8_t);
+    // data type + separator + offset + separator + format
+    size_t otherInfoSize = sizeof(uint32_t) + sizeof(uint8_t) + sizeof(int64_t) + sizeof(uint8_t) + sizeof(uint32_t);
+    if (CheckHashBufCapacity(hashOffset, shapeStridesInfoSize + otherInfoSize) == false) {
         return;
     }
 
-    const uint64_t addSize = sizeof(uint32_t) + sizeof(uint8_t) + sizeof(int64_t) + sizeof(uint8_t) + sizeof(uint32_t);
-    if ((hashOffset + addSize) > K_HASH_BUF_SIZE) {
-        hashOffset = K_INVALID_HASH_OFFSET;
-        return;
+    // view shape
+    for (size_t i = 0; i < viewShape.GetDimNum(); i++) {
+        OpCacheAdd8Byte(&viewShape[i], hashBuf, hashOffset);
     }
+    OpCacheAddSeparator(hashBuf, hashOffset);
+    // view stride
+    for (size_t i = 0; i < strides.size(); i++) {
+        OpCacheAdd8Byte(&strides[i], hashBuf, hashOffset);
+    }
+    OpCacheAddSeparator(hashBuf, hashOffset);
+    // storage shape
+    for (size_t i = 0; i < storageShape.GetDimNum(); i++) {
+        OpCacheAdd8Byte(&storageShape[i], hashBuf, hashOffset);
+    }
+    OpCacheAddSeparator(hashBuf, hashOffset);
     // datatype
     op::DataType dataType = tensor->GetDataType();
     OpCacheAdd4Byte(&dataType, hashBuf, hashOffset);
-    OpCacheAddSeperator(hashBuf, hashOffset);
+    OpCacheAddSeparator(hashBuf, hashOffset);
     // offset
     int64_t offset = tensor->GetViewOffset();
     OpCacheAdd8Byte(&offset, hashBuf, hashOffset);
-    OpCacheAddSeperator(hashBuf, hashOffset);
+    OpCacheAddSeparator(hashBuf, hashOffset);
     // format
     op::Format viewFormat = tensor->GetViewFormat();
     OpCacheAdd4Byte(&viewFormat, hashBuf, hashOffset);
@@ -587,14 +580,20 @@ void AddParamToBuf(const aclScalar* scalar)
     char *hashBuf = tlsData->hashBuf;
     uint64_t &hashOffset = tlsData->hashOffset;
 
-    if (CheckHashBufCapacity(hashOffset, scalar->Size() + sizeof(uint8_t)) == false) {
+    const size_t addSize = scalar->Size() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t);
+    if (CheckHashBufCapacity(hashOffset, addSize) == false) {
         return;
     }
+    // scalar data
     OP_CHECK(memcpy_s(hashBuf + hashOffset, K_HASH_BUF_SIZE - hashOffset, scalar->GetData(), scalar->Size()) == EOK,
              OP_LOGW("Failed to memcpy in op cache."),
              ;);
     hashOffset += scalar->Size();
-    OpCacheAddSeperator(hashBuf, hashOffset);
+    OpCacheAddSeparator(hashBuf, hashOffset);
+    // datatype
+    op::DataType dataType = scalar->GetDataType();
+    OpCacheAdd4Byte(&dataType, hashBuf, hashOffset);
+    OpCacheAddSeparator(hashBuf, hashOffset);
 };
 
 void AddParamToBuf(aclScalar *scalar)
@@ -1536,7 +1535,7 @@ bool CheckCacheable()
     bool cacheDisable =
         (op::internal::IsDumpEnable() || op::internal::IsExceptionDumpEnable() ||
             op::internal::IsOverflowDumpEnable() ||
-            (internal::opProfilingSwitch.recordOpArgFlag || internal::opProfilingSwitch.level2ProfilingFlag));
+            (op::internal::GetOpProfilingRecordArgFlag() || internal::opProfilingSwitch.level2ProfilingFlag));
     if (cacheDisable) {
         g_opCacheTlsData.threadLocalContext.cacheHasFull_ = true;
         return false;

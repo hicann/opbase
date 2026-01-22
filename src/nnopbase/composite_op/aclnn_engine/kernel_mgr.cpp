@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
  
 #include <fstream>
@@ -473,12 +473,13 @@ aclnnStatus KernelMgr::AclOpKernelInit(uint32_t opType)
     static std::once_flag opFlag[MAX_OP_TYPE_COUNT];
     std::call_once(opFlag[opType], [&]() { rc = OpKernelLib::GetInstance().ParseKernelLibInfos(opType); });
     CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseKernelLibInfos.");
-    
+
     std::call_once(initDynKernelFlags_[opType],
         [&]() { rc = internal::gKernelMgr.ParseDynamicKernels(opType); });
     CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseDynamicKernels.");
 
     initStaticKernelFlags_[opType].CallOnce([&]() { rc = internal::gKernelMgr.ParseStaticKernels(opType); });
+    CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseStaticKernels.");
 
     return rc;
 }

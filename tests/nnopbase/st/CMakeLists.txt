@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -94,7 +94,6 @@ file(GLOB_RECURSE NNOPBASE_SRC_FILES CONFIGURE_DEPENDS
 
 # testcase源文件
 file(GLOB_RECURSE NNOPBASE_TEST_COMMON_CASE_SRC_FILES CONFIGURE_DEPENDS
-    ${NNOPBASE_ST_DIR}/individual_op/*.cpp                                     # individual_op
     ${NNOPBASE_ST_DIR}/composite_op/*.cpp                                      # composite_op
     # ${NNOPBASE_ST_DIR}/aicpu/*.cpp                                             # aicpu_op
 )

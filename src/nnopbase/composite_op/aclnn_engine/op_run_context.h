@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef __OP_RUN_CONTEXT_H__
@@ -244,7 +244,7 @@ public:
     static void RecordOpInfo(uint32_t opType, const aclnnOpInfoRecord::OpKernelInfo &kernelInfo, const std::string &implMode,
                              OpArgList &inputs, OpArgList &outputs, OpArgList &attrs)
     {
-        if (opProfilingSwitch.recordOpArgFlag) {
+        if (op::internal::GetOpProfilingRecordArgFlag()) {
             gert::TilingContext *ctx = opRunCtx_.UpdateTilingCtx(opType, inputs, outputs, attrs);
             int64_t determinConfig = 0;
             const aclError rtErr = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &determinConfig);

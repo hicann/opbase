@@ -24,7 +24,7 @@ file(GLOB_RECURSE OPS_BASE_SRC CACHE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/op_host/util/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/log/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/elewise/elewise_tiling.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/broadcast/broadcast_tiling.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/broadcast/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/reduce/reduce_tiling.cpp
 )
 
@@ -36,7 +36,7 @@ file(GLOB_RECURSE OPS_BASE_INFER_SRC CACHE
 
 file(GLOB_RECURSE OPS_BASE_TILING_SRC CACHE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/elewise/elewise_tiling.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/broadcast/broadcast_tiling.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/broadcast/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/atvoss/reduce/reduce_tiling.cpp
 )
 

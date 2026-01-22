@@ -57,7 +57,6 @@ private:
     IndvSoc(void);
     bool isInit = false;
     std::string socVersion;
-    std::string longSocVersion;
 
     void Init(void);
 

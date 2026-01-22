@@ -180,6 +180,7 @@ struct SliceView {
         uint64_t srcStride = 0;
         uint64_t dstStride = 0;
         uint64_t idx = 0;
+        bool isSliceNum = false;
         bool isAxisA = false;
     } axis[dim];
 };

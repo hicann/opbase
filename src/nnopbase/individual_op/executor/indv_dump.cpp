@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <set>
 #include <iostream>
@@ -221,7 +221,7 @@ extern "C" {
 
 aclnnStatus NnopbaseDumpWorkspaceData(NnopbaseExecutor *executor, aclrtStream stream)
 {
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseSkipKernelLaunch(executor)) {
         return OK;
     }
     if (executor->args->binInfo->dfxInfo.isPrintEnable || executor->args->binInfo->dfxInfo.isTimeStampEnable) {
@@ -278,7 +278,7 @@ aclnnStatus NnopbasePrepareWorkspaceDumpTensor(NnopbaseExecutor *executor, std::
 
 aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor *const executor, aclrtStream stream)
 {
-    if (NnopbaseIsExceptionDumpEnable() && NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseIsExceptionDumpEnable() && !NnopbaseSkipKernelLaunch(executor)) {
         int32_t deviceId = 0;
         uint32_t taskId = 0U;
         int32_t streamId = 0U;
@@ -395,7 +395,7 @@ static uint64_t *NnopbaseAddWorkspaceExceptionInfo(NnopbaseExecutor *const execu
     return sizeInfoAddr;
 }
 
-static bool NnopbaseNeedL0ExceptionDump()
+static bool NnopbaseNeedL0ExceptionDump(void)
 {
     static const bool ret = (nnopbase::IndvSoc::GetInstance().SupportL0ExceptionDump() &&
                              op::internal::IsArgExceptionDumpEnable());

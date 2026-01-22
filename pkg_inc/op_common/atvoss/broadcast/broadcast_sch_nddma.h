@@ -83,32 +83,32 @@ public:
                     tilingData->ubOuter);
             }
 
-            int64_t nddmaUbSplitSize = axesIndices[tilingData->ubSplitAxis] == tilingData->ubOuter - 1 ?
+            int64_t ubSplitSize = axesIndices[tilingData->ubSplitAxis] == tilingData->ubOuter - 1 ?
                 tilingData->ubTail :
                 tilingData->ubFormer;
             // ub整循环处理的元素个数
-            Run<0, false>(nddmaUbSplitSize, axesIndices, ubLoopIdx, ubLoopIdx & 1);
+            Run<0, false>(ubSplitSize, axesIndices, ubLoopIdx, ubLoopIdx & 1);
         }
     }
 
 protected:
     // 初始化输出
-    template <int begin, class... Args>
+    template <int start, class... Args>
     __aicore__ inline void InitOutputArgs(GM_ADDR y, Args... args)
     {
-        this->outGm_[begin] = y;
-        if constexpr (begin + 1 < BrcDag::OutputSize) {
-            InitOutputArgs<begin + 1>(args...);
+        this->outGm_[start] = y;
+        if constexpr (start + 1 < BrcDag::OutputSize) {
+            InitOutputArgs<start + 1>(args...);
         }
     }
 
     // 初始化输入
-    template <int begin, class... Args>
+    template <int start, class... Args>
     __aicore__ inline void InitInputArgs(GM_ADDR x, Args... args)
     {
-        this->inGm_[begin] = x;
-        if constexpr (begin + 1 < BrcDag::InputSize) {
-            InitInputArgs<begin + 1>(args...);
+        this->inGm_[start] = x;
+        if constexpr (start + 1 < BrcDag::InputSize) {
+            InitInputArgs<start + 1>(args...);
         } else {
             InitOutputArgs<0>(args...);
         }
@@ -168,7 +168,7 @@ protected:
 
     // 遍历执行图
     template <int pos = 0, bool insideIf = false>
-    __aicore__ inline void Run(int64_t nddmaUbSplitSize, const int64_t (&axesIndices)[BROADCAST_MAX_DIMS],
+    __aicore__ inline void Run(int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_MAX_DIMS],
         int64_t ubLoopIdx, int32_t pingPong)
     {
         if constexpr (pos >= BrcDag::FunList::Size) {
@@ -176,18 +176,18 @@ protected:
         }
 
         // Run current func
-        using Func = typename Op::Fun;
         using Op = typename BrcDag::FunList::template At<pos>;
+        using Func = typename Op::Fun;
         if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value && !insideIf) {
             constexpr int vecIndex = BrcDag::template VecBrcIdxDepend<Op>;
             if constexpr (vecIndex >= 0) {
                 if ((tilingData->inputVecBrcStrides[vecIndex] != 0) || (ubLoopIdx == 0 ||
                     (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter == 0)) {
-                    Run<pos, true>(nddmaUbSplitSize, axesIndices, ubLoopIdx, pingPong);
+                    Run<pos, true>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
                 }
                 using vecBrcOp = typename BrcDag::VecBrcNodes::template At<vecIndex>;
                 constexpr int vecBrcOpPos = BrcDag::FunList::template GetIndex<vecBrcOp>();
-                Run<vecBrcOpPos + 1, false>(nddmaUbSplitSize, axesIndices, ubLoopIdx, pingPong);
+                Run<vecBrcOpPos + 1, false>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
                 return;
             }
         }
@@ -195,16 +195,16 @@ protected:
         if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value) {
             this->template CopyIn<Op, pos>(axesIndices, ubLoopIdx, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyInBrc>::Value) {
-            CopyInBrc<Op, pos>(nddmaUbSplitSize, axesIndices, ubLoopIdx, pingPong);
+            CopyInBrc<Op, pos>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyOut>::Value) {
             int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingData->outputStrides, tilingData->ubSplitAxis,
                 tilingData->ubFormer);
-            int64_t tileLength = nddmaUbSplitSize * tilingData->outputStrides[tilingData->ubSplitAxis];
+            int64_t tileLength = ubSplitSize * tilingData->outputStrides[tilingData->ubSplitAxis];
             this->template CopyOut<Op, pos>(gmOffset, tileLength, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::Brc>::Value) {
             this->template VecBroadcast<Op, pos>(ubLoopIdx, pingPong);
         } else {
-            uint64_t tileLength = nddmaUbSplitSize * tilingData->outputStrides[tilingData->ubSplitAxis];
+            uint64_t tileLength = ubSplitSize * tilingData->outputStrides[tilingData->ubSplitAxis];
             this->template RunNormalOp<Op, pos>(tileLength, pingPong);
         }
 
@@ -214,7 +214,7 @@ protected:
 
         // Run next func
         if constexpr (pos + 1 < BrcDag::FunList::Size) {
-            Run<pos + 1, insideIf>(nddmaUbSplitSize, axesIndices, ubLoopIdx, pingPong);
+            Run<pos + 1, insideIf>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
         }
     }
 

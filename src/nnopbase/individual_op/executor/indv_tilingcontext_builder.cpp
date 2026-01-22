@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "indv_tilingcontext_builder.h"
 #include <mutex>
@@ -68,7 +68,7 @@ void NnopbaseUpdatePlatformInfo(const NnopbaseExecutor *executor)
     NnopbaseUpdateCoreNum(executor->coreNum.aicNum, executor->coreNum.aivNum);
 }
 
-aclnnStatus NnopbaseExecutorPlatFormInfosInit()
+aclnnStatus NnopbaseExecutorPlatFormInfosInit(void)
 {
     if (g_nnopbasePlatformMgr.isInit) {
         return OK;
@@ -168,7 +168,11 @@ static void NnopbaseTilingSetContextOutputStep1(NnopbaseExecutor *const executor
     /* kOutputScheduleMode. */
     executor->scheMode = (uint32_t *)values[index]->data.inplace;
     values[index]->deleter = nullptr;
-    index += 2U;  // 2 is OutputScheduleMode and OutputLocalMemorySize
+    index++;
+    /* kOutputLocalMemorySize. */
+    executor->dynUbufSize = (uint32_t *)values[index]->data.inplace;
+    values[index]->deleter = nullptr;
+    index++;
     executor->aicpuBlockDim = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
 }
@@ -226,6 +230,7 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor)
     *(executor->scheMode) = 0U;
     *(executor->needAtomic) = false;
     *(executor->aicpuBlockDim) = 0U;
+    *(executor->dynUbufSize) = 0U;
     NnopbaseTilingSetContextOutputStep2(executor);
     NnopbaseTilingBuildOpInputs(executor);
     NnopbaseTilingBuildOpOutputs(executor);
@@ -356,7 +361,11 @@ aclnnStatus NnopbaseMemsetV2TilingContextBuild(NnopbaseExecutor *executor)
         /* kOutputScheduleMode. */
         executor->args->binInfo->memsetInfo->scheMode = op::internal::PtrCastTo<uint32_t>(values[input_size]->data.inplace);
         values[input_size]->deleter = nullptr;
-        input_size += 2U;  // 2 is OutputScheduleMode and OutputLocalMemorySize
+        input_size++;
+        /* kOutputLocalMemorySize. */
+        executor->args->binInfo->memsetInfo->dynUbufSize = op::internal::PtrCastTo<uint32_t>(values[input_size]->data.inplace);
+        values[input_size]->deleter = nullptr;
+        input_size++;
         values[input_size]->deleter = nullptr;
 
         contextExt->hasPrepared = true;
@@ -369,6 +378,7 @@ aclnnStatus NnopbaseMemsetV2TilingContextBuild(NnopbaseExecutor *executor)
     *(executor->args->binInfo->memsetInfo->blockDim) = 0U;
     *(executor->args->binInfo->memsetInfo->tilingKey) = 0U;
     *(executor->args->binInfo->memsetInfo->scheMode) = 0U;
+    *(executor->args->binInfo->memsetInfo->dynUbufSize) = 0U;
 
     // 3 for tilingkey, blockdim, atomic
     size_t index = contextExt->context->input_size + 3U;

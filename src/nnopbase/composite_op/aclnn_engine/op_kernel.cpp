@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "op_kernel.h"
@@ -393,8 +393,7 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
 
 aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t tilingKey)
 {
-    static std::mutex getFunchandleMutex;
-    const std::lock_guard<std::mutex> lock(getFunchandleMutex);
+    const std::lock_guard<std::mutex> getFuncHandleLock(funcHandleMutex_);
     if (isLaunchWithTilingKey) {
         auto f = [this, tilingKey](aclrtFuncHandle &hdl) -> aclnnStatus {
             aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
@@ -413,12 +412,14 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
         auto &opJson = binJson_.GetVar();
         CHECK_COND(
             opJson.contains("kernelName"), ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND, "json does not contain kernelName");
-        std::string kernelName = opJson["kernelName"].get<std::string>();
-        CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &hdl) == ACL_SUCCESS,
+        kernelNameOfNoFatBin_ = opJson["kernelName"].get<std::string>();
+        CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
             ACLNN_ERR_RUNTIME_ERROR,
             "aclrtBinaryGetFunction failed, kernel name: %s",
-            kernelName.c_str());
-        OP_LOGI("Get function handle by kernel name [%s] successfully, function handle: %p", kernelName.c_str(), hdl);
+            kernelNameOfNoFatBin_.c_str());
+        OP_LOGI(
+            "Get function handle by kernel name [%s] successfully, function handle: %p",
+            kernelNameOfNoFatBin_.c_str(), hdl);
         return ACLNN_SUCCESS;
     };
     return funcHandleWithKernelName_[currDevId_].InitVar(f);
@@ -426,30 +427,24 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
 
 void GetTaskInfoMultiKernelInfo(TaskInfo &info, const nlohmann::json &elem)
 {
-    OP_LOGI("get task type, task ration: %s", elem["taskRation"].get<std::string>().c_str());
-    if (elem["taskRation"].get<std::string>() == "1:0" || elem["taskRation"].get<std::string>() == "0:1") {
-        if (elem.contains("crossCoreSync") && elem["crossCoreSync"] == 1) {
-            if (elem["kernelType"].get<std::string>() == "MIX_AIC") {
-                info.type = MSPROF_GE_TASK_TYPE_MIX_AIC;
-            } else {
-                info.type = MSPROF_GE_TASK_TYPE_MIX_AIV;
-            }
-            info.ration = 0;
-        } else {
-            if (elem["kernelType"].get<std::string>() == "MIX_AIC") {
-                info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
-            } else {
-                info.type = MSPROF_GE_TASK_TYPE_AIV;
-            }
-            info.ration = 0;
-        }
+    const string kernelType = elem["kernelType"].get<std::string>();
+    const string taskRation = elem["taskRation"].get<std::string>();
+    const uint32_t crossCoreSync =
+        (elem["crossCoreSync"].is_number_integer()) ? (elem["crossCoreSync"].get<uint32_t>()) : 0;
+    OP_LOGI("get info from json, kernelType is: %s, taskRation is: %s, crossCoreSync is: %u",
+        kernelType.c_str(),
+        taskRation.c_str(),
+        crossCoreSync);
+    if (taskRation == "1:0" || taskRation == "0:1") {
+        info.type = (taskRation == "0:1") ? MSPROF_GE_TASK_TYPE_MIX_AIV : MSPROF_GE_TASK_TYPE_MIX_AIC;
+        info.ration = 0;
     } else {
-        if (elem["kernelType"].get<std::string>() == "MIX_AIC") {
+        if (kernelType == "MIX_AIC") {
             info.type = MSPROF_GE_TASK_TYPE_MIX_AIC;
         } else {
             info.type = MSPROF_GE_TASK_TYPE_MIX_AIV;
         }
-        info.ration = (elem["taskRation"].get<std::string>() == "1:2") ? KERNEL_RATION_TWO : 1;
+        info.ration = (taskRation == "1:2") ? KERNEL_RATION_TWO : 1;
     }
 }
 
@@ -1091,12 +1086,17 @@ aclnnStatus OpKernel::HashAndInsert(const string &binAndJsonDir,
         jsonPath.append(binOrJsonPathPrefix);
         jsonPath.append(JSON_SUFFIX);
         if (keyParams.binType == BinType::STATIC_BIN) {
-            auto hash = HashBinary(binPath.c_str(), binPath.size());
+            const std::string &simplifiedKey = key.key;
+            auto hash = HashBinary(simplifiedKey.c_str(), simplifiedKey.size());
             const std::lock_guard<std::mutex> lock(staticKernelsMutex_);
+            if (staticBins_.find(hash) != staticBins_.end()) {
+                OP_LOGD("This static bin has been added, key: %s", simplifiedKey.c_str());
+                continue;
+            }
             staticBins_.emplace(hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath,
                                                                     key, hash, keyParams.binType,
                                                                     keyParams.genPlaceholder, false, this));
-            OP_LOGD("Static bin: key: %s, json: %s, bin: %s", key.key.c_str(), jsonPath.c_str(), binPath.c_str());
+            OP_LOGD("Static bin: key: %s, json: %s, bin: %s", simplifiedKey.c_str(), jsonPath.c_str(), binPath.c_str());
             continue;
         }
 
@@ -1453,7 +1453,7 @@ aclnnStatus OpKernel::AppendDynBin(const string &jsonPath, const string &binAndJ
             GenerateKeyByJson(binJson, resultJsonPath, keyParams);
         }
         if (HashAndInsert(binAndJsonDir, resultJsonPath, pos, keyParams) != ACLNN_SUCCESS) {
-            return ACLNN_ERR_INNER_KEY_CONFILICT;
+            return ACLNN_ERR_INNER_KEY_CONFLICT;
         }
         genPlaceholder_ = keyParams.genPlaceholder;
     }
@@ -1485,24 +1485,33 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string
     for (const auto &singleJson : *staticListIter) {
         auto binPathIter = singleJson.find(BIN_PATH);
         if (binPathIter == singleJson.end()) {
-            OP_LOGD("binPath does not exist.");
+            OP_LOGW("binPath does not exist.");
+            continue;
+        }
+
+        auto simplifiedKeyIter = singleJson.find(SIMPLIFIED_KEY);
+        if (simplifiedKeyIter == singleJson.end()) {
+            OP_LOGW("simplifiedKey does not exist.");
             continue;
         }
 
         const std::string &binPath = binPathIter->get<std::string>();
         auto pos = binPath.find(BIN_SUFFIX);
         if (pos == string::npos) {
-            OP_LOGD("binPath %s is not valid.", binPath.c_str());
+            OP_LOGW("binPath %s is not valid.", binPath.c_str());
             continue;
         }
+
+        const std::string &simplifiedKey = simplifiedKeyIter->get<std::string>();
 
         KeyParams keyParams;
         keyParams.binType = BinType::STATIC_BIN;
         keyParams.keys.emplace_back();
-        keyParams.keys.back().key = binPath;
-        if (HashAndInsert(binAndJsonDir, binPath, pos, keyParams) != ACLNN_SUCCESS) {
-            return ACLNN_ERR_INNER_KEY_CONFILICT;
-        }
+        keyParams.keys.back().key = simplifiedKey;
+
+        CHECK_COND(
+            HashAndInsert(binAndJsonDir, binPath, pos, keyParams) == ACLNN_SUCCESS, ACLNN_ERR_INNER_KEY_CONFLICT,
+            "HashAndInsert failed");
     }
     return ACLNN_SUCCESS;
 }
@@ -1594,9 +1603,9 @@ void OpKernelBin::ReportOpAttrInfo(OpArgContext *args, uint64_t summaryId)
     input.VisitByNoReturn(
         [&attrStr](size_t idx, OpArg &elem) { SummaryAttrArg(idx, elem, attrStr); });
     OP_LOGI("attrStr is %s after add input tensor", attrStr.c_str());
-    if (!attrStr.empty()) {
-        ReportAttrInfo(attrStr, summaryId);
-    }
+    attrStr +=
+        std::string("IsStaticKernel:") + (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));
+    ReportAttrInfo(attrStr, summaryId);
 }
 
 } // namespace internal

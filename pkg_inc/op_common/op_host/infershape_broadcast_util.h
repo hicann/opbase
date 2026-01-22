@@ -16,6 +16,7 @@
 #ifndef OP_COMMON_OP_HOST_INFERSHAPE_BROADCAST_UTIL_H
 #define OP_COMMON_OP_HOST_INFERSHAPE_BROADCAST_UTIL_H
 
+#include <stddef.h>
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/op_host/util/opbase_export.h"
 
@@ -24,6 +25,7 @@ namespace Base {
 
 // Do infershape for OP which is single-input single-output and in-shape equal out-shape.
 OPBASE_API ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context);
+
 // Do infershape for OP which is multi-input single-output.
 OPBASE_API ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context, size_t inputNum);
 

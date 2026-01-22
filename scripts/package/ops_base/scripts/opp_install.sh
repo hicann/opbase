@@ -260,7 +260,6 @@ getinstallpath() {
 }
 
 setenv() {
-    logandprint "[INFO]: Set the environment path [ export ASCEND_OPS_BASE_PATH=${relative_path_val}/share/info/${ops_base_platform_dir} ]."
     if [ "${is_docker_install}" = y ] ; then
          install_option="--docker-root=${docker_root}"
     else
@@ -446,18 +445,15 @@ subdirs=$(ls "${version_install_dir}/share/info/${ops_base_platform_dir}" 2> /de
 chown "${_TARGET_USERNAME}":"${_TARGET_USERGROUP}" "${version_install_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
 logwitherrorlevel "$?" "error" "[ERROR]: ERR_NO:${INSTALL_FAILED};ERR_DES:Change opbase onwership failed.."
 
+# create softlinks for stub libs in devlib/linux/$(ARCH)
+create_stub_softlink "${version_install_dir}"
+
 logandprint "[INFO]: upgradePercentage:100%"
 
 logandprint "[INFO]: Installation information listed below:"
 logandprint "[INFO]: Install path: (${version_install_dir}/share/info/${ops_base_platform_dir})"
 logandprint "[INFO]: Install log file path: (${_INSTALL_LOG_FILE})"
 logandprint "[INFO]: Operation log file path: (${_OPERATE_LOG_FILE})"
-
-if [ "${is_setenv}" != "y" ];then
-    logandprint "[INFO]: Using requirements: when opbase module install finished or \
-before you run the opbase module, execute the command \
-[ export ASCEND_OPS_BASE_PATH=${_TARGET_INSTALL_PATH}/latest/share/info/${ops_base_platform_dir} ] to set the environment path."
-fi
 
 logandprint "[INFO]: Ops_base package installed successfully! The new version takes effect immediately."
 exit 0

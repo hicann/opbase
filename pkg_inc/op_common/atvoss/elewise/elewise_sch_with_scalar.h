@@ -26,9 +26,6 @@
 namespace Ops {
 namespace Base {
 
-constexpr uint64_t BYTE_LENGTH = 8;
-constexpr uint64_t CACHE_LINE_BYTE_LENGTH = 512;
-
 template <typename EleBaseTilingDataStruct,uint64_t schMode, class ElemDag>
 class ElementwiseSchWithScalar {
  public:
@@ -474,6 +471,8 @@ class ElementwiseSchWithScalar {
   }
 
   private:
+  constexpr static uint64_t BYTE_LENGTH = 8;
+  constexpr static uint64_t CACHE_LINE_BYTE_LENGTH = 512;
   constexpr static int inputNums = ElemDag::InputSize;
   constexpr static int outputNums = ElemDag::OutputSize;
   constexpr static auto bufferIds = ElemDag::template GetBufferIds<true, false>();

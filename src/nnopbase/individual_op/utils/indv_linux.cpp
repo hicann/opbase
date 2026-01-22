@@ -14,7 +14,7 @@ int32_t IndvScandir(const char *path, IndvDirent ***entryList, IndvFilter filter
     return mmScandir(path, entryList, filter, sort);
 }
 
-void IndvScandirFree(IndvDirent **nameList, int32_t fileCount)
+void IndvScandirFree(IndvDirent **entryList, int32_t fileCount)
 {
-    return mmScandirFree(nameList, fileCount);
+    return mmScandirFree(entryList, fileCount);
 }

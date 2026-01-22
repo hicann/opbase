@@ -52,3 +52,62 @@ createrelativelysoftlink() {
         return 0
     fi
 }
+
+_CURR_PATH=$(dirname $(readlink -f $0))
+SCENE_FILE="${_CURR_PATH}""/../scene.info"
+
+get_pkg_arch_name() {
+    if [ ! -f "$SCENE_FILE" ]; then
+        echo "[OpsBase] [$(getdate)] [ERROR]: $SCENE_FILE file cannot be found!"
+        exit 1
+    fi
+    local arch="$(grep -iw arch "$SCENE_FILE" | cut -d"=" -f2- | awk '{print tolower($0)}')"
+    if [ -z "$arch" ]; then
+        echo "[OpsBase] [$(getdate)] [ERROR]: var arch cannot be found in file $SCENE_FILE!"
+        exit 1
+    fi
+    echo $arch
+}
+
+get_stub_libs_from_filelist() {
+    awk -v arch_name="$arch_name" 'BEGIN {
+        FS=","
+        prefix=sprintf("^%s-linux/devlib/", arch_name)
+        pat=sprintf("^%s-linux/devlib/(linux/%s/[^/]+\\.(so|a)$)", arch_name, arch_name)
+    }
+    {
+        if (match($4, pat)) {
+            sub(prefix, "", $4)
+            print($4)
+        }
+    }' $_CURR_PATH/filelist.csv
+}
+
+create_stub_softlink() {
+    local install_path="$1"
+    if [ ! -d "$install_path" ]; then
+        return
+    fi
+    local arch_name="$pkg_arch_name"
+    ([ -d "$install_path/${arch_name}-linux/devlib" ] && cd "$install_path/${arch_name}-linux/devlib" && {
+        chmod u+w . && \
+        for lib in $(get_stub_libs_from_filelist); do
+            [ -f "$lib" ] && ln -sf "$lib" "$(basename $lib)"
+        done
+        chmod u-w .
+    })
+}
+
+remove_stub_softlink() {
+    local install_path="$1"
+    if [ ! -d "$install_path" ]; then
+        return
+    fi
+    local arch_name="$pkg_arch_name"
+    ([ -d "$install_path/${arch_name}-linux/devlib" ] && cd "$install_path/${arch_name}-linux/devlib" && {
+        chmod u+w . && basename --multiple $(get_stub_libs_from_filelist) | xargs --no-run-if-empty rm -rf
+        chmod u-w .
+    })
+}
+
+pkg_arch_name="$(get_pkg_arch_name)"

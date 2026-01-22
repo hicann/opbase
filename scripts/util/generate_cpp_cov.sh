@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -10,6 +10,10 @@
 
 logging() {
   echo "[INFO] $@"
+}
+
+logging_error() {
+  echo "[ERROR] $@"
 }
 
 mk_dir() {
@@ -24,12 +28,12 @@ generate_coverage() {
   local _coverage_file="$2"
 
   if [[ -z "${_source_dir}" ]]; then
-    logging "directory required to find the .da files"
+    logging_error "directory required to find the .da files"
     exit 1
   fi
 
   if [[ ! -d "${_source_dir}" ]]; then
-    logging "directory is not exist, please check ${_source_dir}"
+    logging_error "directory is not exist, please check ${_source_dir}"
     exit 1
   fi
 
@@ -40,7 +44,7 @@ generate_coverage() {
 
   which lcov >/dev/null 2>&1
   if [[ $? -ne 0 ]]; then
-    logging "lcov is required to generate coverage data, please install"
+    logging_error "lcov is required to generate coverage data, please install"
     exit 1
   fi
 

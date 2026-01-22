@@ -115,9 +115,9 @@ else()
         ${METADEF_INCLUDE}/external/exe_graph
         ${METADEF_INCLUDE}/exe_graph
         ${TOP_DIR}/runtime/pkg_inc
- 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common
+        ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common
         ${TOP_DIR}/runtime/include/external
-    )
+        )
 
     target_include_directories(ops_base_infer_objs
         PRIVATE

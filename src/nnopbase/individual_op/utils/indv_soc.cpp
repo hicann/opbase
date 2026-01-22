@@ -84,7 +84,7 @@ bool IndvSoc::MemsetV2(void) const
 
 bool IndvSoc::NeedAlignInitValues(void) const
 {
-    return socVersion != OPS_SUBPATH_ASCEND910B;
+    return socVersion == OPS_SUBPATH_ASCEND910B;
 }
 
 bool IndvSoc::NeedsExtraMemoryForOverflowDump(void) const

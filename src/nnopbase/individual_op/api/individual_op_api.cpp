@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "individual_op_api.h"
 #include <mutex>
@@ -24,6 +24,7 @@
 #include "aclnn/aclnn_base.h"
 #include "thread_local_context.h"
 #include "opdev/platform.h"
+#include "op_dfx_internal.h"
 
 void NnopbaseOpLogE(const aclnnStatus code, const NnopbaseChar *const expr)
 {
@@ -107,6 +108,7 @@ void* NnopbaseGetExecutor(void *space, const NnopbaseChar *opType, NnopbaseChar 
             // 留出optype的偏移量后续生成key的时候用
             executor->ownArgs.keyLen = strlen(executor->opType);
             executor->ownArgs.remainKeyLen = NNOPBASE_MAX_ARGS_KEY_LEN - strlen(executor->opType);
+            executor->ownArgs.inputKey.resize(NNOPBASE_MAX_ARGS_KEY_LEN);
             return executor;
         }
     }
@@ -810,7 +812,7 @@ const NnopbaseChar *NnopbaseFindStaticKernel(const NnopbaseChar *opType,
     OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
     verKey = NnopbaseCollecterGenStaticKey(verKey, &regInfoKey, &tensorNumInfo, tensors,
                                            attrs, implMode, deterMode, valueDepend);
-    return NnopbaseCollecterGetBinPath(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
+    return NnopbaseCollecterGetSimplifiedKey(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
                                        uint32_t(verKey - verbose));
 }
 
@@ -875,7 +877,7 @@ void NnopbaseSetHcclServerTypeList(void *executor, NnopbaseHcclServerType *hcclS
     NNOPBASE_ASSERT_NOTNULL(socSupportList);
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     const auto supportHcclSocMap = nnopbase::IndvSoc::GetInstance().GetSupportHcclSocMap();
-    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const auto &iter = supportHcclSocMap.find(socVersion);
     if (iter == supportHcclSocMap.cend()) {
         return;
@@ -908,7 +910,7 @@ bool NnopbaseMatchArgs(void *executor, uint64_t *workspaceLen)
     RecordNnopbaseTime(nnopExecutor, NnopbaseTimeIdx::kGetWsStart);
     nnopbase::NnopbaseGetCoreNum(&nnopExecutor->coreNum.aicNum, &nnopExecutor->coreNum.aivNum);
     NnopbaseUpdatePlatformInfo(nnopExecutor);
-    if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::opProfilingSwitch.recordOpArgFlag) {
+    if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         nnopExecutor->ownArgs.enableCache = false;
         OP_LOGI("Op %s does not enable match args cache.", nnopExecutor->opType);
         RecordNnopbaseTime(nnopExecutor, NnopbaseTimeIdx::kMatchCacheStart);

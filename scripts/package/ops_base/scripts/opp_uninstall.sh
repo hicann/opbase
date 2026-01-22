@@ -99,7 +99,6 @@ getinstallpath() {
 }
 
 unsetenv() {
-    logandprint "[INFO]: Unset the environment path [ export ASCEND_OPS_BASE_PATH=${relative_path_val}/${ops_base_platform_dir} ]."
     target_username=$(getinstalledinfo "${KEY_INSTALLED_UNAME}")
     target_usergroup=$(getinstalledinfo "${KEY_INSTALLED_UGROUP}")
     if [ "${is_docker_install}" = y ] ; then
@@ -233,10 +232,15 @@ get_version "pkg_version" "$_VERSION_INFO_FILE"
 # delete opbase source files
 unsetenv
 
-# is_multi_version_pkg "pkg_is_multi_version" "$_VERSION_INFO_FILE "
-# if [ "$pkg_is_multi_version" = "true" ]; then
-#     get_version_dir "pkg_version_dir" "$_VERSION_INFO_FILE"
-# fi
+is_multi_version_pkg "pkg_is_multi_version" "$_VERSION_INFO_FILE"
+if [ "$pkg_is_multi_version" = "true" ]; then
+    version_install_dir=${installed_path}/${pkg_version_dir}
+else
+    version_install_dir=${installed_path}
+fi
+
+# remove softlinks for stub libs in devlib/linux/$(ARCH)
+remove_stub_softlink "$version_install_dir"
 
 if [ "${pkg_version_dir}" = "" ]; then
     FINAL_INSTALL_PATH=${_ABS_INSTALL_PATH}

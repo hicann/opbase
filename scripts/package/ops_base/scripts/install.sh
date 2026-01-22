@@ -1504,6 +1504,12 @@ user group (${_DEFAULT_USERGROUP}) for devel mode? [y/n]"
         logoperationretstatus "install" "${in_install_type}" "1" "${in_cmd_list}"
     fi
 
+    architecture=$(uname -m)
+    if [ "${architecture}" != "${platform_data}" ]; then
+        return
+        exit 0
+    fi
+
     # use uninstall to clean the install folder
     precleanbeforeinstall "${_TARGET_INSTALL_PATH}"
     if [ "$?" != 0 ]; then

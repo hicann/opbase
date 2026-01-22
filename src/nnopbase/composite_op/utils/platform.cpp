@@ -1,16 +1,18 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "opdev/platform.h"
 #include <map>
 #include <vector>
+#include "runtime/rt_external_base.h"
+#include "platform/soc_spec.h"
 #include "platform/platform_info.h"
 #include "opdev/fast_vector.h"
 #include "acl/acl_rt.h"
@@ -21,6 +23,8 @@ namespace op {
 constexpr size_t SOC_SPEC_COUNT = 3;
 constexpr size_t SOC_SPEC_ABILITY_DEFAULT_COUNT = 10;
 constexpr int64_t DEFAULT_BLOCK_SIZE = 32;
+constexpr size_t NPU_ARCH_VAL_MAX_LEN = 10;
+
 using SocSpecAbilityVector = std::vector<SocSpecAbility>;
 
 class PlatformThreadLocalCtx {
@@ -65,6 +69,8 @@ public:
 
     bool GetFftsPlusMode() const;
 
+    NpuArch GetCurNpuArch() const;
+
 private:
     void InitAiCoreInstFromOriginPlatformInfo();
 
@@ -80,6 +86,8 @@ private:
 
     void InitSoCInfo();
 
+    void InitNpuArch();
+
 private:
     fe::PlatFormInfos *platformOriInfo_;
     SocVersion socVersion_ = SocVersion::RESERVED_VERSION;
@@ -89,6 +97,7 @@ private:
     uint32_t vectorCoreNum_{0};
     std::vector<SocSpecAbilityVector> aiCoreInstAbility_;
     bool fftsPlusMode_{false};
+    NpuArch npuArch_{NpuArch::DAV_RESV};
 };
 
 PlatformInfoImpl::PlatformInfoImpl(fe::PlatFormInfos *platformOriginInfo) : platformOriInfo_(platformOriginInfo)
@@ -96,6 +105,7 @@ PlatformInfoImpl::PlatformInfoImpl(fe::PlatFormInfos *platformOriginInfo) : plat
     InitAiCoreInstAbility();
     InitAiCoreInstFromOriginPlatformInfo();
     InitCoreNum();
+    InitNpuArch();
 }
 
 PlatformInfoImpl::~PlatformInfoImpl()
@@ -150,6 +160,11 @@ uint32_t PlatformInfoImpl::GetVectorCoreNum() const
 bool PlatformInfoImpl::GetFftsPlusMode() const
 {
     return fftsPlusMode_;
+}
+
+NpuArch PlatformInfoImpl::GetCurNpuArch() const
+{
+    return npuArch_;
 }
 
 fe::PlatFormInfos *PlatformInfoImpl::GetPlatformInfos() const
@@ -278,6 +293,25 @@ void PlatformInfoImpl::InitSoCInfo()
     OP_LOGI("GetPlatformResWithLock res is %d, get ffts_mode is: %s", static_cast<int>(res), fftsModeStr.c_str());
 }
 
+void PlatformInfoImpl::InitNpuArch()
+{
+    char archVal[NPU_ARCH_VAL_MAX_LEN] = {0};
+    OP_CHECK(
+        rtGetSocSpec("version", "NpuArch", archVal, NPU_ARCH_VAL_MAX_LEN) == RT_ERROR_NONE,
+        OP_LOGW("call rtGetSocSpec failed"), return);
+    std::string archStrVal(archVal);
+    uint32_t npuArchVal = 0;
+    try {
+        npuArchVal = static_cast<uint32_t>(std::stoul(archStrVal));
+    } catch (const std::exception &e) {
+        OP_LOGW("stoul %s to uint32_t value failed, reason: %s", archStrVal, e.what());
+        npuArch_ = NpuArch::DAV_RESV;
+        return;
+    }
+    OP_LOGI("Npu arch get from rtGetSocSpec: %s, change to uint32_t: %u", archVal, npuArchVal);
+    npuArch_ = static_cast<NpuArch>(npuArchVal);
+}
+
 bool PlatformInfo::CheckSupport(op::SocSpec socSpec, op::SocSpecAbility ability) const
 {
     if (impl_ != nullptr) {
@@ -344,6 +378,12 @@ bool PlatformInfo::GetFftsPlusMode() const
 {
     CHECK_RET(impl_ != nullptr, false);
     return impl_->GetFftsPlusMode();
+}
+
+NpuArch PlatformInfo::GetCurNpuArch() const
+{
+    CHECK_RET(impl_ != nullptr, NpuArch::DAV_RESV);
+    return impl_->GetCurNpuArch();
 }
 
 fe::PlatFormInfos *PlatformInfo::GetPlatformInfos() const

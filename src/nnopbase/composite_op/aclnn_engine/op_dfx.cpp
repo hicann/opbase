@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <atomic>
@@ -37,6 +37,8 @@ static std::atomic<uint64_t> opLogSequenceCounter = 0;
 static std::map<std::string, uint32_t> profilingTable;
 static thread_local int oPProfilingTid = 0;
 static std::mutex profilingTableMutex;
+static std::mutex opProfilingSwitchMutex;
+
 namespace internal {
     OpProfilingSwitch opProfilingSwitch;
 }
@@ -112,6 +114,19 @@ uint32_t GenOpTypeId(const char *opName)
 }
 
 namespace internal {
+
+// OpProfilingSwitch 线程安全访问辅助函数实现 (仅针对 recordOpArgFlag)
+bool GetOpProfilingRecordArgFlag()
+{
+    std::lock_guard<std::mutex> lock(opProfilingSwitchMutex);
+    return opProfilingSwitch.recordOpArgFlag;
+}
+
+void SetOpProfilingRecordArgFlag(bool value)
+{
+    std::lock_guard<std::mutex> lock(opProfilingSwitchMutex);
+    opProfilingSwitch.recordOpArgFlag = value;
+}
 
 OpThreadLocalContext &GetThreadLocalContext()
 {
@@ -216,16 +231,16 @@ uint64_t GenSummaryItemId(const char *l2Name, const char *l0Name, const char *op
 int32_t RecordOpArgCallbacker::RecordOpArgCallback(
     [[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char *dumpConfig, [[maybe_unused]] int32_t size)
 {
-    opProfilingSwitch.recordOpArgFlag = (dumpSwitch & Adx::OP_INFO_RECORD_DUMP) ? true : false;
-    OP_LOGI("RecordOpArgCallback, get record op arg flag = %d", opProfilingSwitch.recordOpArgFlag);
+    SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) ? true : false);
+    OP_LOGI("RecordOpArgCallback, get record op arg flag = %d", GetOpProfilingRecordArgFlag());
     return 0;
 }
- 
+
 int32_t RecordOpArgCallbacker::RecordOpArgDump(
     [[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char *dumpConfig, [[maybe_unused]] int32_t size)
 {
-    opProfilingSwitch.recordOpArgFlag = (dumpSwitch & Adx::OP_INFO_RECORD_DUMP) ? true : false;
-    if (!opProfilingSwitch.recordOpArgFlag) {
+    SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) ? true : false);
+    if (!GetOpProfilingRecordArgFlag()) {
         OP_LOGI("Record stop, start RecordOpArgDump");
         int32_t res = aclnnOpInfoRecord::OpInfoDump();
         CHECK_COND(res == EOK, ACLNN_ERR_INNER, "OpInfoDump filed");
@@ -340,16 +355,21 @@ void PrepareBasicInfo(MsprofCompactInfo &compactInfo, MsprofGeTaskType taskType,
     compactInfo.data.nodeBasicInfo.taskType = taskType;
     compactInfo.data.nodeBasicInfo.opType = id;
     uint32_t blockDim = op::internal::GetThreadLocalContext().blockDim_;
+    OP_LOGI("blockDim is %u before calculation", blockDim);
     if (taskType == MSPROF_GE_TASK_TYPE_MIX_AIC) {
         constexpr uint32_t constTwo = 2U;
         blockDim = ((blockDim & 0xFFFFU) | (constTwo << 16U));
     }
+    OP_LOGI("blockDim is %u after calculation", blockDim);
     (taskType == MSPROF_GE_TASK_TYPE_AI_CPU || taskType == MSPROF_GE_TASK_TYPE_DSA) ?
         compactInfo.data.nodeBasicInfo.blockDim = 0 : \
                            compactInfo.data.nodeBasicInfo.blockDim = blockDim;
     compactInfo.data.nodeBasicInfo.opFlag = 0;
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
-    OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu", res, compactInfo.timeStamp);
+    OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.",
+        res,
+        compactInfo.timeStamp,
+        compactInfo.data.nodeBasicInfo.taskType);
 }
 
 void PrepareBasicInfo(MsprofCompactInfo &compactInfo, const TaskInfo &taskInfo, uint64_t id, uint64_t summaryId)
@@ -377,7 +397,10 @@ void PrepareBasicInfo(MsprofCompactInfo &compactInfo, const TaskInfo &taskInfo, 
     compactInfo.data.nodeBasicInfo.opFlag =
         (static_cast<uint32_t>(taskInfo.execMode) & static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ? 1 : 0;
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
-    OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu", res, compactInfo.timeStamp);
+    OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.",
+        res,
+        compactInfo.timeStamp,
+        compactInfo.data.nodeBasicInfo.taskType);
 }
 
 void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream &stream)
@@ -920,17 +943,13 @@ void DumpL2(const std::vector<const aclTensor *> &tensors,
             OpIOType ioType,
             aclrtStream stream)
 {
-    OP_LOGD("AdumpGetDumpSwitch = %d\n", IsDumpEnable());
-    if (IsDumpEnable()) {
+    if (op::internal::GetThreadLocalContext().opConfigInfo_.isOpDumpEnable_) {
         std::vector<Adx::TensorInfoV2> dumpTensors;
         PrepareL2DumpTensor(dumpTensors, tensors, ioType);
         std::string l2Name = (opLogInfo.l2ApiName != nullptr) ? opLogInfo.l2ApiName : "L2DfxAbscent";
         l2Name += std::string("_") + std::to_string(opLogInfo.l2SequenceCounter) + std::string("_L2");
         std::string l2Type = (opLogInfo.l2ApiName != nullptr) ? opLogInfo.l2ApiName : "L2DfxAbscent";
-        auto res = Adx::AdumpDumpTensorV2(l2Name,
-                                        l2Type,
-                                        dumpTensors,
-                                        stream);
+        auto res = Adx::AdumpDumpTensorV2(l2Name, l2Type, dumpTensors, stream);
         OP_LOGI("AdumpDumpTensor res = %d\n", res);
     }
 }
@@ -1406,8 +1425,9 @@ OpDfxProfiler *CreateDfxProfiler(uint32_t id)
 
 bool IsDumpEnabled()
 {
-    return internal::IsDumpEnable();
+    return op::internal::GetThreadLocalContext().opConfigInfo_.isOpDumpEnable_;
 }
+
 void InitThreadLocalContext()
 {
     op::internal::GetThreadLocalContext().l2IOTensors_.Init();

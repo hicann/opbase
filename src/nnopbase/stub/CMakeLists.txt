@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -19,7 +19,7 @@ set(STUB_SRC_LIST
     ${CMAKE_CURRENT_BINARY_DIR}/stub_platform.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_shape_utils.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_tensor_view_utils.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/stub_individual_op_api.cc,
+    ${CMAKE_CURRENT_BINARY_DIR}/stub_individual_op_api.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_acl_meta.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_bridge_pool.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_block_pool.cc
@@ -77,7 +77,7 @@ add_dependencies(stub_nnopbase nnopbase_stub)
 
 target_include_directories(stub_nnopbase PRIVATE ${STUB_NNOPBASE_INCLUDING_PATH})
 
-target_compile_options(stub_nnopbase PRIVATE -O2 -fno-common -Wextra -Wfloat-equal -Wno-unused-parameter -D_FORTIFY_SOURCE=2)
+target_compile_options(stub_nnopbase PRIVATE -O2 -fno-common -Wno-extra -Wfloat-equal -Wno-unused-parameter -D_FORTIFY_SOURCE=2)
 
 target_link_libraries(stub_nnopbase
     PRIVATE

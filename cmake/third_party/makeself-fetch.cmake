@@ -31,6 +31,9 @@ else()
     set(MAKESELF_PATH ${MAKESELF_INSTALL_PATH})
 endif()
 
+message("MAKESELF_PATH:${MAKESELF_PATH}")
+message("CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
+
 # 默认配置的makeself还是不存在则下载
 if (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_PATH}/makeself.sh")
     set(MAKESELF_URL "https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz")
@@ -44,18 +47,18 @@ if (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_P
       SOURCE_DIR                  ${MAKESELF_INSTALL_PATH}
       CONFIGURE_COMMAND           ""
       BUILD_COMMAND               ""
-      INSTALL_COMMAND             ""
+      INSTALL_COMMAND             
+        ${CMAKE_COMMAND} -E make_directory ${MAKESELF_INSTALL_PATH} &&
+        ${CMAKE_COMMAND} -E chdir ${MAKESELF_INSTALL_PATH} ${CMAKE_COMMAND} -E tar zxvf "${MAKESELF_DOWNLOAD_PATH}/makeself-release-2.5.0-patch1.tar.gz" &&
+        ${CMAKE_COMMAND} -E copy_directory "${MAKESELF_PATH}" "${CMAKE_BINARY_DIR}/makeself"
     )
 else ()
     message("makeself found in ${MAKESELF_PATH}, no need download")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${MAKESELF_PATH}" "${CMAKE_BINARY_DIR}/makeself"
+        COMMAND chmod 700 "${CMAKE_BINARY_DIR}/makeself/makeself.sh"
+        COMMAND chmod 700 "${CMAKE_BINARY_DIR}/makeself/makeself-header.sh"
+        RESULT_VARIABLE CHMOD_RESULT
+        ERROR_VARIABLE CHMOD_ERROR
+    )
 endif()
-
-message("MAKESELF_PATH:${MAKESELF_PATH}")
-message("CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${MAKESELF_PATH}" "${CMAKE_BINARY_DIR}/makeself"
-    COMMAND chmod 700 "${CMAKE_BINARY_DIR}/makeself/makeself.sh"
-    COMMAND chmod 700 "${CMAKE_BINARY_DIR}/makeself/makeself-header.sh"
-    RESULT_VARIABLE CHMOD_RESULT
-    ERROR_VARIABLE CHMOD_ERROR
-)

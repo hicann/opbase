@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef INDV_COLLECTER_H_
@@ -54,7 +54,7 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter);
 NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, const size_t hashKey,
     const NnopbaseUChar *const verbose, const uint32_t verbLen);
 void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo *const regInfo, NnopbaseBinInfo* binInfo);
-aclnnStatus NnopbaseCollecterAddBinInfo(NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
+aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
     const NnopbaseUChar *const verbose, const uint32_t len);
 aclnnStatus NnopbaseCollecterAddRegInfoToTbl(NnopbaseBinCollecter *const collecter, const NnopbaseJsonInfo &jsonInfo,
                                              const uint64_t hashKey, NnopbaseRegInfo *&reg, gert::OppImplVersionTag oppImplVersion);
@@ -85,7 +85,7 @@ bool NnopbaseReadConfigFile(const std::string &configPath, std::vector<std::stri
 NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey, const NnopbaseRegInfoKey *const regInfoKey,
     const NnopbaseStaticTensorNumInfo *const tensorNumInfo, const aclTensor* tensors[], const NnopbaseAttrAddr *attrs[],
     const int64_t implMode, const int64_t deterMin, const int64_t *const vDepend);
-const char *NnopbaseCollecterGetBinPath(
+const char *NnopbaseCollecterGetSimplifiedKey(
     const NnopbaseChar *const opType, const uint64_t key, const NnopbaseUChar *verbose, const uint32_t verbLen);
 aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter);
 aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo);

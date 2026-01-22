@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
  
 #include "gtest/gtest.h"
@@ -44,6 +44,10 @@ using Json = nlohmann::json;
 using namespace op::internal;
 
 extern "C" void InitPTACacheThreadLocal();
+
+namespace op::internal {
+    extern std::string GenerateOpPathBySocVersion(const std::string &soc);
+}
 
 class OpKernelUT : public testing::Test {
 protected:
@@ -212,7 +216,7 @@ TEST_F(OpKernelUT, GetTaskTypeSingleBinMmultiKernelType)
     PrepareBasicInfo(compactInfo, taskType, 0, 0);
 
     taskType = kernelBin.GetTaskInfo(10000);
-    EXPECT_EQ(taskType.type, MSPROF_GE_TASK_TYPE_AI_CORE);
+    EXPECT_EQ(taskType.type, MSPROF_GE_TASK_TYPE_MIX_AIC);
     EXPECT_EQ(taskType.ration, 0);
     taskType = kernelBin.GetTaskInfo(10001);
     EXPECT_EQ(taskType.type, MSPROF_GE_TASK_TYPE_MIX_AIC);
@@ -340,14 +344,16 @@ TEST_F(OpKernelUT, LaunchArgCacheTest) {
     rec = kernelBin.JsonLoad();
     EXPECT_EQ(rec, ACLNN_SUCCESS);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
 
     auto ctx = op::MakeOpArgContext(input, output);
     LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
-    RtsArg arg(true, argInfo, 900);
+    RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
     PrintRtArg(arg.GetRtsArg());
 
@@ -712,14 +718,16 @@ TEST_F(OpKernelUT, TestDoLaunchWithSplitAicAndAiv) {
     rec = kernelBin.JsonLoad();
     EXPECT_EQ(rec, ACLNN_SUCCESS);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf + 100;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 32;
  
     auto ctx = op::MakeOpArgContext(input, output);
     LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
-    RtsArg arg(true, argInfo, 900);
+    RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
     PrintRtArg(arg.GetRtsArg());
  
@@ -1138,12 +1146,14 @@ TEST_F(OpKernelUT, AssertExceptionDump)
     auto ctx = op::MakeOpArgContext(input, output, attr, mode);
     ctx->AppendOpWorkspaceArg(inputList);
 
-    char tilingbuf[1000];
-    void *tilingData = tilingbuf+200;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(1000);
+    buffer.Seek(100);
+    void *tilingData = buffer.Data();
     size_t tilingDataLen = 100;
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 800);
+    op::internal::RtsArg arg(true, argInfo, 800, &buffer);
     arg.FillArgs(true);
     dumpStub.CheckResult();
     Adx::DumpStub::GetInstance()->UnInstall();
@@ -1306,8 +1316,10 @@ TEST_F(OpKernelUT, TestTilingOOMInfo1)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    int64_t tilingbuf[2000];
-    int64_t *tilingData = tilingbuf + 1000;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(2000);
+    buffer.Seek(1000);
+    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
@@ -1418,8 +1430,10 @@ TEST_F(OpKernelUT, TestTilingOOMInfo2)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    int64_t tilingbuf[2000];
-    int64_t *tilingData = tilingbuf + 1000;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(2000);
+    buffer.Seek(1000);
+    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
@@ -1532,8 +1546,10 @@ TEST_F(OpKernelUT, TestTilingOOMInfo3)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    int64_t tilingbuf[2000];
-    int64_t *tilingData = tilingbuf + 1000;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(2000);
+    buffer.Seek(1000);
+    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
@@ -1641,8 +1657,10 @@ TEST_F(OpKernelUT, TestTilingOOMInfo4)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    int64_t tilingbuf[2000];
-    int64_t *tilingData = tilingbuf + 1000;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(2000);
+    buffer.Seek(1000);
+    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
@@ -1691,4 +1709,24 @@ TEST_F(OpKernelUT, LoadJsonFail)
     Json opJson;
     aclnnStatus rec = kernelBin->GetBinJson(opJson);
     EXPECT_NE(rec, ACLNN_SUCCESS);
+}
+
+TEST_F(OpKernelUT, TilingBufferEnlarge)
+{
+    ExtendedTilingBuffer buffer;
+    buffer.Init(4);
+    int data = 1;
+    buffer.Append(&data, sizeof(int));
+    buffer.Append(&data, sizeof(int));
+    EXPECT_EQ(buffer.size_, 8);
+}
+
+TEST_F(OpKernelUT, GenerateOpPathBySocVersion) {
+    std::string opPath = op::internal::GenerateOpPathBySocVersion("Ascend910_957c");
+    EXPECT_EQ(opPath, "ascend910_95/");
+}
+
+TEST_F(OpKernelUT, GenerateOpPathBySocVersionFailed) {
+    std::string opPath = op::internal::GenerateOpPathBySocVersion("Ascend910");
+    EXPECT_EQ(opPath, "");
 }

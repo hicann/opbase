@@ -352,7 +352,7 @@ struct FilterTempCalcNode {
 };
 
 /*
-* 最大存活节点等相关返回信息
+* 最大存活节点等相关返回信息（剔除永久存活节点后）
 */
 struct DagMaxAliveInfo {
   uint32_t aliveNode = 0;      // 最大存活节点数量
@@ -406,16 +406,12 @@ constexpr DagMaxAliveInfo MaxAliveNode(DagMaxAliveInfo info) {
   if constexpr (start < FunList::Size) {
     using func = typename FunList::template At<start>;
 
-    // 检查输入是否可以删除
-    using delVar = typename TryDelInOutAux<FunList, RsvList, start + 1,
-                                           typename func::InNonScalarFuns>::Type;
-
     // 依赖节点： 输入 + 输出
     using inOutNodes = Condition<(Vec::IsCopyOutOp<typename func::Fun>::Value || func::IsScalarOp),
                                  typename func::InNonScalarFuns,
                                  typename func::InNonScalarFuns::template Append<typename func::RealBindType> >;
-    // Union当前存活节点
-    using aliveNodes = typename Acc::template Union<inOutNodes>::Unique;
+    // Union当前存活节点，刨去永久存活节点
+    using aliveNodes = typename Acc::template Union<inOutNodes>::Unique::template Remove< RsvList >;
     // 存活节点中CopyInBrc节点
     using copyInBrcNodes = typename aliveNodes::template Filter< TypeIsCopyInBrcBind >;
     // 刨去输入/输出占用的Buffer节点，保留中间计算临时节点（非NDDMA场景下CopyInBrc视作普通节点）
@@ -449,6 +445,9 @@ constexpr DagMaxAliveInfo MaxAliveNode(DagMaxAliveInfo info) {
     info.maxDtypeBytes = Max<uint32_t>(curDtypeBytes, info.maxDtypeBytes);
     info.minDtypeBytes = curDtypeBytes < info.minDtypeBytes ? curDtypeBytes : info.minDtypeBytes;
 
+    // 检查输入是否可以删除
+    using delVar = typename TryDelInOutAux<FunList, RsvList, start + 1,
+                                           typename func::InNonScalarFuns>::Type;
     // 删除不再在后续节点中使用的节点
     using next = typename aliveNodes::template Remove<delVar>;
 

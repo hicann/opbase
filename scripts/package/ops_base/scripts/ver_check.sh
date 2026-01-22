@@ -88,8 +88,8 @@ check_version_file () {
 }
 
 check_opp_version_file () {
-    if [ -f "${_CURR_PATH}/../../version.info" ];then
-        ver_info="${_CURR_PATH}/../../version.info"
+    if [ -f "${_CURR_PATH}/../version.info" ];then
+        ver_info="${_CURR_PATH}/../version.info"
     # opbase/version.info -> opbase
     elif [ -f "${_DEFAULT_INSTALL_PATH}/opbase/version.info" ];then
         ver_info="${_DEFAULT_INSTALL_PATH}/opbase/version.info"

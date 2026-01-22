@@ -24,6 +24,7 @@ static constexpr uint64_t COMPUTE_KEY_OFFSET = 1000000;
 static constexpr uint64_t COMPUTE_KEY = 0;
 static constexpr uint64_t SCHEDULE_KEY = 100;
 static constexpr int64_t MIN_TILING_BITS_SIZE_PER_CORE = 32768; // 4KB
+static constexpr int64_t CACHE_LINE_BYTE_LENGTH = 512;
 
 static uint64_t GetComputeKey()
 {
@@ -78,7 +79,7 @@ ge::graphStatus ElewiseTiling(const ElewiseTilingParams& elewiseTilingParams, El
     if (coreNum > elewiseTilingParams.coreNum) {
         coreNum = elewiseTilingParams.coreNum;
     }
-    int64_t blockFormer = ((dim0 + coreNum - 1) / coreNum + 7) / 8 * 8;
+    int64_t blockFormer = ((dim0 + coreNum - 1) / coreNum + CACHE_LINE_BYTE_LENGTH - 1) / CACHE_LINE_BYTE_LENGTH * CACHE_LINE_BYTE_LENGTH;
     int64_t blockNum = (dim0 + blockFormer - 1) / blockFormer;
     int64_t blockTail = dim0 - (blockNum - 1) * blockFormer;
 
@@ -102,6 +103,7 @@ ge::graphStatus ElewiseTiling(const ElewiseTilingParams& elewiseTilingParams, El
     elewiseTilingData.ubTailOfFormerBlock = ubTailOfFormerBlock;
     elewiseTilingData.ubTailOfTailBlock = ubTailOfTailBlock;
     elewiseTilingData.elemNum = maxElemNum;
+    elewiseTilingData.coreNum = coreNum;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -156,6 +158,35 @@ void ElewiseBaseTiling::AdaptEleBaseTilingData(const ElewiseTilingData& elewiseT
     eleBaseTilingData.ubTailOfFormerBlock = elewiseTilingData.ubTailOfFormerBlock;
     eleBaseTilingData.ubTailOfTailBlock = elewiseTilingData.ubTailOfTailBlock;
     eleBaseTilingData.elemNum = elewiseTilingData.elemNum;
+    eleBaseTilingData.coreNum = static_cast<int32_t>(elewiseTilingData.coreNum);
+}
+
+
+void ElewiseBaseTiling::AdaptEleBaseTilingData16B(const ElewiseTilingData& elewiseTilingData,
+                                                 EleBaseTilingData16B& eleBaseTilingData16B) {
+    OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData16B.");
+    
+    eleBaseTilingData16B.dim0 = elewiseTilingData.dim0;
+    eleBaseTilingData16B.ubFormer = elewiseTilingData.ubFormer;
+    eleBaseTilingData16B.coreNum = elewiseTilingData.coreNum;
+
+    blockDim = elewiseTilingData.blockNum;
+}
+
+ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData24B(const ElewiseTilingData& elewiseTilingData) {
+    OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData24B.");
+
+    Ele24BTilingData = context_->GetTilingData<EleBaseTilingData24B>();
+    OP_CHECK_IF((Ele24BTilingData == nullptr),
+                    OP_LOGD(context_->GetNodeName(), "Get Ele24BTilingData from GE context failed"),
+                    return ge::GRAPH_FAILED);
+    
+    Ele24BTilingData->dim0 = elewiseTilingData.dim0;
+    Ele24BTilingData->ubFormer = elewiseTilingData.ubFormer;
+    Ele24BTilingData->coreNum = elewiseTilingData.coreNum;
+
+    blockDim = elewiseTilingData.blockNum;
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData32B(const ElewiseTilingData& elewiseTilingData) {

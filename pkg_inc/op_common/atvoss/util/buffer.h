@@ -40,14 +40,18 @@ constexpr static uint8_t BUF_PING_PONG = 2;
 constexpr static uint8_t BUF_MAX_COUNT = 32;
 
 enum class BufPosInList : uint8_t {
-  MTE2 = 0,
-  MTE3 = 1,
-  TEMP = 2,
-  PONG_MTE3 = 3,
+  PERSIST_MTE2 = 0,
+  MTE2,
+  PERSIST_MTE3,
+  MTE3,
+  PERSIST_TEMP,
+  TEMP,
+  PONG_MTE3,
+  MAX_POS,
 };
 
-constexpr static int BUF_ALLOCATED_IDX = 4;
-constexpr static int BUF_TO_RELEASE_IDX = 4;
+constexpr static int BUF_ALLOCATED_IDX = static_cast<int>(BufPosInList::MAX_POS);
+constexpr static int BUF_TO_RELEASE_IDX = static_cast<int>(BufPosInList::MAX_POS);
 
 /*
 * Buffer wrapper Tempalte
@@ -368,66 +372,103 @@ struct PriorityGetFront {
   using Type = typename PriorityGetFrontAux<Elems<Eses...>>::Type;
 };
 
-// 分配MTE2内存
-template<typename FunList, typename BufListList, MemLevel MemLvl>
-struct AllocMte2 {
-private:
+template<typename BufListList>
+struct BufListListDecoder {
+public:
+  using PersistMte2Es = typename BufListList::template At<static_cast<int>(BufPosInList::PERSIST_MTE2)>;
   using Mte2Es = typename BufListList::template At<static_cast<int>(BufPosInList::MTE2)>;
+  using PersistMte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::PERSIST_MTE3)>;
   using Mte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::MTE3)>;
+  using PersistTmpEs = typename BufListList::template At<static_cast<int>(BufPosInList::PERSIST_TEMP)>;
   using TmpEs = typename BufListList::template At<static_cast<int>(BufPosInList::TEMP)>;
   using PongMte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::PONG_MTE3)>;
+};
+
+// 分配MTE2内存
+template<typename FunList, typename BufListList, MemLevel MemLvl, bool cache = false>
+struct AllocMte2 {
+private:
+  using BufLists = BufListListDecoder<BufListList>;
   // pop front
-  using usedTmpEs = __aux::Condition<MemLvl == MemLevel::LEVEL_2, Elems<>, TmpEs>;
-  using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0, Elems<>, PongMte3Es>;
-  using mte2 = typename PriorityGetFront<Mte2Es, usedTmpEs, usedPongMte3Es>::Type;
+  using usedTmpEs = __aux::Condition<MemLvl == MemLevel::LEVEL_2 || cache, 
+                                     Elems<>, typename BufLists::TmpEs>;
+  using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, 
+                                          Elems<>, typename BufLists::PongMte3Es>;
+  using usedPersistMte2Es = __aux::Condition<!cache, 
+                                             Elems<>, typename BufLists::PersistMte2Es>;
+  using usedMte2Es = __aux::Condition<cache, 
+                                      Elems<>, typename BufLists::Mte2Es>;
+  using mte2 = typename PriorityGetFront<usedPersistMte2Es, usedMte2Es, 
+                                         usedTmpEs, usedPongMte3Es>::Type;
   // update Es
-  using Mte2EsNext = typename Mte2Es::template PopFront<mte2>::Type;
-  using TmpEsNext = typename TmpEs::template PopFront<mte2>::Type;
-  using PongMte3EsNext = typename PongMte3Es::template PopFront<mte2>::Type;
+  using Mte2EsNext = typename BufLists::Mte2Es::template PopFront<mte2>::Type;
+  using TmpEsNext = typename BufLists::TmpEs::template PopFront<mte2>::Type;
+  using PongMte3EsNext = typename BufLists::PongMte3Es::template PopFront<mte2>::Type;
+  using PersistMte2EsNext = typename BufLists::PersistMte2Es::template PopFront<mte2>::Type;
 public:
-  using Type = Elems<Mte2EsNext, Mte3Es, TmpEsNext, PongMte3EsNext, mte2>;
+  using Type = Elems<PersistMte2EsNext, Mte2EsNext, 
+                     typename BufLists::PersistMte3Es, typename BufLists::Mte3Es, 
+                     typename BufLists::PersistTmpEs, TmpEsNext, 
+                     PongMte3EsNext, mte2>;
 };
 
 // 分配Temp内存
-template<typename FunList, typename BufListList, MemLevel MemLvl>
+template<typename FunList, typename BufListList, MemLevel MemLvl, bool cache = false>
 struct AllocTempBuffer {
 private:
-  using Mte2Es = typename BufListList::template At<static_cast<int>(BufPosInList::MTE2)>;
-  using Mte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::MTE3)>;
-  using TmpEs = typename BufListList::template At<static_cast<int>(BufPosInList::TEMP)>;
-  using PongMte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::PONG_MTE3)>;
+  using BufLists = BufListListDecoder<BufListList>;
   // pop front
-  using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0, Elems<>, PongMte3Es>;
-  using usedMte2Es = __aux::Condition<MemLvl == MemLevel::LEVEL_2, Elems<>, Mte2Es>;
-  using tmp = typename PriorityGetFront<TmpEs, usedPongMte3Es, usedMte2Es>::Type;
+  using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, 
+                                          Elems<>, typename BufLists::PongMte3Es>;
+  using usedMte2Es = __aux::Condition<MemLvl == MemLevel::LEVEL_2 || cache, 
+                                      Elems<>, typename BufLists::Mte2Es>;
+  using usedPersistTmpEs = __aux::Condition<!cache, 
+                                            Elems<>, typename BufLists::PersistTmpEs>;
+  using usedTmpEs = __aux::Condition<cache, 
+                                     Elems<>, typename BufLists::TmpEs>;
+  using tmp = typename PriorityGetFront<usedPersistTmpEs, usedTmpEs, 
+                                        usedPongMte3Es, usedMte2Es>::Type;
   // update Es
-  using TmpEsNext = typename TmpEs::template PopFront<tmp>::Type;
-  using PongMte3EsNext = typename PongMte3Es::template PopFront<tmp>::Type;
-  using Mte2EsNext = typename Mte2Es::template PopFront<tmp>::Type;
+  using TmpEsNext = typename BufLists::TmpEs::template PopFront<tmp>::Type;
+  using PongMte3EsNext = typename BufLists::PongMte3Es::template PopFront<tmp>::Type;
+  using Mte2EsNext = typename BufLists::Mte2Es::template PopFront<tmp>::Type;
+  using PersistTmpEsNext = typename BufLists::PersistTmpEs::template PopFront<tmp>::Type;
 public:
-  using Type = Elems<Mte2EsNext, Mte3Es, TmpEsNext, PongMte3EsNext, tmp>;
+  using Type = Elems<typename BufLists::PersistMte2Es, Mte2EsNext, 
+                     typename BufLists::PersistMte3Es, typename BufLists::Mte3Es, 
+                     PersistTmpEsNext, TmpEsNext, 
+                     PongMte3EsNext, tmp>;
 };
 
 // 分配Mte3内存
-template<typename FunList, typename BufListList, MemLevel MemLvl>
+template<typename FunList, typename BufListList, MemLevel MemLvl, bool cache = false>
 struct AllocMte3 {
 private:
-  using Mte2Es = typename BufListList::template At<static_cast<int>(BufPosInList::MTE2)>;
-  using Mte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::MTE3)>;
-  using TmpEs = typename BufListList::template At<static_cast<int>(BufPosInList::TEMP)>;
-  using PongMte3Es = typename BufListList::template At<static_cast<int>(BufPosInList::PONG_MTE3)>;
+  using BufLists = BufListListDecoder<BufListList>;
   // pop front
-  using usedTmpEs = __aux::Condition<MemLvl != MemLevel::LEVEL_0, Elems<>, TmpEs>;
-  using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0, Elems<>, PongMte3Es>;
-  using usedMte2Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0, Elems<>, Mte2Es>;
-  using mte3 = typename PriorityGetFront<Mte3Es, usedTmpEs, usedPongMte3Es, usedMte2Es>::Type;
+  using usedTmpEs = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, 
+                                     Elems<>, typename BufLists::TmpEs>;
+  using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, 
+                                          Elems<>, typename BufLists::PongMte3Es>;
+  using usedMte2Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, 
+                                      Elems<>, typename BufLists::Mte2Es>;
+  using usedPersistMte3Es = __aux::Condition<!cache, 
+                                             Elems<>, typename BufLists::PersistMte3Es>;
+  using usedMte3Es = __aux::Condition<cache, 
+                                      Elems<>, typename BufLists::Mte3Es>;
+  using mte3 = typename PriorityGetFront<usedPersistMte3Es, usedMte3Es, 
+                                         usedTmpEs, usedPongMte3Es, usedMte2Es>::Type;
   // update Es
-  using Mte3EsNext = typename Mte3Es::template PopFront<mte3>::Type;
-  using TmpEsNext = typename TmpEs::template PopFront<mte3>::Type;
-  using PongMte3EsNext = typename PongMte3Es::template PopFront<mte3>::Type;
-  using Mte2EsNext = typename Mte2Es::template PopFront<mte3>::Type;
+  using Mte3EsNext = typename BufLists::Mte3Es::template PopFront<mte3>::Type;
+  using TmpEsNext = typename BufLists::TmpEs::template PopFront<mte3>::Type;
+  using PongMte3EsNext = typename BufLists::PongMte3Es::template PopFront<mte3>::Type;
+  using Mte2EsNext = typename BufLists::Mte2Es::template PopFront<mte3>::Type;
+  using PersistMte3EsNext = typename BufLists::PersistMte3Es::template PopFront<mte3>::Type;
 public:
-  using Type = Elems<Mte2EsNext, Mte3EsNext, TmpEsNext, PongMte3EsNext, mte3>;
+  using Type = Elems<typename BufLists::PersistMte2Es, Mte2EsNext, 
+                     PersistMte3EsNext, Mte3EsNext, 
+                     typename BufLists::PersistTmpEs, TmpEsNext, 
+                     PongMte3EsNext, mte3>;
 };
 
 // 释放并更新内存队列
@@ -435,23 +476,30 @@ template<typename FunList, typename BufListList, typename ToReleaseEs,
          bool cache_brc, int funPos>
 struct ReleaseAndUpdateEs {
 private:
+  using BufLists = BufListListDecoder<BufListList>;
   // release & update
-  using Mte2EsNext = typename BufListList::template At<static_cast<int>(BufPosInList::MTE2)>::template \
+  using PersistMte2Es = typename BufLists::PersistMte2Es;
+  using Mte2EsNext = typename BufLists::Mte2Es::template \
                                 Concat<typename ReleaseUnusedBufferByType<FunList, ToReleaseEs,
                                        funPos, BUF_TYPE_MTE2, cache_brc>::Type>;
-  using Mte3EsNext = typename BufListList::template At<static_cast<int>(BufPosInList::MTE3)>::template \
+  using PersistMte3Es = typename BufLists::PersistMte3Es;
+  using Mte3EsNext = typename BufLists::Mte3Es::template \
                                 Concat<typename ReleaseUnusedBufferByType<FunList, ToReleaseEs,
                                        funPos, BUF_TYPE_MTE3, cache_brc>::Type>;
-  using TmpEsNext = typename BufListList::template At<static_cast<int>(BufPosInList::TEMP)>::template \
+  using PersistTmpEs = typename BufLists::PersistTmpEs;
+  using TmpEsNext = typename BufLists::TmpEs::template \
                                 Concat<typename ReleaseUnusedBufferByType<FunList, ToReleaseEs,
                                        funPos, BUF_TYPE_TEMP, cache_brc>::Type>;
-  using PongMte3EsNext = typename BufListList::template At<static_cast<int>(BufPosInList::PONG_MTE3)>::template \
+  using PongMte3EsNext = typename BufLists::PongMte3Es::template \
                                Concat<typename ReleaseUnusedBufferByType<FunList, ToReleaseEs,
                                       funPos, BUF_TYPE_MTE3, cache_brc, BUF_PONG>::Type>;
   // update ToReleaseEs to speedup next release
   using ToReleaseEsNext = typename ReleaseUnusedInput<FunList, ToReleaseEs, funPos, cache_brc>::Type;
 public:
-  using Type = Elems<Mte2EsNext, Mte3EsNext, TmpEsNext, PongMte3EsNext, ToReleaseEsNext>;
+  using Type = Elems<PersistMte2Es, Mte2EsNext, 
+                     PersistMte3Es, Mte3EsNext, 
+                     PersistTmpEs, TmpEsNext, 
+                     PongMte3EsNext, ToReleaseEsNext>;
 };
 
 /*
@@ -491,11 +539,11 @@ __aicore__ static constexpr const int32_t* const *GenerateBufferIdOrder() {
                                    scalarIdx + 1, funPos + 1>();
     } else if constexpr (Vec::IsCopyInBrcOp<typename fun::Fun>::Value && !use_nddma) {
       // use copyIn + ubBrc to implement nddma.
-      using NextEs0 = typename AllocMte2<FunList, BufListList, MemLvl>::Type;
+      using NextEs0 = typename AllocMte2<FunList, BufListList, MemLvl, cache_brc>::Type;
       using mte2 = typename NextEs0::template At<BUF_ALLOCATED_IDX>;
       if constexpr (__aux::IsConnectOutput<FunList, funPos + 1, fun>()) {
         // if CopyInBrc -> CopyOut, should use MTE3
-        using NextEs = typename AllocMte3<FunList, NextEs0, MemLvl>::Type;
+        using NextEs = typename AllocMte3<FunList, NextEs0, MemLvl, cache_brc>::Type;
         using mte3 = typename NextEs::template At<BUF_ALLOCATED_IDX>;
         // add to alloc list
         using AllocEsNext = typename AllocEs::template Append<CombinedBufferWrappers<mte3, mte2>>;
@@ -505,7 +553,7 @@ __aicore__ static constexpr const int32_t* const *GenerateBufferIdOrder() {
                                      use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext,
                                      scalarIdx, funPos + 1>();
       } else {
-        using NextEs = typename AllocTempBuffer<FunList, NextEs0, MemLvl>::Type;
+        using NextEs = typename AllocTempBuffer<FunList, NextEs0, MemLvl, cache_brc>::Type;
         using tmp = typename NextEs::template At<BUF_ALLOCATED_IDX>;
         // add to alloc list
         using AllocEsNext = typename AllocEs::template Append<CombinedBufferWrappers<tmp, mte2>>;
@@ -516,7 +564,9 @@ __aicore__ static constexpr const int32_t* const *GenerateBufferIdOrder() {
                                      scalarIdx, funPos + 1>();
       }
     } else if constexpr (Vec::IsCopyInOp<typename fun::Fun>::Value) {
-      using NextEs = typename AllocMte2<FunList, BufListList, MemLvl>::Type;
+      // activate cache when CopyInBrc = NDDMA
+      using NextEs = typename AllocMte2<FunList, BufListList, MemLvl,
+        /*cache=*/(cache_brc && Vec::IsCopyInBrcOp<typename fun::Fun>::Value)>::Type;
       using mte2 = typename NextEs::template At<BUF_ALLOCATED_IDX>;
       // add to alloc list
       using AllocEsNext = typename AllocEs::template Append<mte2>;
@@ -537,7 +587,9 @@ __aicore__ static constexpr const int32_t* const *GenerateBufferIdOrder() {
                                    scalarIdx, funPos + 1>();
     } else {
       if constexpr (__aux::IsConnectOutput<FunList, funPos + 1, fun>()) {
-        using NextEs0 = typename AllocMte3<FunList, BufListList, MemLvl>::Type;
+        // activate cache when current Node is VecBrc
+        using NextEs0 = typename AllocMte3<FunList, BufListList, MemLvl,
+          /*cache=*/(cache_brc && Vec::IsVecBrcOp<typename fun::Fun>::Value)>::Type;
         using mte3 = typename NextEs0::template At<BUF_ALLOCATED_IDX>;
         // add to alloc list
         using AllocEsNext = typename AllocEs::template Append<mte3>;
@@ -550,7 +602,9 @@ __aicore__ static constexpr const int32_t* const *GenerateBufferIdOrder() {
                                      use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext,
                                      scalarIdx, funPos + 1>();
       } else {
-        using NextEs0 = typename AllocTempBuffer<FunList, BufListList, MemLvl>::Type;
+        // activate cache when current Node is VecBrc
+        using NextEs0 = typename AllocTempBuffer<FunList, BufListList, MemLvl,
+          /*cache=*/(cache_brc && Vec::IsVecBrcOp<typename fun::Fun>::Value)>::Type;
         using tmp = typename NextEs0::template At<BUF_ALLOCATED_IDX>;
         // add to alloc list
         using AllocEsNext = typename AllocEs::template Append<tmp>;

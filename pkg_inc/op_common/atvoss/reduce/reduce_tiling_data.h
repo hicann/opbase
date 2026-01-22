@@ -33,9 +33,12 @@ struct ReduceOpTilingData {
     int32_t coreNum;
     int32_t useNddma;
     float meanVar;
-    uint64_t shape[ReduceOpTmpl::MAX_DIM] = {0};
-    uint64_t stride[ReduceOpTmpl::MAX_DIM] = {0};
-    uint64_t dstStride[ReduceOpTmpl::MAX_DIM] = {0};
+    uint64_t shape[ReduceOpTmpl::MAX_DIM] = {0};       // 输入shape
+    int64_t stride[ReduceOpTmpl::MAX_DIM] = {0};       // 输入stride
+    int64_t dstStride[ReduceOpTmpl::MAX_DIM] = {0};    // 输出stride
+    uint64_t sliceNum[ReduceOpTmpl::MAX_DIM] = {0};    // 每个轴slice切片的个数
+    uint64_t sliceShape[ReduceOpTmpl::MAX_DIM] = {0};  // 每个轴slice切片后的shape大小
+    uint64_t sliceStride[ReduceOpTmpl::MAX_DIM] = {0}; // 每个轴slice切片后的stride长度
 };
 } // namespace Base
 } // namespace Ops

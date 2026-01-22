@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "indv_mc2_aicpu.h"
@@ -248,7 +248,7 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
     launchAttr[0].id = RT_LAUNCH_ATTRIBUTE_BLOCKDIM;
     launchAttr[0].value.blockDim = blockDim;
     rtLaunchConfig_t launchCfg = {launchAttr, 1U};
-    rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->binHandle, tilingKey, &launchCfg};
+    rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->ccuBinHandle, tilingKey, &launchCfg};
     rtFunsionTaskInfo_t fusionTaskInfo = {};
     rtCcuTaskGroup_t ccuTaskGroup = {};
     rtAicpuFusionInfo_t aicpuInfo = {};
@@ -278,22 +278,18 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
     return OK;
 }
 
-aclnnStatus NnopbaseMC2KernelMTE(NnopbaseExecutor *executor, rtStream_t stream)
+static aclnnStatus NnopbaseMC2KernelMTE(NnopbaseExecutor *executor, rtStream_t stream)
 {
     return NnopbaseExecutorKernelLaunch(executor, stream);
 }
 
-aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor *const executor, rtStream_t stream)
+static aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor *const executor, rtStream_t stream)
 {
     return NnopbaseFusionKernelLaunch(executor, stream);
 }
 
-aclnnStatus NnopbaseMC2KernelAicpu(NnopbaseExecutor *executor, rtStream_t stream)
+static aclnnStatus NnopbaseMC2KernelAicpu(NnopbaseExecutor *executor, rtStream_t stream)
 {
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
-        // only compute without communication, no need to launch aicpu task
-        return NnopbaseMC2KernelMTE(executor, stream);
-    }
     if (executor->collecter->isMc2FusionLaunch) {
         // fusion mode, launch aicpu by fusion launch
         return NnopbaseMC2KernelCCU(executor, stream);
@@ -305,7 +301,7 @@ aclnnStatus NnopbaseMC2KernelAicpu(NnopbaseExecutor *executor, rtStream_t stream
 aclnnStatus NnopbaseMC2KernelLaunch(NnopbaseExecutor *executor, rtStream_t stream)
 {
     OP_LOGI("HcclServerType is %d.", executor->mc2OpCfg.sType);
-    if (!NnopbaseIsEnableZeroeleOutputLaunch(executor)) {
+    if (NnopbaseSkipKernelLaunch(executor)) {
         OP_LOGI("Output of MC2 operator is empty and ZeroEleOutputLaunch is not enabled, skipping launch.");
         return OK;
     }

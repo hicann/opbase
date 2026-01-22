@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef __TILINGCTX_BUILDER_H__
@@ -78,7 +78,7 @@ public:
 
     ~TilingResCache()
     {
-        OP_LOGI("#### release tiling result");
+        OP_LOGI("release tiling result");
         if (workspaceSize_ != nullptr) {
             BlockPool::Free(workspaceSize_);
             workspaceSize_ = nullptr;
@@ -138,7 +138,7 @@ public:
     gert::TilingContext *GetTilingCtx(const TilingParseCtxHolder *tilingParseCtx) const
     {
         gert::TilingContext *ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);
-        if (opProfilingSwitch.recordOpArgFlag) {
+        if (op::internal::GetOpProfilingRecordArgFlag()) {
             OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s.",
                     tilingParseCtx->GetCompileOptions().deterministic,
                     tilingParseCtx->GetCompileOptions().impl_mode.c_str(), tilingParseCtx->GetOpKernelInfo()->bin_type,

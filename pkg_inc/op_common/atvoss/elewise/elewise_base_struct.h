@@ -24,18 +24,23 @@ constexpr uint64_t EIGHT_BYTES = 8;
 constexpr uint64_t SIXTEN_BYTES = 16;
 
 struct EleBaseTilingData {
-    uint64_t scheMode;
     int64_t dim0;
+    int32_t coreNum;
+    int32_t ubFormer;
     int64_t blockFormer;
     int64_t blockNum;
-    int64_t ubFormer;
     int64_t ubLoopOfFormerBlock;
     int64_t ubLoopOfTailBlock;
     int64_t ubTailOfFormerBlock;
     int64_t ubTailOfTailBlock;
     int64_t elemNum;
+    uint64_t scheMode;
+};
 
-    char scalarData[ELEWISE_MAX_SCALAR_BYTES];
+struct EleBaseTilingData16B {
+    int64_t dim0;
+    int32_t coreNum;
+    int32_t ubFormer;
 };
 
 struct EleBaseTilingData24B {
