@@ -23,6 +23,7 @@
 #include "exe_graph/runtime/continuous_vector.h"
 #include "individual_op_internal.h"
 #include "individual_op_api.h"
+#include "opdev/op_dfx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -175,17 +176,17 @@ typedef struct {
     std::vector<NnopbaseTensor> extTensors;
     NnopbaseUnContTensors unContiguousTensors;
     NnopbaseParamDesc paramDescs;
-    uint32_t usedNum;
-    uint32_t arrayLen;
-    uint32_t requiredCnt;
-    uint32_t nonDynamicCnt;
-    uint32_t num; // tensor总个数
-    bool hasDynamic;
-    uint16_t hostInputNum;
-    uint32_t expectIndex;
-    size_t hostInputSize;
-    uint32_t dynamicNum; // DYNAMIC输入/输出原型个数
-    uint32_t dynamicCnt; // DYNAMIC输入/输出中tensor总数
+    uint32_t usedNum = 0U;
+    uint32_t arrayLen = 0U;
+    uint32_t requiredCnt = 0U;
+    uint32_t nonDynamicCnt = 0U;
+    uint32_t num = 0U; // tensor总个数
+    bool hasDynamic = false;
+    uint16_t hostInputNum = 0U;
+    uint32_t expectIndex = 0U;
+    size_t hostInputSize = 0U;
+    uint32_t dynamicNum = 0U; // DYNAMIC输入/输出原型个数
+    uint32_t dynamicCnt = 0U; // DYNAMIC输入/输出中tensor总数
     size_t dynamicSize = 0U;
     size_t outPutShapeSize = 0U;
     size_t outPutShapeArgsOffset = 0U;
@@ -219,7 +220,7 @@ static inline NnopbaseUChar *NnopbaseAppend4Byte(void *buf, uint32_t src)
 
 static inline NnopbaseUChar *NnopbaseAppend8Byte(NnopbaseUChar *buf, uint64_t src)
 {
-    uint64_t* p = (uint64_t*)buf;
+    uint64_t* p = op::internal::PtrCastTo<uint64_t>(buf);
     *p = src;
     return buf + sizeof(uint64_t);
 }

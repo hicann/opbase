@@ -145,7 +145,7 @@ static void NnopbaseBuildSingleProfTensorInfo(NnopbaseExecutor *const executor, 
     tensorInfo.threadId = static_cast<uint32_t>(mmGetTid());
 
     tensorInfo.dataLen = static_cast<uint32_t>(sizeof(MsprofTensorInfo));
-    auto profTensorData = reinterpret_cast<MsprofTensorInfo *>(tensorInfo.data);
+    auto profTensorData = op::internal::PtrCastTo<MsprofTensorInfo>(tensorInfo.data);
 
     profTensorData->opName = executor->itemId;
     profTensorData->tensorNum = tensorNum;
@@ -188,7 +188,7 @@ void NnopbaseReportContextIdInfo(const NnopbaseExecutor *const executor, const u
     info.timeStamp = timeStamp;
     info.threadId = static_cast<uint32_t>(mmGetTid());
     info.dataLen = static_cast<uint32_t>(sizeof(uint32_t));
-    auto contextIdInfo = reinterpret_cast<MsprofContextIdInfo *>(info.data);
+    auto contextIdInfo = op::internal::PtrCastTo<MsprofContextIdInfo>(info.data);
     contextIdInfo->ctxIdNum = 1U;
     contextIdInfo->ctxIds[0] = 0U;
     contextIdInfo->opName = executor->itemId;

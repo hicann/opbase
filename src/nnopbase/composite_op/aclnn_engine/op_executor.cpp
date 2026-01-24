@@ -1497,8 +1497,8 @@ aclnnStatus CreatAiCoreKernelLauncher([[maybe_unused]] const char *l0Name, uint3
     if (args->ContainsOpArgType(op::OP_OUTSHAPE_ARG)) {
         executor->AbandonCache(true);
     }
+    op::internal::GetLauncherCtx().SetOpKernelBin(nullptr);
     aclnnStatus addToLaunchRet = ACLNN_SUCCESS;
-
     if (args->ContainsOpArgType(op::OP_WORKSPACE_ARG)) {
         auto *launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, args};
         executor->AddToKernelLauncherList(launcher);

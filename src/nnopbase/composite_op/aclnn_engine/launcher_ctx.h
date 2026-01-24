@@ -16,6 +16,8 @@
 
 namespace op::internal {
 
+class OpKernelBin;
+
 class LauncherContext {
 public:
     const TilingResCache *GetTilingResCache()
@@ -53,15 +55,27 @@ public:
         return isLauncherRepeatable_;
     }
 
+    void SetOpKernelBin(op::internal::OpKernelBin *bin)
+    {
+        opKernelBin_ = bin;
+    }
+
+    op::internal::OpKernelBin *GetOpKernelBin() const
+    {
+        return opKernelBin_;
+    }
+
     void Reset()
     {
         implMode_ = OpImplMode::IMPL_MODE_DEFAULT;
         ClearTilingCache();
+        opKernelBin_ = nullptr;
     }
 
 private:
     OpImplMode implMode_{OpImplMode::IMPL_MODE_DEFAULT};
     std::unique_ptr<TilingResCache> tilingRes_;
+    op::internal::OpKernelBin *opKernelBin_{nullptr};
     bool isLauncherRepeatable_{false};
 };
 

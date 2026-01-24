@@ -115,7 +115,8 @@ std::string GetBuiltInBasePath(gert::OppImplVersionTag &oppImplVersion)
     const NnopbaseChar *homePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, homePath);
     if (homePath != nullptr) {
-        const std::string kernelPath = std::string(homePath) + "/opp_latest";
+        const std::string homePathStr = std::string(homePath);
+        const std::string kernelPath = homePathStr + "/opp_latest";
         std::vector<NnopbaseChar> path(NNOPBASE_FILE_PATH_MAX_LEN, '\0');
         if (mmRealPath(kernelPath.c_str(), &(path[0U]), NNOPBASE_FILE_PATH_MAX_LEN) == EN_OK) {
             oppImplVersion = gert::OppImplVersionTag::kOppKernel;
@@ -127,7 +128,7 @@ std::string GetBuiltInBasePath(gert::OppImplVersionTag &oppImplVersion)
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
     if (oppPathEnv != nullptr) {
         oppImplVersion = gert::OppImplVersionTag::kOpp;
-        return oppPathEnv;
+        return std::string(oppPathEnv);
     }
     return "";
 }
@@ -240,7 +241,7 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
         }
         if (valueDepend[i]) {
             const int64_t elementSize = tensors[i]->Size();
-            addr = reinterpret_cast<NnopbaseUChar *>(tensors[i]->GetData());
+            addr = op::internal::PtrCastTo<NnopbaseUChar>(tensors[i]->GetData());
             const size_t typeSize = op::TypeSize(tensors[i]->GetDataType());
             for (int64_t k = 0; k < elementSize; k++) {
                 verKey = NnopbaseExecutor8ByteCopy(typeSize, verKey, addr + typeSize * k);
@@ -256,14 +257,14 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
                 continue;
             }
             if (!attrs[j]->isVector) {
-                addr = reinterpret_cast<NnopbaseUChar*>(attrs[j]->addr);
+                addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs[j]->addr);
                 length = attrs[j]->size;
                 verKey = NnopbaseExecutor8ByteCopy(length, verKey, addr);
             } else {
                 const size_t elementSize = attrs[j]->elementSize;
                 const size_t elementSizeNumber = attrs[j]->size / elementSize;
                 for (size_t i = 0U; i < elementSizeNumber; i++) {
-                    addr = reinterpret_cast<NnopbaseUChar*>(attrs[j]->addr) + elementSize * i;
+                    addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs[j]->addr) + elementSize * i;
                     verKey = NnopbaseExecutor8ByteCopy(elementSize, verKey, addr);
                 }
             }
@@ -573,7 +574,7 @@ aclnnStatus NnopbaseCollecterAddRepoInfo(NnopbaseBinCollecter *const collecter,
                                          gert::OppImplVersionTag oppImplVersion)
 {
     const uint64_t hashKey = static_cast<uint64_t>(
-        NnopbaseHashBinary((const NnopbaseUChar *)(jsonInfo.opType.c_str()), jsonInfo.opType.size()) %
+        NnopbaseHashBinary(op::internal::PtrCastTo<const NnopbaseUChar>(jsonInfo.opType.c_str()), jsonInfo.opType.size()) %
         NNOPBASE_NORM_MAX_BIN_BUCKETS);
     NnopbaseRegInfo *regInfo = NnopbaseCollecterFindRegInfoInTbl(collecter, jsonInfo.opType.c_str(), hashKey);
     if (regInfo == nullptr) {
@@ -612,9 +613,9 @@ inline static aclnnStatus NnopbaseCollecterAddRepoInfos(NnopbaseBinCollecter *co
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterGcRegInfo(const void *const data)
+aclnnStatus NnopbaseCollecterGcRegInfo(void *data)
 {
-    NnopbaseRegInfo *regInfo = (NnopbaseRegInfo *)data;
+    NnopbaseRegInfo *regInfo = op::internal::PtrCastTo<NnopbaseRegInfo>(data);
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
         BinInfoBucket *bucket = &regInfo->binTbl.buckets[i];
         if (bucket->isVist) { return ACLNN_SUCCESS; }
@@ -666,7 +667,7 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *cons
         binInfo->bin = jsonInfo.bin;
     }
 
-    auto vec = (gert::ContinuousVector*)binInfo->staticWorkspaceSizes;
+    auto vec = op::internal::PtrCastTo<gert::ContinuousVector>(binInfo->staticWorkspaceSizes);
     NNOPBASE_ASSERT_TRUE_RETVAL(memcpy_s(vec->MutableData(), sizeof(size_t) * vec->GetCapacity(),
         jsonInfo.workspaceSizes, sizeof(jsonInfo.workspaceSizes)) == EOK);
     NNOPBASE_ASSERT_TRUE_RETVAL(vec->SetSize(jsonInfo.workspaceSizeNum) == ge::GRAPH_SUCCESS);
@@ -840,10 +841,10 @@ NnopbaseUChar *NnopbaseBeyond8BtyeCopy(const int32_t start, const int32_t end, c
     uint32_t j = 0U;
     for (int32_t i = end; i >= start; i--) {
         if ((strKey[i] >= '0') && (strKey[i] <= '9')) {
-            type = type | (((uint64_t)(strKey[i] - '0')) << ((4U * j))); // 4 is 4bit
+            type = type | ((static_cast<uint64_t>(strKey[i] - '0')) << ((4U * j))); // 4 is 4bit
             bitNum++;
         } else if ((strKey[i] >= 'a') && (strKey[i] <= 'f')) {
-            type = type | ((uint64_t)(strKey[i] - 'a' + 10) << ((4U * j))); // 4 is 4bit 10 is decimal
+            type = type | (static_cast<uint64_t>(strKey[i] - 'a' + 10) << ((4U * j))); // 4 is 4bit 10 is decimal
             bitNum++;
         }
         j++;
@@ -966,7 +967,7 @@ static aclnnStatus NnopbaseCollecterReadStaticBinJsonInfo(NnopbaseJsonInfo &json
         nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDescByKey(jsonInfo.keys[0].c_str(), binInfo));
     auto &binConfigInfo = std::get<0>(binInfo);
     const auto &binContent = std::get<1>(binInfo);
-    jsonInfo.bin = (NnopbaseUChar *)binContent.content;
+    jsonInfo.bin = const_cast<NnopbaseUChar *>(op::internal::PtrCastTo<const NnopbaseUChar>((binContent.content)));
     jsonInfo.binLen = binContent.len;
     try {
         const std::string coreType = binConfigInfo["coreType"].get<std::string>();
@@ -1241,7 +1242,7 @@ aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo)
 aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter)
 {
     if (collecter == nullptr) {
-        OP_LOGD("collecter is nullptr.");
+        OP_LOGD("collector is nullptr.");
         return OK;
     }
     // reload static kernel info

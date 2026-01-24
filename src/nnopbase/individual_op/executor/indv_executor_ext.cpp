@@ -126,10 +126,10 @@ aclnnStatus NnopbaseExecutorConvertScalarType(std::vector<uint8_t> &scalarValue,
             *op::internal::PtrCastTo<double>(scalarValue.data() + offset) = scalar->ToDouble();
             return OK;
         case ge::DataType::DT_COMPLEX64:
-            *(std::complex<float> *)(scalarValue.data() + offset) = scalar->ToComplex64();
+            *op::internal::PtrCastTo<std::complex<float>>(scalarValue.data() + offset) = scalar->ToComplex64();
             return OK;
         case ge::DataType::DT_COMPLEX128:
-            *(std::complex<double> *)(scalarValue.data() + offset) = scalar->ToComplex128();
+            *op::internal::PtrCastTo<std::complex<double>>(scalarValue.data() + offset) = scalar->ToComplex128();
             return OK;
         default:
             OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "Not supported data type[%s].", op::ToString(dtype).GetString());
@@ -527,13 +527,13 @@ static aclnnStatus NnopnbaseMemsetTiling(NnopbaseExecutor *executor)
     if (argSize > executor->args->memsetArgs.size()) {
         executor->args->memsetArgs.resize(argSize);
     }
-    auto tilingData = reinterpret_cast<NnopbaseTilingData *>(executor->args->binInfo->memsetInfo->tilingData);
+    auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->binInfo->memsetInfo->tilingData);
     tilingData->Init(executor->args->binInfo->memsetInfo->binInfo->opParaSize,
         &(executor->args->memsetArgs[tilingDataOffset]));
 
     auto tiling = executor->args->binInfo->memsetInfo->tiling;
     CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of MemSet!");
-    NNOPBASE_ASSERT_RETVAL(tiling(reinterpret_cast<gert::TilingContext *>(
+    NNOPBASE_ASSERT_RETVAL(tiling(op::internal::PtrCastTo<gert::TilingContext>(
                                    executor->args->binInfo->memsetInfo->contextExt.context)) == ge::GRAPH_SUCCESS,
             ACLNN_ERR_INNER_TILING_ERROR);
 
@@ -653,7 +653,7 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetV2Args(NnopbaseExecutor *executo
 
     executor->args->binInfo->memsetInfo->argsExt.hostInputInfoNum = NNOPBASE_MEMSET_V2_OP_INPUT_COUNT +
                                                                     NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT;
-    aclrtPlaceHolderInfo *hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(reinterpret_cast<NnopbaseUChar *>(tilingData->GetData())
+    aclrtPlaceHolderInfo *hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData())
         + tilingDataSize);
     NnopbaseUChar *hostInputData = op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + tilingDataSize +
                                     executor->args->binInfo->memsetInfo->argsExt.hostInputInfoNum * sizeof(aclrtPlaceHolderInfo);
@@ -764,8 +764,8 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
 {
     // 2 is for tiling, overflow
     const size_t argsNum = executor->args->binInfo->initValues.size() + 2U;
-    auto tilingData = reinterpret_cast<NnopbaseTilingData *>(executor->args->binInfo->memsetInfo->tilingData);
-    void *args = reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) - argsNum * sizeof(void*);
+    auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->binInfo->memsetInfo->tilingData);
+    void *args = op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) - argsNum * sizeof(void*);
     executor->args->binInfo->memsetInfo->argsExt.args = args;
     void **addr = (void **)args;
     const size_t tilingDataSize = tilingData->GetDataSize();
@@ -779,11 +779,11 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
     }
     *addr = tilingData->GetData();
     executor->args->binInfo->memsetInfo->argsExt.tilingAddrOffset = static_cast<uint32_t>(
-        reinterpret_cast<NnopbaseUChar *>(addr) -
-        reinterpret_cast<NnopbaseUChar *>(executor->args->binInfo->memsetInfo->argsExt.args));
+        op::internal::PtrCastTo<NnopbaseUChar>(addr) -
+        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
     executor->args->binInfo->memsetInfo->argsExt.tilingDataOffset = static_cast<uint32_t>(
-        reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) -
-        reinterpret_cast<NnopbaseUChar *>(executor->args->binInfo->memsetInfo->argsExt.args));
+        op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) -
+        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
     addr++;
     *addr = g_nnopbaseSysCfgParams.overflowAddr;
     addr++;
@@ -792,7 +792,7 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
     executor->args->binInfo->memsetInfo->argsExt.hostInputInfoNum = 0U;
     executor->args->binInfo->memsetInfo->argsExt.argsSize =
         static_cast<uint32_t>(
-        reinterpret_cast<NnopbaseUChar *>(addr) - reinterpret_cast<NnopbaseUChar *>(executor->args->binInfo->memsetInfo->argsExt.args) +
+        op::internal::PtrCastTo<NnopbaseUChar>(addr) - op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args) +
         alignTilingDataSize);
 
     OP_LOGI("Aligned tilingDataSize is %zu bytes, argsSize is %u.",
@@ -966,7 +966,7 @@ NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey
         const size_t leftBit = totalSize % 8U;
         uint64_t littleEndien = 0U;
         for (size_t i = 0U; i < leftBit; i++) {
-            littleEndien |= littleEndien | ((uint64_t)(*(addr + i)) << (sizeof(uint64_t) * i));
+            littleEndien |= littleEndien | (static_cast<uint64_t>(*(addr + i)) << (sizeof(uint64_t) * i));
         }
         verKey = NnopbaseAppend8Byte(verKey, littleEndien);
     }
@@ -1242,7 +1242,7 @@ void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor *executor)
     } else {
         verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
     }
-    verKey = NnopbaseAppend1Byte(verKey, (NnopbaseUChar)g_nnopbaseSysCfgParams.deterministic);
+    verKey = NnopbaseAppend1Byte(verKey, static_cast<NnopbaseUChar>(g_nnopbaseSysCfgParams.deterministic));
     verKey = NnopbaseAppend1Byte(verKey, g_nnopbaseSysCfgParams.precision);
     OP_LOGI("Verbose opType is %s, deterministic value is %d, highPrecision value is %d, verboseLen is %u",
         executor->regInfo->key.opType.c_str(), g_nnopbaseSysCfgParams.deterministic,
@@ -1312,11 +1312,11 @@ NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTens
         const GertShape &shape = tensors->extTensors[i].rt2Tensor.GetStorageShape();
         const size_t dimNum = shape.GetDimNum();
         for (size_t j = 0U; j < dimNum; j++) {
-            verKey = NnopbaseAppend8Byte(verKey, (uint64_t)shape.GetDim(j));
+            verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(shape.GetDim(j)));
             OP_LOGI("shape[%zu] is %ld", j, shape.GetDim(j));
         }
         if (tensors->extTensors[i].valueDepend) {
-            addr = reinterpret_cast<NnopbaseUChar *>(tensors->extTensors[i].rt2Tensor.GetAddr());
+            addr = op::internal::PtrCastTo<NnopbaseUChar>(tensors->extTensors[i].rt2Tensor.GetAddr());
             const auto dtype = tensors->extTensors[i].rt2Tensor.GetDataType();
             length = tensors->extTensors[i].rt2Tensor.GetSize();
             const size_t typeSize = op::TypeSize(dtype);
@@ -1336,13 +1336,13 @@ NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *
     for (size_t j = 0; j < attrs->num; j++) {
         // 传入时已校验 attrs[j].addr.addr 不为空
         if (!attrs->attrs[j].addr.isVector) {
-            addr = reinterpret_cast<NnopbaseUChar *>(attrs->attrs[j].addr.addr);
+            addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs->attrs[j].addr.addr);
             length = attrs->attrs[j].addr.size;
             verKey = NnopbaseExecutor8ByteCopy(length, verKey, addr);
         } else {
             const size_t elementSize = attrs->attrs[j].addr.elementSize;
             for (size_t i = 0U; i < attrs->attrs[j].addr.size / elementSize; i++) {
-                addr = reinterpret_cast<NnopbaseUChar *>(attrs->attrs[j].addr.addr) + elementSize * i;
+                addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs->attrs[j].addr.addr) + elementSize * i;
                 verKey = NnopbaseExecutor8ByteCopy(elementSize, verKey, addr);
             }
         }

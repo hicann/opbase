@@ -69,7 +69,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
 aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter *collecter);
 
 void NnopbaseCollecterOpRegInfoDestroy(NnopbaseRegInfo **regInfo);
-aclnnStatus NnopbaseCollecterGcRegInfo(const void *const data);
+aclnnStatus NnopbaseCollecterGcRegInfo(void *data);
 aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
     const nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion,
     const std::string pkgName);

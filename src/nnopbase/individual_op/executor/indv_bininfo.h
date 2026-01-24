@@ -37,6 +37,7 @@ static const std::string NNOPBASE_MEMSET_DEFAULT_PATH = "/built-in/op_impl/ai_co
 static const std::string NNOPBASE_MEMSET_DEFAULT_PATH_V2 = "/built-in/op_impl/ai_core/tbe/kernel/";
 static const std::string NNOPBASE_MEMSET_JSON_PATH ="/mem_set.json";
 static const std::string NNOPBASE_MEMSET_V2_OP_NAME = "MemSetV2";
+static const std::string NNOPBASE_MEMSET_OP_NAME = "MemSet";
 constexpr size_t NNOPBASE_MEMSET_V2_OP_SIMPLIFIED_KEY_MAX_LEN = 256;
 
 typedef struct {
@@ -285,7 +286,7 @@ static inline void NnopbaseBinInfoInit(NnopbaseBinInfo *binInfo)
     binInfo->hasReg = false;
     binInfo->isStaticShape = false;
     binInfo->blockDim = 0;
-    auto vec = (gert::ContinuousVector *)binInfo->staticWorkspaceSizes;
+    auto vec = op::internal::PtrCastTo<gert::ContinuousVector>(binInfo->staticWorkspaceSizes);
     vec->Init(NNOPBASE_NORM_MAX_WORKSPACE_NUMS);
     binInfo->initValues.clear();
 }

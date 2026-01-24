@@ -272,6 +272,12 @@ aclError aclrtGetOpExecuteTimeout(uint32_t *const timeoutMs)
 }
 
 EXTERN_C
+aclError aclrtBinarySetExceptionCallback(aclrtBinHandle binHandle, aclrtOpExceptionCallback callback, void *userData)
+{
+    return ACL_SUCCESS;
+}
+
+EXTERN_C
 aclError aclrtGetDeviceInfo(uint32_t deviceId, aclrtDevAttr attr, int64_t *value)
 {
     *value = 8;

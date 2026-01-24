@@ -902,11 +902,11 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json &singleBin
         keyParams.keys.emplace_back();
         auto &back = keyParams.keys.back();
         back.key = keyStr;
-        back.deterministicFlag = deterministicFlag != NON_DETERMINISTIC_VALUE;
+        back.deterministicFlag = (deterministicFlag != 0);
         back.implMode = ToString(implMode).GetString();
         AppendImplModeBm(implMode);
         OP_LOGD("%s append simplified key %s deterministic(%u) implMode(%u)",
-            opTypeStr_.c_str(), back.key.c_str(), deterministicFlag, static_cast<uint32_t>(implMode));
+            opTypeStr_.c_str(), back.key.c_str(), back.deterministicFlag, static_cast<uint32_t>(implMode));
     }
     keyParams.genPlaceholder = IsGenInputPlaceholder(singleBinJson);
     keyParams.hasDevPtrArg = HasDevPtrArg(singleBinJson);

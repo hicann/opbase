@@ -18,14 +18,14 @@ extern "C" {
 aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt *nodeExt, NnopbaseAttrs *attrs)
 {
     NnopbaseRuntimeAttrsDef *attrDef = nodeExt->attrStart;
-    NnopbaseUChar *ptr = (NnopbaseUChar *) attrDef;
+    NnopbaseUChar *ptr = op::internal::PtrCastTo<NnopbaseUChar>(attrDef);
     size_t current_offset = sizeof(NnopbaseRuntimeAttrsDef) + sizeof(size_t) * attrs->num;
     attrDef->attr_num = attrs->num;
     for (size_t i = 0U; i < attrDef->attr_num; i++) {
         attrDef->offset[i] = current_offset;
         if (attrs->attrs[i].addr.isVector) {
             const size_t totalSize = sizeof(gert::ContinuousVector) + attrs->attrs[i].addr.size;
-            gert::ContinuousVector *const vector = (gert::ContinuousVector *)(ptr + current_offset);
+            gert::ContinuousVector *const vector = op::internal::PtrCastTo<gert::ContinuousVector>(ptr + current_offset);
             const size_t capacity = attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize;
             const size_t size = attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize;
             vector->Init(capacity);
@@ -126,16 +126,16 @@ aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor *executor)
             if (nodeExt->buf != nullptr) {
                 free(nodeExt->buf);
             }
-            nodeExt->buf = (NnopbaseUChar*)node;
+            nodeExt->buf = op::internal::PtrCastTo<NnopbaseUChar>(node);
             nodeExt->bufLen = sizeof(NnopbaseComputeNodeInfo) + size;
-            nodeExt->instStart = (NnopbaseAnchorInstanceInfo*)(&(node->place_holder));
+            nodeExt->instStart = op::internal::PtrCastTo<NnopbaseAnchorInstanceInfo>(&(node->place_holder));
         }
     }
-    nodeExt->inputTdStart = (NnopbaseCompileTimeTensorDesc *)(nodeExt->instStart + count);
+    nodeExt->inputTdStart = op::internal::PtrCastTo<NnopbaseCompileTimeTensorDesc>(nodeExt->instStart + count);
     nodeExt->outputTdStart = nodeExt->inputTdStart + node->inputsNum;
-    nodeExt->attrStart = (NnopbaseRuntimeAttrsDef *)(nodeExt->outputTdStart + node->outputsNum);
+    nodeExt->attrStart = op::internal::PtrCastTo<NnopbaseRuntimeAttrsDef>(nodeExt->outputTdStart + node->outputsNum);
     nodeExt->outputInstStart =
-        (NnopbaseAnchorInstanceInfo*)((NnopbaseUChar *)nodeExt->attrStart + nodeExt->node->attrSize);
+        op::internal::PtrCastTo<NnopbaseAnchorInstanceInfo>(op::internal::PtrCastTo<NnopbaseUChar>(nodeExt->attrStart) + nodeExt->node->attrSize);
 
     const NnopbaseParamDesc *const desc = &executor->args->inputs.paramDescs;
     for (size_t i = 0U; i < count; i++) {
@@ -223,9 +223,9 @@ aclnnStatus NnopbaseComputeNodeInfoInit(NnopbaseComputeNodeInfoExt *nodeExt)
     nodeExt->inputTdStart = nullptr;
     nodeExt->outputTdStart = nullptr;
     nodeExt->attrStart = nullptr;
-    nodeExt->buf = (NnopbaseUChar*)nodeExt->node;
+    nodeExt->buf = op::internal::PtrCastTo<NnopbaseUChar>(nodeExt->node);
     nodeExt->bufLen = sizeof(NnopbaseComputeNodeInfo) + NNOPBASE_COMPUTE_NODE_BUF_LEN;
-    nodeExt->instStart = (NnopbaseAnchorInstanceInfo*)(&(nodeExt->node->place_holder));
+    nodeExt->instStart = op::internal::PtrCastTo<NnopbaseAnchorInstanceInfo>(&(nodeExt->node->place_holder));
     nodeExt->outputInstStart = nullptr;
     return OK;
 }

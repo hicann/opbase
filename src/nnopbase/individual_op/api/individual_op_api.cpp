@@ -370,7 +370,7 @@ aclnnStatus NnopbaseAddIntArrayAttr(void *executor, const aclIntArray* array, co
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     OP_LOGI("NnopbaseAddIntArrayAttr index %zu, size %lu.", index, array->Size());
-    return NnopbaseExecutorAddAttr((NnopbaseExecutor *)executor, const_cast<void *>((const void*)array->GetData()),
+    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), const_cast<void *>((const void*)array->GetData()),
                                    array->Size() * sizeof(int64_t), index, sizeof(int64_t), kNnopbaseInt);
 }
 
@@ -379,7 +379,7 @@ aclnnStatus NnopbaseAddBoolArrayAttr(void *executor, const aclBoolArray* array, 
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     OP_LOGI("NnopbaseAddBoolArrayAttr index %zu, size %lu.", index, array->Size());
-    return NnopbaseExecutorAddAttr((NnopbaseExecutor *)executor, const_cast<void *>((const void*)array->GetData()),
+    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), const_cast<void *>((const void*)array->GetData()),
                                    array->Size() * sizeof(bool), index, sizeof(bool), kNnopbaseBool);
 }
 
@@ -388,7 +388,7 @@ aclnnStatus NnopbaseAddFloatArrayAttr(void *executor, const aclFloatArray* array
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     OP_LOGI("NnopbaseAddFloatArrayAttr index %zu, size %lu.", index, array->Size());
-    return NnopbaseExecutorAddAttr((NnopbaseExecutor *)executor, const_cast<void *>((const void*)array->GetData()),
+    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), const_cast<void *>((const void*)array->GetData()),
                                    array->Size() * sizeof(float), index, sizeof(float), kNnopbaseFloat);
 }
 
@@ -447,12 +447,12 @@ void NnopbaseGetTilingData(void *executor, void **tilingData, uint64_t *dataLen)
     NNOPBASE_ASSERT_NOTNULL(executor);
     NNOPBASE_ASSERT_NOTNULL(tilingData);
     NNOPBASE_ASSERT_NOTNULL(dataLen);
-    NnopbaseExecutor *nnopExecutor = (NnopbaseExecutor *)executor;
-    if (nnopExecutor->hasTiling && ((NnopbaseTilingData *)nnopExecutor->args != nullptr)) {
-        auto tilingDataPtr = (NnopbaseTilingData *)nnopExecutor->args->tilingInfo.tilingData;
+    NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    if (nnopExecutor->hasTiling && (PtrCastTo<NnopbaseTilingData>(nnopExecutor->args) != nullptr)) {
+        auto tilingDataPtr = PtrCastTo<NnopbaseTilingData>(nnopExecutor->args->tilingInfo.tilingData);
         if (tilingDataPtr != nullptr) {
-            *tilingData = (void *)tilingDataPtr->GetData();
-            *dataLen = (uint64_t)tilingDataPtr->GetDataSize();
+            *tilingData = PtrCastTo<void>(tilingDataPtr->GetData());
+            *dataLen = static_cast<uint64_t>(tilingDataPtr->GetDataSize());
             return;
         }
     }
@@ -807,7 +807,7 @@ const NnopbaseChar *NnopbaseFindStaticKernel(const NnopbaseChar *opType,
 
     regInfoKey.opType = std::string(opType);
     regInfoKey.hashKey =
-        static_cast<uint64_t>(NnopbaseHashBinary((NnopbaseUChar *)regInfoKey.opType.c_str(), regInfoKey.opType.size()) %
+        static_cast<uint64_t>(NnopbaseHashBinary(PtrCastTo<NnopbaseUChar>(regInfoKey.opType.c_str()), regInfoKey.opType.size()) %
                               NNOPBASE_NORM_MAX_BIN_BUCKETS);
     OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
     verKey = NnopbaseCollecterGenStaticKey(verKey, &regInfoKey, &tensorNumInfo, tensors,

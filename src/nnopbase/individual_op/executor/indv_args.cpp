@@ -76,7 +76,7 @@ static void NnopbaseExecutorPrepareIOSize(
 static void NnopbaseExecutorSetDfxInfo(const NnopbaseExecutor *const executor)
 {
     size_t startIndex = executor->mc2OpCfg.hcomHandle.size();
-    NnopbaseUChar *addr = (NnopbaseUChar *)(&(executor->args->dfxInfo[startIndex]));
+    NnopbaseUChar *addr = op::internal::PtrCastTo<NnopbaseUChar>(&(executor->args->dfxInfo[startIndex]));
     const auto workspacesSizes = NnopbaseGetWorkspacesSizesFromArgs(executor->args);
     const uint32_t workspaceNum =
         workspacesSizes->GetSize() == 0UL ? 1U : static_cast<uint32_t>(workspacesSizes->GetSize());
@@ -85,7 +85,7 @@ static void NnopbaseExecutorSetDfxInfo(const NnopbaseExecutor *const executor)
     if (executor->args->outputs.outPutShapeSize != 0U) {
         oomNum += 1U;
     }
-    NnopbaseUChar *shapeInfoPtr = (NnopbaseUChar *)(executor->args->dfxInfo.data()) + oomNum * sizeof(void *);
+    NnopbaseUChar *shapeInfoPtr = op::internal::PtrCastTo<NnopbaseUChar>(executor->args->dfxInfo.data()) + oomNum * sizeof(void *);
     // input tensor data size
     NnopbaseExecutorPrepareIOSize(executor, addr, shapeInfoPtr, true);
     // output tensor data size
@@ -181,7 +181,7 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(
         if (executor->args->outputs.outPutShapeSize != 0U) {
             oomSize += sizeof(void *);
         }
-        CHECK_COND((memcpy_s((void *)argsAddr->ptr, oomSize, executor->args->dfxInfo.data(), oomSize) == EOK),
+        CHECK_COND((memcpy_s(op::internal::PtrCastTo<void>(argsAddr->ptr), oomSize, executor->args->dfxInfo.data(), oomSize) == EOK),
             ACLNN_ERR_PARAM_INVALID,
             "Memcpy oom info failed, src is %p, dst is %p, size is %u.",
             argsAddr->ptr,
@@ -311,17 +311,17 @@ static void NnopbaseExecutorEncodeDynamicTensors(NnopbaseExecutorArgsAddr *argsA
     const NnopbaseUChar *const args = (NnopbaseUChar*)executor->argsExt.args;
     for (uint32_t i = 0U; i < size; i++) {
         NnopbaseUChar *addr = (NnopbaseUChar*)extTensors[startIndex + i].rt2Tensor.GetAddr();
-        extTensors[startIndex + i].argsOffset = (uint32_t)((NnopbaseUChar *)(*dynamicIOData) - args);
+        extTensors[startIndex + i].argsOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOData) - args);
         *dynamicIOData = nnopbase::NnopbaseAppendByte<void *>(*dynamicIOData, addr);
     }
-    (*dynamicIOInfo)->addrOffset = static_cast<uint32_t>((NnopbaseUChar *)dynamicIOAddr - args);
-    (*dynamicIOInfo)->dataOffset = static_cast<uint32_t>((NnopbaseUChar *)(*dynamicIOAddr) - args);
+    (*dynamicIOInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) - args);
+    (*dynamicIOInfo)->dataOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr) - args);
     (*dynamicIOInfo)++;
     if ((executor->mc2OpCfg.isMc2) && (!executor->collecter->isMc2FusionLaunch)) {
         aclrtPlaceHolderInfo **aicpuHostInputInfo = &argsAddr->aicpuHostInputInfo;
         const NnopbaseUChar *const aicpuArgs = (NnopbaseUChar*)executor->aicpuArgs.args;
-        (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>((NnopbaseUChar *)dynamicIOAddr - aicpuArgs);
-        (*aicpuHostInputInfo)->dataOffset = static_cast<uint32_t>((NnopbaseUChar *)(*dynamicIOAddr) - aicpuArgs);
+        (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) - aicpuArgs);
+        (*aicpuHostInputInfo)->dataOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr) - aicpuArgs);
         (*aicpuHostInputInfo)++;
     }
 }
@@ -354,12 +354,12 @@ static inline void NnopbaseExecutorEncodeHostInput(const NnopbaseExecutor *const
         (*hostInputData)[i] = addr[i];
     }
     *inputAddr = *hostInputData;
-    (*hostInputInfo)->addrOffset = static_cast<uint32_t>((NnopbaseUChar *)inputAddr - args);
+    (*hostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(inputAddr) - args);
     (*hostInputInfo)->dataOffset = static_cast<uint32_t>((*hostInputData) - args);
     if ((executor->mc2OpCfg.isMc2) && (!executor->collecter->isMc2FusionLaunch)) {
         aclrtPlaceHolderInfo **aicpuHostInputInfo = &argsAddr->aicpuHostInputInfo;
         const NnopbaseUChar *const aicpuArgs = (NnopbaseUChar*)executor->aicpuArgs.args;
-        (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>((NnopbaseUChar *)inputAddr - aicpuArgs);
+        (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(inputAddr) - aicpuArgs);
         (*aicpuHostInputInfo)->dataOffset = static_cast<uint32_t>((*hostInputData) - aicpuArgs);
         (*aicpuHostInputInfo)++;
     }

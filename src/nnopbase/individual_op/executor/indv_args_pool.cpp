@@ -61,13 +61,13 @@ size_t CalcKeyLen(NnopbaseExecutor *executor)
 
 uint8_t *AddShapeInfo(const GertTensor &rt2Tensor, uint8_t *key)
 {
-    key = NnopbaseAppend1Byte(key, (NnopbaseUChar) rt2Tensor.GetDataType());
-    key = NnopbaseAppend1Byte(key, (NnopbaseUChar) rt2Tensor.GetStorageFormat());
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(rt2Tensor.GetDataType()));
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(rt2Tensor.GetStorageFormat()));
     const GertShape &shape = rt2Tensor.GetStorageShape();
     const size_t dimNum = shape.GetDimNum();
-    key = (uint8_t *) NnopbaseAppend4Byte(key, static_cast<uint32_t>(dimNum));
+    key = static_cast<uint8_t *>(NnopbaseAppend4Byte(key, static_cast<uint32_t>(dimNum)));
     for (size_t j = 0U; j < dimNum; j++) {
-        key = (uint8_t *) NnopbaseAppend8Byte(key, static_cast<uint64_t>(shape.GetDim(j)));
+        key = static_cast<uint8_t *>(NnopbaseAppend8Byte(key, static_cast<uint64_t>(shape.GetDim(j))));
     }
     return key;
 }
@@ -87,7 +87,7 @@ void GenArgsKey(NnopbaseExecutor *executor)
     const auto attrs = &executor->attrs;
     const auto coreNum = &executor->coreNum;
     uint8_t *key = executor->ownArgs.inputKey.data();
-    key = (uint8_t *) NnopbaseAppendBinary(key, executor->ownArgs.inputKey.size(), executor->opType, strlen(executor->opType));
+    key = static_cast<uint8_t *>(NnopbaseAppendBinary(key, executor->ownArgs.inputKey.size(), executor->opType, strlen(executor->opType)));
     for (uint32_t i = 0U; i < inputs->num; i++) {
         if (inputs->extTensors[i].isNull) {
             key = NnopbaseAppend1Byte(key, '/');
@@ -97,7 +97,7 @@ void GenArgsKey(NnopbaseExecutor *executor)
         if (inputs->extTensors[i].valueDepend) {
             const auto addr = inputs->extTensors[i].rt2Tensor.GetAddr();
             const auto length = inputs->extTensors[i].rt2Tensor.GetSize();
-            key = (uint8_t *) NnopbaseAppendBinary(key, length, addr, length);
+            key = static_cast<uint8_t *>(NnopbaseAppendBinary(key, length, addr, length));
         }
     }
 
@@ -112,8 +112,8 @@ void GenArgsKey(NnopbaseExecutor *executor)
     key = NnopbaseAppend1Byte(key, '/');
     if (attrs->num > 0U) {
         for (size_t i = 0U; i < attrs->num; i++) {
-            key = (NnopbaseUChar*) NnopbaseAppendBinary(key, attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr,
-                                                        attrs->attrs[i].addr.size);
+            key = op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr,
+                                                        attrs->attrs[i].addr.size));
         }
     }
     key = NnopbaseAppend1Byte(key, '/');

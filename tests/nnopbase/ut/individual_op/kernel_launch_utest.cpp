@@ -69,6 +69,7 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     NnopbaseExecutorSetCollecter(executor, gBinCollecter);
     executor->collecter->useCoreTypeMagic = true;
     executor->collecter->oppPath = "/usr/local/Ascend/latest/opp";
+    executor->opType = "AddCustom";
     std::string socVersion = "ascend910b";
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion));
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);

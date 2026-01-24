@@ -1276,9 +1276,12 @@ public:
             return ACLNN_ERR_INNER;
         }
         CHECK_RET(args != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-        auto bin = SelectBin(*args->GetOpArg(op::OP_INPUT_ARG),
-                             *args->GetOpArg(op::OP_OUTPUT_ARG),
-                             *args->GetOpArg(op::OP_ATTR_ARG));
+        op::internal::OpKernelBin *bin = op::internal::GetLauncherCtx().GetOpKernelBin();
+        if (bin == nullptr) {
+            bin = SelectBin(*args->GetOpArg(op::OP_INPUT_ARG),
+                            *args->GetOpArg(op::OP_OUTPUT_ARG),
+                            *args->GetOpArg(op::OP_ATTR_ARG));
+        }
         if (bin == nullptr) {
             OP_LOGE(ACLNN_ERR_INNER, "Cannot find binary for op %s.", op::OpTypeDict::ToString(opType_).GetString());
             return ACLNN_ERR_INNER;
@@ -1303,6 +1306,7 @@ public:
             OP_LOGE(ACLNN_ERR_INNER, "Cannot find binary for op %s.", op::OpTypeDict::ToString(opType_).GetString());
             return ACLNN_ERR_INNER;
         }
+        op::internal::GetLauncherCtx().SetOpKernelBin(bin);
         auto ret = bin->JsonLoad();
         if (ret != ACLNN_SUCCESS) {
             return ret;

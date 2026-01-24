@@ -360,9 +360,9 @@ inline uint32_t NnopbaseExecutorGetBlockDim(NnopbaseExecutor *executor)
 inline const NnopbaseWorkspaceSizes* NnopbaseGetWorkspacesSizesFromArgs(const NnopbaseExecutorArgs *args)
 {
     if (args->binInfo->isStaticShape) {
-        return (const NnopbaseWorkspaceSizes*)args->binInfo->staticWorkspaceSizes;
+        return op::internal::PtrCastTo<const NnopbaseWorkspaceSizes>(args->binInfo->staticWorkspaceSizes);
     } else {
-        return (const NnopbaseWorkspaceSizes*)args->tilingInfo.workspacesSizes;
+        return op::internal::PtrCastTo<const NnopbaseWorkspaceSizes>(args->tilingInfo.workspacesSizes);
     }
 }
 
@@ -394,7 +394,7 @@ static inline void NnopbaseExecutorGetRefUnContiguousTensors(NnopbaseExecutor *e
     if (!refUnContTensors.empty()) {
         inUnContTensors.refUnContTensorList.tensors = const_cast<aclTensor **>(&refUnContTensors[0U]);
         inUnContTensors.refUnContTensorList.size = refUnContTensors.size();
-        *unContTensors = (const aclTensorList *)&inUnContTensors.refUnContTensorList;
+        *unContTensors = op::internal::PtrCastTo<const aclTensorList>(&inUnContTensors.refUnContTensorList);
         const aclTensor *const *value = &inUnContTensors.refContTensors[0U];
         inUnContTensors.refContTensorList = aclCreateTensorList(value, inUnContTensors.refContTensors.size());
         *contTensors = inUnContTensors.refContTensorList;

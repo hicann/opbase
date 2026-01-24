@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "indv_hash.h"
+#include "opdev/op_dfx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +21,7 @@ size_t NnopbaseHashBinary(const NnopbaseUChar* const addr, const size_t len)
     size_t rem = len % sizeof(uint64_t);
     size_t i = 0U;
     size_t seed = 0U;
-    const uint64_t *ptr = (const uint64_t*) addr;
+    const uint64_t *ptr =  op::internal::PtrCastTo<const uint64_t>(addr);
 
     while (i < size) {
         seed ^= hasher(*ptr) + NNOPBASE_HASH_SEED + (seed << 6U) + (seed >> 2U);
@@ -28,9 +29,9 @@ size_t NnopbaseHashBinary(const NnopbaseUChar* const addr, const size_t len)
         i++;
     }
     if (rem != 0) {
-        const NnopbaseUChar *p = (const NnopbaseUChar *)ptr;
+        const NnopbaseUChar *p =  op::internal::PtrCastTo<const NnopbaseUChar>(ptr);
         uint64_t val = 0U;
-        while (rem-- > 0) {
+        for (size_t j = 0U; j < rem; ++j) {
             val |= (*p);
             val = val << 8U;
             p++;

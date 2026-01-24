@@ -29,7 +29,7 @@ const std::map<NnopbaseAttrDtype, std::string> kDTypeToStr = {
 template<typename T>
 std::string DataToStr(const void *data)
 {
-    const T *p = (const T*)data;
+    const T *p = op::internal::PtrCastTo<const T>(data);
     if constexpr (std::is_same<char, T>::value) {
         return std::string(p);
     } else {
@@ -65,7 +65,7 @@ std::string ConvertToStr(const GertTensor &tensor)
     const void *addr = tensor.GetAddr();
     std::string res;
     for (size_t i = 0; i < len; i++) {
-        res += ToString((const T *)((const uint8_t *)addr + i * dtypeSize));
+        res += ToString(op::internal::PtrCastTo<const T>(op::internal::PtrCastTo<const uint8_t>(addr) + i * dtypeSize));
         if (i + 1 < len) { // 非最后一个
             // 逗号后不能加空格，fp32类型数据用sqlite解析的时候会受空格影响导致少数据
             res += ",";

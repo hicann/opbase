@@ -36,7 +36,7 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, rtStream_t const
         }
         NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(commHandle,
             stream,
-            ((NnopbaseTilingData *)executor->args->tilingInfo.tilingData)->GetData(),
+            (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(),
             &contextAddr));
         executor->contextAddr.push_back(contextAddr);
         rtStream_t aicpuStream = nullptr;
@@ -129,13 +129,13 @@ aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor *const executor, rtStream_t s
 
 void NnopbaseCopyDavidMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
 {
-    const NnopbaseUChar *const args = reinterpret_cast<NnopbaseUChar *>(executor->fusionArgs.args);
+    const NnopbaseUChar *const args = op::internal::PtrCastTo<NnopbaseUChar>(executor->fusionArgs.args);
     const uint16_t kfcArgsFmtOffset = static_cast<uint16_t>(argsAddr->hostInputData - args);
     executor->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset = kfcArgsFmtOffset / sizeof(void *);
     OP_LOGI("KfcArgsFmtOffset is %u.", kfcArgsFmtOffset);
     for (size_t i = 0U; i < sizeof(NnopbaseHcclCommParamDesc); i++) {
         argsAddr->hostInputData =
-            NnopbaseAppend1Byte(argsAddr->hostInputData, (reinterpret_cast<NnopbaseUChar *>(argsAddr->hcclDesc))[i]);
+            NnopbaseAppend1Byte(argsAddr->hostInputData, (op::internal::PtrCastTo<NnopbaseUChar>(argsAddr->hcclDesc))[i]);
     }
     OP_LOGI("GroupNum is %u, hasffts is %u, tilingOff is %u, isDyn is %lu.",
         argsAddr->hcclDesc->groupNum,
@@ -150,9 +150,9 @@ void NnopbaseCopyDavidMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorA
 
 void NnopbaseCopyMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
 {
-    NnopbaseUChar *descAddr = reinterpret_cast<NnopbaseUChar *>(executor->aicpuArgs.args);
+    NnopbaseUChar *descAddr = op::internal::PtrCastTo<NnopbaseUChar>(executor->aicpuArgs.args);
     for (size_t i = 0U; i < sizeof(NnopbaseHcclCommParamDesc); i++) {
-        descAddr = NnopbaseAppend1Byte(descAddr, (reinterpret_cast<NnopbaseUChar *>(argsAddr->hcclDesc))[i]);
+        descAddr = NnopbaseAppend1Byte(descAddr, (op::internal::PtrCastTo<NnopbaseUChar>(argsAddr->hcclDesc))[i]);
     }
 
     OP_LOGI("GroupNum is %u, hasffts is %u, tilingOff is %u, isDyn is %lu.",

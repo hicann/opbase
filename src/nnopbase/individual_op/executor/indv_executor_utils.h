@@ -27,7 +27,7 @@ constexpr const char* IMPL_MODE_HIGH_PRECISION = "high_precision";
 template<typename T>
 NnopbaseUChar *NnopbaseAppendByte(NnopbaseUChar *buf, T src)
 {
-    T* dst = reinterpret_cast<T*>(buf);
+    T* dst = op::internal::PtrCastTo<T>(buf);
     *dst = src;
     return buf + sizeof(T);
 }
@@ -49,7 +49,7 @@ inline bool EnableNnopbaseArgsCache()
 inline bool GetGlobalDeterministic()
 {
     int64_t value = 0; // 0表示非确定性
-    const rtError_t ret = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &value); // SYS_OPT_DETERMINISTIC
+    const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &value); // SYS_OPT_DETERMINISTIC
     OP_LOGD("Get system param deterministic ret = %d.", ret);
     return (value == 1); // 1表示确定性
 }
@@ -94,7 +94,7 @@ inline aclnnStatus NnopbaseSetOverFlowAddr(void *&addr)
 inline bool GetDebugKernel()
 {
     int64_t value = 0; // 0表示不使能debug kernel
-    const rtError_t ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &value); // SYS_OPT_ENABLE_DEBUG_KERNEL = 1
+    const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &value); // SYS_OPT_ENABLE_DEBUG_KERNEL = 1
     OP_LOGD("Get system param debug kernel ret = %d.", ret);
     return (value == 1); // 1表示使能debug kernel
 }
@@ -176,7 +176,7 @@ static inline bool IsContiguous(const GertShape &shape, const op::Strides &strid
     OP_LOGI("Input tensor view shape is %s, view strides is %s",
             op::ToString(shape).GetString(), op::ToString(strides).GetString());
     int64_t valid_stride = 1;
-    for (int64_t i = (int64_t) strides.size() - 1; i >= 0; --i) {
+    for (int64_t i = static_cast<int64_t>(strides.size()) - 1; i >= 0; --i) {
         if (shape[i] == 1) {
             continue;
         }
@@ -232,9 +232,9 @@ static inline void NnopbaseExecutorGet8ByteSize(size_t totalSize, uint32_t *len)
 static inline NnopbaseUChar *NnopbaseAppendBinary(void *buf, const size_t bufLen, const void *src, const size_t srcLen)
 {
     if (src != nullptr && memcpy_s(buf, bufLen, src, srcLen) == EOK) {
-        buf = reinterpret_cast<NnopbaseUChar *>(buf) + srcLen;
+        buf = op::internal::PtrCastTo<NnopbaseUChar>(buf) + srcLen;
     }
-    return reinterpret_cast<NnopbaseUChar *>(buf);
+    return op::internal::PtrCastTo<NnopbaseUChar>(buf);
 }
 
 static inline uint32_t NnopbaseExecutorGetTaskType(const CoreType coreType, NnopbaseTaskRation taskRation) {

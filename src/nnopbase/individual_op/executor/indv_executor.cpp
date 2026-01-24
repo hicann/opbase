@@ -284,7 +284,7 @@ aclnnStatus NnopbaseSetUnContiguousExecutorRepeatable(NnopbaseExecutor *executor
             return ACLNN_ERR_INNER;
         }
         auto ret = inExe->SetRepeatable();
-        CHECK_COND(ret == OK, ACLNN_ERR_INNER, "Op %s set UnContiguous executor repeatable filed.", executor->opType);
+        CHECK_COND(ret == OK, ACLNN_ERR_INNER, "Op %s set UnContiguous executor repeatable failed.", executor->opType);
         aclOpExecutor *viewCopyExe = executor->viewCopyExe;
         if (viewCopyExe != nullptr) {
             if (viewCopyExe->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
@@ -455,24 +455,24 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
     }
 
     // workspace num为0时，args中需要占位
-    const uint32_t workspaceNum = executor->workspaces.num == 0U ? 1U : (uint32_t)executor->workspaces.num;
+    const uint32_t workspaceNum = executor->workspaces.num == 0U ? 1U : static_cast<uint32_t>(executor->workspaces.num);
     // input, output, workspaces, 3 for tiling, overflow, ctrlAddr
     uint32_t num = executor->args->inputs.paramDescs.count + executor->args->outputs.paramDescs.count +
         workspaceNum + 3U + mc2Num;
     if (executor->args->outputs.outPutShapeSize != 0U) {
         num++; // for outPutShapeSize
     }
-    auto tilingData = reinterpret_cast<NnopbaseTilingData *>(executor->args->tilingInfo.tilingData);
+    auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData);
     void *args = nullptr;
     if (executor->hasTiling) {
-        args = reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) - num * sizeof(void*);
+        args = op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) - num * sizeof(void*);
         const size_t tilingDataSize = tilingData->GetDataSize();
         OP_LOGI("TilingDataSize is %zu bytes.", tilingDataSize);
 
         const size_t alignTilingDataSize =
             ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U : tilingDataSize; // 8byte对齐
-        argsAddr.ptr = executor->args->binInfo->oomFlag ? reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) + alignTilingDataSize
-                                                        : reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) + tilingDataSize;
+        argsAddr.ptr = executor->args->binInfo->oomFlag ? op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + alignTilingDataSize
+                                                        : op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + tilingDataSize;
 
         if (executor->args->binInfo->oomFlag || op::internal::IsArgExceptionDumpEnable()) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorArgsGetDfxInfo(executor, &argsAddr, workspaceNum));
@@ -480,7 +480,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
     } else {
         // MC2算子没有静态场景
         args = static_cast<void*>(executor->args->argsBuf.data());
-        argsAddr.ptr = reinterpret_cast<NnopbaseUChar *>(executor->args->argsBuf.data()) + num * sizeof(void*);
+        argsAddr.ptr = op::internal::PtrCastTo<NnopbaseUChar>(executor->args->argsBuf.data()) + num * sizeof(void*);
     }
 
     if ((executor->args->inputs.hostInputNum > 0) || executor->args->inputs.hasDynamic || executor->args->outputs.hasDynamic ||
@@ -494,23 +494,23 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
                 executor->fusionArgs.hostInputInfoNum = executor->argsExt.hostInputInfoNum + 1U;
                 argsAddr.hostInputData = argsAddr.ptr + executor->fusionArgs.hostInputInfoNum * sizeof(aclrtPlaceHolderInfo);
                 // mc2算子会占用一个rtHostInputInfo_t存储tilingdata信息
-                argsAddr.hostInputInfo = reinterpret_cast<aclrtPlaceHolderInfo *>(argsAddr.ptr + sizeof(aclrtPlaceHolderInfo));
-                executor->fusionArgs.hostInputInfoPtr = reinterpret_cast<rtHostInputInfo_t *>(argsAddr.ptr);
+                argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr + sizeof(aclrtPlaceHolderInfo));
+                executor->fusionArgs.hostInputInfoPtr = op::internal::PtrCastTo<rtHostInputInfo_t>(argsAddr.ptr);
             } else {
                 // 1 is aicpu tilingdata hostinfo
                 executor->aicpuArgs.hostInputInfoNum = executor->argsExt.hostInputInfoNum + 1;
                 argsAddr.hostInputData =
                     argsAddr.ptr + (executor->aicpuArgs.hostInputInfoNum + executor->argsExt.hostInputInfoNum) *
                                        sizeof(aclrtPlaceHolderInfo);
-                argsAddr.aicpuHostInputInfo = reinterpret_cast<aclrtPlaceHolderInfo *>(
+                argsAddr.aicpuHostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(
                     argsAddr.ptr + executor->argsExt.hostInputInfoNum * sizeof(aclrtPlaceHolderInfo));
-                argsAddr.hostInputInfo = reinterpret_cast<aclrtPlaceHolderInfo *>(argsAddr.ptr);
-                executor->aicpuArgs.hostInputInfoPtr = reinterpret_cast<rtHostInputInfo_t *>(argsAddr.aicpuHostInputInfo);
+                argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
+                executor->aicpuArgs.hostInputInfoPtr = op::internal::PtrCastTo<rtHostInputInfo_t>(argsAddr.aicpuHostInputInfo);
                 executor->argsExt.hostInputInfoPtr = argsAddr.hostInputInfo;
             }
         } else {
             argsAddr.hostInputData = argsAddr.ptr + executor->argsExt.hostInputInfoNum * sizeof(aclrtPlaceHolderInfo);
-            argsAddr.hostInputInfo = (aclrtPlaceHolderInfo *)argsAddr.ptr;
+            argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
             executor->argsExt.hostInputInfoPtr = argsAddr.hostInputInfo;
         }
     } else {
@@ -525,9 +525,9 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
             executor->fusionArgs.args = args;
             executor->argsExt.args = args;
         } else {
-            addr = (void **)(reinterpret_cast<NnopbaseUChar *>(args) + sizeof(void *));
+            addr = op::internal::PtrCastTo<void *>(op::internal::PtrCastTo<NnopbaseUChar>(args) + sizeof(void *));
             executor->aicpuArgs.args = args;
-            executor->argsExt.args = reinterpret_cast<void *>(addr);
+            executor->argsExt.args = op::internal::PtrCastTo<void>(addr);
         }
     } else {
         addr = (void **)args;
@@ -559,7 +559,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         *addr = op::internal::PtrCastTo<uint8_t>(executor->workspaces.workspaces[0]) +
                 (executor->workspaces.length - executor->args->outputs.outPutShapeSize);
         executor->args->outputs.outPutShapeArgsOffset =
-            (reinterpret_cast<NnopbaseUChar *>(addr) - reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args)) / sizeof(void *);
+            (op::internal::PtrCastTo<NnopbaseUChar>(addr) - op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args)) / sizeof(void *);
         OP_LOGI("OutputShape addr is %p, outPutShapeArgsOffset is %zu.", *addr, executor->args->outputs.outPutShapeArgsOffset);
         addr++;
     }
@@ -572,7 +572,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         for (size_t i = 0U; i < executor->workspaces.num; i++) {
             *addr = executor->workspaces.workspaces[i];
             executor->workspaces.workspaceArgsOffset[i] =
-                static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(addr) - reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args));
+                static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(addr) - op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args));
             addr++;
         }
     }
@@ -580,27 +580,27 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
     if (executor->hasTiling) {
         *addr = tilingData->GetData();
         executor->argsExt.tilingAddrOffset =
-            static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(addr) - reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args));
+            static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(addr) - op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args));
         executor->argsExt.tilingDataOffset =
-            static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) - 
-                reinterpret_cast<NnopbaseUChar *>(executor->argsExt.args));
+            static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) - 
+                op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args));
         if (executor->mc2OpCfg.isMc2) {
             if (executor->collecter->isMc2FusionLaunch) {
                 executor->fusionArgs.hostInputInfoPtr->addrOffset =
-                    reinterpret_cast<NnopbaseUChar *>(addr) -
-                    reinterpret_cast<NnopbaseUChar *>(executor->fusionArgs.args);
+                    op::internal::PtrCastTo<NnopbaseUChar>(addr) -
+                    op::internal::PtrCastTo<NnopbaseUChar>(executor->fusionArgs.args);
                 executor->fusionArgs.hostInputInfoPtr->dataOffset =
-                    reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) -
-                    reinterpret_cast<NnopbaseUChar *>(executor->fusionArgs.args);
+                    op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) -
+                    op::internal::PtrCastTo<NnopbaseUChar>(executor->fusionArgs.args);
                 // tilingOff设置的是tilingDataPtr首地址和args首地址间的偏移，用来解析args获取tilingdata
                 argsAddr.hcclDesc->tilingOff = executor->fusionArgs.hostInputInfoPtr->addrOffset / sizeof(void *);
             } else {
                 argsAddr.aicpuHostInputInfo->addrOffset =
-                    static_cast<uint32_t>(reinterpret_cast<NnopbaseUChar *>(addr) -
-                                          reinterpret_cast<NnopbaseUChar *>(executor->aicpuArgs.args));
+                    static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(addr) -
+                                          op::internal::PtrCastTo<NnopbaseUChar>(executor->aicpuArgs.args));
                 argsAddr.aicpuHostInputInfo->dataOffset = static_cast<uint32_t>(
-                    reinterpret_cast<NnopbaseUChar *>(tilingData->GetData()) -
-                    reinterpret_cast<NnopbaseUChar *>(executor->aicpuArgs.args));
+                    op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) -
+                    op::internal::PtrCastTo<NnopbaseUChar>(executor->aicpuArgs.args));
                 // tilingOff设置的是tilingdata ptr地址和args首地址间的偏移，算子在kernel中用来解析args获取tilingdata
                 argsAddr.hcclDesc->tilingOff = argsAddr.aicpuHostInputInfo->addrOffset / sizeof(void *);
             }
@@ -615,7 +615,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
     *addr = g_nnopbaseSysCfgParams.overflowAddr;
     /* tiling data has been encode in tiling func. */
     /* host input data and data have been encoded. */
-    executor->argsExt.argsSize = static_cast<uint32_t>(argsAddr.ptr - reinterpret_cast<NnopbaseUChar*>(executor->argsExt.args))
+    executor->argsExt.argsSize = static_cast<uint32_t>(argsAddr.ptr - op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args))
         + NNOPBASE_PARAM_EXT_LEN + static_cast<uint32_t>(sizeof(aclrtPlaceHolderInfo));
     if (executor->mc2OpCfg.isMc2) {
         NnopbasePrepareMC2Params(executor, &argsAddr);
@@ -650,7 +650,16 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
     }
-    
+
+    auto &registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
+    auto opImpl = registry->GetOpImpl(executor->opType);
+    if (opImpl != nullptr && opImpl->exception_func != nullptr) {
+        OP_LOGI("Start to register customized exception dump parse function for op: %s.", executor->opType);
+        NNOPBASE_ASSERT_OK_RETVAL(aclrtBinarySetExceptionCallback(binInfo->binHandle,
+            reinterpret_cast<aclrtOpExceptionCallback>(opImpl->exception_func), nullptr));
+        OP_LOGI("Register customized exception dump parse function for op: %s successfully.", executor->opType);
+    }
     if (binInfo->initValues.size() > 0U) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbasePrepareInitValues(executor));
         if (gBinCollecter->isMemsetV2) {
@@ -727,8 +736,8 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
     }
     // init tilingdata & workspace
     auto &tilingInfo = executor->args->tilingInfo;
-    auto workspacesSizes = reinterpret_cast<gert::ContinuousVector *>(tilingInfo.workspacesSizes);
-    auto tilingData = reinterpret_cast<NnopbaseTilingData *>(tilingInfo.tilingData);
+    auto workspacesSizes = op::internal::PtrCastTo<gert::ContinuousVector>(tilingInfo.workspacesSizes);
+    auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(tilingInfo.tilingData);
     workspacesSizes->Init(NNOPBASE_NORM_MAX_WORKSPACE_NUMS);
     const size_t tilingDataSize =
         executor->args->binInfo->opParaSize == 0U ? NNOPBASE_MAX_TILING_DATA_LEN : executor->args->binInfo->opParaSize;
@@ -745,7 +754,7 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
     auto tiling = executor->regInfo->tiling;
     CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of %s!", executor->opType);
     ge::graphStatus ret =
-        executor->regInfo->tiling(reinterpret_cast<gert::TilingContext *>(executor->contextExt.context));
+        executor->regInfo->tiling(op::internal::PtrCastTo<gert::TilingContext>(executor->contextExt.context));
     CHECK_COND((ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR,
                "%s do tiling failed, ret is %d.", executor->opType, ret);
     if (executor->tilingId != nullptr) {
@@ -788,7 +797,7 @@ static aclnnStatus NnopbaseExecutorCopyAttr(NnopbaseExecutor *executor)
             attrs.attrs[i].addr.addr,
             attrs.attrs[i].addr.size);
         // 开启L2 profiling时，保存attr，保证传给算子tiling的attr和上报的attr一致
-        attrs.attrs[i].addr.addr = reinterpret_cast<void *>(executor->args->attrsData.data() + offset);
+        attrs.attrs[i].addr.addr = op::internal::PtrCastTo<void>(executor->args->attrsData.data() + offset);
         offset += attrs.attrs[i].addr.size;
     }
     OP_LOGI("Copy attr successfully.");
@@ -893,7 +902,7 @@ void NnopbaseExecutorCopyCacheAttr(NnopbaseExecutor *executor)
     if (op::internal::opProfilingSwitch.level2ProfilingFlag) {
         size_t offset = 0;
         for (size_t i = 0; i < executor->attrs.num; i++) {
-            executor->attrs.attrs[i].addr.addr = reinterpret_cast<void *>(executor->args->attrsData.data() + offset);
+            executor->attrs.attrs[i].addr.addr = op::internal::PtrCastTo<void>(executor->args->attrsData.data() + offset);
             offset += executor->attrs.attrs[i].addr.size;
         }
     }
@@ -997,7 +1006,7 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
                 executor->args->binInfo->binPath.c_str(), binType);
         executor->opKernelInfo = aclnnOpInfoRecord::OpKernelInfo(executor->args->binInfo->binPath, binType);
         aclnnOpInfoRecord::OpInfoSerialize(
-            (const gert::TilingContext *)executor->contextExt.context,
+            op::internal::PtrCastTo<const gert::TilingContext>(executor->contextExt.context),
             aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, g_nnopbaseSysCfgParams.deterministic),
             &executor->opKernelInfo);
     }
@@ -1107,7 +1116,7 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
         stream);
     OP_LOGI("Main stream launch success.");
 
-    const uint8_t scheMode = (uint8_t)executor->args->tilingInfo.scheMode;
+    const uint8_t scheMode = static_cast<uint8_t>(executor->args->tilingInfo.scheMode);
     const rtTaskCfgInfo_t aivCfgInfo = {0U, 0U, scheMode, false, blockInfo.aivBlockDimOffset, 0U, 0U, {0U}, 0U};
     const uint64_t aivLaunchBeginTime = NnopbaseMsprofSysTime();
     // vector core kernel launch
@@ -1242,7 +1251,7 @@ aclnnStatus NnopbaseExecutorRefreshOutputShape(NnopbaseExecutor *executor)
 
     // outputShape: [output_shape1_dim, output_shape1, output_shape2_dim, output_shape2]
     // output_shape1_dim=2, output_shape1=[32,64,0,0,0,0,0,0]
-    uint64_t *hostData = reinterpret_cast<uint64_t *>(executor->outputShapeData.data());
+    uint64_t *hostData = op::internal::PtrCastTo<uint64_t>(executor->outputShapeData.data());
     for (auto it = executor->args->outputs.outPutShapeMap.begin(); it != executor->args->outputs.outPutShapeMap.end(); ++it) {
         gert::Shape newShape;
         uint64_t dimNum = hostData[0] & 0x7F; // 最高位1表示uint64_t类型，解析dimNum要去掉
@@ -1317,7 +1326,7 @@ void NnopbaseExecutorGetUnContiguousTensors(NnopbaseExecutor *executor, const ac
     if (!inVec.empty()) {
         inUnContTensors.tensorList.tensors = const_cast<aclTensor **>(&inVec[0U]);
         inUnContTensors.tensorList.size = inVec.size();
-        *inTensors = (const aclTensorList *)&inUnContTensors.tensorList;
+        *inTensors = op::internal::PtrCastTo<const aclTensorList>(&inUnContTensors.tensorList);
     } else {
         *inTensors = nullptr;
     }

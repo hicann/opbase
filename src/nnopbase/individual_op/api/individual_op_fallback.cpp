@@ -69,7 +69,7 @@ aclIntArray *NnopbaseCovertIntArray(const gert::Tensor* tensor)
     OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Gert tensor is not host placement."),
         return nullptr);
-    return aclCreateIntArray((const int64_t *)(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
+    return aclCreateIntArray(static_cast<const int64_t *>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
 
 aclBoolArray *NnopbaseCovertBoolArray(const gert::Tensor* tensor)
@@ -78,7 +78,7 @@ aclBoolArray *NnopbaseCovertBoolArray(const gert::Tensor* tensor)
     OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
         return nullptr);
-    return aclCreateBoolArray((const bool *)(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
+    return aclCreateBoolArray(static_cast<const bool *>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
 
 aclFloatArray *NnopbaseCovertFloatArray(const gert::Tensor* tensor)
@@ -87,7 +87,7 @@ aclFloatArray *NnopbaseCovertFloatArray(const gert::Tensor* tensor)
     OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
         return nullptr);
-    return aclCreateFloatArray((const float *)(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
+    return aclCreateFloatArray(static_cast<const float *>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
 
 aclScalar *NnopbaseConvertScalar(const gert::Tensor* tensor)
@@ -110,7 +110,7 @@ aclScalarList *NnopbaseConvertScalarList(const gert::Tensor* tensor)
     const size_t typeSize = op::TypeSize(tensor->GetDataType());
     void *addr = const_cast<void *>(tensor->GetAddr());
     for (int64_t i = 0; i < tensor->GetStorageShape().GetShapeSize(); i++) {
-        aclScalar *scalar = aclCreateScalar((void *)((uint8_t *)addr + typeSize * i), dataType);
+        aclScalar *scalar = aclCreateScalar(op::internal::PtrCastTo<void>(static_cast<uint8_t *>(addr) + typeSize * i), dataType);
         tmp.push_back(scalar);
     }
     return aclCreateScalarList(tmp.data(), tmp.size());

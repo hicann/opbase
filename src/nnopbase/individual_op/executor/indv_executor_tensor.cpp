@@ -69,8 +69,8 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
     if (dataType ==  ge::DataType::DT_COMPLEX64) {
         if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
             for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
-                ((std::complex<double> *)scalarValue.data())[i] =
-                    ((std::complex<float> *)tensor->MutableTensorData().GetAddr())[i];
+                (op::internal::PtrCastTo<std::complex<double>>(scalarValue.data()))[i] =
+                    (op::internal::PtrCastTo<std::complex<float>>(tensor->MutableTensorData().GetAddr()))[i];
             }
         }
         tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
@@ -80,8 +80,8 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
     if (dataType ==  ge::DataType::DT_COMPLEX128) {
         if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
             for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
-                ((std::complex<float> *)scalarValue.data())[i] =
-                    ((std::complex<double> *)tensor->MutableTensorData().GetAddr())[i];
+                (op::internal::PtrCastTo<std::complex<float>>(scalarValue.data()))[i] =
+                    (op::internal::PtrCastTo<std::complex<double>>(tensor->MutableTensorData().GetAddr()))[i];
             }
             tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
         }
@@ -89,7 +89,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
     }
 
     for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
-        reinterpret_cast<T *>(scalarValue.data())[i] = reinterpret_cast<S *>(tensor->MutableTensorData().GetAddr())[i];
+        op::internal::PtrCastTo<T>(scalarValue.data())[i] = op::internal::PtrCastTo<S>(tensor->MutableTensorData().GetAddr())[i];
     }
 
     tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);

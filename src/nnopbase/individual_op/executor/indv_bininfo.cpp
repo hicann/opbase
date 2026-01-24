@@ -323,7 +323,7 @@ aclnnStatus NnopbaseLoadMemsetJson(std::unique_ptr<NnopbaseMemsetInfo> &memsetIn
     try {
         std::string compileInfoStr = jsonInfo["compileInfo"].dump();
         memsetInfo->compileInfo = compileInfoStr.c_str();
-        OP_LOGI("Compile info is is %s.", memsetInfo->compileInfo);
+        OP_LOGI("Compile info is %s.", memsetInfo->compileInfo);
 
         memsetInfo->binInfo->kernelName = jsonInfo["binFileName"].get<std::string>();
         memsetInfo->binInfo->stubName = jsonInfo["kernelName"].get<std::string>();
@@ -489,7 +489,7 @@ aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, Nnopba
     struct stat statbuf;
     NNOPBASE_ASSERT_TRUE_RETVAL(stat(binPath, &statbuf) != -1);
     NNOPBASE_ASSERT_TRUE_RETVAL(statbuf.st_size > 0);
-    const size_t size = (size_t)statbuf.st_size;
+    const size_t size = static_cast<size_t>(statbuf.st_size);
     auto buf = std::make_unique<NnopbaseUChar[]>(size);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(buf);
 

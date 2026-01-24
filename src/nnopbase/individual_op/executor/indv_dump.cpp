@@ -121,7 +121,7 @@ inline void NnopbasePrepareOutputShapeDumpTensor(
         {ge::FORMAT_ND, ge::FORMAT_ND, {}},        // format
         gert::kOnDeviceHbm,                        // placement
         ge::DT_INT64,                              // data type
-        (void *)((uint8_t *)(executor->workspaces.workspaces[0]) +
+        op::internal::PtrCastTo<void>(op::internal::PtrCastTo<uint8_t>(executor->workspaces.workspaces[0]) +
                 (executor->workspaces.length - executor->args->outputs.outPutShapeSize))};
     FillTensorInfo(info, outputShapeTensor);
     info.type = Adx::TensorType::OUTPUT;
@@ -243,7 +243,7 @@ aclnnStatus NnopbaseDumpWorkspaceData(NnopbaseExecutor *executor, aclrtStream st
 
 void NnopbaseDumpData(NnopbaseExecutor *executor, Adx::TensorType ioType, aclrtStream stream, NnopbaseChar *opType)
 {
-    if (Adx::AdumpGetDumpSwitch(Adx::DumpType::OPERATOR)) {
+    if (Adx::AdumpGetDumpSwitch(Adx::DumpType::OPERATOR) != 0) {
         NnopbaseDumpTensors(executor, ioType, stream, opType);
     }
 }
@@ -419,7 +419,7 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor *const executor)
         NNOPBASE_ASSERT_NOTNULL_RETVAL(exceptionDumpAddr);
 
         // atmoic index
-        uint64_t *sizeInfoAddr = reinterpret_cast<uint64_t *>(exceptionDumpAddr);
+        uint64_t *sizeInfoAddr = static_cast<uint64_t *>(exceptionDumpAddr);
         *sizeInfoAddr = static_cast<uint64_t>(atomicIndex);
         sizeInfoAddr++;
         bool hasCtrlAddr = false;
