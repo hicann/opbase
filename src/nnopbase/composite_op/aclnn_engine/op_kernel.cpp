@@ -436,7 +436,11 @@ void GetTaskInfoMultiKernelInfo(TaskInfo &info, const nlohmann::json &elem)
         taskRation.c_str(),
         crossCoreSync);
     if (taskRation == "1:0" || taskRation == "0:1") {
-        info.type = (taskRation == "0:1") ? MSPROF_GE_TASK_TYPE_MIX_AIV : MSPROF_GE_TASK_TYPE_MIX_AIC;
+        if (crossCoreSync == 1) {
+            info.type = (taskRation == "0:1") ? MSPROF_GE_TASK_TYPE_MIX_AIV : MSPROF_GE_TASK_TYPE_MIX_AIC;
+        } else {
+            info.type = (taskRation == "0:1") ? MSPROF_GE_TASK_TYPE_AIV : MSPROF_GE_TASK_TYPE_AI_CORE;
+        }
         info.ration = 0;
     } else {
         if (kernelType == "MIX_AIC") {

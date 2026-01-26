@@ -216,7 +216,7 @@ TEST_F(OpKernelUT, GetTaskTypeSingleBinMmultiKernelType)
     PrepareBasicInfo(compactInfo, taskType, 0, 0);
 
     taskType = kernelBin.GetTaskInfo(10000);
-    EXPECT_EQ(taskType.type, MSPROF_GE_TASK_TYPE_MIX_AIC);
+    EXPECT_EQ(taskType.type, MSPROF_GE_TASK_TYPE_AI_CORE);
     EXPECT_EQ(taskType.ration, 0);
     taskType = kernelBin.GetTaskInfo(10001);
     EXPECT_EQ(taskType.type, MSPROF_GE_TASK_TYPE_MIX_AIC);
