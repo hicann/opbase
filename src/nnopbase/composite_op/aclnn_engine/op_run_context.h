@@ -246,15 +246,10 @@ public:
     {
         if (op::internal::GetOpProfilingRecordArgFlag()) {
             gert::TilingContext *ctx = opRunCtx_.UpdateTilingCtx(opType, inputs, outputs, attrs);
-            int64_t determinConfig = 0;
-            const aclError rtErr = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &determinConfig);
-            if (rtErr != ACL_SUCCESS) {
-                OP_LOGW("aclrtCtxGetSysParamOpt error, errorCode is %d", static_cast<int32_t>(rtErr));
-                return;
-            }
-            auto opts = aclnnOpInfoRecord::OpCompilerOption(implMode, static_cast<bool>(determinConfig));
-            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s.", opts.deterministic,
-                    opts.impl_mode.c_str(), kernelInfo.bin_type, kernelInfo.bin_info.c_str());
+            bool isDeterministicOn = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_;
+            auto opts = aclnnOpInfoRecord::OpCompilerOption(implMode, isDeterministicOn);
+            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s, deterministic is %d.", opts.deterministic,
+                    opts.impl_mode.c_str(), kernelInfo.bin_type, kernelInfo.bin_info.c_str(), isDeterministicOn);
             aclnnOpInfoRecord::OpInfoSerialize(ctx, opts, &kernelInfo);
         }
     }

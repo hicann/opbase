@@ -23,6 +23,7 @@
 #include "op_info_serialize.h"
 #include "opdev/op_def.h"
 #include "kernel_context_holder.h"
+#include "thread_local_context.h"
 
 namespace op::internal {
 
@@ -39,6 +40,8 @@ public:
 
     AsyncAnyValue *GetDeterministic() const
     {
+        *PtrCastTo<int32_t>(Deterministic_.data.inplace) =
+            GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ? 1 : 0;
         return const_cast<AsyncAnyValue *>(&Deterministic_);
     }
 
@@ -98,7 +101,7 @@ private:
     static constexpr size_t MAX_COMPILE_INFO_STRUCT_SIZE = 32 * 1024;
     aclnnOpInfoRecord::OpKernelInfo opKernelInfo_{"", 0};
     uint32_t coreNum_{0};
-    AsyncAnyValue Deterministic_;
+    mutable AsyncAnyValue Deterministic_;
 };
 
 } // namespace op::internal

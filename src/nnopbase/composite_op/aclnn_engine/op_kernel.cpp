@@ -1402,9 +1402,6 @@ aclnnStatus OpKernel::GetOpDescJson(bool debug)
 
 aclnnStatus OpKernel::AppendDynBin(const string &jsonPath, const string &binAndJsonDir, bool debug)
 {
-    aclError retRts = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &determinConfig_);
-    OP_CHECK_NO_RETURN(retRts == ACL_SUCCESS,
-                       determinConfig_ = 0; OP_LOGD("Can not get system param deterministic, ret = %d.", retRts));
     configJsonPath_ = jsonPath;
     auto ret = GetOpDescJson(debug);
     CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "failed to get op desc info [%s]", opTypeStr_.c_str());

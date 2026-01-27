@@ -1368,8 +1368,9 @@ public:
         int64_t implMode = ToIndex(GetCurrentImplMode());
         OP_LOGD("tensor size %zu; dynamic index %s, dynamic count %s. Attr size %zu.", tensors.size(),
                 IntegerVecToString(dynamicIndex).c_str(), IntegerVecToString(dynamicCount).c_str(), attrsVec.size());
+        int64_t determinConfig = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ? 1 : 0;
         OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
-                implMode, determinConfig_,
+                implMode, determinConfig,
                 tensors.size(), dynamicCount.size(), attrsVec.size(), valueDependIndex_.size());
         simpKey = NnopbaseFindStaticKernel(opTypeStr_.c_str(), (tensors.data()),
             static_cast<int64_t>(tensors.size()),
@@ -1378,7 +1379,7 @@ public:
             static_cast<int64_t>(dynamicCount.size()),
             const_cast<const NnopbaseAttrAddr **>(attrsVec.data()),
             static_cast<int64_t>(attrsVec.size()),
-            implMode, determinConfig_,
+            implMode, determinConfig,
             valueDependIndex_.data(), valueDependIndex_.size());
         if (simpKey != nullptr) {
             OP_LOGD("Simp key is %s", simpKey);
@@ -1631,7 +1632,7 @@ private:
         char *&integralKey, KeyLength &len, OpArgList &inputs, OpArgList &outputs, OpArgList &attrs) const
     {
         AssignAndIncrement(integralKey, len.totalBufferLength, PtrCastTo<uint8_t>("d="), sizeof("d=") - 1);
-        if (determinConfig_ == 1) {
+        if (GetThreadLocalContext().opConfigInfo_.isDeterministicOn_) {
             AssignAndIncrement(integralKey, DETERMINISTIC_VALUE);
         } else {
             AssignAndIncrement(integralKey, NON_DETERMINISTIC_VALUE);
@@ -1669,7 +1670,7 @@ private:
         //  "enable_hi_float_32_execution": 6
         //  "keep_fp16": 7
         char *originalKey = integralKey;
-        if (determinConfig_ == 1) {
+        if (GetThreadLocalContext().opConfigInfo_.isDeterministicOn_) {
             AssignAndIncrement(integralKey, DETERMINISTIC_VALUE);
         } else {
             AssignAndIncrement(integralKey, NON_DETERMINISTIC_VALUE);
@@ -1774,7 +1775,6 @@ private:
     uint64_t implModeBm_ = 0; // Use bitmap to show how many op impl types this kernel supports
     size_t maxKeyLength_ = 0;
     bool needMatchAttrDimNum_ = false;
-    int64_t determinConfig_ = 0;
     nlohmann::json configJson_;
     std::string configJsonPath_;
     uint32_t opType_;

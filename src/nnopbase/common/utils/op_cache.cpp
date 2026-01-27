@@ -429,6 +429,12 @@ static inline void OpCacheAddSeparator(char *hashBuf, uint64_t &hashOffset)
     hashOffset += 1;
 }
 
+static inline void OpCacheAdd1Byte(const void *buf, char *hashBuf, uint64_t &hashOffset)
+{
+    *PtrCastTo<uint8_t>(hashBuf + hashOffset) = *PtrCastTo<uint8_t>(buf);
+    hashOffset += sizeof(uint8_t);
+}
+
 static inline void OpCacheAdd4Byte(const void *buf, char *hashBuf, uint64_t &hashOffset)
 {
     *PtrCastTo<uint32_t>(hashBuf + hashOffset) = *PtrCastTo<uint32_t>(buf);
@@ -483,11 +489,13 @@ void SetOpCacheKey(OpCacheKey &key)
 
 void AddOpConfigInfoToBuf() {
     OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
-    if (CheckHashBufCapacity(tlsData->hashOffset, sizeof(ThreadCoreNum))) {
+    if (CheckHashBufCapacity(tlsData->hashOffset, sizeof(ThreadCoreNum) + sizeof(uint8_t))) {
         ThreadCoreNum coreNum(
             tlsData->threadLocalContext.opConfigInfo_.aicNum_, tlsData->threadLocalContext.opConfigInfo_.aivNum_);
         *PtrCastTo<ThreadCoreNum>(tlsData->hashBuf + tlsData->hashOffset) = coreNum;
         tlsData->hashOffset += sizeof(ThreadCoreNum);
+        bool deterministic = tlsData->threadLocalContext.opConfigInfo_.isDeterministicOn_;
+        OpCacheAdd1Byte(&deterministic, tlsData->hashBuf, tlsData->hashOffset);
     }
 }
 

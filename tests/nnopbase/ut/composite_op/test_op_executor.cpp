@@ -442,3 +442,47 @@ TEST_F(OpExecutorTest, phase1ParamCheckTest)
 
     delete ptr;
 }
+
+static void L2Phase2Func(const char *apiName, aclOpExecutor *executor, const int64_t configVal)
+{
+    std::cout << "phase2 thread id: " << std::this_thread::get_id() << std::endl;
+    InitL2Phase2Context(apiName, executor);
+    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (configVal == 1));
+    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (configVal == 1));
+}
+
+TEST_F(OpExecutorTest, DeterministicTest)
+{
+    std::cout << "phase1 thread id: " << std::this_thread::get_id() << std::endl;
+    const char *apiName = "aclnnArgsort";
+    int64_t deterministicValue = 0;
+    aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicValue);
+    std::cout << "deterministic value: " << deterministicValue << std::endl;
+
+    aclOpExecutor *executor = nullptr;
+    InitL2Phase1Context(apiName, &executor);
+    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (deterministicValue == 1));
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    uniqueExecutor.ReleaseTo(&executor);
+    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (deterministicValue == 1));
+
+    std::thread t(L2Phase2Func, apiName, executor, deterministicValue);
+    t.join();
+    delete executor;
+
+    executor = nullptr;
+    deterministicValue = (deterministicValue == 0) ? 1 : 0;
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, deterministicValue);
+    InitL2Phase1Context(apiName, &executor);
+    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (deterministicValue == 1));
+    auto uniqueExecutor2 = CREATE_EXECUTOR();
+    uniqueExecutor2.ReleaseTo(&executor);
+    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (deterministicValue == 1));
+
+    std::thread t2(L2Phase2Func, apiName, executor, deterministicValue);
+    t2.join();
+    delete executor;
+
+    deterministicValue = (deterministicValue == 0) ? 1 : 0;
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, deterministicValue);
+}

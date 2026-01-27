@@ -296,3 +296,23 @@ aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, size_t infoSize)
 {
     return ACL_SUCCESS;
 }
+
+int64_t gDeterministicNew = 0;
+
+EXTERN_C
+aclError aclrtSetSysParamOpt(aclSysParamOpt opt, int64_t value)
+{
+    if (opt == ACL_OPT_DETERMINISTIC) {
+        gDeterministicNew = value;
+    }
+    return ACL_SUCCESS;
+}
+
+EXTERN_C
+aclError aclrtGetSysParamOpt(aclSysParamOpt opt, int64_t *value)
+{
+    if (opt == ACL_OPT_DETERMINISTIC) {
+        *value = gDeterministicNew;
+    }
+    return ACL_SUCCESS;
+}

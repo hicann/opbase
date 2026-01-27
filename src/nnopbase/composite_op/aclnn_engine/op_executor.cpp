@@ -1448,8 +1448,13 @@ void InitL2Phase1Context(const char *l2Name, [[maybe_unused]] aclOpExecutor **ex
     OP_CHECK_NO_RETURN(aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &controlCoreNum) == ACL_RT_SUCCESS,
         controlCoreNum = op::GetCurrentPlatformInfo().GetVectorCoreNum());
     opTlsCtx.opConfigInfo_.aivNum_ = controlCoreNum;
-    opTlsCtx.opConfigInfo_.isDeterministicOn_ = false;
     opTlsCtx.opConfigInfo_.isOpDumpEnable_ = op::internal::IsDumpEnable();
+
+    int64_t determinConfig = 0;
+    aclError aclRet = aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &determinConfig);
+    OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, 
+                       determinConfig = 0; OP_LOGW("can not get system param deterministic, ret= %d.", aclRet));
+    opTlsCtx.opConfigInfo_.isDeterministicOn_ = (determinConfig == 1);
     OP_LOGI("aic num: %u, aiv num: %u, is deterministic on: %d, is op dump enable: %d",
         opTlsCtx.opConfigInfo_.aicNum_, opTlsCtx.opConfigInfo_.aivNum_,
         opTlsCtx.opConfigInfo_.isDeterministicOn_, opTlsCtx.opConfigInfo_.isOpDumpEnable_);

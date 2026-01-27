@@ -220,14 +220,8 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     tilingParseCtxValue_[kCompileInfoStruct].data.pointer = pStruct;
     tilingParseInfo_.compileInfoStruct_ = pStruct;
 
-    int32_t *dataInplace = reinterpret_cast<int32_t *>(Deterministic_.data.inplace);
-    int64_t deterministicVal = 0;
-    aclError retRts = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicVal);
-    OP_CHECK_NO_RETURN(retRts == ACL_SUCCESS, OP_LOGD("Can not get system param deterministic, ret = %d.", retRts));
-
-    *dataInplace = static_cast<int32_t>(deterministicVal);
-    OP_LOGD("Get system param deterministic successs, deterministic = %d",
-        *reinterpret_cast<int32_t *>(Deterministic_.data.inplace));
+    *PtrCastTo<int32_t>(Deterministic_.data.inplace) = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ? 1 : 0;
+    OP_LOGD("Deterministic status: %d", *PtrCastTo<int32_t>(Deterministic_.data.inplace));
 
     OP_CHECK(tilingFuncs->tiling_parse != nullptr,
         OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
