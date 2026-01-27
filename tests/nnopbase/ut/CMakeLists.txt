@@ -20,9 +20,9 @@ if(DEFINED ENV{ASCEND_HOME_PATH})
     set(ASCEND_PATH $ENV{ASCEND_HOME_PATH})
 else()
     if ("$ENV{USER}" STREQUAL "root")
-      set(ASCEND_PATH /usr/local/Ascend/latest)
+      set(ASCEND_PATH /usr/local/Ascend/cann)
     else ()
-      set(ASCEND_PATH $ENV{HOME}/Ascend/latest)
+      set(ASCEND_PATH $ENV{HOME}/Ascend/cann)
     endif ()
 endif()
 message(STATUS "Search libs under install path ${ASCEND_PATH}")
@@ -30,8 +30,6 @@ message(STATUS "Search libs under install path ${ASCEND_PATH}")
 # include path
 set(ASCEND_INCLUDE_DIR ${ASCEND_PATH}/include)
 set(ASCEND_PKG_INC_DIR ${ASCEND_PATH}/pkg_inc)
-set(EXPERIMENT_INCLUDE_DIR ${ASCEND_PATH}/include/experiment)
-set(OPENSDK_INCLUDE_DIR ${ASCEND_PATH}/opensdk/opensdk/include)
 
 # local path
 set(NNOPBASE_UT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -86,11 +84,12 @@ set(NNOPBASE_TEST_HEADER_FILES
     ${OPS_BASE_PATH}/include/
     ${OPS_BASE_PATH}/include/nnopbase/
     ${OPS_BASE_PATH}/include/nnopbase/opdev/
-    ${OPS_BASE_PATH}/third_party/gtest/include/
-    ${OPS_BASE_PATH}/third_party/json/include/
-    ${OPS_BASE_PATH}/third_party/mockcpp/include
-    ${OPS_BASE_PATH}/third_party/boost
     ${OPS_BASE_PATH}/tests/nnopbase/common/
+
+    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
+    ${CANN_3RD_LIB_PATH}/boost/
 
     ${ASCEND_INCLUDE_DIR}/
 
@@ -197,7 +196,7 @@ target_link_libraries(nnopbase_utest PRIVATE
     -ldl
     $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
     ${opInfoRecordLinkLibraries}
-    ${OPS_BASE_PATH}/third_party/mockcpp/lib/libmockcpp.a
+    ${CANN_3RD_LIB_PATH}/mockcpp/lib/libmockcpp.a
  PUBLIC
 )
 

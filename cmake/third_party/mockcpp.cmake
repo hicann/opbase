@@ -50,7 +50,7 @@ endif()
 if(NOT EXISTS "${MOCK_INSTALL_PATH}/lib/libmockcpp.a" OR FORCE_REBUILD_CANN_3RD)
     set(PATCH_FILE ${CANN_3RD_PKG_PATH}/mockcpp-2.7.patch)
     if(NOT EXISTS ${PATCH_FILE})
-        message(STATUS, "download mockcpp-2.7.patch")
+        message(STATUS "download mockcpp-2.7.patch")
         file(DOWNLOAD
             "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7_py3.patch"
             ${PATCH_FILE}

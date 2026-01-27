@@ -9,7 +9,12 @@
 # ----------------------------------------------------------------------------
 
 set(BOOST_NAME "boost")
-set(BOOST_PATH ${PROJECT_SOURCE_DIR}/third_party/boost)
+
+if(NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party)
+endif()
+
+set(BOOST_PATH ${CANN_3RD_LIB_PATH}/boost)
 
 if(NOT EXISTS "${BOOST_PATH}/boost/config.hpp")
     set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/boost_1_87_0.tar.gz")

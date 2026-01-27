@@ -58,9 +58,9 @@ checkopts() {
     if [[ -n "${ASCEND_HOME_PATH}" ]]; then
         echo "env exists ASCEND_HOME_PATH : ${ASCEND_HOME_PATH}"
     elif [ $UID -eq 0 ]; then
-        export ASCEND_HOME_PATH=/usr/local/Ascend/latest
+        export ASCEND_HOME_PATH=/usr/local/Ascend/cann
     else
-        export ASCEND_HOME_PATH=~/Ascend/latest
+        export ASCEND_HOME_PATH=~/Ascend/cann
     fi
     CANN_3RD_LIB_PATH="${BASEPATH}/third_party"
 
@@ -263,13 +263,13 @@ main() {
         echo "---------------- ops_base build finished ----------------"
     fi
     
-    if [[ "${ENABLE_UT}" == "on" && "${EXEC_TEST}" == "on" ]];then
-        if [ -f "${BASEPATH}"/"${BUILD_RELATIVE_PATH}"/tests/nnopbase/ut/nnopbase_utest ];then
+    if [[ "${ENABLE_UT}" == "on" && "${EXEC_TEST}" == "on" ]]; then
+        if [ -f "${BASEPATH}"/"${BUILD_RELATIVE_PATH}"/tests/nnopbase/ut/nnopbase_utest ]; then
             source "${ASCEND_HOME_PATH}/bin/setenv.bash"
             export LD_LIBRARY_PATH="${BASEPATH}/${BUILD_RELATIVE_PATH}"/:$LD_LIBRARY_PATH
             cd "${BASEPATH}"/"${BUILD_RELATIVE_PATH}"/tests/nnopbase/ut/
-            ./nnopbase_utest | tee nnopbase_utest.log
-            if grep -q "\[  FAILED  \]" nnopbase_utest.log; then
+            ./nnopbase_utest
+            if [[ $? -ne 0 ]]; then
                 echo "Execute nnopbase_utest failed."
                 exit 1
             fi
