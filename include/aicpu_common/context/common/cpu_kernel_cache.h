@@ -222,6 +222,12 @@ class CpuKernelCache : public KernelCache<CpuCacheData> {
    * @return bool: bit is 1 or 0
    */
   bool GetBitStatus(uint64_t num, uint64_t pos) const;
+
+  uint32_t CheckTensorParam(const std::vector<uint64_t> &io_addrs, ExtInfoMsg &ext_info_msg,
+    CpuKernelContext &ctx) const;
+
+  uint32_t UpdateInputTensor(const std::vector<uint64_t> &io_addrs,
+    ExtInfoMsg &ext_info_msg, CpuKernelContext &ctx, size_t &addr_index) const;
 };
 }  // namespace aicpu
 #endif  // AICPU_CPU_KERNEL_CACHE_H_

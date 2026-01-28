@@ -94,6 +94,9 @@ aclnnStatus AicpuExtInfoHandler::AppendExtInfoShape(const FVector<const aclTenso
 
     AicpuShapeAndType *inputs = reinterpret_cast<AicpuShapeAndType *>(aicpuExtInfo->infoMsg);
     for (size_t index = 0; index < tensors.size(); ++index) {
+        if (tensors[index] == nullptr) {
+            continue;
+        }
         if (isTf) {
             AICPU_ASSERT_NOTNULL_RETVAL(space_);
             auto space = (AicpuTaskSpace *)space_;
@@ -396,6 +399,9 @@ aclnnStatus AicpuExtInfoHandler::UpdateInputAndOutputShape(const FVector<const a
                                                            uint64_t &deviceCacheOffset)
 {
     for (size_t i = 0U; i < inputs.size(); ++i) {
+        if (inputs[i] == nullptr) {
+            continue;
+        }
         AICPU_ASSERT_OK_RETVAL(UpdateInputShape(i, inputs[i]->GetOriginalShape()));
     }
     for (size_t i = 0U; i < outputs.size(); ++i) {

@@ -251,7 +251,7 @@ uint64_t AicpuTaskSpace::CalcHostInputDataSize(const FVector<const aclTensor *> 
 {
     uint64_t totalSize = 0;
     for (size_t i = 0; i < inputs.size(); i++) {
-        if (inputs[i]->GetPlacement() != op::TensorPlacement::kOnHost) {
+        if ((inputs[i] == nullptr) || (inputs[i]->GetPlacement() != op::TensorPlacement::kOnHost)) {
             continue;
         }
         int64_t dataSize = op::CalcShapeBytes(inputs[i]->GetStorageShape().GetShapeSize(), inputs[i]->GetDataType());
@@ -283,6 +283,9 @@ size_t AicpuTaskSpace::GenTaskKey(uint8_t inputKey[], size_t &keyLen,
     uint8_t *key = &inputKey[0];
     AppendAttrForKey(GetTid(), key, keyLen);
     for (size_t i = 0U; i < inputs.size(); ++i) {
+        if (inputs[i] == nullptr) {
+            continue;
+        }
         key = Append1Byte(key, static_cast<uint8_t>(inputs[i]->GetDataType()));
         ++keyLen;
         key = Append1Byte(key, static_cast<uint8_t>(inputs[i]->GetViewFormat()));

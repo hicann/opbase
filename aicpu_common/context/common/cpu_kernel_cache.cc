@@ -124,17 +124,11 @@ void CpuKernelCache::GetDimsFromArrays(const int64_t *shape, size_t len,
   }
 }
 
-/*
- * update tensor information.
- */
-uint32_t CpuKernelCache::UpdateTensor(
-    const std::vector<uint64_t> &io_addrs, ExtInfoMsg &ext_info_msg,
-    CpuKernelContext &ctx) const {
-  KERNEL_LOG_INFO("Update tensor info begin");
+uint32_t CpuKernelCache::CheckTensorParam(const std::vector<uint64_t> &io_addrs,
+  ExtInfoMsg &ext_info_msg, CpuKernelContext &ctx) const {
   if (io_addrs.size() != ctx.GetInputsSize() + ctx.GetOutputsSize()) {
     KERNEL_LOG_ERROR(
-        "Addr number[%zu] is not equal to the sum of inputs[%u] and "
-        "output[%u].",
+        "Addr number[%zu] is not equal to the sum of inputs[%u] and output[%u].",
         io_addrs.size(), ctx.GetInputsSize(), ctx.GetOutputsSize());
     return KERNEL_STATUS_PARAM_INVALID;
   }
@@ -149,31 +143,26 @@ uint32_t CpuKernelCache::UpdateTensor(
         ctx.GetOutputsSize(), ext_info_msg.output_shape_and_type.size());
     return KERNEL_STATUS_PARAM_INVALID;
   }
+  return KERNEL_STATUS_OK;
+}
 
-  size_t addr_index = 0;
+uint32_t CpuKernelCache::UpdateInputTensor(const std::vector<uint64_t> &io_addrs,
+  ExtInfoMsg &ext_info_msg, CpuKernelContext &ctx, size_t &addr_index) const {
   for (size_t i = 0; i < ctx.GetInputsSize(); ++i, ++addr_index) {
     Tensor *input = ctx.Input(static_cast<uint32_t>(i));
-    KERNEL_CHECK_NULLPTR(input, KERNEL_STATUS_PARAM_INVALID,
-                         "Get input[%zu] failed.", i)
+    KERNEL_CHECK_NULLPTR(input, KERNEL_STATUS_PARAM_INVALID, "Get input[%zu] failed.", i)
     auto iter = ext_info_msg.unknown_shape_input_index_addr.find(static_cast<uint32_t>(i));
     if (iter != ext_info_msg.unknown_shape_input_index_addr.end()) {
       iter->second = io_addrs[addr_index];
-      RuntimeTensorDesc *tensor_desc =
-          reinterpret_cast<RuntimeTensorDesc *>(
-              static_cast<uintptr_t>(io_addrs[addr_index]));
+      RuntimeTensorDesc *tensor_desc = reinterpret_cast<RuntimeTensorDesc *>(static_cast<uintptr_t>(io_addrs[addr_index]));
       std::vector<int64_t> dims;
-      KERNEL_CHECK_FALSE(
-          (tensor_desc->shape[0] <= kMaxDimSize), KERNEL_STATUS_PARAM_INVALID,
-          "Max shape size[%ld], but got input[%zu] shape size[%ld]", kMaxDimSize, i,
-          tensor_desc->shape[0])
-      GetDimsFromArrays(&(tensor_desc->shape[1]),
-                        static_cast<size_t>(tensor_desc->shape[0]), dims);
+      KERNEL_CHECK_FALSE((tensor_desc->shape[0] <= kMaxDimSize), KERNEL_STATUS_PARAM_INVALID,
+          "Max shape size[%ld], but got input[%zu] shape size[%ld]", kMaxDimSize, i, tensor_desc->shape[0])
+      GetDimsFromArrays(&(tensor_desc->shape[1]), static_cast<size_t>(tensor_desc->shape[0]), dims);
       auto shape = input->GetTensorShape();
-      KERNEL_CHECK_NULLPTR(shape, KERNEL_STATUS_PARAM_INVALID,
-                           "Get input[%zu] shape failed.", i)
+      KERNEL_CHECK_NULLPTR(shape, KERNEL_STATUS_PARAM_INVALID, "Get input[%zu] shape failed.", i)
       shape->SetDimSizes(dims);
-      input->SetData(reinterpret_cast<void *>(
-          static_cast<uintptr_t>(tensor_desc->data_addr)));
+      input->SetData(reinterpret_cast<void *>(static_cast<uintptr_t>(tensor_desc->data_addr)));
     } else {
       input->SetData(reinterpret_cast<void *>(static_cast<uintptr_t>(io_addrs[addr_index])));
     }
@@ -182,57 +171,59 @@ uint32_t CpuKernelCache::UpdateTensor(
       std::vector<int64_t> dims;
       GetDimsFromShapeAndType(ext_info_msg.input_shape_and_type[i], dims);
       auto shape = input->GetTensorShape();
-      KERNEL_CHECK_NULLPTR(shape, KERNEL_STATUS_PARAM_INVALID,
-                           "Get input[%zu] shape failed.", i)
       shape->SetDimSizes(dims);
     }
 
-    KERNEL_CHECK_FALSE((input->NumElements() >= 0), KERNEL_STATUS_PARAM_INVALID,
-                       "Input[%zu] data elements number must be >= 0, "
-                       "got size[%ld].", i, input->NumElements());
-    input->SetDataSize(std::max(
-        uint64_t(0), static_cast<uint64_t>(input->CalcDataSizeByShape())));
     KERNEL_LOG_INFO("Set input[%zu] addr[%lu] success.", i, io_addrs[addr_index]);
+    if (io_addrs[addr_index] == 0) {
+      continue;
+    }
+    KERNEL_CHECK_FALSE((input->NumElements() >= 0), KERNEL_STATUS_PARAM_INVALID,
+      "Input[%zu] data elements number must be >= 0, got size[%ld].", i, input->NumElements());
+    input->SetDataSize(std::max(uint64_t(0), static_cast<uint64_t>(input->CalcDataSizeByShape())));
   }
+  return KERNEL_STATUS_OK;
+}
+
+/*
+ * update tensor information.
+ */
+uint32_t CpuKernelCache::UpdateTensor(
+    const std::vector<uint64_t> &io_addrs, ExtInfoMsg &ext_info_msg,
+    CpuKernelContext &ctx) const {
+  KERNEL_CHECK_RET(CheckTensorParam(io_addrs, ext_info_msg, ctx) != KERNEL_STATUS_OK, KERNEL_STATUS_PARAM_INVALID);
+
+  size_t addr_index = 0;
+  auto ret = UpdateInputTensor(io_addrs, ext_info_msg, ctx, addr_index);
+  KERNEL_CHECK_RET(ret != KERNEL_STATUS_OK, ret);
 
   bool no_tiling = ext_info_msg.unknown_shape_output_index_addr.empty();
 
   for (size_t i = 0; i < ctx.GetOutputsSize(); i++, addr_index++) {
     Tensor *output = ctx.Output(static_cast<uint32_t>(i));
-    KERNEL_CHECK_NULLPTR(output, KERNEL_STATUS_PARAM_INVALID,
-                         "Get output[%zu] failed.", i)
+    KERNEL_CHECK_NULLPTR(output, KERNEL_STATUS_PARAM_INVALID, "Get output[%zu] failed.", i)
     auto iter = ext_info_msg.unknown_shape_output_index_addr.find(static_cast<uint32_t>(i));
     if (iter != ext_info_msg.unknown_shape_output_index_addr.end()) {
       iter->second = io_addrs[addr_index];
-      RuntimeTensorDesc *tensor_desc =
-          reinterpret_cast<RuntimeTensorDesc *>(
-              static_cast<uintptr_t>(io_addrs[addr_index]));
-      output->SetData(reinterpret_cast<void *>(
-          static_cast<uintptr_t>(tensor_desc->data_addr)));
+      RuntimeTensorDesc *tensor_desc = reinterpret_cast<RuntimeTensorDesc *>(static_cast<uintptr_t>(io_addrs[addr_index]));
+      output->SetData(reinterpret_cast<void *>(static_cast<uintptr_t>(tensor_desc->data_addr)));
     } else {
-      output->SetData(
-          reinterpret_cast<void *>(static_cast<uintptr_t>(io_addrs[addr_index])));
+      output->SetData(reinterpret_cast<void *>(static_cast<uintptr_t>(io_addrs[addr_index])));
     }
 
     if (ext_info_msg.unknown_shape) {
       std::vector<int64_t> dims;
       GetDimsFromShapeAndType(ext_info_msg.output_shape_and_type[i], dims);
       auto shape = output->GetTensorShape();
-      KERNEL_CHECK_NULLPTR(shape, KERNEL_STATUS_PARAM_INVALID,
-                           "Get output[%zu] shape failed.", i)
+      KERNEL_CHECK_NULLPTR(shape, KERNEL_STATUS_PARAM_INVALID, "Get output[%zu] shape failed.", i)
       shape->SetDimSizes(dims);
     }
 
-    KERNEL_CHECK_FALSE((ext_info_msg.unknown_shape || (!no_tiling) ||
-                        (output->NumElements() >= 0)),
-                       KERNEL_STATUS_PARAM_INVALID,
-                       "Output[%zu] data elements number must be >= 0 "
+    KERNEL_CHECK_FALSE((ext_info_msg.unknown_shape || (!no_tiling) || (output->NumElements() >= 0)),
+                       KERNEL_STATUS_PARAM_INVALID, "Output[%zu] data elements number must be >= 0 "
                        "when known shape, got size[%ld].", i, output->NumElements());
-    output->SetDataSize(std::max(
-        uint64_t(0), static_cast<uint64_t>(output->CalcDataSizeByShape())));
-    KERNEL_LOG_INFO("Set output[%zu] addr[%lu] success.", i, io_addrs[addr_index]);
+    output->SetDataSize(std::max(uint64_t(0), static_cast<uint64_t>(output->CalcDataSizeByShape())));
   }
-  KERNEL_LOG_INFO("Update tensor info success.");
   return KERNEL_STATUS_OK;
 }
 

@@ -47,6 +47,14 @@ void GetConstVec(const op::FVector<aclTensor*> &in, op::FVector<const aclTensor*
         out.emplace_back(t);
     }
 }
+void GetValidInputVec(const op::FVector<const aclTensor*> &in, op::FVector<const aclTensor*> &out) {
+    for (auto t : in) {
+        if (t == nullptr) {
+            continue;
+        }
+        out.emplace_back(t);
+    }
+}
 } // namespace
 
 aclnnStatus AicpuTfTask::Init(const FVector<const aclTensor *> &inputs, const FVector<aclTensor *> &outputs,
@@ -158,10 +166,12 @@ aclnnStatus AicpuTfTask::Run(aclOpExecutor *executor, aclrtStream stream)
 
     if (op::internal::opProfilingSwitch.kernelLaunchFlag && op::internal::opProfilingSwitch.additionInfoFlag) {
         GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = launchId_; // optype
+        op::FVector<const aclTensor*> input;
         op::FVector<const aclTensor*> out;
+        GetValidInputVec(inputs_, input);
         GetConstVec(outputs_, out);
         // summaryItemId for op name
-        op::internal::ReportAdditionInfo(inputs_, out, MSPROF_GE_TASK_TYPE_AI_CPU, summaryItemId_);
+        op::internal::ReportAdditionInfo(input, out, MSPROF_GE_TASK_TYPE_AI_CPU, summaryItemId_);
     }
 
     op::internal::PrintAicpuAllTimeStampInfo(opType_.c_str());
@@ -308,10 +318,12 @@ aclnnStatus AicpuCCTask::Run(aclOpExecutor *executor, aclrtStream stream)
 
     if (op::internal::opProfilingSwitch.kernelLaunchFlag && op::internal::opProfilingSwitch.additionInfoFlag) {
         GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = launchId_; // optype
+        op::FVector<const aclTensor*> input;
         op::FVector<const aclTensor*> out;
+        GetValidInputVec(inputs_, input);
         GetConstVec(outputs_, out);
         // summaryItemId for op name
-        op::internal::ReportAdditionInfo(inputs_, out, MSPROF_GE_TASK_TYPE_AI_CPU, summaryItemId_);
+        op::internal::ReportAdditionInfo(input, out, MSPROF_GE_TASK_TYPE_AI_CPU, summaryItemId_);
     }
 
     op::internal::PrintAicpuAllTimeStampInfo(opType_.c_str());

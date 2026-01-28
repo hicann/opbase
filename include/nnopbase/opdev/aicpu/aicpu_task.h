@@ -34,15 +34,17 @@ template<typename V>
 inline void AppendTensor(aclOpExecutor *executor, const aclTensor *arg, V &l)
 {
     (void)executor;
-    if (arg != nullptr) {
-        l.emplace_back(const_cast<aclTensor *>(arg));
-    }
+    l.emplace_back(const_cast<aclTensor *>(arg));
 }
 
 template<typename V>
 inline void AppendTensor(aclOpExecutor *executor, const aclScalar *arg, V &l)
 {
-    auto t = executor->ConvertToTensor(arg, arg->GetDataType());
+    op::DataType dataType = ge::DT_INT64;
+    if (arg != nullptr) {
+        dataType = arg->GetDataType();
+    }
+    auto t = executor->ConvertToTensor(arg, dataType);
     l.emplace_back(const_cast<aclTensor *>(t));
 }
 

@@ -196,7 +196,7 @@ aclnnStatus ParseAttr(const FVector<const aclTensor *> &inputs, const AicpuAttrs
         AICPU_ASSERT_TRUE_RETVAL(pair.second);
     }
 
-    if (!inputs.empty()) {
+    if (!inputs.empty() && inputs[0] != nullptr) {
         domi::tensorflow::AttrValue attrValue;
         auto geDtype = inputs[0]->GetDataType();
         auto tfDtype = ConvertGeDataType2TfDataType(geDtype);
@@ -242,6 +242,9 @@ aclnnStatus BuildKernelRunParam(const FVector<const aclTensor *> &inputs,
     for (size_t i = 0; i < inputs.size(); i++) {
         auto inputTensor = kernelRunParam.add_input();
         const auto aclTensor = inputs[i];
+        if (aclTensor == nullptr) {
+            continue;
+        }
         AICPU_ASSERT_NOTNULL_RETVAL(inputTensor);
         AICPU_ASSERT_NOTNULL_RETVAL(aclTensor);
         const bool isRef = space->IsRef(i, true);
@@ -278,6 +281,9 @@ uint64_t RoundUp(const uint64_t originValue, const uint64_t multipleOf)
 
 aclnnStatus UpdateProtoTensor(const aclTensor *aclTensor, aicpuops::Tensor *tensor)
 {
+    if (aclTensor == nullptr) {
+        return OK;
+    }
     auto aicpuShape = tensor->mutable_tensor_shape();
     AICPU_ASSERT_NOTNULL_RETVAL(aicpuShape);
     auto shape = aclTensor->GetOriginalShape();
@@ -469,6 +475,11 @@ aclnnStatus AicpuArgsHandler::UpdateIoAddr(const FVector<const aclTensor *> &inp
 {
     uint64_t *ioAddrs = reinterpret_cast<uint64_t *>(hostBuffer_.get() + ioAddrOffset_);
     for (size_t i = 0U; i < inputs.size(); i++) {
+        if (inputs[i] == nullptr) {
+            *ioAddrs = 0;
+            ioAddrs++;
+            continue;
+        }
         if ((inputs[i]->GetPlacement() == op::TensorPlacement::kOnHost)) {
             auto
                 hostTensorSize = GetSizeInBytes(inputs[i]->GetOriginalShape().GetShapeSize(), inputs[i]->GetDataType());
