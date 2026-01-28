@@ -11,6 +11,10 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 
 <img src="docs/zh/figures/architecture.png" alt="架构图"  width="700px" height="320px">
 
+ ## 📝版本配套
+ 	 
+本项目源码会跟随CANN软件版本发布，关于CANN软件版本与本项目标签的对应关系请参阅[release仓库](https://gitcode.com/cann/release-management)中的相应版本说明。
+请注意，为确保您的源码定制开发顺利进行，请选择配套的CANN版本与Gitcode标签源码，使用master分支可能存在版本不匹配的风险。
 
 ## ⚡️快速入门
 
@@ -60,9 +64,16 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 └── tests                          # 测试工程目录
 ```
 
-## 📝相关信息
+## 💬相关信息
 
 - [贡献指南](CONTRIBUTING.md)
 - [安全声明](SECURITY.md)
 - [许可证](LICENSE)
 - [所属SIG](https://gitcode.com/cann/community/tree/master/CANN/sigs/ops-basic)
+
+## 🤝联系我们
+ 	 
+本项目功能和文档正在持续更新和完善中，欢迎您关注最新版本。
+
+- **问题反馈**：通过GitCode[【Issues】](https://gitcode.com/cann/opbase/issues)提交问题
+- **社区互动**：通过GitCode[【讨论】](https://gitcode.com/cann/opbase/discussions)参与交流
