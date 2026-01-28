@@ -16,7 +16,6 @@
 #include "utils/indv_base.h"
 #include "utils/indv_dlist.h"
 #include "indv_bininfo.h"
-#include "runtime/runtime/dev.h"
 #include "platform/platform_info.h"
 
 #ifdef __cplusplus

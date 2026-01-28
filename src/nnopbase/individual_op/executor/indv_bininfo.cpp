@@ -41,21 +41,21 @@ static uint32_t NnopbaseGetBinaryMagic(const bool useCoreTypeMagic, NnopbaseBinI
 {
     OP_LOGI("Get bin core type is %d.", binInfo->coreType);
     if (!useCoreTypeMagic) {
-        return RT_DEV_BINARY_MAGIC_ELF;
+        return ACL_RT_BINARY_MAGIC_ELF_AICORE;
     }
 
     switch (binInfo->coreType) {
         case kMix: {
-            return RT_DEV_BINARY_MAGIC_ELF;
+            return ACL_RT_BINARY_MAGIC_ELF_AICORE;
         }
         case kAicore: {
-            return RT_DEV_BINARY_MAGIC_ELF_AICUBE;
+            return ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE;
         }
         case kVectorcore: {
-            return RT_DEV_BINARY_MAGIC_ELF_AIVEC;
+            return ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE;
         }
         default: {
-            return RT_DEV_BINARY_MAGIC_ELF;
+            return ACL_RT_BINARY_MAGIC_ELF_AICORE;
         }
     }
 }
@@ -338,9 +338,9 @@ aclnnStatus NnopbaseLoadMemsetJson(std::unique_ptr<NnopbaseMemsetInfo> &memsetIn
 
         const auto &magic = jsonInfo["magic"].get<std::string>();
         if (magic == "RT_DEV_BINARY_MAGIC_ELF_AICUBE") {
-            memsetInfo->binInfo->magic = RT_DEV_BINARY_MAGIC_ELF_AICUBE;
+            memsetInfo->binInfo->magic = ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE;
         } else if (magic == "RT_DEV_BINARY_MAGIC_ELF_AIVEC") {
-            memsetInfo->binInfo->magic = RT_DEV_BINARY_MAGIC_ELF_AIVEC;
+            memsetInfo->binInfo->magic = ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE;
         }
         std::string coreType = jsonInfo["coreType"].get<std::string>();
         const auto &iterKernelType = g_nnopbaseKernelTypeMap.find(coreType);
@@ -551,17 +551,17 @@ std::string GetMagicFormBin(const bool useCoreTypeMagic, NnopbaseBinInfo *binInf
     if (useCoreTypeMagic) {
         switch (binInfo->coreType) {
             case kAicore: {
-                return "RT_DEV_BINARY_MAGIC_ELF_AICUBE";
+                return "ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE";
             }
             case kVectorcore: {
-                return "RT_DEV_BINARY_MAGIC_ELF_AIVEC";
+                return "ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE";
             }
             default: {
-                return "RT_DEV_BINARY_MAGIC_ELF";
+                return "ACL_RT_BINARY_MAGIC_ELF_AICORE";
             }
         }
     } else {
-        return "RT_DEV_BINARY_MAGIC_ELF";
+        return "ACL_RT_BINARY_MAGIC_ELF_AICORE";
     }
 }
 } // nnopbase

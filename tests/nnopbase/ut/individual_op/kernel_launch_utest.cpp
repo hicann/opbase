@@ -73,19 +73,19 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     std::string socVersion = "ascend910b";
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion));
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
-    EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "RT_DEV_BINARY_MAGIC_ELF");
+    EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "ACL_RT_BINARY_MAGIC_ELF_AICORE");
     EXPECT_EQ(binInfo.hasReg, true);
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
 
     binInfo.coreType = kAicore;
     binInfo.hasReg = false;
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
-    EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "RT_DEV_BINARY_MAGIC_ELF_AICUBE");
+    EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE");
 
     binInfo.coreType = kVectorcore;
     binInfo.hasReg = false;
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
-    EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "RT_DEV_BINARY_MAGIC_ELF_AIVEC");
+    EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE");
 
     binInfo.coreType = kCoreTypeEnd;
     binInfo.hasReg = false;

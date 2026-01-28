@@ -790,13 +790,6 @@ TEST_F(NnopbaseExecutorUnitTest, NnopTestInfNanOverflow)
 
 class OverflowRuntimeStub : public RuntimeStub {
   public:
-    rtError_t rtGeneralCtrl(uintptr_t *ctrl, uint32_t num, uint32_t type)
-    {
-        if (type == RT_GNL_CTRL_TYPE_NPU_GET_FLOAT_DEBUG_STATUS) {
-            *(uint8_t *)(ctrl[0U]) = 1;
-        }
-        return RT_ERROR_NONE;
-    }
     rtError_t rtsNpuGetFloatOverFlowDebugStatus(void *outputAddrPtr, uint64_t outputSize, uint32_t checkMode, rtStream_t stm)
     {
         ((uint8_t *)outputAddrPtr)[0U] = 1;
@@ -1193,7 +1186,7 @@ class UtExceptionDump : public Adx::DumpStub {
             std::stringstream workspaceAddrStr;
             workspaceAddrStr << std::hex << exceptionDumpWorkspaceAddr << " ";
             EXPECT_EQ(opInfo.additionalInfo.at("workspace_addrs"), workspaceAddrStr.str());
-            EXPECT_EQ(opInfo.additionalInfo.at("tvm_magic"), std::string("RT_DEV_BINARY_MAGIC_ELF"));
+            EXPECT_EQ(opInfo.additionalInfo.at("tvm_magic"), std::string("ACL_RT_BINARY_MAGIC_ELF_AICORE"));
             EXPECT_EQ(opInfo.additionalInfo.at("block_dim"), std::string("0"));
             EXPECT_EQ(opInfo.additionalInfo.at("tiling_key"), std::string("0"));
             for (auto &info : opInfo.tensorInfos) {

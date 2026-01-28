@@ -18,7 +18,6 @@
 #include "thread_local_context.h"
 #include "opdev/format_utils.h"
 #include "op_dfx_internal.h"
-#include "runtime/runtime/kernel.h"
 #include "runtime/runtime/rt_ffts.h"
 #include "exe_graph/runtime/tensor_data.h"
 #include "mmpa/mmpa_api.h"
@@ -538,7 +537,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
         (executor->args->binInfo->coreType == kMix)) {
         uint64_t ctrlAddr = 0U;
         uint32_t addrLen = 0U;
-        NNOPBASE_ASSERT_RTOK_RETVAL(rtGetC2cCtrlAddr(&ctrlAddr, &addrLen));
+        NNOPBASE_ASSERT_RTOK_RETVAL(rtGetC2cCtrlAddr(&ctrlAddr, &addrLen)); // 获取核间同步地址配合AscendC核间同步接口完成多核任务协调
         addr[0] = reinterpret_cast<void *>(ctrlAddr);
         addr++;
         argsAddr.hcclDesc->hasFfts = 1U;

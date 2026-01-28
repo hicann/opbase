@@ -21,8 +21,7 @@
 #include "opdev/op_dfx.h"
 #include "bridge_dfx.h"
 #include "acl/acl_rt.h"
-#include "runtime/runtime/rt_stars.h"
-#include "runtime/runtime/context.h"
+#include "runtime/runtime/rts/rts_kernel.h"
 #include "dump/adump_api.h"
 
 using namespace op::internal;
@@ -176,14 +175,14 @@ aclnnStatus NnopbaseIsSaturationOverflow(const bool is910b, aclrtStream stream, 
                                              ACL_MEMCPY_HOST_TO_DEVICE));
     }
     constexpr uint32_t checkMode = 0U;
-    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtNpuGetFloatOverFlowStatus(dst, dstLen, checkMode, stream));
+    NNOPBASE_ASSERT_RTOK_RETVAL(rtsNpuGetFloatOverFlowDebugStatus(dst, dstLen, checkMode, stream));
     uint8_t status = 0U;
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtSynchronizeStream(stream));
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtMemcpy(&status, sizeof(uint8_t), ValueToPtr(realAddr), sizeof(uint8_t),
                                          ACL_MEMCPY_DEVICE_TO_HOST));
 
-    OP_LOGI("Get aclrtNpuGetFloatOverFlowStatus check result is %u.", status);
-    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtNpuClearFloatOverFlowStatus(checkMode, stream));
+    OP_LOGI("Get rtsNpuGetFloatOverFlowDebugStatus check result is %u.", status);
+    NNOPBASE_ASSERT_RTOK_RETVAL(rtsNpuClearFloatOverFlowDebugStatus(checkMode, stream));
     isOverflow = (status != 0U);
     return OK;
 }

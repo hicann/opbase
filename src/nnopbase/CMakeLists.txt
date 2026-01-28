@@ -36,6 +36,8 @@ set(COMMON_INCLUDING_PATH
 
     ${ASCEND_HOME_PATH}/pkg_inc
     ${ASCEND_HOME_PATH}/pkg_inc/aicpu
+    ${ASCEND_HOME_PATH}/pkg_inc/runtime
+    ${ASCEND_HOME_PATH}/pkg_inc/runtime/runtime
 )
 
 # nnopbase

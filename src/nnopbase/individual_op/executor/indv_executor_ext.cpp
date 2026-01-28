@@ -15,7 +15,6 @@
 #include "utils/indv_soc.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 #include "register/op_binary_resource_manager.h"
-#include "runtime/runtime/kernel.h"
 
 #ifdef __cplusplus
 extern "C" {
