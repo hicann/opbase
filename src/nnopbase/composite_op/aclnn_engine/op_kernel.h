@@ -331,7 +331,8 @@ public:
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
             TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
-            ReportCacheOpInfo(taskInfo, args, opType_);
+            uint64_t attrId = GetAttrId(args);
+            ReportCacheOpInfo(taskInfo, args, opType_, attrId);
         }
         return rc;
     }
@@ -551,7 +552,8 @@ public:
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
             TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
-            ReportCacheOpInfo(taskInfo, args, opType_);
+            uint64_t attrId = GetAttrId(args);
+            ReportCacheOpInfo(taskInfo, args, opType_, attrId);
         }
         {
             OpDfxGuard
@@ -607,7 +609,8 @@ public:
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
             TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
-            ReportCacheOpInfo(taskInfo, args, opType_);
+            uint64_t attrId = GetAttrId(args);
+            ReportCacheOpInfo(taskInfo, args, opType_, attrId);
         }
         return ACLNN_SUCCESS;
     }
@@ -917,6 +920,8 @@ private:
     aclnnStatus BinLoadImpl(aclrtBinHandle &binHandle);
     aclnnStatus InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t tilingKey);
     aclnnStatus JsonLoadImpl(nlohmann::json &jsonObj);
+
+    uint64_t GetAttrId(OpArgContext *args);
 
     void CollectMemSetTensor(OpArgContext *args, size_t inputNum, bool needAlign, MemsetVersion memsetVersion)
     {

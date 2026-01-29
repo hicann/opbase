@@ -35,7 +35,7 @@ struct CacheOpInfoBasic {
     uint32_t blockdim;
     uint64_t nodeId;
     uint64_t opType;
-    uint64_t reserve1{0};
+    uint64_t attrId{0};
     uint64_t reserve2{0};
     uint32_t opFlag;
     uint32_t tensorNum;
@@ -43,7 +43,7 @@ struct CacheOpInfoBasic {
 };
  
 void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream &stream);
-void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint64_t &opType);
+void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint64_t &opType, const uint64_t &attrId=0);
 void ReportCacheOpInfoFromCache(
     const TaskInfo &taskInfo, void *tensorInfoLists, const uint32_t &blockDim, const ProfilingInfoId &profilingInfoId);
 void ReportCacheOpInfoDSA(OpArgList &inputs, OpArgList &outputs, MsprofGeTaskType taskType);

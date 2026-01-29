@@ -620,6 +620,29 @@ void OpKernelBin::SetMemSetFlagFromJson()
     }
 }
 
+uint64_t OpKernelBin::GetAttrId(OpArgContext *args)
+{
+    uint64_t aclGraphAttrId = 0;
+    if ((op::internal::opProfilingSwitch.level2ProfilingFlag) && (opKernel_ != nullptr)) {
+        // only level2 profiling need to report attr info
+        std::string attrStrId;
+        if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
+            op::internal::ReportAttrInfo(
+                *args->GetOpArg(op::OP_ATTR_ARG), attrStrId, static_cast<OpKernel *>(opKernel_)->attrInfos_);
+            OP_LOGI("attrStrId is %s after add attr value", attrStrId.c_str());
+        }
+        OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
+        input.VisitByNoReturn(
+            [&attrStrId](size_t idx, OpArg &elem) { SummaryAttrArg(idx, elem, attrStrId); });
+        OP_LOGI("attrStrId is %s after add input tensor", attrStrId.c_str());
+        attrStrId +=
+            std::string("IsStaticKernel:") + (binType_ == BinType::STATIC_BIN ? std::string("true")
+                                                                              : std::string("false"));
+        aclGraphAttrId = MsprofGetHashId(attrStrId.c_str(), attrStrId.size());
+    }
+    return aclGraphAttrId;
+}
+
 void ParseImplModeByJson(const nlohmann::json &singleBinJson, const std::string &jsonPath,
                          FVector<OpImplMode> &implModes)
 {

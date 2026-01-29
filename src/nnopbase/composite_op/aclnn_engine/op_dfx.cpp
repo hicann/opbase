@@ -456,11 +456,9 @@ static void ReportCacheOpInfoTensor(uint8_t *dest, uint64_t &destOffset, const u
     }
 }
 
-void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint64_t &opType)
+void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint64_t &opType, const uint64_t &attrId)
 {
-    OP_LOGI("Entering function ReportCacheOpInfo.");
     CacheOpInfoBasic cacheOpInfoBasic;
-    // tensorNum
     OpArgList &inputs = *args->GetOpArg(op::OP_INPUT_ARG);
     OpArgList &outputs = *args->GetOpArg(op::OP_OUTPUT_ARG);
     FVector<const aclTensor *> inTensors;
@@ -473,7 +471,7 @@ void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint6
     OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocate failed."), throw std::bad_alloc());
     uint8_t *dest = static_cast<uint8_t *>(infoPtr);
     uint64_t destOffset = 0;
-    // CacheOpInfoBasic: taskType/nodeId/opType/blockdim/opFlag/tensorNum
+    cacheOpInfoBasic.attrId = attrId;
     cacheOpInfoBasic.taskType = static_cast<uint32_t>(taskInfo.type);
     cacheOpInfoBasic.nodeId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
         GetThreadLocalContext().logInfo_.l0Name,
@@ -495,10 +493,11 @@ void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint6
         OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
         throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI("taskType %u, nodeId %zu, opType %zu, blockDim %u, opFlag %u, tensorNum %u",
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, blockDim %u, opFlag %u, tensorNum %u",
         cacheOpInfoBasic.taskType,
         cacheOpInfoBasic.nodeId,
         cacheOpInfoBasic.opType,
+        cacheOpInfoBasic.attrId,
         cacheOpInfoBasic.blockdim,
         cacheOpInfoBasic.opFlag,
         cacheOpInfoBasic.tensorNum);
