@@ -7,13 +7,10 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+#include "indv_args.h"
 #include "indv_executor.h"
 #include "bridge_dfx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 static inline NnopbaseUChar *NnopbasePrepareDimInfo(NnopbaseUChar *addr, const GertShape &shape)
 {
     const int64_t shapeSize = shape.GetShapeSize();
@@ -437,6 +434,32 @@ void **NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor *executor, void 
     return addr;
 }
 
-#ifdef __cplusplus
+std::vector<aclrtPlaceHolderInfo> NnopbaseGetRTSPlaceHolder(NnopbaseRTArgsExt* argsExt) {
+    std::vector<aclrtPlaceHolderInfo> hostInputInfoPtr;
+    if (argsExt->hasTiling != 0) {
+        hostInputInfoPtr.push_back({argsExt->tilingAddrOffset, argsExt->tilingDataOffset});
+    }
+    for (int i = 0; i < argsExt->hostInputInfoNum; i++) {
+        aclrtPlaceHolderInfo *ptr = argsExt->hostInputInfoPtr + i;
+        hostInputInfoPtr.push_back({ptr->addrOffset, ptr->dataOffset});
+    }
+
+    return hostInputInfoPtr;
 }
-#endif
+
+void NnopbaseGetIrIndex(const NnopbaseParamDesc &paramDesc, const size_t index,
+                                      size_t &irIndex, size_t &relativeIndex)
+{
+    // num为0表示无入参，几乎不存在调此接口场景，直接返回不作处理
+    if (paramDesc.count == 0) {
+        return;
+    }
+
+    for (int64_t i = paramDesc.count - 1U; i >= 0; i--) {
+        if (paramDesc.instances[i].startIndex <= index) {
+            irIndex = static_cast<size_t>(i);
+            relativeIndex = static_cast<size_t>(index - paramDesc.instances[i].startIndex);
+            return;
+        }
+    }
+}

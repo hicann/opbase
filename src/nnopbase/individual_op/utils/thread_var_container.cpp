@@ -10,8 +10,6 @@
 
 #include "thread_var_container.h"
 #include <thread>
-#include "acl/acl_base.h"
-#include "acl/acl_rt.h"
 #include "op_def.h"
 #include "indv_lib_wrapper.h"
 

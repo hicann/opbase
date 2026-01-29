@@ -1363,8 +1363,6 @@ aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter *collecter)
         collecter->useCoreTypeMagic = true;
         collecter->isMc2FusionLaunch = true;
     }
-    collecter->isMemsetV2 = nnopbase::IndvSoc::GetInstance().MemsetV2();
-
     return OK;
 }
 

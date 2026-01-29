@@ -410,7 +410,7 @@ aclnnStatus NnopbaseExecutorGcSpace(void *data)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus NnopbasePrepareInitValues(NnopbaseExecutor *executor)
+aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor *executor)
 {
     for (uint32_t i = 0; i < executor->args->binInfo->initValues.size(); i++) {
         size_t index = executor->args->binInfo->initValues[i].irIndex;
@@ -426,91 +426,27 @@ aclnnStatus NnopbasePrepareInitValues(NnopbaseExecutor *executor)
         CHECK_COND(!executor->args->outputs.paramDescs.instances[irIndex].isDynamic,
             ACLNN_ERR_PARAM_INVALID,
             "Does not support init dynamic output[%zu].", irIndex);
+        // 将算子的输出的IrIndex转化为输入IrIndex
         executor->args->binInfo->initValues[i].irIndex = irIndex;
         const uint32_t startIndex = executor->args->outputs.paramDescs.instances[irIndex].startIndex;
         if (!executor->args->outputs.extTensors[startIndex].isNull) {
             GertTensor *tensor = &executor->args->outputs.extTensors[startIndex].rt2Tensor;
-
-            executor->args->binInfo->tensorNeedMemSetV2 += 1;
-
             if (nnopbase::IndvSoc::GetInstance().NeedAlignInitValues()) {
-                executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
-            } else {
-                executor->args->binInfo->initValues[i].tensorDataSize =
-                    NNOPBASE_BLOCK_SIZE + op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE);
+                executor->args->binInfo->initValues[i].tensorDataSize = op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE);
                 OP_LOGI("Size is %zu bytes, dypeSize is %d bytes, alignSize is %zu bytes.",
                     tensor->GetSize(),
                     ge::GetSizeByDataType(tensor->GetDataType()),
-                    op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE));
+                    op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE));                
+            } else {
+                executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
             }
-            OP_LOGI("TensorDataSize is %zu bytes.", executor->args->binInfo->initValues[i].tensorDataSize);
+            OP_LOGI("InitValues[%zu] outputIrIndex:%zu size is %zu bytes, dypeSize is %d bytes, TensorDataSize is %zu bytes.",
+                index, irIndex,
+                tensor->GetSize(),
+                ge::GetSizeByDataType(tensor->GetDataType()),
+                executor->args->binInfo->initValues[i].tensorDataSize);
         }
     }
-    return OK;
-}
-
-static aclnnStatus NnopbaseInitMemsetV2Attrs(NnopbaseExecutor *executor)
-{
-    static std::set<ge::DataType> intOrBoolDtypesSet = {ge::DT_INT8, ge::DT_INT32, ge::DT_UINT8, ge::DT_INT16,
-                                                ge::DT_UINT16, ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64, ge::DT_BOOL};
-    static std::set<ge::DataType> floatDtypesSet = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    for (uint32_t i = 0; i < executor->args->binInfo->initValues.size(); i++) {
-        size_t irIndex = executor->args->binInfo->initValues[i].irIndex;
-        const uint32_t startIndex = executor->args->outputs.paramDescs.instances[irIndex].startIndex;
-        if (executor->args->outputs.extTensors[startIndex].isNull) {
-            continue;
-        }
-
-        const auto &elem = executor->args->binInfo->initValues[i];
-
-        if (intOrBoolDtypesSet.find(elem.dtype) != intOrBoolDtypesSet.end()) {
-            executor->args->binInfo->memsetInfo->intAttrs.emplace_back(elem.intValue);
-        } else if (floatDtypesSet.find(elem.dtype) != floatDtypesSet.end()) {
-            executor->args->binInfo->memsetInfo->floatAttrs.emplace_back(elem.floatValue);
-        } else {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The current supported data type does not include [%d].", elem.dtype);
-            return ACLNN_ERR_PARAM_INVALID;
-        }
-    }
-
-    return OK;
-}
-
-aclnnStatus NnopbaseGenMemsetV2Info(NnopbaseExecutor *executor)
-{
-    if (!gBinCollecter->isMemsetV2) {
-        return OK;
-    }
-
-    uint64_t hashKey = static_cast<uint64_t>(NnopbaseHashBinary(
-        op::internal::PtrCastTo<const NnopbaseUChar>(NNOPBASE_MEMSET_V2_OP_NAME.c_str()),
-        NNOPBASE_MEMSET_V2_OP_NAME.size()) % NNOPBASE_NORM_MAX_BIN_BUCKETS);
-    NnopbaseRegInfo *regInfo = NnopbaseCollecterFindRegInfoInTbl(gBinCollecter, NNOPBASE_MEMSET_V2_OP_NAME.c_str(), hashKey);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(regInfo);
-
-    executor->args->binInfo->memsetInfo->binInfo->opType = NNOPBASE_MEMSET_V2_OP_NAME.c_str();
-
-    // Current contextExt is an empty struct, as memsetV2 does not depend on it.
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorGenCustomizedKey(
-        executor->args->binInfo->memsetInfo->binInfo->binInfoKey,
-        executor->args->binInfo->memsetInfo->binInfo->opType,
-        &executor->args->binInfo->memsetInfo->contextExt));
-
-    auto binInfo = NnopbaseCollecterFindBinInfo(regInfo,
-        executor->args->binInfo->memsetInfo->binInfo->binInfoKey.hashKey,
-        &(executor->args->binInfo->memsetInfo->binInfo->binInfoKey.verbose[0U]),
-        executor->args->binInfo->memsetInfo->binInfo->binInfoKey.len);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(binInfo);
-
-    executor->args->binInfo->memsetInfo->binInfo->binPath = binInfo->binPath;
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetOpJsonPath(binInfo->binPath,
-        executor->args->binInfo->memsetInfo->memSetJsonPath));
-
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(executor->args->binInfo->memsetInfo->binInfo->binPath.c_str(),
-        executor->args->binInfo->memsetInfo->binInfo->bin,
-        &executor->args->binInfo->memsetInfo->binInfo->binLen));
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseLoadMemsetJson(executor->args->binInfo->memsetInfo));
-    NnopbaseRegisterMemsetBin(executor->args->binInfo->memsetInfo->binInfo);
     return OK;
 }
 
@@ -521,7 +457,8 @@ static aclnnStatus NnopnbaseMemsetTiling(NnopbaseExecutor *executor)
         executor->args->binInfo->memsetInfo->binInfo->opParaSize;
     // memset算子的输入是其他算子的输出，都是device地址, 2 is tiling and overflow
     const size_t tilingDataOffset = (executor->args->binInfo->initValues.size() + 2U) * sizeof(void *);
-    const size_t argSize = tilingDataSize + tilingDataOffset + NNOPBASE_TILING_DATA_OFFSET;
+    const size_t argSize = tilingDataOffset + tilingDataSize + NNOPBASE_TILING_DATA_OFFSET;
+    /* |initvalue0, initvalue1, ... initvalueN, tilingPtr, overFlowPtr, tilingData, NNOPBASE_TILING_DATA_OFFSET| */
     OP_LOGI("Memset tilingDataSize is %zu bytes, tilingDataOffset is %zu bytes.", tilingDataSize, tilingDataOffset);
     if (argSize > executor->args->memsetArgs.size()) {
         executor->args->memsetArgs.resize(argSize);
@@ -530,102 +467,27 @@ static aclnnStatus NnopnbaseMemsetTiling(NnopbaseExecutor *executor)
     tilingData->Init(executor->args->binInfo->memsetInfo->binInfo->opParaSize,
         &(executor->args->memsetArgs[tilingDataOffset]));
 
-    auto tiling = executor->args->binInfo->memsetInfo->tiling;
-    CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of MemSet!");
-    NNOPBASE_ASSERT_RETVAL(tiling(op::internal::PtrCastTo<gert::TilingContext>(
+    auto tilingFunc = executor->args->binInfo->memsetInfo->tilingFunc;
+    CHECK_COND((tilingFunc != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of MemSet!");
+    NNOPBASE_ASSERT_RETVAL(tilingFunc(op::internal::PtrCastTo<gert::TilingContext>(
                                    executor->args->binInfo->memsetInfo->contextExt.context)) == ge::GRAPH_SUCCESS,
             ACLNN_ERR_INNER_TILING_ERROR);
 
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->blockDim);
-    executor->args->binInfo->memsetInfo->memsetBlockDim = *(executor->args->binInfo->memsetInfo->blockDim);
-    OP_LOGI("Memset op blockDim is %u.", executor->args->binInfo->memsetInfo->memsetBlockDim);
-    return OK;
-}
-
-static size_t NnopbaseMemsetV2GetTensorSize(NnopbaseExecutor *executor)
-{
-    size_t tensorSize = NNOPBASE_MEMSET_V2_OP_INPUT_COUNT * sizeof(aclrtPlaceHolderInfo) +
-                        NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT * sizeof(aclrtPlaceHolderInfo);
-
-    tensorSize += sizeof(uint64_t); // hostInputData offset
-
-    size_t inputInfoLen = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(void *); // tensor dimNum, 1U, tensor addr
-
-    for (uint32_t i = 0; i < executor->args->binInfo->initValues.size(); i++) {
-        size_t irIndex = executor->args->binInfo->initValues[i].irIndex;
-        const uint32_t startIndex = executor->args->outputs.paramDescs.instances[irIndex].startIndex;
-
-        if (!executor->args->outputs.extTensors[startIndex].isNull) {
-            tensorSize += inputInfoLen;
-
-            const GertShape &shape = executor->args->outputs.extTensors[startIndex].rt2Tensor.GetStorageShape();
-            tensorSize += shape.GetDimNum() * sizeof(uint64_t); // tensor dims
-        }
-    }
-
-    OP_LOGI("MemSetV2 dynamic size is %zu bytes", tensorSize);
-    return tensorSize;
-}
-
-static aclnnStatus NnopnbaseMemsetV2Tiling(NnopbaseExecutor *executor)
-{
-    auto workspacesSizes = op::internal::PtrCastTo<gert::ContinuousVector>(executor->args->binInfo->memsetInfo->workspacesSizes);
-    workspacesSizes->Init(NNOPBASE_NORM_MAX_WORKSPACE_NUMS);
-
-    auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->binInfo->memsetInfo->tilingData);
-    size_t opParaSize = executor->args->binInfo->memsetInfo->binInfo->opParaSize;
-    const size_t tilingDataSize = opParaSize == 0U ? NNOPBASE_MAX_TILING_DATA_LEN : opParaSize;
-
-    // 3 is for workspace placeholder, tiling addr and overflow.
-    const size_t argsNum = NNOPBASE_MEMSET_V2_OP_INPUT_COUNT + NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT + 3U;
-    const size_t tilingDataOffset = argsNum * sizeof(void *);
-    const size_t tensorSize = NnopbaseMemsetV2GetTensorSize(executor);
-    const size_t argSize = tilingDataOffset + tilingDataSize + tensorSize + NNOPBASE_TILING_DATA_OFFSET;
-
-    OP_LOGI("MemSetV2 tilingDataSize is %zu bytes, tilingDataOffset is %zu bytes, tensorSize is %zu bytes.",
-            tilingDataSize, tilingDataOffset, tensorSize);
-
-    if (argSize > executor->args->memsetArgs.size()) {
-        executor->args->memsetArgs.resize(argSize);
-    }
-    tilingData->Init(tilingDataSize, &(executor->args->memsetArgs[tilingDataOffset]));
-
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMemsetV2TilingContextBuild(executor));
-
-    auto tiling = executor->args->binInfo->memsetInfo->tiling;
-    CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of MemSet!");
-    NNOPBASE_ASSERT_RETVAL(tiling(op::internal::PtrCastTo<gert::TilingContext>(
-                           executor->args->binInfo->memsetInfo->contextExt.context)) == ge::GRAPH_SUCCESS,
-                           ACLNN_ERR_INNER_TILING_ERROR);
-
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->blockDim);
-    executor->args->binInfo->memsetInfo->memsetBlockDim = *(executor->args->binInfo->memsetInfo->blockDim);
-    executor->args->binInfo->memsetInfo->memsetScheMode = *(executor->args->binInfo->memsetInfo->scheMode);
-    executor->args->binInfo->memsetInfo->memsetTilingKey = *(executor->args->binInfo->memsetInfo->tilingKey);
-    
-    OP_LOGI("MemSetV2 op blockDim is %u. tilingKey is %llu, scheMode is %u.",
-        executor->args->binInfo->memsetInfo->memsetBlockDim, executor->args->binInfo->memsetInfo->memsetTilingKey,
-        executor->args->binInfo->memsetInfo->memsetScheMode);
-
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->tilingKey);
+    OP_LOGI("Memset op blockDim is %u, tilingKey is %llu.",
+        *(executor->args->binInfo->memsetInfo->blockDim),
+        *(executor->args->binInfo->memsetInfo->tilingKey));
     return OK;
 }
 
 aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor)
 {
     executor->hasMemset = executor->args->binInfo->isStaticShape ? true : executor->args->tilingInfo.needAtomic;
-
     if (executor->hasMemset) {
-        if (gBinCollecter->isMemsetV2) {
-            if (executor->args->binInfo->tensorNeedMemSetV2 > 0) {
-                NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGenMemsetV2Info(executor));
-                NNOPBASE_ASSERT_OK_RETVAL(NnopbaseInitMemsetV2Attrs(executor));
-                NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseMemsetV2Tiling(executor));
-            }
-        } else {
-            // 构造tilingContext
-            NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseBuildMemsetTilingContext(executor));
-            NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseMemsetTiling(executor));
-        }
+        // 构造tilingContext
+        NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseBuildMemsetTilingContext(executor));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseMemsetTiling(executor));
     }
     return OK;
 }
@@ -638,138 +500,19 @@ static inline void NnopbaseExecutorPreportMemsetProfiling(
     return;
 }
 
-static aclnnStatus NnopbaseExecutorPrepareMemsetV2Args(NnopbaseExecutor *executor)
-{
-    // 3 is for workspace placeholder, tiling addr and overflow.
-    const size_t argsNum = NNOPBASE_MEMSET_V2_OP_INPUT_COUNT + NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT + 3U;
-    auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->binInfo->memsetInfo->tilingData);
-
-    void *args = op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) - argsNum * sizeof(void*);
-    executor->args->binInfo->memsetInfo->argsExt.args = args;
-
-    void **addr = static_cast<void **>(args);
-    const size_t tilingDataSize = tilingData->GetDataSize();
-
-    executor->args->binInfo->memsetInfo->argsExt.hostInputInfoNum = NNOPBASE_MEMSET_V2_OP_INPUT_COUNT +
-                                                                    NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT;
-    aclrtPlaceHolderInfo *hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData())
-        + tilingDataSize);
-    NnopbaseUChar *hostInputData = op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + tilingDataSize +
-                                    executor->args->binInfo->memsetInfo->argsExt.hostInputInfoNum * sizeof(aclrtPlaceHolderInfo);
-    executor->args->binInfo->memsetInfo->argsExt.hostInputInfoPtr = hostInputInfo;
-
-    /* inputs address */
-    void **dynamicIOAddr = addr;
-    *addr = static_cast<void *>(hostInputData);
-    addr++;
-
-    /* outputs address */
-    void **outputDynamicIOAddr = addr;
-    *addr = static_cast<void *>(hostInputData);
-    addr++;
-
-    NnopbaseUChar **dynamicIOData = &hostInputData;
-    aclrtPlaceHolderInfo **dynamicIOInfo = &hostInputInfo;
-    const uint32_t size = executor->args->binInfo->tensorNeedMemSetV2;
-
-    // set dynamic addr offset
-    uint64_t dynamicOffset;
-    (*dynamicIOData) += sizeof(uint64_t);
-
-    // set shape info
-    for (uint32_t i = 0U; i < size; i++) {
-        size_t irIndex = executor->args->binInfo->initValues[i].irIndex;
-        const uint32_t startIndex = executor->args->outputs.paramDescs.instances[irIndex].startIndex;
-
-        if (executor->args->outputs.extTensors[startIndex].isNull) {
-            continue;
-        }
- 
-        const GertShape shape = executor->args->outputs.extTensors[startIndex].rt2Tensor.GetStorageShape();
-        const uint32_t dimNum = static_cast<uint32_t>(shape.GetDimNum());
- 
-        *dynamicIOData = nnopbase::NnopbaseAppendByte<uint32_t>(*dynamicIOData, dimNum);
-        *dynamicIOData = nnopbase::NnopbaseAppendByte<uint32_t>(*dynamicIOData, 1U);
- 
-        for (size_t j = 0U; j < shape.GetDimNum(); j++) {
-            const int64_t dim = shape.GetDim(j);
-            *dynamicIOData = nnopbase::NnopbaseAppendByte<int64_t>(*dynamicIOData, dim);
-        }
-    }
-
-    dynamicOffset = static_cast<uint64_t>((*dynamicIOData) - op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr));
-    (void)nnopbase::NnopbaseAppendByte<uint64_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr), dynamicOffset);
- 
-    // set dynamic input or output addr
-    for (uint32_t i = 0U; i < size; i++) {
-        size_t irIndex = executor->args->binInfo->initValues[i].irIndex;
-        const uint32_t startIndex = executor->args->outputs.paramDescs.instances[irIndex].startIndex;
-
-        if (executor->args->outputs.extTensors[startIndex].isNull) {
-            continue;
-        }
- 
-        NnopbaseUChar *tensorAddr = op::internal::PtrCastTo<NnopbaseUChar>(
-            executor->args->outputs.extTensors[startIndex].rt2Tensor.GetAddr());
-        *dynamicIOData = nnopbase::NnopbaseAppendByte<void *>(*dynamicIOData, tensorAddr);
-    }
-
-    (*dynamicIOInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) -
-        op::internal::PtrCastTo<NnopbaseUChar>(args));
-    (*dynamicIOInfo)->dataOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr) -
-        op::internal::PtrCastTo<NnopbaseUChar>(args));
-    (*dynamicIOInfo)++;
-    (*dynamicIOInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(outputDynamicIOAddr) -
-        op::internal::PtrCastTo<NnopbaseUChar>(args));
-    (*dynamicIOInfo)->dataOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*outputDynamicIOAddr) -
-        op::internal::PtrCastTo<NnopbaseUChar>(args));
-
-    /* workspace address */
-    *addr = nullptr;
-    addr++;
-
-    /* tiling data address */
-    *addr = tilingData->GetData();
-    executor->args->binInfo->memsetInfo->argsExt.tilingAddrOffset = static_cast<uint32_t>(
-        op::internal::PtrCastTo<NnopbaseUChar>(addr) -
-        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
-    executor->args->binInfo->memsetInfo->argsExt.tilingDataOffset = static_cast<uint32_t>(
-        op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) -
-        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
-    addr++;
-
-    /* overflow address */
-    *addr = g_nnopbaseSysCfgParams.overflowAddr;
-    addr++;
-
-    executor->args->binInfo->memsetInfo->argsExt.hasTiling = true;
-    executor->args->binInfo->memsetInfo->argsExt.argsSize =
-        static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOData) -
-        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
-
-    OP_LOGI("TilingDataSize is %zu bytes, argsSize is %u.",
-        tilingDataSize, executor->args->binInfo->memsetInfo->argsExt.argsSize);
-
-    CHECK_COND((executor->args->binInfo->memsetInfo->argsExt.argsSize <= executor->args->memsetArgs.size()),
-        ACLNN_ERR_PARAM_INVALID,
-        "Memset args is out of memory. argsSize is %u, argsBuf size is %zu bytes",
-        executor->args->binInfo->memsetInfo->argsExt.argsSize,
-        executor->args->memsetArgs.size());
-
-    return OK;
-}
-
 static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
 {
     // 2 is for tiling, overflow
     const size_t argsNum = executor->args->binInfo->initValues.size() + 2U;
     auto tilingData = op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->binInfo->memsetInfo->tilingData);
+    // 通过tilingData指针反推Arg排布的起始位置
     void *args = op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) - argsNum * sizeof(void*);
     executor->args->binInfo->memsetInfo->argsExt.args = args;
     void **addr = (void **)args;
     const size_t tilingDataSize = tilingData->GetDataSize();
     const size_t alignTilingDataSize =
             ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U : tilingDataSize; // 8byte对齐
+    // 从索引0开始填充args的输入Tensor指针
     for (size_t i = 0U; i < executor->args->binInfo->initValues.size(); i++) {
         size_t irIndex = executor->args->binInfo->initValues[i].irIndex;
         const uint32_t startIndex = executor->args->outputs.paramDescs.instances[irIndex].startIndex;
@@ -779,10 +522,13 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
     *addr = tilingData->GetData();
     executor->args->binInfo->memsetInfo->argsExt.tilingAddrOffset = static_cast<uint32_t>(
         op::internal::PtrCastTo<NnopbaseUChar>(addr) -
-        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
+        op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args)); // 结果即initvalue.size() * sizeof(void *)
     executor->args->binInfo->memsetInfo->argsExt.tilingDataOffset = static_cast<uint32_t>(
         op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) -
         op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args));
+        OP_LOGI("Tiling address offset for memset is %u, tiling data offset is %u",
+        executor->args->binInfo->memsetInfo->argsExt.tilingAddrOffset,
+        executor->args->binInfo->memsetInfo->argsExt.tilingDataOffset); // 结果即 (initvalue.size() + 2U) * sizeof(void *)
     addr++;
     *addr = g_nnopbaseSysCfgParams.overflowAddr;
     addr++;
@@ -792,7 +538,7 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
     executor->args->binInfo->memsetInfo->argsExt.argsSize =
         static_cast<uint32_t>(
         op::internal::PtrCastTo<NnopbaseUChar>(addr) - op::internal::PtrCastTo<NnopbaseUChar>(executor->args->binInfo->memsetInfo->argsExt.args) +
-        alignTilingDataSize);
+        alignTilingDataSize); // 结果即 (sizeof(initValues) + 2U) * sizeof(void*) + tilingDataSize
 
     OP_LOGI("Aligned tilingDataSize is %zu bytes, argsSize is %u.",
         alignTilingDataSize,
@@ -809,59 +555,57 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
 aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stream)
 {
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
-    const uint32_t blockDim = executor->args->binInfo->memsetInfo->memsetBlockDim;
-    OP_LOGI("Launch Memset task, blockDim is %u, stream is %p", blockDim, stream);
-    auto placeHolder = NnopbaseGetRTSPlaceHolder(&executor->args->binInfo->memsetInfo->argsExt);
-    OP_LOGI("Place Holder hostInputNum %u", 
-        executor->args->binInfo->memsetInfo->argsExt.hostInputInfoNum);
-    if (gBinCollecter->isMemsetV2) {
-        OP_LOGI("No need to launch MemSetV2 task, tensor list is empty");
-        if (executor->args->binInfo->tensorNeedMemSetV2 == 0) {
-            return OK;
+    auto memsetInfo = executor->args->binInfo->memsetInfo;
+    const uint32_t blockDim = *(memsetInfo->blockDim);
+    const uint32_t dynUBufSize = *(memsetInfo->dynUBufSize);
+    const uint64_t tilingKey = *(memsetInfo->tilingKey);
+    const uint8_t scheMode = static_cast<uint8_t>(*(memsetInfo->scheMode));
+    OP_LOGI("Start to launch Memset task, blockDim is %u, tilingKey is %llu, dynUBufSize is %u, schemMode is %u.",
+        blockDim, tilingKey, dynUBufSize, *(memsetInfo->scheMode));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetArgs(executor));
+    aclrtFuncHandle funcHandle;
+    aclrtLaunchKernelCfg *cfgPtr = nullptr;
+    aclrtLaunchKernelCfg cfg;
+    std::vector<aclrtLaunchKernelAttr> attrs;
+    if (memsetInfo->binInfo->loadFuncHandleByTilingKey) {
+        OP_LOGI("Get memset operator function handle by tilingKey.");
+        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(memsetInfo->binInfo->binHandle,
+            tilingKey, &funcHandle));
+        if (*(memsetInfo->scheMode) != 0U) {
+            aclrtLaunchKernelAttr schemModeAttr = {
+                .id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE,
+                .value = { .schemMode = scheMode },
+            };
+            attrs.push_back(schemModeAttr);
         }
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetV2Args(executor));
-        aclrtFuncHandle funcHandle;
-        NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->memsetInfo->binInfo->binHandle,
-            executor->args->binInfo->memsetInfo->memsetTilingKey, &funcHandle));
-        std::vector<aclrtLaunchKernelAttr> attrs;
-        aclrtLaunchKernelAttr schemModeAttr = {
-            .id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE,
-            .value = { .schemMode = executor->args->binInfo->memsetInfo->memsetScheMode },
-        };
-        attrs.push_back(schemModeAttr);
-        aclrtLaunchKernelCfg cfg;
-        cfg.attrs = attrs.data();
-        cfg.numAttrs = attrs.size();
-        NNOPBASE_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(
-            funcHandle,
-            blockDim,
-            stream,
-            &cfg,
-            executor->args->binInfo->memsetInfo->argsExt.args,
-            executor->args->binInfo->memsetInfo->argsExt.argsSize,
-            NnopbaseGetRTSPlaceHolder(&executor->args->binInfo->memsetInfo->argsExt).data(),
-            NnopbaseGetRTSPlaceHolderNum(&executor->args->binInfo->memsetInfo->argsExt)));
+        if (dynUBufSize != 0U) {
+            aclrtLaunchKernelAttr simtModeAttr = {
+                .id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE,
+                .value = { .localMemorySize = dynUBufSize },
+            };
+            attrs.push_back(simtModeAttr);
+        }
+        if (!attrs.empty()) {
+            cfg.attrs = attrs.data();
+            cfg.numAttrs = attrs.size();
+            cfgPtr = &cfg;
+        }
     } else {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetArgs(executor));
-        aclrtFuncHandle funcHandle;
+        OP_LOGI("Get memset operator function handle by kernel name %s.",
+            memsetInfo->binInfo->kernelName.c_str());
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(
-            executor->args->binInfo->memsetInfo->binInfo->binHandle,
-            executor->args->binInfo->memsetInfo->binInfo->stubName.c_str(),
+            memsetInfo->binInfo->binHandle,
+            memsetInfo->binInfo->kernelName.c_str(),
             &funcHandle));
-
-        NNOPBASE_ASSERT_RTOK_RETVAL(aclrtLaunchKernelWithHostArgs(
-            funcHandle,
-            blockDim,
-            stream,
-            nullptr,
-            executor->args->binInfo->memsetInfo->argsExt.args,
-            executor->args->binInfo->memsetInfo->argsExt.argsSize,
-            NnopbaseGetRTSPlaceHolder(&executor->args->binInfo->memsetInfo->argsExt).data(),
-            NnopbaseGetRTSPlaceHolderNum(&executor->args->binInfo->memsetInfo->argsExt)));
     }
-
-    const uint32_t taskType = NnopbaseExecutorGetTaskType(executor->args->binInfo->memsetInfo->binInfo->coreType, kRationEnd);
+    auto rtsHostPlaceHolder = NnopbaseGetRTSPlaceHolder(&memsetInfo->argsExt);
+    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtLaunchKernelWithHostArgs(funcHandle,
+        blockDim, stream, cfgPtr, memsetInfo->argsExt.args, memsetInfo->argsExt.argsSize,
+        rtsHostPlaceHolder.data(),
+        rtsHostPlaceHolder.size()));
+    const uint32_t taskType = NnopbaseExecutorGetTaskType(memsetInfo->binInfo->coreType, kRationEnd);
     NnopbaseExecutorPreportMemsetProfiling(executor, blockDim, taskType, launchBeginTime);
+    OP_LOGI("Launch memset operator successfully.");
     return OK;
 }
 
@@ -945,8 +689,7 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
     executor->itemId = MsprofGetHashId(opType, len);
     const std::string aicpuOpType = std::string(opType) + NNOPBAE_MC2_AICPU_SUFFIX ;
     executor->aicpuItemId = MsprofGetHashId(&aicpuOpType[0], aicpuOpType.length());
-    const std::string memsetOp = "MemSet";
-    executor->memsetItemId = MsprofGetHashId(&memsetOp[0], memsetOp.length());
+    executor->memsetItemId = MsprofGetHashId(&NNOPBASE_MEMSET_OP_NAME[0], NNOPBASE_MEMSET_OP_NAME.length());
     OP_LOGI("OpType is %s, hashKey is %lu, item id is %lu, aicpu item id is %lu, memset item id is %lu.",
             opType, hashKey, executor->itemId, executor->aicpuItemId, executor->memsetItemId);
     return OK;
@@ -1170,51 +913,6 @@ aclnnStatus NnopbaseSetMc2Tiling(NnopbaseExecutor *executor, const char *const g
     NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcomGetCommHandleByGroup(group, &commHandle));
     executor->mc2OpCfg.hcomHandle.push_back(commHandle);
     NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::SetCurMc2RankIdInThread(commHandle));
-    return OK;
-}
-
-aclnnStatus NnopbaseExecutorGenCustomizedKey(BinInfoKey &binInfoKey, const NnopbaseChar *opType,
-    NnopbaseKernelRunContextExt *contextExt)
-{
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(opType);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(contextExt);
-
-    NnopbaseUChar *verKey = nullptr;
-    if (binInfoKey.verbose.empty()) {
-        binInfoKey.verbose = std::vector<NnopbaseUChar>(NNOPBASE_VEB_KEY_LEN, '\0');
-        verKey = &(binInfoKey.verbose[0U]);
-        binInfoKey.bufLen = NNOPBASE_VEB_KEY_LEN;
-        verKey = NnopbaseAppendBinary(verKey, static_cast<size_t>(NNOPBASE_VEB_KEY_LEN), &(opType[0U]), strlen(opType));
-    } else {
-        verKey = &(binInfoKey.verbose[0U]) + strlen(opType);
-    }
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(verKey);
-
-    verKey = NnopbaseAppend1Byte(verKey, static_cast<NnopbaseUChar>(g_nnopbaseSysCfgParams.deterministic));
-    verKey = NnopbaseAppend1Byte(verKey, g_nnopbaseSysCfgParams.precision);
-
-    auto &registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
-    auto opImpl = registry->GetOpImpl(opType);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->gen_simplifiedkey);
-
-    char simplifiedkey[NNOPBASE_MEMSET_V2_OP_SIMPLIFIED_KEY_MAX_LEN] = { '\0' };
-    auto ret = opImpl->gen_simplifiedkey(op::internal::PtrCastTo<gert::TilingContext>(contextExt->context),
-        simplifiedkey);
-    if (ret != ge::GRAPH_SUCCESS) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "MemSetV2 gen simplifiedkey failed, ret is %u.", ret);
-        return ACLNN_ERR_PARAM_INVALID;
-    }
-
-    verKey = NnopbaseAppendBinary(verKey, static_cast<size_t>(NNOPBASE_VEB_KEY_LEN),
-        simplifiedkey, strlen(simplifiedkey));
-
-    size_t len = verKey - &(binInfoKey.verbose[0U]);
-    binInfoKey.len = len;
-    binInfoKey.bufLen = len;
-    binInfoKey.hashKey = NnopbaseHashBinary(&(binInfoKey.verbose[0U]), len) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
-
     return OK;
 }
 

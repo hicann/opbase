@@ -46,32 +46,18 @@ struct NnopbaseKernelExtendInfo {
     const NnopbaseChar *kernelType;
 };
 
-aclnnStatus NnopbaseMemsetTilingContextInit(NnopbaseExecutor *executor);
+aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueInfo> &initValues,
+    std::shared_ptr<MemsetOpInfo> &memsetInfo, const NnopbaseParamDesc& outputParamDescs);
 aclnnStatus NnopnbaseBuildMemsetTilingContext(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseGenMemsetV2TilingFunc(NnopbaseExecutor *executor);
+aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo> &memsetInfo);
 aclnnStatus NnopbaseExecutorPlatFormInfosInit(void);
 void NnopbaseUpdatePlatformInfo(const NnopbaseExecutor *executor);
 static constexpr int32_t NNOPBASE_DYNAMIC_PARAM_DEF_NUM = 256;
 void NnopbaseTilingBuildOpInputs(NnopbaseExecutor *executor);
 void NnopbaseTilingBuildOpOutputs(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseMemsetV2TilingContextInit(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseMemsetV2TilingContextBuild(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseTilingContextInit(NnopbaseExecutor *executor);
 void NnopbaseTilingContextDeInit(NnopbaseExecutor *executor);
-
-static inline uint32_t NnopbaseGetKernelRunContextValuesInitNum(NnopbaseExecutor *executor)
-{
-    uint32_t num = executor->ownArgs.inputs.nonDynamicCnt + executor->ownArgs.outputs.nonDynamicCnt +
-                   static_cast<uint32_t>(kInputsAppendEnd) + gert::TilingContext::kOutputNum;
-
-    if (executor->ownArgs.inputs.hasDynamic || executor->ownArgs.outputs.hasDynamic) {
-        num += (executor->ownArgs.inputs.dynamicNum * NNOPBASE_DYNAMIC_PARAM_DEF_NUM +
-                executor->ownArgs.outputs.dynamicNum * NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
-    }
-    return num;
-}
 
 #ifdef __cplusplus
 }

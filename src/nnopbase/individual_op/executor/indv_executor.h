@@ -211,7 +211,7 @@ NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *
 NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors, size_t tensorNum);
 bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor *executor);
 NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey, NnopbaseUChar *addr);
-aclnnStatus NnopbasePrepareInitValues(NnopbaseExecutor *executor);
+aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor *executor);
 
 // prepare args for launch
 void **NnopbaseExecutorPrepareNullTensors(
@@ -292,9 +292,7 @@ void NnopbaseReportContextIdInfoByRation(
 void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor);
 
 // for mesmet
-aclnnStatus NnopbaseExecutorGenCustomizedKey(BinInfoKey &binInfoKey, const NnopbaseChar *opType, NnopbaseKernelRunContextExt *contextExt);
 aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseGenMemsetV2Info(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stream);
 
 aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(

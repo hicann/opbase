@@ -45,7 +45,6 @@ typedef struct {
     bool useCoreTypeMagic = false;
     bool isMc2FusionLaunch = false; // 对于910_95后的芯片，mc2算子使用fusion launch
     std::string oppPath;
-    bool isMemsetV2 = false;  // for memsetV2 flag
 } NnopbaseBinCollecter;
 
 extern NnopbaseBinCollecter *gBinCollecter;

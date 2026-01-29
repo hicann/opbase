@@ -45,7 +45,6 @@ public:
     bool SupportCurrentSoc(void) const;
     bool UseCoreTypeMagic(void) const;
     bool SupportMc2FusionLaunch(void) const;
-    bool MemsetV2(void) const;
     bool NeedAlignInitValues(void) const;
     bool NeedsExtraMemoryForOverflowDump(void) const;
     bool SupportL0ExceptionDump(void) const;

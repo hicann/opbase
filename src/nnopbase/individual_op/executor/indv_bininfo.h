@@ -30,15 +30,11 @@ extern "C" {
 static constexpr size_t NNOPBASE_FILE_PATH_MAX_LEN = 4096;
 static const std::string NNOPBASE_BUILD_TYPE = "debug";
 
-constexpr uint32_t NNOPBASE_MEMSET_V2_OP_INPUT_COUNT = 1;
-constexpr uint32_t NNOPBASE_MEMSET_V2_OP_OUTPUT_COUNT = 1;
-constexpr uint32_t NNOPBASE_MEMSET_V2_OP_ATTR_COUNT = 2;
-static const std::string NNOPBASE_MEMSET_DEFAULT_PATH = "/built-in/op_impl/ai_core/tbe/kernel/config/";
-static const std::string NNOPBASE_MEMSET_DEFAULT_PATH_V2 = "/built-in/op_impl/ai_core/tbe/kernel/";
-static const std::string NNOPBASE_MEMSET_JSON_PATH ="/mem_set.json";
-static const std::string NNOPBASE_MEMSET_V2_OP_NAME = "MemSetV2";
+static const std::string MEMSET_DESC_JSON_COMMON_DIR = "/built-in/op_impl/ai_core/tbe/kernel/config/";
+static const std::string MEMSET_BINARY_JSON_COMMON_DIR = "/built-in/op_impl/ai_core/tbe/kernel/";
+static const std::string INDV_MEMSET_TBE_FILE_NAME ="/mem_set.json";
+static const std::string INDV_MEMSET_ASC_FILE_NAME ="/mem_set_apt.json";
 static const std::string NNOPBASE_MEMSET_OP_NAME = "MemSet";
-constexpr size_t NNOPBASE_MEMSET_V2_OP_SIMPLIFIED_KEY_MAX_LEN = 256;
 
 typedef struct {
     DList head;
@@ -126,49 +122,41 @@ struct NnopbaseInitValueInfo {
     size_t tensorDataSize;
 };
 
-struct NnopbaseMemsetBinInfo {
-    ~NnopbaseMemsetBinInfo() {
+struct MemsetOpBinInfo {
+    ~MemsetOpBinInfo() {
         if (bin != nullptr) {
             delete[] bin;
             bin = nullptr;
         }
     }
-    BinInfoKey binInfoKey;
     const NnopbaseChar *opType = nullptr;
     NnopbaseUChar *bin = nullptr;
     std::string binPath;
     void *binHandle = nullptr;
     uint32_t binLen = 0U;
     uint32_t magic = ACL_RT_BINARY_MAGIC_ELF_AICORE;
+    std::string binFileName;
     std::string kernelName;
-    std::string stubName;
     CoreType coreType = kCoreTypeEnd;
     uint32_t opParaSize = 0U;
+    bool loadFuncHandleByTilingKey = false;
 };
 
-struct NnopbaseMemsetInfo {
+struct MemsetOpInfo {
     NnopbaseRTArgsExt argsExt;
-    const NnopbaseChar *compileInfo = nullptr;
+    std::string compileInfo;
     std::string memSetJsonPath;
-    TilingFun tiling = nullptr;
-    std::shared_ptr<NnopbaseMemsetBinInfo> binInfo = nullptr;
+    TilingFun tilingFunc = nullptr;
+    std::shared_ptr<MemsetOpBinInfo> binInfo = nullptr;
     NnopbaseKernelRunContextExt contextExt;
     NnopbaseAsyncAnyValue *tilingParseContextValue = nullptr;
     NnopbaseKernelRunContext *tilingParseContext = nullptr;
     uint8_t tilingData[NNOPBASE_TILIING_DATA_STRUCT_SIZE] = {};
     uint8_t workspacesSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE] = {};
     uint64_t *tilingKey = nullptr;
-    uint64_t memsetTilingKey = 0U;
     uint32_t *blockDim = nullptr;
-    uint32_t memsetBlockDim = 0U;
     uint32_t *scheMode = nullptr;
-    uint32_t *dynUbufSize = nullptr;
-    uint32_t memsetScheMode = 0U;
-
-    // MemSetV2 attributes
-    uint32_t attrNum = NNOPBASE_MEMSET_V2_OP_ATTR_COUNT;
-    std::vector<int64_t> intAttrs;
-    std::vector<float> floatAttrs;
+    uint32_t *dynUBufSize = nullptr;
 };
 
 typedef struct {
@@ -196,16 +184,13 @@ typedef struct {
     bool oomFlag = false;
     NnopbaseTaskRation taskRation = kRationEnd;
     std::vector<NnopbaseInitValueInfo> initValues;
-    uint32_t tensorNeedMemSetV2 = 0U;
-    std::unique_ptr<NnopbaseMemsetInfo> memsetInfo = nullptr;
+    std::shared_ptr<MemsetOpInfo> memsetInfo = nullptr;
 } NnopbaseBinInfo;
 
 aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
-aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
-aclnnStatus NnopbaseInitMemsetV2Info(NnopbaseBinInfo *binInfo);
-aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, std::string &socVersion,
-    bool isMemsetV2);
+
+aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
 aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, NnopbaseUChar *&bin, uint32_t *binLen);
 aclnnStatus NnopbaseKernelUnRegister(void **handle);
 aclnnStatus NnopbaseReadJsonConfig(const std::string &binaryInfoPath, nlohmann::json &binaryInfoConfig);
@@ -213,12 +198,13 @@ aclnnStatus NnopbaseGetOpJsonPath(const std::string &binPath, std::string &jsonP
 NnopbaseChar *NnopbaseGetmmErrorMsg();
 
 // for memset aux operator
-aclnnStatus NnopbaseLoadMemsetJson(std::unique_ptr<NnopbaseMemsetInfo> &memsetInfo);
+aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
+aclnnStatus NnopbaseLoadMemsetJson(std::shared_ptr<MemsetOpInfo> &memsetInfo);
 aclnnStatus NnopbaseGetBinPath(const std::string &jsonPath, std::string &binPath);
-aclnnStatus NnopbaseGetMemsetBinInfo(std::unique_ptr<NnopbaseMemsetInfo> &memsetInfo);
+aclnnStatus NnopbaseGetMemsetBinInfo(std::shared_ptr<MemsetOpInfo> &memsetInfo);
 aclnnStatus NnopbaseReadMemsetJsonInfo(const std::string &memsetBasePath, nlohmann::json &memsetJsonInfo,
-    std::unique_ptr<NnopbaseMemsetInfo> &memsetInfo, const size_t initNum);
-aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<NnopbaseMemsetBinInfo> &binInfo);
+    std::shared_ptr<MemsetOpInfo> &memsetInfo, const size_t initNum, const bool loadFuncHandleByTilingKey);
+aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<MemsetOpBinInfo> &binInfo, bool loadFuncHandleByTilingKey);
 
 
 // getFunction Handle from binInfo
@@ -230,7 +216,7 @@ static const std::map<std::string, CoreType> g_nnopbaseKernelTypeMap = {
     {"MIX", kMix}, {"AiCore", kAicore}, {"VectorCore", kVectorcore}, {"MIX_AICORE", kMixAiCore},
     {"MIX_VECTOR_CORE", kMixAiv}, {"MIX_AIC", kMix}};
 
-static inline void NnopbaseMemsetInfoDestroy(std::unique_ptr<NnopbaseMemsetInfo> &memsetInfo)
+static inline void NnopbaseMemsetInfoDestroy(std::shared_ptr<MemsetOpInfo> &memsetInfo)
 {
     if ((memsetInfo->binInfo != nullptr) && (memsetInfo->binInfo->bin != nullptr)) {
         delete[](memsetInfo->binInfo->bin);

@@ -77,14 +77,11 @@ bool IndvSoc::SupportMc2FusionLaunch(void) const
     return (socVersion == OPS_SUBPATH_ASCEND910_95) || (socVersion == OPS_SUBPATH_ASCEND910_96);
 }
 
-bool IndvSoc::MemsetV2(void) const
-{
-    return (socVersion == OPS_SUBPATH_ASCEND910_95) || (socVersion == OPS_SUBPATH_ASCEND910_96);
-}
-
 bool IndvSoc::NeedAlignInitValues(void) const
 {
-    return socVersion == OPS_SUBPATH_ASCEND910B;
+    // 910B以及后继芯片场景 需要在Memset的输入tensor上做shape对齐
+    return (socVersion != OPS_SUBPATH_ASCEND310B) && (socVersion != OPS_SUBPATH_ASCEND310P) &&
+        (socVersion != OPS_SUBPATH_ASCEND610LITE) && (socVersion != OPS_SUBPATH_ASCEND910);
 }
 
 bool IndvSoc::NeedsExtraMemoryForOverflowDump(void) const

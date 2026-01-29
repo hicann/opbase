@@ -23,9 +23,7 @@ static constexpr size_t NNOPBASE_COMPUTE_NODE_BUF_LEN  = 4096U;
 static constexpr size_t NNOPBASE_COMPUTE_NODE_BUF_LEN_EXT = 128U;
 
 aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt *nodeExt, NnopbaseAttrs *attrs);
-aclnnStatus NnopbaseMemsetV2ComputeNodeAttrsUpdate(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseMemsetV2ComputeNodeInfoUpdate(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseComputeNodeInfoInit(NnopbaseComputeNodeInfoExt *nodeExt);
 
 static inline void NnopbaseComputeNodeInfoDeInit(NnopbaseComputeNodeInfoExt *nodeExt)
@@ -48,25 +46,6 @@ static inline size_t NnopbaseComputeNodeCalcLen(NnopbaseExecutor *executor)
     return size;
 }
 
-static inline size_t NnopbaseMemsetV2ComputeNodeCalcLen(NnopbaseExecutor *executor)
-{
-    uint32_t attrNum = executor->args->binInfo->memsetInfo->attrNum;
-    size_t intAttrsSize = sizeof(int64_t) * executor->args->binInfo->memsetInfo->intAttrs.size();
-    size_t floatAttrsSize = sizeof(float) * executor->args->binInfo->memsetInfo->floatAttrs.size();
-    size_t attrTotalSize = attrNum * sizeof(gert::ContinuousVector) + intAttrsSize + floatAttrsSize;
-    OP_LOGD("Calculate MemSetV2 attr number:%u, int attr size:%llu, float attr size:%llu,"
-        " attr total size:%llu", attrNum, intAttrsSize, floatAttrsSize, attrTotalSize);
-
-    NnopbaseKernelRunContextExt *contextExt = &executor->args->binInfo->memsetInfo->contextExt;
-    NnopbaseComputeNodeInfo *node = contextExt->nodeExt.node;
-    size_t size = node->irInputsNum * sizeof(NnopbaseAnchorInstanceInfo) +
-                  node->irOutputsNum * sizeof(NnopbaseAnchorInstanceInfo) +
-                  (node->outputsNum + node->inputsNum) * sizeof(NnopbaseCompileTimeTensorDesc) +
-                  sizeof(NnopbaseRuntimeAttrsDef) + attrTotalSize + 
-                  sizeof(size_t) * attrNum + NNOPBASE_COMPUTE_NODE_BUF_LEN_EXT;
-    return size;
-}
-
 static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(const size_t irNum,
                                                          const size_t irIndex,
                                                          NnopbaseAnchorInstanceInfo *nodeExtInstStart,
@@ -82,12 +61,6 @@ static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(const size_t irNum,
 }
 
 aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseMemsetV2TilingContextUpdatePrepare(NnopbaseExecutor *executor);
-
-static inline aclnnStatus NnopbaseMemsetV2TilingBuildOpAttrs(NnopbaseExecutor *executor)
-{
-    return NnopbaseMemsetV2ComputeNodeAttrsUpdate(executor);
-}
 
 static inline aclnnStatus NnopbaseTilingBuildOpAttrs(NnopbaseExecutor *executor)
 {

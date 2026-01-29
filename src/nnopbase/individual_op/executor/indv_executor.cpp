@@ -642,7 +642,7 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
 
     std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadJsonFile(binInfo, executor->collecter->oppPath,
-        socVersion, gBinCollecter->isMemsetV2));
+        socVersion));
     if (executor->mc2OpCfg.isMc2 && executor->collecter->isMc2FusionLaunch) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collecter->useCoreTypeMagic, binInfo));
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
@@ -660,17 +660,11 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
         OP_LOGI("Register customized exception dump parse function for op: %s successfully.", executor->opType);
     }
     if (binInfo->initValues.size() > 0U) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbasePrepareInitValues(executor));
-        if (gBinCollecter->isMemsetV2) {
-            if (binInfo->tensorNeedMemSetV2 > 0) {
-                NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGenMemsetV2TilingFunc(executor));
-                NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMemsetV2TilingContextInit(executor));
-            }
-        } else {
-            // 构造TilingParseContext，执行tilingParse函数
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBuildAndRunMemsetTilingParse(executor));
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMemsetTilingContextInit(executor));
-        }
+        NNOPBASE_ASSERT_OK_RETVAL(SetTensorDataSizeToInitValue(executor));
+        // 构造TilingParseContext，执行tilingParse函数
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBuildAndRunMemsetTilingParse(executor->args->binInfo->memsetInfo));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMemsetTilingContextInit(executor->args->binInfo->initValues,
+            executor->args->binInfo->memsetInfo, executor->args->outputs.paramDescs));
     }
     binInfo->hasReg = true;
     return OK;
@@ -1034,6 +1028,7 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
     aclrtLaunchKernelCfg cfg;
     cfg.attrs = attrs.data();
     cfg.numAttrs = attrs.size();
+    auto rtsHostPlaceHolder = NnopbaseGetRTSPlaceHolder(&executor->argsExt);
     NNOPBASE_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(
         funcHandle,
         blockDim,
@@ -1041,13 +1036,13 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
         &cfg,
         executor->argsExt.args,
         executor->argsExt.argsSize,
-        NnopbaseGetRTSPlaceHolder(&executor->argsExt).data(),
-        NnopbaseGetRTSPlaceHolderNum(&executor->argsExt)));
+        rtsHostPlaceHolder.data(),
+        rtsHostPlaceHolder.size()));
     return OK;
 }
 
 static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *executor, rtStream_t stream,
-                                                          const uint32_t blockDim, const rtTaskCfgInfo_t *cfgInfo)
+                                                          const uint32_t blockDim, const uint8_t schemMode, const uint32_t blockDimOffset)
 {
     aclrtFuncHandle funcHandle;
     if (executor->args->binInfo->isStaticShape) {
@@ -1064,7 +1059,7 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
     std::vector<aclrtLaunchKernelAttr> attrs;
     aclrtLaunchKernelAttr schemModeAttr = {
         .id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE,
-        .value = { .schemMode = cfgInfo->schemMode },
+        .value = { .schemMode = schemMode },
     };
     aclrtLaunchKernelAttr engineTypeAttr = {
         .id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
@@ -1072,7 +1067,7 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
     };
     aclrtLaunchKernelAttr blockDimOffsetAttr = {
         .id = ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
-        .value = { .blockDimOffset = cfgInfo->blockDimOffset },
+        .value = { .blockDimOffset = blockDimOffset },
     };
     attrs.push_back(schemModeAttr);
     attrs.push_back(engineTypeAttr);
@@ -1081,6 +1076,7 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
     aclrtLaunchKernelCfg cfg;
     cfg.attrs = attrs.data();
     cfg.numAttrs = attrs.size();
+    auto rtsHostPlaceHolder = NnopbaseGetRTSPlaceHolder(&executor->argsExt);
     NNOPBASE_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(
         funcHandle,
         blockDim,
@@ -1088,8 +1084,8 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
         &cfg,
         executor->argsExt.args,
         executor->argsExt.argsSize,
-        NnopbaseGetRTSPlaceHolder(&executor->argsExt).data(),
-        NnopbaseGetRTSPlaceHolderNum(&executor->argsExt)));
+        rtsHostPlaceHolder.data(),
+        rtsHostPlaceHolder.size()));
     return OK;
 }
 
@@ -1116,11 +1112,11 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
     OP_LOGI("Main stream launch success.");
 
     const uint8_t scheMode = static_cast<uint8_t>(executor->args->tilingInfo.scheMode);
-    const rtTaskCfgInfo_t aivCfgInfo = {0U, 0U, scheMode, false, blockInfo.aivBlockDimOffset, 0U, 0U, {0U}, 0U};
     const uint64_t aivLaunchBeginTime = NnopbaseMsprofSysTime();
     // vector core kernel launch
     NNOPBASE_ASSERT_RTOK_RETVAL(
-        NnopbaseExecutorVectorCoreLaunchKernel(executor, nnopbaseStream.stream, blockInfo.aivBlockDim, &aivCfgInfo));
+        NnopbaseExecutorVectorCoreLaunchKernel(executor, nnopbaseStream.stream, blockInfo.aivBlockDim,
+            scheMode, blockInfo.aivBlockDimOffset));
     NnopbaseExecutorReportProfiling(executor, blockInfo.aivBlockDim, MSPROF_GE_TASK_TYPE_AIV, aivLaunchBeginTime,
         stream);
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtRecordEvent(nnopbaseStream.eventB, nnopbaseStream.stream));

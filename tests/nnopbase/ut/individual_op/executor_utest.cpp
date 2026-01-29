@@ -43,11 +43,19 @@ protected:
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseBuildAndRunMemsetTilingParse)
 {
     NnopbaseExecutor *executor = new NnopbaseExecutor;
+    NnopbaseExecutorArgs *args = new NnopbaseExecutorArgs;
+    NnopbaseBinInfo *binInfo = new NnopbaseBinInfo;
     ASSERT_NE(executor, nullptr);
-
+    ASSERT_NE(args, nullptr);
+    ASSERT_NE(binInfo, nullptr);
+    executor->args = args;
+    executor->args->binInfo = binInfo;
+    binInfo->memsetInfo = std::make_shared<MemsetOpInfo>();
     MOCKER(NnopbaseExecutorPlatFormInfosInit).stubs().will(returnValue(ACLNN_ERR_RUNTIME_ERROR));
-    auto ret = NnopbaseBuildAndRunMemsetTilingParse(executor);
+    auto ret = NnopbaseBuildAndRunMemsetTilingParse(executor->args->binInfo->memsetInfo);
     ASSERT_EQ(ret, ACLNN_ERR_RUNTIME_ERROR);
+    delete binInfo;
+    delete args;
     delete executor;
     GlobalMockObject::verify();
 }
@@ -2193,7 +2201,7 @@ TEST_F(NnopbaseExecutorUnitTest, TestOutputAutomicCleanSuccessFor1971)
     ((NnopbaseExecutor *)executor)->args->binInfo->initValues.clear();
     NnopbaseInitValueInfo info = {2, op::DataType::DT_FLOAT, 0.0, 0, 0};
     ((NnopbaseExecutor *)executor)->args->binInfo->initValues.push_back(info);
-    ASSERT_EQ(NnopbasePrepareInitValues((NnopbaseExecutor *)executor), OK);
+    ASSERT_EQ(SetTensorDataSizeToInitValue((NnopbaseExecutor *)executor), OK);
     ASSERT_EQ(((NnopbaseExecutor *)executor)->args->binInfo->initValues[0].tensorDataSize, 4U);
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
 
@@ -2206,8 +2214,8 @@ TEST_F(NnopbaseExecutorUnitTest, TestOutputAutomicCleanSuccessFor1971)
 TEST_F(NnopbaseExecutorUnitTest, TestLoadMemSetJsonFailed)
 {
     std::string oppPath = std::string(OP_API_COMMON_UT_SRC_DIR);
-    std::unique_ptr<NnopbaseMemsetInfo> memsetInfo = std::make_unique<NnopbaseMemsetInfo>();
-    auto binInfo = std::make_unique<NnopbaseMemsetBinInfo>();
+    std::shared_ptr<MemsetOpInfo> memsetInfo = std::make_shared<MemsetOpInfo>();
+    auto binInfo = std::make_shared<MemsetOpBinInfo>();
     memsetInfo->binInfo = std::move(binInfo);
     memsetInfo->memSetJsonPath = oppPath + "/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/MemSet_2e0edc6c5154edf0badbec9c57f44db6_high_performance_error.json";
     ASSERT_EQ(NnopbaseLoadMemsetJson(memsetInfo), ACLNN_ERR_PARAM_INVALID);
@@ -2222,128 +2230,19 @@ TEST_F(NnopbaseExecutorUnitTest, TestGetMemsetBinInfoFailed)
     ASSERT_EQ(NnopbaseGetOpJsonPath(jsonPath, binPath), ACLNN_ERR_PARAM_INVALID);
 
     std::string oppPath = std::string(OP_API_COMMON_UT_SRC_DIR) + "/built-in/op_impl/ai_core/tbe/kernel/config/ascend910";
-    std::unique_ptr<NnopbaseMemsetInfo> memsetInfo = std::make_unique<NnopbaseMemsetInfo>();
-    memsetInfo->memSetJsonPath = oppPath + "/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/MemSet_2e0edc6c5154edf0badbec9c57f44db6_high_performance_error.json";
+    std::shared_ptr<MemsetOpInfo> memsetInfo = std::make_shared<MemsetOpInfo>();
+    memsetInfo->memSetJsonPath = oppPath + "/mem_set/MemSet_2e0edc6c5154edf0badbec9c57f44db6_high_performance_error.json";
     ASSERT_EQ(NnopbaseGetMemsetBinInfo(memsetInfo), ACLNN_ERR_PARAM_INVALID);
 
     const std::string memsetDirPath =
             oppPath + "/mem_set.json";
     nlohmann::json memsetJsonInfo;
     ASSERT_EQ(NnopbaseReadJsonConfig(memsetDirPath, memsetJsonInfo), OK);
-    ASSERT_EQ(NnopbaseReadMemsetJsonInfo(oppPath, memsetJsonInfo, memsetInfo, 3U), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseReadMemsetJsonInfo(oppPath, memsetJsonInfo, memsetInfo, 3U, false), ACLNN_ERR_PARAM_INVALID);
 
-    ASSERT_EQ(NnopbaseReadMemsetJsonInfo(oppPath, memsetJsonInfo, memsetInfo, 20U), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseReadMemsetJsonInfo(oppPath, memsetJsonInfo, memsetInfo, 20U, false), ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnopbaseInitMemsetV2AttrsFailed)
-{
-    MOCKER(NnopbaseGenMemsetV2Info).stubs().with().will(returnValue(OK));
-
-    NnopbaseExecutor *executor = new NnopbaseExecutor;
-    ASSERT_NE(executor, nullptr);
-
-    char inputDesc[] = {1, 1, 1};
-    char outputDesc[] = {1};
-    char attrDesc[] = {};
-    auto ret = NnopbaseExecutorInit(executor, {inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-                                    sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char)});
-
-    executor->args = new NnopbaseExecutorArgs();
-    executor->args->binInfo = new NnopbaseBinInfo();
-    executor->args->binInfo->isStaticShape = true;
-    executor->args->binInfo->tensorNeedMemSetV2 = 1;
-
-    NnopbaseInitValueInfo valueInfo = {0, op::DataType::DT_STRING, 0.0f, 0, 0};
-    executor->args->binInfo->initValues.push_back(std::move(valueInfo));
-    NnopbaseParamInstance paramInstance = { 0, 0, 0, true, false, {}, -1, -1, nullptr, false };
-    executor->args->outputs.paramDescs.instances.push_back(std::move(paramInstance));
-    NnopbaseTensor tensor = { {}, false, false, false, false, 0U };
-    executor->args->outputs.extTensors.push_back(std::move(tensor));
-    bool tmp = gBinCollecter->isMemsetV2;
-    gBinCollecter->isMemsetV2 = true;
-
-    ASSERT_EQ(NnopbaseExecutorInsertMemsetOp(executor), ACLNN_ERR_PARAM_INVALID);
-
-    ASSERT_EQ(ret, OK);
-    NnopbaseExecutorDeInit(executor);
-    delete executor->args->binInfo;
-    delete executor->args;
-    delete executor;
-    gBinCollecter->isMemsetV2 = tmp;
-    GlobalMockObject::verify();
-}
-
-TEST_F(NnopbaseExecutorUnitTest, NnopbaseExecutorGenCustomizedKeyWithVerbose)
-{
-    BinInfoKey binInfoKey;
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('e');
-    binInfoKey.verbose.push_back('m');
-    binInfoKey.verbose.push_back('S');
-    binInfoKey.verbose.push_back('e');
-    binInfoKey.verbose.push_back('t');
-    binInfoKey.verbose.push_back('V');
-    binInfoKey.verbose.push_back('2');
-    binInfoKey.verbose.push_back('d');
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('0');
-    binInfoKey.verbose.push_back('0');
-    NnopbaseChar opType[9] = "MemSetV2";
-    NnopbaseKernelRunContextExt runContext;
-    ASSERT_EQ(NnopbaseExecutorGenCustomizedKey(binInfoKey, opType, &runContext), OK);
-    // 0emSetV2\0\0diy,99
-    ASSERT_EQ(binInfoKey.verbose.size(), 16);
-    ASSERT_EQ(binInfoKey.verbose[10], 100);
-    ASSERT_EQ(binInfoKey.verbose[11], 105);
-    ASSERT_EQ(binInfoKey.verbose[12], 121);
-    ASSERT_EQ(binInfoKey.verbose[13], 44);
-    ASSERT_EQ(binInfoKey.verbose[14], 57);
-    ASSERT_EQ(binInfoKey.verbose[15], 57);
-}
-
-TEST_F(NnopbaseExecutorUnitTest, TestGenScalarListKey)
-{
-    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-
-    void *executorSpace = nullptr;
-    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
-    const char *opType = "AddTik2";
-    char inputDesc[] = {1, 1, 0, 0};
-    char outputDesc[] = {};
-    char attrDesc[] = {0};
-    void *executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
-
-    ASSERT_NE(executor, nullptr);
-    NnopbaseSetMatchArgsFlag(executor);
-    double scalar_value = 5;
-    auto *scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
-    auto scalarList = aclCreateScalarList(&scalar, 1);
-
-    NnopbaseExecutorArgs *args = &((NnopbaseExecutor *)executor)->ownArgs;
-    args->remainKeyLen = 0;
-    NnopbaseAddScalarInput(executor, scalar, 0, -1, ge::DT_UNDEFINED);
-    args->remainKeyLen = 0;
-    NnopbaseAddScalarListInput(executor, scalarList, 1, -1, ge::DT_UNDEFINED);
-    args->remainKeyLen = 0;
-    NnopbaseAddScalarInput(executor, scalar, 2, -1, ge::DT_INT32);
-    args->remainKeyLen = 0;
-    NnopbaseAddScalarListInput(executor, scalarList, 3, -1,  ge::DT_INT32);
-    NnopbaseAddScalarInput(executor, scalar, 1, 0, ge::DT_UNDEFINED);
-    NnopbaseAddScalarListInput(executor, scalarList, 2, 0, ge::DT_UNDEFINED);
-
-    std::vector<float> vec(2048 * 2, 2.0);
-    auto *floatArray = aclCreateFloatArray(vec.data(), vec.size());
-    ASSERT_EQ(NnopbaseAddFloatArrayAttr(executor, floatArray, 0), OK);
-
-    aclDestroyScalarList(scalarList);
-    NnopbaseExecutorGcSpace(executorSpace);
-    NnopbaseUnsetEnvAndClearFolder();
-}
 
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseGenPlaceHolderKey)
 {
