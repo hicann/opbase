@@ -31,7 +31,7 @@ rtError_t rtGetSocVersion(char *version, const uint32_t maxLen)
         if (strcmp(value, "1") == 0) {
             str = "Ascend910B1";
         } else if (strcmp(value, "2") == 0) {
-            str = "Ascend910_95";
+            str = "Ascend950";
         } else if (strcmp(value, "3") == 0) {
             str = "Ascend310P1";
         }

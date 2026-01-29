@@ -101,67 +101,66 @@ static std::string GenerateOpPathBySocVersion(const std::string &soc)
     return "ascend" + part1 + "_" + part2 + "/";
 }
 
+static std::unordered_map<std::string, std::string> socOpMapV2 = {
+    {"Ascend910_95", "ascend910_95/"},
+    {"Ascend950", "ascend950/"}
+};
+
+static std::string emptyString = "";
+
+static const std::string &GetSocPathV2(const std::string &soc)
+{
+    for (auto &socPair : socOpMapV2) {
+        const std::string &socPrefix = socPair.first;
+        if (soc.compare(0, socPrefix.length(), socPrefix) == 0) {
+            return socPair.second;
+        }
+    }
+    return emptyString;
+}
+
+static map<string, string> socOpMap = {
+    {"Ascend910A", "ascend910/"},
+    {"Ascend910B", "ascend910/"},
+    {"Ascend910ProA", "ascend910/"},
+    {"Ascend910PremiumA", "ascend910/"},
+    {"Ascend910ProB", "ascend910/"},
+    {"Ascend910B1", "ascend910b/"},
+    {"Ascend910B2", "ascend910b/"},
+    {"Ascend910B3", "ascend910b/"},
+    {"Ascend910B4", "ascend910b/"},
+    {"Ascend910B4-1", "ascend910b/"},
+    {"Ascend910B2C", "ascend910b/"},
+    {"Ascend910_9391", "ascend910_93/"},
+    {"Ascend910_9381", "ascend910_93/"},
+    {"Ascend910_9372", "ascend910_93/"},
+    {"Ascend910_9392", "ascend910_93/"},
+    {"Ascend910_9382", "ascend910_93/"},
+    {"Ascend910_9362", "ascend910_93/"},
+    {"Ascend310P1", "ascend310p/"},
+    {"Ascend310P3", "ascend310p/"},
+    {"Ascend310P5", "ascend310p/"},
+    {"Ascend310P7", "ascend310p/"},
+    {"Ascend310B1", "ascend310b/"},
+    {"Ascend310B4", "ascend310b/"},
+    {"Ascend610Lite", "ascend610lite/"},
+    {"KirinX90", "kirinx90/"}
+};
+
 const std::string &OpKernelLib::GetSocPath()
 {
     if (initFlag_ && !socPath_.empty()) {
         return socPath_;
     }
-
-    static map<string, string> socOpMap = {
-        {"Ascend910A", "ascend910/"},
-        {"Ascend910B", "ascend910/"},
-        {"Ascend910ProA", "ascend910/"},
-        {"Ascend910PremiumA", "ascend910/"},
-        {"Ascend910ProB", "ascend910/"},
-        {"Ascend910B1", "ascend910b/"},
-        {"Ascend910B2", "ascend910b/"},
-        {"Ascend910B3", "ascend910b/"},
-        {"Ascend910B4", "ascend910b/"},
-        {"Ascend910B4-1", "ascend910b/"},
-        {"Ascend910B2C", "ascend910b/"},
-        {"Ascend910_9391", "ascend910_93/"},
-        {"Ascend910_9381", "ascend910_93/"},
-        {"Ascend910_9372", "ascend910_93/"},
-        {"Ascend910_9392", "ascend910_93/"},
-        {"Ascend910_9382", "ascend910_93/"},
-        {"Ascend910_9362", "ascend910_93/"},
-        {"Ascend910_9591", "ascend910_95/"},
-        {"Ascend910_9592", "ascend910_95/"},
-        {"Ascend910_9582", "ascend910_95/"},
-        {"Ascend910_9584", "ascend910_95/"},
-        {"Ascend910_9587", "ascend910_95/"},
-        {"Ascend910_9588", "ascend910_95/"},
-        {"Ascend910_9572", "ascend910_95/"},
-        {"Ascend910_9574", "ascend910_95/"},
-        {"Ascend910_9575", "ascend910_95/"},
-        {"Ascend910_9576", "ascend910_95/"},
-        {"Ascend910_9577", "ascend910_95/"},
-        {"Ascend910_9578", "ascend910_95/"},
-        {"Ascend910_950z", "ascend910_95/"},
-        {"Ascend910_957b", "ascend910_95/"},
-        {"Ascend910_957d", "ascend910_95/"},
-        {"Ascend910_9579", "ascend910_95/"},
-        {"Ascend910_9589", "ascend910_95/"},
-        {"Ascend910_958a", "ascend910_95/"},
-        {"Ascend910_958b", "ascend910_95/"},
-        {"Ascend910_9599", "ascend910_95/"},
-        {"Ascend910_9581", "ascend910_95/"},
-        {"Ascend310P1", "ascend310p/"},
-        {"Ascend310P3", "ascend310p/"},
-        {"Ascend310P5", "ascend310p/"},
-        {"Ascend310P7", "ascend310p/"},
-        {"Ascend310B1", "ascend310b/"},
-        {"Ascend310B4", "ascend310b/"},
-        {"Ascend610Lite", "ascend610lite/"},
-        {"KirinX90", "kirinx90/"}
-    };
-
     auto soc = aclrtGetSocName();
-    OP_LOGD("aclrtGetSocName %s", soc);
+    OP_LOGI("aclrtGetSocName %s", soc);
     const string &devtype = string(soc);
     const auto &iter = socOpMap.find(devtype);
-    OP_CHECK_NO_RETURN((iter != (socOpMap.end())), (socOpMap[devtype] = GenerateOpPathBySocVersion(devtype)));
-    socPath_ = socOpMap[devtype];
+    if (iter != socOpMap.end()) {
+        socPath_ = socOpMap[devtype];
+    } else {
+        socPath_ = GetSocPathV2(devtype);
+    }
     OP_CHECK_NO_RETURN(!socPath_.empty(), OP_LOGW("Invalid device type:%s.", soc));
     return socPath_;
 }

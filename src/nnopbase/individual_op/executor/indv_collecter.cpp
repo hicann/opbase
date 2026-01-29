@@ -1194,7 +1194,7 @@ aclnnStatus NnopbaseCollecterGetDebugKernelPathAndReadConfig(NnopbaseBinCollecte
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
     NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
-    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const std::string &binaryInfoPath = basePath + "/debug_kernel/config/" + socVersion +
                                         "/binary_info_config.json";
     // 若不存在debug kernel的目录，会在NnopbaseReadJsonConfig里面的realpath判断返回error，不打error日志
@@ -1254,7 +1254,7 @@ aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollect
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
     NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
-    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const std::string &binaryInfoPath = basePath + "/static_kernel/ai_core/config/" + socVersion +
                                         "/binary_info_config.json";
     OP_LOGI("Start read binary_info_config.json for static kernel. Path: %s", binaryInfoPath.c_str());
@@ -1271,7 +1271,7 @@ aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollec
 {
     OP_LOGI("Start get path and read binary_info_config json");
     bool readConfigSucc = false;
-    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     for (size_t i = 0U; i < basePath.size(); i++) {
         nlohmann::json binaryInfoConfig;
         std::string binaryBasePath = basePath[i].first + "/op_impl/ai_core/tbe/kernel/config/" + socVersion;
@@ -1354,7 +1354,7 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
 
 aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter *collecter)
 {
-    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     OP_LOGI("Get current soc version: %s", socVersion.c_str());
     CHECK_COND(nnopbase::IndvSoc::GetInstance().SupportCurrentSoc(), ACLNN_ERR_PARAM_INVALID, "Not supported socVersion %s.", socVersion.c_str());
 

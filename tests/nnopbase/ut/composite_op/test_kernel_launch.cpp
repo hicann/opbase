@@ -213,7 +213,7 @@ static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
 {
     OP_LOGI("not support dev ptr");
     InitHugeMemThreadLocal(nullptr, false);
-    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend910_95", "Ascend910_9591");
+    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend950", "Ascend950DT_9591");
     // create input output workspace outputshape
     op::Shape selfShape{33, 15, 64};
     op::Shape wsShape{32};
@@ -326,7 +326,7 @@ static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
 static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
 {
     OP_LOGI("support dev ptr");
-    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend910_95", "Ascend910_9591");
+    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend950", "Ascend950DT_9591");
     // create input output workspace outputshape
     op::Shape selfShape{33, 15, 64};
     op::Shape wsShape{32};
@@ -427,7 +427,7 @@ static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
 static void MemSetV2OutputTensorWithDevPtr2(op::internal::OpKernelBin *kernelBin)
 {
     OP_LOGI("support dev ptr 2");
-    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend910_95", "Ascend910_9591");
+    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend950", "Ascend950DT_9591");
     // create input output workspace outputshape
     op::Shape selfShape{33, 15, 64};
     op::Shape wsShape{31, 32};

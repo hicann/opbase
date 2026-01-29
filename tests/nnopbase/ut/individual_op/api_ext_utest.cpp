@@ -2369,7 +2369,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
 
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910_95)));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
     ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
@@ -2470,7 +2470,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
 
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910_95)));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
     ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
@@ -2569,7 +2569,7 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void *)> setHccl
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion));
-    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND910_95 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
+    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND950 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
         ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
     } else {
         ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = false;
@@ -2639,7 +2639,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypDefault)
 {
     MOCKER(rtFusionLaunch).expects(atLeast(0)).will(returnValue(0));
     TestHcclServerType([](void *executor){
-    }, nnopbase::OPS_SUBPATH_ASCEND910_95);
+    }, nnopbase::OPS_SUBPATH_ASCEND950);
 }
 
 TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeCCU)
@@ -2647,7 +2647,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeCCU)
     MOCKER(rtFusionLaunch).expects(atLeast(1)).will(returnValue(0));
     TestHcclServerType([](void *executor){
         NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
-    }, nnopbase::OPS_SUBPATH_ASCEND910_95);
+    }, nnopbase::OPS_SUBPATH_ASCEND950);
 }
 
 TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeAICPU)
@@ -2655,7 +2655,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeAICPU)
     MOCKER(rtFusionLaunch).expects(atLeast(0)).will(returnValue(0));
     TestHcclServerType([](void *executor){
         NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
-    }, nnopbase::OPS_SUBPATH_ASCEND910_95);
+    }, nnopbase::OPS_SUBPATH_ASCEND950);
 }
 
 TEST_F(NnopbaseExtUnitTest, NnopBaseRunSuccessWithNotEnableCache)

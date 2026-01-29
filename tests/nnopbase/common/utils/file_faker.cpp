@@ -63,12 +63,12 @@ void CreateOppDir(const std::string &dirPrefix)
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/ascend910").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/ascend310p").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/config").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/ascend910_95").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/ascend950").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/config/ascend910b").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/config/ascend910").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/config/ascend310p").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/config/ascend910_95").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir((dirPrefix + "/op_impl/ai_core/tbe/kernel/config/ascend950").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 
     // for tiling
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/op_tiling").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
@@ -136,14 +136,14 @@ void CreateStubFolders(const std::string &opp_path, const bool isOppLastest = fa
     mkdir((OPP_PATH + "/static_kernel/ai_core/config").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/config/ascend910b").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/config/ascend910").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((OPP_PATH + "/static_kernel/ai_core/config/ascend910_95").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir((OPP_PATH + "/static_kernel/ai_core/config/ascend950").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 
     // debug 路径
     mkdir((OPP_PATH + "/debug_kernel").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/debug_kernel/config").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/debug_kernel/config/ascend910b").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/debug_kernel/config/ascend910").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((OPP_PATH + "/debug_kernel/config/ascend910_95").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir((OPP_PATH + "/debug_kernel/config/ascend950").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/debug_kernel/ascend910b").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/debug_kernel/ascend910").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 
@@ -238,7 +238,7 @@ int32_t NnopbaseCreateStubOpInfoConfig(const std::string &filePath, const std::s
     fprintf(file, "            {\n");
     fprintf(file, "                \"coreType\": 0,\n");
     fprintf(file, "                \"simplifiedKey\": [\"TestDavidCustom/d=0,p=0/0,2/0,2/0,2\"],\n");
-    fprintf(file, (binPath + "ascend910_95" + "/TestDavidCustom.o\"\n").c_str());
+    fprintf(file, (binPath + "ascend950" + "/TestDavidCustom.o\"\n").c_str());
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    },\n");
@@ -286,8 +286,8 @@ int32_t NnopbaseCreateStubOpInfoConfig(const std::string &filePath, const std::s
     fprintf(file, "                    \"MemSetV2/d=0,p=0/diy,99\",\n");
     fprintf(file, "                    \"MemSetV2/d=1,p=0/diy,99\"\n");
     fprintf(file, "                ],\n");
-    fprintf(file, "                \"binPath\": \"ascend910_95/MemSetV2.o\",\n");
-    fprintf(file, "                \"jsonPath\": \"ascend910_95/MemSetV2.json\"\n");
+    fprintf(file, "                \"binPath\": \"ascend950/MemSetV2.o\",\n");
+    fprintf(file, "                \"jsonPath\": \"ascend950/MemSetV2.json\"\n");
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    },\n");
@@ -1232,7 +1232,7 @@ int32_t CreateStubKernelFiles()
 
     ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
     ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910/binary_info_config.json", "ascend910"));
-    ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910_95/binary_info_config.json", "ascend910_95"));
+    ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend950/binary_info_config.json", "ascend950"));
     ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971(buildInPrefix + "ascend910b/kernel_bninference_d_dync_main.json", "ascend910b"));
     ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1980(buildInPrefix + "ascend910/kernel_bninference_d_dync_main.json", "ascend910"));
 
@@ -1251,14 +1251,14 @@ int32_t CreateStubKernelFiles()
     ASSERT_SUCC(NnopbaseCreateStubBinJsonForAutomicClean(buildInPrefix + "ascend910b/kernel_output_automic_clean.json", "ascend910b"));
 
     // MemSetV2 david only
-    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910_95/MemSetV2.o"));
-    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910_95/MemSetV2.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForMemSetV2(buildInPrefix + "ascend910_95/MemSetV2.json", "ascend910_95"));
+    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/MemSetV2.o"));
+    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/MemSetV2.json"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForMemSetV2(buildInPrefix + "ascend950/MemSetV2.json", "ascend950"));
 
     // TestDavidCustom david only
-    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910_95/TestDavidCustom.o"));
-    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910_95/TestDavidCustom.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForTestDavidCustom(buildInPrefix + "ascend910_95/TestDavidCustom.json", "ascend910_95"));
+    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/TestDavidCustom.o"));
+    ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/TestDavidCustom.json"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForTestDavidCustom(buildInPrefix + "ascend950/TestDavidCustom.json", "ascend950"));
 
     // test_register
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/test_registe_ascend910.o"));
@@ -1351,7 +1351,7 @@ int32_t CreateStubKernelFiles()
 
     ASSERT_SUCC(CreateCustomStubOpInfoConfig(custPrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
     ASSERT_SUCC(CreateCustomStubOpInfoConfig(custPrefix + "config/ascend910/binary_info_config.json", "ascend910"));
-    ASSERT_SUCC(CreateCustomStubOpInfoConfig(custPrefix + "config/ascend910_95/binary_info_config.json", "ascend910_95"));
+    ASSERT_SUCC(CreateCustomStubOpInfoConfig(custPrefix + "config/ascend950/binary_info_config.json", "ascend950"));
 
     // userDefine
     std::string userDefinePrefix = OPP_PATH + "/user_define/op_impl/ai_core/tbe/kernel/";
@@ -1389,7 +1389,7 @@ int32_t CreateStubKernelFiles()
 
     ASSERT_SUCC(CreateDebugStubOpInfoConfig(debugPrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
     ASSERT_SUCC(CreateDebugStubOpInfoConfig(debugPrefix + "config/ascend910/binary_info_config.json", "ascend910"));
-    ASSERT_SUCC(CreateDebugStubOpInfoConfig(debugPrefix + "config/ascend910_95/binary_info_config.json", "ascend910_95"));
+    ASSERT_SUCC(CreateDebugStubOpInfoConfig(debugPrefix + "config/ascend950/binary_info_config.json", "ascend950"));
     return 1;
 }
 

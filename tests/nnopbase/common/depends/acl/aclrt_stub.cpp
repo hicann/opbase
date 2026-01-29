@@ -52,13 +52,20 @@ aclError aclrtCreateStream(aclrtStream *stream)
 const char *aclrtGetSocName()
 {
     std::string str = "Ascend910A";
-    if (std::getenv("ASCEND_C") != nullptr) {
-        str = "Ascend910B1";
+    const char *value = std::getenv("ASCEND_C");
+    if (value != nullptr) {
+        const std::string valStr = std::string(value);
+        if (valStr == "1") {
+            str = "Ascend910B1";
+        } else if (valStr == "2") {
+            str = "Ascend950DT_9591";
+        } else if (valStr == "3") {
+            str = "Ascend310P1";
+        }
     }
     strncpy(aclSocVersion, str.c_str(), 100);
     return aclSocVersion;
 }
-
 
 EXTERN_C
 aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)

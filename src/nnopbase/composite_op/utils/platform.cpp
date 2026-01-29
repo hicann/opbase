@@ -233,6 +233,7 @@ void PlatformInfoImpl::InitSocVersion()
             {"Ascend910B", SocVersion::ASCEND910B},
             {"Ascend910_93", SocVersion::ASCEND910_93},
             {"Ascend910_95", SocVersion::ASCEND910_95},
+            {"Ascend950", SocVersion::ASCEND950},
             {"Ascend910E", SocVersion::ASCEND910E},
             {"Ascend310", SocVersion::ASCEND310},
             {"Ascend310B", SocVersion::ASCEND310B},
@@ -434,7 +435,7 @@ ge::AscendString ToString(SocVersion socVersion)
         {SocVersion::ASCEND910, "Ascend910"},               // SocVersion::ASCEND910
         {SocVersion::ASCEND910B, "Ascend910B"},             // SocVersion::ASCEND910B
         {SocVersion::ASCEND910_93, "Ascend910_93"},         // SocVersion::ASCEND910_93
-        {SocVersion::ASCEND910_95, "Ascend910_95"},         // SocVersion::ASCEND910_95
+        {SocVersion::ASCEND950, "Ascend950"},               // SocVersion::ASCEND950
         {SocVersion::ASCEND910E, "Ascend910E"},             // SocVersion::ASCEND910E
         {SocVersion::ASCEND310, "Ascend310"},               // SocVersion::ASCEND310
         {SocVersion::ASCEND310B, "Ascend310B"},             // SocVersion::ASCEND310B

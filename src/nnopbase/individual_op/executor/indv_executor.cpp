@@ -640,7 +640,7 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), binInfo->bin, &binInfo->binLen));
     }
 
-    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadJsonFile(binInfo, executor->collecter->oppPath,
         socVersion));
     if (executor->mc2OpCfg.isMc2 && executor->collecter->isMc2FusionLaunch) {

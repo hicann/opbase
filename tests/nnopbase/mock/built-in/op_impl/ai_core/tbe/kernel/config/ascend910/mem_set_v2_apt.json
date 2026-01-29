@@ -56,7 +56,7 @@
       "opMode": "dynamic",
       "deterministic": "ignore",
       "binInfo": {
-        "jsonFilePath": "ascend910_95/mem_set_v2_apt/MemSetV2_simplifiedKey_matchAll_high_performance.json"
+        "jsonFilePath": "ascend950/mem_set_v2_apt/MemSetV2_simplifiedKey_matchAll_high_performance.json"
       }
     }
   ]

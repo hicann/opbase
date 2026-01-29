@@ -877,7 +877,7 @@ void NnopbaseSetHcclServerTypeList(void *executor, NnopbaseHcclServerType *hcclS
     NNOPBASE_ASSERT_NOTNULL(socSupportList);
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     const auto supportHcclSocMap = nnopbase::IndvSoc::GetInstance().GetSupportHcclSocMap();
-    std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const auto &iter = supportHcclSocMap.find(socVersion);
     if (iter == supportHcclSocMap.cend()) {
         return;

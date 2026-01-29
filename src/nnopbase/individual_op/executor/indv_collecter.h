@@ -43,7 +43,7 @@ typedef struct {
 typedef struct {
     RegInfoTbl regInfoTbl;
     bool useCoreTypeMagic = false;
-    bool isMc2FusionLaunch = false; // 对于910_95后的芯片，mc2算子使用fusion launch
+    bool isMc2FusionLaunch = false; // 对于950后的芯片，mc2算子使用fusion launch
     std::string oppPath;
 } NnopbaseBinCollecter;
 

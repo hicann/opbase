@@ -74,7 +74,7 @@ bool IndvSoc::UseCoreTypeMagic(void) const
 
 bool IndvSoc::SupportMc2FusionLaunch(void) const
 {
-    return (socVersion == OPS_SUBPATH_ASCEND910_95) || (socVersion == OPS_SUBPATH_ASCEND910_96);
+    return (socVersion == OPS_SUBPATH_ASCEND950) || (socVersion == OPS_SUBPATH_ASCEND910_96);
 }
 
 bool IndvSoc::NeedAlignInitValues(void) const
