@@ -17,6 +17,7 @@
 namespace Ops {
 namespace Base {
 static constexpr int64_t NDDMA_COPYINBRC_INLINE_MAX_SUPPORT = 4;
+static constexpr int64_t NDDMA_COPYINBRC_LEAST_NUMBER_NEED_FUSE = 3;
 
 template <class BrcDag, bool withLoop>
 class BroadcastNddmaSch : public BroadcastBaseSch<BrcDag, true> {
@@ -140,9 +141,15 @@ protected:
 
             if constexpr (withLoop) {
                 if constexpr (BrcDag::CopyBrcSize <= NDDMA_COPYINBRC_INLINE_MAX_SUPPORT) {
-                    BroadcastNddmaWithLoop(globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
-                        tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
-                        tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
+                    if constexpr (BrcDag::CopyBrcSize >= NDDMA_COPYINBRC_LEAST_NUMBER_NEED_FUSE) {
+                        BroadcastNddmaWithLoopContiguousFuseAxis(globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                            tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
+                            tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
+                    } else {
+                        BroadcastNddmaWithLoop(globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                            tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
+                            tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
+                    }
                 } else {
                     BroadcastNddmaWithLoopNoInline(globalTensor, inTensor, tilingData->outputDims,
                         tilingData->outputStrides, tilingData->inputBrcStrides[copyInBrcCount], axesIndices,

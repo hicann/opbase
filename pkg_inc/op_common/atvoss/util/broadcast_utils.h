@@ -228,6 +228,64 @@ __aicore__ __attribute__((noinline)) void BroadcastNddmaWithLoopNoInline(
     BroadcastNddmaWithLoop(inputGm, outputTensor, outputDims, outputStrides, inputStrides, axesIndices, ubSplitAxis,
                               shapeLen, ubSplitSize, ubFormer);
 }
+
+template <typename T1, typename T2, size_t N>
+__aicore__ inline void BroadcastNddmaWithLoopContiguousFuseAxis(AscendC::GlobalTensor<T1>& inputGm,
+                                              AscendC::LocalTensor<T2>& outputTensor, const int64_t (&outputDims)[N],
+                                              const int64_t (&outputStrides)[N], const int64_t (&inputStrides)[N],
+                                              const int64_t (&axesIndices)[N], int64_t ubSplitAxis, int64_t shapeLen,
+                                              int64_t ubSplitSize, int64_t ubFormer) {
+  int64_t gmOffset = BroadcastGetGmOffset(axesIndices, inputStrides, ubSplitAxis, ubFormer);
+  if (outputStrides[ubSplitAxis] != inputStrides[ubSplitAxis]) {
+    int64_t outputDims2[BROADCAST_MAX_DIMS] = {1, 1, 1, 1, 1, 1, 1, 1};
+    int64_t outputStrides2[BROADCAST_MAX_DIMS] = {0};
+    int64_t inputStrides2[BROADCAST_MAX_DIMS] = {0};
+    int64_t count = shapeLen - 1;
+    int64_t curFlag = 0;
+    int64_t oriFlag = -1;
+    int64_t newCount = shapeLen;
+
+    while (count > ubSplitAxis) {
+      curFlag = inputStrides[count] == 0 ? 0 : 1;
+      if (curFlag != oriFlag) {
+        newCount = newCount - 1;
+        outputDims2[newCount] = outputDims[count];
+        outputStrides2[newCount] = outputStrides[count];
+        inputStrides2[newCount] = inputStrides[count];
+        oriFlag = curFlag;
+      } else {
+        outputDims2[newCount] = outputDims2[newCount] * outputDims[count];
+      }
+      count--;
+    }
+
+    outputDims2[newCount - 1] = ubSplitSize;
+    outputStrides2[newCount - 1] = outputStrides[count];
+    inputStrides2[newCount - 1] = inputStrides[count];
+
+    static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
+    AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain =
+        BroadcastSetNddmaConfigWithLoop<T1>(outputDims2, outputStrides2, inputStrides2, shapeLen, ubSplitAxis);
+    int64_t nddmaIndices[NDDMA_THROW_DIMS] = {0};
+    int64_t nddmaProduct = BroadcastFuseAxes(outputDims2, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
+    for (int64_t i = 0; i < nddmaProduct; i++) {
+      if (i != 0) {
+        BroadcastUpdateNddmaAxesIndices(nddmaIndices, outputDims, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS - 1 - ubSplitAxis);
+      }
+      int64_t nddmaGmOffset = BroadcastGetNddmaOffset(nddmaIndices, inputStrides, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
+      int64_t nddmaUbOffset = BroadcastGetNddmaOffset(nddmaIndices, outputStrides, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
+      if constexpr (AscendC::IsSameType<T1, T2>::value) {
+        AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor[nddmaUbOffset], inputGm[gmOffset + nddmaGmOffset], paramsMain);
+      } else {
+        AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor[nddmaUbOffset].template ReinterpretCast<T1>(),
+                                         inputGm[gmOffset + nddmaGmOffset], paramsMain);
+      }
+    }
+  } else {
+    DataCopyMoveAlign(inputGm, outputTensor, inputStrides, ubSplitAxis, ubSplitSize, gmOffset);
+  }
+}
+
 } // namespace Base
 } // namespace Ops
 #endif
