@@ -479,7 +479,14 @@ int64_t aclTensor::Numel() const
 
 op::DataType aclTensor::GetDataType() const
 {
-    return tensor_->GetDataType();
+    if (tensor_) {
+        return tensor_->GetDataType();
+    } else {
+        OP_LOGE(
+            ACLNN_ERR_PARAM_NULLPTR,
+            "the aclTensor(%p)'s tensor_ address is %p. please check the memory usage in your code.", this, tensor_);
+        return op::DataType::DT_MAX;
+    }
 }
 
 int64_t aclTensor::GetViewOffset() const

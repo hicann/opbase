@@ -5,11 +5,13 @@ cmake-build-debugindocker/
 .DS_Store
 # distribution and packaging
 build/
+build_out/
 output/
 dist/
 *.egg-info/
 *.egg
 *.whl
+*.run
 
 # vim cache
 *.swp
