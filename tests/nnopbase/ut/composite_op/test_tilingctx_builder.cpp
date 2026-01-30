@@ -546,3 +546,275 @@ TEST_F(TilingCtxBuildUT, TilingCtxMultiThreadTest3)
     }
     delete fakeBin;
 }
+
+// 测试 deterministicLevel 参数的传递和获取
+static void TilingCtxDeterministicLevelTest()
+{
+    op::Shape selfShape{33, 15, 1, 48};
+    op::Shape otherShape{33, 15, 14, 48};
+    op::Shape outShape{33, 15, 14, 48};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto other = std::make_unique<aclTensor>(otherShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    float alpha = 13.37;
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get(), other.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(alpha);
+    auto ws = OP_WORKSPACE(out.get());
+
+    const char *p = std::getenv("ASCEND_OPP_PATH");
+    EXPECT_NE(p, nullptr);
+    op::internal::KeyAndDetail key;
+    key.key = "hahaha";
+    size_t hashKey = 125;
+    char jsonPath[1024];
+    char binPath[1024];
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+        p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+        p);
+
+    op::internal::OpKernelBin kernelBin(
+        opType, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
+    EXPECT_EQ(kernelBin.InitTilingParseCtx(), ACLNN_SUCCESS);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr, ws);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    uint32_t aic = op::internal::GetThreadLocalContext().opConfigInfo_.aicNum_;
+    uint32_t aiv = op::internal::GetThreadLocalContext().opConfigInfo_.aivNum_;
+
+    // 获取 tilingParseCtxHolder
+    auto *tilingParseCtxHolder = kernelBin.tilingParseCtxHolder_[op::internal::ThreadCoreNum(aic, aiv)].get();
+    EXPECT_NE(tilingParseCtxHolder, nullptr);
+
+    // 验证 GetDeterministicLevel() 方法可以正确返回指针
+    auto *deterministicLevelValue = tilingParseCtxHolder->GetDeterministicLevel();
+    EXPECT_NE(deterministicLevelValue, nullptr);
+
+    // 验证 GetDeterministic() 方法可以正确返回指针
+    auto *deterministicValue = tilingParseCtxHolder->GetDeterministic();
+    EXPECT_NE(deterministicValue, nullptr);
+
+    // 更新 tiling context
+    auto res = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_),
+        tilingParseCtxHolder);
+    EXPECT_EQ(res, ACLNN_SUCCESS);
+
+    // 验证 tilingCtx 中正确设置了 deterministic 和 deterministicLevel
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t DETERMINISTIC_IDX = 2;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    // 验证 deterministic 值的正确性
+    auto *deterministicPtr = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX];
+    EXPECT_NE(deterministicPtr, nullptr);
+    int32_t deterministicVal = *reinterpret_cast<int32_t *>(deterministicPtr->data.inplace);
+    EXPECT_GE(deterministicVal, 0);  // 验证值为非负
+    EXPECT_LE(deterministicVal, 1);  // deterministic 值为 0 或 1
+
+    // 验证 deterministicLevel 值的正确性
+    auto *deterministicLevelPtr = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 1];
+    EXPECT_NE(deterministicLevelPtr, nullptr);
+    int32_t deterministicLevelVal = *reinterpret_cast<int32_t *>(deterministicLevelPtr->data.inplace);
+    EXPECT_GE(deterministicLevelVal, 0);  // Level 范围是 0-2
+    EXPECT_LE(deterministicLevelVal, 2);
+
+    // 验证 deterministicLevel 的逻辑正确性
+    // Level 0: deterministic=0
+    // Level 1: deterministic=1, consistency=0
+    // Level 2: deterministic=1, consistency=1
+    if (deterministicVal == 0) {
+        EXPECT_EQ(deterministicLevelVal, 0);
+    } else {
+        EXPECT_GE(deterministicLevelVal, 1);
+        EXPECT_LE(deterministicLevelVal, 2);
+    }
+
+    OP_LOGI("TilingCtxDeterministicLevelTest: deterministic = %d, deterministicLevel = %d",
+            deterministicVal, deterministicLevelVal);
+
+    for (auto &[key, value] : kernelBin.tilingParseCtxHolder_) {
+        if (value.get()) {
+            value.get()->ReleaseTilingParse();
+        }
+    }
+    op::DestroyOpArgContext(ctx);
+}
+
+// 测试 deterministicLevel 参数的线程安全性
+static void TilingCtxDeterministicLevelThreadSafetyTest()
+{
+    op::Shape selfShape{16, 32, 64};
+    op::Shape outShape{16, 32, 64};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(1.0f);
+    auto ws = OP_WORKSPACE(out.get());
+
+    const char *p = std::getenv("ASCEND_OPP_PATH");
+    EXPECT_NE(p, nullptr);
+    op::internal::KeyAndDetail key;
+    key.key = "hahaha";
+    size_t hashKey = 125;
+    char jsonPath[1024];
+    char binPath[1024];
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+        p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+        p);
+
+    op::internal::OpKernelBin kernelBin(
+        opType, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
+    EXPECT_EQ(kernelBin.InitTilingParseCtx(), ACLNN_SUCCESS);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr, ws);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    uint32_t aic = op::internal::GetThreadLocalContext().opConfigInfo_.aicNum_;
+    uint32_t aiv = op::internal::GetThreadLocalContext().opConfigInfo_.aivNum_;
+    auto *tilingParseCtxHolder = kernelBin.tilingParseCtxHolder_[op::internal::ThreadCoreNum(aic, aiv)].get();
+    EXPECT_NE(tilingParseCtxHolder, nullptr);
+
+    // 多次调用 UpdateTilingCtx 验证 deterministicLevel 值的一致性
+    auto res1 = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_),
+        tilingParseCtxHolder);
+    EXPECT_EQ(res1, ACLNN_SUCCESS);
+
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    auto *deterministicLevelPtr1 = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 1];
+    EXPECT_NE(deterministicLevelPtr1, nullptr);
+    int32_t deterministicLevelVal1 = *reinterpret_cast<int32_t *>(deterministicLevelPtr1->data.inplace);
+
+    // 再次调用,验证 deterministicLevel 值是否一致(因为使用静态变量和 call_once)
+    auto res2 = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_),
+        tilingParseCtxHolder);
+    EXPECT_EQ(res2, ACLNN_SUCCESS);
+
+    auto *deterministicLevelPtr2 = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 1];
+    EXPECT_NE(deterministicLevelPtr2, nullptr);
+    int32_t deterministicLevelVal2 = *reinterpret_cast<int32_t *>(deterministicLevelPtr2->data.inplace);
+
+    // 验证两次获取的 deterministicLevel 值相同
+    EXPECT_EQ(deterministicLevelVal1, deterministicLevelVal2);
+
+    OP_LOGI("TilingCtxDeterministicLevelThreadSafetyTest: deterministicLevelVal1 = %d, deterministicLevelVal2 = %d",
+            deterministicLevelVal1, deterministicLevelVal2);
+
+    for (auto &[key, value] : kernelBin.tilingParseCtxHolder_) {
+        if (value.get()) {
+            value.get()->ReleaseTilingParse();
+        }
+    }
+    op::DestroyOpArgContext(ctx);
+}
+
+// 测试 deterministicLevel 参数在没有 tilingParseCtx 时的行为
+static void TilingCtxDeterministicLevelNullTest()
+{
+    op::Shape selfShape{16, 32};
+    op::Shape outShape{16, 32};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(1.0f);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    // 不传入 tilingParseCtx,测试所有相关指针是否被正确设置为 nullptr
+    auto res = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_));
+    EXPECT_EQ(res, ACLNN_SUCCESS);
+
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t DETERMINISTIC_IDX = 2;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    // 验证所有额外参数都被设置为 nullptr
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM], nullptr);  // CompiledInfoStruct
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 4], nullptr);  // PlatformInfo
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 3], nullptr);  // TilingFunc
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX], nullptr);  // Deterministic
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 1], nullptr);  // DeterministicLevel
+
+    op::DestroyOpArgContext(ctx);
+}
+
+TEST_F(TilingCtxBuildUT, TilingCtxDeterministicLevelParameterTest)
+{
+    TilingCtxDeterministicLevelTest();
+}
+
+TEST_F(TilingCtxBuildUT, TilingCtxDeterministicLevelThreadSafetyTest)
+{
+    TilingCtxDeterministicLevelThreadSafetyTest();
+}
+
+TEST_F(TilingCtxBuildUT, TilingCtxDeterministicLevelNullTest)
+{
+    TilingCtxDeterministicLevelNullTest();
+}
+
+TEST_F(TilingCtxBuildUT, TilingCtxDeterministicLevelMultiThreadTest)
+{
+    vector<Functional> funVec = {TilingCtxDeterministicLevelTest,
+                                  TilingCtxDeterministicLevelThreadSafetyTest,
+                                  TilingCtxDeterministicLevelNullTest};
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(0, funVec.size()-1);
+    const uint64_t threadCount = 50;
+    vector<std::thread> threadVec;
+    for (int i = 0; i < threadCount; i++) {
+        threadVec.emplace_back(std::thread(funVec[distrib(gen)]));
+    }
+    for (int i = 0; i < threadCount; i++) {
+        threadVec[i].join();
+    }
+}

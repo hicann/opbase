@@ -40,9 +40,10 @@ namespace internal {
 using BlockPool = internal::BlockPool;
 using OpImplFunctions = gert::OpImplKernelRegistry::OpImplFunctions;
 
-constexpr size_t TILING_INPUT_OTHER_NUM = 4;
-constexpr size_t TILING_PLATFORM_IDX = 3;
-constexpr size_t TILING_FUNC_IDX = 2;
+constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+constexpr size_t TILING_PLATFORM_IDX = 4;
+constexpr size_t TILING_FUNC_IDX = 3;
+constexpr size_t DETERMINISTIC_IDX = 2;
 
 void TilingCtxHolder::BuildTilingCtx()
 {
@@ -117,7 +118,7 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
 
     size_t opInputNum = kernelCtx->inputNum_;
     size_t opOutputNum = kernelCtx->outputNum_;
-    // + 4 for tiling compile info parsed struct,platform,tilingfunc,deterministic
+    // + 5 for tiling compile info parsed struct,platform,tilingfunc,deterministic,deterministicLevel
     size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
     tilingOutput_.inputNum_ = opInputNum;
     tilingOutput_.outputNum_ = opOutputNum;
@@ -136,16 +137,19 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = tilingParseCtx->GetCompiledInfoStruct();
     tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = &platformInfoValue_;
     tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - 1] = tilingParseCtx->GetDeterministic();
+    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = tilingParseCtx->GetDeterministic();
+    tilingCtx_->values[tilingInputNum - 1] = tilingParseCtx->GetDeterministicLevel();
     for (size_t i = 0; i < tilingOutputNum_; i++) {
         tilingCtx_->values[tilingInputNum + i] = &tilingCtxValue_[i];
     }
     tilingCtx_->output_start = tilingCtx_->values + tilingCtx_->input_size;
 
-    OP_LOGI("Update op tiling ctx. input[%zu], output[%zu], compiled Info %p, deterministic %d, tilingDataWrap: %p, "
-        "coreNum: %u",
+    OP_LOGI("Update op tiling ctx. input[%zu], output[%zu], compiled Info %p, deterministic %d, deterministicLevel %d, "
+        "tilingDataWrap: %p, coreNum: %u",
         opInputNum, opOutputNum, tilingParseCtx->GetCompiledInfoStruct(),
-        *reinterpret_cast<int32_t *>(tilingCtx_->values[tilingInputNum - 1]->data.inplace), tilingData_, coreNum);
+        *reinterpret_cast<int32_t *>(tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX]->data.inplace),
+        *reinterpret_cast<int32_t *>(tilingCtx_->values[tilingInputNum - 1]->data.inplace),
+        tilingData_, coreNum);
     return ACLNN_SUCCESS;
 }
 
@@ -179,6 +183,7 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = nullptr;
     tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = nullptr;
     tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
+    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = nullptr;
     tilingCtx_->values[tilingInputNum - 1] = nullptr;
     for (size_t i = 0; i < tilingOutputNum_; i++) {
         tilingCtx_->values[tilingInputNum + i] = &tilingCtxValue_[i];
