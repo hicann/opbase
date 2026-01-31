@@ -635,12 +635,14 @@ static void TilingCtxDeterministicLevelTest()
     EXPECT_LE(deterministicLevelVal, 2);
 
     // 验证 deterministicLevel 的逻辑正确性
-    // Level 0: deterministic=0
+    // Level 0: deterministic=0 (consistency=0 或 consistency=1)
     // Level 1: deterministic=1, consistency=0
     // Level 2: deterministic=1, consistency=1
     if (deterministicVal == 0) {
+        // deterministic=0 时，无论 consistency 值如何，level 都为 0
         EXPECT_EQ(deterministicLevelVal, 0);
     } else {
+        // deterministic=1 时，根据 consistency 值决定 level 是 1 或 2
         EXPECT_GE(deterministicLevelVal, 1);
         EXPECT_LE(deterministicLevelVal, 2);
     }
@@ -773,13 +775,15 @@ static void TilingCtxDeterministicLevelNullTest()
     size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
     size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
     constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t TILING_PLATFORM_IDX = 4;
+    constexpr size_t TILING_FUNC_IDX = 3;
     constexpr size_t DETERMINISTIC_IDX = 2;
     size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
 
     // 验证所有额外参数都被设置为 nullptr
     EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM], nullptr);  // CompiledInfoStruct
-    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 4], nullptr);  // PlatformInfo
-    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 3], nullptr);  // TilingFunc
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX], nullptr);  // PlatformInfo
+    EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX], nullptr);  // TilingFunc
     EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX], nullptr);  // Deterministic
     EXPECT_EQ(op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - 1], nullptr);  // DeterministicLevel
 

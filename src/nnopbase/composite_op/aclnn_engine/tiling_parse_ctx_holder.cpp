@@ -231,14 +231,10 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
         OP_CHECK_NO_RETURN(retRts == ACL_SUCCESS, OP_LOGD("Can not get system param consistency, ret = %d.", retRts));
     });
 
-    if (!GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ && consistency == 1) {
-        OP_LOGE(ACLNN_ERR_INNER, "Cannot support deterministic=0 and consistency=1");
-        return ACLNN_ERR_INNER;
-    }
-
     /**
      * deterministic level:
      * 0: deterministic:0, strong consistency:0
+     * 0: deterministic:0, strong consistency:1
      * 1: deterministic:1, strong consistency:0
      * 2: deterministic:1, strong consistency:1
      */
@@ -248,7 +244,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     }
     int32_t *deterministicLevelDataInplace = reinterpret_cast<int32_t *>(DeterministicLevel_.data.inplace);
     *deterministicLevelDataInplace = deterministicLevel;
-    OP_LOGD("Get deterministic level success, level = %d", deterministicLevel);
+    OP_LOGD("Get deterministic level success, level = %d, strong consistency = %lld", deterministicLevel, consistency);
 
     OP_CHECK(tilingFuncs->tiling_parse != nullptr,
         OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
