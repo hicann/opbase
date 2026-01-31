@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <complex>
+#include <limits>
 
 namespace Ops {
 namespace Base {

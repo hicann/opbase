@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <complex>
+#include <limits>
 
 #include "opdev/fp16_t.h"
 
