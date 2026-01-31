@@ -153,7 +153,7 @@ add_executable(nnopbase_utest
 
 target_compile_definitions(nnopbase_utest PRIVATE RUN_TEST TLS_GUARDIAN_ __LLT__)
 
-target_include_directories(nnopbase_utest PRIVATE
+target_include_directories(nnopbase_utest BEFORE PRIVATE
     ${NNOPBASE_TEST_HEADER_FILES}
 )
 

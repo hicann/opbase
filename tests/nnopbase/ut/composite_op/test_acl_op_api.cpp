@@ -9,6 +9,7 @@
  */
  
 #include "aclnn/aclnn_base.h"
+#include "aclnn/acl_meta.h"
 #include "gtest/gtest.h"
 #include <memory>
 #include <vector>
@@ -23,6 +24,10 @@
 
 using namespace std;
 using namespace op;
+
+#define INPUT(x, y, z) aclTensor(x, y, z)
+#define INIT_ACL_TENSOR_ARRAY(tensors, ...)  aclTensor tensors[] = {__VA_ARGS__}
+
 class AclOpApiTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -621,4 +626,20 @@ TEST_F(AclOpApiTest, RepeatRunWithCacheWithDFX)
     op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 0;
     op::internal::GetThreadLocalContext().cacheHasFull_ = oriCacheHasFull;
     op::internal::GetThreadLocalContext().cachedStorageList_.clear();
+}
+
+TEST_F(AclOpApiTest, DumpOpTensors)
+{
+    aclrtStream stream = (aclrtStream)0x1234;
+    aclnnStatus ret = aclDumpOpTensors(nullptr, nullptr, nullptr, 0, 0, nullptr);
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
+    ret = aclDumpOpTensors("opType", nullptr, nullptr, 0, 0, nullptr);
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
+    ret = aclDumpOpTensors("opType", "opName", nullptr, 0, 0, stream);
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
+    INIT_ACL_TENSOR_ARRAY(tensors, INPUT(op::DataType::DT_FLOAT, op::Format::FORMAT_NHWC, op::Format::FORMAT_ND),
+                                   INPUT(op::DataType::DT_FLOAT, op::Format::FORMAT_NHWC, op::Format::FORMAT_ND));
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
+    ret = aclDumpOpTensors("opType", "opName", tensors, 1, 1, stream);
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
 }

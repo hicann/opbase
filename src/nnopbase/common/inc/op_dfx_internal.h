@@ -166,7 +166,7 @@ void PrepareTensorData(const FVector<const aclTensor *> &tensors,
                        uint32_t tensorNum,
                        uint32_t baseIndex);
 
-void PrepareL2DumpTensor(std::vector<Adx::TensorInfo> &dumpTensors,
+void PrepareL2DumpTensor(std::vector<Adx::TensorInfoV2> &dumpTensors,
                          const std::vector<const aclTensor *> &aclTensors,
                          OpIOType ioType);
 

@@ -132,6 +132,22 @@ ACL_FUNC_VISIBILITY aclnnStatus aclSetDynamicTensorAddr(aclOpExecutor *executor,
                                                         aclTensorList *tensors, void *addr);
 ACL_FUNC_VISIBILITY aclnnStatus aclSetRawTensorAddr(aclTensor *tensor, void *addr);
 ACL_FUNC_VISIBILITY aclnnStatus aclGetRawTensorAddr(const aclTensor *tensor, void **addr);
+/**
+ * @ingroup AscendCL Dump
+ * @brief Custom operator dump the input/output data for accuracy comparison
+ * @attention Opened for custom operator, not recommended for internal(official compatibility time: 2027/01/30)
+ * @param [in] opType: Operator type
+ * @param [in] opName: Operator name
+ * @param [in] tensors: aclTensor array(input tensor first, output tensor last)
+ * @param [in] inputTensorNum: Input tensor number in aclTensor array
+ * @param [in] outputTensorNum: Output tensor number in aclTensor array
+ * @param [in] stream: Stream pointer
+ * @retval 0: success, other value: failure
+ * @since Created on 2026/01/30
+ */
+ACL_FUNC_VISIBILITY aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, const aclTensor *tensors,
+                                                 size_t inputTensorNum, size_t outputTensorNum, aclrtStream stream);
+
 #ifdef __cplusplus
 }
 #endif
