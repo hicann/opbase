@@ -144,7 +144,8 @@ static map<string, string> socOpMap = {
     {"Ascend310B1", "ascend310b/"},
     {"Ascend310B4", "ascend310b/"},
     {"Ascend610Lite", "ascend610lite/"},
-    {"KirinX90", "kirinx90/"}
+    {"KirinX90", "kirinx90/"},
+    {"Kirin9030", "kirin9030/"}
 };
 
 const std::string &OpKernelLib::GetSocPath()
@@ -152,6 +153,7 @@ const std::string &OpKernelLib::GetSocPath()
     if (initFlag_ && !socPath_.empty()) {
         return socPath_;
     }
+
     auto soc = aclrtGetSocName();
     OP_LOGI("aclrtGetSocName %s", soc);
     const string &devtype = string(soc);

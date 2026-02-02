@@ -239,7 +239,9 @@ void PlatformInfoImpl::InitSocVersion()
             {"Ascend310B", SocVersion::ASCEND310B},
             {"Ascend310C", SocVersion::ASCEND310C},
             {"Ascend310P", SocVersion::ASCEND310P},
-            {"Ascend610Lite", SocVersion::ASCEND610LITE}};
+            {"Ascend610Lite", SocVersion::ASCEND610LITE},
+            {"KirinX90", SocVersion::KIRINX90},
+            {"Kirin9030", SocVersion::KIRIN9030}};
         auto it = convertMap.find(socVersionStr);
         if (it != convertMap.end()) {
             socVersion_ = it->second;
@@ -442,6 +444,8 @@ ge::AscendString ToString(SocVersion socVersion)
         {SocVersion::ASCEND310C, "Ascend310C"},             // SocVersion::ASCEND310C
         {SocVersion::ASCEND310P, "Ascend310P"},             // SocVersion::ASCEND310P
         {SocVersion::ASCEND610LITE, "Ascend610Lite"},       // SocVersion::ASCEND610LITE
+        {SocVersion::KIRINX90, "KirinX90"},                 // SocVersion::KIRINX90
+        {SocVersion::KIRIN9030, "Kirin9030"},               // SocVersion::KIRIN9030
         {SocVersion::RESERVED_VERSION, "UnknownSocVersion"} // SocVersion::RESERVED_VERSION
     };
     static const std::string reserved("UnknownSocVersion");
