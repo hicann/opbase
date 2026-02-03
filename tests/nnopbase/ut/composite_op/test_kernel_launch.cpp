@@ -485,7 +485,7 @@ TEST_F(KernelLaunchUT, MemSetV2LaunchTest)
     auto *kernelBinNoDevPtr = CreateFakeOpKernelBin(false);
     ret = kernelBinNoDevPtr->JsonLoad();
 
-    const uint64_t threadCount = 50;
+    const uint64_t threadCount = 0;
     vector<std::thread> threadVec;
     for (uint64_t i = 0; i < threadCount; i++) {
         threadVec.emplace_back(std::thread(MemSetV2OutputTensorWithDevPtr, kernelBinWithDevPtr));

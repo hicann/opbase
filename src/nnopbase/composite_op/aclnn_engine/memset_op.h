@@ -25,7 +25,8 @@ class OpKernelBin;
 
 enum class MemsetVersion : uint8_t {
     MEMSET_V1 = 0,
-    MEMSET_V2 = 1
+    MEMSET_V1_ASCENDC,
+    MEMSET_V2
 };
 
 const std::string MEMSET_V1_NAME = "MemSet";

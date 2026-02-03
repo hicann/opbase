@@ -108,9 +108,9 @@ public:
             return nullptr;
         }
 
-        if (memsetVersion == MemsetVersion::MEMSET_V2) {
+        if (memsetVersion == MemsetVersion::MEMSET_V1_ASCENDC || memsetVersion == MemsetVersion::MEMSET_V2) {
             OP_CHECK(bins_.begin()->second->JsonLoad() == ACLNN_SUCCESS,
-                OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "memset_v2 json load failed."),
+                OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "json load failed."),
                 return nullptr);
             return bins_.begin()->second.get();
         }

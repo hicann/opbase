@@ -573,6 +573,43 @@ aclnnStatus OpKernelBin::InitTilingParseCtx()
     return ret;
 }
 
+static void GetParamtersValue(const nlohmann::json &elem, op::DataType &dtype, int64_t &valuei, float32_t &valuef)
+{
+    if (elem["dtype"] == "float16") {
+        dtype = op::DataType::DT_FLOAT16;
+        valuef = elem["init_value"].get<float32_t>();
+    } else if (elem["dtype"] == "float32") {
+        dtype = op::DataType::DT_FLOAT;
+        valuef = elem["init_value"].get<float32_t>();
+    } else if (elem["dtype"] == "int32") {
+        dtype = op::DataType::DT_INT32;
+        valuei = static_cast<int64_t>(elem["init_value"].get<int32_t>());
+    } else if (elem["dtype"] == "uint32") {
+        dtype = op::DataType::DT_UINT32;
+        valuei = static_cast<int64_t>(elem["init_value"].get<uint32_t>());
+    } else if (elem["dtype"] == "int64") {
+        dtype = op::DataType::DT_INT64;
+        valuei = elem["init_value"].get<int64_t>();
+    } else if (elem["dtype"] == "uint64") {
+        dtype = op::DataType::DT_UINT64;
+        valuei = static_cast<int64_t>(elem["init_value"].get<uint64_t>());
+    } else if (elem["dtype"] == "int16") {
+        dtype = op::DataType::DT_INT16;
+        valuei = static_cast<int64_t>(elem["init_value"].get<int16_t>());
+    } else if (elem["dtype"] == "uint16") {
+        dtype = op::DataType::DT_UINT16;
+        valuei = static_cast<int64_t>(elem["init_value"].get<uint16_t>());
+    } else if (elem["dtype"] == "int8") {
+        dtype = op::DataType::DT_INT8;
+        valuei = static_cast<int64_t>(elem["init_value"].get<int8_t>());
+    } else if (elem["dtype"] == "uint8") {
+        dtype = op::DataType::DT_UINT8;
+        valuei = static_cast<int64_t>(elem["init_value"].get<uint8_t>());
+    } else {
+        OP_LOGW("unknown dtype: %s", elem["dtype"].get<std::string>().c_str());
+    }
+}
+
 void OpKernelBin::SetMemSetFlagFromJson()
 {
     auto &opJson = binJson_.GetVar();
@@ -593,21 +630,7 @@ void OpKernelBin::SetMemSetFlagFromJson()
                 OP_LOGW("not contain dtype, index: %zu", i);
                 continue;
             }
-            if (elem["dtype"] == "float16") {
-                dtype = op::DataType::DT_FLOAT16;
-                valuef = elem["init_value"].get<float32_t>();
-            } else if (elem["dtype"] == "float32") {
-                dtype = op::DataType::DT_FLOAT;
-                valuef = elem["init_value"].get<float32_t>();
-            } else if (elem["dtype"] == "int32") {
-                dtype = op::DataType::DT_INT32;
-                valuei = elem["init_value"].get<int32_t>();
-            } else if (elem["dtype"] == "uint32") {
-                dtype = op::DataType::DT_UINT32;
-                valuei = static_cast<int64_t>(elem["init_value"].get<uint32_t>());
-            } else {
-                OP_LOGW("unknown dtype: %s", elem["dtype"].get<std::string>().c_str());
-            }
+            GetParamtersValue(elem, dtype, valuei, valuef);
 
             memSetValue_.emplace_back(MemSetTensorInfo{
                 i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
