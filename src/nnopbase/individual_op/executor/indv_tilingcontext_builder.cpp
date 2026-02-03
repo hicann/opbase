@@ -313,7 +313,7 @@ aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueI
 
     nodeExt->inputTdStart = op::internal::PtrCastTo<NnopbaseCompileTimeTensorDesc>(nodeExt->instStart + node->irInputsNum);
     nodeExt->outputTdStart = nodeExt->inputTdStart + node->inputsNum;
-    nodeExt->attrStart = (NnopbaseRuntimeAttrsDef *)(nodeExt->outputTdStart + node->outputsNum);
+    nodeExt->attrStart = op::internal::PtrCastTo<NnopbaseRuntimeAttrsDef>(nodeExt->outputTdStart + node->outputsNum);
     nodeExt->outputInstStart = op::internal::PtrCastTo<NnopbaseAnchorInstanceInfo>(
         op::internal::PtrCastTo<NnopbaseUChar>(nodeExt->attrStart) + nodeExt->node->attrSize);
 

@@ -756,7 +756,7 @@ aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar *const 
             case NNOPBASE_COMPILE_ARGS_INDEX: {
                 if (strKey[i] != '/') {
                     if ((strKey[i] == '0') || (strKey[i] == '1') || (strKey[i] == '2')) {
-                        int32_t offsetNumber = strKey[i] - '0';
+                        uint64_t offsetNumber = static_cast<uint64_t>(strKey[i]) -  static_cast<uint64_t>('0');
                         key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(offsetNumber));
                     }
                 } else {
@@ -779,8 +779,7 @@ aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar *const 
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const strKey,
-                                                   NnopbaseUChar *const binKey, uint32_t *const size)
+aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const strKey, NnopbaseUChar *const binKey, uint32_t *const size)
 {
     const size_t len = strlen(strKey);
     OP_LOGI("Start convert dynamic verbose key %s, size=%zu.", strKey, len);
@@ -802,7 +801,7 @@ aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const str
             case NNOPBASE_COMPILE_ARGS_INDEX: {
                 if (strKey[i] != '/') {
                     if ((strKey[i] == '0') || (strKey[i] == '1') || (strKey[i] == '2')) {
-                        key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(strKey[i] - '0'));
+                        key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('0')));
                     }
                 } else {
                     index++;
@@ -814,7 +813,7 @@ aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const str
                     isReplayStaticKey = true;
                 }
                 if ((strKey[i] >= '0') && (strKey[i] <= '9')) {
-                    type = type * 10U + strKey[i] - '0'; // 10 转换规则
+                    type = type * 10U + (static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('0')); // 10 转换规则
                 } else {
                     key = NnopbaseAppend1Byte(key, type);
                     type = 0U;
@@ -841,10 +840,10 @@ NnopbaseUChar *NnopbaseBeyond8BtyeCopy(const int32_t start, const int32_t end, c
     uint32_t j = 0U;
     for (int32_t i = end; i >= start; i--) {
         if ((strKey[i] >= '0') && (strKey[i] <= '9')) {
-            type = type | ((static_cast<uint64_t>(strKey[i] - '0')) << ((4U * j))); // 4 is 4bit
+            type = type | ((static_cast<uint64_t>(static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('0'))) << ((4U * j))); // 4 is 4bit
             bitNum++;
         } else if ((strKey[i] >= 'a') && (strKey[i] <= 'f')) {
-            type = type | (static_cast<uint64_t>(strKey[i] - 'a' + 10) << ((4U * j))); // 4 is 4bit 10 is decimal
+            type = type | (static_cast<uint64_t>(static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('a') + 10) << ((4U * j))); // 4 is 4bit 10 is decimal
             bitNum++;
         }
         j++;
@@ -886,7 +885,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
             case NNOPBASE_COMPILE_ARGS_INDEX: {
                 if (strKey[i] != '/') {
                     if ((strKey[i] == '0') || (strKey[i] == '1') || (strKey[i] == '2')) {
-                        key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(strKey[i] - '0'));
+                        key = NnopbaseAppend8Byte(key, (static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('0')));
                     }
                 } else {
                     index++;
@@ -899,12 +898,12 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
                     break;
                 }
                 if ((strKey[i] >= '0') && (strKey[i] <= '9')) {
-                    type = (type << 4U) | static_cast<uint64_t>(strKey[i] - '0'); // 4 is 4bit
+                    type = (type << 4U) | (static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('0')); // 4 is 4bit
                     bitNum++;
                     isAppend = true;
                 } else if ((strKey[i] >= 'a') && (strKey[i] <= 'f')) {
                     // 4 is 4bit, 10 is decimal conversion
-                    type = (type << 4U) | static_cast<uint64_t>((strKey[i] - 'a') + 10U);
+                    type = (type << 4U) | ((static_cast<uint64_t>(strKey[i]) - static_cast<uint64_t>('a')) + 10U);
                     bitNum++;
                     isAppend = true;
                 } else {

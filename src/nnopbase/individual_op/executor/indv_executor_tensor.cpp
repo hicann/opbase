@@ -30,7 +30,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
             }
         } else {
             for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
-                op::internal::PtrCastTo<T>(scalarValue.data())[i] = op::internal::PtrCastTo<float>(tensor->MutableTensorData().GetAddr())[i];
+                op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(op::internal::PtrCastTo<float>(tensor->MutableTensorData().GetAddr())[i]);
             }
         }
         tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
@@ -89,7 +89,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
     }
 
     for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
-        op::internal::PtrCastTo<T>(scalarValue.data())[i] = op::internal::PtrCastTo<S>(tensor->MutableTensorData().GetAddr())[i];
+        op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(op::internal::PtrCastTo<S>(tensor->MutableTensorData().GetAddr())[i]);
     }
 
     tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);

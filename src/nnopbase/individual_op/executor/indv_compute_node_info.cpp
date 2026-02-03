@@ -48,7 +48,6 @@ aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt *nodeExt, Nn
     return OK;
 }
 
-
 aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor *executor)
 {
     NnopbaseComputeNodeInfoExt *nodeExt = &executor->contextExt.nodeExt;
@@ -106,8 +105,6 @@ aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor *executor)
     return OK;
 }
 
-
-
 aclnnStatus NnopbaseComputeNodeInfoInit(NnopbaseComputeNodeInfoExt *nodeExt)
 {
     nodeExt->node = (NnopbaseComputeNodeInfo *)malloc(sizeof(NnopbaseComputeNodeInfo) + NNOPBASE_COMPUTE_NODE_BUF_LEN);
@@ -140,7 +137,6 @@ aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor *executor)
     context->compute_node_info = executor->contextExt.nodeExt.node;
     return OK;
 }
-
 
 #ifdef __cplusplus
 }

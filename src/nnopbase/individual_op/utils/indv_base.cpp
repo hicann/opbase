@@ -60,7 +60,7 @@ template<typename T>
 std::string ConvertToStr(const GertTensor &tensor)
 {
     const ge::DataType dataType = tensor.GetDataType();
-    const size_t len = tensor.GetStorageShape().GetShapeSize();
+    const size_t len = static_cast<size_t>(tensor.GetStorageShape().GetShapeSize());
     const int32_t dtypeSize = GetSizeByDataType(dataType);
     const void *addr = tensor.GetAddr();
     std::string res;
