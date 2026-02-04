@@ -381,7 +381,7 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     launchCfg.binHandle = (void *)0x12341234;
     launchCfg.funcHandle = (void *)0x12345678;
     launchCfg.tilingKey = 1234;
-    launchCfg.blockDim = 32;
+    launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 0;
@@ -393,7 +393,7 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     EXPECT_EQ(cacheCtx->launchCfg_.binHandle, launchCfg.binHandle);
     EXPECT_EQ(cacheCtx->launchCfg_.funcHandle, launchCfg.funcHandle);
     EXPECT_EQ(cacheCtx->launchCfg_.tilingKey, launchCfg.tilingKey);
-    EXPECT_EQ(cacheCtx->launchCfg_.blockDim, launchCfg.blockDim);
+    EXPECT_EQ(cacheCtx->launchCfg_.numBlocks, launchCfg.numBlocks);
     EXPECT_EQ(cacheCtx->launchCfg_.schemMode, launchCfg.schemMode);
     EXPECT_EQ(cacheCtx->launchCfg_.localMemorySize, launchCfg.localMemorySize);
     EXPECT_EQ(cacheCtx->launchCfg_.blockDimOffset, launchCfg.blockDimOffset);
@@ -1118,7 +1118,7 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
 
     op::internal::KernelLaunchConfig launchCfg;
     launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.blockDim = 32;
+    launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 0;

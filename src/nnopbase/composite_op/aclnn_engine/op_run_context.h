@@ -223,8 +223,8 @@ public:
                 OP_LOGE(ACLNN_ERR_INNER, "failed to UpdateComputeNodeInfo"),
                 return nullptr);
         auto ret = const_cast<TilingCtxOutput *>(opRunCtx_.tilingCtx_.GetTilingResult());
-        *ret->blockDim_ = staticBlockDim;
-        OP_LOGD("Block dim is %ld", *ret->blockDim_);
+        *ret->numBlocks_ = staticBlockDim;
+        OP_LOGD("Block dim is %ld", *ret->numBlocks_);
         *ret->atomicCleanFlag_ = atomicCleanFlag;
         ret->workspaceSize_->SetSize(staticWorkspaceSize.size());
         for (size_t i = 0; i < staticWorkspaceSize.size(); ++i) {

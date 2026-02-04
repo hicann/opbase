@@ -170,7 +170,7 @@ void ElewiseBaseTiling::AdaptEleBaseTilingData16B(const ElewiseTilingData& elewi
     eleBaseTilingData16B.ubFormer = elewiseTilingData.ubFormer;
     eleBaseTilingData16B.coreNum = elewiseTilingData.coreNum;
 
-    blockDim = elewiseTilingData.blockNum;
+    numBlocks = elewiseTilingData.blockNum;
 }
 
 ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData24B(const ElewiseTilingData& elewiseTilingData) {
@@ -185,7 +185,7 @@ ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData24B(const ElewiseTiling
     Ele24BTilingData->ubFormer = elewiseTilingData.ubFormer;
     Ele24BTilingData->coreNum = elewiseTilingData.coreNum;
 
-    blockDim = elewiseTilingData.blockNum;
+    numBlocks = elewiseTilingData.blockNum;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -201,7 +201,7 @@ ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData32B(const ElewiseTiling
     Ele32BTilingData->ubFormer = elewiseTilingData.ubFormer;
     Ele32BTilingData->coreNum = elewiseTilingData.coreNum;
 
-    blockDim = elewiseTilingData.blockNum;
+    numBlocks = elewiseTilingData.blockNum;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -210,7 +210,7 @@ int64_t ElewiseBaseTiling::GetScheMode() {
 }
 
 int64_t ElewiseBaseTiling::GetBlockDim() {
-    return blockDim;
+    return numBlocks;
 }
 
 } // namespace Base

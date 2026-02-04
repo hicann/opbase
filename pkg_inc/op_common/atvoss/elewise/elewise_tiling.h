@@ -96,6 +96,7 @@ class OPBASE_API ElewiseBaseTiling {
     template <typename T>
     void SetScalar(T value);
     int64_t GetBlockDim();
+    int64_t GetNumBlocks();
 
   private:
     int64_t GetScheMode();
@@ -111,7 +112,7 @@ class OPBASE_API ElewiseBaseTiling {
     char scalarData[ELEWISE_MAX_SCALAR_BYTES] = {0};
     gert::TilingContext* context_{nullptr};
     uint32_t offset = 0;
-    int64_t blockDim;
+    int64_t numBlocks;
     uint64_t coreNum{0};
     uint64_t ubSize{0};
     gert::Shape shape;

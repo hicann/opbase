@@ -970,23 +970,23 @@ template <class Pattern>
 void ReduceOpTiling::SetTilingData(const uint64_t* shape)
 {
     uint64_t perCoreNum = CeilDiv(unitA_.outer * unitR_.outer, compileInfo_->vectorCoreNum);
-    uint64_t blockDim = CeilDiv(unitA_.outer * unitR_.outer, perCoreNum);
-    if (unitA_.outer < blockDim) {
-        auto tmpBlockDim = CeilAlign(blockDim, unitA_.outer);
+    uint64_t numBlocks = CeilDiv(unitA_.outer * unitR_.outer, perCoreNum);
+    if (unitA_.outer < numBlocks) {
+        auto tmpBlockDim = CeilAlign(numBlocks, unitA_.outer);
         if (tmpBlockDim <= compileInfo_->vectorCoreNum) {
-            blockDim = tmpBlockDim;
+            numBlocks = tmpBlockDim;
         } else {
-            blockDim = FloorAlign(blockDim, unitA_.outer);
+            numBlocks = FloorAlign(numBlocks, unitA_.outer);
         }
     }
 
     tilingData_->ubFactorA = unitA_.step;
-    uint64_t factorACntPerCore = CeilDiv(unitA_.outer, blockDim);
+    uint64_t factorACntPerCore = CeilDiv(unitA_.outer, numBlocks);
     tilingData_->factorACntPerCore = factorACntPerCore;
     tilingData_->factorATotalCnt = unitA_.outer;
 
     tilingData_->ubFactorR = unitR_.step;
-    uint64_t factorRCntPerCore = CeilDiv(unitR_.outer, CeilDiv(blockDim, unitA_.outer));
+    uint64_t factorRCntPerCore = CeilDiv(unitR_.outer, CeilDiv(numBlocks, unitA_.outer));
     tilingData_->factorRCntPerCore = factorRCntPerCore;
     tilingData_->factorRTotalCnt = unitR_.outer;
     tilingData_->groupR = CeilDiv(unitR_.outer, factorRCntPerCore);

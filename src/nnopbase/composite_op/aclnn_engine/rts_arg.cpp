@@ -255,9 +255,9 @@ void RtsArg::ReportExceptionDumpInfo() const
 
 aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig &launchCfg)
 {
-    OP_LOGI("Launch kernel engine type: %d, blockDim: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
+    OP_LOGI("Launch kernel engine type: %d, numBlocks: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
         "funcHandle: %p, print arg result: %d",
-        static_cast<int>(launchCfg.engineType), launchCfg.blockDim, launchCfg.schemMode, launchCfg.blockDimOffset,
+        static_cast<int>(launchCfg.engineType), launchCfg.numBlocks, launchCfg.schemMode, launchCfg.blockDimOffset,
         launchCfg.localMemorySize, launchCfg.funcHandle, PrintRtArg(rtArg_));
 
     std::vector<aclrtLaunchKernelAttr> kernelAttrs;
@@ -286,7 +286,7 @@ aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig &l
     aclrtLaunchCfg.attrs = kernelAttrs.data();
     aclrtLaunchCfg.numAttrs = kernelAttrs.size();
 
-    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle, launchCfg.blockDim, stream, &aclrtLaunchCfg,
+    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle, launchCfg.numBlocks, stream, &aclrtLaunchCfg,
         rtArg_.args, rtArg_.argsSize, rtArg_.placeHolderInfoPtr, rtArg_.placeHolderInfoNum);
     OP_CHECK(
         rc != ACL_ERROR_RT_INVALID_HANDLE,
@@ -784,9 +784,9 @@ aclnnStatus LaunchArgCache::UpdateFunctionHandle(KernelLaunchConfig& launchCfg)
 
 aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& rtArg, KernelLaunchConfig& launchCfg)
 {
-    OP_LOGD("Launch kernel engine type: %d, blockDim: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
+    OP_LOGD("Launch kernel engine type: %d, numBlocks: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
         "funcHandle: %p",
-        static_cast<int>(launchCfg.engineType), launchCfg.blockDim, launchCfg.schemMode, launchCfg.blockDimOffset,
+        static_cast<int>(launchCfg.engineType), launchCfg.numBlocks, launchCfg.schemMode, launchCfg.blockDimOffset,
         launchCfg.localMemorySize, launchCfg.funcHandle);
 
     std::vector<aclrtLaunchKernelAttr> kernelAttrs;
@@ -810,7 +810,7 @@ aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& 
     aclrtLaunchCfg.attrs = kernelAttrs.data();
     aclrtLaunchCfg.numAttrs = kernelAttrs.size();
 
-    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle, launchCfg.blockDim, stream, &aclrtLaunchCfg,
+    aclError rc = aclrtLaunchKernelWithHostArgs(launchCfg.funcHandle, launchCfg.numBlocks, stream, &aclrtLaunchCfg,
         rtArg.args, rtArg.argsSize, rtArg.placeHolderInfoPtr, rtArg.placeHolderInfoNum);
     if (rc == ACL_ERROR_RT_INVALID_HANDLE) {
         OP_LOGW("aclrtLaunchKernelWithHostArgs return %d, need to update function handle", ACL_ERROR_RT_INVALID_HANDLE);
@@ -818,7 +818,7 @@ aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& 
             UpdateFunctionHandle(launchCfg) == ACL_SUCCESS,
             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Update function handle failed"), return ACLNN_ERR_RUNTIME_ERROR);
         rc = aclrtLaunchKernelWithHostArgs(
-            launchCfg.funcHandle, launchCfg.blockDim, stream, &aclrtLaunchCfg, rtArg.args, rtArg.argsSize,
+            launchCfg.funcHandle, launchCfg.numBlocks, stream, &aclrtLaunchCfg, rtArg.args, rtArg.argsSize,
             rtArg.placeHolderInfoPtr, rtArg.placeHolderInfoNum);
     }
     OP_CHECK(rc == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtLaunchKernelWithHostArgs failed: %d", rc),

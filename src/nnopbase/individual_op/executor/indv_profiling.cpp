@@ -90,7 +90,7 @@ inline void NnopbaseBuildTensorData(const NnopbaseExecutor *const executor, cons
     }
 }
 
-void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t blockDim, uint32_t taskType,
+void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
     aclrtStream stream)
 {
     aclrtStreamAttrValue value = {};
@@ -113,7 +113,7 @@ void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t 
     (void)memset_s(buffer, totalSize, 0, totalSize);
     op::internal::CacheOpInfoBasic *opInfo = static_cast<op::internal::CacheOpInfoBasic*>(buffer);
     opInfo->taskType = taskType;
-    opInfo->blockdim = blockDim;
+    opInfo->numBlocks = numBlocks;
     opInfo->nodeId = executor->itemId;
     opInfo->opType = executor->itemId;
     opInfo->opFlag = 0;
@@ -132,7 +132,7 @@ void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t 
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Report op info cache failed, ret is [%d]", ret);
     }
     OP_LOGD("Report op [%s] info cache, task type[%u], block dim[%u], size[%zu]",
-        executor->opType, taskType, blockDim, totalSize);
+        executor->opType, taskType, numBlocks, totalSize);
     free(buffer);
 }
 

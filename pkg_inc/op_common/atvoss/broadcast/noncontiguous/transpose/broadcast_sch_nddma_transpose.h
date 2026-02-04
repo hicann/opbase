@@ -68,7 +68,7 @@ public:
         RUN_LOG("TilingData ubSplitAxis is %d ", tilingData->ubSplitAxis);
         RUN_LOG("TilingData dimProductBeforeUbInner is %d ", tilingData->dimProductBeforeUbInner);
         RUN_LOG("TilingData elemNum is %d ", this->blockEleNum_);
-        RUN_LOG("TilingData blockDim is %d ", AscendC::GetBlockNum());
+        RUN_LOG("TilingData numBlocks is %d ", AscendC::GetBlockNum());
 
         RUN_LOG("Tiling Data End...");
     }

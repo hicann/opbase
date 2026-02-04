@@ -284,7 +284,7 @@ TEST_F(KernelLaunchUT, RtsArgTest)
 
     op::internal::KernelLaunchConfig launchCfg;
     launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.blockDim = 32;
+    launchCfg.numBlocks =  32;
     launchCfg.schemMode = 1;
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 0;
@@ -323,7 +323,7 @@ TEST_F(KernelLaunchUT, TestWithHandleBlockDimOffset1)
 
     op::internal::KernelLaunchConfig launchCfg;
     launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.blockDim = 32;
+    launchCfg.numBlocks =  32;
     launchCfg.schemMode = 1;
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 10;
@@ -362,7 +362,7 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
 
     op::internal::KernelLaunchConfig launchCfg;
     launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.blockDim = 32;
+    launchCfg.numBlocks =  32;
     launchCfg.schemMode = 1;
     launchCfg.localMemorySize = 0;
     launchCfg.blockDimOffset = 10;

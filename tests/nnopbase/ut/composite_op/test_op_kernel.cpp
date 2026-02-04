@@ -855,7 +855,7 @@ TEST_F(OpKernelUT, OpKernelBinFuncTest)
     auto ret = kernelBin.ParseStaticBlockdim(jsonObj);
     EXPECT_EQ(ret, ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID);
     // no Blockdim
-    jsonObj.erase("blockDim");
+    jsonObj.erase("numBlocks");
     ret = kernelBin.ParseStaticBlockdim(jsonObj);
     EXPECT_EQ(ret, ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID);
 

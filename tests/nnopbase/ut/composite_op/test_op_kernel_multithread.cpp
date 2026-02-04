@@ -411,12 +411,12 @@ static void MultiDoLaunchNormalTest2() {
     tilingDataStruct.data_size_ = tilingDataLen;
     tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
-    int64_t blockDim = 16;
+    int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
     uint32_t localMemorySize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
-    tilingOutput.blockDim_ = &blockDim;
+    tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.localMemorySize_ = &localMemorySize;
@@ -806,12 +806,12 @@ static void MultiDoLaunchNormalTest3() {
     tilingDataStruct.data_size_ = tilingDataLen;
     tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
-    int64_t blockDim = 16;
+    int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
     uint32_t localMemorySize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
-    tilingOutput.blockDim_ = &blockDim;
+    tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.localMemorySize_ = &localMemorySize;
@@ -1210,12 +1210,12 @@ static void MultiDoLaunchNormalTest4() {
     tilingDataStruct.data_size_ = tilingDataLen;
     tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
-    int64_t blockDim = 16;
+    int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
     uint32_t localMemorySize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
-    tilingOutput.blockDim_ = &blockDim;
+    tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.localMemorySize_ = &localMemorySize;
@@ -1624,12 +1624,12 @@ static void MultiDoLaunchAlignTest() {
     tilingDataStruct.data_size_ = tilingDataLen;
     tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
-    int64_t blockDim = 16;
+    int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
     uint32_t localMemorySize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
-    tilingOutput.blockDim_ = &blockDim;
+    tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.localMemorySize_ = &localMemorySize;
@@ -1774,13 +1774,13 @@ static void TestInvalidFunctionHandle() {
     tilingDataStruct.data_size_ = tilingDataLen;
     tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
-    int64_t blockDim = 16;
+    int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
     uint32_t localMemorySize = 888;
 
     TilingCtxOutput tilingOutput;
     tilingOutput.tilingKey_ = &tilingKey;
-    tilingOutput.blockDim_ = &blockDim;
+    tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.localMemorySize_ = &localMemorySize;

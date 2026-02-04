@@ -40,7 +40,7 @@ struct KernelLaunchConfig {
     aclrtFuncHandle funcHandle;
     uint64_t tilingKey;
     const char *kernelNameOfNoFatBin;
-    uint32_t blockDim;
+    uint32_t numBlocks;
     bool isFatBin;
     uint8_t schemMode;
     uint32_t localMemorySize;
@@ -174,12 +174,12 @@ public:
     bool SetRunParam(KernelLaunchConfig &launchCfg, std::string &kernelName)
     {
         launchCfg_ = launchCfg;
-        OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, blockDim: %u, "
+        OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, numBlocks: %u, "
                 "scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, funcHandle: %p, binHandle: %p",
             static_cast<int>(launchCfg_.engineType),
             launchCfg_.isFatBin,
             launchCfg_.tilingKey,
-            launchCfg_.blockDim,
+            launchCfg_.numBlocks,
             launchCfg_.schemMode,
             launchCfg_.blockDimOffset,
             launchCfg_.localMemorySize,
@@ -218,9 +218,9 @@ public:
         return handle_;
     }
 
-    uint32_t GetBlockDim() const
+    uint32_t GetNumBlocks() const
     {
-        return blockDim_;
+        return numBlocks_;
     }
 
     uint32_t GetLocalMemorySize() const
@@ -288,7 +288,7 @@ private:
     KernelLaunchConfig launchCfg_;
 
     RtsApiType rtsType_{0};
-    uint32_t blockDim_{0};
+    uint32_t numBlocks_{0};
     uint64_t tilingKey_{0};
     uint32_t localMemorySize_{0};
 

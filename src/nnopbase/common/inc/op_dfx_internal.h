@@ -32,7 +32,7 @@ void PrepareAdditionInfo(MsprofAdditionalInfo &additionInfo);
 
 struct CacheOpInfoBasic {
     uint32_t taskType;
-    uint32_t blockdim;
+    uint32_t numBlocks;
     uint64_t nodeId;
     uint64_t opType;
     uint64_t attrId{0};
@@ -45,7 +45,7 @@ struct CacheOpInfoBasic {
 void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream &stream);
 void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint64_t &opType, const uint64_t &attrId=0);
 void ReportCacheOpInfoFromCache(
-    const TaskInfo &taskInfo, void *tensorInfoLists, const uint32_t &blockDim, const ProfilingInfoId &profilingInfoId);
+    const TaskInfo &taskInfo, void *tensorInfoLists, const uint32_t &numBlocks, const ProfilingInfoId &profilingInfoId);
 void ReportCacheOpInfoDSA(OpArgList &inputs, OpArgList &outputs, MsprofGeTaskType taskType);
 
 void PrepareTensorInfo(const FVector<const aclTensor *> &tensors,
@@ -80,7 +80,7 @@ void DumpL2(const std::vector<const aclTensor *> &tensors,
 
 void CacheTensorInfo(const FVector<const aclTensor*> &inTensors, const FVector<const aclTensor*> &outTensors);
 
-void CacheDfxInfo(uint32_t blockDim, const ProfilingInfoId &id, const TaskInfo &taskInfo, bool isMemSet);
+void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId &id, const TaskInfo &taskInfo, bool isMemSet);
 
 int32_t RestoreTensorInfo(void *cacheTensorInfoLists,
                           FVector<const aclTensor *> &inTensors,

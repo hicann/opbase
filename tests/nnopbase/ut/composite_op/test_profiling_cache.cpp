@@ -40,7 +40,7 @@ static ProfilingCacheUtProfiler prof;
 namespace op {
 namespace internal {
 void CacheTensorInfo(const FVector<const aclTensor *> &inTensors, const FVector<const aclTensor *> &outTensors);
-void CacheDfxInfo(uint32_t blockDim, const op::internal::ProfilingInfoId &id, const TaskInfo &taskInfo, bool isMemSet);
+void CacheDfxInfo(uint32_t numBlocks, const op::internal::ProfilingInfoId &id, const TaskInfo &taskInfo, bool isMemSet);
 aclnnStatus DoReportAdditionInfo(
     void *infoLists, const TaskInfo &taskInfo, const op::internal::ProfilingInfoId &profilingInfoId);
 }

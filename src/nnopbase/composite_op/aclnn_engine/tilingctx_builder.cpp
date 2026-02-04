@@ -90,7 +90,7 @@ void TilingCtxHolder::BuildTilingCtx()
 
     // tiling_ctx_outputs_[kOutputTilingKey].data.pointer = &tiling_outputs_->tiling_key_;
     tilingOutput_.tilingKey_ = PtrCastTo<uint64_t>(tilingCtxValue_[kOutputTilingKey].data.inplace);
-    tilingOutput_.blockDim_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputBlockDim].data.inplace);
+    tilingOutput_.numBlocks_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputBlockDim].data.inplace);
     tilingOutput_.atomicCleanFlag_ = PtrCastTo<bool>(tilingCtxValue_[kOutputAtomicCleanFlag].data.inplace);
     tilingOutput_.tilingData_ = tilingData_;
     tilingOutput_.workspaceSize_ = PtrCastTo<gert::TypedContinuousVector<size_t>>(workspaceSizeVec_.get());
@@ -107,7 +107,7 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     // Reset tiling data.
     tilingData_->data_size_ = 0;
     *tilingOutput_.atomicCleanFlag_ = false;
-    *tilingOutput_.blockDim_ = 0;
+    *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
     *tilingOutput_.scheduleMode_ = 0;
     *tilingOutput_.localMemorySize_ = 0;
@@ -159,7 +159,7 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     // Reset tiling data.
     tilingData_->data_size_ = 0;
     *tilingOutput_.atomicCleanFlag_ = false;
-    *tilingOutput_.blockDim_ = 0;
+    *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
     *tilingOutput_.scheduleMode_ = 0;
     *tilingOutput_.localMemorySize_ = 0;

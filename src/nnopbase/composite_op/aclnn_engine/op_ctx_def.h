@@ -167,7 +167,7 @@ struct TilingData {
 // Tiling output
 struct TilingCtxOutput {
     uint64_t *tilingKey_;
-    int64_t *blockDim_;
+    int64_t *numBlocks_;
     bool *atomicCleanFlag_;
     TilingData *tilingData_;
     gert::TypedContinuousVector<size_t> *workspaceSize_;

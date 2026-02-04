@@ -1033,7 +1033,12 @@ void OpExecCache::UpdateTensorAddr(void *workspaceAddr, const std::vector<void *
 
 void OpExecCache::SetBlockDim(uint32_t blockDim)
 {
-    blockDim_.push_back(blockDim);
+    numBlocks_.push_back(blockDim);
+}
+
+void OpExecCache::SetNumBlocks(uint32_t numBlocks)
+{
+    numBlocks_.push_back(numBlocks);
 }
 
 void OpExecCache::SetCacheTensorInfo(void *infoLists)
@@ -1153,7 +1158,7 @@ aclnnStatus OpExecCache::DoSummaryProfiling(int index)
 void OpExecCache::RestoreThreadLocal(int index)
 {
     OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
-    tlsData->threadLocalContext.blockDim_ = blockDim_[index];
+    tlsData->threadLocalContext.numBlocks_ = numBlocks_[index];
     tlsData->threadLocalContext.profilingInfoId_ = opExecCacheDfx_->GetProfilingInfoId(index);
 }
 
@@ -1184,7 +1189,7 @@ aclnnStatus OpExecCache::Run(void *workspaceAddr, const aclrtStream stream, cons
             TaskInfo taskInfo = opExecCacheDfx_->GetTaskInfo(index);
             ReportCacheOpInfoFromCache(taskInfo,
                 tensorInfoLists,
-                g_opCacheTlsData.threadLocalContext.blockDim_,
+                g_opCacheTlsData.threadLocalContext.numBlocks_,
                 g_opCacheTlsData.threadLocalContext.profilingInfoId_);
         }
         index++;

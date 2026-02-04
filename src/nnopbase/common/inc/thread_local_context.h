@@ -74,7 +74,7 @@ struct L2IOTensors {
 };
 
 struct ExceptionDumpInfo {
-    std::string blockDim_;
+    std::string numBlocks_;
     std::string devFunc_;
     std::string magic_;
     std::string tilingKey_;
@@ -83,7 +83,7 @@ struct ExceptionDumpInfo {
     uint32_t rtsArgsSize_{0};
     bool IsEmpty() const
     {
-        return (blockDim_ == "" && devFunc_ == "" && magic_ == "" && tilingKey_ == "" && tilingData_ == "");
+        return (numBlocks_ == "" && devFunc_ == "" && magic_ == "" && tilingKey_ == "" && tilingData_ == "");
     };
 };
 
@@ -111,7 +111,7 @@ struct OpThreadLocalContext {
     ExceptionDumpInfo exceptionDumpInfo_;
     uint64_t kernelLauncherStartTime_;
     int32_t poolIndex_;
-    uint32_t blockDim_{0};
+    uint32_t numBlocks_{0};
     std::vector<const aclStorage *> cachedStorageList_;
     size_t cachedStorageListSize_{0};
     std::vector<void *> cachedTensorList_;

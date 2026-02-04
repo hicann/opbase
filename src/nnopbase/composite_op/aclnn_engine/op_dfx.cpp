@@ -354,16 +354,16 @@ void PrepareBasicInfo(MsprofCompactInfo &compactInfo, MsprofGeTaskType taskType,
     compactInfo.data.nodeBasicInfo.opName = summaryId;
     compactInfo.data.nodeBasicInfo.taskType = taskType;
     compactInfo.data.nodeBasicInfo.opType = id;
-    uint32_t blockDim = op::internal::GetThreadLocalContext().blockDim_;
-    OP_LOGI("blockDim is %u before calculation", blockDim);
+    uint32_t numBlocks = op::internal::GetThreadLocalContext().numBlocks_;
+    OP_LOGI("numBlocks is %u before calculation", numBlocks);
     if (taskType == MSPROF_GE_TASK_TYPE_MIX_AIC) {
         constexpr uint32_t constTwo = 2U;
-        blockDim = ((blockDim & 0xFFFFU) | (constTwo << 16U));
+        numBlocks = ((numBlocks & 0xFFFFU) | (constTwo << 16U));
     }
-    OP_LOGI("blockDim is %u after calculation", blockDim);
+    OP_LOGI("numBlocks is %u after calculation", numBlocks);
     (taskType == MSPROF_GE_TASK_TYPE_AI_CPU || taskType == MSPROF_GE_TASK_TYPE_DSA) ?
         compactInfo.data.nodeBasicInfo.blockDim = 0 : \
-                           compactInfo.data.nodeBasicInfo.blockDim = blockDim;
+                           compactInfo.data.nodeBasicInfo.blockDim = numBlocks;
     compactInfo.data.nodeBasicInfo.opFlag = 0;
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
     OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.",
@@ -383,17 +383,17 @@ void PrepareBasicInfo(MsprofCompactInfo &compactInfo, const TaskInfo &taskInfo, 
     compactInfo.data.nodeBasicInfo.opName = summaryId;
     compactInfo.data.nodeBasicInfo.taskType = taskInfo.type;
     compactInfo.data.nodeBasicInfo.opType = id;
-    uint32_t blockDim = op::internal::GetThreadLocalContext().blockDim_;
-    OP_LOGI("blockDim is %u, taskInfo.ration is %u", blockDim, taskInfo.ration);
+    uint32_t numBlocks = op::internal::GetThreadLocalContext().numBlocks_;
+    OP_LOGI("numBlocks is %u, taskInfo.ration is %u", numBlocks, taskInfo.ration);
     if (taskInfo.ration == OP_DFX_TASK_RATION_TWO) {
         constexpr uint32_t constTwo = 2U;
-        blockDim = ((blockDim & 0xFFFFU) | (constTwo << 16U));
+        numBlocks = ((numBlocks & 0xFFFFU) | (constTwo << 16U));
     } else if (taskInfo.ration == 1) {
         constexpr uint32_t constOne = 1U;
-        blockDim = ((blockDim & 0xFFFFU) | (constOne << 16U));
+        numBlocks = ((numBlocks & 0xFFFFU) | (constOne << 16U));
     }
-    OP_LOGI("blockDim is %u after calculation", blockDim);
-    compactInfo.data.nodeBasicInfo.blockDim = blockDim;
+    OP_LOGI("numBlocks is %u after calculation", numBlocks);
+    compactInfo.data.nodeBasicInfo.blockDim = numBlocks;
     compactInfo.data.nodeBasicInfo.opFlag =
         (static_cast<uint32_t>(taskInfo.execMode) & static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ? 1 : 0;
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
@@ -477,15 +477,15 @@ void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint6
         GetThreadLocalContext().logInfo_.l0Name,
         op::OpTypeDict::ToString(opType).GetString());
     cacheOpInfoBasic.opType = GenKernelLauncherId(GetThreadLocalContext().logInfo_.l0Name);
-    uint32_t blockDim = op::internal::GetThreadLocalContext().blockDim_;
-    OP_LOGI("blockDim is %u, taskInfo.ration is %u", blockDim, taskInfo.ration);
+    uint32_t numBlocks = op::internal::GetThreadLocalContext().numBlocks_;
+    OP_LOGI("numBlocks is %u, taskInfo.ration is %u", numBlocks, taskInfo.ration);
     if (taskInfo.ration == OP_DFX_TASK_RATION_TWO) {
-        blockDim = ((blockDim & 0xFFFFU) | (0x20000));
+        numBlocks = ((numBlocks & 0xFFFFU) | (0x20000));
     } else if (taskInfo.ration == 1) {
-        blockDim = ((blockDim & 0xFFFFU) | (0x10000));
+        numBlocks = ((numBlocks & 0xFFFFU) | (0x10000));
     }
-    cacheOpInfoBasic.blockdim = blockDim;
-    OP_LOGI("blockDim is %u after calculation", blockDim);
+    cacheOpInfoBasic.numBlocks = numBlocks;
+    OP_LOGI("numBlocks is %u after calculation", numBlocks);
     cacheOpInfoBasic.opFlag =
         (static_cast<uint32_t>(taskInfo.execMode) & static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ? 1 : 0;
     cacheOpInfoBasic.tensorNum = tensorNum;
@@ -493,12 +493,12 @@ void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint6
         OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
         throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, blockDim %u, opFlag %u, tensorNum %u",
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
         cacheOpInfoBasic.taskType,
         cacheOpInfoBasic.nodeId,
         cacheOpInfoBasic.opType,
         cacheOpInfoBasic.attrId,
-        cacheOpInfoBasic.blockdim,
+        cacheOpInfoBasic.numBlocks,
         cacheOpInfoBasic.opFlag,
         cacheOpInfoBasic.tensorNum);
     ReportCacheOpInfoTensor(dest, destOffset, totalSize, inTensors, MSPROF_GE_TENSOR_TYPE_INPUT);
@@ -522,24 +522,24 @@ void ReportCacheOpInfoDSA(OpArgList &inputs, OpArgList &outputs, MsprofGeTaskTyp
     OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocate failed."), throw std::bad_alloc());
     uint8_t *dest = static_cast<uint8_t *>(infoPtr);
     uint64_t destOffset = 0;
-    // CacheOpInfoBasic: taskType/nodeId/opType/blockdim/opFlag/tensorNum
+    // CacheOpInfoBasic: taskType/nodeId/opType/numBlocks/opFlag/tensorNum
     cacheOpInfoBasic.taskType = static_cast<uint32_t>(taskType);
     cacheOpInfoBasic.nodeId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
         GetThreadLocalContext().logInfo_.l0Name,
         GetThreadLocalContext().logInfo_.l0Name);
     cacheOpInfoBasic.opType = GenKernelLauncherId(GetThreadLocalContext().logInfo_.l0Name);
-    cacheOpInfoBasic.blockdim = 0;
+    cacheOpInfoBasic.numBlocks = 0;
     cacheOpInfoBasic.opFlag = 0;
     cacheOpInfoBasic.tensorNum = tensorNum;
     OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
         OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
         throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI("taskType %u, nodeId %zu, opType %zu, blockDim %u, opFlag %u, tensorNum %u",
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, numBlocks %u, opFlag %u, tensorNum %u",
         cacheOpInfoBasic.taskType,
         cacheOpInfoBasic.nodeId,
         cacheOpInfoBasic.opType,
-        cacheOpInfoBasic.blockdim,
+        cacheOpInfoBasic.numBlocks,
         cacheOpInfoBasic.opFlag,
         cacheOpInfoBasic.tensorNum);
     ReportCacheOpInfoTensor(dest, destOffset, totalSize, inTensors, MSPROF_GE_TENSOR_TYPE_INPUT);
@@ -1146,7 +1146,7 @@ void PrepareExceptionDumpInfo(const std::vector<op::Tensor *> &in, const std::ve
         .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
         .TensorInfo(dumpInTensors)
         .TensorInfo(dumpOutTensors)
-        .AdditionInfo(BLOCK_DIM_STR, exceptionDumpInfo.blockDim_)
+        .AdditionInfo(BLOCK_DIM_STR, exceptionDumpInfo.numBlocks_)
         .AdditionInfo(DEV_FUNC, exceptionDumpInfo.devFunc_)
         .AdditionInfo(TVM_MAGIC, exceptionDumpInfo.magic_)
         .AdditionInfo(TILING_KEY_STR, exceptionDumpInfo.tilingKey_)
@@ -1157,7 +1157,7 @@ void PrepareExceptionDumpInfo(const std::vector<op::Tensor *> &in, const std::ve
         .Build();
     auto res = AdumpAddExceptionOperatorInfoV2(opInfo);
     OP_LOGI("AdumpAddExceptionOperatorInfo block_dim: %s, dev_func: %s, magic: %s, tiling key: %s, tiling data: %s\n",
-            exceptionDumpInfo.blockDim_.c_str(),
+            exceptionDumpInfo.numBlocks_.c_str(),
             exceptionDumpInfo.devFunc_.c_str(),
             exceptionDumpInfo.magic_.c_str(),
             exceptionDumpInfo.tilingKey_.c_str(),
@@ -1240,7 +1240,7 @@ void AddExceptionDumpOperatorInfo(const std::vector<Adx::TensorInfoV2> &dumpInTe
         .TensorInfo(dumpInTensors)
         .TensorInfo(dumpOutTensors)
         .TensorInfo(dumpWorkSpaceTensors)
-        .AdditionInfo(BLOCK_DIM_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.blockDim_)
+        .AdditionInfo(BLOCK_DIM_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.numBlocks_)
         .AdditionInfo(DEV_FUNC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.devFunc_)
         .AdditionInfo(TVM_MAGIC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.magic_)
         .AdditionInfo(TILING_KEY_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingKey_)
@@ -1251,7 +1251,7 @@ void AddExceptionDumpOperatorInfo(const std::vector<Adx::TensorInfoV2> &dumpInTe
         .Build();
     auto res = AdumpAddExceptionOperatorInfoV2(opInfo);
     OP_LOGI("AdumpAddExceptionOperatorInfo block_dim: %s, dev_func: %s, magic: %s, tiling key: %s, tiling data: %s\n",
-            op::internal::GetThreadLocalContext().exceptionDumpInfo_.blockDim_.c_str(),
+            op::internal::GetThreadLocalContext().exceptionDumpInfo_.numBlocks_.c_str(),
             op::internal::GetThreadLocalContext().exceptionDumpInfo_.devFunc_.c_str(),
             op::internal::GetThreadLocalContext().exceptionDumpInfo_.magic_.c_str(),
             op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingKey_.c_str(),

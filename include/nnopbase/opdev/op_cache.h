@@ -183,6 +183,8 @@ public:
 
     void SetBlockDim(uint32_t blockDim);
 
+    void SetNumBlocks(uint32_t numBlocks);
+
     void SetCacheTensorInfo(void *infoLists);
     void *GetCacheTensorInfo(int index);
     void AddTensorRelation(const aclTensor *tensorOut, const aclTensor *tensorMiddle);
@@ -237,7 +239,7 @@ private:
     std::unordered_map<const aclStorage *, const aclStorage *> storageRelation_;
     // dfx data
     std::vector<void *> cacheTensorInfoLists_;
-    std::vector<uint32_t> blockDim_;
+    std::vector<uint32_t> numBlocks_;
     ListHead shrinkList_;
     uint8_t reserved_field_[8]; // Reserved field
 };

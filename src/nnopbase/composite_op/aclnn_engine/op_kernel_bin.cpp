@@ -231,7 +231,7 @@ static void PrintHex(const uint8_t *p, size_t num, std::stringstream &ss)
     }
 }
 
-void OpKernelBin::SetExceptionDumpInfo(uint32_t blockDim, uint64_t tilingKey, void *tilingData, size_t tilingSize)
+void OpKernelBin::SetExceptionDumpInfo(uint32_t numBlocks, uint64_t tilingKey, void *tilingData, size_t tilingSize)
 {
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
 #else
@@ -239,7 +239,7 @@ void OpKernelBin::SetExceptionDumpInfo(uint32_t blockDim, uint64_t tilingKey, vo
         return;
     }
 #endif
-    GetThreadLocalContext().exceptionDumpInfo_.blockDim_ = std::to_string(blockDim);
+    GetThreadLocalContext().exceptionDumpInfo_.numBlocks_ = std::to_string(numBlocks);
     GetThreadLocalContext().exceptionDumpInfo_.tilingKey_ = std::to_string(tilingKey);
     GetThreadLocalContext().exceptionDumpInfo_.tilingData_ = "";
     if (tilingData != nullptr && tilingSize > 0) {

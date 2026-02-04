@@ -66,7 +66,7 @@ public:
         rawTilingDataLen_ = res->tilingData_->data_size_;
 
         tilingKey_ = *(res->tilingKey_);
-        blockDim_ = *(res->blockDim_);
+        numBlocks_ = *(res->numBlocks_);
         atomicCleanFlag_ = *(res->atomicCleanFlag_);
         tilingCond_ = *(res->tilingCond_);
         scheduleMode_ = *(res->scheduleMode_);
@@ -88,7 +88,7 @@ public:
     bool valid_{false};
 
     uint64_t tilingKey_;
-    int64_t blockDim_;
+    int64_t numBlocks_;
     bool atomicCleanFlag_;
     void *rawTilingData_{nullptr};
     size_t rawTilingDataLen_;
@@ -165,7 +165,7 @@ public:
             return nullptr;
         }
         *tilingOutput_.tilingKey_ = res.tilingKey_;
-        *tilingOutput_.blockDim_ = res.blockDim_;
+        *tilingOutput_.numBlocks_ = res.numBlocks_;
         *tilingOutput_.atomicCleanFlag_ = res.atomicCleanFlag_;
         *tilingOutput_.tilingCond_ = res.tilingCond_;
         *tilingOutput_.scheduleMode_ = res.scheduleMode_;

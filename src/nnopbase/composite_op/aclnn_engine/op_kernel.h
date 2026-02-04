@@ -169,7 +169,7 @@ public:
     {
     }
 
-    void SetExceptionDumpInfo(uint32_t blockDim, uint64_t tilingKey, void *tilingData, size_t tilingSize);
+    void SetExceptionDumpInfo(uint32_t numBlocks, uint64_t tilingKey, void *tilingData, size_t tilingSize);
 
     aclnnStatus DoLaunchKernel(RtsArg& rtsArg, aclrtStream stream, KernelLaunchConfig& launchCfg)
     {
@@ -204,7 +204,7 @@ public:
         OP_LOGD("tilingDataWrap %p, tilingData %p, size %zu, capacity %zu", res->tilingData_, res->tilingData_->data_,
                 res->tilingData_->data_size_, res->tilingData_->capacity_);
         uint64_t tilingkey = *(res->tilingKey_);
-        uint32_t blockdim = *(res->blockDim_);
+        uint32_t numBlocks = *(res->numBlocks_);
         try {
             bool hasFftsAddr = ((interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end())) &&
                                 GetCurrentPlatformInfo().GetFftsPlusMode());
@@ -214,9 +214,9 @@ public:
                 return ACLNN_ERR_INNER);
             tensorOffset = rtsArg.GetTensorOffset();
             if (!isMemSet) {
-                SetExceptionDumpInfo(blockdim, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
+                SetExceptionDumpInfo(numBlocks, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
             }
-            GetThreadLocalContext().blockDim_ = blockdim;
+            GetThreadLocalContext().numBlocks_ = numBlocks;
 
             CHECK_RET_CODE(InitFunctionHandle(isFatbin_, tilingkey), "Init function handle failed.");
             KernelLaunchConfig launchCfg;
@@ -226,7 +226,7 @@ public:
                                                funcHandleWithKernelName_[currDevId_].GetVar();
             launchCfg.tilingKey = tilingkey;
             launchCfg.kernelNameOfNoFatBin = kernelNameOfNoFatBin_.c_str();
-            launchCfg.blockDim = blockdim;
+            launchCfg.numBlocks = numBlocks;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.localMemorySize = *(res->localMemorySize_);
             launchCfg.blockDimOffset = 0;
@@ -264,14 +264,14 @@ public:
                         GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
                             GetThreadLocalContext().logInfo_.l0Name,
                             op::OpTypeDict::ToString(opType_).GetString());
-                    CacheDfxInfo(blockdim, GetThreadLocalContext().profilingInfoId_, GetTaskInfo(tilingkey, args), false);
+                    CacheDfxInfo(numBlocks, GetThreadLocalContext().profilingInfoId_, GetTaskInfo(tilingkey, args), false);
                 } else {
                     GetThreadLocalContext().memSetProfilingInfoId_.summaryItemId_ =
                         GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
                             GetThreadLocalContext().logInfo_.l0Name,
                             op::OpTypeDict::ToString(opType_).GetString());
                     CacheDfxInfo(
-                        blockdim, GetThreadLocalContext().memSetProfilingInfoId_, GetTaskInfo(tilingkey, args), true);
+                        numBlocks, GetThreadLocalContext().memSetProfilingInfoId_, GetTaskInfo(tilingkey, args), true);
                 }
             }
 
@@ -417,7 +417,7 @@ public:
         }
         uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
         uint32_t vectorCoreNum = GetThreadLocalContext().opConfigInfo_.aivNum_;
-        uint32_t needCoreNum = *(res->blockDim_);
+        uint32_t needCoreNum = *(res->numBlocks_);
         if ((cubeCoreNum + vectorCoreNum) == 0) {
             OP_LOGW("The number of cubeCore is %u, The number of vectorCore is %u. Calculation failed.",
                 cubeCoreNum,
@@ -433,7 +433,7 @@ public:
     {
         uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
         uint32_t vectorCoreNum = GetThreadLocalContext().opConfigInfo_.aivNum_;
-        uint32_t totalNeedNum = *(res->blockDim_);
+        uint32_t totalNeedNum = *(res->numBlocks_);
 
         if ((cubeCoreNum + vectorCoreNum) == 0) {
             OP_LOGW("The number of cubeCore is %u, The number of vectorCore is %u. Calculation failed.",
@@ -500,7 +500,7 @@ public:
                 return ACLNN_ERR_INNER);
             tensorOffset = rtsArg.GetTensorOffset();
             SetExceptionDumpInfo(blockdimAic, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
-            GetThreadLocalContext().blockDim_ = blockdimAic;
+            GetThreadLocalContext().numBlocks_ = blockdimAic;
 
             ret = aclrtRecordEvent(eventA, stream);
             if (ret != ACL_SUCCESS) {
@@ -517,7 +517,7 @@ public:
             KernelLaunchConfig launchCfg;
             launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar() :
                                                funcHandleWithKernelName_[currDevId_].GetVar();
-            launchCfg.blockDim = blockdimAic;
+            launchCfg.numBlocks = blockdimAic;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.blockDimOffset = 0;
             launchCfg.localMemorySize = 0;
@@ -559,13 +559,13 @@ public:
             OpDfxGuard
                 kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
             SetExceptionDumpInfo(blockdimAiv, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
-            GetThreadLocalContext().blockDim_ = blockdimAiv;
+            GetThreadLocalContext().numBlocks_ = blockdimAiv;
 
             // secondStream kernel launch
             KernelLaunchConfig launchCfg;
             launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
                                                          : funcHandleWithKernelName_[currDevId_].GetVar();
-            launchCfg.blockDim = blockdimAiv;
+            launchCfg.numBlocks = blockdimAiv;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.blockDimOffset = blockdimAic;
             launchCfg.localMemorySize = 0;
@@ -651,10 +651,10 @@ public:
                 }
 
                 auto ws = PtrCastTo<gert::TypedContinuousVector<size_t>>(res->workspaceSize_);
-                OP_LOGD("Tiling Key: %lu, len: %lu, BlockDim: %ld, Workspace Num: %zu.",
+                OP_LOGD("Tiling Key: %lu, len: %lu, numBlocks: %ld, Workspace Num: %zu.",
                         *(res->tilingKey_),
                         res->tilingData_->data_size_,
-                        *(res->blockDim_),
+                        *(res->numBlocks_),
                         ws->GetSize());
 #ifdef DEBUG
                 for (size_t i = 0; i < ws->GetSize(); i++) {
@@ -707,8 +707,8 @@ public:
                 .get(),
             memsetTensorInfo);
         CHECK_COND(res != nullptr, ACLNN_ERR_INNER_NULLPTR, "Tiling4MemSet Failed.");
-        OP_LOGD("Tiling Key: %lu, len: %lu, BlockDim: %ld",
-                *(res->tilingKey_), res->tilingData_->data_size_, *(res->blockDim_));
+        OP_LOGD("Tiling Key: %lu, len: %lu, numBlocks: %ld",
+                *(res->tilingKey_), res->tilingData_->data_size_, *(res->numBlocks_));
         std::vector<std::tuple<void*, const aclTensor*>> tensor;
         for (const auto &elem : memsetTensorInfo) {
             OP_CHECK_NO_RETURN(elem.tensor_ != nullptr, OP_LOGW("elem idx [%zu] is nullptr.", elem.argIdx_));
@@ -770,8 +770,8 @@ public:
                 *memsetV2OpArgCtx->GetOpArg(op::OP_OUTPUT_ARG),
                 *memsetV2OpArgCtx->GetOpArg(op::OP_ATTR_ARG));
             CHECK_COND(res != nullptr, ACLNN_ERR_INNER_NULLPTR, "MemSetV2 Tiling Failed.");
-            OP_LOGD("Tiling Key: %lu, len: %zu, BlockDim: %ld",
-                *(res->tilingKey_), res->tilingData_->data_size_, *(res->blockDim_));
+            OP_LOGD("Tiling Key: %lu, len: %zu, numBlocks: %ld",
+                *(res->tilingKey_), res->tilingData_->data_size_, *(res->numBlocks_));
         }
         // kernel launch
         static uint64_t kernelLaunchId = GenKernelLauncherId(MEMSET_V2_NAME.c_str());
