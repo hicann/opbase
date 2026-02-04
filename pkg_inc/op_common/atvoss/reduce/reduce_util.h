@@ -197,6 +197,11 @@ struct PaddingParam {
     int32_t aPaddingRepeat = 0;      // a轴 补pad的循环次数
 };
 
+struct SliceFactors {
+    uint64_t sliceShapeFactor;
+    uint64_t sliceNumFactor;
+};
+
 namespace __reduceType
 {
 template <typename DType>

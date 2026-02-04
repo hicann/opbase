@@ -62,6 +62,7 @@ struct ReduceOpCompileInfo {
 
 struct ReduceOpDagParam {
     uint64_t maxInputBytes = 0; // dag图上节点最大字节
+    uint64_t minInputBytes = 0; // dag图上节点最小字节
     uint64_t preInput = 1;      // dag图reduce 前的输入个数
     uint64_t preOutput = 0;     // dag图reduce 前的输出个数
     uint64_t preTempCalc = 0;   // dag图reduce 前的临时计算节点个数
@@ -288,13 +289,16 @@ protected:
             opDag_.postOutput = OpDag::template GetMte3NumImpl<typename OpDag::PostReduceNodeInfo, true, false>();
             opDag_.postTempCalc = OpDag::template GetTempBufNumImpl<typename OpDag::PostReduceNodeInfo, true, false>();
             opDag_.maxInputBytes = OpDag::MaxDtypeBytes;
+            opDag_.minInputBytes = OpDag::MinDtypeBytes;
             opDag_.reduceOpPos = OpDag::ReduceOpPos;
             opDag_.memLevel = OpDag::BufLevel;
         }
         OP_LOGI(
-            context_, "PreDAG Input:%ld, Output:%ld, TempCalc:%ld, PostDAG Input:%ld, Output:%ld, TempCalc:%ld",
+            context_,
+            "PreDAG Input:%ld, Output:%ld, TempCalc:%ld, PostDAG Input:%ld, Output:%ld, TempCalc:%ld, maxBtypes:%ld, "
+            "minBtypes:%ld",
             opDag_.preInput, opDag_.preOutput, opDag_.preTempCalc, opDag_.postInput, opDag_.postOutput,
-            opDag_.postTempCalc);
+            opDag_.postTempCalc, opDag_.maxInputBytes, opDag_.minInputBytes);
 
         opInput_ = opInput;
         if (opDag_.maxInputBytes == 0UL && opInput_.promoteDtpye != ge::DT_UNDEFINED) {
