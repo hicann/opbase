@@ -354,15 +354,14 @@ void KernelMgr::GetConfigJsonOpsFolders()
         const std::string legacyFolderName = "ops_legacy";
         while ((entry = readdir(curDir)) != nullptr) {
             std::string curEntryName = std::string(entry->d_name);
+            OP_LOGD("Entry d_name: %s, d_type: %d", entry->d_name, entry->d_type);
             if (curEntryName == "." || curEntryName == "..") {
                 continue;
             }
-            if (entry->d_type == DT_DIR) {
-                if (curEntryName == legacyFolderName) {
-                    hasLegacyFold = true;
-                } else {
-                    configJsonOpsFolders_.emplace_back(curEntryName);
-                }
+            if (curEntryName == legacyFolderName) {
+                hasLegacyFold = true;
+            } else {
+                configJsonOpsFolders_.emplace_back(curEntryName);
             }
         }
         if (hasLegacyFold) {
@@ -370,7 +369,8 @@ void KernelMgr::GetConfigJsonOpsFolders()
         }
         closedir(curDir);
     });
-    OP_LOGI("print folders result: %d", PrintConfigJsonOpsFolders(configJsonOpsFolders_));
+    OP_LOGI("The built-in config dir: %s, print folders result: %d",
+            builtInConfigDir_.c_str(), PrintConfigJsonOpsFolders(configJsonOpsFolders_));
 }
 
 aclnnStatus KernelMgr::Prepare()
