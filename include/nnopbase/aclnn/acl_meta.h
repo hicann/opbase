@@ -145,7 +145,7 @@ ACL_FUNC_VISIBILITY aclnnStatus aclGetRawTensorAddr(const aclTensor *tensor, voi
  * @retval 0: success, other value: failure
  * @since Created on 2026/01/30
  */
-ACL_FUNC_VISIBILITY aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, const aclTensor *tensors,
+ACL_FUNC_VISIBILITY aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, aclTensor **tensors,
                                                  size_t inputTensorNum, size_t outputTensorNum, aclrtStream stream);
 
 #ifdef __cplusplus

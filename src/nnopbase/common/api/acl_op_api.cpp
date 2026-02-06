@@ -529,7 +529,7 @@ aclnnStatus aclnnReselectStaticKernel()
     return OK;
 }
 
-aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, const aclTensor *tensors,
+aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, aclTensor **tensors,
                              size_t inputTensorNum, size_t outputTensorNum, aclrtStream stream)
 {
     CHECK_RET(opType != nullptr, ACLNN_ERR_PARAM_NULLPTR);
@@ -540,12 +540,12 @@ aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, const aclTe
     std::vector<Adx::TensorInfoV2> dumpTensors;
     std::vector<const aclTensor *> inputTensors;
     for (size_t i = 0U; i < inputTensorNum; i++) {
-        inputTensors.push_back(tensors + i);
+        inputTensors.push_back(tensors[i]);
     }
     op::internal::PrepareL2DumpTensor(dumpTensors, inputTensors, op::OpIOType::OpInputType);
     std::vector<const aclTensor *> outputTensors;
     for (size_t i = inputTensorNum; i < inputTensorNum + outputTensorNum; i++) {
-        outputTensors.push_back(tensors + i);
+        outputTensors.push_back(tensors[i]);
     }
     op::internal::PrepareL2DumpTensor(dumpTensors, outputTensors, op::OpIOType::OpOutputType);
     return Adx::AdumpDumpTensorV2(opType, opName, dumpTensors, stream);

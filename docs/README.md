@@ -76,6 +76,7 @@ aclnn API调用时依赖的公共Meta接口，如创建/释放aclTensor、aclSca
 -   [aclDestroyScalarList](zh/nnopbase/aclnn/aclDestroyScalarList.md)
 -   [aclDestroyTensor](zh/nnopbase/aclnn/aclDestroyTensor.md)
 -   [aclDestroyTensorList](zh/nnopbase/aclnn/aclDestroyTensorList.md)
+-   [aclDumpOpTensors](zh/nnopbase/aclnn/aclDumpOpTensors.md)
 -   [aclGetBoolArraySize](zh/nnopbase/aclnn/aclGetBoolArraySize.md)
 -   [aclGetDataType](zh/nnopbase/aclnn/aclGetDataType.md)
 -   [aclGetFloatArraySize](zh/nnopbase/aclnn/aclGetFloatArraySize.md)

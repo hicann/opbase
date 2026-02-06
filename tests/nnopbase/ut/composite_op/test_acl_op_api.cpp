@@ -25,8 +25,7 @@
 using namespace std;
 using namespace op;
 
-#define INPUT(x, y, z) aclTensor(x, y, z)
-#define INIT_ACL_TENSOR_ARRAY(tensors, ...)  aclTensor tensors[] = {__VA_ARGS__}
+#define INIT_ACL_TENSOR_ARRAY(tensors, ...)  aclTensor* tensors[] = {__VA_ARGS__}
 
 class AclOpApiTest : public testing::Test {
 protected:
@@ -637,9 +636,18 @@ TEST_F(AclOpApiTest, DumpOpTensors)
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
     ret = aclDumpOpTensors("opType", "opName", nullptr, 0, 0, stream);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
-    INIT_ACL_TENSOR_ARRAY(tensors, INPUT(op::DataType::DT_FLOAT, op::Format::FORMAT_NHWC, op::Format::FORMAT_ND),
-                                   INPUT(op::DataType::DT_FLOAT, op::Format::FORMAT_NHWC, op::Format::FORMAT_ND));
+    std::vector<int64_t> shape = {1, 2, 3};
+    aclTensor *input1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor *input2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor *output1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+                                         nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    INIT_ACL_TENSOR_ARRAY(tensors, input1, input2, output1);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
-    ret = aclDumpOpTensors("opType", "opName", tensors, 1, 1, stream);
+    ret = aclDumpOpTensors("opType", "opName", tensors, 2, 1, stream);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
+    aclDestroyTensor(input1);
+    aclDestroyTensor(input2);
+    aclDestroyTensor(output1);
 }

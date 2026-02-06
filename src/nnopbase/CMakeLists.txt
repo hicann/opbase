@@ -25,6 +25,7 @@ set(CMAKE_MODULE_PATH ${OPS_BASE_PATH}/cmake/modules)
 # set include path
 set(COMMON_INCLUDING_PATH
     ${OPS_BASE_PATH}/include/
+    ${OPS_BASE_PATH}/include/nnopbase/
     ${OPS_BASE_PATH}/include/nnopbase/opdev
 
     ${NNOPBASE_PATH}/individual_op/
@@ -56,7 +57,7 @@ set(COMMON_INCLUDING_PATH
 #add_library(nnopbase SHARED ${opInfoRecordSrc})
 #target_include_directories(nnopbase PRIVATE ${COMMON_INCLUDING_PATH} ${opInfoRecordInclude})
 add_library(nnopbase SHARED)
-target_include_directories(nnopbase PRIVATE ${COMMON_INCLUDING_PATH})
+target_include_directories(nnopbase BEFORE PRIVATE ${COMMON_INCLUDING_PATH})
 
 target_link_libraries(nnopbase
     PRIVATE
