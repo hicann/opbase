@@ -11,7 +11,7 @@
 #include "shape_inference.h"
 
 #include "exe_graph/runtime/tensor.h"
-#include "transformer/transfer_shape_according_to_format_ext.h"
+#include "transfer_shape_according_to_format_ext.h"
 #include "opdev/platform.h"
 #include "opdev/data_type_utils.h"
 

@@ -92,6 +92,7 @@ set(NNOPBASE_TEST_HEADER_FILES
     ${CANN_3RD_LIB_PATH}/boost/
 
     ${ASCEND_INCLUDE_DIR}/
+    ${ASCEND_INCLUDE_DIR}/transformer/
 
     ${ASCEND_PKG_INC_DIR}/
     ${ASCEND_PKG_INC_DIR}/dump/

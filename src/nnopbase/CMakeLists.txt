@@ -32,12 +32,24 @@ set(COMMON_INCLUDING_PATH
     ${NNOPBASE_PATH}/common/inc
 
     ${ASCEND_INCLUDE_DIR}/
+    ${ASCEND_INCLUDE_DIR}/transformer/
     ${ASCEND_INCLUDE_DIR}/external/
 
     ${ASCEND_HOME_PATH}/pkg_inc
     ${ASCEND_HOME_PATH}/pkg_inc/aicpu
     ${ASCEND_HOME_PATH}/pkg_inc/runtime
     ${ASCEND_HOME_PATH}/pkg_inc/runtime/runtime
+    ${TOP_DIR}/runtime/pkg_inc/
+    ${TOP_DIR}/runtime/pkg_inc/runtime/
+    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common/
+    ${TOP_DIR}/runtime/include/external/
+    ${TOP_DIR}/runtime/src/inc/runtime/
+    ${TOP_DIR}/metadef/inc/external/
+    ${TOP_DIR}/metadef/inc/
+    ${TOP_DIR}/hcomm/pkg_inc/
+    ${TOP_DIR}/hcomm/include/
+    ${TOP_DIR}/air/graph_metadef/third_party/transformer/inc/
+    ${TOP_DIR}/abl/libc_sec/src/
 )
 
 # nnopbase
@@ -50,17 +62,17 @@ target_link_libraries(nnopbase
     PRIVATE
         intf_pub_cxx17
         -Wl,--no-as-needed
-        ${ASCEND_HOME_PATH}/lib64/libruntime.so
-        ${ASCEND_HOME_PATH}/lib64/libunified_dlog.so
-        ${ASCEND_HOME_PATH}/lib64/libascend_dump.so
-        ${ASCEND_HOME_PATH}/lib64/libc_sec.so
-        ${ASCEND_HOME_PATH}/lib64/libexe_graph.so
-        ${ASCEND_HOME_PATH}/lib64/libacl_rt.so
-        ${ASCEND_HOME_PATH}/lib64/libmetadef.so
-        ${ASCEND_HOME_PATH}/lib64/liberror_manager.so
-        ${ASCEND_HOME_PATH}/lib64/libopp_registry.so
-        ${ASCEND_HOME_PATH}/lib64/libgraph.so
-        ${ASCEND_HOME_PATH}/lib64/libregister.so
+        runtime
+        unified_dlog
+        ascend_dump
+        c_sec
+        exe_graph
+        acl_rt
+        metadef
+        error_manager
+        opp_registry
+        graph
+        register
         dummy_tls
         -Wl,--as-needed
         json
@@ -69,6 +81,10 @@ target_link_libraries(nnopbase
         ${opInfoRecordLinkLibraries}
         ascend_protobuf_shared_headers
     PUBLIC
+)
+
+target_link_directories(nnopbase PRIVATE
+    ${ASCEND_HOME_PATH}/lib64/
 )
 
 target_compile_definitions(nnopbase PRIVATE google=ascend_private ACLNN_LOG_FMT_CHECK LOG_CPP)

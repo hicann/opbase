@@ -62,10 +62,22 @@ set(STUB_NNOPBASE_INCLUDING_PATH
     ${NNOPBASE_PATH}/common
 
     ${ASCEND_INCLUDE_DIR}/
+    ${ASCEND_INCLUDE_DIR}/transformer/
     ${ASCEND_INCLUDE_DIR}/external/
 
     ${ASCEND_HOME_PATH}/pkg_inc
     ${ASCEND_HOME_PATH}/pkg_inc/aicpu
+    ${TOP_DIR}/runtime/pkg_inc/
+    ${TOP_DIR}/runtime/pkg_inc/runtime/
+    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common/
+    ${TOP_DIR}/runtime/include/external/
+    ${TOP_DIR}/runtime/src/inc/runtime/
+    ${TOP_DIR}/metadef/inc/external/
+    ${TOP_DIR}/metadef/inc/
+    ${TOP_DIR}/hcomm/pkg_inc/
+    ${TOP_DIR}/hcomm/include/
+    ${TOP_DIR}/air/graph_metadef/third_party/transformer/inc/
+    ${TOP_DIR}/abl/libc_sec/src/
 )
 
 
@@ -82,9 +94,13 @@ target_compile_options(stub_nnopbase PRIVATE -O2 -fno-common -Wno-extra -Wfloat-
 target_link_libraries(stub_nnopbase
     PRIVATE
         intf_pub_cxx17
-        ${ASCEND_HOME_PATH}/lib64/libc_sec.so
+        c_sec
         json
     PUBLIC
+)
+
+target_link_directories(stub_nnopbase PRIVATE
+    ${ASCEND_HOME_PATH}/lib64/
 )
 
 set_target_properties(stub_nnopbase PROPERTIES

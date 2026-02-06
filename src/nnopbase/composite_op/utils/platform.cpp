@@ -307,7 +307,7 @@ void PlatformInfoImpl::InitNpuArch()
     try {
         npuArchVal = static_cast<uint32_t>(std::stoul(archStrVal));
     } catch (const std::exception &e) {
-        OP_LOGW("stoul %s to uint32_t value failed, reason: %s", archStrVal, e.what());
+        OP_LOGW("stoul %s to uint32_t value failed, reason: %s", archStrVal.c_str(), e.what());
         npuArch_ = NpuArch::DAV_RESV;
         return;
     }
