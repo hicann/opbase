@@ -30,11 +30,20 @@
         <os_version>$(OS_VER)</os_version>
         <arch>$(ARCH)</arch>
     </generate_info>
-    <file_info copy_type="source" src_path="" dst_path="ops_base/include" install_path="$(TARGET_ENV)/pkg_inc" install_type="all">
-        <file value="aicpu_common" install_mod="550" entity="true"/>
+    <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc/op_common" install_path="$(TARGET_ENV)/pkg_inc" install_type="all"> 
+        <file value="aicpu_common" install_mod="550" entity="true"/> 
     </file_info>
-    <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc" install_path="$(TARGET_ENV)/pkg_inc" install_type="all">
-        <file value="op_common" install_mod="550" entity="true"/>
+    <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc/op_common" install_path="$(TARGET_ENV)/pkg_inc/op_common" install_type="all">
+        <file value="atvoss" install_mod="550" entity="true"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc/op_common" install_path="$(TARGET_ENV)/pkg_inc/op_common" install_type="all">
+        <file value="log" install_mod="550" entity="true"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc/op_common" install_path="$(TARGET_ENV)/pkg_inc/op_common" install_type="all">
+        <file value="op_host" install_mod="550" entity="true"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="ops_base/pkg_inc/op_common" install_path="$(TARGET_ENV)/pkg_inc/op_common" install_type="all">
+        <file value="op_kernel" install_mod="550" entity="true"/>
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="ops_base/conf" install_path="$(TARGET_ENV)/conf" install_type="all">
         <file value="dump_tool_config.ini" install_mod="550" entity="true"/>

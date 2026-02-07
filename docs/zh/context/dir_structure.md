@@ -16,7 +16,6 @@
 │   └── variables.cmake                                 # 项目工程编译参数配置文件
 ├── docs                                                # 项目相关文档目录（zh为中文，en为英文）
 ├── include                                             # 项目公共头文件
-│   └── aicpu_common                                    # aicpu公共函数头文件
 │   └── nnopbase                                        # nnopbase模块头文件
 │        ├── aclnn                                      # aclnn接口依赖头文件
 │        └── opdev                                      # 算子开发依赖头文件
@@ -27,6 +26,7 @@
 │       ├── atvoss                                      # atvoss接口头文件，包括broadcast、elewise等
 │       ├── log                                         # log相关接口头文件
 │       ├── op_host                                     # host侧接口头文件
+│       ├── aicpu_common                                # aicpu公共函数头文件
 │       └── op_kernel                                   # kernel侧接口头文件
 ├── scripts                                             # 项目脚本文件存放目录
 ├── src

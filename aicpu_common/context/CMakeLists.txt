@@ -46,10 +46,10 @@ set (local_context_src_files
 
 set(local_context_inc_path
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/context/common
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/context/cpu_proto
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/context/utils
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/context/cust_op
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/common
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cpu_proto
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/utils
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cust_op
   ${C_SEC_INCLUDE}
 )
 

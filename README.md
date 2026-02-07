@@ -36,7 +36,6 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 ├── CMakeLists.txt                 # 算子编译配置文件
 ├── docs                           # 项目文档介绍（zh为中文，en为英文）
 ├── include                        # 项目公共头文件
-│   └── aicpu_common               # aicpu公共函数头文件
 │   └── nnopbase                   # nnopbase模块头文件
 │        ├── aclnn                 # aclnn接口依赖头文件
 │        └── opdev                 # 算子开发依赖头文件

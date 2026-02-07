@@ -5,8 +5,8 @@ set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
 set(local_folding_inc_path
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/context/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/folding
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/folding
 )
 
 message(STATUS "folding PRODUCT_SIDE is ${PRODUCT_SIDE}")
@@ -24,8 +24,8 @@ else()
 
 set(local_folding_inc_path
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/context/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/aicpu_common/folding
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/folding
 )
 endif()
 
