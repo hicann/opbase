@@ -173,7 +173,7 @@ struct TilingCtxOutput {
     gert::TypedContinuousVector<size_t> *workspaceSize_;
     int64_t *tilingCond_;
     uint8_t *scheduleMode_;
-    uint32_t *localMemorySize_;
+    uint32_t *dynUBufSize_;
 
     size_t inputNum_;
     size_t outputNum_;

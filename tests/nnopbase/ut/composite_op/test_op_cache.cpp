@@ -383,7 +383,7 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     launchCfg.tilingKey = 1234;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
-    launchCfg.localMemorySize = 0;
+    launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 0;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
     launchCfg.isFatBin = false;
@@ -395,7 +395,7 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     EXPECT_EQ(cacheCtx->launchCfg_.tilingKey, launchCfg.tilingKey);
     EXPECT_EQ(cacheCtx->launchCfg_.numBlocks, launchCfg.numBlocks);
     EXPECT_EQ(cacheCtx->launchCfg_.schemMode, launchCfg.schemMode);
-    EXPECT_EQ(cacheCtx->launchCfg_.localMemorySize, launchCfg.localMemorySize);
+    EXPECT_EQ(cacheCtx->launchCfg_.dynUBufSize, launchCfg.dynUBufSize);
     EXPECT_EQ(cacheCtx->launchCfg_.blockDimOffset, launchCfg.blockDimOffset);
     EXPECT_EQ(cacheCtx->launchCfg_.engineType, launchCfg.engineType);
     EXPECT_EQ(cacheCtx->launchCfg_.isFatBin, launchCfg.isFatBin);
@@ -1120,7 +1120,7 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     launchCfg.funcHandle = (void *)0x12345678;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
-    launchCfg.localMemorySize = 0;
+    launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 0;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::NO_VECTOR_CORE;
     launchCfg.isFatBin = false;

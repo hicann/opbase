@@ -103,11 +103,11 @@ static bool CheckRtKernelLaunchCfgSchemMode(aclrtLaunchKernelCfg *cfg, uint8_t s
     return false;
 }
 
-static bool CheckRtKernelLaunchCfgLocalMemSize(aclrtLaunchKernelCfg *cfg, uint32_t localMemorySize)
+static bool CheckRtKernelLaunchCfgLocalMemSize(aclrtLaunchKernelCfg *cfg, uint32_t dynUBufSize)
 {
     for (size_t idx = 0U; idx < cfg->numAttrs; idx++) {
-        if (cfg->attrs[idx].id == ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE) {
-            EXPECT_EQ(cfg->attrs[idx].value.localMemorySize, localMemorySize);
+        if (cfg->attrs[idx].id == LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE) {
+            EXPECT_EQ(cfg->attrs[idx].value.localMemorySize, dynUBufSize);
             return true;
         }
     }
@@ -413,13 +413,13 @@ static void MultiDoLaunchNormalTest2() {
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
-    uint32_t localMemorySize = 888;
+    uint32_t dynUBufSize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
-    tilingOutput.localMemorySize_ = &localMemorySize;
+    tilingOutput.dynUBufSize_ = &dynUBufSize;
 
     // run launch
     MultiDoLaunchNormalTest2AclrtStub aclrtStub;
@@ -808,13 +808,13 @@ static void MultiDoLaunchNormalTest3() {
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
-    uint32_t localMemorySize = 888;
+    uint32_t dynUBufSize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
-    tilingOutput.localMemorySize_ = &localMemorySize;
+    tilingOutput.dynUBufSize_ = &dynUBufSize;
 
     // run launch
     MultiDoLaunchNormalTest3AclrtStub aclrtStub;
@@ -1212,13 +1212,13 @@ static void MultiDoLaunchNormalTest4() {
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
-    uint32_t localMemorySize = 888;
+    uint32_t dynUBufSize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
-    tilingOutput.localMemorySize_ = &localMemorySize;
+    tilingOutput.dynUBufSize_ = &dynUBufSize;
 
     // run launch
     MultiDoLaunchNormalTest4AclrtStub aclrtStub;
@@ -1626,13 +1626,13 @@ static void MultiDoLaunchAlignTest() {
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
-    uint32_t localMemorySize = 888;
+    uint32_t dynUBufSize = 888;
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
-    tilingOutput.localMemorySize_ = &localMemorySize;
+    tilingOutput.dynUBufSize_ = &dynUBufSize;
 
     // run launch
     MultiDoLaunchAlignTestAclrtStub aclrtStub;
@@ -1776,14 +1776,14 @@ static void TestInvalidFunctionHandle() {
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
-    uint32_t localMemorySize = 888;
+    uint32_t dynUBufSize = 888;
 
     TilingCtxOutput tilingOutput;
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
     tilingOutput.tilingData_ = &tilingDataStruct;
     tilingOutput.scheduleMode_ = &scheduleMode;
-    tilingOutput.localMemorySize_ = &localMemorySize;
+    tilingOutput.dynUBufSize_ = &dynUBufSize;
 
     InvalidFunctionHandleAclrtStub aclrtStub;
     aclrtStub.returnInvalidHandleFlag = true;

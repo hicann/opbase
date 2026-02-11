@@ -255,10 +255,10 @@ void RtsArg::ReportExceptionDumpInfo() const
 
 aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig &launchCfg)
 {
-    OP_LOGI("Launch kernel engine type: %d, numBlocks: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
+    OP_LOGI("Launch kernel engine type: %d, numBlocks: %u, scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, "
         "funcHandle: %p, print arg result: %d",
         static_cast<int>(launchCfg.engineType), launchCfg.numBlocks, launchCfg.schemMode, launchCfg.blockDimOffset,
-        launchCfg.localMemorySize, launchCfg.funcHandle, PrintRtArg(rtArg_));
+        launchCfg.dynUBufSize, launchCfg.funcHandle, PrintRtArg(rtArg_));
 
     std::vector<aclrtLaunchKernelAttr> kernelAttrs;
     kernelAttrs.reserve(KERNEL_ATTRS_SIZE_THREE);
@@ -268,8 +268,8 @@ aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig &l
 
     if (launchCfg.engineType == LaunchKernelEngineType::NO_VECTOR_CORE) {
         kernelAttrs.emplace_back();
-        kernelAttrs.back().id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE;
-        kernelAttrs.back().value.localMemorySize = launchCfg.localMemorySize;
+        kernelAttrs.back().id = static_cast<aclrtLaunchKernelAttrId>(LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE);
+        kernelAttrs.back().value.localMemorySize = launchCfg.dynUBufSize;
     } else if (launchCfg.engineType == LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC ||
         launchCfg.engineType == LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIV) {
         kernelAttrs.emplace_back();
@@ -784,10 +784,10 @@ aclnnStatus LaunchArgCache::UpdateFunctionHandle(KernelLaunchConfig& launchCfg)
 
 aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& rtArg, KernelLaunchConfig& launchCfg)
 {
-    OP_LOGD("Launch kernel engine type: %d, numBlocks: %u, scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, "
+    OP_LOGD("Launch kernel engine type: %d, numBlocks: %u, scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, "
         "funcHandle: %p",
         static_cast<int>(launchCfg.engineType), launchCfg.numBlocks, launchCfg.schemMode, launchCfg.blockDimOffset,
-        launchCfg.localMemorySize, launchCfg.funcHandle);
+        launchCfg.dynUBufSize, launchCfg.funcHandle);
 
     std::vector<aclrtLaunchKernelAttr> kernelAttrs;
     kernelAttrs.reserve(KERNEL_ATTRS_SIZE_FOUR);
@@ -795,8 +795,8 @@ aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& 
     kernelAttrs.back().id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     kernelAttrs.back().value.schemMode = launchCfg.schemMode;
     kernelAttrs.emplace_back();
-    kernelAttrs.back().id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE;
-    kernelAttrs.back().value.localMemorySize = launchCfg.localMemorySize;
+    kernelAttrs.back().id = static_cast<aclrtLaunchKernelAttrId>(LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE);
+    kernelAttrs.back().value.localMemorySize = launchCfg.dynUBufSize;
     if (launchCfg.engineType == LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC) {
         kernelAttrs.emplace_back();
         kernelAttrs.back().id = ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET;

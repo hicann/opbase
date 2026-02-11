@@ -96,7 +96,7 @@ void TilingCtxHolder::BuildTilingCtx()
     tilingOutput_.workspaceSize_ = PtrCastTo<gert::TypedContinuousVector<size_t>>(workspaceSizeVec_.get());
     tilingOutput_.tilingCond_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputTilingCond].data.inplace);
     tilingOutput_.scheduleMode_ = PtrCastTo<uint8_t>(tilingCtxValue_[kOutputScheduleMode].data.inplace);
-    tilingOutput_.localMemorySize_ = PtrCastTo<uint32_t>(tilingCtxValue_[kOutputLocalMemorySize].data.inplace);
+    tilingOutput_.dynUBufSize_ = PtrCastTo<uint32_t>(tilingCtxValue_[kOutputLocalMemorySize].data.inplace);
 }
 
 aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCtx,
@@ -110,7 +110,7 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
     *tilingOutput_.scheduleMode_ = 0;
-    *tilingOutput_.localMemorySize_ = 0;
+    *tilingOutput_.dynUBufSize_ = 0;
     PtrCastTo<gert::ContinuousVector>(workspaceSizeVec_.get())->SetSize(0);
 
     tilingCtx_->compute_node_info = kernelCtx->computeNodeInfo_;
@@ -162,7 +162,7 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
     *tilingOutput_.scheduleMode_ = 0;
-    *tilingOutput_.localMemorySize_ = 0;
+    *tilingOutput_.dynUBufSize_ = 0;
     PtrCastTo<gert::ContinuousVector>(workspaceSizeVec_.get())->SetSize(0);
 
     tilingCtx_->compute_node_info = kernelCtx->computeNodeInfo_;

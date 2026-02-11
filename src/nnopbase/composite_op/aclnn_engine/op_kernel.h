@@ -228,7 +228,7 @@ public:
             launchCfg.kernelNameOfNoFatBin = kernelNameOfNoFatBin_.c_str();
             launchCfg.numBlocks = numBlocks;
             launchCfg.schemMode = *(res->scheduleMode_);
-            launchCfg.localMemorySize = *(res->localMemorySize_);
+            launchCfg.dynUBufSize = *(res->dynUBufSize_);
             launchCfg.blockDimOffset = 0;
             launchCfg.engineType = isVectorCoreEnableScenario_ ? LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC
                                                                : LaunchKernelEngineType::NO_VECTOR_CORE;
@@ -520,7 +520,7 @@ public:
             launchCfg.numBlocks = blockdimAic;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.blockDimOffset = 0;
-            launchCfg.localMemorySize = 0;
+            launchCfg.dynUBufSize = 0;
             launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
 
             rtsArg.ReportExceptionDumpInfo();
@@ -568,7 +568,7 @@ public:
             launchCfg.numBlocks = blockdimAiv;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.blockDimOffset = blockdimAic;
-            launchCfg.localMemorySize = 0;
+            launchCfg.dynUBufSize = 0;
             launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIV;
 
             rtsArg.ReportExceptionDumpInfo();

@@ -70,7 +70,7 @@ public:
         atomicCleanFlag_ = *(res->atomicCleanFlag_);
         tilingCond_ = *(res->tilingCond_);
         scheduleMode_ = *(res->scheduleMode_);
-        localMemorySize_ = *(res->localMemorySize_);
+        dynUBufSize_ = *(res->dynUBufSize_);
         inputNum_ = res->inputNum_;
         outputNum_ = res->outputNum_;
         valid_ = true;
@@ -96,7 +96,7 @@ public:
     size_t workspaceNum_;
     int64_t tilingCond_;
     uint8_t scheduleMode_;
-    uint32_t localMemorySize_;
+    uint32_t dynUBufSize_;
 
     size_t inputNum_;
     size_t outputNum_;
@@ -169,7 +169,7 @@ public:
         *tilingOutput_.atomicCleanFlag_ = res.atomicCleanFlag_;
         *tilingOutput_.tilingCond_ = res.tilingCond_;
         *tilingOutput_.scheduleMode_ = res.scheduleMode_;
-        *tilingOutput_.localMemorySize_ = res.localMemorySize_;
+        *tilingOutput_.dynUBufSize_ = res.dynUBufSize_;
         OP_LOGD("Call GetTilingResFromCache, scheduleMode_ %u.", *tilingOutput_.scheduleMode_);
         OP_CHECK((memcpy_s(tilingOutput_.tilingData_->data_,
                      tilingOutput_.tilingData_->capacity_,

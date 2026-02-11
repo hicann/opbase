@@ -286,7 +286,7 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     launchCfg.funcHandle = (void *)0x12345678;
     launchCfg.numBlocks =  32;
     launchCfg.schemMode = 1;
-    launchCfg.localMemorySize = 0;
+    launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 0;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::NO_VECTOR_CORE;
     aclnnStatus rc = arg.LaunchKernel(nullptr, launchCfg);
@@ -325,7 +325,7 @@ TEST_F(KernelLaunchUT, TestWithHandleBlockDimOffset1)
     launchCfg.funcHandle = (void *)0x12345678;
     launchCfg.numBlocks =  32;
     launchCfg.schemMode = 1;
-    launchCfg.localMemorySize = 0;
+    launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 10;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::NO_VECTOR_CORE;
     aclnnStatus rc = arg.LaunchKernel(nullptr, launchCfg);
@@ -364,7 +364,7 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
     launchCfg.funcHandle = (void *)0x12345678;
     launchCfg.numBlocks =  32;
     launchCfg.schemMode = 1;
-    launchCfg.localMemorySize = 0;
+    launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 10;
     launchCfg.engineType = op::internal::LaunchKernelEngineType::NO_VECTOR_CORE;
     aclnnStatus rc = arg.LaunchKernel(nullptr, launchCfg);

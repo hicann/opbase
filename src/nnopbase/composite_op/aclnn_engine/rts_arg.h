@@ -28,6 +28,7 @@
 namespace op::internal {
 
 constexpr size_t KERNEL_NAME_MAX_SIZE = 160;
+constexpr int32_t LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE = 2;
 
 enum class LaunchKernelEngineType : uint8_t {
     NO_VECTOR_CORE = 0,
@@ -43,7 +44,7 @@ struct KernelLaunchConfig {
     uint32_t numBlocks;
     bool isFatBin;
     uint8_t schemMode;
-    uint32_t localMemorySize;
+    uint32_t dynUBufSize;
     uint32_t blockDimOffset;
     LaunchKernelEngineType engineType;
 };
@@ -175,14 +176,14 @@ public:
     {
         launchCfg_ = launchCfg;
         OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, numBlocks: %u, "
-                "scheduleMode: %u, blockDimOffset: %u, localMemorySize: %u, funcHandle: %p, binHandle: %p",
+                "scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, funcHandle: %p, binHandle: %p",
             static_cast<int>(launchCfg_.engineType),
             launchCfg_.isFatBin,
             launchCfg_.tilingKey,
             launchCfg_.numBlocks,
             launchCfg_.schemMode,
             launchCfg_.blockDimOffset,
-            launchCfg_.localMemorySize,
+            launchCfg_.dynUBufSize,
             launchCfg_.funcHandle,
             launchCfg_.binHandle);
         if (!launchCfg_.isFatBin) {
@@ -223,9 +224,9 @@ public:
         return numBlocks_;
     }
 
-    uint32_t GetLocalMemorySize() const
+    uint32_t GetDynUBufSize() const
     {
-        return localMemorySize_;
+        return dynUBufSize_;
     }
 
     uint64_t GetTilingKey() const
@@ -290,7 +291,7 @@ private:
     RtsApiType rtsType_{0};
     uint32_t numBlocks_{0};
     uint64_t tilingKey_{0};
-    uint32_t localMemorySize_{0};
+    uint32_t dynUBufSize_{0};
 
     size_t hostArgSize_{0};
     size_t hostArgNum_{0};
