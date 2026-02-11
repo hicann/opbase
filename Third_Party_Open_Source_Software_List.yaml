@@ -2,7 +2,7 @@ boost:
   version: v1.87.0
   type: run
 eigen:
-  version: 3.4.0
+  version: 5.0.0
   type: run
 googletest:
   version: v1.14.0

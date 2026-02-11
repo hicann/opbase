@@ -15,38 +15,26 @@ endif()
 set(EIGEN_DOWNLOAD_PATH ${CANN_3RD_PKG_PATH}/eigen)
 set(EIGEN_INSTALL_PATH ${CANN_3RD_LIB_PATH}/eigen)
 
-if (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
-  message("eigen found in ${CANN_3RD_LIB_PATH}/eigen, no need download")
+if (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen-5.0.0")
+  message(STATUS "Eigen path found in cache: ${CANN_3RD_LIB_PATH}/eigen-5.0.0")
+  set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen-5.0.0")
+elseif (IS_DIRECTORY "${CANN_3RD_LIB_PATH}/eigen")
+  message(STATUS "Eigen path found in cache: ${CANN_3RD_LIB_PATH}/eigen")
   set(REQ_URL "${CANN_3RD_LIB_PATH}/eigen")
-  include(ExternalProject)
-  ExternalProject_Add(external_eigen
-    URL                 ${REQ_URL}
-    URL_MD5             4c527a9171d71a72a9d4186e65bea559
-    DOWNLOAD_DIR        download/eigen
-    SOURCE_DIR          third_party
-    CONFIGURE_COMMAND   ""
-    BUILD_COMMAND       ""
-    INSTALL_COMMAND     ""
-  )
-else ()
-  message("opensource git")
-  if(EXISTS "${EIGEN_DOWNLOAD_PATH}/Eigen/Eigen")
-    message("eigen found in ${EIGEN_DOWNLOAD_PATH}, no need download")
-    set(REQ_URL "${EIGEN_DOWNLOAD_PATH}/eigen-3.4.0.tar.gz")
-  else ()
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/3.4.0/eigen-3.4.0.tar.gz")
-  endif ()
-  include(ExternalProject)
-  ExternalProject_Add(external_eigen
-    URL                 ${REQ_URL}
-    URL_MD5             4c527a9171d71a72a9d4186e65bea559
-    DOWNLOAD_DIR        ${EIGEN_DOWNLOAD_PATH}
-    SOURCE_DIR          ${EIGEN_INSTALL_PATH}
-    CONFIGURE_COMMAND   ""
-    BUILD_COMMAND       ""
-    INSTALL_COMMAND     ""
-  )
+else()
+  message("The eigen package needs to be downloaded.")
+  set(REQ_URL "https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0/eigen-5.0.0.tar.gz")
 endif()
+
+include(ExternalProject)
+ExternalProject_Add(external_eigen
+  URL               ${REQ_URL}
+  DOWNLOAD_DIR      ${EIGEN_DOWNLOAD_PATH}
+  SOURCE_DIR        third_party
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+)
 
 ExternalProject_Get_Property(external_eigen SOURCE_DIR)
 
