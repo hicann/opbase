@@ -340,7 +340,7 @@ ge::graphStatus NonContiguousDimensionCollapse(
 
     // 根据输入shape和stride，判断每个轴是不是都连续
     std::vector<bool> isAxesContiguous;
-    for (int64_t i = 0; i < maxDim; ++i) {
+    for (uint64_t i = 0; i < maxDim; ++i) {
         bool isAxisContiguous = false;
         isAxesContiguous.push_back(isAxisContiguous);
     }
