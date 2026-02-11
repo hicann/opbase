@@ -416,6 +416,7 @@ void ReportCacheOpInfoFromCache(
     cacheOpInfoBasic.taskType = static_cast<uint32_t>(taskInfo.type);
     cacheOpInfoBasic.nodeId = profilingInfoId.summaryItemId_;
     cacheOpInfoBasic.opType = profilingInfoId.kernelLauncherId_;
+    cacheOpInfoBasic.attrId = taskInfo.attrId;
     uint32_t currBlockDim = numBlocks;
     OP_LOGI("numBlocks is %u, taskInfo.ration is %u", currBlockDim, taskInfo.ration);
     if (taskInfo.ration == OP_DFX_TASK_RATION_TWO) {
@@ -432,10 +433,11 @@ void ReportCacheOpInfoFromCache(
         OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
         throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI("taskType %u, nodeId %zu, opType %zu, numBlocks %u, opFlag %u, tensorNum %u",
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
         cacheOpInfoBasic.taskType,
         cacheOpInfoBasic.nodeId,
         cacheOpInfoBasic.opType,
+        cacheOpInfoBasic.attrId,
         cacheOpInfoBasic.numBlocks,
         cacheOpInfoBasic.opFlag,
         cacheOpInfoBasic.tensorNum);

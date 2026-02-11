@@ -30,7 +30,7 @@ aclnnStatus aclGetRawTensorAddr(const aclTensor *tensor, void **addr)
 </tr>
 <tr id="row22097340193"><td class="cellrowborder" valign="top" width="28.99%" headers="mcps1.1.4.1.1 "><p id="p1020918345198"><a name="p1020918345198"></a><a name="p1020918345198"></a>addr</p>
 </td>
-<td class="cellrowborder" valign="top" width="24.57%" headers="mcps1.1.4.1.2 "><p id="p1820993461913"><a name="p1820993461913"></a><a name="p1820993461913"></a>输入</p>
+<td class="cellrowborder" valign="top" width="24.57%" headers="mcps1.1.4.1.2 "><p id="p1820993461913"><a name="p1820993461913"></a><a name="p1820993461913"></a>输出</p>
 </td>
 <td class="cellrowborder" valign="top" width="46.44%" headers="mcps1.1.4.1.3 "><p id="p72134196915"><a name="p72134196915"></a><a name="p72134196915"></a>返回的aclTensor中记录的Device内存地址。</p>
 </td>

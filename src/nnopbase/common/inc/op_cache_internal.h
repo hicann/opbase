@@ -24,6 +24,7 @@ namespace op {
 namespace internal {
 
 struct TaskInfo {
+    uint64_t attrId{0};
     MsprofGeTaskType type;
     uint32_t ration;
     OpExecMode execMode{OpExecMode::OP_EXEC_MODE_DEFAULT};

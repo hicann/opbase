@@ -646,8 +646,7 @@ void OpKernelBin::SetMemSetFlagFromJson()
 uint64_t OpKernelBin::GetAttrId(OpArgContext *args)
 {
     uint64_t aclGraphAttrId = 0;
-    if ((op::internal::opProfilingSwitch.level2ProfilingFlag) && (opKernel_ != nullptr)) {
-        // only level2 profiling need to report attr info
+    if (opKernel_ != nullptr) {
         std::string attrStrId;
         if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
             op::internal::ReportAttrInfo(
