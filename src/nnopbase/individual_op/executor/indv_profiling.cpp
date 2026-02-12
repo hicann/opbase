@@ -102,6 +102,7 @@ void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t 
         return;
     }
     if (!static_cast<bool>(value.cacheOpInfoSwitch)) {
+        OP_LOGI("Profiling for AclGraph is disabled.");
         return;
     }
 
@@ -127,12 +128,18 @@ void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t 
             opInfo->tensorData[i + executor->args->inputs.num]);
     }
 
+    const std::string attrStr = NnopbaseGetAttrVal(executor->attrs);
+    if (!attrStr.empty()) {
+        OP_LOGI("Report op [%s] attr info cache: %s.", executor->opType, attrStr.c_str());
+        opInfo->attrId = MsprofGetHashId(attrStr.c_str(), attrStr.size());
+    }
+
     ret = aclrtCacheLastTaskOpInfo(buffer, totalSize);
     if (ret != ACL_SUCCESS) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Report op info cache failed, ret is [%d]", ret);
     }
-    OP_LOGD("Report op [%s] info cache, task type[%u], block dim[%u], size[%zu]",
-        executor->opType, taskType, numBlocks, totalSize);
+    OP_LOGI("Report op [%s] info cache, task type[%u], block dim[%u], attrId[%llu] size[%zu]",
+        executor->opType, taskType, numBlocks, opInfo->attrId, totalSize);
     free(buffer);
 }
 
