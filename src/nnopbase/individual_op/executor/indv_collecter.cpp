@@ -220,7 +220,7 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
     }
     ge::DataType dtype = ge::DT_INT32;
     ge::Format format = ge::FORMAT_ND;
-    NnopbaseUChar *addr = nullptr;
+    const NnopbaseUChar *addr = nullptr;
     // input and output
     for (int64_t i = 0; i < tensorNumInfo->numTensors; i++) {
         if (tensors[i] == nullptr) {
@@ -257,14 +257,14 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
                 continue;
             }
             if (!attrs[j]->isVector) {
-                addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs[j]->addr);
+                addr = op::internal::PtrCastTo<const NnopbaseUChar>(attrs[j]->addr);
                 length = attrs[j]->size;
                 verKey = NnopbaseExecutor8ByteCopy(length, verKey, addr);
             } else {
                 const size_t elementSize = attrs[j]->elementSize;
                 const size_t elementSizeNumber = attrs[j]->size / elementSize;
                 for (size_t i = 0U; i < elementSizeNumber; i++) {
-                    addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs[j]->addr) + elementSize * i;
+                    addr = op::internal::PtrCastTo<const NnopbaseUChar>(attrs[j]->addr) + elementSize * i;
                     verKey = NnopbaseExecutor8ByteCopy(elementSize, verKey, addr);
                 }
             }
@@ -966,7 +966,7 @@ static aclnnStatus NnopbaseCollecterReadStaticBinJsonInfo(NnopbaseJsonInfo &json
         nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDescByKey(jsonInfo.keys[0].c_str(), binInfo));
     auto &binConfigInfo = std::get<0>(binInfo);
     const auto &binContent = std::get<1>(binInfo);
-    jsonInfo.bin = const_cast<NnopbaseUChar *>(op::internal::PtrCastTo<const NnopbaseUChar>((binContent.content)));
+    jsonInfo.bin = op::internal::PtrCastTo<const NnopbaseUChar>((binContent.content));
     jsonInfo.binLen = binContent.len;
     try {
         const std::string coreType = binConfigInfo["coreType"].get<std::string>();

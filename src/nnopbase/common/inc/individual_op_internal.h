@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    void *addr;
+    const void *addr;
     size_t size;
     bool isOptional;
     bool isVector;

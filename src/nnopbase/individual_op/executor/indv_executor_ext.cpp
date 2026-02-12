@@ -695,7 +695,7 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
     return OK;
 }
 
-NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey, NnopbaseUChar *addr)
+NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey, const NnopbaseUChar *addr)
 {
     const size_t length = totalSize / 8U;
     if (length != 0) {
@@ -1028,18 +1028,18 @@ NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTens
 
 NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *verKey)
 {
-    NnopbaseUChar *addr = nullptr;
+    const NnopbaseUChar *addr = nullptr;
     size_t length = 0;
     for (size_t j = 0; j < attrs->num; j++) {
         // 传入时已校验 attrs[j].addr.addr 不为空
         if (!attrs->attrs[j].addr.isVector) {
-            addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs->attrs[j].addr.addr);
+            addr = op::internal::PtrCastTo<const NnopbaseUChar>(attrs->attrs[j].addr.addr);
             length = attrs->attrs[j].addr.size;
             verKey = NnopbaseExecutor8ByteCopy(length, verKey, addr);
         } else {
             const size_t elementSize = attrs->attrs[j].addr.elementSize;
             for (size_t i = 0U; i < attrs->attrs[j].addr.size / elementSize; i++) {
-                addr = op::internal::PtrCastTo<NnopbaseUChar>(attrs->attrs[j].addr.addr) + elementSize * i;
+                addr = op::internal::PtrCastTo<const NnopbaseUChar>(attrs->attrs[j].addr.addr) + elementSize * i;
                 verKey = NnopbaseExecutor8ByteCopy(elementSize, verKey, addr);
             }
         }

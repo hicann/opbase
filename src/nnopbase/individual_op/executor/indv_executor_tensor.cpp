@@ -510,7 +510,7 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor *executor, const 
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, void *const attrAddr, const size_t attrLen,
+aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *const attrAddr, const size_t attrLen,
     const size_t index, const size_t elementSize, const NnopbaseAttrDtype dtype)
 {
     NnopbaseAttrs &opAttrs = executor->attrs;

@@ -107,7 +107,7 @@ typedef struct {
     uint32_t blockDim = 0U;
     uint32_t multiKernelType = 0U;
     std::unordered_map<uint64_t, MixRationParam> tilingKeyInfo;
-    NnopbaseUChar *bin = nullptr;
+    const NnopbaseUChar *bin = nullptr;
     uint32_t binLen = 0U;
     NnopbaseDfxInfo dfxInfo;
     size_t debugBufSize = 0U;
@@ -130,7 +130,7 @@ struct MemsetOpBinInfo {
         }
     }
     const NnopbaseChar *opType = nullptr;
-    NnopbaseUChar *bin = nullptr;
+    const NnopbaseUChar *bin = nullptr;
     std::string binPath;
     void *binHandle = nullptr;
     uint32_t binLen = 0U;
@@ -162,7 +162,7 @@ struct MemsetOpInfo {
 typedef struct {
     BinInfoKey binInfoKey;
     void* regInfo = nullptr;
-    NnopbaseUChar *bin;
+    const NnopbaseUChar *bin;
     std::string simplifiedKey;
     std::string binPath;
     void *binHandle = nullptr;
@@ -191,7 +191,7 @@ aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, Nnopba
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 
 aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
-aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, NnopbaseUChar *&bin, uint32_t *binLen);
+aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, const NnopbaseUChar **bin, uint32_t *binLen);
 aclnnStatus NnopbaseKernelUnRegister(void **handle);
 aclnnStatus NnopbaseReadJsonConfig(const std::string &binaryInfoPath, nlohmann::json &binaryInfoConfig);
 aclnnStatus NnopbaseGetOpJsonPath(const std::string &binPath, std::string &jsonPath);

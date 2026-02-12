@@ -210,7 +210,7 @@ size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor)
 NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *verKey);
 NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors, size_t tensorNum);
 bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor *executor);
-NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey, NnopbaseUChar *addr);
+NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey, const NnopbaseUChar *addr);
 aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor *executor);
 
 // prepare args for launch
@@ -236,7 +236,7 @@ aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors *tensors, const u
 aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor *executor, const aclTensorList *tensorList,
                                               const uint32_t index, const bool isInput);
 aclnnStatus NnopbaseExecutorSetRef(NnopbaseExecutor *executor, const size_t inputIrIdx, const size_t outputIrIdx);
-aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, void *const attrAddr, const size_t attrLen,
+aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *const attrAddr, const size_t attrLen,
     const size_t index, const size_t elementSize, const NnopbaseAttrDtype dtype);
 
 // IOcache
@@ -390,7 +390,7 @@ static inline void NnopbaseExecutorGetRefUnContiguousTensors(NnopbaseExecutor *e
     auto &refUnContTensors = inUnContTensors.refUnContTensors;
     OP_LOGD("Op %s has %zu ref uncontiguous input.", executor->opType, refUnContTensors.size());
     if (!refUnContTensors.empty()) {
-        inUnContTensors.refUnContTensorList.tensors = const_cast<aclTensor **>(&refUnContTensors[0U]);
+        inUnContTensors.refUnContTensorList.tensors = (&refUnContTensors[0U]);
         inUnContTensors.refUnContTensorList.size = refUnContTensors.size();
         *unContTensors = op::internal::PtrCastTo<const aclTensorList>(&inUnContTensors.refUnContTensorList);
         const aclTensor *const *value = &inUnContTensors.refContTensors[0U];

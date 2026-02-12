@@ -155,7 +155,7 @@ typedef struct {
 } NnopbaseTensor;
 
 struct NnopbaseTensorList : public op::Object {
-    aclTensor **tensors = nullptr;
+    const aclTensor **tensors = nullptr;
     uint64_t size = 0U;
 };
 

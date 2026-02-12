@@ -370,7 +370,7 @@ aclnnStatus NnopbaseAddIntArrayAttr(void *executor, const aclIntArray* array, co
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     OP_LOGI("NnopbaseAddIntArrayAttr index %zu, size %lu.", index, array->Size());
-    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), const_cast<void *>(PtrCastTo<const void>(array->GetData())),
+    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), (PtrCastTo<const void>(array->GetData())),
                                    array->Size() * sizeof(int64_t), index, sizeof(int64_t), kNnopbaseInt);
 }
 
@@ -379,7 +379,7 @@ aclnnStatus NnopbaseAddBoolArrayAttr(void *executor, const aclBoolArray* array, 
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     OP_LOGI("NnopbaseAddBoolArrayAttr index %zu, size %lu.", index, array->Size());
-    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), const_cast<void *>(PtrCastTo<const void>(array->GetData())),
+    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), PtrCastTo<const void>(array->GetData()),
                                    array->Size() * sizeof(bool), index, sizeof(bool), kNnopbaseBool);
 }
 
@@ -388,7 +388,7 @@ aclnnStatus NnopbaseAddFloatArrayAttr(void *executor, const aclFloatArray* array
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     OP_LOGI("NnopbaseAddFloatArrayAttr index %zu, size %lu.", index, array->Size());
-    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), const_cast<void *>(PtrCastTo<const void>(array->GetData())),
+    return NnopbaseExecutorAddAttr(PtrCastTo<NnopbaseExecutor>(executor), PtrCastTo<const void>(array->GetData()),
                                    array->Size() * sizeof(float), index, sizeof(float), kNnopbaseFloat);
 }
 
@@ -421,7 +421,7 @@ aclnnStatus NnopbaseGetAttrAddr(void *executor, const size_t index, void **attrA
     NnopbaseAttrAddr *attr = nullptr;
     ret = NnopbaseExecutorGetAttr((NnopbaseExecutor *)executor, index, &attr);
     if (attr != nullptr) {
-        *attrAddr = attr->addr;
+        *attrAddr = const_cast<void*>(attr->addr);
         *attrLen = attr->size;
     }
     return ret;

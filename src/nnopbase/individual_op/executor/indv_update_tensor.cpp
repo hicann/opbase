@@ -388,7 +388,7 @@ void NnopbaseSaveUnContiguousTensors(NnopbaseTensors *dstTensors, NnopbaseTensor
         inUnContTensors.idxs.size(),
         inUnContTensors.workspaceOffsets.size());
     auto &inVec = inUnContTensors.tensors;
-    inUnContTensors.tensorList.tensors = const_cast<aclTensor **>(&inVec[0U]);
+    inUnContTensors.tensorList.tensors = (&inVec[0U]);
     inUnContTensors.tensorList.size = inVec.size();
     if (!tensors->unContiguousTensors.refIdxs.empty()) {
         inUnContTensors.refIdxs = tensors->unContiguousTensors.refIdxs;

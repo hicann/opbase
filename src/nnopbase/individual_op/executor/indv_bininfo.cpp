@@ -92,7 +92,7 @@ aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo
 aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<MemsetOpBinInfo> &binInfo, bool loadFuncHandleByTilingKey)
 {
     if (binInfo->bin == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), binInfo->bin, &binInfo->binLen));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
     }
     aclrtBinaryLoadOption aclrtBinaryLoadOp =  aclrtBinaryLoadOption {
         .type = ACL_RT_BINARY_LOAD_OPT_LAZY_MAGIC,
@@ -478,7 +478,7 @@ aclnnStatus NnopbaseKernelUnRegister(void **handle)
     return OK;
 }
 
-aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, NnopbaseUChar *&bin, uint32_t *binLen)
+aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, const NnopbaseUChar **bin, uint32_t *binLen)
 {
     struct stat statbuf;
     NNOPBASE_ASSERT_TRUE_RETVAL(stat(binPath, &statbuf) != -1);
@@ -493,7 +493,7 @@ aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, Nnopba
     if (close(fd) == -1) { OP_LOGW("Close bin file %s failed, errno = %d.", binPath, errno); }
 
     NNOPBASE_ASSERT_TRUE_RETVAL(len != -1);
-    bin = buf.release();
+    *bin = buf.release();
     *binLen = size;
     return OK;
 }

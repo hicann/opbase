@@ -637,7 +637,7 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
     if (binInfo->hasReg) { return OK;}
 
     if (binInfo->bin == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), binInfo->bin, &binInfo->binLen));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
     }
 
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
@@ -1319,7 +1319,7 @@ void NnopbaseExecutorGetUnContiguousTensors(NnopbaseExecutor *executor, const ac
     auto &inVec = inUnContTensors.tensors;
     OP_LOGI("Op %s has %zu uncontiguous input, executor addr is %p.", executor->opType, inVec.size(), executor);
     if (!inVec.empty()) {
-        inUnContTensors.tensorList.tensors = const_cast<aclTensor **>(&inVec[0U]);
+        inUnContTensors.tensorList.tensors = (&inVec[0U]);
         inUnContTensors.tensorList.size = inVec.size();
         *inTensors = op::internal::PtrCastTo<const aclTensorList>(&inUnContTensors.tensorList);
     } else {
