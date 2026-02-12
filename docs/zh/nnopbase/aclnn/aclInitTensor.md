@@ -98,7 +98,7 @@ aclnnStatus aclInitTensor(aclTensor *tensor, const int64_t *viewDims, uint64_t v
 </td>
 <td class="cellrowborder" valign="top" width="24.529999999999998%" headers="mcps1.1.4.1.2 "><p id="p165782015134216"><a name="p165782015134216"></a><a name="p165782015134216"></a>输入</p>
 </td>
-<td class="cellrowborder" valign="top" width="46.44%" headers="mcps1.1.4.1.3 "><p id="p6592154141914"><a name="p6592154141914"></a><a name="p6592154141914"></a>tensor在Device侧的存储地址。</p>
+<td class="cellrowborder" valign="top" width="46.44%" headers="mcps1.1.4.1.3 "><p id="p6592154141914"><a name="p6592154141914"></a><a name="p6592154141914"></a>tensor在Device侧的存储地址，该地址必须32字节对齐，否则可能会出现未定义错误。</p>
 </td>
 </tr>
 </tbody>

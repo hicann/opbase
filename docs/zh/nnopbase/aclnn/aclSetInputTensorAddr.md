@@ -46,7 +46,7 @@ aclnnStatus aclSetInputTensorAddr(aclOpExecutor *executor, const size_t index, a
 </td>
 <td class="cellrowborder" valign="top" width="24.57%" headers="mcps1.1.4.1.2 "><p id="p1820993461913"><a name="p1820993461913"></a><a name="p1820993461913"></a>输入</p>
 </td>
-<td class="cellrowborder" valign="top" width="46.44%" headers="mcps1.1.4.1.3 "><p id="p1320933419195"><a name="p1320933419195"></a><a name="p1320933419195"></a>需要刷新到指定aclTensor中记录的Device存储地址。</p>
+<td class="cellrowborder" valign="top" width="46.44%" headers="mcps1.1.4.1.3 "><p id="p1320933419195"><a name="p1320933419195"></a><a name="p1320933419195"></a>需要刷新到指定aclTensor中记录的Device存储地址，该地址必须32字节对齐，否则可能会出现未定义错误。</p>
 </td>
 </tr>
 </tbody>

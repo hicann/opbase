@@ -92,7 +92,7 @@ aclTensor *aclCreateTensor(const int64_t *viewDims, uint64_t viewDimsNum, aclDat
 </td>
 <td class="cellrowborder" valign="top" width="26.919999999999998%" headers="mcps1.1.4.1.2 "><p id="p5988103815119"><a name="p5988103815119"></a><a name="p5988103815119"></a>输入</p>
 </td>
-<td class="cellrowborder" valign="top" width="54.7%" headers="mcps1.1.4.1.3 "><p id="p618520277151"><a name="p618520277151"></a><a name="p618520277151"></a>tensor在Device侧的存储地址。</p>
+<td class="cellrowborder" valign="top" width="54.7%" headers="mcps1.1.4.1.3 "><p id="p618520277151"><a name="p618520277151"></a><a name="p618520277151"></a>tensor在Device侧的存储地址，该地址必须32字节对齐，否则可能会出现未定义错误。</p>
 </td>
 </tr>
 </tbody>
