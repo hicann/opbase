@@ -180,7 +180,6 @@ struct SliceView {
         uint64_t srcStride = 0;
         uint64_t dstStride = 0;
         uint64_t idx = 0;
-        bool isSliceNum = false;
         bool isAxisA = false;
     } axis[dim];
 };
@@ -195,11 +194,6 @@ struct PaddingParam {
     int32_t aPaddingStart = 0;       // a轴 补pad的起始位置
     int32_t aPaddingLen = 0;         // a轴 补pad的长度
     int32_t aPaddingRepeat = 0;      // a轴 补pad的循环次数
-};
-
-struct SliceFactors {
-    uint64_t sliceShapeFactor;
-    uint64_t sliceNumFactor;
 };
 
 namespace __reduceType

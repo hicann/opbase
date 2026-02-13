@@ -33,28 +33,24 @@ struct ReduceSchAux {
     using InDType = typename InputDType<OpDag, DataType, IsStageOne, IsSameType<OpDag, void>::value>::T;
     // reduce计算的数据类型
     using PromoteDType =
-        typename OutputDType<OpDag, DataType, OpDag::ReduceOpPos, IsSameType<OpDag, void>::value>::T;
+    	typename OutputDType<OpDag, DataType, OpDag::ReduceOpPos, IsSameType<OpDag, void>::value>::T;
+    // 输出数据类型 
+    using OutDType = 
+        typename OutputDType<OpDag, DataType, OpDag::FunList::Size - 1, IsSameType<OpDag, void>::value>::T;
     constexpr static int32_t Dim = Pattern::Dim;
     constexpr static int32_t VL_ELEMS = Ops::Base::GetVRegSize() / sizeof(DataType);
     constexpr static uint64_t UB_BLOCK = Ops::Base::GetUbBlockSize();
-    constexpr static int32_t MIN_DTYPE_BYTES = OpDag::MinDtypeBytes;
 
 public:
     uint64_t loopAStartIndex_ = 0;
     uint64_t loopAEndIndex_ = 0;
     uint64_t loopAAxisStep_ = 0;
-    uint64_t loopAAxisSliceStep_ = 0;
     uint64_t ubFactorA_ = 0;
-    uint64_t sliceShapeFactorA_ = 0;
-    uint64_t sliceNumFactorA_ = 0;
 
     uint64_t loopRStartIndex_ = 0;
     uint64_t loopREndIndex_ = 0;
     uint64_t loopRAxisStep_ = 0;
-    uint64_t loopRAxisSliceStep_ = 0;
     uint64_t ubFactorR_ = 0;
-    uint64_t sliceShapeFactorR_ = 0;
-    uint64_t sliceNumFactorR_ = 0;
 
     GlobalTensor<uint8_t>* input_;
     GlobalTensor<uint8_t>* output_;
@@ -68,13 +64,9 @@ public:
 
     uint64_t eleNum_ = 0;
 
-    uint8_t isContiguous_ = 1;
-
     struct {
         uint64_t start = 0;
-        uint64_t sliceStart = 0;
         uint64_t stride = 1;
-        uint64_t sliceStride = 1;
     } iterAddr_[Dim];
 
     const ReduceOpTilingData* tiling_;
@@ -105,92 +97,14 @@ public:
         this->workspace_ = workspace;
         this->tiling_ = tiling;
         for (uint64_t i = 0; i < Dim; i++) {
-            iterAddr_[i].stride = tiling_->sliceShape[i];
-            iterAddr_[i].sliceStride = tiling_->sliceNum[i];
+            iterAddr_[i].stride = tiling_->shape[i];
         }
         eleNum_ = tiling_->basicBlock / sizeof(InDType);
-        ubFactorA_ = tiling_->ubFactorA;
-        ubFactorR_ = tiling_->ubFactorR;
-    }
-
-    __aicore__ inline void JudgeIsContiguous()
-    {
-        if (tiling_->stride[Dim - 1] != 1) {
-            isContiguous_ = 0;
-            return;
-        }
-        for (int32_t i = Dim - 2; i >= 0; i--) {
-            if (tiling_->stride[i] != tiling_->sliceShape[i + 1] * tiling_->stride[i + 1]) {
-                isContiguous_ = 0;
-                return;
-            }
-        }
-    }
-
-    __aicore__ inline void CalcAxisStep(
-        uint64_t sliceNum, uint64_t sliceShape, uint64_t ubFactor, uint64_t& axisStep, uint64_t& axisSliceStep)
-    {
-        if (ubFactor <= sliceShape) { // ub切在sliceShape
-            axisStep = Ops::Base::CeilDiv(sliceShape, ubFactor);
-            axisSliceStep = 1;
-        } else { // ub切在sliceNum
-            axisStep = sliceShape;
-            axisSliceStep = Ops::Base::CeilDiv(sliceNum, Ops::Base::CeilDiv(ubFactor, sliceShape));
-        }
-    }
-
-    __aicore__ inline void ComputeIterAddress(int32_t axis, uint64_t step, uint64_t stepSize,
-                                              uint64_t sliceShapeFactor, uint64_t sliceNumFactor)
-    {
-        auto curInSliceShape = step % stepSize;
-        auto curInSliceNum = step / stepSize;
-
-        this->iterAddr_[axis].start = curInSliceShape * sliceShapeFactor;
-        this->iterAddr_[axis].sliceStart = curInSliceNum * sliceNumFactor;
-        this->iterAddr_[axis].stride = tiling_->sliceShape[axis] - this->iterAddr_[axis].start;
-        this->iterAddr_[axis].sliceStride = tiling_->shape[axis] / tiling_->sliceShape[axis] -
-                                            this->iterAddr_[axis].sliceStart;
-
-        if (likely(this->iterAddr_[axis].stride >= sliceShapeFactor)) {
-            this->iterAddr_[axis].stride = sliceShapeFactor;
-        }
-        if (likely(this->iterAddr_[axis].sliceStride >= sliceNumFactor)) {
-            this->iterAddr_[axis].sliceStride = sliceNumFactor;
-        }
-    }
-
-    template<typename T>
-    __aicore__ inline SliceFactors ComputeSliceFactors(T ubFactor, T sliceShape)
-    {
-        if (ubFactor <= sliceShape) {
-            return {ubFactor, 1};
-        } else {
-            return {sliceShape, Ops::Base::CeilDiv(ubFactor, sliceShape)};
-        }
-    }
-
-    __aicore__ inline void InitSliceFactors()
-    {
-        constexpr auto axisA = LoopInfo->loopAAxis[LoopInfo->loopACount - 1];
-        auto factorsA = ComputeSliceFactors(ubFactorA_, tiling_->sliceShape[axisA]);
-        sliceShapeFactorA_ = factorsA.sliceShapeFactor;
-        sliceNumFactorA_ = factorsA.sliceNumFactor;
-        
-        if constexpr (LoopInfo->loopInnerRCount > 0) {
-            constexpr auto axisR = LoopInfo->loopInnerRAxis[LoopInfo->loopInnerRCount - 1];
-            auto factorsR = ComputeSliceFactors(ubFactorR_, tiling_->sliceShape[axisR]);
-            sliceShapeFactorR_ = factorsR.sliceShapeFactor;
-            sliceNumFactorR_ = factorsR.sliceNumFactor;
-        } else {
-            sliceShapeFactorR_ = ubFactorR_;
-            sliceNumFactorR_ = 1;
-        }
     }
 
     __aicore__ inline void SetLoopRange()
     {
         int32_t blockId = GetBlockIdx();
-	    JudgeIsContiguous();
         if constexpr (IsBlockCutA<LoopInfo>()) {
             loopAStartIndex_ = blockId * tiling_->factorACntPerCore;
             loopAEndIndex_ = loopAStartIndex_ + tiling_->factorACntPerCore;
@@ -199,13 +113,11 @@ public:
             }
             constexpr int32_t aAxisIdx = LoopInfo->loopACount - 1;
             constexpr int32_t aAxis = LoopInfo->loopAAxis[aAxisIdx];
-            CalcAxisStep(tiling_->sliceNum[aAxis], tiling_->sliceShape[aAxis], ubFactorA_,
-                         loopAAxisStep_, loopAAxisSliceStep_);
+            loopAAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[aAxis], tiling_->ubFactorA);
             if constexpr (LoopInfo->loopInnerRCount > 0) {
                 constexpr int32_t rAxisIdx = LoopInfo->loopInnerRCount - 1;
                 constexpr int32_t rAxis = LoopInfo->loopInnerRAxis[rAxisIdx];
-                CalcAxisStep(tiling_->sliceNum[rAxis], tiling_->sliceShape[rAxis], ubFactorR_,
-                             loopRAxisStep_, loopRAxisSliceStep_);
+                loopRAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[rAxis], tiling_->ubFactorR);
             }
         } else {
             loopRStartIndex_ = blockId / tiling_->groupR * tiling_->factorRTotalCnt +
@@ -223,20 +135,21 @@ public:
 
             constexpr int32_t rAxisIdx = LoopInfo->loopRCount - 1;
             constexpr int32_t rAxis = LoopInfo->loopRAxis[rAxisIdx];
-            CalcAxisStep(tiling_->sliceNum[rAxis], tiling_->sliceShape[rAxis], ubFactorR_,
-                         loopRAxisStep_, loopRAxisSliceStep_);
+            loopRAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[rAxis], tiling_->ubFactorR);  // 切分轴Rfactor的个数
+
             if constexpr (LoopInfo->loopACount > 0) {
                 constexpr int32_t aAxisIdx = LoopInfo->loopACount - 1;
                 constexpr int32_t aAxis = LoopInfo->loopAAxis[aAxisIdx];
-                CalcAxisStep(tiling_->sliceNum[aAxis], tiling_->sliceShape[aAxis], ubFactorA_,
-                             loopAAxisStep_, loopAAxisSliceStep_);
+                loopAAxisStep_ = Ops::Base::CeilDiv(tiling_->shape[aAxis], tiling_->ubFactorA);
             }
         }
+        ubFactorA_ = tiling_->ubFactorA;
+        ubFactorR_ = tiling_->ubFactorR;
         RUN_LOG(
-            "loopAStartIndex:%ld, loopAEndIndex:%ld, loopAAxisStep:%ld, loopAAxisSliceStep:%ld, ubFactorA:%ld, "
-            "loopRStartIndex:%ld, loopREndIndex:%ld, loopRAxisStep:%ld, loopRAxisSliceStep:%ld, ubFactorR:%ld\n",
-            loopAStartIndex_, loopAEndIndex_, loopAAxisStep_, loopAAxisSliceStep_, ubFactorA_,
-            loopRStartIndex_, loopREndIndex_, loopRAxisStep_, loopRAxisSliceStep_, ubFactorR_);
+            "loopAStartIndex:%ld, loopAEndIndex:%ld, loopAAxisStep:%ld, ubFactorA:%ld, loopRStartIndex:%ld, "
+            "loopREndIndex:%ld, loopRAxisStep:%ld, ubFactorR:%ld\n",
+            loopAStartIndex_, loopAEndIndex_, loopAAxisStep_, ubFactorA_, loopRStartIndex_, loopREndIndex_,
+            loopRAxisStep_, ubFactorR_);
     }
 
     __aicore__ inline void SetIterRRange()
@@ -255,7 +168,6 @@ public:
     template <class... Args>
     __aicore__ inline void Process(Args... args)
     {
-        InitSliceFactors();
         SetLoopRange();
         SetIterRRange();
 
@@ -278,7 +190,14 @@ public:
         if constexpr (LoopAIdx != 0) {
             constexpr auto axis = LoopInfo->loopAAxis[LoopAIdx - 1];
             if constexpr (LoopAIdx == LoopInfo->loopACount) {
-                ComputeIterAddress(axis, step, this->loopAAxisStep_, sliceShapeFactorA_, sliceNumFactorA_);
+                // 切分轴
+                auto cur = step % this->loopAAxisStep_;
+                this->iterAddr_[axis].start = cur * this->ubFactorA_;
+                this->iterAddr_[axis].stride = tiling_->shape[axis] - this->iterAddr_[axis].start;
+                if (likely(this->iterAddr_[axis].stride >= this->ubFactorA_)) {
+                    this->iterAddr_[axis].stride = this->ubFactorA_;
+                }
+
                 if constexpr (LoopAIdx > 0) {
                     CalculateIterA<LoopAIdx - 1>(step / this->loopAAxisStep_);
                 }
@@ -309,7 +228,7 @@ public:
             }
         } else {
             constexpr int32_t axis = LoopInfo->loopInnerAAxis[start];
-            uint64_t shape = tiling_->sliceShape[axis];
+            uint64_t shape = tiling_->shape[axis];
             if constexpr (start + 1 == end) {  // 为最内轴
                 uint64_t loopSize = shape / this->ubFactorA_;
                 uint64_t tail = shape - loopSize * this->ubFactorA_;
@@ -471,16 +390,7 @@ public:
         const uint64_t blkSize = static_cast<uint64_t>(UB_BLOCK / sizeof(InDType));
         const uint64_t alignSize = view.isBlockAligned == 1U ? blkSize : 1UL;
         const bool isLastSplit = IsLoopSpliteRAxis<LoopInfo>(Dim - 1);
-        uint64_t mainBurstLen = 0;
-        if (tiling_->sliceNum[Dim - 1] != 1) {
-            if (this->ubFactorR_ <= tiling_->sliceShape[Dim - 1]) {   // 切sliceShape
-                mainBurstLen = isLastSplit ? this->ubFactorR_ : view.axis[0].repeat;
-            } else {    // 切sliceNum
-                mainBurstLen = view.axis[0].repeat;
-            }            
-        } else {
-            mainBurstLen = isLastSplit ? this->ubFactorR_ : view.axis[0].repeat;
-        }
+        const uint64_t mainBurstLen = isLastSplit ? this->ubFactorR_ : view.axis[0].repeat;
         const uint64_t busrtLen = view.axis[0].repeat;
         const uint64_t mainBurstLenAlign = Ops::Base::CeilAlign(mainBurstLen, alignSize);
         const uint64_t dimRAlign = Ops::Base::CeilAlign(static_cast<uint64_t>(shape.value[1]), blkSize);
@@ -492,7 +402,8 @@ public:
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {
                 if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx)) {
-                    rPaddingStart *= view.axis[i].repeat;
+                    rPaddingStart = view.axis[i].repeat;
+                    break;
                 } else {
                     burstPaddingRepeat *= view.axis[i].repeat;
                 }
@@ -548,21 +459,10 @@ public:
         padding.aPaddingLen = dimAAlign - padding.aPaddingStart;
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {
-                auto axisIdx = view.axis[i].idx;
-                if (IsLoopSpliteRAxis<LoopInfo>(axisIdx)) {
-                    if (!view.axis[i].isSliceNum && ubFactorR_ < tiling_->sliceShape[axisIdx]) {
-                        rPaddingStart = view.axis[i].repeat;
-                        rPaddingTimes = this->ubFactorR_ - view.axis[i].repeat;
-                    } else if (!view.axis[i].isSliceNum && ubFactorR_ >= tiling_->sliceShape[axisIdx]) {
-                        // tiling 切 slicenum
-                        aPaddingRepeat *= view.axis[i].repeat;
-                    } else if (view.axis[i].isSliceNum && ubFactorR_ >= tiling_->sliceShape[axisIdx]) {
-                        // tiling 切 slicenum
-                        rPaddingStart = view.axis[i].repeat;
-                        rPaddingTimes = this->ubFactorR_ / tiling_->sliceShape[axisIdx] - view.axis[i].repeat;
-                    } else {
-                        break;
-                    }
+                if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx)) {
+                    rPaddingStart = view.axis[i].repeat;
+                    rPaddingTimes = this->ubFactorR_ - view.axis[i].repeat;
+                    break;
                 } else {
                     aPaddingRepeat *= view.axis[i].repeat;
                 }
@@ -583,7 +483,12 @@ public:
         if constexpr (LoopInnerRIdx != 0) {
             constexpr auto axis = LoopInfo->loopInnerRAxis[LoopInnerRIdx - 1];
             if constexpr (LoopInnerRIdx == LoopInfo->loopInnerRCount) {
-                ComputeIterAddress(axis, basicBlockIdx, this->loopRAxisStep_, sliceShapeFactorR_, sliceNumFactorR_);
+                auto cur = basicBlockIdx % this->loopRAxisStep_;
+                this->iterAddr_[axis].start = cur * this->ubFactorR_;
+                this->iterAddr_[axis].stride = tiling_->shape[axis] - this->iterAddr_[axis].start;
+                if (likely(this->iterAddr_[axis].stride >= this->ubFactorR_)) {
+                    this->iterAddr_[axis].stride = this->ubFactorR_;
+                }
                 CalculateInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / this->loopRAxisStep_);
             } else {
                 this->iterAddr_[axis].start = basicBlockIdx % tiling_->shape[axis];
@@ -601,13 +506,23 @@ public:
             for (auto idx = LoopInfo->loopRCount - 1; idx > -1; --idx) {
                 if (idx == LoopInfo->loopRCount - 1) {
                     constexpr auto axis = LoopInfo->loopRAxis[LoopInfo->loopRCount - 1];
-                    ComputeIterAddress(axis, temp, this->loopRAxisStep_, sliceShapeFactorR_, sliceNumFactorR_);
+                    auto cur = temp % this->loopRAxisStep_;
+                    this->iterAddr_[axis].start = cur * this->ubFactorR_;
+                    this->iterAddr_[axis].stride = tiling_->shape[axis] - this->iterAddr_[axis].start;
+                    if (likely(this->iterAddr_[axis].stride >= this->ubFactorR_)) {
+                        this->iterAddr_[axis].stride = this->ubFactorR_;
+                    }
                     temp = temp / this->loopRAxisStep_;
                 } else {
                     auto axis = LoopInfo->loopRAxis[idx];
                     if (IsLoopSpliteAAxis<LoopInfo>(axis)) {
                         // axis both in AAxis and RAxis
-                        ComputeIterAddress(axis, temp, this->loopAAxisStep_, sliceShapeFactorA_, sliceNumFactorA_);
+                        auto cur = temp % this->loopAAxisStep_;
+                        this->iterAddr_[axis].start = cur * this->ubFactorA_;
+                        this->iterAddr_[axis].stride = tiling_->shape[axis] - this->iterAddr_[axis].start;
+                        if (likely(this->iterAddr_[axis].stride >= this->ubFactorA_)) {
+                            this->iterAddr_[axis].stride = this->ubFactorA_;
+                        }
                         temp = temp / this->loopAAxisStep_;
                     } else {
                         this->iterAddr_[axis].start = temp % tiling_->shape[axis];
@@ -624,51 +539,25 @@ public:
     {
         constexpr static auto burstLenAxis = Dim - 1;  // 获取第一个循环轴
         view.axis[0].start = iterAddr_[burstLenAxis].start;
-        view.axis[0].srcStride = tiling_->stride[burstLenAxis];
-        view.axis[0].repeat = iterAddr_[burstLenAxis].stride;
+        view.axis[0].srcStride = 1;
+        view.axis[0].repeat = GetBurstLen<LoopInfo, burstLenAxis>(iterAddr_, tiling_);
         view.axis[0].idx = burstLenAxis;
         view.axis[0].isAxisA = IsAxisA<Pattern::FirstA>(view.axis[0].idx);
         view.axisSize = 1;
-        if (tiling_->sliceNum[burstLenAxis] != 1) {
-            view.axis[1].start = iterAddr_[burstLenAxis].sliceStart;
-            view.axis[1].srcStride = tiling_->sliceStride[burstLenAxis];
-            view.axis[1].repeat = iterAddr_[burstLenAxis].sliceStride;
-            view.axis[1].idx = view.axis[0].idx;
-            view.axis[1].isAxisA = view.axis[0].isAxisA;
-            view.axis[1].isSliceNum = true;
-            view.axisSize = 2;
-        }
-        int32_t axisStart = view.axisSize;
 
         if constexpr (burstLenAxis > 0) {
             int32_t axis = burstLenAxis;
             for (int32_t i = 1; i < Dim; i++) {
-                if (tiling_->shape[axis - 1] == 1 && i != Dim - 1) {
-                    axis = axis - 1;
-                    continue;
-                }
-                int32_t currentIdx = axisStart;
-                view.axis[currentIdx].start = iterAddr_[axis - 1].start;
-                view.axis[currentIdx].srcStride = tiling_->stride[axis - 1];
-                view.axis[currentIdx].repeat = iterAddr_[axis - 1].stride;
-                view.axis[currentIdx].idx = axis - 1;
-                view.axis[currentIdx].isAxisA = IsAxisA<Pattern::FirstA>(view.axis[currentIdx].idx);
-                axisStart++;
-                view.axisSize = axisStart;
-                if (tiling_->sliceNum[burstLenAxis - i] != 1) {
-                    view.axis[currentIdx + 1].start = iterAddr_[burstLenAxis - i].sliceStart;
-                    view.axis[currentIdx + 1].srcStride = tiling_->sliceStride[burstLenAxis - i];
-                    view.axis[currentIdx + 1].repeat = iterAddr_[burstLenAxis - i].sliceStride;
-                    view.axis[currentIdx + 1].idx = view.axis[currentIdx].idx;
-                    view.axis[currentIdx + 1].isAxisA = view.axis[currentIdx].isAxisA;
-                    view.axis[currentIdx + 1].isSliceNum = true;
-                    axisStart++;
-                    view.axisSize = axisStart;
-                }
-                if (view.axis[currentIdx].idx <= 0) {
+                view.axisSize = i + 1;
+                view.axis[i].start = iterAddr_[axis - 1].start;
+                view.axis[i].repeat =
+                    GetRepeatStride<LoopInfo>(axis - 1, iterAddr_, tiling_, view.axis[i].srcStride);
+                view.axis[i].idx = axis - 1;
+                view.axis[i].isAxisA = IsAxisA<Pattern::FirstA>(view.axis[i].idx);
+                if (view.axis[i].idx <= 0) {
                     break;
                 }
-                axis = view.axis[currentIdx].idx;
+                axis = view.axis[i].idx;
             }
         }
         view.isBlockAligned = (tiling_->useNddma == 0);
@@ -702,16 +591,8 @@ public:
             if (!view.axis[i].isAxisA) {
                 // 第一个R轴的dstStride就是A轴大小
                 aSize = (aSize == 1) ? view.axis[i].dstStride : aSize;
-                if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx) && !view.axis[i].isSliceNum) {
-                    if (this->ubFactorR_ <= tiling_->sliceShape[view.axis[i].idx]) { // UB切在sliceShape
-                        rSize = rSize * this->ubFactorR_;
-                    } else {    // UB切在sliceNum
-                        rSize = rSize * view.axis[i].repeat;
-                        rSize = rSize * (this->ubFactorR_ / view.axis[i].repeat);
-                    }
-                } else if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx) && view.axis[i].isSliceNum) {
-                    // 这部分的rsize已经在 UB切在sliceNum 分支中计算过，跳过
-                    continue;
+                if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx)) {
+                    rSize = rSize * this->ubFactorR_;
                 } else {
                     rSize = rSize * view.axis[i].repeat;
                 }
@@ -804,7 +685,7 @@ public:
         CalculateInView<InputType>(view);
         // Run copyIn
         GetTensor<TPosition::VECIN>(bufId);
-        sch_->ReduceSch::template CopyInAux<pos, InnerPattern>(inTensor, globalTensor, view, isContiguous_);
+        sch_->ReduceSch::template CopyInAux<pos, InnerPattern>(inTensor, globalTensor, view);
         ReleaseTensor<TPosition::VECIN>(bufId);
 
         CalculateInnerShape(view, shape);
@@ -978,7 +859,7 @@ public:
         globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ InDType*>(workspace_[0].GetPhyAddr(0)));
         // Run copyIn
         GetTensor<TPosition::VECIN>(bufId);
-        sch_->ReduceSch::template CopyInAux<0, InnerPattern>(inTensor, globalTensor, view, isContiguous_);
+        sch_->ReduceSch::template CopyInAux<0, InnerPattern>(inTensor, globalTensor, view);
         ReleaseTensor<TPosition::VECIN>(bufId);
 
         CalculateInnerShape(view, shape);
@@ -992,26 +873,14 @@ public:
         view.axis[0].dstStride = 1;
         if (IsLoopSpliteRAxis<LoopInfo>(Pattern::Dim - 1)) {
             // R是切分轴时, 主尾块会先add起来, 所以R轴按照factorR算
-            if (ubFactorR_ < tiling_->sliceShape[view.axis[0].idx]) {
-                value = Ops::Base::CeilAlign(ubFactorR_, alignedValue);
-            }
+            value = Ops::Base::CeilAlign(tiling_->ubFactorR, alignedValue);
         }
         // 因A轴循环会重新触发shape计算，所以A轴的shape不需要统一到ubFactorA,但是R轴shape需要统一到ubFactorR
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {
-                auto axisIdx = view.axis[i].idx;
                 view.axis[i].dstStride = value;
-                if (IsLoopSpliteRAxis<LoopInfo>(axisIdx)) {
-                    if (!view.axis[i].isSliceNum && ubFactorR_ < tiling_->sliceShape[axisIdx]) {
-                        value = value * ubFactorR_;
-                    } else if (
-                        !view.axis[i].isSliceNum && ubFactorR_ >= tiling_->sliceShape[axisIdx]) {
-                        value = value * view.axis[i].repeat;
-                    } else if (view.axis[i].isSliceNum && ubFactorR_ >= tiling_->sliceShape[axisIdx]) {
-                        value = value * ubFactorR_ / tiling_->sliceShape[axisIdx];
-                    } else {
-                        value = value * view.axis[i].repeat;
-                    }
+                if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx)) {
+                    value = value * tiling_->ubFactorR;
                 } else {
                     value = value * view.axis[i].repeat;
                 }
@@ -1032,7 +901,7 @@ public:
     template <class T, class V>
     __aicore__ inline void CalculateViewRAMode(V& view)
     {
-        uint64_t alignedValue = (view.isBlockAligned == 1 ? (UB_BLOCK / MIN_DTYPE_BYTES) : 1UL);
+        uint64_t alignedValue = (view.isBlockAligned == 1 ? (UB_BLOCK / sizeof(T)) : 1UL);
         int64_t value = Ops::Base::CeilAlign(view.axis[0].repeat, alignedValue);
         view.axis[0].dstStride = 1;
         // 因A轴循环会重新触发shape计算，所以A轴的shape不需要统一到ubFactorA,但是R轴shape需要统一到ubFactorR
@@ -1048,19 +917,9 @@ public:
         }
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {
-                auto axisIdx = view.axis[i].idx;
                 view.axis[i].dstStride = value;
-                if (IsLoopSpliteRAxis<LoopInfo>(axisIdx)) {
-                    if (!view.axis[i].isSliceNum && ubFactorR_ < tiling_->sliceShape[axisIdx]) {
-                        value = value * ubFactorR_;
-                    } else if (
-                        !view.axis[i].isSliceNum && ubFactorR_ >= tiling_->sliceShape[axisIdx]) {
-                        value = value * view.axis[i].repeat;
-                    } else if (view.axis[i].isSliceNum && ubFactorR_ >= tiling_->sliceShape[axisIdx]) {
-                        value = value * ubFactorR_ / tiling_->sliceShape[axisIdx];
-                    } else {
-                        value = value * view.axis[i].repeat;
-                    }
+                if (IsLoopSpliteRAxis<LoopInfo>(view.axis[i].idx)) {
+                    value = value * tiling_->ubFactorR;
                 } else {
                     value = value * view.axis[i].repeat;
                 }
@@ -1082,7 +941,7 @@ public:
     __aicore__ inline void CalculateInView(V& view)
     {
         uint64_t addrOffset = 0;
-        for (int32_t i = 0; i < view.axisSize; i++) {
+        for (int32_t i = 0; i < Pattern::Dim; i++) {
             addrOffset += view.axis[i].start * view.axis[i].srcStride;
         }
         view.addr = addrOffset;  // 搬运地址
@@ -1132,11 +991,7 @@ public:
 
         S newShape;
         newShape.value[0] = 1;
-        if constexpr (Pattern::TailA) {
-            newShape.value[1] = outRepeat * Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
-        } else {
-            newShape.value[1] = outRepeat * Ops::Base::CeilAlign(outLen, UB_BLOCK / sizeof(InDType));
-        }
+        newShape.value[1] = outRepeat * Ops::Base::CeilAlign(outLen, UB_BLOCK / sizeof(InDType));
         RunPostOp<OpDag::ReduceOpPos>(aIndex, newView, newShape);
     }
 
@@ -1147,10 +1002,11 @@ public:
         using Input = typename ElemOp::Args::template At<1>;
         using Output = typename ElemOp::Args::template At<0>;
         static_assert(Placeholder::IsOutHolder<Output>::Value, "output args should be out holder");
-        using outDtype = typename Output::DType;
+        static_assert(IsSameType<typename Output::DType, OutDType>::value,	 
+                      "CopyOut data type is inconsistent with Op data type.");
 
-        GlobalTensor<outDtype> globalTensor;
-        globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ outDtype*>(output_[Output::Pos].GetPhyAddr(0)));
+        GlobalTensor<OutDType> globalTensor;
+        globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ OutDType*>(output_[Output::Pos].GetPhyAddr(0)));
 
         if constexpr (Vec::IsReduceOp<typename Input::Fun>::Value) {
             SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
@@ -1158,8 +1014,8 @@ public:
         } else {
             uint8_t bufId = GetPostBufId<GetFunOutputPos<Input>()>();
             uint8_t syncId = bufId + preBufNum_;
-            LocalTensor<outDtype> src =
-                sch_->ReduceSch::template AllocTensorAux<outDtype, GetFunOutputPos<Input>()>(bufId);
+            LocalTensor<OutDType> src =
+                sch_->ReduceSch::template AllocTensorAux<OutDType, GetFunOutputPos<Input>()>(bufId);
             GetTensor<TPosition::VECOUT>(syncId);
             sch_->ReduceSch::template CopyOutAux(globalTensor, src, view);
             ReleaseTensor<TPosition::VECOUT>(syncId);
@@ -1199,7 +1055,7 @@ public:
         uint64_t axisStep = LoopInfo->loopACount > 0 ? this->loopAAxisStep_ : 1;
         newView.addr = (blockId % tiling_->groupR) *
                            Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(VL_ELEMS)) +     // group offset
-                       (blockId / (tiling_->groupR * axisStep)) * tiling_->sliceShape[axis] * innerA +  // AAxis offset
+                       (blockId / (tiling_->groupR * axisStep)) * tiling_->shape[axis] * innerA +  // AAxis offset
                        (blockId / tiling_->groupR % axisStep) * this->ubFactorA_ * innerA +        // main offset
                        addrOffset;                                                                 // innerA offset
 
