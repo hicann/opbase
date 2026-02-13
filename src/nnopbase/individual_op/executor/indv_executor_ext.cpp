@@ -47,6 +47,22 @@ void PrintTime(const NnopbaseExecutor *const executor, const char *const info, c
     OP_EVENT("Nnopbase time %s : %f us", info, time / 1000.0); // 1000.0 for time us
 }
 
+void PrintInitTime(const timespec *const tp, const char *const info, const unsigned short startIndex,
+               const unsigned short endIndex)
+{
+    unsigned long time = 0U;
+    if (startIndex < NnopbaseCollectorTimeIdx::kEnd && endIndex < NnopbaseCollectorTimeIdx::kEnd &&
+        tp[endIndex].tv_nsec != 0) {
+        if (tp[startIndex].tv_sec != tp[endIndex].tv_sec) {
+            // 1000000000 for time stamp
+            time = tp[endIndex].tv_nsec + 1000000000 - tp[startIndex].tv_nsec;
+        } else {
+            time = tp[endIndex].tv_nsec - tp[startIndex].tv_nsec;
+        }
+    }
+    OP_EVENT("Nnopbase init time %s : %f us", info, time / 1000.0); // 1000.0 for time us
+}
+
 void NnopbaseExecutorClearAttrs(NnopbaseAttrs *attrs)
 {
     attrs->totalSize = 0;
@@ -660,6 +676,18 @@ void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor)
         PrintTime(executor, "launch", NnopbaseTimeIdx::kBeforeLaunch, NnopbaseTimeIdx::kAfterLaunch);
         PrintTime(executor, "after launch", NnopbaseTimeIdx::kAfterLaunch, NnopbaseTimeIdx::kRunWithWsEnd);
         (void)memset_s(executor->timeStamp.tp, sizeof(executor->timeStamp.tp), 0, sizeof(executor->timeStamp.tp));
+    }
+}
+
+void PrintNnopbaseInitTimeStampInfo()
+{
+    if (g_nnopbaseSysCfgParams.enableTimeStamp) {
+        PrintInitTime(gBinCollecter->collectorTp, "collector init", NnopbaseCollectorTimeIdx::kCollectorInitStart, NnopbaseCollectorTimeIdx::kCollectorInitEnd);
+        PrintInitTime(gBinCollecter->collectorTp, "get base path", NnopbaseCollectorTimeIdx::kCollectorInitEnd, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
+        PrintInitTime(gBinCollecter->collectorTp, "load tiling so", NnopbaseCollectorTimeIdx::kGetBasePathEnd, NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
+        PrintInitTime(gBinCollecter->collectorTp, "load debug kernel", NnopbaseCollectorTimeIdx::kLoadTilingSoEnd, NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd);
+        PrintInitTime(gBinCollecter->collectorTp, "load static kernel", NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd, NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
+        PrintInitTime(gBinCollecter->collectorTp, "load dynamic kernel", NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
     }
 }
 

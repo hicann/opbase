@@ -477,18 +477,17 @@ aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImp
         }
         for (auto tilingSoPath : tilingSoPaths) {
             OP_LOGI("Tiling so path: %s", tilingSoPath.c_str());
-            if (mmRealPath(tilingSoPath.c_str(), &(soPath[0U]), NNOPBASE_FILE_PATH_MAX_LEN) != EN_OK) {
-                OP_LOGW("Get op tiling so path for %s failed, errmsg:%s.", tilingSoPath.c_str(), NnopbaseGetmmErrorMsg());
-            } else {
-                auto registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(basePath[i].second);
-                if (registry == nullptr) {
-                    registry = std::make_shared<gert::OpImplSpaceRegistryV2>();
-                    NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
-                    gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(registry, basePath[i].second);
-                }
-                gert::OppSoDesc oppSoDesc({ge::AscendString(soPath.data())}, ge::AscendString(GetOpSoPackageName(tilingSoPath).c_str()));
-                registry->AddSoToRegistry(oppSoDesc);
+            auto registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(basePath[i].second);
+            if (registry == nullptr) {
+                registry = std::make_shared<gert::OpImplSpaceRegistryV2>();
+                NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
+                gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(registry, basePath[i].second);
+            }
+            gert::OppSoDesc oppSoDesc({ge::AscendString(tilingSoPath.c_str())}, ge::AscendString(GetOpSoPackageName(tilingSoPath).c_str()));
+            if(registry->AddSoToRegistry(oppSoDesc) == ge::GRAPH_SUCCESS) {
                 openSoSuccess = true;
+            } else {
+                OP_LOGW("Load op tiling so path for %s failed.", tilingSoPath.c_str());
             }
         }
     }
@@ -1040,14 +1039,14 @@ static aclnnStatus NnopbaseUpdateCommonJsonInfo(nlohmann::json &binInfo, const s
     const std::string &kernelPath = kernelSubPath + relativeBinPath;
     jsonInfo.coreType = static_cast<CoreType>(coreType);
     // get kernelPath
-    if (mmRealPath(kernelPath.c_str(), jsonInfo.path, NNOPBASE_FILE_PATH_MAX_LEN) != EN_OK) {
-        OP_LOGW("Get kernel path for %s failed, errmsg:%s.", kernelPath.c_str(), NnopbaseGetmmErrorMsg());
-        return ACLNN_ERR_PARAM_INVALID;
-    }
+    const errno_t ret = strcpy_s(jsonInfo.path, NNOPBASE_FILE_PATH_MAX_LEN, kernelPath.c_str());
+    CHECK_COND(ret == EOK,
+        ACLNN_ERR_PARAM_INVALID, "Strcpy kernel path[%s] to jsonInfo.path[%s] failed, result is %d.",
+        kernelPath.c_str(), jsonInfo.path, ret);
     OP_LOGI("Get op[%s] coreType is [%d], binPath is [%s]",
         jsonInfo.opType.c_str(), jsonInfo.coreType, jsonInfo.path);
-    
     jsonInfo.multiKernelType = 0U;
+    
     if ((jsonInfo.coreType == kMix || jsonInfo.coreType == kMixAiCore || jsonInfo.coreType == kMixAiv)) {
         try {
             jsonInfo.multiKernelType = binInfo["multiKernelType"].get<uint32_t>();
@@ -1329,21 +1328,29 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
     OP_LOGI("[NnopbaseCollecter] Collecter work start.");
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
     NnopbaseGetBasePath(collecter, basePath);
+    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
+    
     if (basePath.size() > 0) {
         (void)(NnopbaseLoadTilingSo(basePath));
     }
+    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
+
     if (NnopbaseIsExceptionDumpEnable() || g_nnopbaseSysCfgParams.enableDebugKernel) {
         (void)NnopbaseCollecterGetDebugKernelPathAndReadConfig(collecter);
     }
-    (void)NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter);
+    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd);
 
+    (void)NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter);
     const aclnnStatus retForStaticBinaryInfo = NnopbaseCollecterGetStaticBinaryInfo(collecter);
     if (retForStaticBinaryInfo != OK) {
         CHECK_COND((basePath.size() >= 1), ACLNN_ERR_PARAM_INVALID,
             "May not set ASCEND_OPP_PATH or ASCEND_CUSTOM_OPP_PATH in env!");
     }
+    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
+    
     const aclnnStatus retForDynamicKernelInfo =
         NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath);
+    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
     CHECK_COND((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
         "Get path and read binary_info_config.json failed, "
             "please check if the opp_kernel package is installed!");

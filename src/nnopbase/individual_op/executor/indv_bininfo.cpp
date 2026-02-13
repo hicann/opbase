@@ -481,7 +481,8 @@ aclnnStatus NnopbaseKernelUnRegister(void **handle)
 aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, const NnopbaseUChar **bin, uint32_t *binLen)
 {
     struct stat statbuf;
-    NNOPBASE_ASSERT_TRUE_RETVAL(stat(binPath, &statbuf) != -1);
+    CHECK_COND(stat(binPath, &statbuf) != -1,
+        ACLNN_ERR_PARAM_INVALID, "Failed to stat file: %s", binPath);
     NNOPBASE_ASSERT_TRUE_RETVAL(statbuf.st_size > 0);
     const size_t size = static_cast<size_t>(statbuf.st_size);
     auto buf = std::make_unique<NnopbaseUChar[]>(size);
@@ -512,26 +513,22 @@ aclnnStatus NnopbaseGetOpJsonPath(const std::string &binPath, std::string &jsonP
 
 aclnnStatus NnopbaseReadJsonConfig(const std::string &binaryInfoPath, nlohmann::json &binaryInfoConfig)
 {
-    std::vector<NnopbaseChar> opInfoPath(NNOPBASE_FILE_PATH_MAX_LEN, '\0');
-    if (mmRealPath(binaryInfoPath.c_str(), &(opInfoPath[0U]), NNOPBASE_FILE_PATH_MAX_LEN) != EN_OK) {
-        OP_LOGW("Get jsonfile path for %s failed, errmsg:%s.", binaryInfoPath.c_str(),
-                NnopbaseGetmmErrorMsg());
-        return ACLNN_ERR_PARAM_INVALID;
+    OP_LOGI("Get jsonfile path: %s", binaryInfoPath.c_str());
+
+    std::ifstream ifs(binaryInfoPath.c_str());
+    if (!ifs.is_open()) {
+         OP_LOGW("Open jsonfile path for %s failed.", binaryInfoPath.c_str());
+         return ACLNN_ERR_PARAM_INVALID;
     }
-
-    OP_LOGI("Get jsonfile path: %s", &(opInfoPath[0U]));
-
-    std::ifstream ifs(&(opInfoPath[0U]));
-    NNOPBASE_ASSERT_TRUE_RETVAL(ifs.is_open());
     try {
         ifs >> binaryInfoConfig;
         ifs.close();
     } catch (const nlohmann::json::exception &e) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Read jsonfile [%s] failed, reason %s", &(opInfoPath[0U]), e.what());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Read jsonfile [%s] failed, reason %s", binaryInfoPath.c_str(), e.what());
         ifs.close();
         return ACLNN_ERR_PARAM_INVALID;
     }
-    OP_LOGI("Read jsonfile [%s] successfully.", &(opInfoPath[0U]));
+    OP_LOGI("Read jsonfile [%s] successfully.", binaryInfoPath.c_str());
     return OK;
 }
 

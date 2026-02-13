@@ -45,6 +45,7 @@ typedef struct {
     bool useCoreTypeMagic = false;
     bool isMc2FusionLaunch = false; // 对于950后的芯片，mc2算子使用fusion launch
     std::string oppPath;
+    struct timespec collectorTp[NnopbaseCollectorTimeIdx::kEnd];
 } NnopbaseBinCollecter;
 
 extern NnopbaseBinCollecter *gBinCollecter;

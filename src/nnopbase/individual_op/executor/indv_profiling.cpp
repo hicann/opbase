@@ -138,7 +138,7 @@ void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t 
     if (ret != ACL_SUCCESS) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Report op info cache failed, ret is [%d]", ret);
     }
-    OP_LOGI("Report op [%s] info cache, task type[%u], block dim[%u], attrId[%llu] size[%zu]",
+    OP_LOGI("Report op [%s] info cache, task type[%u], numBlocks[%u], attrId[%llu] size[%zu]",
         executor->opType, taskType, numBlocks, opInfo->attrId, totalSize);
     free(buffer);
 }

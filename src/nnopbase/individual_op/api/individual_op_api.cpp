@@ -17,6 +17,7 @@
 #include "utils/thread_var_container.h"
 #include "utils/indv_soc.h"
 #include "executor/indv_executor.h"
+#include "executor/indv_collecter.h"
 #include "executor/indv_tilingcontext_builder.h"
 #include "executor/indv_bininfo.h"
 #include "executor/indv_args_pool.h"
@@ -49,12 +50,15 @@ aclnnStatus NnopbaseInit()
     if (gBinCollecter == nullptr) {
         auto binCollecter = std::make_unique<NnopbaseBinCollecter>();
         NNOPBASE_ASSERT_NOTNULL_RETVAL(binCollecter);
+        RecordNnopbaseInitTime(binCollecter.get(), NnopbaseCollectorTimeIdx::kCollectorInitStart);
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterInit(binCollecter.get()));
+        RecordNnopbaseInitTime(binCollecter.get(), NnopbaseCollectorTimeIdx::kCollectorInitEnd);
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterWork(binCollecter.get()));
         gBinCollecter = binCollecter.release();
     }
     NnopbaseExecutorSpaceSetInit(&g_nnopbaseSpaceSet);
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorSetGlobalConfig());
+    PrintNnopbaseInitTimeStampInfo();
     isInit = true;
     OP_LOGI("NnopbaseInit end");
     return OK;

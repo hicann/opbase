@@ -62,6 +62,17 @@ enum NnopbaseTimeIdx {
     kNum
 };
 
+enum NnopbaseCollectorTimeIdx {
+    kCollectorInitStart = 0,
+    kCollectorInitEnd,
+    kGetBasePathEnd,
+    kLoadTilingSoEnd,
+    kLoadDebugKernelEnd,
+    kLoadStaticKernelEnd,
+    kLoadDynamicKernelEnd,
+    kEnd
+};
+
 struct NnopbaseTimeStamp {
     struct timespec tp[NnopbaseTimeIdx::kNum];
 };

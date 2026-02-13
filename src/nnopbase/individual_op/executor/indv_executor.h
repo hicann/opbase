@@ -290,6 +290,7 @@ void NnopbaseReportContextIdInfoByRation(
     NnopbaseExecutor *const opExecutor, const uint64_t timeStamp, uint32_t &blockDim, uint32_t &taskType);
 
 void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor);
+void PrintNnopbaseInitTimeStampInfo();
 
 // for mesmet
 aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor);
@@ -344,6 +345,11 @@ inline void RecordNnopbaseTime(NnopbaseExecutor *const executor, const size_t in
     if (g_nnopbaseSysCfgParams.enableTimeStamp) {
         clock_gettime(CLOCK_MONOTONIC, &(executor->timeStamp.tp[index]));
     }
+}
+
+inline void RecordNnopbaseInitTime(NnopbaseBinCollecter *const collecter, const size_t index)
+{
+    clock_gettime(CLOCK_MONOTONIC, &(collecter->collectorTp[index]));
 }
 
 inline uint32_t NnopbaseExecutorGetBlockDim(NnopbaseExecutor *executor)
