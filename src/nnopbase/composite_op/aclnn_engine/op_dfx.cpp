@@ -476,7 +476,7 @@ void ReportCacheOpInfo(const TaskInfo &taskInfo, OpArgContext *args, const uint6
     cacheOpInfoBasic.nodeId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
         GetThreadLocalContext().logInfo_.l0Name,
         op::OpTypeDict::ToString(opType).GetString());
-    cacheOpInfoBasic.opType = GenKernelLauncherId(GetThreadLocalContext().logInfo_.l0Name);
+    cacheOpInfoBasic.opType = GenKernelLauncherId(op::OpTypeDict::ToString(opType).GetString());
     uint32_t numBlocks = op::internal::GetThreadLocalContext().numBlocks_;
     OP_LOGI("numBlocks is %u, taskInfo.ration is %u", numBlocks, taskInfo.ration);
     if (taskInfo.ration == OP_DFX_TASK_RATION_TWO) {

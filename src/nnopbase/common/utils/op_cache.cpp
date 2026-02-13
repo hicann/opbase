@@ -1190,7 +1190,7 @@ aclnnStatus OpExecCache::Run(void *workspaceAddr, const aclrtStream stream, cons
             ReportCacheOpInfoFromCache(taskInfo,
                 tensorInfoLists,
                 g_opCacheTlsData.threadLocalContext.numBlocks_,
-                g_opCacheTlsData.threadLocalContext.profilingInfoId_);
+                opExecCacheDfx_->GetProfilingInfoId(index));
         }
         index++;
     }
