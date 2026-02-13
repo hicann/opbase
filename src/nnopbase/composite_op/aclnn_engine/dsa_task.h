@@ -30,6 +30,7 @@ public:
     DSATask()
     {
         memset_s(workspaceHolder_, sizeof(workspaceHolder_), 0, sizeof(workspaceHolder_));
+        memset_s(&randomNumTaskInfo_, sizeof(randomNumTaskInfo_), 0, sizeof(randomNumTaskInfo_));
     }
 protected:
     aclnnStatus VisitOutputArg(const aclTensor *const arg)

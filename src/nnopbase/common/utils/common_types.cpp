@@ -157,10 +157,8 @@ aclArray<T>::aclArray(const T *value, uint64_t size)
 }
 
 aclTensor::aclTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat)
+    : viewOffset_(0), viewFormat_(originFormat), storage_(new (std::nothrow) aclStorage(true))
 {
-    viewOffset_ = 0;
-    viewFormat_ = originFormat;
-    storage_ = new (std::nothrow) aclStorage(true);
     OP_CHECK(storage_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."),
             throw std::bad_alloc());
     op::StorageShape shape;
@@ -179,9 +177,9 @@ aclTensor::aclTensor(const op::Shape &shape, op::DataType dataType, op::Format f
 
 aclTensor::aclTensor(const op::Shape &storageShape, const op::Shape &originShape, op::DataType dataType,
                      op::Format storageFormat, op::Format originFormat, void *tensorDataAddr)
+    : viewOffset_(0), viewFormat_(originFormat), viewShape_(originShape),
+      storage_(new (std::nothrow) aclStorage(tensorDataAddr, true))
 {
-    viewOffset_ = 0;
-    storage_ = new (std::nothrow) aclStorage(tensorDataAddr, true);
     OP_CHECK(storage_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."),
             throw std::bad_alloc());
     op::StorageShape gertShape;
@@ -190,8 +188,6 @@ aclTensor::aclTensor(const op::Shape &storageShape, const op::Shape &originShape
     gertShape.MutableOriginShape() = originShape;
     gertFormat.SetStorageFormat(storageFormat);
     gertFormat.SetOriginFormat(originFormat);
-    viewShape_ = originShape;
-    viewFormat_ = originFormat;
     op::ToContiguousStrides(viewShape_, viewStrides_);
 
     void *base = op::internal::Allocate(sizeof(op::Tensor));
@@ -207,8 +203,8 @@ aclTensor::aclTensor(const op::Shape &shape, op::DataType dataType, op::Format f
 
 aclTensor::aclTensor(const op::Shape &storageShape, const op::Shape &originShape, op::DataType dataType,
                      op::Format storageFormat, op::Format originFormat)
+    : viewOffset_(0), viewFormat_(originFormat), viewShape_(originShape)
 {
-    viewOffset_ = 0;
     auto typeSize = op::TypeSize(dataType);
     int64_t size = storageShape.GetShapeSize();
     void *data = op::internal::Allocate(size * typeSize);
@@ -218,8 +214,6 @@ aclTensor::aclTensor(const op::Shape &storageShape, const op::Shape &originShape
     storage_ = new (std::nothrow) aclStorage(dataAddr, false);
     OP_CHECK(storage_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."),
             throw std::bad_alloc());
-    viewShape_ = originShape;
-    viewFormat_ = originFormat;
     op::ToContiguousStrides(viewShape_, viewStrides_);
 
     op::StorageShape gertShape;
@@ -238,16 +232,14 @@ aclTensor::aclTensor(const op::Shape &storageShape, const op::Shape &originShape
 aclTensor::aclTensor(const int64_t *viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t *stride,
                      int64_t offset, const aclFormat format, const int64_t *storageDims, uint64_t storageDimsNum,
                      void *tensorDataAddr)
+    : viewOffset_(offset), viewFormat_(static_cast<op::Format>(format))
 {
     op::ToShape(viewDims, viewDimsNum, viewShape_);
-    viewFormat_ = static_cast<op::Format>(format);
     if (stride != nullptr) {
         viewStrides_.assign(stride, stride + viewDimsNum);
     } else {
         op::ToContiguousStrides(viewShape_, viewStrides_);
     }
-
-    viewOffset_ = offset;
 
     op::StorageShape storageShape;
     op::StorageFormat storageFormat;
@@ -271,8 +263,9 @@ aclTensor::aclTensor(const int64_t *viewDims, uint64_t viewDimsNum, aclDataType 
 }
 
 aclTensor::aclTensor(const aclTensor &other, const op::Shape &shape, int64_t offset)
+    : isView_(true), viewOffset_(offset), viewShape_(shape), viewFormat_(other.viewFormat_),
+      storage_(other.storage_)
 {
-    isView_ = true;
     op::StorageShape storageShape;
     storageShape.MutableStorageShape() = shape;
     storageShape.MutableOriginShape() = shape;
@@ -283,16 +276,13 @@ aclTensor::aclTensor(const aclTensor &other, const op::Shape &shape, int64_t off
         new (base) op::Tensor(storageShape, other.tensor_->GetFormat(), other.tensor_->GetPlacement(),
                              other.GetDataType(),
                              other.tensor_->GetTensorData().GetAddr());
-    storage_ = other.storage_;
-    viewOffset_ = offset;
-    viewShape_ = shape;
     op::ToContiguousStrides(viewShape_, viewStrides_);
-    viewFormat_ = other.viewFormat_;
 }
 
 aclTensor::aclTensor(const aclTensor &other, const op::Shape &oriShape, const op::Shape &storageShape, const op::Strides &oriStride, int64_t offset)
+    : isView_(true), viewStrides_(oriStride), viewOffset_(offset), viewShape_(oriShape),
+      viewFormat_(other.viewFormat_), storage_(other.storage_)
 {
-    isView_ = true;
     op::StorageShape storageShapeLocal;
     storageShapeLocal.MutableStorageShape() = storageShape;
     storageShapeLocal.MutableOriginShape() = oriShape;
@@ -308,11 +298,6 @@ aclTensor::aclTensor(const aclTensor &other, const op::Shape &oriShape, const op
     for (size_t i = 0; i < oriStride.size(); i++) {
         geStride.SetStride(i, oriStride[i]);
     }
-    storage_ = other.storage_;
-    viewShape_ = oriShape;
-    viewStrides_ = oriStride;
-    viewOffset_ = offset;
-    viewFormat_ = other.viewFormat_;
 }
 
 aclTensor::aclTensor(const aclIntArray *value, op::DataType dataType) : aclTensor(value->GetData(),
@@ -342,11 +327,8 @@ aclTensor::aclTensor(const aclBf16Array *value, op::DataType dataType)
 }
 
 aclTensor::aclTensor(const aclScalar *value, op::DataType dataType)
+    : viewOffset_(0), isView_(false), viewShape_({}), viewFormat_(op::Format::FORMAT_ND)
 {
-    viewOffset_ = 0;
-    isView_ = false;
-    viewShape_ = {};
-    viewFormat_ = op::Format::FORMAT_ND;
     auto typeSize = op::TypeSize(dataType);
     void *dataAddr = op::internal::Allocate(typeSize);
     OP_CHECK(dataAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."),
@@ -1461,11 +1443,9 @@ ge::AscendString ToString(const aclScalarList& t)
 
 template<typename T>
 aclTensor::aclTensor(const T *value, uint64_t size, op::DataType dataType)
+    : viewOffset_(0), isView_(false), viewShape_({static_cast<int64_t>(size)}),
+      viewFormat_(op::Format::FORMAT_ND)
 {
-    viewOffset_ = 0;
-    isView_ = false;
-    viewShape_ = {static_cast<int64_t>(size)};
-    viewFormat_ = op::Format::FORMAT_ND;
     auto typeSize = op::TypeSize(dataType);
     void *dataAddr = op::internal::Allocate(size * typeSize);
     OP_CHECK(dataAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."),

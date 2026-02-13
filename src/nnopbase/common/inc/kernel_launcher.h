@@ -21,6 +21,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "aclnn_engine/launcher_ctx.h"
+#include "bridge_dfx.h"
 
 namespace op {
 

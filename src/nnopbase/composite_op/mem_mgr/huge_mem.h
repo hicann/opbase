@@ -10,6 +10,9 @@
 
 #ifndef OP_API_OP_API_COMMON_HUGE_MEM_H_
 #define OP_API_OP_API_COMMON_HUGE_MEM_H_
+
+#include <cstdint>
+
 namespace op {
 namespace internal {
 

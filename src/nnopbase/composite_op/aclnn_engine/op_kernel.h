@@ -225,7 +225,6 @@ public:
             launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar() :
                                                funcHandleWithKernelName_[currDevId_].GetVar();
             launchCfg.tilingKey = tilingkey;
-            launchCfg.kernelNameOfNoFatBin = kernelNameOfNoFatBin_.c_str();
             launchCfg.numBlocks = numBlocks;
             launchCfg.schemMode = *(res->scheduleMode_);
             launchCfg.dynUBufSize = *(res->dynUBufSize_);
@@ -1238,7 +1237,7 @@ private:
     thread_local static std::vector<MemSetTensorInfo> memSetValueCtx_;
     bool hasWorkspace_{false};
     FVector<size_t> staticWorkspaceSize_;
-    int64_t staticBlockDim_;
+    int64_t staticBlockDim_{0};
     bool interCoreSync_{false};
     uint8_t scheduleMode_{0};
     std::string staticImplMode_;

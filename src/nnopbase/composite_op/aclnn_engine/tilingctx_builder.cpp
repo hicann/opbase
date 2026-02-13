@@ -147,8 +147,8 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     OP_LOGI("Update op tiling ctx. input[%zu], output[%zu], compiled Info %p, deterministic %d, deterministicLevel %d, "
         "tilingDataWrap: %p, coreNum: %u",
         opInputNum, opOutputNum, tilingParseCtx->GetCompiledInfoStruct(),
-        *reinterpret_cast<int32_t *>(tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX]->data.inplace),
-        *reinterpret_cast<int32_t *>(tilingCtx_->values[tilingInputNum - 1]->data.inplace),
+        *PtrCastTo<int32_t>(tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX]->data.inplace),
+        *PtrCastTo<int32_t>(tilingCtx_->values[tilingInputNum - 1]->data.inplace),
         tilingData_, coreNum);
     return ACLNN_SUCCESS;
 }

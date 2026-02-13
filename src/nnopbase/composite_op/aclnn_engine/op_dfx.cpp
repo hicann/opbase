@@ -231,7 +231,7 @@ uint64_t GenSummaryItemId(const char *l2Name, const char *l0Name, const char *op
 int32_t RecordOpArgCallbacker::RecordOpArgCallback(
     [[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char *dumpConfig, [[maybe_unused]] int32_t size)
 {
-    SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) ? true : false);
+    SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) != 0 ? true : false);
     OP_LOGI("RecordOpArgCallback, get record op arg flag = %d", GetOpProfilingRecordArgFlag());
     return 0;
 }
@@ -239,7 +239,7 @@ int32_t RecordOpArgCallbacker::RecordOpArgCallback(
 int32_t RecordOpArgCallbacker::RecordOpArgDump(
     [[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char *dumpConfig, [[maybe_unused]] int32_t size)
 {
-    SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) ? true : false);
+    SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) != 0 ? true : false);
     if (!GetOpProfilingRecordArgFlag()) {
         OP_LOGI("Record stop, start RecordOpArgDump");
         int32_t res = aclnnOpInfoRecord::OpInfoDump();

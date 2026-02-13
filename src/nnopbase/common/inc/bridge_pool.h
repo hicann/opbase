@@ -21,7 +21,7 @@ namespace internal {
     int32_t GetPoolIndex();
     void UpdateHugeMemIndex(int32_t id);
     void FreeHugeMem();
-    void *GetAddr(int32_t id, size_t size);
+    void *GetAddr(const int32_t id, size_t size);
 } // namespace internal
 } // namespace op
 #endif

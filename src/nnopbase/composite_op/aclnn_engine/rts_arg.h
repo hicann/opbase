@@ -19,7 +19,6 @@
 
 #include "aclnn/acl_meta.h"
 #include "kernel_utils.h"
-#include "opdev/op_errno.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_cache.h"
 #include "kernel_arg.h"

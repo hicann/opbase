@@ -11,6 +11,9 @@
 #ifndef OP_API_OP_API_COMMON_INC_DLOPEN_API_H_
 #define OP_API_OP_API_COMMON_INC_DLOPEN_API_H_
 
+#include <cstdint>
+#include "aclnn/acl_meta.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -356,7 +356,7 @@ void RtsArg::AppendExceptionDumpAddr(bool assertFlag)
 
 aclnnStatus RtsArg::AppendFftsAddr()
 {
-    void *modeAddr = 0;
+    void *modeAddr = nullptr;
     aclError rc = aclrtGetHardwareSyncAddr(&modeAddr);
     OP_CHECK(rc == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtGetHardwareSyncAddr failed: %d", rc),
         return ACLNN_ERR_RUNTIME_ERROR);
@@ -378,6 +378,9 @@ aclnnStatus RtsArg::AppendHostArg(void *hostData, size_t hostDataSize)
 
     size_t alignLen = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
 
+    // Record data start position before writing to avoid unsigned integer wraparound
+    void *dataStart = GetExtendedTilingBuffer()->Data();
+
     if (!isEmptyData) {
         OP_CHECK(GetExtendedTilingBuffer()->Append(hostData, hostDataSize) == ACLNN_SUCCESS,
             OP_LOGE(ACLNN_ERR_INNER, "failed to append host data. size: %zu", hostDataSize), return ACLNN_ERR_INNER);
@@ -391,12 +394,12 @@ aclnnStatus RtsArg::AppendHostArg(void *hostData, size_t hostDataSize)
         OP_CHECK((memset_s(GetExtendedTilingBuffer()->Data(), hostDataSize, 0, hostDataSize) == EOK),
             OP_LOGW("Failed to memset."),
             ;);
+        CHECK_RET_CODE(GetExtendedTilingBuffer()->Seek(hostDataSize), "failed to seek buffer, len %zu.", hostDataSize);
     }
 
     placeHolderInfo_.emplace_back(aclrtPlaceHolderInfo{
         static_cast<decltype(rtArg_.placeHolderInfoPtr->addrOffset)>(PtrOffset(rtArg_.args, hostAddr_)),
-        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(
-        PtrOffset(rtArg_.args, PtrShift(GetExtendedTilingBuffer()->Data(), -hostDataSize))) });
+        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(PtrOffset(rtArg_.args, dataStart)) });
     tensorOffset_.push_back(PtrOffset(rtArg_.args, hostAddr_) / PTR_SIZE);
     hostAddr_++;
     OP_CHECK(GetExtendedTilingBuffer()->Seek(alignLen - hostDataSize) == ACLNN_SUCCESS,
@@ -410,7 +413,10 @@ aclnnStatus RtsArg::AppendDevicePtrArg(const aclTensorList *tensors, size_t data
     size_t hostDataSize = dataSize + tensors->Size() * PTR_SIZE;
     size_t alignSize = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
 
-    int64_t *dataPtr = static_cast<int64_t *>(GetExtendedTilingBuffer()->Data());
+    // Record data start position before writing to avoid unsigned integer wraparound
+    void *dataStart = GetExtendedTilingBuffer()->Data();
+
+    int64_t *dataPtr = PtrCastTo<int64_t>(dataStart);
     OP_CHECK(GetExtendedTilingBuffer()->Seek(dataSize) == ACLNN_SUCCESS,
         OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", dataSize), return ACLNN_ERR_INNER);
     int64_t *devicePtr = reinterpret_cast<int64_t *>(GetExtendedTilingBuffer()->Data());
@@ -445,8 +451,7 @@ aclnnStatus RtsArg::AppendDevicePtrArg(const aclTensorList *tensors, size_t data
 
     placeHolderInfo_.emplace_back(aclrtPlaceHolderInfo{
         static_cast<decltype(rtArg_.placeHolderInfoPtr->addrOffset)>(PtrOffset(rtArg_.args, hostAddr_)),
-        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(
-        PtrOffset(rtArg_.args, PtrShift(GetExtendedTilingBuffer()->Data(), -hostDataSize))) });
+        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(PtrOffset(rtArg_.args, dataStart)) });
     hostAddr_++;
     OP_CHECK(GetExtendedTilingBuffer()->Seek(alignSize - hostDataSize) == ACLNN_SUCCESS,
         OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignSize - hostDataSize), return ACLNN_ERR_INNER);

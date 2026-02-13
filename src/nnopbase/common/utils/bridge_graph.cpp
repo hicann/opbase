@@ -14,6 +14,7 @@
 #include "kernel_tensor.h"
 #include "opdev/op_def.h"
 #include "opdev/op_log.h"
+#include "opdev/op_dfx.h"
 #include "bridge_graph.h"
 
 using namespace op::mem;
@@ -128,9 +129,9 @@ static void TraitsAclTensor(FVector<aclTensor *> &result, OpArgList &opArgList)
 {
     opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg &arg) {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AddToList(result, reinterpret_cast<aclTensor *>(arg->pointer));
+            AddToList(result, PtrCastTo<aclTensor>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AddToList(result, reinterpret_cast<aclTensorList *>(arg->pointer));
+            AddToList(result, PtrCastTo<aclTensorList>(arg->pointer));
         }
     });
 }
