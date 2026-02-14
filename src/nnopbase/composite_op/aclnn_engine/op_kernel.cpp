@@ -646,7 +646,7 @@ void OpKernelBin::SetMemSetFlagFromJson()
 uint64_t OpKernelBin::GetAttrId(OpArgContext *args)
 {
     uint64_t aclGraphAttrId = 0;
-    if (opKernel_ != nullptr) {
+    if (GetThreadLocalContext().cacheOpInfoSwitch_ && opKernel_ != nullptr) {
         std::string attrStrId;
         if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
             op::internal::ReportAttrInfo(

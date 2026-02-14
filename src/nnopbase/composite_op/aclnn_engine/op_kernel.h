@@ -256,8 +256,6 @@ public:
                         });
                 }
                 CacheTensorInfo(in, out);
-                TaskInfo tskInfo = GetTaskInfo(tilingkey, args);
-                tskInfo.attrId = GetAttrId(args);
                 if (isMemSet == false) {
                     GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
                         GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
@@ -265,15 +263,16 @@ public:
                         GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
                             GetThreadLocalContext().logInfo_.l0Name,
                             op::OpTypeDict::ToString(opType_).GetString());
+                    TaskInfo tskInfo = GetTaskInfo(tilingkey, args);
+                    tskInfo.attrId = GetAttrId(args);
                     CacheDfxInfo(numBlocks, GetThreadLocalContext().profilingInfoId_, tskInfo, false);
                 } else {
                     GetThreadLocalContext().memSetProfilingInfoId_.summaryItemId_ =
                         GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
                             GetThreadLocalContext().logInfo_.l0Name,
                             op::OpTypeDict::ToString(opType_).GetString());
-
                     CacheDfxInfo(
-                        numBlocks, GetThreadLocalContext().memSetProfilingInfoId_, tskInfo, true);
+                        numBlocks, GetThreadLocalContext().memSetProfilingInfoId_, GetTaskInfo(tilingkey, args), true);
                 }
             }
 
