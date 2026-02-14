@@ -16,7 +16,11 @@
 #ifndef BROADCAST_SCH_NLAST_TRANSPOSE_UB_BROADCAST_BASE_H_
 #define BROADCAST_SCH_NLAST_TRANSPOSE_UB_BROADCAST_BASE_H_
 
+#if ASC_DEVKIT_MAJOR >=9
+#include "basic_api/kernel_vec_intf.h"
+#else
 #include "kernel_operator.h"
+#endif
 #include "atvoss/util/dag.h"
 #include "atvoss/util/vec.h"
 #include "atvoss/util/dfx.h"

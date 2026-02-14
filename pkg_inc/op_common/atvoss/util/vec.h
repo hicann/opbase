@@ -17,7 +17,21 @@
 #include "elems.h"
 
 #ifdef __CCE_AICORE__
+#if ASC_DEVKIT_MAJOR >=9
+#include "basic_api/kernel_vec_intf.h"
+#else
 #include "kernel_operator.h"
+#endif
+#include "adv_api/math/log.h"
+#include "adv_api/math/exp.h"
+#include "adv_api/math/sin.h"
+#include "adv_api/math/cos.h"
+#include "adv_api/math/atan.h"
+#include "adv_api/math/erf.h"
+#include "adv_api/math/fmod.h"
+#include "adv_api/math/power.h"
+#include "adv_api/math/axpy.h"
+
 namespace Ops {
 namespace Base {
 using namespace AscendC;

@@ -17,7 +17,11 @@
 #define _REDUCE_UTIL_H_
 #include <stdint.h>
 #ifdef __CCE_AICORE__
+#if ASC_DEVKIT_MAJOR >=9
+#include "basic_api/kernel_vec_intf.h"
+#else
 #include "kernel_operator.h"
+#endif
 #endif
 
 #ifndef INFINITY

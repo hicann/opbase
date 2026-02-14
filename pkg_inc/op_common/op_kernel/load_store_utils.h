@@ -16,7 +16,11 @@
 #ifndef OPS_BUILT_IN_OP_ASCENDC_LOAD_STORE_UTILS_H_
 #define OPS_BUILT_IN_OP_ASCENDC_LOAD_STORE_UTILS_H_
 
+#if ASC_DEVKIT_MAJOR >=9
+#include "basic_api/kernel_vec_intf.h"
+#else
 #include "kernel_operator.h"
+#endif
 
 namespace ops {
 using namespace AscendC;

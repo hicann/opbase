@@ -18,6 +18,7 @@
 #ifdef __CCE_AICORE__
 #include "reduce_util.h"
 #include "reduce_sch_aux.h"
+#include "adv_api/reduce/reduce.h"
 #include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
 #endif

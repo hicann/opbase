@@ -15,7 +15,11 @@
 #ifndef ELEWISE_SCH_H_
 #define ELEWISE_SCH_H_
 #include "atvoss/util/dag.h"
+#if ASC_DEVKIT_MAJOR >=9
+#include "basic_api/kernel_vec_intf.h"
+#else
 #include "kernel_operator.h"
+#endif
 #include "atvoss/util/sync.h"
 #include "atvoss/util/vec.h"
 #include "elewise_base_struct.h"

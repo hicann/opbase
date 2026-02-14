@@ -15,7 +15,11 @@
 
 #ifndef OP_COMMON_OP_KERNEL_PLATFORM_UTIL_H
 #define OP_COMMON_OP_KERNEL_PLATFORM_UTIL_H
+#if ASC_DEVKIT_MAJOR >=9
+#include "basic_api/kernel_vec_intf.h"
+#else
 #include "kernel_operator.h"
+#endif
 
 namespace Ops{
 namespace Base {
