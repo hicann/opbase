@@ -20,19 +20,6 @@
 
 namespace op {
 namespace internal {
-// stub for aclrt, when moved to blue zone, codes below should be deleted
-// typedef struct {
-//     uint32_t addrOffset;
-//     uint32_t dataOffset;
-// } aclrtPlaceHolderInfo;
-
-// ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim,
-//                                                            aclrtStream stream, aclrtLaunchKernelCfg *cfg,
-//                                                            void *hostArgs, size_t argsSize,
-//                                                            aclrtPlaceHolderInfo *placeHolderArray,
-//                                                            size_t placeHolderNum);
-// end stub
-
 using AicpuAttrs = std::map<std::string, GeAttrValue>;
 
 struct AicpuArgsForLaunch {
