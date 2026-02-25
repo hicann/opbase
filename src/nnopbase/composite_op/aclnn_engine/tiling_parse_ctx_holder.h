@@ -42,6 +42,11 @@ public:
         return const_cast<AsyncAnyValue *>(&Deterministic_);
     }
 
+    AsyncAnyValue *GetDeterministicLevel() const
+    {
+        return const_cast<AsyncAnyValue *>(&DeterministicLevel_);
+    }
+
     uint32_t GetCoreNum() const
     {
         return coreNum_;
@@ -99,6 +104,7 @@ private:
     aclnnOpInfoRecord::OpKernelInfo opKernelInfo_{"", 0};
     uint32_t coreNum_{0};
     AsyncAnyValue Deterministic_;
+    AsyncAnyValue DeterministicLevel_;
 };
 
 } // namespace op::internal

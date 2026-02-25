@@ -229,6 +229,29 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     OP_LOGD("Get system param deterministic successs, deterministic = %d",
         *reinterpret_cast<int32_t *>(Deterministic_.data.inplace));
 
+    // 一次性获取强一致性开关，后续直接从静态变量中获取
+    static int64_t consistency = 0;
+    static std::once_flag consistencyFlag;
+    std::call_once(consistencyFlag, [&]() {
+        aclError retRts = aclrtGetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, &consistency);
+        OP_CHECK_NO_RETURN(retRts == ACL_SUCCESS, OP_LOGD("Can not get system param consistency, ret = %d.", retRts));
+    });
+
+    /**
+     * deterministic level:
+     * 0: deterministic:0, strong consistency:0
+     * 0: deterministic:0, strong consistency:1
+     * 1: deterministic:1, strong consistency:0
+     * 2: deterministic:1, strong consistency:1
+     */
+    int32_t deterministicLevel = 0;
+    if (deterministicVal == 1) { // deterministic is enable
+        deterministicLevel = (consistency == 1) ? 2 : 1;
+    }
+    int32_t *deterministicLevelDataInplace = reinterpret_cast<int32_t *>(DeterministicLevel_.data.inplace);
+    *deterministicLevelDataInplace = deterministicLevel;
+    OP_LOGD("Get deterministic level success, level = %d, strong consistency = %lld", deterministicLevel, consistency);
+
     OP_CHECK(tilingFuncs->tiling_parse != nullptr,
         OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
         return ACLNN_SUCCESS);
