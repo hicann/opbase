@@ -678,7 +678,11 @@ void ReduceOpTiling::ComputeUnitA(const uint64_t* shape)
                     (tmpOuterA * unitR_.outer) / CeilDiv(tmpOuterA * unitR_.outer, compileInfo_->vectorCoreNum);
                 tempCoreNum = tempCoreNum > tmpOuterA ? FloorAlign(tempCoreNum, tmpOuterA) : tempCoreNum;
                 double rate = static_cast<double>(tempCoreNum) / static_cast<double>(compileInfo_->vectorCoreNum);
-                maxStep = (rate > THRES_HOLD && rate > maxRate) ? s : maxStep;
+                if (Pattern::TailA) {
+                    maxStep = (rate > THRES_HOLD) ? s : maxStep;
+                } else {
+                    maxStep = (rate > THRES_HOLD && rate > maxRate) ? s : maxStep;
+                }
                 maxRate = rate > maxRate ? rate : maxRate;
             } else {
                 splitHere = true;
