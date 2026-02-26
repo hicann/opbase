@@ -52,6 +52,12 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/nlohmann_json.cmake)
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/func.cmake)
 
+    include(version.cmake)
+    if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
+        check_pkg_build_deps("opbase")
+    endif()
+    add_version_info_targets()
+
     include_directories(
         ${OPS_BASE_INCLUDE}
         ${OPS_BASE_INCLUDE}/op_common

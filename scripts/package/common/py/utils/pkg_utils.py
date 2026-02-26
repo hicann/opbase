@@ -92,6 +92,26 @@ class CompressError(PackageError):
         self.package_name = package_name
 
 
+class InstallScriptNotInPackageError(PackageError):
+    """package_info中没有配置install_script。"""
+
+
+class InstallScriptFormatError(PackageError):
+    """install_script配置格式错误。"""
+
+    def __init__(self, detail: str):
+        super().__init__(detail)
+        self.detail = detail
+
+
+class VersionInfoNotExist(PackageError):
+    """version.info文件不存在。"""
+
+    def __init__(self, filepath: str):
+        super().__init__(f"Version info file not found: {filepath}")
+        self.filepath = filepath
+
+
 def flatten(list_of_lists):
     """Flatten one level of nesting"""
     return chain.from_iterable(list_of_lists)

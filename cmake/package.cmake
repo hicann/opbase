@@ -74,8 +74,9 @@ set(CONF_FILES
     ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
     ${CMAKE_SOURCE_DIR}/src/nnopbase/common/op_info_record/dump_tool_config.ini
 )
-install(FILES ${CMAKE_SOURCE_DIR}/version.info
+install(FILES ${CMAKE_BINARY_DIR}/version.opbase.info
     DESTINATION share/info/ops_base
+    RENAME version.info
 )
 install(FILES ${CONF_FILES}
     DESTINATION ops_base/conf
