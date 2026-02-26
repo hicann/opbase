@@ -195,12 +195,18 @@ private:
 
     void BuildTilingCtx();
 
+    aclnnStatus EnsureTilingCtxCapacity(size_t requiredCapacity);
+
 private:
     constexpr static size_t tilingOutputNum_ = kOutputNum;
     KernelRunContext *tilingCtx_{nullptr};
     AsyncAnyValue *tilingCtxValue_{nullptr};
     AsyncAnyValue platformInfoValue_;
     std::unique_ptr<uint8_t[]> workspaceSizeVec_;
+
+    // Dynamic capacity management
+    // Initial capacity set to MAX_OP_ARG_NUM, expansion triggered only when exceeding this value
+    size_t tilingCtxCapacity_{MAX_OP_ARG_NUM};
 };
 
 } //namespace internal

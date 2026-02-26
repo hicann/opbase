@@ -19,9 +19,9 @@ namespace op::internal {
 void KernelContextHolder::BuildComputeNodeInfo()
 {
     computeNodeInfoSize_ = sizeof(ComputeNodeInfo)
-        + sizeof(AnchorInstanceInfo) * MAX_OP_ARG_NUM
-        + sizeof(CompileTimeTensorDesc) * MAX_OP_ARG_NUM
-        + sizeof(RuntimeAttrsDef) + ATTR_CAPACITY;
+        + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_
+        + sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_
+        + sizeof(RuntimeAttrsDef) + attrCapacity_;
     computeNodeInfo_ = static_cast<ComputeNodeInfo *>(malloc(computeNodeInfoSize_));
     if (computeNodeInfo_ == nullptr) {
         return;
@@ -32,12 +32,170 @@ void KernelContextHolder::BuildComputeNodeInfo()
 
 void KernelContextHolder::BuildOpInOutArg()
 {
-    size_t sz = sizeof(AsyncAnyValue) * MAX_OP_ARG_NUM;
+    size_t sz = sizeof(AsyncAnyValue) * opInArgCapacity_;
     opInArg_ = static_cast<AsyncAnyValue *>(malloc(sz));
     if (opInArg_ == nullptr) {
         return;
     }
     (void)memset_s(opInArg_, sz, 0, sz);
+}
+
+aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
+{
+    if (requiredCapacity <= opInArgCapacity_) {
+        return ACLNN_SUCCESS;
+    }
+
+    // Calculate new capacity using growth factor 2x (similar to std::vector)
+    size_t newCapacity = opInArgCapacity_;
+    while (newCapacity < requiredCapacity) {
+        newCapacity *= 2;
+    }
+
+    // Allocate new memory (do NOT use realloc)
+    size_t newSize = sizeof(AsyncAnyValue) * newCapacity;
+    AsyncAnyValue *newArg = static_cast<AsyncAnyValue *>(malloc(newSize));
+    OP_CHECK(newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc opInArg, size %zu.", newSize),
+        return ACLNN_ERR_INNER);
+
+    // Copy existing data to new location
+    size_t oldSize = sizeof(AsyncAnyValue) * opInArgCapacity_;
+    OP_CHECK(memcpy_s(newArg, newSize, opInArg_, oldSize) == EOK,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy opInArg."),
+        std::free(newArg);
+        return ACLNN_ERR_INNER);
+
+    // Zero out the new portion
+    size_t zeroSize = newSize - oldSize;
+    (void)memset_s(reinterpret_cast<uint8_t *>(newArg) + oldSize, zeroSize, 0, zeroSize);
+
+    // Free old memory and update pointer
+    std::free(opInArg_);
+    opInArg_ = newArg;
+    opInArgCapacity_ = newCapacity;
+
+    OP_LOGI("Expanded opInArg capacity from %zu to %zu.", opInArgCapacity_ / 2, opInArgCapacity_);
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCapacity)
+{
+    if (requiredCapacity <= computeNodeInfoCapacity_) {
+        return ACLNN_SUCCESS;
+    }
+
+    // Calculate new capacity using growth factor 2x
+    size_t newCapacity = computeNodeInfoCapacity_;
+    while (newCapacity < requiredCapacity) {
+        newCapacity *= 2;
+    }
+
+    // Allocate new memory
+    size_t newSize = sizeof(ComputeNodeInfo)
+        + sizeof(AnchorInstanceInfo) * newCapacity
+        + sizeof(CompileTimeTensorDesc) * newCapacity
+        + sizeof(RuntimeAttrsDef) + attrCapacity_;
+    ComputeNodeInfo *newInfo = static_cast<ComputeNodeInfo *>(malloc(newSize));
+    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo, size %zu.", newSize),
+        return ACLNN_ERR_INNER);
+
+    // Copy existing data
+    OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."),
+        std::free(newInfo);
+        return ACLNN_ERR_INNER);
+
+    // Zero out the new portion
+    size_t zeroOffset = computeNodeInfoSize_;
+    size_t zeroSize = newSize - computeNodeInfoSize_;
+    (void)memset_s(reinterpret_cast<uint8_t *>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
+
+    // Update pointers based on new memory layout
+    anchorInfo_ = PtrCastTo<AnchorInstanceInfo>(&newInfo->place_holder);
+
+    // Recalculate compileDesc_ and attrDef_ based on current irInputNum_
+    UpdateCompileDescOffset(irInputNum_);
+    if (attrNum_ > 0) {
+        UpdateAttrDefOffset(inputNum_ + outputNum_, attrNum_);
+    }
+
+    // Note: attrDef offset data is already copied as part of the memcpy_s(newInfo, ...) above
+
+    // Free old memory and update
+    std::free(computeNodeInfo_);
+    computeNodeInfo_ = newInfo;
+    computeNodeInfoSize_ = newSize;
+    computeNodeInfoCapacity_ = newCapacity;
+
+    // Update kernelCtx reference in inferShapeCtx and tilingCtx if they exist
+    // This is handled by the fact that these contexts hold pointers to the KernelContextHolder,
+    // not directly to computeNodeInfo_
+
+    OP_LOGI("Expanded computeNodeInfo capacity from %zu to %zu.", computeNodeInfoCapacity_ / 2, computeNodeInfoCapacity_);
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
+{
+    if (requiredSize <= attrCapacity_) {
+        return ACLNN_SUCCESS;
+    }
+
+    // If attrDef_ is not yet initialized, we need to expand the entire computeNodeInfo_
+    // Recalculate the structure layout to get proper offsets
+    size_t anchorInfoSize = sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_;
+    size_t compileDescSize = sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_;
+    size_t baseSize = sizeof(ComputeNodeInfo) + anchorInfoSize + compileDescSize;
+
+    // Calculate current attrDef offset (same as in UpdateAttrDefOffset)
+    size_t attrDefOffset = sizeof(ComputeNodeInfo) + anchorInfoSize + compileDescSize;
+    size_t attrDataStartOffset = attrDefOffset + sizeof(RuntimeAttrsDef) + sizeof(size_t) * attrNum_;
+
+    // Calculate new capacity using growth factor 2x
+    size_t newCapacity = attrCapacity_;
+    while (newCapacity < requiredSize) {
+        newCapacity *= 2;
+    }
+
+    // Need to reallocate the entire computeNodeInfo_ since attr data is embedded in it
+    size_t newSize = sizeof(ComputeNodeInfo)
+        + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_
+        + sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_
+        + sizeof(RuntimeAttrsDef) + newCapacity;
+    ComputeNodeInfo *newInfo = static_cast<ComputeNodeInfo *>(malloc(newSize));
+    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo for attr expansion, size %zu.", newSize),
+        return ACLNN_ERR_INNER);
+
+    // Copy data up to current computeNodeInfoSize_
+    OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."),
+        std::free(newInfo);
+        return ACLNN_ERR_INNER);
+
+    // Zero out the new portion
+    size_t zeroOffset = computeNodeInfoSize_;
+    size_t zeroSize = newSize - computeNodeInfoSize_;
+    (void)memset_s(reinterpret_cast<uint8_t *>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
+
+    // Update pointers based on new memory layout
+    ComputeNodeInfo *oldInfo = computeNodeInfo_;
+    computeNodeInfo_ = newInfo;
+    anchorInfo_ = PtrCastTo<AnchorInstanceInfo>(&newInfo->place_holder);
+    compileDesc_ = PtrCastTo<CompileTimeTensorDesc>(anchorInfo_ + irInputNum_);
+    if (attrNum_ > 0) {
+        UpdateAttrDefOffset(inputNum_ + outputNum_, attrNum_);
+    } else {
+        attrDef_ = PtrCastTo<RuntimeAttrsDef>(PtrShift(newInfo, attrDefOffset));
+        attrDataStart_ = PtrCastTo<uint8_t>(attrDef_ + 1) + sizeof(size_t) * attrNum_;
+    }
+    computeNodeInfoSize_ = newSize;
+    attrCapacity_ = newCapacity;
+
+    // Free old memory
+    std::free(oldInfo);
+
+    OP_LOGI("Expanded attr capacity from %zu to %zu.", attrCapacity_ / 2, attrCapacity_);
+    return ACLNN_SUCCESS;
 }
 
 void KernelContextHolder::UpdateKernelExtendInfo(const char *kernelType, const char *kernelName)
@@ -83,10 +241,11 @@ aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensor *ten
         }
     }
 #endif
-    if (inputNum_ >= MAX_OP_ARG_NUM) {
-        OP_LOGE(ACLNN_ERR_INNER, "Too many input args, %zu", MAX_OP_ARG_NUM);
-        return ACLNN_ERR_INNER;
-    }
+
+    // Ensure capacity for input args (need room for one more input)
+    CHECK_RET_CODE(EnsureArgCapacity(inputNum_ + 1), "EnsureArgCapacity failed.");
+    CHECK_RET_CODE(EnsureComputeNodeInfoCapacity(inputNum_ + 1), "EnsureComputeNodeInfoCapacity failed.");
+
     anchorInfo_[idx].instance_start_ = inputNum_;
     anchorInfo_[idx].instantiation_num_ = 1;
     compileDesc_[inputNum_].data_type_ = tensor->GetDataType();
@@ -138,11 +297,12 @@ aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensor *te
         OP_LOGI("Update Output Arg Tensor List is Null [%zu]", idx);
         return ACLNN_SUCCESS;
     }
-    if (inputNum_ + outputNum_ >= MAX_OP_ARG_NUM) {
-        OP_LOGE(ACLNN_ERR_INNER, "Too many input/output args, allow:%zu. input: %zu, output: %zu",
-                MAX_OP_ARG_NUM, inputNum_, outputNum_);
-        return ACLNN_ERR_INNER;
-    }
+
+    // Ensure capacity for input + output args
+    size_t totalArgs = inputNum_ + outputNum_ + 1;
+    CHECK_RET_CODE(EnsureArgCapacity(totalArgs), "EnsureArgCapacity failed.");
+    CHECK_RET_CODE(EnsureComputeNodeInfoCapacity(totalArgs), "EnsureComputeNodeInfoCapacity failed.");
+
 #ifdef DEBUG
     OP_LOGD("Update Output Arg Tensor: [%zu]. %s", idx, tensor->ToString().GetString());
 #endif

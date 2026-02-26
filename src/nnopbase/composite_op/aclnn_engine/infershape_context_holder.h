@@ -43,6 +43,10 @@ private:
     AsyncAnyValue *inferShapeValues_{nullptr};
 
     constexpr static size_t inferShapeValueNum_ = 2;
+    // Initial capacity set to MAX_OP_ARG_NUM, expansion triggered only when exceeding this value
+    size_t inferShapeCtxCapacity_{MAX_OP_ARG_NUM};
+
+    aclnnStatus EnsureContextCapacity(size_t requiredCapacity);
 };
 
 }

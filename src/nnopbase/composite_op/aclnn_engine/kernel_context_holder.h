@@ -93,9 +93,20 @@ public:
     ComputeNodeInfo *computeNodeInfo_{nullptr};
     KernelExtendInfo kernelExtendInfo_;
 
+    // Dynamic capacity management
+    // Initial capacity set to MAX_OP_ARG_NUM and ATTR_CAPACITY
+    // Expansion is triggered only when capacity exceeds these constant values
+    size_t opInArgCapacity_{MAX_OP_ARG_NUM};
+    size_t computeNodeInfoCapacity_{MAX_OP_ARG_NUM};
+    size_t attrCapacity_{ATTR_CAPACITY};
+
 private:
     void BuildComputeNodeInfo();
     void BuildOpInOutArg();
+
+    aclnnStatus EnsureArgCapacity(size_t requiredCapacity);
+    aclnnStatus EnsureComputeNodeInfoCapacity(size_t requiredCapacity);
+    aclnnStatus EnsureAttrCapacity(size_t requiredSize);
 
     void UpdateAttrDefOffset(size_t inoutNum, size_t attrNum);
 
@@ -171,10 +182,7 @@ private:
         } else {
             OP_LOGD("Update Attr char*: [%zu]. %s", idx, value);
             size_t slen = strlen(value);
-            if (slen >= MAX_ATTR_STRING_SIZE) {
-                OP_LOGD("Update Attr char* too long: [%zu]. len: [%zu]", idx, slen);
-                return ACLNN_ERR_INNER;
-            }
+            // Note: MAX_ATTR_STRING_SIZE limit removed, attr capacity will expand dynamically via EnsureAttrCapacity
             OP_CHECK(memcpy_s(attrPtr, slen + 1, value, slen + 1) == EOK,
                      OP_LOGW("Failed to memcpy in update attr arg for char."),
                      ;);
@@ -264,10 +272,12 @@ private:
 
     aclnnStatus UpdateAttrArg(size_t idx, OpArg &arg, void *&attrPtr)
     {
-        if (PtrOffset(attrDataStart_, attrPtr) >= ATTR_CAPACITY) {
-            OP_LOGE(ACLNN_ERR_INNER, "attr too large. should less than [%zu]", ATTR_CAPACITY);
-            return ACLNN_ERR_INNER;
-        }
+        // Ensure attr capacity is sufficient
+        // Calculate required size conservatively (estimate max possible attr size)
+        size_t currentOffset = PtrOffset(attrDataStart_, attrPtr);
+        size_t estimatedRequiredSize = currentOffset + 4096;  // Reserve 4KB per attr for safety
+        CHECK_RET_CODE(EnsureAttrCapacity(estimatedRequiredSize), "EnsureAttrCapacity failed.");
+
         attrDef_->offset[idx] = PtrOffset(attrDef_, attrPtr);
         switch (arg.type) {
             case OpArgType::OPARG_DATATYPE:

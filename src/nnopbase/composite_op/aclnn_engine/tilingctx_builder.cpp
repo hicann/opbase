@@ -48,7 +48,7 @@ constexpr size_t DETERMINISTIC_IDX = 2;
 void TilingCtxHolder::BuildTilingCtx()
 {
     // +1 for compiled info struct
-    size_t tilingCtxSize = sizeof(AsyncAnyValue *) * (MAX_OP_ARG_NUM + TILING_INPUT_OTHER_NUM + tilingOutputNum_) +
+    size_t tilingCtxSize = sizeof(AsyncAnyValue *) * (tilingCtxCapacity_ + TILING_INPUT_OTHER_NUM + tilingOutputNum_) +
         sizeof(KernelRunContext);
     tilingCtx_ = static_cast<KernelRunContext *>(malloc(tilingCtxSize));
     OP_CHECK(tilingCtx_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "malloc failed. [%zu]", tilingCtxSize), return );
@@ -99,11 +99,58 @@ void TilingCtxHolder::BuildTilingCtx()
     tilingOutput_.dynUBufSize_ = PtrCastTo<uint32_t>(tilingCtxValue_[kOutputLocalMemorySize].data.inplace);
 }
 
+aclnnStatus TilingCtxHolder::EnsureTilingCtxCapacity(size_t requiredCapacity)
+{
+    if (requiredCapacity <= tilingCtxCapacity_) {
+        return ACLNN_SUCCESS;
+    }
+
+    // Calculate new capacity using growth factor 2x
+    size_t newCapacity = tilingCtxCapacity_;
+    while (newCapacity < requiredCapacity) {
+        newCapacity *= 2;
+    }
+
+    // Allocate new memory (do NOT use realloc)
+    size_t newSize = sizeof(AsyncAnyValue *) * (newCapacity + TILING_INPUT_OTHER_NUM + tilingOutputNum_) +
+        sizeof(KernelRunContext);
+    KernelRunContext *newCtx = static_cast<KernelRunContext *>(malloc(newSize));
+    OP_CHECK(newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc tilingCtx, size %zu.", newSize),
+        return ACLNN_ERR_INNER);
+
+    // Calculate old size for copy
+    size_t oldSize = sizeof(AsyncAnyValue *) * (tilingCtxCapacity_ + TILING_INPUT_OTHER_NUM + tilingOutputNum_) +
+        sizeof(KernelRunContext);
+
+    // Copy existing data
+    OP_CHECK(memcpy_s(newCtx, newSize, tilingCtx_, oldSize) == EOK,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy tilingCtx."),
+        std::free(newCtx);
+        return ACLNN_ERR_INNER);
+
+    // Zero out the new portion
+    size_t zeroSize = newSize - oldSize;
+    (void)memset_s(reinterpret_cast<uint8_t *>(newCtx) + oldSize, zeroSize, 0, zeroSize);
+
+    // Free old memory and update pointer
+    std::free(tilingCtx_);
+    tilingCtx_ = newCtx;
+    tilingCtxCapacity_ = newCapacity;
+
+    OP_LOGI("Expanded tilingCtx capacity from %zu to %zu.", tilingCtxCapacity_ / 2, tilingCtxCapacity_);
+    return ACLNN_SUCCESS;
+}
+
 aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCtx,
     const TilingParseCtxHolder *tilingParseCtx)
 {
     CHECK_COND(kernelCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "kernelCtx is NULL");
     CHECK_COND(tilingParseCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "tilingParseCtx is NULL");
+
+    // Ensure capacity before updating context
+    size_t requiredCapacity = kernelCtx->inputNum_ + kernelCtx->outputNum_ + TILING_INPUT_OTHER_NUM + tilingOutputNum_;
+    CHECK_RET_CODE(EnsureTilingCtxCapacity(requiredCapacity), "EnsureTilingCtxCapacity failed.");
+
     // Reset tiling data.
     tilingData_->data_size_ = 0;
     *tilingOutput_.atomicCleanFlag_ = false;
@@ -156,6 +203,11 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
 aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCtx)
 {
     CHECK_COND(kernelCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "kernelCtx is NULL");
+
+    // Ensure capacity before updating context
+    size_t requiredCapacity = kernelCtx->inputNum_ + kernelCtx->outputNum_ + TILING_INPUT_OTHER_NUM + tilingOutputNum_;
+    CHECK_RET_CODE(EnsureTilingCtxCapacity(requiredCapacity), "EnsureTilingCtxCapacity failed.");
+
     // Reset tiling data.
     tilingData_->data_size_ = 0;
     *tilingOutput_.atomicCleanFlag_ = false;
