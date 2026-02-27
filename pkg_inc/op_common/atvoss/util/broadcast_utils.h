@@ -274,10 +274,10 @@ __aicore__ inline void BroadcastNddmaWithLoopContiguousFuseAxis(AscendC::GlobalT
     int64_t nddmaProduct = BroadcastFuseAxes(outputDims2, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
     for (int64_t i = 0; i < nddmaProduct; i++) {
       if (i != 0) {
-        BroadcastUpdateNddmaAxesIndices(nddmaIndices, outputDims, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS - 1 - ubSplitAxis);
+        BroadcastUpdateNddmaAxesIndices(nddmaIndices, outputDims2, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS - 1 - ubSplitAxis);
       }
-      int64_t nddmaGmOffset = BroadcastGetNddmaOffset(nddmaIndices, inputStrides, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
-      int64_t nddmaUbOffset = BroadcastGetNddmaOffset(nddmaIndices, outputStrides, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
+      int64_t nddmaGmOffset = BroadcastGetNddmaOffset(nddmaIndices, inputStrides2, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
+      int64_t nddmaUbOffset = BroadcastGetNddmaOffset(nddmaIndices, outputStrides2, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);
       if constexpr (AscendC::IsSameType<T1, T2>::value) {
         AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor[nddmaUbOffset], inputGm[gmOffset + nddmaGmOffset], paramsMain);
       } else {
