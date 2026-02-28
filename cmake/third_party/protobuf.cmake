@@ -30,15 +30,24 @@ set(SOURCE_DIR ${PROTOBUF_SRC_DIR})
 
 if (EXISTS ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
   set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-all-25.1.tar.gz)
-else ()
+elseif (EXISTS ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
   set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf/protobuf-25.1.tar.gz)
+else ()
+  set(PROTOBUF_PATH ${CANN_3RD_LIB_PATH}/protobuf-25.1.tar.gz)
 endif ()
-set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp/abseil-cpp-20230802.1.tar.gz)
 
-if (NOT EXISTS "${ABSEIL_PATH}")
+if (EXISTS ${CANN_3RD_LIB_PATH}/abseil-cpp/abseil-cpp-20230802.1.tar.gz)
+  set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp/abseil-cpp-20230802.1.tar.gz)
+else ()
+  set(ABSEIL_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp-20230802.1.tar.gz)
+endif ()
+
+if (NOT EXISTS "${PROTOBUF_PATH}" OR NOT EXISTS "${ABSEIL_PATH}")
   set(REQ_URL "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz")
+  message(STATUS "Downloading protobuf from ${REQ_URL}")
   set(ABS_REQ_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20230802.1/abseil-cpp-20230802.1.tar.gz")
- 
+  message(STATUS "Downloading abseil-cpp from ${ABS_REQ_URL}")
+  
   ExternalProject_Add(protobuf_src_dl
     URL               ${REQ_URL}
     DOWNLOAD_DIR      ${PROTOBUF_DL_DIR}/

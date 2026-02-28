@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 
 set(MAKESELF_NAME "makeself")
+set(MAKESELF_VERSION_PKG makeself-release-2.5.0-patch1.tar.gz)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
@@ -36,12 +37,18 @@ message("CMAKE_BINARY_DIR:${CMAKE_BINARY_DIR}")
 
 # 默认配置的makeself还是不存在则下载
 if (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_PATH}/makeself.sh")
-    set(MAKESELF_URL "https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz")
-    message(STATUS "Downloading ${MAKESELF_NAME} from ${MAKESELF_URL}")
+    if(EXISTS "${CANN_3RD_LIB_PATH}/${MAKESELF_VERSION_PKG}")
+        set(REQ_URL "file://${CANN_3RD_LIB_PATH}/${MAKESELF_VERSION_PKG}")
+        message(STATUS "[ThirdPartyLib][makeself] found in ${REQ_URL}.")
+        set(MAKESELF_DOWNLOAD_PATH ${CANN_3RD_LIB_PATH})
+    else()
+        set(REQ_URL "https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/${MAKESELF_VERSION_PKG}")
+        message(STATUS "Downloading ${MAKESELF_NAME} from ${REQ_URL}")
+    endif()
 
     include(ExternalProject)
     ExternalProject_Add(makeself
-      URL                         ${MAKESELF_URL}
+      URL                         ${REQ_URL}
       URL_MD5                     a080aaf744fcae5d96477c0a799ca469
       DOWNLOAD_DIR                ${MAKESELF_DOWNLOAD_PATH}
       SOURCE_DIR                  ${MAKESELF_INSTALL_PATH}
@@ -49,7 +56,7 @@ if (NOT EXISTS "${MAKESELF_PATH}/makeself-header.sh" OR NOT EXISTS "${MAKESELF_P
       BUILD_COMMAND               ""
       INSTALL_COMMAND             
         ${CMAKE_COMMAND} -E make_directory ${MAKESELF_INSTALL_PATH} &&
-        ${CMAKE_COMMAND} -E chdir ${MAKESELF_INSTALL_PATH} ${CMAKE_COMMAND} -E tar zxvf "${MAKESELF_DOWNLOAD_PATH}/makeself-release-2.5.0-patch1.tar.gz" &&
+        ${CMAKE_COMMAND} -E chdir ${MAKESELF_INSTALL_PATH} ${CMAKE_COMMAND} -E tar zxvf "${MAKESELF_DOWNLOAD_PATH}/${MAKESELF_VERSION_PKG}" &&
         ${CMAKE_COMMAND} -E copy_directory "${MAKESELF_PATH}" "${CMAKE_BINARY_DIR}/makeself"
     )
 else ()
