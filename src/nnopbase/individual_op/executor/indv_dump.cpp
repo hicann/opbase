@@ -422,7 +422,8 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor *const executor)
         *sizeInfoAddr = static_cast<uint64_t>(atomicIndex);
         sizeInfoAddr++;
         bool hasCtrlAddr = false;
-        if ((executor->collecter->useCoreTypeMagic) && (executor->args->binInfo->coreType == kMix)) {
+        // 只有910B/910_93需要设置L2Ctrl/Ffts标志位
+        if (nnopbase::IndvSoc::GetInstance().UseCoreTypeMagic() && (executor->args->binInfo->coreType == kMix)) {
             hasCtrlAddr = true;
         }
         // 低32位表示inputs/outputs/workspaces nums
