@@ -136,13 +136,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * correctShape:string
  * errMessage:OP[opName] indexth input has incorrect shape[incorrectShape], it should be[correctShape].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_SHAPE(opName, index, incorrectShape, correctShape)                      \
-    do {                                                                                                   \
-        std::string index_str = std::to_string(index);                                                     \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] %sth input has incorrect shape[: %s], it should be[: %s].", \
-                               opName, index_str.c_str(), incorrectShape, correctShape);                   \
-        REPORT_INNER_ERR_MSG("EZ0001", "OP[%s] %sth input has incorrect shape[: %s], it should be[: %s].", \
-                             opName, index_str.c_str(), incorrectShape, correctShape);                     \
+#define OP_LOGE_WITH_INVALID_INPUT_SHAPE(opName, index, incorrectShape, correctShape)                              \
+    do {                                                                                                           \
+        std::string index_str = std::to_string(index);                                                             \
+        OP_LOGE_WITHOUT_REPORT(                                                                                    \
+            opName, "OP[%s] %sth input has incorrect shape[: %s], it should be[: %s].", opName, index_str.c_str(), \
+            incorrectShape, correctShape);                                                                         \
+        const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_shape", "correct_shape"};          \
+        const std::vector<const char*> msgvalue = {opName, index_str.c_str(), incorrectShape, correctShape};       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0001", msgKey, msgvalue);                                                     \
     } while (0)
 
 /**
@@ -152,12 +154,14 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * correctVal:string
  * errMessage:OP[opName] attr[: attrName], has incorrect value[: incorrectVal], it should be[: correctVal].
  */
-#define OP_LOGE_WITH_INVALID_ATTR(opName, attrName, incorrectVal, correctVal)                               \
-    do {                                                                                                    \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] attr[: %s], has incorrect value[: %s], it should be[: %s].", \
-                               opName, attrName, incorrectVal, correctVal);                                 \
-        REPORT_INNER_ERR_MSG("EZ0002", "OP[%s] attr[: %s], has incorrect value[: %s], it should be[: %s].", \
-                             opName, attrName, incorrectVal, correctVal);                                   \
+#define OP_LOGE_WITH_INVALID_ATTR(opName, attrName, incorrectVal, correctVal)                              \
+    do {                                                                                                   \
+        OP_LOGE_WITHOUT_REPORT(                                                                            \
+            opName, "OP[%s] attr[: %s], has incorrect value[: %s], it should be[: %s].", opName, attrName, \
+            incorrectVal, correctVal);                                                                     \
+        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_val", "correct_val"};  \
+        const std::vector<const char*> msgvalue = {opName, attrName, incorrectVal, correctVal};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                             \
     } while (0)
 
 /**
@@ -167,12 +171,14 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * correctSize:string
  * errMessage:OP[opName] attr[: attrName], has incorrect size[: incorrectSize], it should be[: correctSize].
  */
-#define OP_LOGE_WITH_INVALID_ATTR_SIZE(opName, attrName, incorrectSize, correctSize)                       \
-    do {                                                                                                   \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] attr[: %s], has incorrect size[: %s], it should be[: %s].", \
-                               opName, attrName, incorrectSize, correctSize);                              \
-        REPORT_INNER_ERR_MSG("EZ0003", "OP[%s] attr[: %s], has incorrect size[: %s], it should be[: %s].", \
-                             opName, attrName, incorrectSize, correctSize);                                \
+#define OP_LOGE_WITH_INVALID_ATTR_SIZE(opName, attrName, incorrectSize, correctSize)                        \
+    do {                                                                                                    \
+        OP_LOGE_WITHOUT_REPORT(                                                                             \
+            opName, "OP[%s] attr[: %s], has incorrect size[: %s], it should be[: %s].", opName, attrName,   \
+            incorrectSize, correctSize);                                                                    \
+        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgvalue = {opName, attrName, incorrectSize, correctSize};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                              \
     } while (0)
 
 /**
@@ -183,7 +189,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
 #define OP_LOGE_WITH_INVALID_INPUT(opName, paramName)                                 \
     do {                                                                              \
         OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] get [%s] failed.", opName, paramName); \
-        REPORT_INNER_ERR_MSG("EZ0004", "OP[%s] get [%s] failed.", opName, paramName); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name"};            \
+        const std::vector<const char*> msgvalue = {opName, param_name};               \
+        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                        \
     } while (0)
 
 /**
@@ -193,13 +201,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * correctSize:string
  * errMessage:OP[opName] indexth input has incorrect shape size[: incorrectSize], it should be[: correctSize].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(opName, index, incorrectSize, correctSize)                         \
-    do {                                                                                                        \
-        std::string index_str = std::to_string(index);                                                          \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] %sth input has incorrect shape size[: %s], it should be[: %s].", \
-                               opName, index_str.c_str(), incorrectSize, correctSize);                          \
-        REPORT_INNER_ERR_MSG("EZ0005", "OP[%s] %sth input has incorrect shape size[: %s], it should be[: %s].", \
-                             opName, index_str.c_str(), incorrectSize, correctSize);                            \
+#define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(opName, index, incorrectSize, correctSize)                    \
+    do {                                                                                                   \
+        std::string index_str = std::to_string(index);                                                     \
+        OP_LOGE_WITHOUT_REPORT(                                                                            \
+            opName, "OP[%s] %sth input has incorrect shape size[: %s], it should be[: %s].", opName,       \
+            index_str.c_str(), incorrectSize, correctSize);                                                \
+        const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_size", "correct_size"};    \
+        const std::vector<const char*> msgvalue = {opName, index_str.c_str(), incorrectSize, correctSize}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                             \
     } while (0)
 
 /**
@@ -209,12 +219,14 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * expectedFormatList:string
  * errMessage:OP[opName] paramName has incorrect format[: dataFormat], it should be expectedFormatList.
  */
-#define OP_LOGE_WITH_INVALID_INPUT_FORMAT(opName, paramName, dataFormat, expectedFormatList)     \
-    do {                                                                                         \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] %s has incorrect format[: %s], it should be %s.", \
-                               opName, paramName, dataFormat, expectedFormatList);               \
-        REPORT_INNER_ERR_MSG("EZ0006", "OP[%s] %s has incorrect format[: %s], it should be %s.", \
-                             opName, paramName, dataFormat, expectedFormatList);                 \
+#define OP_LOGE_WITH_INVALID_INPUT_FORMAT(opName, paramName, dataFormat, expectedFormatList)                      \
+    do {                                                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                   \
+            opName, "OP[%s] %s has incorrect format[: %s], it should be %s.", opName, paramName, dataFormat,      \
+            expectedFormatList);                                                                                  \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "data_format", "expected_format_list"}; \
+        const std::vector<const char*> msgvalue = {opName, paramName, dataFormat, expectedFormatList};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0006", msgKey, msgvalue);                                                    \
     } while (0)
 
 /**
@@ -224,12 +236,14 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * expectedDtypeList:string
  * errMessage:OP[opName] paramName has incorrect dtype[: dataDtype], it should be expectedDtypeList.
  */
-#define OP_LOGE_WITH_INVALID_INPUT_DTYPE(opName, paramName, dataDtype, expectedDtypeList)       \
-    do {                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] %s has incorrect dtype[: %s], it should be %s.", \
-                               opName, paramName, dataDtype, expectedDtypeList);                \
-        REPORT_INNER_ERR_MSG("EZ0007", "OP[%s] %s has incorrect dtype[: %s], it should be %s.", \
-                             opName, paramName, dataDtype, expectedDtypeList);                  \
+#define OP_LOGE_WITH_INVALID_INPUT_DTYPE(opName, paramName, dataDtype, expectedDtypeList)                       \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP[%s] %s has incorrect dtype[: %s], it should be %s.", opName, paramName, dataDtype,      \
+            expectedDtypeList);                                                                                 \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "data_dtype", "expected_dtype_list"}; \
+        const std::vector<const char*> msgvalue = {opName, paramName, dataDtype, expectedDtypeList};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0007", msgKey, msgvalue);                                                  \
     } while (0)
 
 #define OP_LOGD(opName, ...) D_OP_LOGD(Ops::Base::GetOpInfo(opName), __VA_ARGS__)
