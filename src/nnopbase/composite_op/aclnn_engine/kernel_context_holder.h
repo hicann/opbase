@@ -278,6 +278,8 @@ private:
         size_t estimatedRequiredSize = currentOffset + 4096;  // Reserve 4KB per attr for safety
         CHECK_RET_CODE(EnsureAttrCapacity(estimatedRequiredSize), "EnsureAttrCapacity failed.");
 
+        // 重新计算attrPtr(基于可能已经更新的attrDataStart_)
+        attrPtr = PtrShift(attrDataStart_, currentOffset);
         attrDef_->offset[idx] = PtrOffset(attrDef_, attrPtr);
         switch (arg.type) {
             case OpArgType::OPARG_DATATYPE:

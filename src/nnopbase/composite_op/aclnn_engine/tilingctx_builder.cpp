@@ -44,6 +44,7 @@ constexpr size_t TILING_INPUT_OTHER_NUM = 5;
 constexpr size_t TILING_PLATFORM_IDX = 4;
 constexpr size_t TILING_FUNC_IDX = 3;
 constexpr size_t DETERMINISTIC_IDX = 2;
+constexpr size_t GROWTH_FACTOR = 2;
 
 void TilingCtxHolder::BuildTilingCtx()
 {
@@ -106,9 +107,10 @@ aclnnStatus TilingCtxHolder::EnsureTilingCtxCapacity(size_t requiredCapacity)
     }
 
     // Calculate new capacity using growth factor 2x
-    size_t newCapacity = tilingCtxCapacity_;
+    const size_t oldCapacity = tilingCtxCapacity_;
+    size_t newCapacity = oldCapacity;
     while (newCapacity < requiredCapacity) {
-        newCapacity *= 2;
+        newCapacity *= GROWTH_FACTOR;
     }
 
     // Allocate new memory (do NOT use realloc)
@@ -137,7 +139,7 @@ aclnnStatus TilingCtxHolder::EnsureTilingCtxCapacity(size_t requiredCapacity)
     tilingCtx_ = newCtx;
     tilingCtxCapacity_ = newCapacity;
 
-    OP_LOGI("Expanded tilingCtx capacity from %zu to %zu.", tilingCtxCapacity_ / 2, tilingCtxCapacity_);
+    OP_LOGI("Expanded tilingCtx capacity from %zu to %zu.", oldCapacity, tilingCtxCapacity_);
     return ACLNN_SUCCESS;
 }
 

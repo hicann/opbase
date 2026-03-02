@@ -15,6 +15,7 @@ namespace op {
 namespace internal {
 
 constexpr size_t INFER_SHAPE_VALUES_OFFSET = 2;
+constexpr size_t GROWTH_FACTOR = 2;
 
 void InferShapeContextHolder::BuildInferShapeContext()
 {
@@ -36,9 +37,10 @@ aclnnStatus InferShapeContextHolder::EnsureContextCapacity(size_t requiredCapaci
     }
 
     // Calculate new capacity using growth factor 2x
-    size_t newCapacity = inferShapeCtxCapacity_;
+    const size_t oldCapacity = inferShapeCtxCapacity_;
+    size_t newCapacity = oldCapacity;
     while (newCapacity < requiredCapacity) {
-        newCapacity *= 2;
+        newCapacity *= GROWTH_FACTOR;
     }
 
     // Allocate new memory (do NOT use realloc)
@@ -65,7 +67,7 @@ aclnnStatus InferShapeContextHolder::EnsureContextCapacity(size_t requiredCapaci
     inferShapeCtx_ = newCtx;
     inferShapeCtxCapacity_ = newCapacity;
 
-    OP_LOGI("Expanded inferShapeCtx capacity from %zu to %zu.", inferShapeCtxCapacity_ / 2, inferShapeCtxCapacity_);
+    OP_LOGI("Expanded inferShapeCtx capacity from %zu to %zu.", oldCapacity, inferShapeCtxCapacity_);
     return ACLNN_SUCCESS;
 }
 

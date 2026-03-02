@@ -16,6 +16,11 @@
 
 namespace op::internal {
 
+namespace {
+    // Growth factor for capacity expansion (similar to std::vector)
+    constexpr size_t GROWTH_FACTOR = 2;
+} // anonymous namespace
+
 void KernelContextHolder::BuildComputeNodeInfo()
 {
     computeNodeInfoSize_ = sizeof(ComputeNodeInfo)
@@ -47,9 +52,10 @@ aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
     }
 
     // Calculate new capacity using growth factor 2x (similar to std::vector)
-    size_t newCapacity = opInArgCapacity_;
+    const size_t oldCapacity = opInArgCapacity_;
+    size_t newCapacity = oldCapacity;
     while (newCapacity < requiredCapacity) {
-        newCapacity *= 2;
+        newCapacity *= GROWTH_FACTOR;
     }
 
     // Allocate new memory (do NOT use realloc)
@@ -74,7 +80,7 @@ aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
     opInArg_ = newArg;
     opInArgCapacity_ = newCapacity;
 
-    OP_LOGI("Expanded opInArg capacity from %zu to %zu.", opInArgCapacity_ / 2, opInArgCapacity_);
+    OP_LOGI("Expanded opInArg capacity from %zu to %zu.", oldCapacity, opInArgCapacity_);
     return ACLNN_SUCCESS;
 }
 
@@ -85,9 +91,10 @@ aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCa
     }
 
     // Calculate new capacity using growth factor 2x
-    size_t newCapacity = computeNodeInfoCapacity_;
+    const size_t oldCapacity = computeNodeInfoCapacity_;
+    size_t newCapacity = oldCapacity;
     while (newCapacity < requiredCapacity) {
-        newCapacity *= 2;
+        newCapacity *= GROWTH_FACTOR;
     }
 
     // Allocate new memory
@@ -131,7 +138,7 @@ aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCa
     // This is handled by the fact that these contexts hold pointers to the KernelContextHolder,
     // not directly to computeNodeInfo_
 
-    OP_LOGI("Expanded computeNodeInfo capacity from %zu to %zu.", computeNodeInfoCapacity_ / 2, computeNodeInfoCapacity_);
+    OP_LOGI("Expanded computeNodeInfo capacity from %zu to %zu.", oldCapacity, computeNodeInfoCapacity_);
     return ACLNN_SUCCESS;
 }
 
@@ -141,20 +148,11 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
         return ACLNN_SUCCESS;
     }
 
-    // If attrDef_ is not yet initialized, we need to expand the entire computeNodeInfo_
-    // Recalculate the structure layout to get proper offsets
-    size_t anchorInfoSize = sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_;
-    size_t compileDescSize = sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_;
-    size_t baseSize = sizeof(ComputeNodeInfo) + anchorInfoSize + compileDescSize;
-
-    // Calculate current attrDef offset (same as in UpdateAttrDefOffset)
-    size_t attrDefOffset = sizeof(ComputeNodeInfo) + anchorInfoSize + compileDescSize;
-    size_t attrDataStartOffset = attrDefOffset + sizeof(RuntimeAttrsDef) + sizeof(size_t) * attrNum_;
-
     // Calculate new capacity using growth factor 2x
-    size_t newCapacity = attrCapacity_;
+    const size_t oldCapacity = attrCapacity_;
+    size_t newCapacity = oldCapacity;
     while (newCapacity < requiredSize) {
-        newCapacity *= 2;
+        newCapacity *= GROWTH_FACTOR;
     }
 
     // Need to reallocate the entire computeNodeInfo_ since attr data is embedded in it
@@ -182,19 +180,15 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
     computeNodeInfo_ = newInfo;
     anchorInfo_ = PtrCastTo<AnchorInstanceInfo>(&newInfo->place_holder);
     compileDesc_ = PtrCastTo<CompileTimeTensorDesc>(anchorInfo_ + irInputNum_);
-    if (attrNum_ > 0) {
-        UpdateAttrDefOffset(inputNum_ + outputNum_, attrNum_);
-    } else {
-        attrDef_ = PtrCastTo<RuntimeAttrsDef>(PtrShift(newInfo, attrDefOffset));
-        attrDataStart_ = PtrCastTo<uint8_t>(attrDef_ + 1) + sizeof(size_t) * attrNum_;
-    }
+    UpdateAttrDefOffset(inputNum_ + outputNum_, attrNum_);
+    
     computeNodeInfoSize_ = newSize;
     attrCapacity_ = newCapacity;
 
     // Free old memory
     std::free(oldInfo);
 
-    OP_LOGI("Expanded attr capacity from %zu to %zu.", attrCapacity_ / 2, attrCapacity_);
+    OP_LOGI("Expanded attr capacity from %zu to %zu.", oldCapacity, attrCapacity_);
     return ACLNN_SUCCESS;
 }
 

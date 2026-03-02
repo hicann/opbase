@@ -47,6 +47,15 @@ using OpImplFunctions = gert::OpImplKernelRegistry::OpImplFunctions;
 constexpr size_t K_DEFAULT_INPUT_SIZE = 3;
 constexpr size_t K_DEFAULT_OUTPUT_SIZE = 1;
 
+// Deterministic level definitions
+// 0: deterministic:0, strong consistency:0 or 1
+// 1: deterministic:1, strong consistency:0
+// 2: deterministic:1, strong consistency:1
+constexpr int32_t DETERMINISTIC_LEVEL_NONE = 0;
+constexpr int32_t DETERMINISTIC_LEVEL_NORMAL = 1;
+constexpr int32_t DETERMINISTIC_LEVEL_HIGH = 2;
+constexpr int32_t STRONG_CONSISTENCY_ON = 1;
+
 uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json &opJson)
 {
     if (!opJson.contains("taskRation")) {
@@ -238,9 +247,10 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
      * 1: deterministic:1, strong consistency:0
      * 2: deterministic:1, strong consistency:1
      */
-    int32_t deterministicLevel = 0;
+    int32_t deterministicLevel = DETERMINISTIC_LEVEL_NONE;
     if (GetThreadLocalContext().opConfigInfo_.isDeterministicOn_) {
-        deterministicLevel = (consistency == 1) ? 2 : 1;
+        deterministicLevel = (consistency == STRONG_CONSISTENCY_ON) ?
+            DETERMINISTIC_LEVEL_HIGH : DETERMINISTIC_LEVEL_NORMAL;
     }
     int32_t *deterministicLevelDataInplace = reinterpret_cast<int32_t *>(DeterministicLevel_.data.inplace);
     *deterministicLevelDataInplace = deterministicLevel;
