@@ -16,3 +16,9 @@ json:
 protobuf:
   version: v25.1
   type: run
+abseil-cpp:
+  version: 20230802.1
+  type: run
+mockcpp:
+  version: 2.7
+  type: run
