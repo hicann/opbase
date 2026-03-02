@@ -504,32 +504,6 @@ getfirstnotexistdir() {
     done
 }
 
-isonlylastnotexistdir() {
-    in_tmp_dir_val="$1"
-    tmp_arr=$(echo ${in_tmp_dir_val} | tr '/' ' ')
-    index_val=0
-    for i in $tmp_arr;do id=$((${id:=-1}+1)); eval arr_$id=$i;index_val=$(expr $index_val + 1);done
-    tmp_str_value=""
-    eval tmp_dir_0="/"
-    arr_len=$(expr $index_val + 1)
-    for i in $(seq 1 ${arr_len}); do
-	tmp_i=$(expr $i - 1)
-	tmp_str_value="${tmp_str_value}""/""$(eval echo '$'arr_${tmp_i})"
-        eval tmp_dir_$i=${tmp_str_value}
-    done
-    less_len=$(expr $index_val - 1)
-    for i in $(seq 0 ${less_len}); do
-	if [ ! -d "$(eval echo '$'tmp_dir_$i)" ]; then
-            isonlylastnotexistdir_path=""
-	    THE_NUM_LAST_NOT_EXISTDIR="$(eval echo '$'tmp_dir_$i)"
-            break
-        else
-	    isonlylastnotexistdir_path="$(eval echo '$'tmp_dir_$i)"
-        fi
-    done
-    return
-}
-
 matchfullpath() {
     absolute_path=""
     if [ -d "${1}" ]; then
@@ -1221,11 +1195,6 @@ else
     echo "[OpsBase] [$(getdate)] [ERROR]: Uninstall the version before multi version of opbase failed!"
     exit 1
 fi
-if [ "${is_input_path}" = y ]; then
-    isonlylastnotexistdir "${_TARGET_INSTALL_PATH}"
-    ret_isonlylastnotexistdir_path=$isonlylastnotexistdir_path
-    RET_THE_NUM_LAST_NOT_EXISTDIR=$THE_NUM_LAST_NOT_EXISTDIR
-fi
 
 _UNINSTALL_SHELL_FILE="${target_dir}""/${opp_platform_dir}/script/opp_uninstall.sh"
 # adpter for old version's path
@@ -1360,37 +1329,28 @@ fi
 _TARGET_USERNAME="${_CURR_OPERATE_USER}"
 _TARGET_USERGROUP="${_CURR_OPERATE_GROUP}"
 
-#Support the installation script when the specified path (relative path and absolute path) does not exist
+# Simplified path checking
 if [ "${is_input_path}" = "y" ];then
     checkgroupvalidwithuser "${_TARGET_USERGROUP}" "${_TARGET_USERNAME}"
-    if [ "${ret_isonlylastnotexistdir_path}" = "" ]; then
-#Penultimate path not exists
-        logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; The directory:${RET_THE_NUM_LAST_NOT_EXISTDIR} not exist, please create this directory."
-        exitlog
-        exit 1
+    if [ -d "${_TARGET_INSTALL_PATH}" ]; then
+        # Target path exists, check write permission
+        checklastfolderspermissionforcheckpath "${_TARGET_INSTALL_PATH}" "${_TARGET_USERNAME}"
+        if [ "$?" != 0 ]; then
+            exit 1
+        fi
     else
-        if [ -d "${_TARGET_INSTALL_PATH}" ]; then
-            checklastfolderspermissionforcheckpath "${_TARGET_INSTALL_PATH}" "${_TARGET_USERNAME}"
+        # Target path doesn't exist, check parent directory permission
+        parent_dir=$(dirname "${_TARGET_INSTALL_PATH}")
+        if [ -n "${parent_dir}" ] && [ "${parent_dir}" != "${_TARGET_INSTALL_PATH}" ]; then
+            checklastfolderspermissionforcheckpath "${parent_dir}" "${_TARGET_USERNAME}"
             if [ "$?" = 0 ]; then
-#All paths exist with write permission
-                _TARGET_INSTALL_PATH=${_TARGET_INSTALL_PATH}
+                creat_checkpath "${_TARGET_INSTALL_PATH}" "${_TARGET_USERNAME}" "${_TARGET_USERGROUP}"
             else
-#All paths exist, no write permission
                 exit 1
             fi
         else
-            checklastfolderspermissionforcheckpath "${ret_isonlylastnotexistdir_path}" "${_TARGET_USERNAME}"
-            if [ "$?" = 0 ]; then
-#penultimate path exists with write permission
-                if [ "${target_dir}" = "${_DEFAULT_INSTALL_PATH}" ] && [ ! -d "${_DEFAULT_INSTALL_PATH}" ] && [ "$(id -u)" = "0" ]; then
-                    creat_checkpath "${_TARGET_INSTALL_PATH}" "${_TARGET_USERNAME}" "${_TARGET_USERGROUP}"
-                else
-                    creat_checkpath "${_TARGET_INSTALL_PATH}" "${_TARGET_USERNAME}" "${_TARGET_USERGROUP}"
-                fi
-            else
-#Penultimate path exists, no write permission
-                exit 1
-            fi
+            logandprint "[ERROR]: ERR_NO:${FILE_NOT_EXIST}; Cannot determine parent directory of ${_TARGET_INSTALL_PATH}."
+            exit 1
         fi
     fi
 else
