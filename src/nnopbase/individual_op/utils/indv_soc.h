@@ -33,7 +33,7 @@ constexpr uint32_t SOC_VERSION_ASCEND950 = 4U;
 constexpr uint32_t SOC_VERSION_ASCEND310P = 5U;
 constexpr uint32_t SOC_VERSION_ASCEND310B = 6U;
 constexpr uint32_t SOC_VERSION_ASCEND610Lite = 8U;
-constexpr uint32_t SOC_VERSION_ASCEND910_96 = 11U;
+constexpr uint32_t SOC_VERSION_ASCEND910_96 = 13U;
 class IndvSoc {
 public:
     static IndvSoc& GetInstance(void);
