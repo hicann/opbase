@@ -111,11 +111,12 @@ typedef struct {
     uint8_t tilingData[NNOPBASE_TILIING_DATA_STRUCT_SIZE] = {};
     uint8_t workspacesSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE] = {};
     uint64_t tilingKey = 0UL;
-    uint32_t blockDim = 0U;
+    uint32_t numBlocks = 0U;
     bool needAtomic = false;
     uint32_t scheMode = 0U;
-    uint32_t aicpuBlockDim = 0U;
+    uint32_t aicpuNumBlocks = 0U;
     uint32_t dynUbufSize = 0U;
+    std::vector<uint8_t> staticTilingData;
 } NnopbaseTilingInfo;
 
 typedef struct {

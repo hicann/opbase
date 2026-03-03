@@ -51,7 +51,7 @@ typedef struct {
 extern NnopbaseBinCollecter *gBinCollecter;
 aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter);
 NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, const size_t hashKey,
-    const NnopbaseUChar *const verbose, const uint32_t verbLen);
+    const NnopbaseUChar *const verbose, const uint32_t verbLen, const NnopbaseCoreNum *const coreNum = nullptr);
 void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo *const regInfo, NnopbaseBinInfo* binInfo);
 aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
     const NnopbaseUChar *const verbose, const uint32_t len);
@@ -85,7 +85,8 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey, const Nnopba
     const NnopbaseStaticTensorNumInfo *const tensorNumInfo, const aclTensor* tensors[], const NnopbaseAttrAddr *attrs[],
     const int64_t implMode, const int64_t deterMin, const int64_t *const vDepend);
 const char *NnopbaseCollecterGetSimplifiedKey(
-    const NnopbaseChar *const opType, const uint64_t key, const NnopbaseUChar *verbose, const uint32_t verbLen);
+    const NnopbaseChar *const opType, const uint64_t key, const NnopbaseUChar *verbose, const uint32_t verbLen,
+    const NnopbaseCoreNum *const coreNum = nullptr);
 aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter);
 aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo);
 void NnopbaseSplitStr(const std::string &configPath, const std::string &pattern, std::vector<std::string> &subPaths);
@@ -103,6 +104,9 @@ aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json &binInfo, NnopbaseJsonIn
 
 aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter *const collecter, const NnopbaseChar *const opType);
 aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter);
+aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo &jsonInfo);
+void SetExtraKernelInfoToBin(const NnopbaseJsonInfo &jsonInfo, std::unique_ptr<NnopbaseBinInfo> &binInfo);
+
 static inline aclnnStatus NnopbaseCollecterInit(NnopbaseBinCollecter *collecter)
 {
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {

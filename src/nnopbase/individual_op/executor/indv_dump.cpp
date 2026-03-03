@@ -298,7 +298,7 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor *const executor, a
 
         const std::string l2Name(executor->opType);
         const std::string l0Name(executor->opType);
-        const uint32_t blockDim = NnopbaseExecutorGetBlockDim(executor);
+        const uint32_t numBlocks = NnopbaseExecutorGetNumBlocks(executor);
         const std::string &magic =
             nnopbase::GetMagicFormBin(executor->collecter->useCoreTypeMagic, executor->args->binInfo);
         std::string devFunc;
@@ -317,7 +317,7 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor *const executor, a
             .TensorInfo(dumpInTensors)
             .TensorInfo(dumpOutTensors)
             .TensorInfo(dumpWorkSpaceTensors)
-            .AdditionInfo("block_dim", std::to_string(blockDim))
+            .AdditionInfo("block_dim", std::to_string(numBlocks))
             .AdditionInfo("workspace_bytes", workspaceBytes)
             .AdditionInfo("workspace_addrs", workspaceAddrs)
             .AdditionInfo("all_attrs", allAttrs)

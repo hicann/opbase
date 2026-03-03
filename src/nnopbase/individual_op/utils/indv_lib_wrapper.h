@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include "mmpa/mmpa_api.h"
 #include "hccl/base.h"
+#include "aclnn/acl_meta.h"
 #include "utils/indv_debug_assert.h"
 
 namespace nnopbase {
@@ -147,6 +148,13 @@ public:
         hcomGetCommHandleByGroupHandle = nullptr;
         hcclGetRankIdHandle = nullptr;
         hcclGetCcuTaskInfoHandle = nullptr;
+
+        // 静态Mc2使能场景重构Topo结构落盘Json用
+        hcclGetRankSizeHandle = nullptr;
+        hcclRankGraphGetLayersHandle = nullptr;
+        hcclRankGraphGetRankSizeByLayerHandle = nullptr;
+        hcclRankGraphGetTopoTypeByLayerHandle = nullptr;
+        hcclGetHcclBufferHandle = nullptr;
         closeSo();
 
         NNOPBASE_ASSERT_OK_RETVAL(openSo(loadSoPath));
@@ -228,12 +236,86 @@ public:
         return OK;
     }
 
+    aclnnStatus HcclRankGraphGetLayers(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetLayersHandle);
+
+        HcclResult ret = hcclRankGraphGetLayersHandle(comm, netLayers, netLayerNum);
+        if (ret != HCCL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the HcclRankGraphGetLayers "
+                    "function. ret = %u, comm = %p.", ret, comm);
+            return ACLNN_ERR_INNER;
+        }
+
+        return OK;
+    }
+    aclnnStatus HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetRankSizeByLayerHandle);
+
+        HcclResult ret = hcclRankGraphGetRankSizeByLayerHandle(comm, netLayer, rankNum);
+        if (ret != HCCL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the HcclRankGraphGetRankSizeByLayer "
+                    "function. ret = %u, comm = %p.", ret, comm);
+            return ACLNN_ERR_INNER;
+        }
+
+        return OK;
+    }
+    aclnnStatus HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetTopoTypeByLayerHandle);
+
+        HcclResult ret = hcclRankGraphGetTopoTypeByLayerHandle(comm, netLayer, topoType);
+        if (ret != HCCL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the HcclRankGraphGetTopoTypeByLayer "
+                    "function. ret = %u, comm = %p.", ret, comm);
+            return ACLNN_ERR_INNER;
+        }
+
+        return OK;
+    }
+    aclnnStatus HcclGetHcclBuffer(HcclComm comm, void** buffer, uint64_t* size)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetHcclBufferHandle);
+
+        HcclResult ret = hcclGetHcclBufferHandle(comm, buffer, size);
+        if (ret != HCCL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the HcclGetHcclBuffer "
+                    "function. ret = %u, comm = %p.", ret, comm);
+            return ACLNN_ERR_INNER;
+        }
+
+        return OK;
+    }
+
+    aclnnStatus HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankSizeHandle);
+
+        HcclResult ret = hcclGetRankSizeHandle(comm, rankSize);
+        if (ret != HCCL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the HcclGetRankId "
+                    "function of the hccl module. ret = %u, comm = %p.", ret, comm);
+            return ACLNN_ERR_INNER;
+        }
+
+        return OK;
+    }
+
 private:
     using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void *, void *, void **);
     using HcclGetAicpuOpStreamAndNotifyFunc = HcclResult (*)(HcclComm, rtStream_t *, uint8_t, void **);
     using HcomGetCommHandleByGroupFunc = HcclResult (*)(const char *, HcclComm *);
     using HcclGetCcuTaskInfoFunc = HcclResult (*)(HcclComm, void *, void *);
     using HcclGetRankIdFunc = HcclResult (*)(HcclComm, uint32_t *);
+
+    // 静态Mc2使能场景重构Topo结构落盘Json用
+    using HcclGetRankSizeFunc = HcclResult (*)(HcclComm, uint32_t *);
+    using HcclRankGraphGetLayersFunc = HcclResult (*)(HcclComm, uint32_t **, uint32_t *);
+    using HcclRankGraphGetRankSizeByLayerFunc = HcclResult (*)(HcclComm, uint32_t, uint32_t* );
+    using HcclRankGraphGetTopoTypeByLayerFunc = HcclResult (*)(HcclComm, uint32_t, uint32_t*);
+    using HcclGetHcclBufferFunc = HcclResult (*)(HcclComm, void**,  uint64_t*);
 
     IndvHcclWrapper(void) {}
 
@@ -245,6 +327,12 @@ private:
         hcclGetCcuTaskInfoHandle = nullptr;
         hcclGetRankIdHandle = nullptr;
 
+        // 静态Mc2使能场景重构Topo结构落盘Json用
+        hcclGetRankSizeHandle = nullptr;
+        hcclRankGraphGetLayersHandle = nullptr;
+        hcclRankGraphGetRankSizeByLayerHandle = nullptr;
+        hcclRankGraphGetTopoTypeByLayerHandle = nullptr;
+        hcclGetHcclBufferHandle = nullptr;
         closeSo();
     }
 
@@ -259,13 +347,25 @@ private:
         NNOPBASE_ASSERT_NOTNULL_RETVAL(hcomGetCommHandleByGroupHandle);
         hcclGetRankIdHandle = LoadFunction<HcclGetRankIdFunc>("HcclGetRankId");
         NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankIdHandle);
+
+        // 静态Mc2使能场景重构Topo结构落盘Json用
+        hcclGetRankSizeHandle = LoadFunction<HcclGetRankSizeFunc>("HcclGetRankSize");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankSizeHandle);
+        hcclRankGraphGetLayersHandle = LoadFunction<HcclRankGraphGetLayersFunc>("HcclRankGraphGetLayers");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetLayersHandle);
+        hcclRankGraphGetRankSizeByLayerHandle =
+            LoadFunction<HcclRankGraphGetRankSizeByLayerFunc>("HcclRankGraphGetRankSizeByLayer");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetRankSizeByLayerHandle);
+        hcclRankGraphGetTopoTypeByLayerHandle = LoadFunction<HcclRankGraphGetTopoTypeByLayerFunc>("HcclRankGraphGetTopoTypeByLayer");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetTopoTypeByLayerHandle);
+        hcclGetHcclBufferHandle = LoadFunction<HcclGetHcclBufferFunc>("HcclGetHcclBuffer");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetHcclBufferHandle);
         return OK;
     }
 
     aclnnStatus LoadDavidHcclFunctions() {
         hcclGetCcuTaskInfoHandle = LoadFunction<HcclGetCcuTaskInfoFunc>("HcclGetCcuTaskInfo");
         NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetCcuTaskInfoHandle);
-
         return OK;
     }
 
@@ -274,6 +374,13 @@ private:
     HcomGetCommHandleByGroupFunc hcomGetCommHandleByGroupHandle = nullptr;
     HcclGetCcuTaskInfoFunc hcclGetCcuTaskInfoHandle = nullptr;
     HcclGetRankIdFunc hcclGetRankIdHandle = nullptr;
+
+    // 静态Mc2使能场景重构Topo结构落盘Json用
+    HcclGetRankSizeFunc hcclGetRankSizeHandle = nullptr;
+    HcclRankGraphGetLayersFunc hcclRankGraphGetLayersHandle = nullptr;
+    HcclRankGraphGetRankSizeByLayerFunc hcclRankGraphGetRankSizeByLayerHandle = nullptr;
+    HcclRankGraphGetTopoTypeByLayerFunc hcclRankGraphGetTopoTypeByLayerHandle = nullptr;
+    HcclGetHcclBufferFunc hcclGetHcclBufferHandle = nullptr;
 };
 
 class NnopbaseSoLoader {

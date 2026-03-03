@@ -207,7 +207,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_bin_info_build_fail_len) {
 TEST_F(NnopbaseCollecterUnitTest, test_read_opinfo_config_fail) {
     bin_collecter = new NnopbaseBinCollecter;
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> commonPath;
-    commonPath.push_back(std::make_pair("/usr/local/Ascend/latest/opp/built-in", gert::OppImplVersionTag::kOpp));
+    commonPath.push_back(std::make_pair("/usr/local/Ascend/latest/opp/built-in/123/4243", gert::OppImplVersionTag::kOpp));
     int32_t ret = NnopbaseCollecterGetDynamicKernelPathAndReadConfig(bin_collecter, commonPath);
     ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
     delete bin_collecter;

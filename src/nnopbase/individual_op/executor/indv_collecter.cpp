@@ -189,6 +189,18 @@ std::string GetOpSoPackageName(const std::string &path) {
   // 内置算子包名
   return "built-in";
 }
+
+bool MatchBinWithCoreNum(const NnopbaseBinInfo *const binInfo, const NnopbaseCoreNum *const coreNum)
+{
+    // 不具备校验的条件或未使能校验，直接返回匹配成功   
+    if (coreNum == nullptr || binInfo->extraKernelDesc == nullptr || binInfo->extraKernelDesc->coreNum == nullptr) { return true; }
+    const auto &binCoreNum = binInfo->extraKernelDesc->coreNum;
+    OP_LOGD("Match static bin with runtime coreNum[%u, %u], while coreNum of candidate static kernel is [%u, %u].",
+        coreNum->aicNum, coreNum->aivNum, binCoreNum->aicNum, binCoreNum->aivNum);
+    // 控核场景必须保证aic/aiv核数与当前核数相等 
+    return (binCoreNum->aivNum == coreNum->aivNum)
+        && ((binCoreNum->aicNum == coreNum->aicNum));
+}
 } // namespace
 
 #ifdef __cplusplus
@@ -274,14 +286,15 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
 }
 
 const NnopbaseChar *NnopbaseCollecterGetSimplifiedKey(const NnopbaseChar *const opType, const uint64_t key,
-                                                const NnopbaseUChar *verbose, const uint32_t verbLen)
+                                                const NnopbaseUChar *verbose, const uint32_t verbLen,
+                                                const NnopbaseCoreNum *const coreNum)
 {
     NnopbaseRegInfo *regInfo = NnopbaseCollecterFindRegInfoInTbl(gBinCollecter, opType, key);
     if (regInfo == nullptr) {
         return nullptr;
     }
     const size_t hashKey = NnopbaseHashBinary(verbose, static_cast<size_t>(verbLen)) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
-    const NnopbaseBinInfo* binInfo = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, verbLen);
+    const NnopbaseBinInfo* binInfo = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, verbLen, coreNum);
     if (binInfo == nullptr) {
         return nullptr;
     }
@@ -297,10 +310,11 @@ aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingF
     if (opImpl != nullptr) {
         // check null at executor, some op no rt2 tiling
         *tiling = reinterpret_cast<TilingFun>(opImpl->tiling);
+        OP_LOGI("Get opImpl of %s success.", jsonInfo.opType.c_str());
     } else {
+        OP_LOGW("Get opImpl of %s failed, opImpl is nullptr.", jsonInfo.opType.c_str());
         *tiling = nullptr;
     }
-    OP_LOGI("%s get tiling func from gert::DefaultOpImplSpaceRegistry.", jsonInfo.opType.c_str());
     return OK;
 }
 
@@ -636,6 +650,42 @@ aclnnStatus NnopbaseCollecterGcRegInfo(void *data)
     return ACLNN_SUCCESS;
 }
 
+void SetExtraKernelInfoToBin(const NnopbaseJsonInfo &jsonInfo, std::unique_ptr<NnopbaseBinInfo> &binInfo)
+{
+    auto &runInfo = jsonInfo.extraKernelDesc.runInfo;
+    auto &coreNum = jsonInfo.extraKernelDesc.coreNum;
+    if (runInfo != nullptr) {
+        if (binInfo->extraKernelDesc == nullptr) {
+            binInfo->extraKernelDesc = std::make_shared<ExtraKernelDesc>();
+            NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc);
+        }
+        binInfo->extraKernelDesc->runInfo = std::make_unique<StaticKernelJsonRunInfo>(*runInfo);
+        NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc->runInfo);
+        OP_LOGI("Update runInfo of %s json to binInfo, aicpuNumBlocks %u, numBlocks %u,"
+            " dynUBufSize %u scheduleMode %u, tilingCond %u tilingKey %llu clearAtomic %d workspaceSizesNum:%zu",
+                jsonInfo.opType.c_str(),
+                binInfo->extraKernelDesc->runInfo->aicpuNumBlocks,
+                binInfo->extraKernelDesc->runInfo->numBlocks,
+                binInfo->extraKernelDesc->runInfo->dynUBufSize,
+                binInfo->extraKernelDesc->runInfo->scheduleMode,
+                binInfo->extraKernelDesc->runInfo->tilingCond,
+                binInfo->extraKernelDesc->runInfo->tilingKey,
+                binInfo->extraKernelDesc->runInfo->clearAtomic,
+                binInfo->extraKernelDesc->runInfo->workspaceSizesNum
+            );
+    }
+    if (coreNum != nullptr) {
+        if (binInfo->extraKernelDesc == nullptr) {
+            binInfo->extraKernelDesc = std::make_shared<ExtraKernelDesc>();
+            NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc);
+        }
+        binInfo->extraKernelDesc->coreNum = std::make_unique<NnopbaseCoreNum>(*coreNum);
+        NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc->coreNum);
+        OP_LOGI("Update platformInfo of %s json to binInfo, number of aic blocks is %u, number of aiv blocks is %u",
+            jsonInfo.opType.c_str(), binInfo->extraKernelDesc->coreNum->aicNum, binInfo->extraKernelDesc->coreNum->aivNum);
+    }
+}
+
 aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
     const NnopbaseUChar *const verbose, const uint32_t len)
 {
@@ -644,7 +694,8 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *cons
     // incremental update static bin
     if (jsonInfo.isStaticShape) {
         size_t hashKey = NnopbaseHashBinary(verbose, len) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
-        NnopbaseBinInfo *findBin = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, len);
+        NnopbaseBinInfo *findBin = 
+            NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, len, jsonInfo.extraKernelDesc.coreNum.get());
         if (findBin != nullptr) {
             OP_LOGI("%s binInfo already exists, no need to add.", regInfo->key.opType.c_str());
             return OK;
@@ -657,7 +708,7 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *cons
     binInfo->simplifiedKey = key;
     binInfo->coreType = jsonInfo.coreType;
     binInfo->isStaticShape = jsonInfo.isStaticShape;
-    binInfo->blockDim = jsonInfo.blockDim;
+    binInfo->numBlocks = jsonInfo.numBlocks;
     binInfo->kernelName = jsonInfo.kernelName;
     binInfo->multiKernelType = jsonInfo.multiKernelType;
     binInfo->loadBinInfoType = jsonInfo.loadBinInfoType;
@@ -665,6 +716,7 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *cons
         binInfo->binLen = jsonInfo.binLen;
         binInfo->bin = jsonInfo.bin;
     }
+    SetExtraKernelInfoToBin(jsonInfo, binInfo);
 
     auto vec = op::internal::PtrCastTo<gert::ContinuousVector>(binInfo->staticWorkspaceSizes);
     NNOPBASE_ASSERT_TRUE_RETVAL(memcpy_s(vec->MutableData(), sizeof(size_t) * vec->GetCapacity(),
@@ -674,6 +726,87 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *cons
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoSetOpBinInfoKey(binInfo.get(), verbose, len));
     NnopbaseCollecterInsertBinInfo(regInfo, binInfo.release()); // insert in list
     OP_LOGD("Finish add %s binInfo.", regInfo->key.opType.c_str());
+    return OK;
+}
+
+void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& staticKernelJsonConfig)
+{
+    try {
+        if (staticKernelJsonConfig.contains("runInfo")) {
+            auto &runInfo = staticKernelJsonConfig["runInfo"];
+            kernelDesc.runInfo = std::make_unique<StaticKernelJsonRunInfo>();
+            if (kernelDesc.runInfo == nullptr) {return;}
+            kernelDesc.runInfo->aicpuNumBlocks = runInfo["aicpu_block_dim"].get<uint32_t>();
+            kernelDesc.runInfo->numBlocks = runInfo["block_dim"].get<uint32_t>();
+            kernelDesc.runInfo->dynUBufSize = runInfo["local_memory_size"].get<uint32_t>();
+            kernelDesc.runInfo->scheduleMode = runInfo["schedule_mode"].get<uint32_t>();
+            kernelDesc.runInfo->tilingCond = runInfo["tiling_cond"].get<uint32_t>();
+            kernelDesc.runInfo->tilingKey = runInfo["tiling_key"].get<uint64_t>();
+            kernelDesc.runInfo->clearAtomic = runInfo["clear_atomic"].get<uint32_t>();
+            std::string tilingData = runInfo["tiling_data"].get<std::string>();
+            kernelDesc.runInfo->workspaceSizesNum = staticKernelJsonConfig["workspace"]["num"].get<size_t>();
+            kernelDesc.runInfo->workspaceSizes.resize(kernelDesc.runInfo->workspaceSizesNum);
+            for (size_t i = 0U; i < kernelDesc.runInfo->workspaceSizesNum; ++i) {
+                kernelDesc.runInfo->workspaceSizes[i] = staticKernelJsonConfig["workspace"]["size"][i].get<size_t>();
+            }
+            if (tilingData.size() % 2U == 1U) {
+                OP_LOGW("To convert static tiling data, the size of tiling data must be even!");
+            } else {
+                for (size_t i = 0U; i < tilingData.size(); i+=2U) { // String内容按每2个字符读取
+                    std::string byteStr = tilingData.substr(i, 2);  // 每2个四比特的字符拼一个字节数据
+                    uint8_t byte = static_cast<uint8_t>(std::stoul(byteStr, nullptr, 16)); // 按16进制字符格式转为一个无符号字节
+                    kernelDesc.runInfo->tilingData.emplace_back(byte);
+                }
+            }
+            OP_LOGI("Parse runInfo success. aicpuNumBlocks is %u, numBlocks is %u, locamMemorySize is %u,"
+            " scheduleMode is %u, tilingCond is %u, tilingKey is %llu, clearAtomic is %u, staticTilingData size is %u, workspaceNum is %zu",
+            kernelDesc.runInfo->aicpuNumBlocks, kernelDesc.runInfo->numBlocks, kernelDesc.runInfo->dynUBufSize, kernelDesc.runInfo->scheduleMode,
+            kernelDesc.runInfo->tilingCond, kernelDesc.runInfo->tilingKey, kernelDesc.runInfo->clearAtomic, kernelDesc.runInfo->tilingData.size(),
+            kernelDesc.runInfo->workspaceSizesNum);
+        }
+    } catch (const nlohmann::json::exception &e) {
+        OP_LOGW("Read static kernel json file of runInfo failed, reason %s", e.what());
+    }
+    return;
+}
+
+void UpdatePlatformInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& staticKernelJsonConfig)
+{
+    try {
+        if (staticKernelJsonConfig.contains("platformInfo")) {
+            auto &platformInfo = staticKernelJsonConfig["platformInfo"];
+            kernelDesc.coreNum = std::make_unique<NnopbaseCoreNum>();
+            if (kernelDesc.coreNum == nullptr) {return;}
+            kernelDesc.coreNum->aicNum = platformInfo["cubeCoreCnt"].get<uint32_t>();
+            kernelDesc.coreNum->aivNum = platformInfo["vectorCoreCnt"].get<uint32_t>();
+            OP_LOGI("Parse platformInfo success: origin[%u, %u] aicNum is %u, aicNum is %u",
+            platformInfo["cubeCoreCnt"].get<uint32_t>(), platformInfo["vectorCoreCnt"].get<uint32_t>(),
+                kernelDesc.coreNum->aicNum, kernelDesc.coreNum->aivNum);
+        }
+    } catch (const nlohmann::json::exception &e) {
+        OP_LOGW("Read static kernel json file of platformInfo failed, reason %s", e.what());
+    }
+    return;
+}
+
+aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo &jsonInfo)
+{
+    std::string staticKernelBinPath = jsonInfo.path;
+    const size_t pos = staticKernelBinPath.find(".o");
+    if (pos == std::string::npos) {
+        OP_LOGW("Static kernel json %s is not a correct format, read extra infos failed.", staticKernelBinPath.c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    std::string staticKernelJsonPath = staticKernelBinPath.substr(0U, pos + 1U) + "json";
+    nlohmann::json staticKernelJsonConfig;
+    if (NnopbaseReadJsonConfig(staticKernelJsonPath, staticKernelJsonConfig) != OK) {
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    OP_LOGI("Read json static kernel json info success %s", staticKernelJsonPath.c_str());
+    auto &kernelDesc = jsonInfo.extraKernelDesc;
+    // 静态算子的json配置读取失败不影响算子的动态执行
+    UpdateRunInfoForStaticJson(kernelDesc, staticKernelJsonConfig);
+    UpdatePlatformInfoForStaticJson(kernelDesc, staticKernelJsonConfig);
     return OK;
 }
 
@@ -694,7 +827,8 @@ void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo *const regInfo, NnopbaseBinI
 
 // 一样的key，会优先选择先放入hash表的
 NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, const size_t hashKey,
-                                              const NnopbaseUChar *const verbose, const uint32_t verbLen)
+                                              const NnopbaseUChar *const verbose, const uint32_t verbLen,
+                                              const NnopbaseCoreNum *const coreNum)
 {
     OP_LOGI("Start find binInfo, opType is %s, hashKey is %zu, verbLen is %u.", regInfo->key.opType.c_str(),
             hashKey, verbLen);
@@ -702,7 +836,6 @@ NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, co
         OP_LOGE(ACLNN_ERR_INNER, "HashKey[%zu] is too large, please check.", hashKey);
         return nullptr;
     }
-
     while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[hashKey].isVist, false, true)) {
          /* nothing to do */
     };
@@ -723,7 +856,7 @@ NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, co
                 break;
             }
         }
-        if (i == verbLen) {
+        if (i == verbLen && MatchBinWithCoreNum(binInfo, coreNum)) {
             regInfo->binTbl.buckets[hashKey].isVist = false;
             OP_LOGI("Found %s binInfo, hashKey is %zu.", regInfo->key.opType.c_str(), hashKey);
             return binInfo;
@@ -1062,7 +1195,7 @@ aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json &binInfo, NnopbaseJsonIn
     jsonInfo.isStaticShape = true;
     try {
         auto binDesc = binInfo["binDesc"];
-        jsonInfo.blockDim = binDesc["blockDim"].get<uint32_t>();
+        jsonInfo.numBlocks = binDesc["blockDim"].get<uint32_t>();
         jsonInfo.kernelName = binDesc["kernelName"].get<std::string>();
         jsonInfo.workspaceSizeNum = binDesc["workspace"].size();
         if (binDesc["workspace"].size() <= NNOPBASE_NORM_MAX_WORKSPACE_NUMS) {
@@ -1097,6 +1230,9 @@ aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter *c
             if (NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo) != OK) {
                 OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
                 continue;
+            }
+            if (UpdateStaticJsonExtraInfo(jsonInfo) != OK) {
+                OP_LOGW("Update extra info of static op %s failed.", jsonInfo.opType.c_str());
             }
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
         }
@@ -1140,11 +1276,11 @@ aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter 
 
 aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter *const collecter, const NnopbaseChar *const opType)
 {
-    // 将运行态添加的静态算子信息注册到collecter中
+    // 将运行态添加的静态库算子信息注册到collecter中
     const auto allOpBinaryDesc = nnopbase::OpBinaryResourceManager::GetInstance().GetAllOpBinaryDesc();
     auto iter = allOpBinaryDesc.find(ge::AscendString(opType));
     if (iter != allOpBinaryDesc.end()) {
-        OP_LOGI("Update static kernel info, opType: %s", opType);
+        OP_LOGI("Update static library kernel info, opType: %s", opType);
         const nlohmann::json &opJsonDesc = iter->second;
         for (auto binInfo : opJsonDesc["binList"]) {
             NnopbaseJsonInfo jsonInfo;
@@ -1179,6 +1315,10 @@ aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *
             if (NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo) != OK) {
                 OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
                 continue;
+            }
+            if (UpdateStaticJsonExtraInfo(jsonInfo) != OK) {
+                // 不是每个静态json都包含runInfo字段，该字段是否存在不影响staticBin的正常场景执行
+                OP_LOGW("Update extra info of static op %s failed.", jsonInfo.opType.c_str());
             }
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
         }

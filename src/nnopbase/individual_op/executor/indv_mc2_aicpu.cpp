@@ -34,10 +34,18 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, rtStream_t const
             executor->aicpuNotify.push_back(std::make_pair(nullptr, nullptr));
             continue;
         }
-        NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(commHandle,
-            stream,
-            (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(),
-            &contextAddr));
+        if (!executor->hasTiling) {
+            // 静态mc2算子场景，用json读取的静态tilingData去激活Hccl通信
+            NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(commHandle,
+                stream,
+                executor->args->tilingInfo.staticTilingData.data(),
+                &contextAddr));
+        } else {
+            NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(commHandle,
+                stream,
+                ((NnopbaseTilingData *)executor->args->tilingInfo.tilingData)->GetData(),
+                &contextAddr));
+        }
         executor->contextAddr.push_back(contextAddr);
         rtStream_t aicpuStream = nullptr;
         rtStream_t notify[NNOPBASE_MC2_NOTIFY_COUNT] = {};
@@ -221,16 +229,16 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
     executor->aicpuArgs.timeout = time;
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     const std::string opType = std::string(executor->opType) + NNOPBAE_MC2_AICPU_SUFFIX;
-    const uint32_t blockDim =
-        executor->args->tilingInfo.aicpuBlockDim == 0U ? 1U : executor->args->tilingInfo.aicpuBlockDim;
+    const uint32_t numBlocks =
+        executor->args->tilingInfo.aicpuNumBlocks == 0U ? 1U : executor->args->tilingInfo.aicpuNumBlocks;
     NNOPBASE_ASSERT_RTOK_RETVAL(rtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC,
         &opType[0],
-        blockDim,
+        numBlocks,
         &executor->aicpuArgs,
         nullptr,
         executor->aicpuStream[0],
         RT_KERNEL_USE_SPECIAL_TIMEOUT));
-    OP_LOGI("%s launch successfully, blockdim is %u.", opType.c_str(), blockDim);
+    OP_LOGI("%s launch successfully, numBlocks is %u.", opType.c_str(), numBlocks);
 
     NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->aicpuItemId);
     NnopbaseReportAicpuAdditionInfo(launchBeginTime + 1, &opType[0]);
@@ -240,13 +248,13 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
 aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStream_t const stream)
 {
     OP_LOGI("Launch kernel by fusion mode.");
-    uint32_t blockDim = executor->args->tilingInfo.blockDim;
+    uint32_t numBlocks = executor->args->tilingInfo.numBlocks;
     uint64_t tilingKey = executor->args->tilingInfo.tilingKey;
-    OP_LOGI("BlockDim is %u, tilingKey is %lu.", blockDim, tilingKey);
+    OP_LOGI("numBlocks is %u, tilingKey is %lu.", numBlocks, tilingKey);
 
     rtLaunchAttribute_t launchAttr[1];
     launchAttr[0].id = RT_LAUNCH_ATTRIBUTE_BLOCKDIM;
-    launchAttr[0].value.blockDim = blockDim;
+    launchAttr[0].value.blockDim = numBlocks;
     rtLaunchConfig_t launchCfg = {launchAttr, 1U};
     rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->ccuBinHandle, tilingKey, &launchCfg};
     rtFunsionTaskInfo_t fusionTaskInfo = {};
@@ -254,7 +262,7 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
     rtAicpuFusionInfo_t aicpuInfo = {};
     if (executor->mc2OpCfg.sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU) {
         executor->fusionArgs.aicpuNum = 1;
-        aicpuInfo = {KERNEL_TYPE_AICPU_KFC, 0, blockDim};
+        aicpuInfo = {KERNEL_TYPE_AICPU_KFC, 0, numBlocks};
         fusionTaskInfo.subTask[0].type = RT_FUSION_HCOM_CPU;
         fusionTaskInfo.subTask[0].task.aicpuInfo = aicpuInfo;
     } else {
@@ -273,7 +281,7 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
 
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     NNOPBASE_ASSERT_RTOK_RETVAL(rtFusionLaunch(&fusionTaskInfo, stream, &executor->fusionArgs));
-    NnopbaseExecutorReportProfiling(executor, blockDim, MSPROF_GE_TASK_TYPE_FUSION, launchBeginTime, stream);
+    NnopbaseExecutorReportProfiling(executor, numBlocks, MSPROF_GE_TASK_TYPE_FUSION, launchBeginTime, stream);
     OP_LOGI("Op %s fusion launch successfully.", executor->opType);
     return OK;
 }

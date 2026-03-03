@@ -15,13 +15,6 @@
 #include "acl/acl_rt.h"
 #include "utils/indv_base.h"
 
-struct NnopbaseStaticTensorNumInfo {
-    int64_t numTensors;
-    int64_t numDynamic;
-    int64_t numAttrs;
-    int64_t numValueDepend;
-};
-
 struct NnopbaseRTArgsExt {
     void *args;                             // args host mem addr
     aclrtPlaceHolderInfo *hostInputInfoPtr;  // nullptr means no host mem input

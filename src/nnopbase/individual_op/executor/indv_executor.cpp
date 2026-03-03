@@ -52,11 +52,11 @@ std::vector<aclrtLaunchKernelAttr> CreateRtsLaunchCfgAttrs(uint8_t scheMode, uin
             .value = { .engineType = ACL_RT_ENGINE_TYPE_AIC },
         };
         attrs.push_back(engineTypeAttr);
-        aclrtLaunchKernelAttr blockDimOffsetAttr = {
+        aclrtLaunchKernelAttr numBlocksOffsetAttr = {
             .id = ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
             .value = { .blockDimOffset = 0 },
         };
-        attrs.push_back(blockDimOffsetAttr);
+        attrs.push_back(numBlocksOffsetAttr);
     } else {
         aclrtLaunchKernelAttr simtModeAttr = {
             .id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE,
@@ -65,6 +65,26 @@ std::vector<aclrtLaunchKernelAttr> CreateRtsLaunchCfgAttrs(uint8_t scheMode, uin
         attrs.push_back(simtModeAttr);
     }
     return attrs;
+}
+
+void ResizeExecutorArgsBuf(NnopbaseExecutor *executor)
+{
+    OP_LOGI("Start resizing %s args buffer.", executor->opType);
+    const uint32_t ioNum = executor->args->inputs.num + executor->args->outputs.num;
+    size_t argsLen = NNOPBASE_MAX_ARGS_BUF_LEN;
+    const size_t tilingDataSize =
+        executor->args->binInfo->opParaSize == 0U ? NNOPBASE_MAX_TILING_DATA_LEN : executor->args->binInfo->opParaSize;
+    // 3k包括2k的输入输出、oom、dynamic输入的shape信息和rtHostInputInfo_t结构体
+    const size_t argSize = executor->args->inputs.hostInputSize + tilingDataSize + NNOPBASE_HOST_DATA_LEN;
+    OP_LOGI("Tiling data size is %zu, argSize is %zu, hostInputSize is %zu.", tilingDataSize, argSize, executor->args->inputs.hostInputSize);
+    if ((ioNum > NNOPBASE_MAX_TENSOR_NUM) || (argSize > argsLen) ||
+        (tilingDataSize > NNOPBASE_MAX_TILING_DATA_LEN)) {
+        argsLen = NnopbaseCalcArgsSize(executor, tilingDataSize);
+    }
+    if (argsLen > executor->args->argsBuf.size()) {
+        executor->args->argsBuf.resize(argsLen);
+    }
+    OP_LOGI("Finish resizing %s args buffer.", executor->opType);
 }
 }
 
@@ -679,8 +699,10 @@ bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor *executor)
     if (NnopbaseExecutorGenStaticKey(executor) != OK) {
         return false;
     }
+    // 已在缓存匹配流程调用控核接口，保证executor的coreNum不为非法值
+    auto coreNum = NnopbaseCoreNum({executor->coreNum.aicNum, executor->coreNum.aivNum});
     auto binInfo = NnopbaseCollecterFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
-                                                &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len);
+                                                &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len, &coreNum);
     if ((binInfo != nullptr) && (NnopbaseKernelRegister(executor, binInfo) == OK)) {
         executor->args->binInfo = binInfo;
         executor->hasTiling = false;
@@ -757,18 +779,18 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
 
     // get tiling output
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->tilingKey);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->blockDim);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->numBlocks);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->scheMode);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->needAtomic);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->dynUbufSize);
     tilingInfo.tilingKey = *(executor->tilingKey);
-    tilingInfo.blockDim = *(executor->blockDim);
+    tilingInfo.numBlocks = *(executor->numBlocks);
     tilingInfo.scheMode = *(executor->scheMode);
     tilingInfo.needAtomic = *(executor->needAtomic);
-    tilingInfo.aicpuBlockDim = *(executor->aicpuBlockDim);
+    tilingInfo.aicpuNumBlocks = *(executor->aicpuNumBlocks);
     tilingInfo.dynUbufSize = *(executor->dynUbufSize);
-    OP_LOGI("Tiling outputs of %s are [tilingKey: %llu, blockDim: %u, scheMode: %u, needAtomic: %u, aicpuBlockDim: %u, dynBufSize: %u].",
-        executor->opType, tilingInfo.tilingKey, tilingInfo.blockDim, tilingInfo.scheMode, tilingInfo.needAtomic, tilingInfo.aicpuBlockDim,
+    OP_LOGI("Tiling outputs of %s are [tilingKey: %llu, numBlocks: %u, scheMode: %u, needAtomic: %u, aicpuNumBlocks: %u, dynBufSize: %u].",
+        executor->opType, tilingInfo.tilingKey, tilingInfo.numBlocks, tilingInfo.scheMode, tilingInfo.needAtomic, tilingInfo.aicpuNumBlocks,
         tilingInfo.dynUbufSize);
     return OK;
 }
@@ -809,7 +831,31 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
 
     // find static bin
     if (executor->regInfo->hasStaticShapeBin && NnopbaseExecutorGetStaticBinInfo(executor)) {
-        OP_LOGI("Op[%s] have find static bin", executor->opType);
+        OP_LOGI("Op[%s] have find static bin.", executor->opType);
+        if (executor->mc2OpCfg.isMc2) {
+            OP_LOGI("Start updating %s tilingInfo.", executor->opType);
+            ResizeExecutorArgsBuf(executor);
+            auto &tilingInfo = executor->args->tilingInfo;
+            auto staticBinInfo = executor->args->binInfo;
+            auto &staticKernelRunInfo = staticBinInfo->extraKernelDesc->runInfo;
+            tilingInfo.tilingKey = staticKernelRunInfo->tilingKey;
+            tilingInfo.numBlocks = staticKernelRunInfo->numBlocks;
+            tilingInfo.scheMode = static_cast<uint8_t>(staticKernelRunInfo->scheduleMode);
+            tilingInfo.aicpuNumBlocks = staticKernelRunInfo->aicpuNumBlocks;
+            tilingInfo.needAtomic = staticKernelRunInfo->clearAtomic;
+            tilingInfo.staticTilingData = staticKernelRunInfo->tilingData;
+            OP_LOGI("Updated static tilingInfo: opType : %s, aicpuNumBlocks %u, numBlocks %u,"
+                " scheduleMode %u,  tilingKey %llu clearAtomic %d staticJson TilingData Size %zu, staticTilingDataSize %zu",
+                executor->opType,
+                tilingInfo.aicpuNumBlocks,
+                tilingInfo.numBlocks,
+                tilingInfo.scheMode,
+                tilingInfo.tilingKey,
+                tilingInfo.needAtomic,
+                staticKernelRunInfo->tilingData.size(),
+                tilingInfo.staticTilingData.size()
+                );
+        }
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindBinEnd);
         return OK;
     }
@@ -824,20 +870,7 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseKernelRegister(executor, executor->args->binInfo));
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindBinEnd);
 
-    const uint32_t ioNum = executor->args->inputs.num + executor->args->outputs.num;
-    size_t argsLen = NNOPBASE_MAX_ARGS_BUF_LEN;
-    const size_t tilingDataSize =
-        executor->args->binInfo->opParaSize == 0U ? NNOPBASE_MAX_TILING_DATA_LEN : executor->args->binInfo->opParaSize;
-    // 3k包括2k的输入输出、oom、dynamic输入的shape信息和rtHostInputInfo_t结构体
-    const size_t argSize = executor->args->inputs.hostInputSize + tilingDataSize + NNOPBASE_HOST_DATA_LEN;
-    OP_LOGI("ArgSize is %zu, hostInputSize is %zu.", argSize, executor->args->inputs.hostInputSize);
-    if ((ioNum > NNOPBASE_MAX_TENSOR_NUM) || (argSize > argsLen) ||
-        (tilingDataSize > NNOPBASE_MAX_TILING_DATA_LEN)) {
-        argsLen = NnopbaseCalcArgsSize(executor, tilingDataSize);
-    }
-    if (argsLen > executor->args->argsBuf.size()) {
-        executor->args->argsBuf.resize(argsLen);
-    }
+    ResizeExecutorArgsBuf(executor);
 
     // do tiling
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorDoTiling(executor));
@@ -995,7 +1028,11 @@ aclnnStatus NnopbaseExecutorRunForWorkspace(NnopbaseExecutor *executor, uint64_t
 
 static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
 {
-    if ((op::internal::GetOpProfilingRecordArgFlag()) && (!executor->mc2OpCfg.isMc2)) {
+    OP_LOGI("Start dump node info for operator %s", executor->opType);
+    // 支持非Mc2算子或者通信模式为AICORE的Mc2算子落盘
+    bool isOpSupportDump = (!executor->mc2OpCfg.isMc2) || 
+        (executor->mc2OpCfg.isMc2 && (executor->mc2OpCfg.sType == NnopbaseHcclServerType::NNOPBASE_HCCL_SERVER_TYPE_MTE));
+    if (op::internal::opProfilingSwitch.recordOpArgFlag && isOpSupportDump) {
         int8_t binType = 1; // 1表示dynamic
         if (executor->args->binInfo->isStaticShape) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseTilingContextBuild(executor));
@@ -1008,25 +1045,26 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
             op::internal::PtrCastTo<const gert::TilingContext>(executor->contextExt.context),
             aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, g_nnopbaseSysCfgParams.deterministic),
             &executor->opKernelInfo);
+        OP_LOGI("Dump node info for operator %s finished.", executor->opType);  
     }
     return OK;
 }
 
 static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtStream_t stream,
-                                                const uint32_t blockDim, const bool is195x = false)
+                                                const uint32_t numBlocks, const bool is195x = false)
 {
     aclrtFuncHandle funcHandle;
     uint8_t scheMode = static_cast<uint8_t>(executor->args->tilingInfo.scheMode);
     uint32_t dynUbufSize = executor->args->tilingInfo.dynUbufSize;
     auto attrs = CreateRtsLaunchCfgAttrs(scheMode, dynUbufSize, is195x);
     if (executor->args->binInfo->isStaticShape) {
-        OP_LOGI("Launch static kernel %s task, blockDim is %u, scheMode is %u.", executor->opType, blockDim, scheMode);
+        OP_LOGI("Launch static kernel %s task, numBlocks is %u, scheMode is %u.", executor->opType, numBlocks, scheMode);
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandle,
             executor->args->binInfo->kernelName.c_str(), &funcHandle));
     } else {
         const uint64_t tilingKey = executor->args->tilingInfo.tilingKey;
-        OP_LOGI("Launch dynamic kernel %s task, tilingKey is %lu, scheMode is %u, blockDim is %u, stream is %p",
-            executor->opType, tilingKey, scheMode, blockDim, stream);
+        OP_LOGI("Launch dynamic kernel %s task, tilingKey is %lu, scheMode is %u, numBlocks is %u, stream is %p",
+            executor->opType, tilingKey, scheMode, numBlocks, stream);
         NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandle,
             tilingKey, &funcHandle));
     }
@@ -1037,7 +1075,7 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
     auto rtsHostPlaceHolder = NnopbaseGetRTSPlaceHolder(&executor->argsExt);
     NNOPBASE_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(
         funcHandle,
-        blockDim,
+        numBlocks,
         stream,
         &cfg,
         executor->argsExt.args,
@@ -1048,16 +1086,17 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
 }
 
 static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *executor, rtStream_t stream,
-                                                          const uint32_t blockDim, const uint8_t schemMode, const uint32_t blockDimOffset)
+                                                          const uint32_t numBlocks, const uint8_t schemMode, const uint32_t numBlocksOffset)
 {
     aclrtFuncHandle funcHandle;
     if (executor->args->binInfo->isStaticShape) {
-        OP_LOGI("%s blockDim is %u", executor->opType, blockDim);
+        OP_LOGI("Get static func handle of op %s by kernel name, numBlocks is %u", executor->opType, numBlocks);
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(executor->args->binInfo->binHandle,
             executor->args->binInfo->kernelName.c_str(), &funcHandle));
     } else {
         OP_LOGI(
-            "%s tilingKey is %lu, blockDim is %u", executor->opType, executor->args->tilingInfo.tilingKey, blockDim);
+            "Get dynamic func handle of op %s by tilingKey, tilingKey is %lu, numBlocks is %u",
+            executor->opType, executor->args->tilingInfo.tilingKey, numBlocks);
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandle,
             executor->args->tilingInfo.tilingKey, &funcHandle));
     }
@@ -1071,13 +1110,13 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
         .id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
         .value = { .engineType = ACL_RT_ENGINE_TYPE_AIV },
     };
-    aclrtLaunchKernelAttr blockDimOffsetAttr = {
+    aclrtLaunchKernelAttr numBlocksOffsetAttr = {
         .id = ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
-        .value = { .blockDimOffset = blockDimOffset },
+        .value = { .blockDimOffset = numBlocksOffset },
     };
     attrs.push_back(schemModeAttr);
     attrs.push_back(engineTypeAttr);
-    attrs.push_back(blockDimOffsetAttr);
+    attrs.push_back(numBlocksOffsetAttr);
 
     aclrtLaunchKernelCfg cfg;
     cfg.attrs = attrs.data();
@@ -1085,7 +1124,7 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
     auto rtsHostPlaceHolder = NnopbaseGetRTSPlaceHolder(&executor->argsExt);
     NNOPBASE_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(
         funcHandle,
-        blockDim,
+        numBlocks,
         stream,
         &cfg,
         executor->argsExt.args,
@@ -1096,12 +1135,12 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
 }
 
 static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
-    NnopbaseExecutor *executor, rtStream_t stream, const NnopbaseBlockDimInfoForVectorCore &blockInfo)
+    NnopbaseExecutor *executor, rtStream_t stream, const NnopbaseBlockInfoForVectorCore &blockInfo)
 {
-    OP_LOGI("AicBlockDim is %u, aivBlockDim is %u, aivBlockDimOffset is %u.",
-            blockInfo.aicBlockDim,
-            blockInfo.aivBlockDim,
-            blockInfo.aivBlockDimOffset);
+    OP_LOGI("AicNumBlocks is %u, aivNumBlocks is %u, aivNumBlocksOffset is %u.",
+            blockInfo.aicNumBlocks,
+            blockInfo.aivNumBlocks,
+            blockInfo.aivNumBlocksOffset);
     NnopbaseStreamForCombineExecution nnopbaseStream = {};
     std::shared_ptr<std::mutex> streamLckPtr;
     NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorGetStreamAndEvent(
@@ -1112,8 +1151,8 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtStreamWaitEvent(nnopbaseStream.stream, nnopbaseStream.eventA));
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     // aicore kernel launch
-    NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, blockInfo.aicBlockDim, true));
-    NnopbaseExecutorReportProfiling(executor, blockInfo.aicBlockDim, MSPROF_GE_TASK_TYPE_AI_CORE, launchBeginTime,
+    NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, blockInfo.aicNumBlocks, true));
+    NnopbaseExecutorReportProfiling(executor, blockInfo.aicNumBlocks, MSPROF_GE_TASK_TYPE_AI_CORE, launchBeginTime,
         stream);
     OP_LOGI("Main stream launch success.");
 
@@ -1121,9 +1160,9 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
     const uint64_t aivLaunchBeginTime = NnopbaseMsprofSysTime();
     // vector core kernel launch
     NNOPBASE_ASSERT_RTOK_RETVAL(
-        NnopbaseExecutorVectorCoreLaunchKernel(executor, nnopbaseStream.stream, blockInfo.aivBlockDim,
-            scheMode, blockInfo.aivBlockDimOffset));
-    NnopbaseExecutorReportProfiling(executor, blockInfo.aivBlockDim, MSPROF_GE_TASK_TYPE_AIV, aivLaunchBeginTime,
+        NnopbaseExecutorVectorCoreLaunchKernel(executor, nnopbaseStream.stream, blockInfo.aivNumBlocks,
+            scheMode, blockInfo.aivNumBlocksOffset));
+    NnopbaseExecutorReportProfiling(executor, blockInfo.aivNumBlocks, MSPROF_GE_TASK_TYPE_AIV, aivLaunchBeginTime,
         stream);
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtRecordEvent(nnopbaseStream.eventB, nnopbaseStream.stream));
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtStreamWaitEvent(stream, nnopbaseStream.eventB));
@@ -1132,41 +1171,41 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
 }
 
 static aclnnStatus NnopbaseExecutorRunKernelForVectorCore(
-    NnopbaseExecutor *executor, rtStream_t stream, uint32_t blockDim, const CoreType coreType)
+    NnopbaseExecutor *executor, rtStream_t stream, uint32_t numBlocks, const CoreType coreType)
 {
-    NnopbaseBlockDimInfoForVectorCore blockInfo = {};
+    NnopbaseBlockInfoForVectorCore blockInfo = {};
     uint32_t deviceId = 0;
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetDevice(op::internal::PtrCastTo<int32_t>(&deviceId)));
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetDeviceInfo(deviceId,
         ACL_DEV_ATTR_VECTOR_CORE_NUM,
-        op::internal::PtrCastTo<int64_t>(&blockInfo.aivBlockDim)));
+        op::internal::PtrCastTo<int64_t>(&blockInfo.aivNumBlocks)));
 
     if (coreType == kMixAiCore) { // MIX_AICORE场景 taskRation 1:1 双kernel下发
-        blockInfo.aicBlockDim = blockDim;
+        blockInfo.aicNumBlocks = numBlocks;
         NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernelForVectorCore(executor, stream, blockInfo));
         return OK;
     } else { // MIX_AIV场景 1:1 场景
         NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetDeviceInfo(
-            deviceId, ACL_DEV_ATTR_AICORE_CORE_NUM, op::internal::PtrCastTo<int64_t>(&blockInfo.aicBlockDim)));
-        const uint32_t coreNum = blockInfo.aicBlockDim + blockInfo.aivBlockDim;
-        OP_LOGI("AicBlockDim is %u, aivBlockDim is %u, aivBlockDimOffset is %u, blockDim is %u.",
-            blockInfo.aicBlockDim,
-            blockInfo.aivBlockDim,
-            blockInfo.aivBlockDimOffset,
-            blockDim);
-        if (blockDim <= blockInfo.aicBlockDim) {
+            deviceId, ACL_DEV_ATTR_AICORE_CORE_NUM, op::internal::PtrCastTo<int64_t>(&blockInfo.aicNumBlocks)));
+        const uint32_t coreNum = blockInfo.aicNumBlocks + blockInfo.aivNumBlocks;
+        OP_LOGI("AicNumBlocks is %u, aivNumBlocks is %u, aivNumBlocksOffset is %u, numBlocks is %u.",
+            blockInfo.aicNumBlocks,
+            blockInfo.aivNumBlocks,
+            blockInfo.aivNumBlocksOffset,
+            numBlocks);
+        if (numBlocks <= blockInfo.aicNumBlocks) {
             const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
             // 动静kernel下发
-            NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, blockDim, true));
-            NnopbaseExecutorReportProfiling(executor, blockDim, MSPROF_GE_TASK_TYPE_AI_CORE, launchBeginTime, stream);
+            NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, numBlocks, true));
+            NnopbaseExecutorReportProfiling(executor, numBlocks, MSPROF_GE_TASK_TYPE_AI_CORE, launchBeginTime, stream);
             return OK;
-        } else if (blockDim > coreNum) {
-            blockInfo.aicBlockDim = (blockDim * blockInfo.aicBlockDim + coreNum - 1U) / coreNum;
-            blockInfo.aivBlockDim = blockDim - blockInfo.aicBlockDim;
+        } else if (numBlocks > coreNum) {
+            blockInfo.aicNumBlocks = (numBlocks * blockInfo.aicNumBlocks + coreNum - 1U) / coreNum;
+            blockInfo.aivNumBlocks = numBlocks - blockInfo.aicNumBlocks;
         } else {
-            blockInfo.aivBlockDim = blockDim - blockInfo.aicBlockDim;
+            blockInfo.aivNumBlocks = numBlocks - blockInfo.aicNumBlocks;
         }
-        blockInfo.aivBlockDimOffset = blockInfo.aicBlockDim;
+        blockInfo.aivNumBlocksOffset = blockInfo.aicNumBlocks;
         NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernelForVectorCore(executor, stream, blockInfo));
     }
     return OK;
@@ -1196,9 +1235,9 @@ aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, rtStream_t 
     }
     CoreType coreType = executor->args->binInfo->coreType;
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
-    const uint32_t blockDim =
+    const uint32_t numBlocks =
         executor->args->binInfo->isStaticShape
-            ? executor->args->binInfo->blockDim : executor->args->tilingInfo.blockDim;
+            ? executor->args->binInfo->numBlocks : executor->args->tilingInfo.numBlocks;
     
     NnopbaseTaskRation taskRation = kRationEnd;
     if (executor->args->binInfo->multiKernelType == 1) {
@@ -1208,11 +1247,11 @@ aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, rtStream_t 
     // 目前只有310p有这两种coretype，其他形态不会走进来
     if (((coreType == kMixAiCore) || (coreType == kMixAiv)) &&
         (taskRation == kRationEnd || taskRation == kRation11)) {
-        NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorRunKernelForVectorCore(executor, stream, blockDim, coreType));
+        NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorRunKernelForVectorCore(executor, stream, numBlocks, coreType));
     } else {
-        NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, blockDim));
+        NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, numBlocks));
         const uint32_t taskType = NnopbaseExecutorGetTaskType(coreType, executor->args->binInfo->taskRation);
-        NnopbaseExecutorReportProfiling(executor, blockDim, taskType, launchBeginTime, stream);
+        NnopbaseExecutorReportProfiling(executor, numBlocks, taskType, launchBeginTime, stream);
     }
 
     OP_LOGI("Kernel launch successfully.");

@@ -242,13 +242,13 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310PMixAivBlockDim)
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = kMixAiv;
  
     //blockDim > aivBlockDim + aicBlockDim
-    auto oriBlockDim = ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim;
-    ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim = 18;
+    auto oriBlockDim = ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks;
+    ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks = 18;
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = oriCoreType;
-    ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim = oriBlockDim;
+    ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks = oriBlockDim;
     if (workspaceLen > 0U) {
         free(workspace);
     }
@@ -294,13 +294,13 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310PMixAivBlockDim2)
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = kMixAiv;
  
     //blockDim > aivBlockDim + aicBlockDim
-    auto oriBlockDim = ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim;
-    ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim = 12;
+    auto oriBlockDim = ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks;
+    ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks = 12;
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = oriCoreType;
-    ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim = oriBlockDim;
+    ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks = oriBlockDim;
     if (workspaceLen > 0U) {
         free(workspace);
     }
@@ -437,15 +437,15 @@ TEST_F(NnopbaseExtUnitTest, TestStaticLaunchUtForAscend310PBlockDim)
         workspace = (void *) malloc(workspaceLen);
     }
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-    auto oriBlockDim = ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim;
+    auto oriBlockDim = ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks;
     auto oriCoreType = ((NnopbaseExecutor *)executor)->args->binInfo->coreType;
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = kMixAiv;
     // blockDim < aicBlockDim
-    ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim = 7;
+    ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks = 7;
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND310P)));
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
  
-    ((NnopbaseExecutor *)executor)->args->tilingInfo.blockDim = oriBlockDim;
+    ((NnopbaseExecutor *)executor)->args->tilingInfo.numBlocks = oriBlockDim;
     MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
     ((NnopbaseExecutor *)executor)->args->binInfo->coreType = oriCoreType;
     if (workspaceLen > 0U) {
@@ -668,15 +668,15 @@ void RunCommonOpForProfiling(std::string opName, CoreType coreType, std::string 
     }
 
     ((NnopbaseExecutor *)executor)->args->tilingInfo.tilingKey = tilingKey; // tilingKey
-    uint32_t blockDim = ((NnopbaseExecutor *)executor)->args->binInfo->blockDim;
+    uint32_t numBlocks = ((NnopbaseExecutor *)executor)->args->binInfo->numBlocks;
     uint32_t taskType = NnopbaseExecutorGetTaskType(((NnopbaseExecutor *)executor)->args->binInfo->coreType,
         ((NnopbaseExecutor *)executor)->args->binInfo->taskRation);
     uint64_t timeStamp = MsprofSysCycleTime();
     if (flag) {
-        NnopbaseReportContextIdInfoByRation((NnopbaseExecutor *)executor, timeStamp, blockDim, taskType);
+        NnopbaseReportContextIdInfoByRation((NnopbaseExecutor *)executor, timeStamp, numBlocks, taskType);
     } else {
-        NnopbaseReportContextIdInfoByRation((NnopbaseExecutor *)executor, timeStamp, blockDim, taskType);
-        ASSERT_EQ(blockDim, goldenData);
+        NnopbaseReportContextIdInfoByRation((NnopbaseExecutor *)executor, timeStamp, numBlocks, taskType);
+        ASSERT_EQ(numBlocks, goldenData);
     }
     
 
@@ -3125,11 +3125,35 @@ HcclResult HcclGetRankIdException(HcclComm comm, uint32_t *rankId)
     return HCCL_E_PARA;
 }
 
+HcclResult HcclRankGraphGetLayersException(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclRankGraphGetRankSizeByLayerException(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclRankGraphGetTopoTypeByLayerException(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclGetHcclBufferException(HcclComm comm, void** buffer, uint64_t* size)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclGetRankSizeException(HcclComm comm, uint32_t *rankSize)
+{
+    return HCCL_E_PARA;
+}
+
 HcclResult HcclGetCcuTaskInfoNorma(HcclComm comm, void* fusionArgs, void* ccuTaskGroup)
 {
     return HCCL_SUCCESS;
 }
-
 
 HcclResult HcclGetRankIdNorma(HcclComm comm, uint32_t *rankId)
 {
@@ -3153,6 +3177,31 @@ HcclResult HcomGetCommHandleByGroupNorma(const char *group, HcclComm *commHandle
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclRankGraphGetLayersNorma(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclRankGraphGetRankSizeByLayerNorma(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclRankGraphGetTopoTypeByLayerNorma(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetHcclBufferNorma(HcclComm comm, void** buffer, uint64_t* size)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRankSizeNorma(HcclComm comm, uint32_t *rankSize)
+{
+    return HCCL_SUCCESS;
+}
+
 class MmpaExceptionStub : public Adx::MmpaStub {
 public:
     void *mmDlsym(void *handle, const char *funcName)
@@ -3167,6 +3216,16 @@ public:
             return  (void *)HcclGetRankIdException;
         } else if (strncmp(funcName, "HcclGetCcuTaskInfo", strlen("HcclGetCcuTaskInfo")) == 0) {
             return (void *)HcclGetCcuTaskInfoException;
+        } else if (strncmp(funcName, "HcclRankGraphGetRankSizeByLayer", strlen("HcclRankGraphGetRankSizeByLayer")) == 0) {
+            return (void *)HcclRankGraphGetRankSizeByLayerException;
+        } else if (strncmp(funcName, "HcclRankGraphGetLayers", strlen("HcclRankGraphGetLayers")) == 0) {
+            return (void *)HcclRankGraphGetLayersException;
+        } else if (strncmp(funcName, "HcclRankGraphGetTopoTypeByLayer", strlen("HcclRankGraphGetTopoTypeByLayer")) == 0) {
+            return  (void *)HcclRankGraphGetTopoTypeByLayerException;
+        } else if (strncmp(funcName, "HcclGetHcclBuffer", strlen("HcclGetHcclBuffer")) == 0) {
+            return (void *)HcclGetHcclBufferException;
+        } else if (strncmp(funcName, "HcclGetRankSize", strlen("HcclGetRankSize")) == 0) {
+            return (void *)HcclGetRankSizeException;
         } else {
             return nullptr;
         }
@@ -3195,6 +3254,16 @@ class MmpaNormalStub : public Adx::MmpaStub {
             return  (void *)HcclGetRankIdNorma;
         } else if (strncmp(funcName, "HcclGetCcuTaskInfo", strlen("HcclGetCcuTaskInfo")) == 0) {
             return (void *)HcclGetCcuTaskInfoNorma;
+        } else if (strncmp(funcName, "HcclRankGraphGetRankSizeByLayer", strlen("HcclRankGraphGetRankSizeByLayer")) == 0) {
+            return (void *)HcclRankGraphGetRankSizeByLayerNorma;
+        } else if (strncmp(funcName, "HcclRankGraphGetLayers", strlen("HcclRankGraphGetLayers")) == 0) {
+            return (void *)HcclRankGraphGetLayersNorma;
+        } else if (strncmp(funcName, "HcclRankGraphGetTopoTypeByLayer", strlen("HcclRankGraphGetTopoTypeByLayer")) == 0) {
+            return  (void *)HcclRankGraphGetTopoTypeByLayerNorma;
+        } else if (strncmp(funcName, "HcclGetRankSize", strlen("HcclGetRankSize")) == 0) {
+            return (void *)HcclGetRankSizeNorma;
+        } else if (strncmp(funcName, "HcclGetHcclBuffer", strlen("HcclGetHcclBuffer")) == 0) {
+            return (void *)HcclGetHcclBufferNorma;
         } else {
             return nullptr;
         }

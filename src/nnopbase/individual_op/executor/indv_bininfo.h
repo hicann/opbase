@@ -93,6 +93,29 @@ struct NnopbaseDfxInfo{
     bool isTimeStampEnable = false;
 };
 
+struct NnopbaseCoreNum {
+    uint32_t aicNum = 0U;
+    uint32_t aivNum = 0U;
+};
+
+struct StaticKernelJsonRunInfo {
+    uint32_t aicpuNumBlocks = 0U;
+    uint32_t numBlocks = 0U;
+    uint32_t dynUBufSize = 0U;
+    uint32_t scheduleMode = 0U;
+    uint32_t tilingCond = 0U;
+    uint64_t tilingKey = 0U;
+    bool clearAtomic = false;
+    size_t workspaceSizesNum = 0U;
+    std::vector<size_t> workspaceSizes;
+    std::vector<NnopbaseUChar> tilingData;
+};
+
+struct ExtraKernelDesc {
+    std::unique_ptr<NnopbaseCoreNum> coreNum = nullptr;
+    std::unique_ptr<StaticKernelJsonRunInfo> runInfo = nullptr;
+};
+
 typedef struct {
     std::vector<std::string> keys; // "simplifiedKey"
     std::string kernelName;
@@ -104,7 +127,7 @@ typedef struct {
     bool isStaticShape = false; // true: include "staticList"
     bool customizedSimplifiedKey = false; // true: "simplifiedKeyMode" is 2
     NnopbaseLoadBinInfoType loadBinInfoType = kDynamicInfo;
-    uint32_t blockDim = 0U;
+    uint32_t numBlocks = 0U;
     uint32_t multiKernelType = 0U;
     std::unordered_map<uint64_t, MixRationParam> tilingKeyInfo;
     const NnopbaseUChar *bin = nullptr;
@@ -112,6 +135,7 @@ typedef struct {
     NnopbaseDfxInfo dfxInfo;
     size_t debugBufSize = 0U;
     NnopbaseTaskRation taskRation = kRationEnd;
+    ExtraKernelDesc extraKernelDesc;
 } NnopbaseJsonInfo;
 
 struct NnopbaseInitValueInfo {
@@ -154,7 +178,7 @@ struct MemsetOpInfo {
     uint8_t tilingData[NNOPBASE_TILIING_DATA_STRUCT_SIZE] = {};
     uint8_t workspacesSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE] = {};
     uint64_t *tilingKey = nullptr;
-    uint32_t *blockDim = nullptr;
+    uint32_t *numBlocks = nullptr;
     uint32_t *scheMode = nullptr;
     uint32_t *dynUBufSize = nullptr;
 };
@@ -172,7 +196,7 @@ typedef struct {
     DoubleListNode dllNode;
     CoreType coreType = kCoreTypeEnd;
     bool isStaticShape = false;
-    uint32_t blockDim = 0U;
+    uint32_t numBlocks = 0U;
     uint8_t staticWorkspaceSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE];
     std::string kernelName;
     uint32_t multiKernelType = 0U;
@@ -185,6 +209,7 @@ typedef struct {
     NnopbaseTaskRation taskRation = kRationEnd;
     std::vector<NnopbaseInitValueInfo> initValues;
     std::shared_ptr<MemsetOpInfo> memsetInfo = nullptr;
+    std::shared_ptr<ExtraKernelDesc> extraKernelDesc = nullptr;
 } NnopbaseBinInfo;
 
 aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
@@ -271,7 +296,7 @@ static inline void NnopbaseBinInfoInit(NnopbaseBinInfo *binInfo)
     binInfo->coreType = kCoreTypeEnd;
     binInfo->hasReg = false;
     binInfo->isStaticShape = false;
-    binInfo->blockDim = 0;
+    binInfo->numBlocks = 0;
     auto vec = op::internal::PtrCastTo<gert::ContinuousVector>(binInfo->staticWorkspaceSizes);
     vec->Init(NNOPBASE_NORM_MAX_WORKSPACE_NUMS);
     binInfo->initValues.clear();

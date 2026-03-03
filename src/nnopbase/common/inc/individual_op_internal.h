@@ -25,26 +25,35 @@ typedef struct {
     size_t elementSize;
 } NnopbaseAttrAddr;
 
+struct NnopbaseStaticTensorNumInfo {
+    int64_t numTensors;
+    int64_t numDynamic;
+    int64_t numAttrs;
+    int64_t numValueDepend;
+};
+
+struct NnopbaseStaticRuntimeInfo {
+    std::string opType;
+    uint32_t aicNum;
+    uint32_t aivNum;
+    int64_t implMode;
+    int64_t deterMode;
+};
+
 /**
  * @description: find static kernel path for hostapi
- * @param [in] opType
  * @param [in] tensors input and output tensor
- * @param [in] numTensors input and output number
- * @param [in] dynamicIndex dynamic input and output index
- * @param [in] dynamicCount every dynamic input number
- * @param [in] numDynamic dynamic input and output number
  * @param [in] attrs attributes
- * @param [in] numAttrs attribute number
- * @param [in] implMode high performance and high precision switch
- * @param [in] deterMode deterministic switch
  * @param [in] valueDepend valueDepend input index
- * @param [in] numValueDepend valueDepend input number
+ * @param [in] tensorNumInfo number description of operator
+ * @param [in] staticRuntimeInfo runtime infomation of operator
  * @return if find static kernel return path else return nullptr
  */
-const char *NnopbaseFindStaticKernel(const char *opType, const aclTensor* tensors[],
-    int64_t numTensors, const int64_t dynamicIndex[], const int64_t dynamicCount[],
-    int64_t numDynamic, const NnopbaseAttrAddr* attrs[], int64_t numAttrs, int64_t implMode, int64_t deterMode,
-    const int64_t valueDepend[], int64_t numValueDepend);
+const char *NnopbaseFindStaticKernel(const aclTensor* tensors[],
+    const NnopbaseAttrAddr* attrs[],
+    const int64_t valueDepend[],
+    const NnopbaseStaticTensorNumInfo* const tensorNumInfo,
+    const NnopbaseStaticRuntimeInfo* const staticRuntimeInfo);
 
 
 /**

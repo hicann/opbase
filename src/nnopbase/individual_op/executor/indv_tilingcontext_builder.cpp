@@ -162,7 +162,7 @@ void NnopbaseTilingBuildOpOutputs(NnopbaseExecutor *executor)
     }
 }
 
-// 设置tilingkey, blockdim, sechmode, 直接使用value上的内存，在executor上保存下来地址
+// 设置tilingkey, numBlocks, sechmode, 直接使用value上的内存，在executor上保存下来地址
 // 若无动态输入，在不需要重新刷新，有动态输入场景需要重新刷新
 static void NnopbaseTilingSetContextOutputStep1(NnopbaseExecutor *const executor)
 {
@@ -173,7 +173,7 @@ static void NnopbaseTilingSetContextOutputStep1(NnopbaseExecutor *const executor
     values[index]->deleter = nullptr;
     index++;
     /* kOutputBlockDim. */
-    executor->blockDim = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->numBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
     /* kOutputAtomicCleanFlag. */
@@ -189,7 +189,7 @@ static void NnopbaseTilingSetContextOutputStep1(NnopbaseExecutor *const executor
     executor->dynUbufSize = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
-    executor->aicpuBlockDim = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->aicpuNumBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
 }
 
@@ -198,7 +198,7 @@ static void NnopbaseTilingSetContextOutputStep2(NnopbaseExecutor *const executor
 {
     NnopbaseAsyncAnyValue **values = executor->contextExt.context->values;
     auto &tilingInfo = executor->args->tilingInfo;
-    // 3 for tilingkey, blockdim, atomic
+    // 3 for tilingkey, numBlocks, atomic
     size_t index = executor->contextExt.context->input_size + 3U;
     /* kOutputTilingData. */
     values[index]->data.pointer = op::internal::PtrCastTo<void>(tilingInfo.tilingData);
@@ -242,10 +242,10 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor)
     values[platformInfIndex]->deleter = nullptr;
 
     *(executor->tilingKey) = 0U;
-    *(executor->blockDim) = 0U;
+    *(executor->numBlocks) = 0U;
     *(executor->scheMode) = 0U;
     *(executor->needAtomic) = false;
-    *(executor->aicpuBlockDim) = 0U;
+    *(executor->aicpuNumBlocks) = 0U;
     *(executor->dynUbufSize) = 0U;
     NnopbaseTilingSetContextOutputStep2(executor);
     NnopbaseTilingBuildOpInputs(executor);
@@ -406,7 +406,7 @@ void NnopbaseBuildMemsetAttrs(NnopbaseExecutor *executor)
     }
 }
 
-static void NnopbaseSetMemsetTilingKeyAndBlockDim(NnopbaseExecutor *const executor)
+static void NnopbaseSetMemsetTilingKeyAndNumBlocks(NnopbaseExecutor *const executor)
 {
     NnopbaseAsyncAnyValue **values = executor->args->binInfo->memsetInfo->contextExt.context->values;
     size_t index = executor->args->binInfo->memsetInfo->contextExt.context->input_size;
@@ -415,7 +415,7 @@ static void NnopbaseSetMemsetTilingKeyAndBlockDim(NnopbaseExecutor *const execut
     values[index]->deleter = nullptr;
     index++;
     /* kOutputBlockDim. */
-    executor->args->binInfo->memsetInfo->blockDim = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->args->binInfo->memsetInfo->numBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
     /* kOutputAtomicCleanFlag, does not support atomic clean. */
@@ -451,15 +451,15 @@ aclnnStatus NnopnbaseBuildMemsetTilingContext(NnopbaseExecutor *executor)
         values[index]->data.pointer = reinterpret_cast<void *>(NnopbaseGetGlobalDeterministic());
         values[index]->deleter = nullptr;
 
-        NnopbaseSetMemsetTilingKeyAndBlockDim(executor);
+        NnopbaseSetMemsetTilingKeyAndNumBlocks(executor);
         contextExt->hasPrepared = true;
     }
     *(executor->args->binInfo->memsetInfo->tilingKey) = 0U;
     *(executor->args->binInfo->memsetInfo->scheMode) = 0U;
     *(executor->args->binInfo->memsetInfo->dynUBufSize) = 0U;
-    *(executor->args->binInfo->memsetInfo->blockDim) = 0U;
+    *(executor->args->binInfo->memsetInfo->numBlocks) = 0U;
     NnopbaseAsyncAnyValue **values = executor->args->binInfo->memsetInfo->contextExt.context->values;
-    // 3 for tilingkey, blockdim, atomic
+    // 3 for tilingkey, numBlocks, atomic
     size_t index = executor->args->binInfo->memsetInfo->contextExt.context->input_size + 3U;
     /* kOutputTilingData. */
     values[index]->data.pointer = op::internal::PtrCastTo<void>(executor->args->binInfo->memsetInfo->tilingData);

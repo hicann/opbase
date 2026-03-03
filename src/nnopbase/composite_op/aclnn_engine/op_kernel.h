@@ -1378,15 +1378,18 @@ public:
         OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
                 implMode, determinConfig,
                 tensors.size(), dynamicCount.size(), attrsVec.size(), valueDependIndex_.size());
-        simpKey = NnopbaseFindStaticKernel(opTypeStr_.c_str(), (tensors.data()),
-            static_cast<int64_t>(tensors.size()),
-            dynamicIndex.data(),
-            dynamicCount.data(),
-            static_cast<int64_t>(dynamicCount.size()),
+        OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u].",
+             GetThreadLocalContext().opConfigInfo_.aicNum_, GetThreadLocalContext().opConfigInfo_.aivNum_);
+        NnopbaseStaticTensorNumInfo tensorNumInfo { static_cast<int64_t>(tensors.size()),
+            static_cast<int64_t>(dynamicCount.size()), static_cast<int64_t>(attrsVec.size()),
+            static_cast<int64_t>(valueDependIndex_.size()) };
+        NnopbaseStaticRuntimeInfo staticRuntimeInfo {opTypeStr_, GetThreadLocalContext().opConfigInfo_.aicNum_,
+            GetThreadLocalContext().opConfigInfo_.aivNum_, implMode, determinConfig};
+        simpKey = NnopbaseFindStaticKernel((tensors.data()),
             const_cast<const NnopbaseAttrAddr **>(attrsVec.data()),
-            static_cast<int64_t>(attrsVec.size()),
-            implMode, determinConfig,
-            valueDependIndex_.data(), valueDependIndex_.size());
+            valueDependIndex_.data(),
+            &tensorNumInfo,
+            &staticRuntimeInfo);
         if (simpKey != nullptr) {
             OP_LOGD("Simp key is %s", simpKey);
         } else {

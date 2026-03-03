@@ -781,18 +781,10 @@ aclnnStatus NnopbaseAddScalarListInput(void *executor, const aclScalarList *scal
     }
 }
 
-const NnopbaseChar *NnopbaseFindStaticKernel(const NnopbaseChar *opType,
-                                             const aclTensor* tensors[],
-                                             int64_t numTensors,
-                                             [[maybe_unused]] const int64_t dynamicIndex[],
-                                             [[maybe_unused]] const int64_t dynamicCount[],
-                                             int64_t numDynamic,
-                                             const NnopbaseAttrAddr* attrs[],
-                                             int64_t numAttrs,
-                                             int64_t implMode,
-                                             int64_t deterMode,
-                                             const int64_t valueDepend[],
-                                             int64_t numValueDepend)
+const NnopbaseChar *NnopbaseFindStaticKernel(const aclTensor* tensors[],
+    const NnopbaseAttrAddr* attrs[],
+    const int64_t valueDepend[], const NnopbaseStaticTensorNumInfo* const tensorNumInfo,
+    const NnopbaseStaticRuntimeInfo* const staticRuntimeInfo)
 {
     {
         const std::lock_guard<std::mutex> lock(g_nnopbaseInitMtx);
@@ -802,22 +794,18 @@ const NnopbaseChar *NnopbaseFindStaticKernel(const NnopbaseChar *opType,
     }
     thread_local static NnopbaseUChar verbose[NNOPBASE_MAX_STATICKEY_LEN];
     NnopbaseUChar *verKey = verbose;
-    NnopbaseStaticTensorNumInfo tensorNumInfo;
-    tensorNumInfo.numTensors = numTensors;
-    tensorNumInfo.numDynamic = numDynamic;
-    tensorNumInfo.numAttrs = numAttrs;
-    tensorNumInfo.numValueDepend = numValueDepend;
     NnopbaseRegInfoKey regInfoKey;
-
-    regInfoKey.opType = std::string(opType);
+    regInfoKey.opType = staticRuntimeInfo->opType;
     regInfoKey.hashKey =
         static_cast<uint64_t>(NnopbaseHashBinary(PtrCastTo<NnopbaseUChar>(regInfoKey.opType.c_str()), regInfoKey.opType.size()) %
                               NNOPBASE_NORM_MAX_BIN_BUCKETS);
     OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
-    verKey = NnopbaseCollecterGenStaticKey(verKey, &regInfoKey, &tensorNumInfo, tensors,
-                                           attrs, implMode, deterMode, valueDepend);
+    verKey = NnopbaseCollecterGenStaticKey(verKey, &regInfoKey, tensorNumInfo, tensors,
+                                           attrs, staticRuntimeInfo->implMode,
+                                           staticRuntimeInfo->deterMode, valueDepend);
+    NnopbaseCoreNum coreNum {staticRuntimeInfo->aicNum, staticRuntimeInfo->aivNum};
     return NnopbaseCollecterGetSimplifiedKey(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                       uint32_t(verKey - verbose));
+                                       uint32_t(verKey - verbose), &coreNum);
 }
 
 aclnnStatus NnopbaseGetStreamAndEvent(const rtStream_t stream, rtStream_t *subStream,

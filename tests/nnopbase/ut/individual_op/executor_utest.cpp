@@ -1130,7 +1130,7 @@ TEST_F(NnopbaseExecutorUnitTest, TestExecutorInit)
     ASSERT_NE(executor, nullptr);
     ASSERT_EQ(executor->args, nullptr);
     ASSERT_EQ(executor->tilingKey, nullptr);
-    ASSERT_EQ(executor->blockDim, nullptr);
+    ASSERT_EQ(executor->numBlocks, nullptr);
     ASSERT_EQ(executor->workspaces.num, 0);
     ASSERT_EQ(executor->binInfoKey.len, 0);
     ASSERT_EQ(executor->binInfoKey.bufLen, 0);

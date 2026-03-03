@@ -14,6 +14,7 @@
 #include "individual_op_api.h"
 #include "individual_op_internal.h"
 #include "op_cache_internal.h"
+#include "executor/indv_bininfo.h"
 #include "executor/indv_collecter.h"
 #include "utils/file_faker.h"
 #include "utils/indv_soc.h"
@@ -35,6 +36,10 @@ extern aclnnStatus NnopbaseInit();
 #ifdef __cplusplus
 }
 #endif
+
+namespace {
+static const NnopbaseCoreNum coreNum{24, 48};
+}
 
 class NnopbaseUnitTest : public testing::Test {
 public:
@@ -1343,8 +1348,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFailed)
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
     MOCKER(NnopbaseInit).stubs().will(returnValue(ACLNN_ERR_RUNTIME_ERROR));
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_EQ(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1370,8 +1386,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOptypeFailed)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_EQ(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1398,8 +1425,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelRefreshFailed)
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
     MOCKER(NnopbaseRefreshStaticKernelInfos).stubs().will(returnValue(ACLNN_ERR_PARAM_NULLPTR));
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1424,8 +1462,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1452,8 +1501,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithValueDependSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {0};
     int64_t numValueDepend = 1;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1485,8 +1545,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithFloatAttrSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1518,8 +1589,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithArrayAttrSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1551,8 +1633,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithArrayAttrNullptrSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_EQ(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1577,8 +1670,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOptionalNullSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1603,8 +1707,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFail)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_EQ(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -1877,8 +1992,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithStringAttrSuccess)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    const char *path = NnopbaseFindStaticKernel(opType, tensors, numTensors, dynamicIndex, dynamicCount,
-        numDynamic, attrs, numAttrs, implMode, deterMin, valueDepend, numValueDepend);
+    NnopbaseStaticTensorNumInfo tensorNumInfo;
+    tensorNumInfo.numTensors = numTensors;
+    tensorNumInfo.numDynamic = numDynamic;
+    tensorNumInfo.numAttrs = numAttrs;
+    tensorNumInfo.numValueDepend = numValueDepend;
+    NnopbaseStaticRuntimeInfo staticRuntimeInfo;
+    staticRuntimeInfo.opType = std::string(opType);
+    staticRuntimeInfo.aicNum = coreNum.aicNum;
+    staticRuntimeInfo.aivNum = coreNum.aivNum;
+    staticRuntimeInfo.implMode = implMode;
+    staticRuntimeInfo.deterMode = deterMin;
+
+    const char *path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &staticRuntimeInfo);
     ASSERT_NE(path, nullptr);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();

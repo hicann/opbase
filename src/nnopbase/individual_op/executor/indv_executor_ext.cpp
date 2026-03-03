@@ -281,7 +281,7 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInf
     executor->hasMemset = false;
     executor->args = nullptr;
     executor->tilingKey = nullptr;
-    executor->blockDim = nullptr;
+    executor->numBlocks = nullptr;
     executor->needAtomic = nullptr;
     executor->scheMode = nullptr;
     executor->dynUbufSize = nullptr;
@@ -489,10 +489,10 @@ static aclnnStatus NnopnbaseMemsetTiling(NnopbaseExecutor *executor)
                                    executor->args->binInfo->memsetInfo->contextExt.context)) == ge::GRAPH_SUCCESS,
             ACLNN_ERR_INNER_TILING_ERROR);
 
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->blockDim);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->numBlocks);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->tilingKey);
-    OP_LOGI("Memset op blockDim is %u, tilingKey is %llu.",
-        *(executor->args->binInfo->memsetInfo->blockDim),
+    OP_LOGI("Memset op numBlocks is %u, tilingKey is %llu.",
+        *(executor->args->binInfo->memsetInfo->numBlocks),
         *(executor->args->binInfo->memsetInfo->tilingKey));
     return OK;
 }
@@ -509,10 +509,10 @@ aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor)
 }
 
 static inline void NnopbaseExecutorPreportMemsetProfiling(
-    const NnopbaseExecutor *const executor, uint32_t blockDim, const uint32_t taskType, const uint64_t launchBeginTime)
+    const NnopbaseExecutor *const executor, uint32_t numBlocks, const uint32_t taskType, const uint64_t launchBeginTime)
 {
     NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->memsetItemId);
-    NnopbaseReportMemsetAdditionInfo(executor, blockDim, taskType, launchBeginTime + 1U);
+    NnopbaseReportMemsetAdditionInfo(executor, numBlocks, taskType, launchBeginTime + 1U);
     return;
 }
 
@@ -572,12 +572,12 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
 {
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     auto memsetInfo = executor->args->binInfo->memsetInfo;
-    const uint32_t blockDim = *(memsetInfo->blockDim);
+    const uint32_t numBlocks = *(memsetInfo->numBlocks);
     const uint32_t dynUBufSize = *(memsetInfo->dynUBufSize);
     const uint64_t tilingKey = *(memsetInfo->tilingKey);
     const uint8_t scheMode = static_cast<uint8_t>(*(memsetInfo->scheMode));
-    OP_LOGI("Start to launch Memset task, blockDim is %u, tilingKey is %llu, dynUBufSize is %u, schemMode is %u.",
-        blockDim, tilingKey, dynUBufSize, *(memsetInfo->scheMode));
+    OP_LOGI("Start to launch Memset task, numBlocks is %u, tilingKey is %llu, dynUBufSize is %u, schemMode is %u.",
+        numBlocks, tilingKey, dynUBufSize, *(memsetInfo->scheMode));
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetArgs(executor));
     aclrtFuncHandle funcHandle;
     aclrtLaunchKernelCfg *cfgPtr = nullptr;
@@ -616,22 +616,22 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
     }
     auto rtsHostPlaceHolder = NnopbaseGetRTSPlaceHolder(&memsetInfo->argsExt);
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtLaunchKernelWithHostArgs(funcHandle,
-        blockDim, stream, cfgPtr, memsetInfo->argsExt.args, memsetInfo->argsExt.argsSize,
+        numBlocks, stream, cfgPtr, memsetInfo->argsExt.args, memsetInfo->argsExt.argsSize,
         rtsHostPlaceHolder.data(),
         rtsHostPlaceHolder.size()));
     const uint32_t taskType = NnopbaseExecutorGetTaskType(memsetInfo->binInfo->coreType, kRationEnd);
-    NnopbaseExecutorPreportMemsetProfiling(executor, blockDim, taskType, launchBeginTime);
+    NnopbaseExecutorPreportMemsetProfiling(executor, numBlocks, taskType, launchBeginTime);
     OP_LOGI("Launch memset operator successfully.");
     return OK;
 }
 
-void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t blockDim, const uint32_t taskType,
+void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t numBlocks, const uint32_t taskType,
     const uint64_t launchBeginTime, aclrtStream stream)
 {
     NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->itemId);
-    NnopbaseReportAdditionInfo(executor, blockDim, taskType, launchBeginTime + 1U);
+    NnopbaseReportAdditionInfo(executor, numBlocks, taskType, launchBeginTime + 1U);
     NnopbasePreportAttrAndHostInfo(executor, launchBeginTime + 1U);
-    NnopbaseReportCacheOpInfo(executor, blockDim, taskType, stream);
+    NnopbaseReportCacheOpInfo(executor, numBlocks, taskType, stream);
     return;
 }
 
@@ -1061,6 +1061,10 @@ NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *
     for (size_t j = 0; j < attrs->num; j++) {
         // 传入时已校验 attrs[j].addr.addr 不为空
         if (!attrs->attrs[j].addr.isVector) {
+            if (attrs->attrs[j].dtype == NnopbaseAttrDtype::kNnopbaseString && attrs->attrs[j].addr.size == 1U) {
+                OP_LOGW("For Attr %zu, this is a string type and actual value is empty, skip concating verKey.", j);
+                continue;
+            }
             addr = op::internal::PtrCastTo<const NnopbaseUChar>(attrs->attrs[j].addr.addr);
             length = attrs->attrs[j].addr.size;
             verKey = NnopbaseExecutor8ByteCopy(length, verKey, addr);

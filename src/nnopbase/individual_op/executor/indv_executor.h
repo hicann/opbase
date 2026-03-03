@@ -81,11 +81,6 @@ struct NnopbaseExecutorArgs {
 };
 
 typedef struct {
-    uint32_t aicNum;
-    uint32_t aivNum;
-} NnopbaseCoreNum;
-
-typedef struct {
     bool isMc2 = false;
     NnopbaseHcclServerType sType;
     std::vector<HcclComm> hcomHandle;
@@ -96,11 +91,11 @@ typedef struct {
     bool repeateFlag;
     NnopbaseAttrs attrs;
     uint64_t *tilingKey;
-    uint32_t *blockDim;
+    uint32_t *numBlocks;
     bool *needAtomic;
     uint32_t *scheMode;
     uint32_t *dynUbufSize;
-    uint32_t *aicpuBlockDim;
+    uint32_t *aicpuNumBlocks;
     NnopbaseExecutorArgs *args;
     NnopbaseExecutorArgs ownArgs;
     NnopbaseBinCollecter *collecter;
@@ -188,10 +183,10 @@ typedef struct {
 } NnopbaseStreamForCombineExecution; // CUB+AIV or AICPU+AICORE组合执行场景
 
 typedef struct {
-    uint32_t aivBlockDim;
-    uint32_t aicBlockDim;
-    uint32_t aivBlockDimOffset;
-} NnopbaseBlockDimInfoForVectorCore;
+    uint32_t aivNumBlocks;
+    uint32_t aicNumBlocks;
+    uint32_t aivNumBlocksOffset;
+} NnopbaseBlockInfoForVectorCore;
 
 aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, rtStream_t stream);
 aclnnStatus NnopbaseExecutorGetStreamAndEvent(
@@ -265,17 +260,17 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor *const executor);
 aclnnStatus NnopbaseOverflowDump(NnopbaseExecutor *const executor, aclrtStream stream);
 
 // for profiling
-void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor *const executor, uint32_t blockDim,
+void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor *const executor, uint32_t numBlocks,
                                       uint32_t taskType, const uint64_t timeStamp);
-void NnopbaseReportAdditionInfo(void *const executor, uint32_t blockDim, uint32_t taskType, const uint64_t timeStamp);
+void NnopbaseReportAdditionInfo(void *const executor, uint32_t numBlocks, uint32_t taskType, const uint64_t timeStamp);
 void NnopbaseInnerReportLaunchInfo(const uint64_t beginTime, const uint64_t itemId);
 void NnopbaseReportTimeStampInfo(const std::vector<MsprofAicTimeStampInfo> &timeStampInfo);
-void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t blockDim, const uint32_t taskType,
+void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t numBlocks, const uint32_t taskType,
     const uint64_t launchBeginTime, aclrtStream stream);
 void NnopbasePreportAttrAndHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp);
 std::string NnopbaseGetHostInfoStr(const NnopbaseTensors &tensors);
 std::string NnopbaseGetAttrVal(const NnopbaseAttrs &attrs);
-void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t blockDim, uint32_t taskType,
+void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
     aclrtStream stream);
 
 aclnnStatus NnopbaseExecutorAddScalarInput(NnopbaseTensors *tensors, const aclScalar *scalar, const uint32_t index,
@@ -287,7 +282,7 @@ aclnnStatus NnopbaseExecutorAddScalarListInput(NnopbaseTensors *tensors, const a
 aclnnStatus NnopbaseExecutorSetGlobalConfig();
 bool NnopbaseGetGlobalDeterministic();
 void NnopbaseReportContextIdInfoByRation(
-    NnopbaseExecutor *const opExecutor, const uint64_t timeStamp, uint32_t &blockDim, uint32_t &taskType);
+    NnopbaseExecutor *const opExecutor, const uint64_t timeStamp, uint32_t &numBlocks, uint32_t &taskType);
 
 void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor);
 void PrintNnopbaseInitTimeStampInfo();
@@ -352,12 +347,12 @@ inline void RecordNnopbaseInitTime(NnopbaseBinCollecter *const collecter, const 
     clock_gettime(CLOCK_MONOTONIC, &(collecter->collectorTp[index]));
 }
 
-inline uint32_t NnopbaseExecutorGetBlockDim(NnopbaseExecutor *executor)
+inline uint32_t NnopbaseExecutorGetNumBlocks(NnopbaseExecutor *executor)
 {
     if (executor->args->binInfo->isStaticShape) {
-        return executor->args->binInfo->blockDim;
+        return executor->args->binInfo->numBlocks;
     } else {
-        return executor->args->tilingInfo.blockDim;
+        return executor->args->tilingInfo.numBlocks;
     }
 }
 

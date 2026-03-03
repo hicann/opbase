@@ -39,7 +39,7 @@ inline void NnopbaseRegTypeInfo(NnopbaseDfxId &dfxId)
     return;
 }
 
-inline void NnopbaseBuildNodeBasicInfo(const uint32_t blockDim,
+inline void NnopbaseBuildNodeBasicInfo(const uint32_t numBlocks,
                                        const std::pair<uint64_t, uint64_t> &opNameAndTypeHash,
                                        const uint32_t taskType,
                                        MsprofCompactInfo &nodeBasicInfo,
@@ -49,7 +49,7 @@ inline void NnopbaseBuildNodeBasicInfo(const uint32_t blockDim,
     profNodeBasicInfo.opName = opNameAndTypeHash.first;
     profNodeBasicInfo.opType = opNameAndTypeHash.second;
     profNodeBasicInfo.taskType = taskType;
-    profNodeBasicInfo.blockDim = blockDim;
+    profNodeBasicInfo.blockDim = numBlocks;
     nodeBasicInfo.level = static_cast<uint16_t>(MSPROF_REPORT_NODE_LEVEL);
     nodeBasicInfo.type = MSPROF_REPORT_NODE_BASIC_INFO_TYPE;
     nodeBasicInfo.timeStamp = timeStamp;
@@ -231,7 +231,7 @@ aclnnStatus NnopbaseGetTilingKeyInfo(NnopbaseExecutor *const opExecutor, Nnopbas
 }
 
 void NnopbaseReportContextIdInfoByRation(NnopbaseExecutor *const opExecutor, const uint64_t timeStamp,
-                                                uint32_t &blockDim, uint32_t &taskType)
+                                                uint32_t &numBlocks, uint32_t &taskType)
 {
     uint32_t ration = 2U;
     if (opExecutor->args->binInfo->multiKernelType == 1) {
@@ -243,41 +243,41 @@ void NnopbaseReportContextIdInfoByRation(NnopbaseExecutor *const opExecutor, con
         if ((taskRation == kRation01 || taskRation == kRation10)) {
             const uint64_t tilingKey = opExecutor->args->tilingInfo.tilingKey;
             if (opExecutor->args->binInfo->tilingKeyInfo[tilingKey].crossCoreSync) {
-                blockDim = ((blockDim & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
+                numBlocks = ((numBlocks & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
                 NnopbaseReportContextIdInfo(opExecutor, timeStamp);
             } else {
                 // 硬同步为0，修改taskType
                 taskType = (taskRation == kRation01) ? MSPROF_GE_TASK_TYPE_AIV : MSPROF_GE_TASK_TYPE_AI_CORE;
             }
         } else {
-            blockDim = ((blockDim & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
+            numBlocks = ((numBlocks & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
             NnopbaseReportContextIdInfo(opExecutor, timeStamp);
         }
         OP_LOGI("Get op[%s] multiKernelType is [%u], tilingKey is [%lu], kernelType is [%d], taskRation is [%d].",
                 opExecutor->opType, opExecutor->args->binInfo->multiKernelType,
                 opExecutor->args->tilingInfo.tilingKey, kernelType, taskRation);
     } else {
-        // 针对mix算子，低16位为主加速器blockdim，高16位为从加速器的ratio值
-        blockDim = ((blockDim & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
+        // 针对mix算子，低16位为主加速器numBlocks，高16位为从加速器的ratio值
+        numBlocks = ((numBlocks & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
         NnopbaseReportContextIdInfo(opExecutor, timeStamp);
     }
     return;
 }
 
-void NnopbaseReportAdditionInfo(void *const executor, uint32_t blockDim,
+void NnopbaseReportAdditionInfo(void *const executor, uint32_t numBlocks,
                                        uint32_t taskType, const uint64_t timeStamp)
 {
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
         NnopbaseExecutor *const opExecutor = (NnopbaseExecutor *)executor;
         if (opExecutor->args->binInfo->coreType == kMix) { // 310p没有mix类型coretype，不会走进来
             OP_LOGI("Get soc version is %s, set mix op type.", nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str());
-            NnopbaseReportContextIdInfoByRation(opExecutor, timeStamp, blockDim, taskType);
+            NnopbaseReportContextIdInfoByRation(opExecutor, timeStamp, numBlocks, taskType);
         }
         OP_LOGI("[Cann Profiling] node type is %s, taskType is %u", opExecutor->opType, taskType);
         if (op::internal::opProfilingSwitch.additionInfoFlag) {
             const uint64_t typeHash = opExecutor->itemId;
             MsprofCompactInfo nodeBasicInfo{};
-            NnopbaseBuildNodeBasicInfo(blockDim, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
+            NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
             (void)MsprofReportCompactInfo(
                 static_cast<uint32_t>(true), &nodeBasicInfo, static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
             NnopbaseReportTensorInfo(opExecutor, timeStamp);
@@ -286,7 +286,7 @@ void NnopbaseReportAdditionInfo(void *const executor, uint32_t blockDim,
     return;
 }
 
-void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor *const executor, uint32_t blockDim,
+void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor *const executor, uint32_t numBlocks,
                                       uint32_t taskType, const uint64_t timeStamp)
 {
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
@@ -294,7 +294,7 @@ void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor *const executor, ui
         if (op::internal::opProfilingSwitch.additionInfoFlag) {
             const uint64_t typeHash = executor->memsetItemId;
             MsprofCompactInfo nodeBasicInfo{};
-            NnopbaseBuildNodeBasicInfo(blockDim, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
+            NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
             (void)MsprofReportCompactInfo(
                 static_cast<uint32_t>(true), &nodeBasicInfo, static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
         }
@@ -355,14 +355,14 @@ void NnopbaseInnerReportLaunchInfo(const uint64_t beginTime, const uint64_t item
 aclnnStatus NnopbaseReportAicpuAdditionInfo(const uint64_t timeStamp, const char *const opType)
 {
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
-        uint32_t blockDim = 0;
+        uint32_t numBlocks = 0;
         auto taskType = MSPROF_GE_TASK_TYPE_AI_CPU;
 
         if (op::internal::opProfilingSwitch.additionInfoFlag) {
             const size_t typeLen = strlen(opType);
             const uint64_t typeHash = MsprofGetHashId(opType, typeLen);
             MsprofCompactInfo nodeBasicInfo{};
-            NnopbaseBuildNodeBasicInfo(blockDim, {typeHash, typeHash}, static_cast<uint32_t>(taskType),
+            NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, static_cast<uint32_t>(taskType),
                                        nodeBasicInfo, timeStamp);
             (void)MsprofReportCompactInfo(
                 static_cast<uint32_t>(true), &nodeBasicInfo, static_cast<uint32_t>(sizeof(MsprofCompactInfo)));

@@ -10,10 +10,12 @@
 
 #include "tiling_context_to_json.h"
 #include <map>
+#include <string>
 #include <cctype>
 #include "register/op_impl_registry.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 #include "graph/utils/type_utils.h"
+#include "utils/indv_lib_wrapper.h"
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
 #include "bin_to_json.h"
@@ -24,6 +26,9 @@ constexpr size_t STR_PRE = 3UL;
 const char *const REQUIRED_STR = "required";
 const char *const OPTIONAL_STR = "optional";
 const char *const DYNAMIC_STR = "dynamic";
+const char *const MC2_ATTR_GROUP_EP_STR = "group_ep";
+const char *const MC2_ATTR_GROUP_TP_STR = "group_tp";
+constexpr size_t MAX_HCCL_NET_LAYER_NUM = 3U;
 
 nlohmann::json StrAttrsToJson(const gert::RuntimeAttrs *attrs, size_t index)
 {
@@ -392,6 +397,79 @@ nlohmann::json AttrsToJson(const gert::ComputeNodeInfo *computeNodeInfo, const n
     }
     return attrs;
 }
+
+std::vector<std::pair<std::string, std::string>> GetMc2AttrGroupName(const nlohmann::json &attrs)
+{
+    std::vector<std::pair<std::string, std::string>> mc2AttrActualGroupNames;
+    for (size_t i = 0U; i < attrs.size(); ++i) {
+        const auto &attr = attrs[i];
+        if (attr.is_null()) {
+            continue;
+        }
+        const std::string attrName = attr["name"].get<std::string>();
+        if (attrName.compare(MC2_ATTR_GROUP_EP_STR) != 0 && attrName.compare(MC2_ATTR_GROUP_TP_STR) != 0) {
+            continue;
+        }
+        const std::string actualGroupName = attr["value"].get<std::string>();
+        if (actualGroupName.empty()) {
+            OP_LOGW("Mc2 operator attribute %s has no value.", attrName.c_str());
+            return {};
+        }
+        mc2AttrActualGroupNames.push_back({attrName, actualGroupName});
+    }
+    return mc2AttrActualGroupNames;
+}
+
+void AddExtraInfoToOpJson(nlohmann::json &opJson, const nlohmann::json &attrs)
+{
+    nlohmann::json topoInfosJson;
+    auto mc2AttrActualGroupNames = GetMc2AttrGroupName(attrs);
+    for (const auto &it : mc2AttrActualGroupNames) {
+        auto attrName = it.first;
+        auto actualGroupName = it.second;
+        nlohmann::json topoInfoJson;
+        HcclComm commHandle;
+        OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcomGetCommHandleByGroup(actualGroupName.c_str(), &commHandle) == OK,
+            OP_LOGE(ACLNN_ERR_INNER, "Call HcomGetCommHandleByGroup failed during dumping topo info of attr %s.", attrName.c_str()), return);
+        uint32_t topoType = 0U;
+        uint32_t netLayerNum = 0U;
+        uint32_t gRankSize = 0U;
+        uint32_t *netLayer = nullptr;
+        OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetLayers(commHandle, &netLayer, &netLayerNum) == OK,
+                OP_LOGE(ACLNN_ERR_INNER, "Call HcclRankGraphGetLayers failed during dumping topo info of attr %s.", attrName.c_str()), return);
+        nlohmann::json topoLevelDescs = nlohmann::json::array();
+        for (uint32_t j = 0U; j < MAX_HCCL_NET_LAYER_NUM; j++) {
+            nlohmann::json topoLevelDesc;
+            if (j < netLayerNum) {
+                OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetRankSizeByLayer(commHandle, netLayer[j], &gRankSize) == OK,
+                    OP_LOGE(ACLNN_ERR_INNER, "Call HcclRankGraphGetRankSizeByLayer failed during dumping topo info of attr %s.", attrName.c_str()), return);
+                OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetTopoTypeByLayer(commHandle, netLayer[j], &topoType) == OK,
+                    OP_LOGE(ACLNN_ERR_INNER, "Call HcclRankGraphGetTopoTypeByLayer failed during dumping topo info of attr %s.", attrName.c_str()), return);            
+                topoLevelDesc["comm_sets"] = static_cast<uint32_t>(topoType);
+                topoLevelDesc["rank_size"] = gRankSize;
+            } else {
+                // 无效部分填充0
+                topoLevelDesc["comm_sets"] = 0U;
+                topoLevelDesc["rank_size"] = 0U;
+            }
+            topoLevelDescs.push_back(topoLevelDesc);
+        }
+        uint64_t localWindowSize;
+        void* buffer = nullptr;
+        OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclGetHcclBuffer(commHandle, &buffer, &localWindowSize) == OK,
+                OP_LOGE(ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.", attrName.c_str()), return);   
+        uint32_t rankSize = 0U;
+        OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankSize(commHandle, &rankSize) == OK,
+                OP_LOGE(ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.", attrName.c_str()), return);   
+        topoInfoJson["topo_level_descs"] = topoLevelDescs;
+        topoInfoJson["local_window_size"] = localWindowSize;
+        topoInfoJson["rank_size"] = rankSize;
+        topoInfosJson[attrName] = topoInfoJson;
+    }
+    if (topoInfosJson.is_null()) {return;}
+    opJson["extra_params"] = topoInfosJson;
+    return;
+}
 } // namespace
 
 nlohmann::json TilingContextToJson(
@@ -429,6 +507,7 @@ nlohmann::json TilingContextToJson(
         return nullJ;
     }
     opJson["attrs"] = attrs;
+    AddExtraInfoToOpJson(opJson, attrs);
     return opJson;
 }
 } // namespace aclnnOpInfoRecord

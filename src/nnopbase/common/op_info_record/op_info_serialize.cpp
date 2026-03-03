@@ -16,7 +16,7 @@
 #include <fstream>
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
-
+#include "platform/platform_info.h"
 #include "tiling_context_to_json.h"
 #include "ini_parse.h"
 
@@ -63,10 +63,6 @@ std::set<std::string> g_opTypeBlackList = {
     "ReduceMax",
     "ArgMinWithValue",
     "FusedInferAttentionScore",
-    "MoeDistributeCombine",
-    "MoeDistributeCombineV2",
-    "MoeDistributeDispatch",
-    "MoeDistributeDispatchV2",
     "GatherV2",
     "GatherV3",
     "ArgMaxWithValue",
@@ -179,6 +175,24 @@ int32_t DumpJson(const std::set<nlohmann::json> &gOpInfoStatistics, const OpInfo
     return ret;
 }
 
+void AddPlatformInfoToJson(nlohmann::json &opJson, const gert::TilingContext *ctx)
+{
+    auto platformInfo = ctx->GetPlatformInfo();
+    if (platformInfo != nullptr) {
+        const std::string socInfoKey = "SoCInfo";
+        const std::string vecCoreCntKey = "vector_core_cnt";
+        const std::string cubeCoreCntKey = "cube_core_cnt";
+        std::map<std::string, std::string> res;
+        if (platformInfo->GetPlatformResWithLock(socInfoKey, res)) {
+            // 不存在异常string转化int失败的场景, 依赖组件的fe::PlatFormInfos在保存值时已做约束
+            opJson["platform_info"]["vector_core_cnt"] = std::stoi(res[vecCoreCntKey]);
+            opJson["platform_info"]["cube_core_cnt"] = std::stoi(res[cubeCoreCntKey]);
+            OP_LOGI("Save coreNum[%d, %d] to json.", opJson["platform_info"]["cube_core_cnt"].get<int32_t>(),
+                opJson["platform_info"]["vector_core_cnt"].get<int32_t>());
+        }
+    }
+}
+
 void AddJsonToOpInfoCompile(const nlohmann::json &opJson)
 {
     if (g_opTypeBlackList.find(opJson["op_type"]) == g_opTypeBlackList.cend()) {
@@ -230,10 +244,8 @@ int32_t OpInfoDump(void)
 int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord::OpCompilerOption &opt,
     const aclnnOpInfoRecord::OpKernelInfo *kernelInfo)
 {
-    if (ctx == nullptr) {
-        OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize ctx is nullptr!");
-        return -1;
-    }
+    OP_CHECK(ctx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize ctx is nullptr!"), return -1);
+    OP_CHECK(kernelInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize kernelInfo is nullptr!"), return -1);
     IniParse iniInstance;
     std::map<std::string, std::string> iniConfigMap;
     if (iniInstance.GetIniParams(iniConfigMap) != 0) {
@@ -260,14 +272,13 @@ int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord:
         if (jsonDebug.is_null()) {
             return 0;
         }
+        AddPlatformInfoToJson(jsonDebug, ctx);
         jsonDebug["impl_mode"] = opt.impl_mode;
         jsonDebug["deterministic"] = opt.deterministic ? "true" : "false";
         std::lock_guard<std::mutex> lck(g_opInfoStatisticsLck);
         AddJsonToOpInfoCompile(jsonDebug); // dump json for compile, not needed "bin_type" and "bin_info"
-        if (kernelInfo != nullptr) {
-            jsonDebug["bin_type"] = kernelInfo->bin_type;
-            jsonDebug["bin_info"] = kernelInfo->bin_info;
-        }
+        jsonDebug["bin_type"] = kernelInfo->bin_type;
+        jsonDebug["bin_info"] = kernelInfo->bin_info;
         AddJsonToOpInfo(jsonDebug);
         AddJsonToOpInfoDebug(jsonDebug);
     } catch (nlohmann::json::exception &e) {
