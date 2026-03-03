@@ -517,7 +517,6 @@ private:
     }
 
     thread_local static std::vector<ArgAddr> addrInfo;
-
 };
 }
 }  // namespace op

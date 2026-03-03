@@ -78,7 +78,7 @@ constexpr uint32_t PRINT_ARGS_STEP = 4;
 constexpr int64_t UNKNOWN_DIM_NUM = -2;
 constexpr int64_t CUSTOMIZED_SIMPLIFIED_KEY = 2;
 constexpr int64_t IGNORE_ATTR_SIMPLIFIED_KEY = 0;
-constexpr size_t MAX_CUSTOMIZED_SIMPLIFIED_KEY_LEN = 128;
+constexpr size_t MAX_CUSTOMIZED_SIMPLIFIED_KEY_LEN = 256;
 constexpr char const *ALL_PRECISION_MODE =
     "high_performance,high_precision,enable_float_32_execution,enable_hi_float_32_execution";
 
