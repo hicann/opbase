@@ -485,9 +485,12 @@ aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImp
             }
         } else {
             // 自定义路径
-            path = basePath[i].first + "/op_impl/ai_core/tbe/op_tiling/lib/" + osType + "/" + cpuType + "/"
-                   + "libcust_opmaster_rt2.0.so";
-            tilingSoPaths.push_back(path);
+            path = basePath[i].first + "/op_impl/ai_core/tbe/op_tiling/lib/" + osType + "/" + cpuType + "/" + "libcust_opmaster_rt2.0.so";
+            if (mmRealPath(path.c_str(), &(soPath[0U]), NNOPBASE_FILE_PATH_MAX_LEN) == EN_OK) {
+                tilingSoPaths.push_back(std::string(&(soPath[0U])));
+            } else {
+                OP_LOGW("Get op tiling so path for %s failed, errmsg:%s.", path.c_str(), NnopbaseGetmmErrorMsg());
+            }
         }
         for (auto tilingSoPath : tilingSoPaths) {
             OP_LOGI("Tiling so path: %s", tilingSoPath.c_str());
