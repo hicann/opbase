@@ -99,8 +99,10 @@ constexpr size_t ARG_VECTOR_CAP_SIZE = 32;
 class LaunchArgInfo {
 public:
     LaunchArgInfo(void *tilingData, size_t tilingDataLen, bool genPlaceholder, bool hasDevPtrArg, OpArgContext *args)
-        : allArg_(addrInfo), tilingData_(tilingData), tilingDataLen_(tilingDataLen), genPlaceholder_(genPlaceholder),
-          argSize_(0), hasDevPtrArg_(hasDevPtrArg)
+        : allArg_(addrInfo), argSize_(0), tilingData_(tilingData), tilingDataLen_(tilingDataLen),
+          devArgNum_(0), hostArgNum_(0), tensorNum_(0), dfxInfoDumpSize_(0), dfxInfoDumpAddr_(nullptr),
+          dfxInfoOffsetInTilingData_(0), genPlaceholder_(genPlaceholder), hasDevPtrArg_(hasDevPtrArg),
+          firstWorkspaceIdx_(0)
     {
         allArg_.reserve(ARG_VECTOR_CAP_SIZE);
         if (args->ContainsOpArgType(OpArgDef::OP_INPUT_ARG)) {
@@ -225,7 +227,7 @@ public:
         return allArg_;
     }
 
-    const size_t GetArgSize() const
+    size_t GetArgSize() const
     {
         return argSize_;
     }
