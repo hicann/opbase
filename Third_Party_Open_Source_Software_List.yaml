@@ -1,6 +1,6 @@
 boost:
   version: v1.87.0
-  type: run
+  type: test
 eigen:
   version: 5.0.0
   type: run
@@ -21,4 +21,4 @@ abseil-cpp:
   type: run
 mockcpp:
   version: 2.7
-  type: run
+  type: test
