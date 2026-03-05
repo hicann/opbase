@@ -90,7 +90,32 @@ inline void NnopbaseBuildTensorData(const NnopbaseExecutor *const executor, cons
     }
 }
 
-void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
+inline void NnopbaseBuildCacheTensorInfo(const NnopbaseExecutor *const executor, op::internal::CacheOpInfoBasic *opInfo)
+{
+    for (uint32_t i = 0U; i < executor->args->inputs.num; ++i) {
+        NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_INPUT, executor->args->inputs, i, opInfo->tensorData[i]);
+    }
+    for (uint32_t i = 0U; i < executor->args->outputs.num; ++i) {
+        NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_OUTPUT, executor->args->outputs, i, opInfo->tensorData[i + executor->args->inputs.num]);
+    }
+
+}
+
+inline void NnopbaseBuildCacheAttrInfo(NnopbaseExecutor *const executor, op::internal::CacheOpInfoBasic *opInfo)
+{
+    size_t offset = 0U;
+    for (size_t i = 0U; i < executor->attrs.num; ++i) {
+        executor->attrs.attrs[i].addr.addr = op::internal::PtrCastTo<void>(executor->args->attrsData.data() + offset);
+        offset += executor->attrs.attrs[i].addr.size;
+    }
+    const std::string attrStr = NnopbaseGetAttrVal(executor->attrs);
+    if (!attrStr.empty()) {
+        OP_LOGI("Report op [%s] attr info cache: %s.", executor->opType, attrStr.c_str());
+        opInfo->attrId = MsprofGetHashId(attrStr.c_str(), attrStr.size());
+    }
+}
+
+void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
     aclrtStream stream)
 {
     aclrtStreamAttrValue value = {};
@@ -107,35 +132,28 @@ void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t 
     }
 
     uint32_t totalNum = executor->args->inputs.num + executor->args->outputs.num;
+    uint64_t itemId = executor->itemId;
+    if (taskType == MSPROF_GE_TASK_TYPE_AI_CPU) {
+        totalNum = 0U;
+        itemId = executor->aicpuItemId;
+    }
     size_t totalSize = sizeof(op::internal::CacheOpInfoBasic) + sizeof(MsrofTensorData) * totalNum;
     void *buffer = malloc(totalSize);
     OP_CHECK(buffer != nullptr, OP_LOGE(ACLNN_ERR_INNER, "malloc buffer failed, strerr[%s]", strerror(errno)), return);
     (void)memset_s(buffer, totalSize, 0, totalSize);
     op::internal::CacheOpInfoBasic *opInfo = static_cast<op::internal::CacheOpInfoBasic*>(buffer);
+
     opInfo->taskType = taskType;
     opInfo->numBlocks = numBlocks;
-    opInfo->nodeId = executor->itemId;
-    opInfo->opType = executor->itemId;
+    opInfo->nodeId = itemId;
+    opInfo->opType = itemId;
     opInfo->attrId = 0;
     opInfo->opFlag = 0;
     opInfo->tensorNum = totalNum;
 
-    for (int32_t i = 0; i < executor->args->inputs.num; ++i) {
-        NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_INPUT, executor->args->inputs, i, opInfo->tensorData[i]);
-    }
-    for (int32_t i = 0; i < executor->args->outputs.num; ++i) {
-        NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_OUTPUT, executor->args->outputs, i, opInfo->tensorData[i + executor->args->inputs.num]);
-    }
-
-    size_t offset = 0U;
-    for (size_t i = 0U; i < executor->attrs.num; ++i) {
-        executor->attrs.attrs[i].addr.addr = op::internal::PtrCastTo<void>(executor->args->attrsData.data() + offset);
-        offset += executor->attrs.attrs[i].addr.size;
-    }
-    const std::string attrStr = NnopbaseGetAttrVal(executor->attrs);
-    if (!attrStr.empty()) {
-        OP_LOGI("Report op [%s] attr info cache: %s.", executor->opType, attrStr.c_str());
-        opInfo->attrId = MsprofGetHashId(attrStr.c_str(), attrStr.size());
+    if (taskType != MSPROF_GE_TASK_TYPE_AI_CPU) {
+        NnopbaseBuildCacheTensorInfo(executor, opInfo);
+        NnopbaseBuildCacheAttrInfo(executor, opInfo);
     }
 
     ret = aclrtCacheLastTaskOpInfo(buffer, totalSize);

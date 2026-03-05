@@ -270,7 +270,7 @@ void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t 
 void NnopbasePreportAttrAndHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp);
 std::string NnopbaseGetHostInfoStr(const NnopbaseTensors &tensors);
 std::string NnopbaseGetAttrVal(const NnopbaseAttrs &attrs);
-void NnopbaseReportCacheOpInfo(const NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
+void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
     aclrtStream stream);
 
 aclnnStatus NnopbaseExecutorAddScalarInput(NnopbaseTensors *tensors, const aclScalar *scalar, const uint32_t index,

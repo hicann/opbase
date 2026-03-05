@@ -242,6 +242,7 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
 
     NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->aicpuItemId);
     NnopbaseReportAicpuAdditionInfo(launchBeginTime + 1, &opType[0]);
+    NnopbaseReportCacheOpInfo(executor, 0U, MSPROF_GE_TASK_TYPE_AI_CPU, executor->aicpuStream[0]);
     return OK;
 }
 
