@@ -73,7 +73,7 @@ aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
 
     // Zero out the new portion
     size_t zeroSize = newSize - oldSize;
-    (void)memset_s(reinterpret_cast<uint8_t *>(newArg) + oldSize, zeroSize, 0, zeroSize);
+    (void)memset_s(PtrCastTo<uint8_t>(newArg) + oldSize, zeroSize, 0, zeroSize);
 
     // Free old memory and update pointer
     std::free(opInArg_);
@@ -115,7 +115,7 @@ aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCa
     // Zero out the new portion
     size_t zeroOffset = computeNodeInfoSize_;
     size_t zeroSize = newSize - computeNodeInfoSize_;
-    (void)memset_s(reinterpret_cast<uint8_t *>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
+    (void)memset_s(PtrCastTo<uint8_t>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
 
     // Update pointers based on new memory layout
     anchorInfo_ = PtrCastTo<AnchorInstanceInfo>(&newInfo->place_holder);
@@ -173,7 +173,7 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
     // Zero out the new portion
     size_t zeroOffset = computeNodeInfoSize_;
     size_t zeroSize = newSize - computeNodeInfoSize_;
-    (void)memset_s(reinterpret_cast<uint8_t *>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
+    (void)memset_s(PtrCastTo<uint8_t>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
 
     // Update pointers based on new memory layout
     ComputeNodeInfo *oldInfo = computeNodeInfo_;

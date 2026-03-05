@@ -45,10 +45,6 @@ using namespace op::internal;
 
 extern "C" void InitPTACacheThreadLocal();
 
-namespace op::internal {
-    extern std::string GenerateOpPathBySocVersion(const std::string &soc);
-}
-
 class OpKernelUT : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -1738,14 +1734,4 @@ TEST_F(OpKernelUT, TilingBufferEnlarge)
     buffer.Append(&data, sizeof(int));
     buffer.Append(&data, sizeof(int));
     EXPECT_EQ(buffer.size_, 8);
-}
-
-// TEST_F(OpKernelUT, GenerateOpPathBySocVersion) {
-//     std::string opPath = op::internal::GenerateOpPathBySocVersion("Ascend950PR_957c");
-//     EXPECT_EQ(opPath, "ascend950/");
-// }
-
-TEST_F(OpKernelUT, GenerateOpPathBySocVersionFailed) {
-    std::string opPath = op::internal::GenerateOpPathBySocVersion("Ascend910");
-    EXPECT_EQ(opPath, "");
 }

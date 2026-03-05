@@ -60,7 +60,7 @@ aclnnStatus InferShapeContextHolder::EnsureContextCapacity(size_t requiredCapaci
 
     // Zero out the new portion
     size_t zeroSize = newSize - oldSize;
-    (void)memset_s(reinterpret_cast<uint8_t *>(newCtx) + oldSize, zeroSize, 0, zeroSize);
+    (void)memset_s(PtrCastTo<uint8_t>(newCtx) + oldSize, zeroSize, 0, zeroSize);
 
     // Free old memory and update pointer
     std::free(inferShapeCtx_);

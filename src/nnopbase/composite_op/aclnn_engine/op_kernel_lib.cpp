@@ -85,22 +85,6 @@ const string &KernelLibInfo::GetOpFile() const
 }
 
 // ============================== OpKernelLib ====================================
-#if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
-std::string GenerateOpPathBySocVersion(const std::string &soc)
-#else
-static std::string GenerateOpPathBySocVersion(const std::string &soc)
-#endif
-{
-    static const std::string target = "Ascend910_9x";
-    if (soc.size() < target.length()) {
-        return "";
-    }
-    std::string base = soc.substr(6);
-    std::string part1 = base.substr(0, 3);
-    std::string part2 = base.substr(4, 2);
-    return "ascend" + part1 + "_" + part2 + "/";
-}
-
 static std::unordered_map<std::string, std::string> socOpMapV2 = {
     {"Ascend910_95", "ascend910_95/"},
     {"Ascend950", "ascend950/"}
