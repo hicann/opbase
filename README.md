@@ -12,7 +12,7 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 <img src="docs/zh/figures/architecture.png" alt="架构图"  width="700px" height="320px">
 
  ## 📝版本配套
- 	 
+
 本项目源码会跟随CANN软件版本发布，关于CANN软件版本与本项目标签的对应关系请参阅[release仓库](https://gitcode.com/cann/release-management)中的相应版本说明。
 请注意，为确保您的源码定制开发顺利进行，请选择配套的CANN版本与Gitcode标签源码，使用master分支可能存在版本不匹配的风险。
 
@@ -21,9 +21,9 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 若您希望快速体验项目，请访问[快速入门](docs/zh/context/quick_start.md)获取简易教程，主要包括如下操作，其他文档介绍可参考[docs](docs)。
 
 - [前提条件](docs/zh/context/quick_start.md#前提条件)：安装软件包之前，请完成基础环境搭建，包括第三方依赖等。
-- [环境准备](docs/zh/context/quick_start.md#环境准备)：基础环境搭建后，需完成CANN软件包安装、环境变量配置、源码下载等。
-- [编译执行](docs/zh/context/quick_start.md#编译执行)：环境准备好后，支持对源码修改（如优化、新增等），编译生成的opbase包可部署到AI业务中。
-- [本地验证](docs/zh/context/quick_start.md#本地验证)：基于build.sh可执行UT用例，快速验证项目功能。
+- [环境准备](docs/zh/context/quick_start.md#环境准备)：完成CANN软件包安装、环境变量配置、源码下载等。
+- [源码编译](docs/zh/context/quick_start.md#源码编译)：环境准备好后，可对源码修改（如能力拓展、bug修复等），通过根目录build.sh源码编译，生成的opbase包可部署到AI业务中。
+- [本地验证](docs/zh/context/quick_start.md#本地验证)：基于build.sh执行UT/ST用例，快速验证项目功能。
 
 ## 🔍 目录结构
 
@@ -71,7 +71,7 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 - [所属SIG](https://gitcode.com/cann/community/tree/master/CANN/sigs/ops-basic)
 
 ## 🤝联系我们
- 	 
+
 本项目功能和文档正在持续更新和完善中，欢迎您关注最新版本。
 
 - **问题反馈**：通过GitCode[【Issues】](https://gitcode.com/cann/opbase/issues)提交问题
