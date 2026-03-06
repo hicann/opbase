@@ -768,6 +768,7 @@ void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& sta
             kernelDesc.runInfo->workspaceSizesNum);
         }
     } catch (const nlohmann::json::exception &e) {
+        kernelDesc.runInfo = nullptr;
         OP_LOGW("Read static kernel json file of runInfo failed, reason %s", e.what());
     }
     return;
@@ -787,6 +788,7 @@ void UpdatePlatformInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json
                 kernelDesc.coreNum->aicNum, kernelDesc.coreNum->aivNum);
         }
     } catch (const nlohmann::json::exception &e) {
+        kernelDesc.coreNum = nullptr;
         OP_LOGW("Read static kernel json file of platformInfo failed, reason %s", e.what());
     }
     return;

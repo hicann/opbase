@@ -462,7 +462,7 @@ void AddExtraInfoToOpJson(nlohmann::json &opJson, const nlohmann::json &attrs)
         OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankSize(commHandle, &rankSize) == OK,
                 OP_LOGE(ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.", attrName.c_str()), return);   
         topoInfoJson["topo_level_descs"] = topoLevelDescs;
-        topoInfoJson["local_window_size"] = localWindowSize;
+        topoInfoJson["local_window_size"] = localWindowSize / 2; // cclBufferSize需要做除2处理
         topoInfoJson["rank_size"] = rankSize;
         topoInfosJson[attrName] = topoInfoJson;
     }

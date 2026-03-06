@@ -79,7 +79,7 @@ int32_t ReadJsonInfo(const std::string &binaryInfoPath, nlohmann::json &binaryIn
         OP_LOGW("Get jsonfile path for %s failed.", binaryInfoPath.c_str());
         return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
     }
-    OP_LOGI("Get jsonfile path: %s", opInfoPath);
+    OP_LOGI("Reading ascendc operator jsonfile path: %s", opInfoPath);
     std::ifstream ifs(opInfoPath);
     if (!ifs.is_open()) { return ACLNN_ERR_INNER_LOAD_JSON_FAILED; }
     try {
@@ -275,10 +275,10 @@ int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord:
         AddPlatformInfoToJson(jsonDebug, ctx);
         jsonDebug["impl_mode"] = opt.impl_mode;
         jsonDebug["deterministic"] = opt.deterministic ? "true" : "false";
-        std::lock_guard<std::mutex> lck(g_opInfoStatisticsLck);
-        AddJsonToOpInfoCompile(jsonDebug); // dump json for compile, not needed "bin_type" and "bin_info"
         jsonDebug["bin_type"] = kernelInfo->bin_type;
         jsonDebug["bin_info"] = kernelInfo->bin_info;
+        std::lock_guard<std::mutex> lck(g_opInfoStatisticsLck);
+        AddJsonToOpInfoCompile(jsonDebug); // dump json for compile, not needed "bin_type" and "bin_info"
         AddJsonToOpInfo(jsonDebug);
         AddJsonToOpInfoDebug(jsonDebug);
     } catch (nlohmann::json::exception &e) {
