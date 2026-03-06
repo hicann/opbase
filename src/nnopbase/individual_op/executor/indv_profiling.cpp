@@ -98,7 +98,6 @@ inline void NnopbaseBuildCacheTensorInfo(const NnopbaseExecutor *const executor,
     for (uint32_t i = 0U; i < executor->args->outputs.num; ++i) {
         NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_OUTPUT, executor->args->outputs, i, opInfo->tensorData[i + executor->args->inputs.num]);
     }
-
 }
 
 inline void NnopbaseBuildCacheAttrInfo(NnopbaseExecutor *const executor, op::internal::CacheOpInfoBasic *opInfo)

@@ -84,18 +84,6 @@ nlohmann::json ListFloatAttrsToJson(const gert::RuntimeAttrs *attrs, size_t inde
     return j;
 }
 
-nlohmann::json DataTypeAttrsToJson(const gert::RuntimeAttrs *attrs, size_t index)
-{
-    nlohmann::json j;
-    j["value"] = *attrs->GetInt(index);
-    return j;
-}
-
-nlohmann::json ListDataTypeAttrsToJson(const gert::RuntimeAttrs *attrs, size_t index)
-{
-    return ListIntAttrsToJson(attrs, index);
-}
-
 nlohmann::json ListBoolAttrsToJson(const gert::RuntimeAttrs *attrs, size_t index)
 {
     nlohmann::json j;

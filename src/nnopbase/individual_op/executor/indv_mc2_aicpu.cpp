@@ -43,7 +43,7 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, rtStream_t const
         } else {
             NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(commHandle,
                 stream,
-                ((NnopbaseTilingData *)executor->args->tilingInfo.tilingData)->GetData(),
+                (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(),
                 &contextAddr));
         }
         executor->contextAddr.push_back(contextAddr);
@@ -257,7 +257,7 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
     launchAttr[0].id = RT_LAUNCH_ATTRIBUTE_BLOCKDIM;
     launchAttr[0].value.blockDim = numBlocks;
     rtLaunchConfig_t launchCfg = {launchAttr, 1U};
-    rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->ccuBinHandle, tilingKey, &launchCfg};
+    rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->ccuBinHandle, tilingKey, &launchCfg, nullptr};
     rtFunsionTaskInfo_t fusionTaskInfo = {};
     rtCcuTaskGroup_t ccuTaskGroup = {};
     rtAicpuFusionInfo_t aicpuInfo = {};

@@ -351,6 +351,9 @@ void NnopbaseBuildMemsetInputs(NnopbaseExecutor *executor)
         }
         const uint32_t startIndex =
             executor->args->outputs.paramDescs.instances[irIndex].startIndex;
+        if (startIndex >= executor->args->outputs.extTensors.size()) {
+            OP_LOGE(ACLNN_ERR_INNER, "Invalid startIndex of outputs[%zu] for op Memset.", irIndex);
+        }
         if (!executor->args->outputs.extTensors[startIndex].isNull) {
             NnopbaseCompileTimeTensorDesc *td = inputTd + i;
             GertTensor *tensor = &executor->args->outputs.extTensors[startIndex].rt2Tensor;

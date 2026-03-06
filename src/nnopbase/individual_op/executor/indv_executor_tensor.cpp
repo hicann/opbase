@@ -23,13 +23,13 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
     scalarValue.resize(tensor->GetShapeSize() * sizeof(T));
     if (dataType ==  ge::DataType::DT_FLOAT) {
         if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 (op::internal::PtrCastTo<bool>(scalarValue.data()))[i] =
                     (std::abs(op::internal::PtrCastTo<bool>(tensor->MutableTensorData().GetAddr())[i]) >=
                         std::numeric_limits<float>::epsilon());
             }
         } else {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(op::internal::PtrCastTo<float>(tensor->MutableTensorData().GetAddr())[i]);
             }
         }
@@ -39,13 +39,13 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
 
     if (dataType ==  ge::DataType::DT_FLOAT16) {
         if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 op::internal::PtrCastTo<bool>(scalarValue.data())[i] =
                     (std::abs(op::fp16_t(op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData().GetAddr())[i]).toFloat()) >=
                         std::numeric_limits<float>::epsilon());
             }
         } else {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 op::internal::PtrCastTo<T>(scalarValue.data())[i] =
                     static_cast<T>(op::fp16_t(op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData().GetAddr())[i]).toDouble());
             }
@@ -57,7 +57,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
     if constexpr (!(std::is_same<std::complex<float>, T>::value) &&
                   !(std::is_same<std::complex<double>, T>::value)) {
         if (dataType ==  ge::DataType::DT_BF16) {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 op::internal::PtrCastTo<T>(scalarValue.data())[i] =
                     static_cast<T>(op::bfloat16(op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData().GetAddr())[i], op::bfloat16::from_bits()));
             }
@@ -68,7 +68,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
 
     if (dataType ==  ge::DataType::DT_COMPLEX64) {
         if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 (op::internal::PtrCastTo<std::complex<double>>(scalarValue.data()))[i] =
                     (op::internal::PtrCastTo<std::complex<float>>(tensor->MutableTensorData().GetAddr()))[i];
             }
@@ -79,7 +79,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
 
     if (dataType ==  ge::DataType::DT_COMPLEX128) {
         if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
-            for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+            for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
                 (op::internal::PtrCastTo<std::complex<float>>(scalarValue.data()))[i] =
                     (op::internal::PtrCastTo<std::complex<double>>(tensor->MutableTensorData().GetAddr()))[i];
             }
@@ -88,7 +88,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
         return;
     }
 
-    for (size_t i = 0U; i < tensor->GetShapeSize(); i++) {
+    for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
         op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(op::internal::PtrCastTo<S>(tensor->MutableTensorData().GetAddr())[i]);
     }
 
