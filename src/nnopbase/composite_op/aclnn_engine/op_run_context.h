@@ -214,6 +214,7 @@ public:
 
     static const TilingCtxOutput *GetStaticTilingCtxOutput(uint32_t opType, int64_t staticBlockDim,
                                                            bool atomicCleanFlag, uint8_t scheduleMode,
+                                                           uint32_t staticKernelDynUBufSize,
                                                            FVector<size_t> &staticWorkspaceSize,
                                                            OpArgList &inputs, OpArgList &outputs,
                                                            OpArgList &attrs)
@@ -224,7 +225,7 @@ public:
                 return nullptr);
         auto ret = const_cast<TilingCtxOutput *>(opRunCtx_.tilingCtx_.GetTilingResult());
         *ret->numBlocks_ = staticBlockDim;
-        OP_LOGD("Block dim is %ld", *ret->numBlocks_);
+        OP_LOGD("numBlocks is %ld", *ret->numBlocks_);
         *ret->atomicCleanFlag_ = atomicCleanFlag;
         ret->workspaceSize_->SetSize(staticWorkspaceSize.size());
         for (size_t i = 0; i < staticWorkspaceSize.size(); ++i) {
@@ -232,7 +233,8 @@ public:
         }
 
         *ret->scheduleMode_ = scheduleMode;
-        OP_LOGD("scheduleMode_ dim is %u", *ret->scheduleMode_);
+        *ret->dynUBufSize_ = staticKernelDynUBufSize;
+        OP_LOGD("scheduleMode_ is %u, dynUBufSize_ is %u", *ret->scheduleMode_, *ret->dynUBufSize_);
         *ret->tilingKey_ = 0;
         ret->tilingData_->data_size_ = 0;
         *ret->tilingCond_ = 0;

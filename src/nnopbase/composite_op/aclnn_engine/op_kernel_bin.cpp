@@ -18,8 +18,8 @@
 #include "utils/string_utils.h"
 namespace op {
 namespace internal {
-constexpr const char* SIZE = "size";
-constexpr const char* BLOCK_DIM = "blockDim";
+constexpr const char *SIZE = "size";
+constexpr const char *BLOCK_DIM = "blockDim";
 constexpr const char *SUPPORT_INFO = "supportInfo";
 constexpr const char *IMPL_MODE = "implMode";
 constexpr const char *OP_DEBUG_CONFIG = "op_debug_config";
@@ -28,8 +28,9 @@ constexpr const char *DEBUG_OPTIONS = "debugOptions";
 constexpr const char *DEBUG_BUF_SIZE = "debugBufSize";
 constexpr const char *DEBUG_OPTIONS_ASSERT = "assert";
 constexpr const char *DEBUG_OPTIONS_PRINTF = "printf";
-constexpr const char* DYNAMIC_PARAM_MODE = "dynamicParamMode";
-constexpr const char* FOLDED_WITH_DESC = "folded_with_desc";
+constexpr const char *DYNAMIC_PARAM_MODE = "dynamicParamMode";
+constexpr const char *FOLDED_WITH_DESC = "folded_with_desc";
+constexpr const char *DYN_UBUF_SIZE = "localMemorySize";
 constexpr int32_t MAX_BLOCK_DIM = 65535;
 constexpr int32_t ONE_BYTE_FOR_HEX = 2;
 
@@ -105,6 +106,28 @@ void OpKernelBin::ParseStaticDevPtrMode(const nlohmann::json &objJson)
         hasDevPtrArg_ = true;
     }
     OP_LOGI("parse static kernel dev ptr mode : %d", hasDevPtrArg_);
+}
+
+void OpKernelBin::ParseStaticDynUBufSize(const nlohmann::json &objJson)
+{
+    if (!objJson.contains(DYN_UBUF_SIZE)) {
+        OP_LOGW("Static kernel json [%s] does not have localMemorySize", jsonPath_.c_str());
+        staticKernelDynUBufSize_ = 0;
+        return;
+    }
+    if (objJson[DYN_UBUF_SIZE].is_null()) {
+        OP_LOGW("localMemorySize value is null in %s", jsonPath_.c_str());
+        staticKernelDynUBufSize_ = 0;
+        return;
+    }
+    try {
+        staticKernelDynUBufSize_ = objJson[DYN_UBUF_SIZE].get<uint32_t>();
+    } catch (const nlohmann::json::exception &e) {
+        OP_LOGW("parse localMemorySize failed in %s, reason: %s", jsonPath_.c_str(), e.what());
+        staticKernelDynUBufSize_ = 0;
+        return;
+    }
+    OP_LOGI("Parse static kernel dynUBufSize(localMemorySize): %u", staticKernelDynUBufSize_);
 }
 
 void OpKernelBin::ParseOpDebugConfig(const nlohmann::json &objJson)

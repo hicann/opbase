@@ -672,6 +672,7 @@ public:
                                           *args->GetOpArg(op::OP_ATTR_ARG));
             res = OpRunContextMgr::GetStaticTilingCtxOutput(opType_, staticBlockDim_, !memSetValue_.empty(),
                                                             scheduleMode_,
+                                                            staticKernelDynUBufSize_,
                                                             staticWorkspaceSize_,
                                                             *args->GetOpArg(op::OP_INPUT_ARG),
                                                             *args->GetOpArg(op::OP_OUTPUT_ARG),
@@ -897,6 +898,11 @@ public:
     bool GetHasDevPtrArg() const
     {
         return hasDevPtrArg_;
+    }
+
+    uint32_t GetStaticKernelDynUBufSize() const
+    {
+        return staticKernelDynUBufSize_;
     }
 
     friend class OpKernel;
@@ -1213,6 +1219,7 @@ private:
     aclnnStatus ParseStaticBlockdim(const nlohmann::json &objJson);
     void ParseStaticImplMode(const nlohmann::json &objJson);
     void ParseStaticDevPtrMode(const nlohmann::json &objJson);
+    void ParseStaticDynUBufSize(const nlohmann::json &objJson);
     void ParseOpDebugConfig(const nlohmann::json &objJson);
     void ParseOriOpParaSize(const nlohmann::json &objJson);
     void ParseKernelDfxConfig(const nlohmann::json &objJson);
@@ -1237,6 +1244,7 @@ private:
     bool hasWorkspace_{false};
     FVector<size_t> staticWorkspaceSize_;
     int64_t staticBlockDim_{0};
+    uint32_t staticKernelDynUBufSize_{0};
     bool interCoreSync_{false};
     uint8_t scheduleMode_{0};
     std::string staticImplMode_;

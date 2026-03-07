@@ -1735,3 +1735,108 @@ TEST_F(OpKernelUT, TilingBufferEnlarge)
     buffer.Append(&data, sizeof(int));
     EXPECT_EQ(buffer.size_, 8);
 }
+
+// ============== LocalMemorySize Parse Tests ==============
+
+std::unique_ptr<OpKernelBin> CreateStaticOpKernelBin(const std::string &jsonFileName)
+{
+    uint32_t opType = op::OpTypeDict::ToOpType("Add");
+    const char *p = std::getenv("ASCEND_OPP_PATH");
+    EXPECT_NE(p, nullptr);
+    KeyAndDetail key;
+    key.key = "test_kernel";
+    size_t hashKey = 123;
+    char jsonPath[1024];
+    char binPath[1024];
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+        "%s/../mock/static_kernel/test_json/%s",
+        p, jsonFileName.c_str());
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+        p);
+
+    std::unique_ptr<OpKernelBin> kernelBin = std::make_unique<OpKernelBin>(
+        opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::STATIC_BIN, false, false);
+    return kernelBin;
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_NormalValue)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_normal_value.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 4096);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_ZeroValue)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_zero_value.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 0);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_MaxValue)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_max_uint32.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 4294967295);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_MissingField)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_missing_field.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 0);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_NullValue)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_null_value.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 0);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_InvalidTypeString)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_invalid_type_string.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 0);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_InvalidTypeBoolean)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_invalid_type_bool.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    // nlohmann::json supports implicit conversion from bool to uint32_t (true -> 1, false -> 0)
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 1);
+}
+
+TEST_F(OpKernelUT, ParseStaticDynUBufSize_OverflowValue)
+{
+    auto kernelBin = CreateStaticOpKernelBin("Test_overflow_value.json");
+    ASSERT_NE(kernelBin, nullptr);
+
+    aclnnStatus ret = kernelBin->JsonLoad();
+    EXPECT_EQ(ret, ACLNN_SUCCESS);
+    EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 0);
+}

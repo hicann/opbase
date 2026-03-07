@@ -555,6 +555,7 @@ aclnnStatus OpKernelBin::JsonLoadImpl(nlohmann::json &jsonObj)
         }
         ParseStaticImplMode(jsonObj);
         ParseStaticDevPtrMode(jsonObj);
+        ParseStaticDynUBufSize(jsonObj);
     }
 
     ParseOpDebugConfig(jsonObj);
