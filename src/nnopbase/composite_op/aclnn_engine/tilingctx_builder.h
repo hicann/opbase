@@ -135,6 +135,7 @@ public:
 
     aclnnStatus UpdateTilingCtx(const KernelContextHolder *kernelCtx, const TilingParseCtxHolder *tilingParseCtx);
     aclnnStatus UpdateTilingCtx(const KernelContextHolder *kernelCtx);
+    aclnnStatus UpdateTilingCtx(const KernelContextHolder *kernelCtx, const nlohmann::json &opJson);
     gert::TilingContext *GetTilingCtx(const TilingParseCtxHolder *tilingParseCtx) const
     {
         gert::TilingContext *ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);

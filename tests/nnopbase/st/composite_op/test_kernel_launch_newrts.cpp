@@ -28,15 +28,12 @@
 #include "opdev/op_errno.h"
 #include "register/op_impl_registry.h"
 #include "thread_local_context.h"
+#include "tiling_parse_ctx_holder.h"
 
 using Json = nlohmann::json;
 
 extern inline uint32_t SortOpTypeId();
 extern inline uint32_t AxpyOpTypeId();
-namespace op::internal {
-uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json &opJson);
-extern void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum);
-}
 
 class KernelLaunchNewRtsUT : public testing::Test {
 protected:

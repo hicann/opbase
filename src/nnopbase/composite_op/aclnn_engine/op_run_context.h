@@ -74,6 +74,21 @@ public:
         return tilingCtx_.GetTilingCtx();
     }
 
+    gert::TilingContext *UpdateTilingCtx(uint32_t opType,
+                                         const nlohmann::json &opJson,
+                                         OpArgList &inputs,
+                                         OpArgList &outputs,
+                                         OpArgList &attrs)
+    {
+        const char *opTypeStr = OpTypeDict::ToString(opType).GetString();
+        OP_CHECK(kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
+        kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+        OP_CHECK(tilingCtx_.UpdateTilingCtx(&kernelCtx_, opJson) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
+        return tilingCtx_.GetTilingCtx();
+    }
+
     gert::TilingContext *UpdateTilingCtx4MemSetV2(const TilingParseCtxHolder *tilingParseCtx,
         OpArgList &inputs, OpArgList &outputs, OpArgList &attrs)
     {
@@ -243,11 +258,12 @@ public:
         return ret;
     }
 
-    static void RecordOpInfo(uint32_t opType, const aclnnOpInfoRecord::OpKernelInfo &kernelInfo, const std::string &implMode,
+    static void RecordOpInfo(uint32_t opType, const nlohmann::json &opJson,
+                             const aclnnOpInfoRecord::OpKernelInfo &kernelInfo, const std::string &implMode,
                              OpArgList &inputs, OpArgList &outputs, OpArgList &attrs)
     {
         if (op::internal::GetOpProfilingRecordArgFlag()) {
-            gert::TilingContext *ctx = opRunCtx_.UpdateTilingCtx(opType, inputs, outputs, attrs);
+            gert::TilingContext *ctx = opRunCtx_.UpdateTilingCtx(opType, opJson, inputs, outputs, attrs);
             bool isDeterministicOn = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_;
             auto opts = aclnnOpInfoRecord::OpCompilerOption(implMode, isDeterministicOn);
             OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s, deterministic is %d.", opts.deterministic,

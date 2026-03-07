@@ -116,11 +116,7 @@ void UpdateThradLocalPlatformInfo(fe::PlatFormInfos *platformInfo, const uint32_
     platformInfo->SetCoreNum(coreNum);
 }
 
-#if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
 void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum)
-#else
-static void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum)
-#endif
 {
     uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
     uint32_t vectorCoreNum = GetThreadLocalContext().opConfigInfo_.aivNum_;
@@ -133,10 +129,7 @@ static void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint
 
     std::string coreType = opJson["coreType"].get<std::string>();
     SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
-    OP_LOGI("current soc version value: %d, ASCEND310P value: %d, core type: %s.",
-        static_cast<int>(version),
-        static_cast<int>(SocVersion::ASCEND310P),
-        coreType.c_str());
+    OP_LOGI("current soc version value: %d, core type: %s.", static_cast<int>(version), coreType.c_str());
     if (coreType == "VectorCore") {
         coreNum = vectorCoreNum;
         OP_LOGI("Set VectorCore core num: %u", coreNum);

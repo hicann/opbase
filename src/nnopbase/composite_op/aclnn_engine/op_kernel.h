@@ -665,6 +665,7 @@ public:
             }
         } else {
             OpRunContextMgr::RecordOpInfo(opType_,
+                                          binJson_.GetVar(),
                                           aclnnOpInfoRecord::OpKernelInfo(binPath_, static_cast<int8_t>(binType_)),
                                           staticImplMode_,
                                           *args->GetOpArg(op::OP_INPUT_ARG),

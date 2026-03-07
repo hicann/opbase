@@ -24,6 +24,7 @@
 #include "kernel_mgr.h"
 #include "memset_ctx_holder.h"
 #include "kernel_context_holder.h"
+#include "tiling_parse_ctx_holder.h"
 #include "tilingctx_builder.h"
 #include "op_kernel.h"
 #include "op_ctx_def.h"
@@ -36,9 +37,7 @@
 #include "depends/platform/platform_stub.h"
 
 typedef std::function<void(void)> Functional;
-namespace op::internal {
-extern void SetCoreNum(const nlohmann::json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum);
-}
+
 class TilingCtxBuildUT : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -810,6 +809,218 @@ TEST_F(TilingCtxBuildUT, TilingCtxDeterministicLevelMultiThreadTest)
     vector<Functional> funVec = {TilingCtxDeterministicLevelTest,
                                   TilingCtxDeterministicLevelThreadSafetyTest,
                                   TilingCtxDeterministicLevelNullTest};
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(0, funVec.size()-1);
+    const uint64_t threadCount = 50;
+    vector<std::thread> threadVec;
+    for (int i = 0; i < threadCount; i++) {
+        threadVec.emplace_back(std::thread(funVec[distrib(gen)]));
+    }
+    for (int i = 0; i < threadCount; i++) {
+        threadVec[i].join();
+    }
+}
+
+// 测试静态bin场景下 UpdateTilingCtx(kernelCtx, opJson) 函数
+static void UpdateTilingCtxWithOpJsonTest()
+{
+    op::Shape selfShape{33, 15, 1, 48};
+    op::Shape otherShape{33, 15, 14, 48};
+    op::Shape outShape{33, 15, 14, 48};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto other = std::make_unique<aclTensor>(otherShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    float alpha = 13.37;
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get(), other.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(alpha);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    // 构造 opJson，包含 coreType 信息
+    nlohmann::json opJson = {{"coreType", "AiCore"}};
+
+    // 调用新增的 UpdateTilingCtx(kernelCtx, opJson) 函数
+    auto res = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_), opJson);
+    EXPECT_EQ(res, ACLNN_SUCCESS);
+
+    // 验证 platformInfo 被正确设置（非 nullptr）
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t TILING_PLATFORM_IDX = 4;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    auto *platformInfoPtr = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX];
+    EXPECT_NE(platformInfoPtr, nullptr);  // platformInfo 应该被正确设置
+
+    op::DestroyOpArgContext(ctx);
+}
+
+// 测试静态bin场景下不同 coreType 的 UpdateTilingCtx
+static void UpdateTilingCtxWithOpJsonVectorCoreTest()
+{
+    op::Shape selfShape{16, 32, 64};
+    op::Shape outShape{16, 32, 64};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(1.0f);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    // 测试 VectorCore 类型
+    nlohmann::json opJson = {{"coreType", "VectorCore"}};
+
+    auto res = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_), opJson);
+    EXPECT_EQ(res, ACLNN_SUCCESS);
+
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t TILING_PLATFORM_IDX = 4;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    auto *platformInfoPtr = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX];
+    EXPECT_NE(platformInfoPtr, nullptr);
+
+    op::DestroyOpArgContext(ctx);
+}
+
+// 测试静态bin场景下不包含 coreType 的 opJson
+static void UpdateTilingCtxWithOpJsonNoCoreTypeTest()
+{
+    op::Shape selfShape{8, 16, 32};
+    op::Shape outShape{8, 16, 32};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(1.0f);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    // opJson 不包含 coreType，应使用默认的 cubeCoreNum
+    nlohmann::json opJson = {{"binFileName", "test_kernel"}};
+
+    auto res = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_), opJson);
+    EXPECT_EQ(res, ACLNN_SUCCESS);
+
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t TILING_PLATFORM_IDX = 4;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    auto *platformInfoPtr = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX];
+    EXPECT_NE(platformInfoPtr, nullptr);  // 即使没有 coreType，platformInfo 也应该被设置
+
+    op::DestroyOpArgContext(ctx);
+}
+
+// 测试静态bin场景下 MIX coreType
+static void UpdateTilingCtxWithOpJsonMIXTest()
+{
+    op::Shape selfShape{4, 8, 16};
+    op::Shape outShape{4, 8, 16};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto input = OP_INPUT(self.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(1.0f);
+
+    auto ctx = op::MakeOpArgContext(input, output, attr);
+    ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
+    const char *opTypeStr = opTypeAscendStr.GetString();
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
+
+    // 测试 MIX 类型（需要 taskRation）
+    nlohmann::json opJson = {{"coreType", "MIX"}, {"taskRation", "1:1"}};
+
+    auto res = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.UpdateTilingCtx(
+        &(op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_), opJson);
+    EXPECT_EQ(res, ACLNN_SUCCESS);
+
+    size_t opInputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.inputNum_;
+    size_t opOutputNum = op::internal::OpRunContextMgr::opRunCtx_.kernelCtx_.outputNum_;
+    constexpr size_t TILING_INPUT_OTHER_NUM = 5;
+    constexpr size_t TILING_PLATFORM_IDX = 4;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+
+    auto *platformInfoPtr = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX];
+    EXPECT_NE(platformInfoPtr, nullptr);
+
+    op::DestroyOpArgContext(ctx);
+}
+
+TEST_F(TilingCtxBuildUT, UpdateTilingCtxWithOpJsonTest)
+{
+    UpdateTilingCtxWithOpJsonTest();
+}
+
+TEST_F(TilingCtxBuildUT, UpdateTilingCtxWithOpJsonVectorCoreTest)
+{
+    UpdateTilingCtxWithOpJsonVectorCoreTest();
+}
+
+TEST_F(TilingCtxBuildUT, UpdateTilingCtxWithOpJsonNoCoreTypeTest)
+{
+    UpdateTilingCtxWithOpJsonNoCoreTypeTest();
+}
+
+TEST_F(TilingCtxBuildUT, UpdateTilingCtxWithOpJsonMIXTest)
+{
+    UpdateTilingCtxWithOpJsonMIXTest();
+}
+
+TEST_F(TilingCtxBuildUT, UpdateTilingCtxWithOpJsonMultiThreadTest)
+{
+    vector<Functional> funVec = {UpdateTilingCtxWithOpJsonTest,
+                                  UpdateTilingCtxWithOpJsonVectorCoreTest,
+                                  UpdateTilingCtxWithOpJsonNoCoreTypeTest,
+                                  UpdateTilingCtxWithOpJsonMIXTest};
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(0, funVec.size()-1);

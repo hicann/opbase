@@ -30,6 +30,7 @@ namespace op::internal {
 uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const nlohmann::json &opJson);
 void UpdateThradLocalPlatformInfo(fe::PlatFormInfos *platformInfo, const uint32_t &coreNum, const uint32_t &cubeCoreNum,
     const uint32_t &vectorCoreNum);
+void SetCoreNum(const nlohmann::json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum);
 
 class TilingParseCtxHolder {
 public:

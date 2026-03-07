@@ -246,6 +246,59 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
     return ACLNN_SUCCESS;
 }
 
+aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCtx, const nlohmann::json &opJson)
+{
+    CHECK_COND(kernelCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "kernelCtx is NULL");
+
+    // Ensure capacity before updating context
+    size_t requiredCapacity = kernelCtx->inputNum_ + kernelCtx->outputNum_ + TILING_INPUT_OTHER_NUM + tilingOutputNum_;
+    CHECK_RET_CODE(EnsureTilingCtxCapacity(requiredCapacity), "EnsureTilingCtxCapacity failed.");
+
+    // Reset tiling data.
+    tilingData_->data_size_ = 0;
+    *tilingOutput_.atomicCleanFlag_ = false;
+    *tilingOutput_.numBlocks_ = 0;
+    *tilingOutput_.tilingKey_ = 0;
+    *tilingOutput_.scheduleMode_ = 0;
+    *tilingOutput_.dynUBufSize_ = 0;
+    PtrCastTo<gert::ContinuousVector>(workspaceSizeVec_.get())->SetSize(0);
+
+    tilingCtx_->compute_node_info = kernelCtx->computeNodeInfo_;
+    tilingCtx_->kernel_extend_info = &kernelCtx->kernelExtendInfo_;
+
+    size_t opInputNum = kernelCtx->inputNum_;
+    size_t opOutputNum = kernelCtx->outputNum_;
+    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+    tilingOutput_.inputNum_ = opInputNum;
+    tilingOutput_.outputNum_ = opOutputNum;
+
+    tilingCtx_->input_size = tilingInputNum;
+    for (size_t i = 0; i < tilingInputNum - TILING_INPUT_OTHER_NUM; i++) {
+        tilingCtx_->values[i] = &kernelCtx->opInArg_[i];
+    }
+
+    // 调用 SetCoreNum，内部会获取 cubeCoreNum/vectorCoreNum 并更新 platformInfo
+    uint32_t coreNum = 0;
+    fe::PlatFormInfos *platformInfo = SocContext::GetPlatformInfo();
+    SetCoreNum(opJson, platformInfo, coreNum);
+
+    platformInfoValue_.data.pointer = platformInfo;
+
+    tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = nullptr;
+    tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = &platformInfoValue_;
+    tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
+    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = nullptr;
+    tilingCtx_->values[tilingInputNum - 1] = nullptr;
+    for (size_t i = 0; i < tilingOutputNum_; i++) {
+        tilingCtx_->values[tilingInputNum + i] = &tilingCtxValue_[i];
+    }
+    tilingCtx_->output_start = tilingCtx_->values + tilingCtx_->input_size;
+
+    OP_LOGI("Update static kernel tiling ctx. input[%zu], output[%zu], coreNum: %u",
+        opInputNum, opOutputNum, coreNum);
+    return ACLNN_SUCCESS;
+}
+
 TilingCtxHolder::~TilingCtxHolder()
 {
     FREE(tilingCtx_);
