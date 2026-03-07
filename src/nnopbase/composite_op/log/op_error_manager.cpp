@@ -14,6 +14,7 @@
 #include <vector>
 #include "securec.h"
 #include "base/err_msg.h"
+#include "base/dlog_pub.h"
 
 static const std::string g_errorInfoJson = R"(
 {
@@ -70,4 +71,17 @@ void ReportErrorMessageInner(const std::string &code, const char *fmt, ...)
     const std::vector<const char *> msgKey = {"message"};
     const std::vector<const char *> msgvalue = {buf.data()};
     REPORT_PREDEFINED_ERR_MSG(code.c_str(), msgKey, msgvalue);
+}
+
+void DlogRecordInner(int32_t moduleId, int32_t level, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    DlogVaList(moduleId, level, fmt, args);
+    va_end(args);
+}
+
+int32_t CheckLogLevelInner(int32_t moduleId, int32_t level)
+{
+    return CheckLogLevel(moduleId, level);
 }
