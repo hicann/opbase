@@ -16,7 +16,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include "op_errno.h"
-#include "base/dlog_pub.h"
 #ifdef __GNUC__
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -45,6 +44,8 @@ public:
 }
 
 void ReportErrorMessageInner(const std::string &code, const char *fmt, ...);
+void DlogRecordInner(int32_t moduleId, int32_t level, const char *fmt, ...);
+int32_t CheckLogLevelInner(int32_t moduleId, int32_t level);
 const std::unordered_map<char, std::string> ERRNO_PREFIX_TO_ERROR_CODE = {
     {'1', "EZ1001"},
     {'3', "EZ9903"},
@@ -93,7 +94,7 @@ inline std::string GetOpName()
 }
 /**
  * @brief DOplogSub: print log, need caller to specify level and submodule
- * call CheckLogLevel in advance to optimize performance, call interface with fmt input take time
+ * call CheckLogLevelInner in advance to optimize performance, call interface with fmt input take time
  *
  * @param [in]moduleId: module id, eg: CCE
  * @param [in]submodule: eg: engine
@@ -102,15 +103,15 @@ inline std::string GetOpName()
  */
 #define DOplogSub(moduleId, submodule, level, fmt, ...)                                                               \
     do {                                                                                                              \
-        if (CheckLogLevel(moduleId, level) == 1) {                                                                    \
-            DlogRecord(moduleId, level, "[%s:%d][%s]" fmt, GetFileName(__FILE__), __LINE__, submodule, ##__VA_ARGS__); \
+        if (CheckLogLevelInner(moduleId, level) == 1) {                                                                    \
+            DlogRecordInner(moduleId, level, "[%s:%d][%s]" fmt, GetFileName(__FILE__), __LINE__, submodule, ##__VA_ARGS__); \
         }                                                                                                             \
     } while (false)
 
 #define DDfxlogSub(moduleId, submodule, level, file, line, fmt, ...)                             \
     do {                                                                                         \
-        if (CheckLogLevel(moduleId, level) == 1) {                                               \
-            DlogRecord(moduleId, level, "[%s:%d][%s]" fmt, file, line, submodule, ##__VA_ARGS__); \
+        if (CheckLogLevelInner(moduleId, level) == 1) {                                               \
+            DlogRecordInner(moduleId, level, "[%s:%d][%s]" fmt, file, line, submodule, ##__VA_ARGS__); \
         }                                                                                        \
     } while (false)
 
