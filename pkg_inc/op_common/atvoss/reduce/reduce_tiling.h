@@ -452,6 +452,6 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(
 
 #define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                           \
     result = GET_TPL_TILING_KEY(                                                      \
-        Ops::Base::reduceTilingKey.patternID, Ops::Base::reduceTilingKey.loopARCount, \
-        Ops::Base::reduceTilingKey.loopInnerARCount, __VA_ARGS__)
+        reduceTilingKey.patternID, reduceTilingKey.loopARCount,                       \
+        reduceTilingKey.loopInnerARCount, __VA_ARGS__)
 #endif
