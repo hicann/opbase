@@ -16,7 +16,6 @@
 #ifndef OP_COMMON_OP_HOST_UTIL_CONST_UTIL_H
 #define OP_COMMON_OP_HOST_UTIL_CONST_UTIL_H
 
-#include "op_common/op_host/util/opbase_export.h"
 #include "exe_graph/runtime/tiling_context.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
