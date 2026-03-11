@@ -1056,9 +1056,6 @@ ge::AscendString aclScalar::ToStr() const
         case op::DataType::DT_UINT64: return ge::AscendString(std::to_string(v.ui64).c_str());
         case op::DataType::DT_BOOL: return ge::AscendString(std::to_string(v.i8).c_str());
         case op::DataType::DT_DOUBLE: return ge::AscendString(std::to_string(v.d).c_str());
-        case op::DataType::DT_STRING:
-        case op::DataType::DT_DUAL_SUB_INT8:
-        case op::DataType::DT_DUAL_SUB_UINT8:
         case op::DataType::DT_COMPLEX64: {
             std::ostringstream oss;
             oss << v.complex64;
@@ -1069,6 +1066,9 @@ ge::AscendString aclScalar::ToStr() const
             oss << v.complex128;
             return ge::AscendString(oss.str().c_str());
         }
+        case op::DataType::DT_STRING:
+        case op::DataType::DT_DUAL_SUB_INT8:
+        case op::DataType::DT_DUAL_SUB_UINT8:
         case op::DataType::DT_QINT8:
         case op::DataType::DT_QINT16:
         case op::DataType::DT_QINT32:
