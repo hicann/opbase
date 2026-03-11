@@ -270,7 +270,12 @@ aclnnStatus JsonLoadManger::ParseCustOpInfo() {
   return ACLNN_SUCCESS;
 }
 
-void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const OpInfoDescs &infoDesc) {
+void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs &infoDesc) {
+  if (!opsRegisterName.empty() && opsRegisterName.back() == '/') {
+    opsRegisterName.pop_back();
+    OP_LOGI("Ops register name: %s", opsRegisterName.c_str());
+  }
+
   const size_t lastUnderscore = opsRegisterName.find_last_of('_');
   if (lastUnderscore != std::string::npos) {
     const std::string suffix = opsRegisterName.substr(lastUnderscore + 1);

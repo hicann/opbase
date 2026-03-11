@@ -61,7 +61,7 @@ private:
   static aclnnStatus LoadBinaryFromJson(const std::string &opsPath, aclrtBinHandle &binHandle, const bool isCust = false);
   static bool ReadCustJsonFile(const std::string &opsRegisterName, const std::string &customJsonPath);
   static bool ReadCustOpInfoFromJsonFile(const std::string &path);
-  static void FillCustOpInfos(const std::string opsRegisterName, const OpInfoDescs &infoDesc);
+  static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs &infoDesc);
   static aclnnStatus ParseCustOpInfo();
   static bool ReadBytesFromBinaryFile(const std::string &fileName, std::vector<char> &buffer);
   static std::shared_ptr<std::vector<char>> GetOrCreateBuffer(const std::string& filePath);
