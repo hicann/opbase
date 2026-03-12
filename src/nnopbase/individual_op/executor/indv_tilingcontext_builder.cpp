@@ -348,11 +348,13 @@ void NnopbaseBuildMemsetInputs(NnopbaseExecutor *executor)
         size_t irIndex = executor->args->binInfo->initValues[i].irIndex;
         if (irIndex >= executor->args->outputs.paramDescs.instances.size()) {
             OP_LOGE(ACLNN_ERR_INNER, "Invalid outputs irIndex %zu for op Memset: index is out of range.", irIndex);
+            return;
         }
         const uint32_t startIndex =
             executor->args->outputs.paramDescs.instances[irIndex].startIndex;
         if (startIndex >= executor->args->outputs.extTensors.size()) {
             OP_LOGE(ACLNN_ERR_INNER, "Invalid startIndex of outputs[%zu] for op Memset.", irIndex);
+            return;
         }
         if (!executor->args->outputs.extTensors[startIndex].isNull) {
             NnopbaseCompileTimeTensorDesc *td = inputTd + i;
