@@ -1466,7 +1466,6 @@ user group (${_DEFAULT_USERGROUP}) for devel mode? [y/n]"
 
     architecture=$(uname -m)
     if [ "${architecture}" != "${platform_data}" ]; then
-        return
         exit 0
     fi
 
