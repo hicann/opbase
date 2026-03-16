@@ -1097,9 +1097,10 @@ void ReduceOpTiling::SetTilingKey()
     tilingKey_.patternID = Pattern::ID * CONST10 + innerID;
     tilingKey_.loopARCount = static_cast<uint32_t>(aCount * CONST10 + rCount);
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * CONST10 + innerRCount);
+    tilingKey_.isContiguous = CheckIsContiguous(opInput_);
     OP_LOGI(
-        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u", tilingKey_.patternID, tilingKey_.loopARCount,
-        tilingKey_.loopInnerARCount);
+        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d",
+        tilingKey_.patternID, tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0);
 }
 
 void ReduceOpTiling::GetTilingKey(ReduceTilingKey& key)

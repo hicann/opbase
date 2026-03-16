@@ -87,6 +87,7 @@ struct ReduceTilingKey {
     uint32_t patternID = 0;
     uint32_t loopARCount = 0;
     uint32_t loopInnerARCount = 0;
+    bool isContiguous = true;
 };
 
 namespace ReduceOpTmpl {
@@ -450,8 +451,9 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(
 } // namespace Base
 } // namespace Ops
 
-#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                           \
-    result = GET_TPL_TILING_KEY(                                                      \
-        reduceTilingKey.patternID, reduceTilingKey.loopARCount,                       \
-        reduceTilingKey.loopInnerARCount, __VA_ARGS__)
+#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                 \
+    result = GET_TPL_TILING_KEY(                                                            \
+        reduceTilingKey.isContiguous, reduceTilingKey.patternID,                            \
+        reduceTilingKey.loopARCount, reduceTilingKey.loopInnerARCount,                      \
+        __VA_ARGS__)
 #endif

@@ -17,6 +17,7 @@
 #define _REDUCE_SCH_H_
 #include "reduce_tiling_data.h"
 #include "reduce_sch_aux.h"
+#include "reduce_sch_aux_non_contiguous.h"
 #include "reduce_sch_aux_util.h"
 #include "reduce_operator.h"
 #include "reduce_tensor_empty.h"
@@ -36,7 +37,7 @@ struct EleSclar<ElemOp, true> {
     using T = void;
 };
 
-template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount, class OpDag>
+template <bool isContiguous, uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount, class OpDag>
 class ReduceSch
 {
 public:
@@ -230,26 +231,46 @@ public:
     template <class... Args>
     __aicore__ inline void ProcessNormal(Args... args)
     {
-        using SchTypeA = ReduceSchAux<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
-        SchTypeA op(this, input_, output_, &workspace_, tiling_);
-        op.Process(args...);
+        if constexpr (isContiguous) {
+            using SchTypeA = ReduceSchAux<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+            SchTypeA op(this, input_, output_, &workspace_, tiling_);
+            op.Process(args...);
+        } else {
+            using SchTypeA = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
+                OpDag>;
+            SchTypeA op(this, input_, output_, &workspace_, tiling_);
+            op.Process(args...);
+        }
     }
 
     template <class... Args>
     __aicore__ inline void ProcessGroup(Args... args)
     {
-        using SchTypeR = ReduceSchAux<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
-        SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
-
         constexpr static ReduceSchLoopInfo groupSchLoopInfo = GetGroupSchLoopInfo();
         ReduceOpTilingData groupTiling;
         SetGroupTiling(groupTiling);
-        using SchTypeA = ReduceSchAux<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>, false, OpDag>;
-        SchTypeA groupOp(this, input_, output_, &workspace_, &groupTiling);
+        if constexpr (isContiguous) {
+            using SchTypeR = ReduceSchAux<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+            SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);        
+            using SchTypeA = ReduceSchAux<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>, false, OpDag>;
+            SchTypeA groupOp(this, input_, output_, &workspace_, &groupTiling);
 
-        op.Process(args...);
-        SyncAll();
-        groupOp.Process(args...);
+            op.Process(args...);
+            SyncAll();
+            groupOp.Process(args...);
+        } else {
+            SetGroupTilingNonContiguous(groupTiling);
+            using SchTypeR = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
+                OpDag>;
+            SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);        
+            using SchTypeA = ReduceSchAuxNonContiguous<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>,
+                false, OpDag>;
+            SchTypeA groupOp(this, input_, output_, &workspace_, &groupTiling);
+
+            op.Process(args...);
+            SyncAll();
+            groupOp.Process(args...);
+        }
     }
 
     template <class... Args>
@@ -290,6 +311,85 @@ public:
         groupTiling.factorATotalCnt = Ops::Base::CeilDiv(groupTiling.shape[1], groupTiling.ubFactorA);
         groupTiling.factorACntPerCore =
             Ops::Base::CeilDiv(groupTiling.factorATotalCnt, static_cast<uint64_t>(tiling_->coreNum));
+    }
+
+    __aicore__ inline void SetGroupTilingNonContiguous(ReduceOpTilingData& groupTiling)
+    {
+        groupTiling.sliceNum[0] = 1; 
+        groupTiling.sliceNum[1] = 1; 
+        groupTiling.sliceShape[0] = tiling_->groupR; 
+        groupTiling.sliceShape[1] = tiling_->outSize; 
+        groupTiling.sliceStride[0] = Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(ELEMENT_ONE_REPEAT)); 
+        groupTiling.sliceStride[1] = 1;
+    }
+
+    template <class T, class V>
+    __aicore__ inline void MaxLoopDataCopyPad(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view,
+                                              const DataCopyExtParams& copyInParams,
+                                              const DataCopyPadExtParams<T>& padParams)
+    {
+        for (uint64_t i = 0; i < view.axis[CONST7].repeat; i++) {
+            for (uint64_t j = 0; j < view.axis[CONST6].repeat; j++) {
+                for (uint64_t k = 0; k < view.axis[CONST5].repeat; k++) {
+                    for (uint64_t l = 0; l < view.axis[CONST4].repeat; l++) {
+                        int64_t dstStride = i * view.axis[CONST7].dstStride + j * view.axis[CONST6].dstStride +
+                                            k * view.axis[CONST5].dstStride + l * view.axis[CONST4].dstStride;
+                        int64_t srcStride = i * view.axis[CONST7].srcStride + j * view.axis[CONST6].srcStride +
+                                            k * view.axis[CONST5].srcStride + l * view.axis[CONST4].srcStride;
+                        DataCopyPad(dst[dstStride], src[view.addr + srcStride], copyInParams, padParams);
+                    }
+                }
+            }
+        }
+    }
+
+    template <class T, class V>
+    __aicore__ inline void InitDataCopyPadParams(DataCopyExtParams& copyInParams, LoopModeParams& loopParams, V& view)
+    {
+        copyInParams.blockCount = view.axis[CONST1].repeat;
+        copyInParams.blockLen = view.axis[CONST0].repeat * sizeof(T);
+        copyInParams.srcStride = (view.axis[CONST1].srcStride - view.axis[CONST0].repeat) * sizeof(T);
+        copyInParams.dstStride =
+            (view.axis[CONST1].dstStride - view.axis[CONST0].repeat) * sizeof(T) / UB_BLOCK;
+
+        loopParams.loop1Size = view.axis[CONST2].repeat;
+        loopParams.loop1SrcStride = view.axis[CONST2].srcStride * sizeof(T);
+        loopParams.loop1DstStride = view.axis[CONST2].dstStride * sizeof(T);
+        loopParams.loop2Size = view.axis[CONST3].repeat;
+        loopParams.loop2SrcStride = view.axis[CONST3].srcStride * sizeof(T);
+        loopParams.loop2DstStride = view.axis[CONST3].dstStride * sizeof(T);
+    }
+
+    template <int32_t pos, class InnerPattern, class T, class V>
+    __aicore__ inline void CopyInWithMoveAlign(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view)
+    {
+        T paddingValue = 0;
+        DataCopyPadExtParams<T> padParams{true, 0, 0, paddingValue};
+        DataCopyExtParams copyInParams;
+        LoopModeParams loopParams;
+        InitDataCopyPadParams<T>(copyInParams, loopParams, view);
+
+        SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+        if constexpr (Pattern::Dim <= CONST4) {
+            DataCopyPad(dst, src[view.addr], copyInParams, padParams);
+        } else {
+            MaxLoopDataCopyPad(dst, src, view, copyInParams, padParams);
+        }
+        ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
+    }
+
+    template <int32_t pos, class InnerPattern, class T, class V>
+    __aicore__ inline void CopyInWithMoveAlignNonContiguous(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view)
+    {
+        T paddingValue = 0;
+        DataCopyPadExtParams<T> padParams{true, 0, 0, paddingValue};
+        DataCopyExtParams copyInParams;
+        LoopModeParams loopParams;
+        InitDataCopyPadParams<T>(copyInParams, loopParams, view);
+
+        SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+        MaxLoopDataCopyPad(dst, src, view, copyInParams, padParams);
+        ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     }
 
     template <int32_t pos, class InnerPattern, class T, class V>
@@ -371,43 +471,37 @@ public:
     }
 
     template <int32_t pos, class InnerPattern, class T, class V>
-    __aicore__ inline void CopyInWithMoveAlign(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view)
+    __aicore__ inline void CopyInWithNddmaNonContiguous(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view)
     {
-        T paddingValue = 0;
-        DataCopyPadExtParams<T> padParams{true, 0, 0, paddingValue};
-        DataCopyExtParams copyInParams;
-        copyInParams.blockCount = view.axis[CONST1].repeat;
-        copyInParams.blockLen = view.axis[CONST0].repeat * sizeof(T);                                   // unit Byte
-        copyInParams.srcStride = (view.axis[CONST1].srcStride - view.axis[CONST0].repeat) * sizeof(T);  // unit Byte
-        copyInParams.dstStride =
-            (view.axis[CONST1].dstStride - view.axis[CONST0].repeat) * sizeof(T) / UB_BLOCK;  // unit block(32byte)
-        LoopModeParams loopParams;
-        loopParams.loop1Size = view.axis[CONST2].repeat;
-        loopParams.loop1SrcStride = view.axis[CONST2].srcStride * sizeof(T);  // unit Byte
-        loopParams.loop1DstStride = view.axis[CONST2].dstStride * sizeof(T);  // unit Byte
-        loopParams.loop2Size = view.axis[CONST3].repeat;
-        loopParams.loop2SrcStride = view.axis[CONST3].srcStride * sizeof(T);  // unit Byte
-        loopParams.loop2DstStride = view.axis[CONST3].dstStride * sizeof(T);  // unit Byte
-
-        SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
-        if constexpr (Pattern::Dim <= CONST4) {
-            DataCopyPad(dst, src[view.addr], copyInParams, padParams);
-        } else {
-            for (uint64_t i = 0; i < view.axis[CONST7].repeat; i++) {
-                for (uint64_t j = 0; j < view.axis[CONST6].repeat; j++) {
-                    for (uint64_t k = 0; k < view.axis[CONST5].repeat; k++) {
-                        for (uint64_t l = 0; l < view.axis[CONST4].repeat; l++) {
-                            int64_t dstStride = i * view.axis[CONST7].dstStride + j * view.axis[CONST6].dstStride +
-                                                k * view.axis[CONST5].dstStride + l * view.axis[CONST4].dstStride;
-                            int64_t srcStride = i * view.axis[CONST7].srcStride + j * view.axis[CONST6].srcStride +
-                                                k * view.axis[CONST5].srcStride + l * view.axis[CONST4].srcStride;
-                            DataCopyPad(dst[dstStride], src[view.addr + srcStride], copyInParams, padParams);
-                        }
-                    }
+        static constexpr MultiCopyConfig config = {false, 0, 0, false};
+        MultiCopyLoopInfo<CONST5> copyLoopInfo = {
+            .loopSrcStride = {view.axis[CONST0].srcStride, view.axis[CONST1].srcStride,
+                              view.axis[CONST2].srcStride, view.axis[CONST3].srcStride,
+                              view.axis[CONST4].srcStride},
+            .loopDstStride = {static_cast<uint32_t>(view.axis[CONST0].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST1].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST2].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST3].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST4].dstStride)},
+            .loopSize = {static_cast<uint32_t>(view.axis[CONST0].repeat),
+                         static_cast<uint32_t>(view.axis[CONST1].repeat),
+                         static_cast<uint32_t>(view.axis[CONST2].repeat),
+                         static_cast<uint32_t>(view.axis[CONST3].repeat),
+                         static_cast<uint32_t>(view.axis[CONST4].repeat)},
+            .loopLpSize = {0, 0, 0, 0, 0},
+            .loopRpSize = {0, 0, 0, 0, 0}};
+        MultiCopyParams<T, CONST5> params = {copyLoopInfo, 0};
+        for (uint64_t i = 0; i < view.axis[CONST7].repeat; i++) {
+            for (uint64_t j = 0; j < view.axis[CONST6].repeat; j++) {
+                for (uint64_t k = 0; k < view.axis[CONST5].repeat; k++) {
+                    int64_t dstStride = i * view.axis[CONST7].dstStride + j * view.axis[CONST6].dstStride +
+                                        k * view.axis[CONST5].dstStride;
+                    int64_t srcStride = i * view.axis[CONST7].srcStride + j * view.axis[CONST6].srcStride +
+                                        k * view.axis[CONST5].srcStride;
+                    DataCopy<T, CONST5, config>(dst[dstStride], src[view.addr + srcStride], params);
                 }
             }
         }
-        ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     }
 
     template <int32_t pos, class InnerPattern, class T, class V>
@@ -417,9 +511,17 @@ public:
             reduceOp_->template CopyIn<pos, InnerPattern, T>(dst, src, view);
         } else {
             if (view.isBlockAligned == 1U) {
-                CopyInWithMoveAlign<pos, InnerPattern>(dst, src, view);
+                if constexpr (isContiguous) {
+                    CopyInWithMoveAlign<pos, InnerPattern>(dst, src, view);
+                } else {
+                    CopyInWithMoveAlignNonContiguous<pos, InnerPattern>(dst, src, view);
+                }
             } else {
-                CopyInWithNddma<pos, InnerPattern>(dst, src, view);
+                if constexpr (isContiguous) {
+                    CopyInWithNddma<pos, InnerPattern>(dst, src, view);
+                } else {
+                    CopyInWithNddmaNonContiguous<pos, InnerPattern>(dst, src, view);
+                }
             }
         }
     }

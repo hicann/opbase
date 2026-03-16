@@ -60,70 +60,81 @@
 #define C4 4
 #define C100 100
 
-#define REDUCE_TPL_PARAM uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount
-#define REDUCE_TPL_VALUE PatternID, LoopARCount, LoopInnerARCount
+#define REDUCE_TPL_PARAM bool IsContiguous, uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount
+#define REDUCE_TPL_VALUE IsContiguous, PatternID, LoopARCount, LoopInnerARCount
 
 #define REDUCE_TPL_KEY_DECL()                                                             \
-    ASCENDC_TPL_UINT_DECL(PatternID, BIT_WIDTH, ASCENDC_TPL_UI_RANGE, 1, C0, C100),       \
+    ASCENDC_TPL_BOOL_DECL(IsContiguous, C1),                                              \
+        ASCENDC_TPL_UINT_DECL(PatternID, BIT_WIDTH, ASCENDC_TPL_UI_RANGE, 1, C0, C100),   \
         ASCENDC_TPL_UINT_DECL(LoopARCount, BIT_WIDTH, ASCENDC_TPL_UI_RANGE, 1, C0, C100), \
         ASCENDC_TPL_UINT_DECL(LoopInnerARCount, BIT_WIDTH, ASCENDC_TPL_UI_RANGE, 1, C0, C100)
 
 #define REDUCE_TPL_KEY_SEL_EMPTY()                                 \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),             \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                    \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, 0),   \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, 0), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_LIST, 0)
 
 #define REDUCE_TPL_KEY_SEL_A()                                        \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),                \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                       \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, C100),   \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R0), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_LIST, C0)
 
 #define REDUCE_TPL_KEY_SEL_AR_NORMAL()                                    \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),                    \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                           \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, AR_PATTERN), \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R0),     \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_RANGE, 1, C0, C1)
 
 #define REDUCE_TPL_KEY_SEL_AR_GROUP()                                     \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_MIX_AIV_1_0),                 \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                           \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, AR_PATTERN), \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R2),     \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_LIST, C0)
 
 #define REDUCE_TPL_KEY_SEL_ARA_NORMAL()                                     \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),                      \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                             \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARA_PATTERN),  \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R0, A2R0), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_RANGE, 1, C0, C1)
 
 #define REDUCE_TPL_KEY_SEL_ARA_GROUP()                                      \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_MIX_AIV_1_0),                   \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                             \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARA_PATTERN),  \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R2, A2R3), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_LIST, C0)
 
 #define REDUCE_TPL_KEY_SEL_ARAR_NORMAL()                                    \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),                      \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                             \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARAR_PATTERN), \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R0, A2R0), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_RANGE, 1, C0, C2)
 
 #define REDUCE_TPL_KEY_SEL_ARAR_GROUP()                                                 \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_MIX_AIV_1_0),                               \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                                         \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARAR_PATTERN),             \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R2, A1R3, A2R3, A2R4), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_LIST, C0)
 
 #define REDUCE_TPL_KEY_SEL_ARARARAR_NORMAL()                                            \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),                                  \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                                         \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARARARAR_PATTERN),         \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R0, A2R0, A3R0, A4R0), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_RANGE, 1, C0, C4)
 
 #define REDUCE_TPL_KEY_SEL_ARARARAR_GROUP()                                                                          \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_MIX_AIV_1_0),                                                            \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                                                                      \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARARARAR_PATTERN),                                      \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R2, A1R3, A1R4, A1R5, A2R3, A2R4, A2R5, A2R6, A3R4, \
                              A3R5, A3R6, A3R7, A4R5, A4R6, A4R7, A4R8),                                              \
@@ -131,12 +142,14 @@
 
 #define REDUCE_TPL_KEY_SEL_ARARARARA_NORMAL()                                                 \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_AIV_ONLY),                                        \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                                               \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARARARARA_PATTERN),              \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R0, A2R0, A3R0, A4R0, A5R0), \
         ASCENDC_TPL_UINT_SEL(LoopInnerARCount, ASCENDC_TPL_UI_RANGE, 1, C0, C4)
 
 #define REDUCE_TPL_KEY_SEL_ARARARARA_GROUP()                                                                         \
     ASCENDC_TPL_KERNEL_TYPE_SEL(ASCENDC_TPL_MIX_AIV_1_0),                                                            \
+        ASCENDC_TPL_BOOL_SEL(IsContiguous, C1),                                                                      \
         ASCENDC_TPL_UINT_SEL(PatternID, ASCENDC_TPL_UI_LIST, ARARARARA_PATTERN),                                     \
         ASCENDC_TPL_UINT_SEL(LoopARCount, ASCENDC_TPL_UI_LIST, A1R2, A1R3, A1R4, A1R5, A2R3, A2R4, A2R5, A2R6, A3R4, \
                              A3R5, A3R6, A3R7, A4R5, A4R6, A4R7, A4R8, A5R6, A5R7, A5R8, A5R9),                      \
