@@ -183,6 +183,11 @@
 </tr>
 <tr id="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_row261151793318"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.2.3.1.1 "><p id="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p170517823516"><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p170517823516"></a><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p170517823516"></a>SetBlockDim(uint32_t blockDim)</p>
 </td>
+<td class="cellrowborder" valign="top" width="50%" headers="mcps1.2.3.1.2 "><p id="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p815571093617"><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p815571093617"></a><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p815571093617"></a>在生成aclnn cache的过程中，记录cache对象使用的核数。(即将废弃，请使用SetNumBlocks(uint32_t numBlocks))</p>
+</td>
+</tr>
+<tr id="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_row261151793318"><td class="cellrowborder" valign="top" width="50%" headers="mcps1.2.3.1.1 "><p id="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p170517823516"><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p170517823516"></a><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p170517823516"></a>SetNumBlocks(uint32_t numBlocks)</p>
+</td>
 <td class="cellrowborder" valign="top" width="50%" headers="mcps1.2.3.1.2 "><p id="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p815571093617"><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p815571093617"></a><a name="zh-cn_topic_0000002078498990_zh-cn_topic_0000001919311394_p815571093617"></a>在生成aclnn cache的过程中，记录cache对象使用的核数。</p>
 </td>
 </tr>
@@ -317,4 +322,3 @@
 </tr>
 </tbody>
 </table>
-
