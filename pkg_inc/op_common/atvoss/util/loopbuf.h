@@ -15,11 +15,7 @@
 #ifndef UTIL_LOOPBUF_H_
 #define UTIL_LOOPBUF_H_
 
-#if ASC_DEVKIT_MAJOR >=9
-#include "basic_api/kernel_vec_intf.h"
-#else
-#include "kernel_operator.h"
-#endif
+#include "atvoss/util/kernel_vec_intf_apt.h"
 namespace Ops {
 namespace Base {
 #ifdef __CCE_KT_TEST__

@@ -15,11 +15,7 @@
 #ifndef BROADCAST_ONE_DIM_OPT_SCH_H_
 #define BROADCAST_ONE_DIM_OPT_SCH_H_
 
-#if ASC_DEVKIT_MAJOR >=9
-#include "basic_api/kernel_vec_intf.h"
-#else
-#include "kernel_operator.h"
-#endif
+#include "atvoss/util/kernel_vec_intf_apt.h"
 #include "atvoss/util/dag.h"
 #include "atvoss/util/sync.h"
 #include "atvoss/util/vec.h"

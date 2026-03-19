@@ -11,11 +11,7 @@
 #ifndef BROADCAST_SCH_H_
 #define BROADCAST_SCH_H_
 
-#if ASC_DEVKIT_MAJOR >=9
-#include "basic_api/kernel_vec_intf.h"
-#else
-#include "kernel_operator.h"
-#endif
+#include "atvoss/util/kernel_vec_intf_apt.h"
 #include "broadcast_sch_nddma.h"
 #include "broadcast_sch_one_dim.h"
 #include "broadcast_sch_one_dim_advance.h"
