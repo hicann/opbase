@@ -396,14 +396,17 @@ static void MultiDoLaunchNormalTest2() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
+    size_t tilingDataLen = 8 * 21;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
     op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
     int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
 
     TilingData tilingDataStruct;
     tilingDataStruct.capacity_ = 128 * 1024;
@@ -791,14 +794,17 @@ static void MultiDoLaunchNormalTest3() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
+    size_t tilingDataLen = 8 * 21;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
     op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
     int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
 
     TilingData tilingDataStruct;
     tilingDataStruct.capacity_ = 128 * 1024;
@@ -1195,14 +1201,17 @@ static void MultiDoLaunchNormalTest4() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
+    size_t tilingDataLen = 8 * 21;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
     op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
     int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
 
     TilingData tilingDataStruct;
     tilingDataStruct.capacity_ = 128 * 1024;
@@ -1609,14 +1618,17 @@ static void MultiDoLaunchAlignTest() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
+    size_t tilingDataLen = 8 * 21;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
     op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
     int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
 
     TilingData tilingDataStruct;
     tilingDataStruct.capacity_ = 128 * 1024;
@@ -1759,14 +1771,16 @@ static void TestInvalidFunctionHandle() {
     kernelBin->binHandle_[0].InitVar(f);
 
     // init tiling data
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    size_t tilingDataLen = 8 * 21;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
     op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
     int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
     for (size_t i = 0; i < 21; i++) {
         tilingData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
 
     TilingData tilingDataStruct;
     tilingDataStruct.capacity_ = 128 * 1024;

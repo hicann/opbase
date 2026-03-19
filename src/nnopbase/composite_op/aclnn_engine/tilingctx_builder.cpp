@@ -71,6 +71,8 @@ void TilingCtxHolder::BuildTilingCtx()
         return );
     tilingData_ = static_cast<TilingData *>(extendedBuffer->Data());
     OP_CHECK(tilingData_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "get tiling data is nullptr."), return );
+    // Register tilingData_ pointer so it gets updated when buffer enlarges
+    extendedBuffer->SetTilingDataPtr(&tilingData_);
     tilingData_->capacity_ = MAX_TILING_DATA_SIZE;
     tilingData_->data_size_ = 0;
 
@@ -94,6 +96,8 @@ void TilingCtxHolder::BuildTilingCtx()
     tilingOutput_.numBlocks_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputBlockDim].data.inplace);
     tilingOutput_.atomicCleanFlag_ = PtrCastTo<bool>(tilingCtxValue_[kOutputAtomicCleanFlag].data.inplace);
     tilingOutput_.tilingData_ = tilingData_;
+    // Register tilingOutput_.tilingData_ pointer so it gets updated when buffer enlarges
+    extendedBuffer->SetTilingOutputDataPtr(&tilingOutput_.tilingData_);
     tilingOutput_.workspaceSize_ = PtrCastTo<gert::TypedContinuousVector<size_t>>(workspaceSizeVec_.get());
     tilingOutput_.tilingCond_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputTilingCond].data.inplace);
     tilingOutput_.scheduleMode_ = PtrCastTo<uint8_t>(tilingCtxValue_[kOutputScheduleMode].data.inplace);
