@@ -1309,6 +1309,7 @@ aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *
                                                           gert::OppImplVersionTag oppImplVersion)
 {
     const std::string &kernelPath = basePath + "/static_kernel/ai_core/";
+    bool readSuccessFlag = false;
     for (auto iter = binaryInfoConfig.begin(); iter != binaryInfoConfig.end(); ++iter) {
         NnopbaseJsonInfo jsonInfo;
         jsonInfo.opType = iter.key();
@@ -1325,10 +1326,15 @@ aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *
                 // 不是每个静态json都包含runInfo字段，该字段是否存在不影响staticBin的正常场景执行
                 OP_LOGW("Update extra info of static op %s failed.", jsonInfo.opType.c_str());
             }
+            readSuccessFlag = true;
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
         }
     }
-    OP_LOGD("Get static kernel path and read config successfully.");
+    if (!readSuccessFlag) {
+        OP_LOGW("Read and parse static kernel config failed.");
+    } else {
+        OP_LOGI("Get static kernel path and read config successfully.");
+    }
     return OK;
 }
 
