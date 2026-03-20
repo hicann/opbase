@@ -14,10 +14,10 @@
  */
 #ifndef UTIL_LOG_H_
 #define UTIL_LOG_H_
-namespace Ops{
+namespace Ops {
 namespace Base {
 #define DO_JOIN_SYMBOL(symbol1, symbol2) symbol1##symbol2
-#define JOIN_SYMBOL(symbol1, symbol2) Ops::Base::DO_JOIN_SYMBOL(symbol1, symbol2)
+#define JOIN_SYMBOL(symbol1, symbol2) DO_JOIN_SYMBOL(symbol1, symbol2)
 
 #ifdef __COUNTER__
 #define UNIQUE_ID __COUNTER__
@@ -25,19 +25,19 @@ namespace Base {
 #define UNIQUE_ID __LINE__
 #endif
 
-#define UNIQUE_NAME(prefix) Ops::Base::JOIN_SYMBOL(prefix, UNIQUE_ID)
+#define UNIQUE_NAME(prefix) JOIN_SYMBOL(prefix, UNIQUE_ID)
 
 #if defined __CCE_KT_TEST__ || defined __ATP_UT__
 #ifdef __CCE_KT_TEST__
-#define RUN_LOG_BASE(...)   \
-  if (GetBlockIdx() == 0) { \
-    printf(__VA_ARGS__);    \
-  }
+#define RUN_LOG_BASE(...)     \
+    if (GetBlockIdx() == 0) { \
+        printf(__VA_ARGS__);  \
+    }
 #else
-#define RUN_LOG_BASE(...)   \
-  do { \
-    printf(__VA_ARGS__);    \
-  } while(0)
+#define RUN_LOG_BASE(...)    \
+    do {                     \
+        printf(__VA_ARGS__); \
+    } while (0)
 #endif
 
 #include <cxxabi.h>
@@ -46,39 +46,41 @@ namespace Base {
 #include <string>
 
 template <typename T>
-const std::string GetTypeName() {
-  std::string result;
-  const char* name = typeid(T).name();
-  int status = -1;
-  char* readableName = abi::__cxa_demangle(name, nullptr, nullptr, &status);
-  if (status == 0 && readableName != nullptr) {
-    result = std::string(readableName);
-    std::free(readableName);
-  } else {
-    result = "[Undemangled]" + std::string(name);
-  }
-  return result;
+const std::string GetTypeName()
+{
+    std::string result;
+    const char* name = typeid(T).name();
+    int status = -1;
+    char* readableName = abi::__cxa_demangle(name, nullptr, nullptr, &status);
+    if (status == 0 && readableName != nullptr) {
+        result = std::string(readableName);
+        std::free(readableName);
+    } else {
+        result = "[Undemangled]" + std::string(name);
+    }
+    return result;
 }
 
 #define PRINT_TYPE(T) Ops::Base::GetTypeName<T>().c_str()
 
-#define RUN_LOG_ONE_BLOCK(...)  \
-  do {                                                                     \
-    const char* filename = strrchr(__FILE__, '/');                         \
-    if (!filename) filename = strrchr(__FILE__, '\\');                     \
-    filename = filename ? filename + 1 : __FILE__;                         \
-    if constexpr (sizeof(#__VA_ARGS__) <= 1) {                             \
-      printf("[INFO][Core0:%s:%d] (empty log)\n", filename, __LINE__);     \
-    } else {                                                               \
-      char buffer[1024];                                                   \
-      int result = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, __VA_ARGS__); \
-      if (result < 0 || buffer[strlen(buffer) - 1] != '\n') {                            \
-        printf("[INFO][Core0:%s:%d] %s\n", filename, __LINE__, buffer);    \
-      } else {                                                             \
-        printf("[INFO][Core0:%s:%d] %s", filename, __LINE__, buffer);      \
-      }                                                                    \
-    }                                                                      \
-  } while (0)
+#define RUN_LOG_ONE_BLOCK(...)                                                                \
+    do {                                                                                      \
+        const char* filename = strrchr(__FILE__, '/');                                        \
+        if (!filename)                                                                        \
+            filename = strrchr(__FILE__, '\\');                                               \
+        filename = filename ? filename + 1 : __FILE__;                                        \
+        if constexpr (sizeof(#__VA_ARGS__) <= 1) {                                            \
+            printf("[INFO][Core0:%s:%d] (empty log)\n", filename, __LINE__);                  \
+        } else {                                                                              \
+            char buffer[1024];                                                                \
+            int result = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, __VA_ARGS__); \
+            if (result < 0 || buffer[strlen(buffer) - 1] != '\n') {                           \
+                printf("[INFO][Core0:%s:%d] %s\n", filename, __LINE__, buffer);               \
+            } else {                                                                          \
+                printf("[INFO][Core0:%s:%d] %s", filename, __LINE__, buffer);                 \
+            }                                                                                 \
+        }                                                                                     \
+    } while (0)
 
 #else
 #define RUN_LOG_BASE(...)
@@ -90,26 +92,29 @@ const std::string GetTypeName() {
 
 #ifdef __CCE_KT_TEST__
 // CPU孪生调试时支持打印
-#define RUN_LOG(...)                                                         \
-  if (GetBlockIdx() == 0) {                                                  \
-    RUN_LOG_ONE_BLOCK(__VA_ARGS__);                                          \
-  }
+#define RUN_LOG(...)                    \
+    if (GetBlockIdx() == 0) {           \
+        RUN_LOG_ONE_BLOCK(__VA_ARGS__); \
+    }
 
 template <typename T, T v>
 struct Print2 {
-  constexpr operator char() { return 1 + 0xFF; }
+    constexpr operator char()
+    {
+        return 1 + 0xFF;
+    }
 };
 #define BUILD_LOG(...) char UNIQUE_NAME(print_value_) = Print2<__VA_ARGS__>()
 
-#else  // __CCE_KT_TEST__
+#else // __CCE_KT_TEST__
 #ifdef __ATP_UT__
-#define RUN_LOG(...)   Ops::Base::RUN_LOG_ONE_BLOCK(__VA_ARGS__)
-#else  // __ATP_UT__
+#define RUN_LOG(...) RUN_LOG_ONE_BLOCK(__VA_ARGS__)
+#else // __ATP_UT__
 // 实际编译Kernel时不打印
 #define RUN_LOG(...)
 #endif // __ATP_UT__
 #define BUILD_LOG(...)
-#endif  // __CCE_KT_TEST__
+#endif // __CCE_KT_TEST__
 } // namespace Base
 } // namespace Ops
-#endif  // UTIL_LOG_H_
+#endif // UTIL_LOG_H_
