@@ -874,23 +874,11 @@ static bool NnopbaseExecutorCachedArgs(NnopbaseExecutor *executor)
         // 老流程add io时tensor是添加到ownArgs上，此时也需要更新args上的io地址
         UpdateArgsIoAddr(&executor->args->inputs, &executor->ownArgs.inputs);
         UpdateArgsIoAddr(&executor->args->outputs, &executor->ownArgs.outputs);
-        if (!executor->ownArgs.inputs.unContiguousTensors.idxs.empty()) {
-                executor->args->inputs.unContiguousTensors.idxs = executor->ownArgs.inputs.unContiguousTensors.idxs;
-                executor->args->inputs.unContiguousTensors.workspaceOffsets = executor->ownArgs.inputs.unContiguousTensors.workspaceOffsets;
-                executor->args->inputs.unContiguousTensors.tensors = executor->ownArgs.inputs.unContiguousTensors.tensors;
-                executor->args->inputs.unContiguousTensors.tensorList = executor->ownArgs.inputs.unContiguousTensors.tensorList;
-        }
-        // ref算子非连续tensor地址也要刷新
-        if (!executor->ownArgs.inputs.unContiguousTensors.refIdxs.empty()) {
-            executor->args->inputs.unContiguousTensors.refIdxs = executor->ownArgs.inputs.unContiguousTensors.refIdxs;
-            executor->args->inputs.unContiguousTensors.refUnContTensors = executor->ownArgs.inputs.unContiguousTensors.refUnContTensors;
-            executor->args->inputs.unContiguousTensors.refContTensors = executor->ownArgs.inputs.unContiguousTensors.refContTensors;
-        }
+        UpdateArgsUncontiguousTensor(executor->args->inputs.unContiguousTensors, executor->ownArgs.inputs.unContiguousTensors);
         if ((executor->args->binInfo->initValues.size() != 0U)) {
             executor->hasMemset =
                 executor->args->binInfo->isStaticShape ? true : executor->args->tilingInfo.needAtomic;
         }
-
         NnopbaseExecutorCopyCacheAttr(executor);
         return true;
     }

@@ -1422,12 +1422,11 @@ aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor)
         verKey = NnopbaseAppendBinary(
             verKey, static_cast<size_t>(executor->binInfoKey.bufLen),
             &(executor->regInfo->key.opType[0U]), executor->regInfo->key.opType.size());
-        verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.deterministic));
-        verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.precision));
     } else {
-        verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size() +
-            NNOPBASE_OP_VERB_HEAD_LEN * sizeof(uint64_t);
+        verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
     }
+    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.deterministic));
+    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.precision));
     OP_LOGI("Op %s HighPrecision value is %d, Deterministic value is %d", executor->opType,
             g_nnopbaseSysCfgParams.precision, g_nnopbaseSysCfgParams.deterministic);
 
