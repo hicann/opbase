@@ -1209,8 +1209,8 @@ private:
 
     aclnnStatus AppendAICErrorDFXInfoToTilingData(TilingData *tilingData, const uint64_t dfxInfoDumpIndex) const
     {
-        CHECK_RET_CODE(CheckDataRemainCapacity(tilingData->capacity_, tilingData->data_size_, UINT64_BYTES),
-            "Tiling data capacity not enough");
+        auto ret = CheckDataRemainCapacity(tilingData->capacity_, tilingData->data_size_, UINT64_BYTES);
+        OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Tiling data capacity not enough"), return ret);
         *PtrCastTo<uint64_t>(PtrShift(tilingData->data_, tilingData->data_size_)) = dfxInfoDumpIndex;
         tilingData->data_size_ += UINT64_BYTES;
         return ACLNN_SUCCESS;

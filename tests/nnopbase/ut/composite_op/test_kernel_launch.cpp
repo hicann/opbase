@@ -627,14 +627,19 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     auto input_arg = OP_INPUT(inputTensor);
     auto output_arg = OP_OUTPUT(out);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    // LAUNCH_ARG_SIZE = 128KB，用于存放 kernel launch args
     size_t tilingDataLen = 100;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    // Seek 到 tiling data 的起始位置，预留 args 空间
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
+    // 此时 tilingData 指向 buffer 基址 + sizeof(TilingData) + LAUNCH_ARG_SIZE
 
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
- 
+
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
     op::internal::RtsArg arg(true, argInfo, 900, &buffer);
     arg.FillArgs();
@@ -685,11 +690,13 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 100;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, true, ctx);
     op::internal::RtsArg arg(true, argInfo, 900, &buffer);
@@ -713,23 +720,25 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
     PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend910_93", "Ascend910_9391");
     op::Shape selfShape{100};
     op::Shape outShape{100};
- 
+
     aclOpExecutor exe;
- 
+
     int64_t inputData[100];
     auto self = exe.AllocIntArray(inputData, 100);
     auto out = exe.AllocTensor(outShape, op::DataType::DT_INT32);
     auto inputTensor = exe.ConvertToTensor(self, op::DataType::DT_INT32);
- 
+
     auto input_arg = OP_INPUT(inputTensor);
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
- 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 100;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
     op::internal::RtsArg arg(true, argInfo, 900, &buffer);

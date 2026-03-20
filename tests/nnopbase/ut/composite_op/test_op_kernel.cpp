@@ -44,6 +44,7 @@ using Json = nlohmann::json;
 using namespace op::internal;
 
 extern "C" void InitPTACacheThreadLocal();
+extern inline uint32_t SortOpTypeId();
 
 class OpKernelUT : public testing::Test {
 protected:
@@ -52,6 +53,7 @@ protected:
         // aclInit(nullptr)
         setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1); // does overwrite
         GetThreadLocalContext().cacheHasFull_ = true;
+        SortOpTypeId();
     }
 
     static void TearDownTestCase() {}
@@ -340,11 +342,13 @@ TEST_F(OpKernelUT, LaunchArgCacheTest) {
     rec = kernelBin.JsonLoad();
     EXPECT_EQ(rec, ACLNN_SUCCESS);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     auto ctx = op::MakeOpArgContext(input, output);
     LaunchArgInfo argInfo(
@@ -714,11 +718,13 @@ TEST_F(OpKernelUT, TestDoLaunchWithSplitAicAndAiv) {
     rec = kernelBin.JsonLoad();
     EXPECT_EQ(rec, ACLNN_SUCCESS);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
  
     auto ctx = op::MakeOpArgContext(input, output);
     LaunchArgInfo argInfo(
@@ -1142,11 +1148,15 @@ TEST_F(OpKernelUT, AssertExceptionDump)
     auto ctx = op::MakeOpArgContext(input, output, attr, mode);
     ctx->AppendOpWorkspaceArg(inputList);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
+    // LAUNCH_ARG_SIZE = 128KB，用于存放 kernel launch args
     size_t tilingDataLen = 100;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    // Seek 到 tiling data 的起始位置，预留 args 空间
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
     op::internal::RtsArg arg(true, argInfo, 800, &buffer);

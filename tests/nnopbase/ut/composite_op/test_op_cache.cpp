@@ -208,11 +208,13 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
@@ -252,11 +254,13 @@ TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
@@ -321,11 +325,13 @@ TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, tilingDataLen, false, false, ctx);
@@ -358,11 +364,13 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
     op::internal::RtsArg arg(true, argInfo, 900, &buffer);
@@ -520,11 +528,13 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, true, ctx);
     op::internal::RtsArg arg(true, argInfo, 900, &buffer);
@@ -558,11 +568,13 @@ TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(
         tilingData, 0, false, false, ctx);
@@ -1097,11 +1109,13 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
+    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
     size_t tilingDataLen = 32;
+    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
+    op::internal::ExtendedTilingBuffer buffer;
+    buffer.Init(bufferSize);
+    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
+    void *tilingData = buffer.Data();
 
     op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
     op::internal::RtsArg arg(true, argInfo, 900, &buffer);

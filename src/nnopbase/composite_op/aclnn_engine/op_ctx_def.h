@@ -65,6 +65,8 @@ struct KernelExtendInfo {
     const ge::char_t *kernel_type_;
 };
 
+struct TilingData;
+
 struct ExtendedTilingBuffer {
 public:
     ExtendedTilingBuffer() = default;
@@ -89,6 +91,30 @@ public:
     void *Data() const
     {
         return static_cast<uint8_t *>(addr_) + offset_;
+    }
+
+    // Get the base address of the buffer
+    void *BaseAddr() const
+    {
+        return addr_;
+    }
+
+    // Get the current offset
+    off_t GetOffset() const
+    {
+        return offset_;
+    }
+
+    // Set the TilingData pointer to be updated when buffer enlarges
+    void SetTilingDataPtr(TilingData **tilingDataPtr)
+    {
+        tilingDataPtr_ = tilingDataPtr;
+    }
+
+    // Set the TilingCtxOutput::tilingData_ pointer to be updated when buffer enlarges
+    void SetTilingOutputDataPtr(TilingData **tilingOutputDataPtr)
+    {
+        tilingOutputDataPtr_ = tilingOutputDataPtr;
     }
 
     aclnnStatus Append(const void *data, size_t len)
@@ -131,29 +157,13 @@ public:
     }
 
 private:
-    aclnnStatus Enlarge(size_t size)
-    {
-        OP_CHECK(size_ != 0, OP_LOGE(ACLNN_ERR_INNER, "Current size is 0."), return ACLNN_ERR_INNER);
-        constexpr size_t DOUBLE = 2;
-        size_t newSize = size_;
-        while (newSize < size) {
-            newSize *= DOUBLE;
-        }
-        void *newAddr = std::malloc(newSize);
-        OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", newSize),
-            return ACLNN_ERR_INNER);
-        OP_CHECK(memcpy_s(newAddr, size_, addr_, size_) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
-            std::free(newAddr);
-            return ACLNN_ERR_INNER);
-        std::free(addr_);
-        addr_ = newAddr;
-        size_ = newSize;
-        return ACLNN_SUCCESS;
-    }
+    aclnnStatus Enlarge(size_t size);
 
     void *addr_{ nullptr };
     off_t offset_{ 0 };
     size_t size_{ 0 };
+    TilingData **tilingDataPtr_{ nullptr };       // Pointer to TilingCtxHolder::tilingData_
+    TilingData **tilingOutputDataPtr_{ nullptr }; // Pointer to TilingCtxOutput::tilingData_
 };
 
 struct TilingData {
@@ -163,6 +173,45 @@ struct TilingData {
     ExtendedTilingBuffer *buffer_;
     uint8_t reserved_[32];
 };
+
+// Constants used by ExtendedTilingBuffer::Enlarge
+constexpr size_t LAUNCH_ARG_SIZE = 128 * 1024;      // kernel launch arg size before tiling data
+
+// Implementation of ExtendedTilingBuffer::Enlarge, must be after TilingData definition
+inline aclnnStatus ExtendedTilingBuffer::Enlarge(size_t size)
+{
+    OP_CHECK(size_ != 0, OP_LOGE(ACLNN_ERR_INNER, "Current size is 0."), return ACLNN_ERR_INNER);
+    constexpr size_t DOUBLE = 2;
+    size_t newSize = size_;
+    while (newSize < size) {
+        newSize *= DOUBLE;
+    }
+    OP_LOGI("ExtendedTilingBuffer Enlarge, current size: %zu, new size: %zu", size_, newSize);
+    void *newAddr = std::malloc(newSize);
+    OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", newSize),
+        return ACLNN_ERR_INNER);
+    OP_CHECK(memcpy_s(newAddr, newSize, addr_, size_) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
+        std::free(newAddr);
+        return ACLNN_ERR_INNER);
+    std::free(addr_);
+    addr_ = newAddr;
+    size_ = newSize;
+
+    // Update the TilingData pointer if registered
+    if (tilingDataPtr_ != nullptr && *tilingDataPtr_ != nullptr) {
+        *tilingDataPtr_ = static_cast<TilingData *>(addr_);
+        // Also update the data_ pointer inside TilingData
+        (*tilingDataPtr_)->data_ = static_cast<uint8_t *>(addr_) + sizeof(TilingData) + LAUNCH_ARG_SIZE;
+        OP_LOGI("ExtendedTilingBuffer updated TilingData ptr to %p, data_ to %p",
+                *tilingDataPtr_, (*tilingDataPtr_)->data_);
+    }
+    // Update the TilingCtxOutput::tilingData_ pointer if registered
+    if (tilingOutputDataPtr_ != nullptr) {
+        *tilingOutputDataPtr_ = static_cast<TilingData *>(addr_);
+        OP_LOGI("ExtendedTilingBuffer updated TilingCtxOutput::tilingData_ ptr to %p", *tilingOutputDataPtr_);
+    }
+    return ACLNN_SUCCESS;
+}
 
 // Tiling output
 struct TilingCtxOutput {
@@ -180,7 +229,6 @@ struct TilingCtxOutput {
 };
 
 constexpr size_t MAX_WORKSPACE_NUM = 64;            // max number of op workspace
-constexpr size_t LAUNCH_ARG_SIZE = 128 * 1024;      // kernel launch arg size before tiling data
 constexpr size_t MAX_TILING_DATA_SIZE = 800 * 1024; // max raw tiling data size
 
 // MAX_ATTR_STRING_SIZE limit has been removed. String attr capacity is now dynamically managed.
