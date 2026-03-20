@@ -596,7 +596,7 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stre
         }
         if (dynUBufSize != 0U) {
             aclrtLaunchKernelAttr simtModeAttr = {
-                .id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE,
+                .id = static_cast<aclrtLaunchKernelAttrId>(INDV_LAUNCH_KERNEL_RTS_DYN_UBUF_SIZE),
                 .value = { .localMemorySize = dynUBufSize },
             };
             attrs.push_back(simtModeAttr);
