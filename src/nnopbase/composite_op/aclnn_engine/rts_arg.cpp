@@ -400,7 +400,7 @@ aclnnStatus RtsArg::AppendHostArg(void *hostData, size_t hostDataSize)
     off_t hostAddrOffset = PtrOffset(GetExtendedTilingBuffer()->BaseAddr(), hostAddr_);
 
     // Record data start position using offset (will be recalculated if buffer enlarges)
-    void *dataStart = GetExtendedTilingBuffer()->Data();
+    uint8_t *dataStart = static_cast<uint8_t *>(GetExtendedTilingBuffer()->Data());
 
     CHECK_RET_CODE(GetExtendedTilingBuffer()->Seek(alignLen), "failed to seek buffer, len %zu.", alignLen);
     void *newBase = GetExtendedTilingBuffer()->BaseAddr();
@@ -447,7 +447,7 @@ aclnnStatus RtsArg::AppendDevicePtrArg(const aclTensorList *tensors, size_t data
     off_t hostAddrOffset = PtrOffset(static_cast<void *>(static_cast<uint8_t *>(oldBase) + argsOffset), hostAddr_);
     off_t dataStartOffset = GetExtendedTilingBuffer()->GetOffset();
 
-    void *dataStart = GetExtendedTilingBuffer()->Data();
+    uint8_t *dataStart = static_cast<uint8_t *>(GetExtendedTilingBuffer()->Data());
 
     int64_t *dataPtr = PtrCastTo<int64_t>(dataStart);
     OP_CHECK(GetExtendedTilingBuffer()->Seek(alignSize) == ACLNN_SUCCESS,
