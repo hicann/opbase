@@ -318,6 +318,7 @@ aclnnStatus NnopbaseUpdateOutputAddr(NnopbaseTensors *dstTensors, NnopbaseTensor
 aclnnStatus NnopbaseAddIoTensors(NnopbaseExecutor *executor);
 void NnopbaseClearParamInstance(NnopbaseTensors *tensors);
 aclnnStatus UpdateArgsIoAddr(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors);
+void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors &dstUncontTensors, NnopbaseUnContTensors &srcUncontTensors);
 bool NnopbasIsEnableNewCache(const NnopbaseExecutor *executor);
 void NnopbaseCheckHasContiguous(NnopbaseExecutor *executor);
 void NnopbaseSaveUnContiguousTensors(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors);

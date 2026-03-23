@@ -347,6 +347,20 @@ aclnnStatus UpdateArgsIoAddr(NnopbaseTensors *dstTensors, NnopbaseTensors *tenso
     return OK;
 }
 
+void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors &dstUncontTensors, NnopbaseUnContTensors &srcUncontTensors)
+{
+    // 刷新非连续tensor地址
+    dstUncontTensors.idxs = srcUncontTensors.idxs;
+    dstUncontTensors.workspaceOffsets = srcUncontTensors.workspaceOffsets;
+    dstUncontTensors.tensors = srcUncontTensors.tensors;
+    dstUncontTensors.tensorList = srcUncontTensors.tensorList;
+    // ref算子非连续tensor地址刷新
+    // refContTensorList和refUnContTensorList在NnopbaseRunForWorkspace后的NnopbaseGetRefUnContiguousTensors里刷新
+    dstUncontTensors.refIdxs = srcUncontTensors.refIdxs;
+    dstUncontTensors.refUnContTensors = srcUncontTensors.refUnContTensors;
+    dstUncontTensors.refContTensors = srcUncontTensors.refContTensors;
+}
+
 bool NnopbasIsEnableNewCache(const NnopbaseExecutor *executor)
 {
     return ((executor->matchArgsV2) && (g_nnopbaseSysCfgParams.enableArgsCache) &&
