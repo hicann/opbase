@@ -50,6 +50,7 @@ static constexpr int32_t INFO_TYPE_CORE_NUM = 3;
 static constexpr size_t NNOPBAE_AICPU_PARAM_LEN = 32U;
 static const std::string NNOPBAE_MC2_AICPU_SUFFIX = "Mc2AicpuKernel";
 constexpr size_t NNOPBASE_BLOCK_SIZE = 32U;
+constexpr int32_t INDV_LAUNCH_KERNEL_RTS_DYN_UBUF_SIZE = 2;
 
 constexpr uint64_t MAX_DIM_NUM = 25;
 struct NnopbaseExecutorSpace;

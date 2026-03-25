@@ -59,7 +59,7 @@ std::vector<aclrtLaunchKernelAttr> CreateRtsLaunchCfgAttrs(uint8_t scheMode, uin
         attrs.push_back(numBlocksOffsetAttr);
     } else {
         aclrtLaunchKernelAttr simtModeAttr = {
-            .id = ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE,
+            .id = static_cast<aclrtLaunchKernelAttrId>(INDV_LAUNCH_KERNEL_RTS_DYN_UBUF_SIZE),
             .value = { .localMemorySize = dynUbufSize },
         };
         attrs.push_back(simtModeAttr);
