@@ -76,7 +76,15 @@ inline bool IsComplexType(const ge::DataType type) {
 inline bool IsFloatingType(const ge::DataType type)
 {
     return (type == ge::DataType::DT_DOUBLE || type == ge::DataType::DT_FLOAT || type == ge::DataType::DT_BF16
-        || type == ge::DataType::DT_FLOAT16);
+        || type == ge::DataType::DT_FLOAT16
+        || type == ge::DataType::DT_HIFLOAT8
+        || type == ge::DataType::DT_FLOAT8_E5M2
+        || type == ge::DataType::DT_FLOAT8_E4M3FN
+        || type == ge::DataType::DT_FLOAT8_E8M0
+        || type == ge::DataType::DT_FLOAT6_E3M2
+        || type == ge::DataType::DT_FLOAT6_E2M3
+        || type == ge::DataType::DT_FLOAT4_E2M1
+        || type == ge::DataType::DT_FLOAT4_E1M2);
 }
 
 inline bool IsIntegralType(const ge::DataType type)

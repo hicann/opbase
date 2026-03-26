@@ -22,6 +22,14 @@
 
 namespace op {
 struct bfloat16;
+struct Float8E4M3FN;
+struct Float8E5M2;
+struct Float8E8M0;
+struct Float6E3M2;
+struct Float6E2M3;
+struct Float4E2M1;
+struct Float4E1M2;
+struct HiFloat4;
 
 const uint16_t DIM_0 = 0;
 const uint16_t DIM_1 = 1;
@@ -677,6 +685,16 @@ public:
     operator int64_t() const;
     operator uint64_t() const;
     operator bool() const;
+
+    // Conversion operators to float8/float6/float4 types
+    operator Float8E4M3FN() const;
+    operator Float8E5M2() const;
+    operator Float8E8M0() const;
+    operator Float6E3M2() const;
+    operator Float6E2M3() const;
+    operator Float4E2M1() const;
+    operator Float4E1M2() const;
+    operator HiFloat4() const;
     /**
    * @ingroup fp16_t judgment method
    * @param [in] fp fp16_t object to be judgement

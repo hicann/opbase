@@ -14,6 +14,14 @@
  */
 #include "opdev/fp16_t.h"
 #include "opdev/bfloat16.h"
+#include "opdev/float8_e4m3fn.h"
+#include "opdev/float8_e5m2.h"
+#include "opdev/float8_e8m0.h"
+#include "opdev/float6_e3m2.h"
+#include "opdev/float6_e2m3.h"
+#include "opdev/float4_e2m1.h"
+#include "opdev/float4_e1m2.h"
+#include "opdev/hifloat4.h"
 
 namespace op {
 /**
@@ -1425,6 +1433,47 @@ fp16_t::operator bfloat16() const
 tagFp16::tagFp16(const op::bfloat16 &value)
 {
     *this = static_cast<float>(value);
+}
+
+// Conversion operators to float8/float6/float4 types
+fp16_t::operator Float8E4M3FN() const
+{
+    return Float8E4M3FN(static_cast<float>(*this));
+}
+
+fp16_t::operator Float8E5M2() const
+{
+    return Float8E5M2(static_cast<float>(*this));
+}
+
+fp16_t::operator Float8E8M0() const
+{
+    return Float8E8M0(static_cast<float>(*this));
+}
+
+fp16_t::operator Float6E3M2() const
+{
+    return Float6E3M2(static_cast<float>(*this));
+}
+
+fp16_t::operator Float6E2M3() const
+{
+    return Float6E2M3(static_cast<float>(*this));
+}
+
+fp16_t::operator Float4E2M1() const
+{
+    return Float4E2M1(static_cast<float>(*this));
+}
+
+fp16_t::operator Float4E1M2() const
+{
+    return Float4E1M2(static_cast<float>(*this));
+}
+
+fp16_t::operator HiFloat4() const
+{
+    return HiFloat4(static_cast<float>(*this));
 }
 
 } // namespace op

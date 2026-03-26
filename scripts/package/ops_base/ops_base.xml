@@ -71,9 +71,17 @@
         <file value="common_types.h" install_mod="550"/>
         <file value="data_type_utils.h" install_mod="550"/>
         <file value="fast_vector.h" install_mod="550"/>
+        <file value="float4_e1m2.h" install_mod="550"/>
+        <file value="float4_e2m1.h" install_mod="550"/>
+        <file value="float6_e2m3.h" install_mod="550"/>
+        <file value="float6_e3m2.h" install_mod="550"/>
+        <file value="float8_e4m3fn.h" install_mod="550"/>
+        <file value="float8_e5m2.h" install_mod="550"/>
+        <file value="float8_e8m0.h" install_mod="550"/>
         <file value="format_utils.h" install_mod="550"/>
         <file value="fp16_t.h" install_mod="550"/>
         <file value="framework_op.h" install_mod="550"/>
+        <file value="hifloat4.h" install_mod="550"/>
         <file value="make_op_executor.h" install_mod="550"/>
         <file value="object.h" install_mod="550"/>
         <file value="op_arg_def.h" install_mod="550"/>

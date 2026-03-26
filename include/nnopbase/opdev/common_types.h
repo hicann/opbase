@@ -15,16 +15,30 @@
 #include <securec.h>
 #include <unordered_set>
 #include <type_traits>
-
 #include <complex>
 
+#include "acl/acl_base.h"
 #include "exe_graph/runtime/tensor.h"
+#include "exe_graph/runtime/shape.h"
+#include "exe_graph/runtime/storage_shape.h"
+#include "exe_graph/runtime/storage_format.h"
+#include "exe_graph/runtime/tensor_data.h"
+#include "graph/ascend_string.h"
+#include "graph/types.h"
+
 #include "fast_vector.h"
 #include "fp16_t.h"
 #include "bfloat16.h"
+#include "float8_e5m2.h"
+#include "float8_e4m3fn.h"
+#include "float8_e8m0.h"
+#include "float6_e3m2.h"
+#include "float6_e2m3.h"
+#include "float4_e2m1.h"
+#include "float4_e1m2.h"
+#include "hifloat4.h"
 #include "object.h"
 #include "op_def.h"
-#include "graph/ascend_string.h"
 
 namespace op {
 constexpr uint64_t MAX_DIM_NUM = 25;
@@ -206,6 +220,14 @@ public:
     void SetFloatData(const float *value, uint64_t size, op::DataType dataType);
     void SetFp16Data(const op::fp16_t *value, uint64_t size, op::DataType dataType);
     void SetBf16Data(const op::bfloat16 *value, uint64_t size, op::DataType dataType);
+    void SetFloat8E5M2Data(const op::Float8E5M2 *value, uint64_t size, op::DataType dataType);
+    void SetFloat8E4M3FNData(const op::Float8E4M3FN *value, uint64_t size, op::DataType dataType);
+    void SetFloat8E8M0Data(const op::Float8E8M0 *value, uint64_t size, op::DataType dataType);
+    void SetFloat6E3M2Data(const op::Float6E3M2 *value, uint64_t size, op::DataType dataType);
+    void SetFloat6E2M3Data(const op::Float6E2M3 *value, uint64_t size, op::DataType dataType);
+    void SetFloat4E2M1Data(const op::Float4E2M1 *value, uint64_t size, op::DataType dataType);
+    void SetFloat4E1M2Data(const op::Float4E1M2 *value, uint64_t size, op::DataType dataType);
+    void SetHiFloat4Data(const op::HiFloat4 *value, uint64_t size, op::DataType dataType);
     void InitTensor(const int64_t *viewDims, uint64_t viewDimsNum, aclDataType dataType,
                     const int64_t *stride, int64_t offset, aclFormat format,
                     const int64_t *storageDims, uint64_t storageDimsNum,
@@ -297,6 +319,14 @@ public:
     uint64_t ToUint64() const;
     op::fp16_t ToFp16() const;
     op::bfloat16 ToBf16() const;
+    op::Float8E5M2 ToFloat8E5M2() const;
+    op::Float8E4M3FN ToFloat8E4M3FN() const;
+    op::Float8E8M0 ToFloat8E8M0() const;
+    op::Float6E3M2 ToFloat6E3M2() const;
+    op::Float6E2M3 ToFloat6E2M3() const;
+    op::Float4E2M1 ToFloat4E2M1() const;
+    op::Float4E1M2 ToFloat4E1M2() const;
+    op::HiFloat4 ToHiFloat4() const;
     std::complex<float> ToComplex64() const;
     std::complex<double> ToComplex128() const;
     ge::AscendString ToString() const;
@@ -321,6 +351,14 @@ private:
     explicit aclScalar(double value);
     explicit aclScalar(op::fp16_t value);
     explicit aclScalar(op::bfloat16 value);
+    explicit aclScalar(op::Float8E5M2 value);
+    explicit aclScalar(op::Float8E4M3FN value);
+    explicit aclScalar(op::Float8E8M0 value);
+    explicit aclScalar(op::Float6E3M2 value);
+    explicit aclScalar(op::Float6E2M3 value);
+    explicit aclScalar(op::Float4E2M1 value);
+    explicit aclScalar(op::Float4E1M2 value);
+    explicit aclScalar(op::HiFloat4 value);
     explicit aclScalar(bool value);
     template<typename T>
     T To() const;

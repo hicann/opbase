@@ -377,6 +377,20 @@ aclTensor::aclTensor(const aclScalar *value, op::DataType dataType)
             break;
         case op::DataType::DT_COMPLEX128:*static_cast<std::complex<double> *>(dataAddr) = value->ToComplex128();
             break;
+        case op::DataType::DT_FLOAT8_E5M2:*static_cast<uint8_t *>(dataAddr) = value->ToFloat8E5M2().value;
+            break;
+        case op::DataType::DT_FLOAT8_E4M3FN:*static_cast<uint8_t *>(dataAddr) = value->ToFloat8E4M3FN().value;
+            break;
+        case op::DataType::DT_FLOAT8_E8M0:*static_cast<uint8_t *>(dataAddr) = value->ToFloat8E8M0().value;
+            break;
+        case op::DataType::DT_FLOAT6_E3M2:*static_cast<uint8_t *>(dataAddr) = value->ToFloat6E3M2().value;
+            break;
+        case op::DataType::DT_FLOAT6_E2M3:*static_cast<uint8_t *>(dataAddr) = value->ToFloat6E2M3().value;
+            break;
+        case op::DataType::DT_FLOAT4_E2M1:*static_cast<uint8_t *>(dataAddr) = value->ToFloat4E2M1().value;
+            break;
+        case op::DataType::DT_FLOAT4_E1M2:*static_cast<uint8_t *>(dataAddr) = value->ToFloat4E1M2().value;
+            break;
         default:
             OP_CHECK(memset_s(dataAddr, typeSize, 0, typeSize) == EOK,
                 OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "memset_s failed."),
@@ -655,15 +669,28 @@ void aclTensor::InitTensor(const int64_t *viewDims, uint64_t viewDimsNum, aclDat
 template<typename T, typename dataType>
 static void SetDataByDataType(int64_t index, void *dataAddr, const T value){
     dataType* tmpDataAddr = static_cast<dataType *>(dataAddr);
-    *(tmpDataAddr + index) = static_cast<dataType>(value);
+    if constexpr (op::internal::IsCustomFloat<typename std::decay<T>::type>::value) {
+        // For custom float types, convert through double to avoid ambiguity
+        *(tmpDataAddr + index) = static_cast<dataType>(static_cast<double>(value));
+    } else {
+        *(tmpDataAddr + index) = static_cast<dataType>(value);
+    }
 }
 
 template<typename T>
 static void SetDataByBool(int64_t index, void *dataAddr, const T value){
     auto tmpDataAddr = static_cast<bool *>(dataAddr);
     if constexpr (std::is_floating_point<T>::value ||
-        std::is_same<op::fp16_t, typename std::decay<T>::type>::value) {
-        *(tmpDataAddr + index) = std::abs(value) >= std::numeric_limits<float>::epsilon();
+        std::is_same<op::fp16_t, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float8E5M2, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float8E4M3FN, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float8E8M0, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float6E3M2, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float6E2M3, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float4E2M1, typename std::decay<T>::type>::value ||
+        std::is_same<op::Float4E1M2, typename std::decay<T>::type>::value ||
+        std::is_same<op::HiFloat4, typename std::decay<T>::type>::value) {
+        *(tmpDataAddr + index) = std::abs(static_cast<float>(value)) >= std::numeric_limits<float>::epsilon();
     } else {
         *(tmpDataAddr + index) = static_cast<bool>(value);
     }
@@ -761,6 +788,46 @@ void aclTensor::SetFp16Data(const op::fp16_t *value, uint64_t size, op::DataType
 }
 
 void aclTensor::SetBf16Data(const op::bfloat16 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat8E5M2Data(const op::Float8E5M2 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat8E4M3FNData(const op::Float8E4M3FN *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat8E8M0Data(const op::Float8E8M0 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat6E3M2Data(const op::Float6E3M2 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat6E2M3Data(const op::Float6E2M3 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat4E2M1Data(const op::Float4E2M1 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetFloat4E1M2Data(const op::Float4E1M2 *value, uint64_t size, op::DataType dataType)
+{
+    SetData(value, size, dataType);
+}
+
+void aclTensor::SetHiFloat4Data(const op::HiFloat4 *value, uint64_t size, op::DataType dataType)
 {
     SetData(value, size, dataType);
 }
@@ -981,6 +1048,48 @@ T aclScalar::To() const
             }
         case op::DataType::DT_BF16:
             return static_cast<T>(BFloat16());
+        case op::DataType::DT_FLOAT8_E5M2:
+            if constexpr (std::is_same<op::Float8E5M2, typename std::decay<T>::type>::value) {
+                return op::Float8E5M2(v.ui8, op::Float8E5M2::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float8E5M2(v.ui8, op::Float8E5M2::FromBits())));
+            }
+        case op::DataType::DT_FLOAT8_E4M3FN:
+            if constexpr (std::is_same<op::Float8E4M3FN, typename std::decay<T>::type>::value) {
+                return op::Float8E4M3FN(v.ui8, op::Float8E4M3FN::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float8E4M3FN(v.ui8, op::Float8E4M3FN::FromBits())));
+            }
+        case op::DataType::DT_FLOAT8_E8M0:
+            if constexpr (std::is_same<op::Float8E8M0, typename std::decay<T>::type>::value) {
+                return op::Float8E8M0(v.ui8, op::Float8E8M0::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float8E8M0(v.ui8, op::Float8E8M0::FromBits())));
+            }
+        case op::DataType::DT_FLOAT6_E3M2:
+            if constexpr (std::is_same<op::Float6E3M2, typename std::decay<T>::type>::value) {
+                return op::Float6E3M2(v.ui8, op::Float6E3M2::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float6E3M2(v.ui8, op::Float6E3M2::FromBits())));
+            }
+        case op::DataType::DT_FLOAT6_E2M3:
+            if constexpr (std::is_same<op::Float6E2M3, typename std::decay<T>::type>::value) {
+                return op::Float6E2M3(v.ui8, op::Float6E2M3::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float6E2M3(v.ui8, op::Float6E2M3::FromBits())));
+            }
+        case op::DataType::DT_FLOAT4_E2M1:
+            if constexpr (std::is_same<op::Float4E2M1, typename std::decay<T>::type>::value) {
+                return op::Float4E2M1(v.ui8, op::Float4E2M1::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float4E2M1(v.ui8, op::Float4E2M1::FromBits())));
+            }
+        case op::DataType::DT_FLOAT4_E1M2:
+            if constexpr (std::is_same<op::Float4E1M2, typename std::decay<T>::type>::value) {
+                return op::Float4E1M2(v.ui8, op::Float4E1M2::FromBits());
+            } else {
+                return static_cast<T>(static_cast<float>(op::Float4E1M2(v.ui8, op::Float4E1M2::FromBits())));
+            }
         case op::DataType::DT_INT8: return static_cast<T>(v.i8);
         case op::DataType::DT_INT16: return static_cast<T>(v.i16);
         case op::DataType::DT_UINT16:
@@ -1036,7 +1145,7 @@ T aclScalar::To() const
         case op::DataType::DT_INT2:
         case op::DataType::DT_UINT2:
         default:OP_LOGW("no supported data type[%s].", op::ToString(dataType_).GetString());
-            return 0;
+            return T{};
     }
 }
 
@@ -1046,6 +1155,20 @@ ge::AscendString aclScalar::ToStr() const
         case op::DataType::DT_FLOAT: return ge::AscendString(std::to_string(v.f).c_str());
         case op::DataType::DT_FLOAT16: return ge::AscendString(std::to_string(op::fp16_t(v.ui16).toFloat()).c_str());
         case op::DataType::DT_BF16:return ge::AscendString(std::to_string(static_cast<float>(BFloat16())).c_str());
+        case op::DataType::DT_FLOAT8_E5M2:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float8E5M2(v.ui8, op::Float8E5M2::FromBits()))).c_str());
+        case op::DataType::DT_FLOAT8_E4M3FN:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float8E4M3FN(v.ui8, op::Float8E4M3FN::FromBits()))).c_str());
+        case op::DataType::DT_FLOAT8_E8M0:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float8E8M0(v.ui8, op::Float8E8M0::FromBits()))).c_str());
+        case op::DataType::DT_FLOAT6_E3M2:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float6E3M2(v.ui8, op::Float6E3M2::FromBits()))).c_str());
+        case op::DataType::DT_FLOAT6_E2M3:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float6E2M3(v.ui8, op::Float6E2M3::FromBits()))).c_str());
+        case op::DataType::DT_FLOAT4_E2M1:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float4E2M1(v.ui8, op::Float4E2M1::FromBits()))).c_str());
+        case op::DataType::DT_FLOAT4_E1M2:
+            return ge::AscendString(std::to_string(static_cast<float>(op::Float4E1M2(v.ui8, op::Float4E1M2::FromBits()))).c_str());
         case op::DataType::DT_INT8: return ge::AscendString(std::to_string(v.i8).c_str());
         case op::DataType::DT_INT16: return ge::AscendString(std::to_string(v.i16).c_str());
         case op::DataType::DT_UINT16: return ge::AscendString(std::to_string(v.ui16).c_str());
@@ -1152,6 +1275,46 @@ std::complex<double> aclScalar::ToComplex128() const
     return To<std::complex<double>>();
 }
 
+op::Float8E5M2 aclScalar::ToFloat8E5M2() const
+{
+    return To<op::Float8E5M2>();
+}
+
+op::Float8E4M3FN aclScalar::ToFloat8E4M3FN() const
+{
+    return To<op::Float8E4M3FN>();
+}
+
+op::Float8E8M0 aclScalar::ToFloat8E8M0() const
+{
+    return To<op::Float8E8M0>();
+}
+
+op::Float6E3M2 aclScalar::ToFloat6E3M2() const
+{
+    return To<op::Float6E3M2>();
+}
+
+op::Float6E2M3 aclScalar::ToFloat6E2M3() const
+{
+    return To<op::Float6E2M3>();
+}
+
+op::Float4E2M1 aclScalar::ToFloat4E2M1() const
+{
+    return To<op::Float4E2M1>();
+}
+
+op::Float4E1M2 aclScalar::ToFloat4E1M2() const
+{
+    return To<op::Float4E1M2>();
+}
+
+op::HiFloat4 aclScalar::ToHiFloat4() const
+{
+    return To<op::HiFloat4>();
+}
+
 aclScalar::aclScalar(const void *data, op::DataType dataType)
 {
     dataType_ = dataType;
@@ -1171,6 +1334,13 @@ aclScalar::aclScalar(const void *data, op::DataType dataType)
         case op::DataType::DT_DOUBLE:v.d = *static_cast<const double *>(data); break;
         case op::DataType::DT_COMPLEX64:v.complex64 = *static_cast<const std::complex<float> *>(data); break;
         case op::DataType::DT_COMPLEX128:v.complex128 = *static_cast<const std::complex<double> *>(data); break;
+        case op::DataType::DT_FLOAT8_E5M2:v.ui8 = *static_cast<const uint8_t *>(data); break;
+        case op::DataType::DT_FLOAT8_E4M3FN:v.ui8 = *static_cast<const uint8_t *>(data); break;
+        case op::DataType::DT_FLOAT8_E8M0:v.ui8 = *static_cast<const uint8_t *>(data); break;
+        case op::DataType::DT_FLOAT6_E3M2:v.ui8 = *static_cast<const uint8_t *>(data); break;
+        case op::DataType::DT_FLOAT6_E2M3:v.ui8 = *static_cast<const uint8_t *>(data); break;
+        case op::DataType::DT_FLOAT4_E2M1:v.ui8 = *static_cast<const uint8_t *>(data); break;
+        case op::DataType::DT_FLOAT4_E1M2:v.ui8 = *static_cast<const uint8_t *>(data); break;
         default:
             OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "no supported data type[%s].", op::ToString(dataType_).GetString());
             throw std::invalid_argument("dataType not supported.");
@@ -1245,6 +1415,55 @@ aclScalar::aclScalar(op::bfloat16 value)
     dataType_ = op::DataType::DT_BF16;
     v.f = value;
 }
+
+aclScalar::aclScalar(op::Float8E5M2 value)
+{
+    dataType_ = op::DataType::DT_FLOAT8_E5M2;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::Float8E4M3FN value)
+{
+    dataType_ = op::DataType::DT_FLOAT8_E4M3FN;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::Float8E8M0 value)
+{
+    dataType_ = op::DataType::DT_FLOAT8_E8M0;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::Float6E3M2 value)
+{
+    dataType_ = op::DataType::DT_FLOAT6_E3M2;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::Float6E2M3 value)
+{
+    dataType_ = op::DataType::DT_FLOAT6_E2M3;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::Float4E2M1 value)
+{
+    dataType_ = op::DataType::DT_FLOAT4_E2M1;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::Float4E1M2 value)
+{
+    dataType_ = op::DataType::DT_FLOAT4_E1M2;
+    v.ui8 = value.value;
+}
+
+aclScalar::aclScalar(op::HiFloat4 value)
+{
+    dataType_ = op::DataType::DT_FLOAT4_E1M2;
+    v.ui8 = value.value;
+}
+
 aclScalar::aclScalar(bool value)
 {
     dataType_ = op::DataType::DT_BOOL;
@@ -1323,6 +1542,14 @@ template bool aclScalar::CheckOverflows<float>() const;
 template bool aclScalar::CheckOverflows<double>() const;
 template bool aclScalar::CheckOverflows<std::complex<float>>() const;
 template bool aclScalar::CheckOverflows<std::complex<double>>() const;
+template bool aclScalar::CheckOverflows<op::Float8E5M2>() const;
+template bool aclScalar::CheckOverflows<op::Float8E4M3FN>() const;
+template bool aclScalar::CheckOverflows<op::Float8E8M0>() const;
+template bool aclScalar::CheckOverflows<op::Float6E3M2>() const;
+template bool aclScalar::CheckOverflows<op::Float6E2M3>() const;
+template bool aclScalar::CheckOverflows<op::Float4E2M1>() const;
+template bool aclScalar::CheckOverflows<op::Float4E1M2>() const;
+template bool aclScalar::CheckOverflows<op::HiFloat4>() const;
 
 ge::AscendString ToString(const aclTensor* t)
 {
