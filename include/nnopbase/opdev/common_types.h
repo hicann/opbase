@@ -37,6 +37,7 @@
 #include "float4_e2m1.h"
 #include "float4_e1m2.h"
 #include "hifloat4.h"
+#include "hifloat8.h"
 #include "object.h"
 #include "op_def.h"
 
@@ -228,6 +229,7 @@ public:
     void SetFloat4E2M1Data(const op::Float4E2M1 *value, uint64_t size, op::DataType dataType);
     void SetFloat4E1M2Data(const op::Float4E1M2 *value, uint64_t size, op::DataType dataType);
     void SetHiFloat4Data(const op::HiFloat4 *value, uint64_t size, op::DataType dataType);
+    void SetHiFloat8Data(const op::HiFloat8 *value, uint64_t size, op::DataType dataType);
     void InitTensor(const int64_t *viewDims, uint64_t viewDimsNum, aclDataType dataType,
                     const int64_t *stride, int64_t offset, aclFormat format,
                     const int64_t *storageDims, uint64_t storageDimsNum,
@@ -327,6 +329,7 @@ public:
     op::Float4E2M1 ToFloat4E2M1() const;
     op::Float4E1M2 ToFloat4E1M2() const;
     op::HiFloat4 ToHiFloat4() const;
+    op::HiFloat8 ToHiFloat8() const;
     std::complex<float> ToComplex64() const;
     std::complex<double> ToComplex128() const;
     ge::AscendString ToString() const;
@@ -359,6 +362,7 @@ private:
     explicit aclScalar(op::Float4E2M1 value);
     explicit aclScalar(op::Float4E1M2 value);
     explicit aclScalar(op::HiFloat4 value);
+    explicit aclScalar(op::HiFloat8 value);
     explicit aclScalar(bool value);
     template<typename T>
     T To() const;

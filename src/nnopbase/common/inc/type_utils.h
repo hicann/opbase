@@ -20,6 +20,7 @@
 #include "opdev/float4_e2m1.h"
 #include "opdev/float4_e1m2.h"
 #include "opdev/hifloat4.h"
+#include "opdev/hifloat8.h"
 
 namespace op::internal {
 
@@ -66,6 +67,9 @@ struct IsCustomFloat<op::Float4E1M2> : public std::true_type {};
 
 template<>
 struct IsCustomFloat<op::HiFloat4> : public std::true_type {};
+
+template<>
+struct IsCustomFloat<op::HiFloat8> : public std::true_type {};
 
 template<typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
