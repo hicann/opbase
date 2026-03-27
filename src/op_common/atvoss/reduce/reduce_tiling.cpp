@@ -932,6 +932,9 @@ ge::graphStatus ReduceOpTiling::ComputeEmptyTiling(uint64_t* shape)
     // 空tensor去除R轴后，作为全A的pattern计算切分
     ComputeCacheLineBlock<__reducePattern::A>(newshape);
     unitA_.outer *= cBlock_.cacheLineOuter;
+    // 空tensor场景，按A轴合轴的结果重新赋值sliceShape和sliceNum
+ 	sliceShape_[0] = outSize;
+ 	sliceNum_[0] = 1;
     ComputeUnitA<__reducePattern::A>(newshape);
     SetTilingData<__reducePattern::A>(newshape);
     return ge::GRAPH_SUCCESS;
