@@ -18,12 +18,11 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 
 ## ⚡️快速入门
 
-若您希望快速体验项目，请访问[快速入门](docs/zh/context/quick_start.md)获取简易教程，主要包括如下操作，其他文档介绍可参考[docs](docs)。
+若您希望**从零到一快速体验**项目能力，请访问下述简易教程。
 
-- [前提条件](docs/zh/context/quick_start.md#前提条件)：安装软件包之前，请完成基础环境搭建，包括第三方依赖等。
-- [环境准备](docs/zh/context/quick_start.md#环境准备)：完成CANN软件包安装、环境变量配置、源码下载等。
-- [源码编译](docs/zh/context/quick_start.md#源码编译)：环境准备好后，可对源码修改（如能力拓展、bug修复等），通过根目录build.sh源码编译，生成的opbase包可部署到AI业务中。
-- [本地验证](docs/zh/context/quick_start.md#本地验证)：基于build.sh执行UT/ST用例，快速验证项目功能。
+1. [环境部署](docs/zh/context//quick_install.md)：本文是**QuickStart和各类教程的操作前提**，请先完成基础环境搭建和源码下载。
+2. [源码编译](docs/zh/context/quick_start.md#源码编译)：环境准备好后，可对源码修改（如能力拓展、bug修复等），通过根目录build.sh源码编译，生成的opbase包可部署到AI业务中。
+3. [本地验证](docs/zh/context/quick_start.md#本地验证)：基于build.sh执行UT/ST用例，快速验证项目功能。
 
 ## 🔍 目录结构
 
