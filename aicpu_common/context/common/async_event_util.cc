@@ -32,37 +32,37 @@ void AsyncEventUtil::InitEventUtil() {
   notify_wait_func_ = reinterpret_cast<NotifyWaitFunc>(
     dlsym(sharder_, kNotifyWaitFunc));
   if (notify_wait_func_ == nullptr) {
-    KERNEL_LOG_WARN("Get Function[%s] address failed, error[%s]", kNotifyWaitFunc, dlerror());
+    KERNEL_LOG_ERROR("Get Function[%s] address failed, error[%s]", kNotifyWaitFunc, dlerror());
   }
   reg_event_cb_func_ = reinterpret_cast<RegEventCbFunc>(
     dlsym(sharder_, kRegEventCbFunc));
   if (reg_event_cb_func_ == nullptr) {
-    KERNEL_LOG_WARN("Get Function[%s] address failed, error[%s]", kRegEventCbFunc, dlerror());
+    KERNEL_LOG_ERROR("Get Function[%s] address failed, error[%s]", kRegEventCbFunc, dlerror());
   }
   reg_event_cb_with_times_func_ = reinterpret_cast<RegEventCbWithTimesFunc>(
     dlsym(sharder_, kRegEventCbWithTimesFunc));
   if (reg_event_cb_with_times_func_ == nullptr) {
-    KERNEL_LOG_WARN("Get Function[%s] address failed, error[%s]", kRegEventCbWithTimesFunc, dlerror());
+    KERNEL_LOG_ERROR("Get Function[%s] address failed, error[%s]", kRegEventCbWithTimesFunc, dlerror());
   }
   unreg_event_cb_func_ = reinterpret_cast<UnregEventCbFunc>(
     dlsym(sharder_, kUnregEventCbFunc));
   if (unreg_event_cb_func_ == nullptr) {
-    KERNEL_LOG_WARN("Get Function[%s] address failed, error[%s]", kUnregEventCbFunc, dlerror());
+    KERNEL_LOG_ERROR("Get Function[%s] address failed, error[%s]", kUnregEventCbFunc, dlerror());
   }
   reg_op_event_cb_func_ = PtrToFunc<void, RegEventCbFunc>(dlsym(sharder_, kRegOpEventCbFunc));
   if (reg_op_event_cb_func_ == nullptr) {
-    KERNEL_LOG_WARN("Get Function[%s] address failed, error[%s]", kRegOpEventCbFunc, dlerror());
+    KERNEL_LOG_ERROR("Get Function[%s] address failed, error[%s]", kRegOpEventCbFunc, dlerror());
   }
   unreg_op_event_cb_func_ = PtrToFunc<void, UnregEventCbFunc>(dlsym(sharder_, kUnregOpEventCbFunc));
   if (unreg_op_event_cb_func_ == nullptr) {
-    KERNEL_LOG_WARN("Get Function[%s] address failed, error[%s]", kUnregOpEventCbFunc, dlerror());
+    KERNEL_LOG_ERROR("Get Function[%s] address failed, error[%s]", kUnregOpEventCbFunc, dlerror());
   }
 }
 
 AsyncEventUtil::AsyncEventUtil() {
   sharder_ = dlopen(kSharderPath, RTLD_LAZY | RTLD_GLOBAL);
   if (sharder_ == nullptr) {
-    KERNEL_LOG_WARN("Device sharder dlopen so [%s] failed, error[%s]",
+    KERNEL_LOG_ERROR("Device sharder dlopen so [%s] failed, error[%s]",
                     kSharderPath, dlerror());
     notify_wait_func_ = nullptr;
     reg_event_cb_func_ = nullptr;
@@ -87,7 +87,7 @@ void AsyncEventUtil::NotifyWait(void *notify_param, const uint32_t param_len) co
     notify_wait_func_(notify_param, param_len);
     return;
   }
-  KERNEL_LOG_WARN("Function[%s] is null", kNotifyWaitFunc);
+  KERNEL_LOG_ERROR("Function[%s] is null", kNotifyWaitFunc);
 }
 
 bool AsyncEventUtil::RegEventCb(const uint32_t event_id, const uint32_t sub_event_id,
@@ -95,7 +95,7 @@ bool AsyncEventUtil::RegEventCb(const uint32_t event_id, const uint32_t sub_even
   if (reg_event_cb_func_ != nullptr) {
     return reg_event_cb_func_(event_id, sub_event_id, cb);
   }
-  KERNEL_LOG_WARN("Function[%s] is null.", kRegEventCbFunc);
+  KERNEL_LOG_ERROR("Function[%s] is null.", kRegEventCbFunc);
   return false;
 }
 
@@ -105,7 +105,7 @@ bool AsyncEventUtil::RegEventCb(const uint32_t event_id, const uint32_t sub_even
   if (reg_event_cb_with_times_func_ != nullptr) {
     return reg_event_cb_with_times_func_(event_id, sub_event_id, cb, times);
   }
-  KERNEL_LOG_WARN("Function[%s] is null.", kRegEventCbWithTimesFunc);
+  KERNEL_LOG_ERROR("Function[%s] is null.", kRegEventCbWithTimesFunc);
   return false;
 }
 
@@ -113,7 +113,7 @@ void AsyncEventUtil::UnregEventCb(const uint32_t event_id, const uint32_t sub_ev
   if (unreg_event_cb_func_ != nullptr) {
     return unreg_event_cb_func_(event_id, sub_event_id);
   }
-  KERNEL_LOG_WARN("Function[%s] is null.", kUnregEventCbFunc);
+  KERNEL_LOG_ERROR("Function[%s] is null.", kUnregEventCbFunc);
 }
 
 bool AsyncEventUtil::RegOpEventCb(const uint32_t event_id, const uint32_t sub_event_id,
@@ -121,7 +121,7 @@ bool AsyncEventUtil::RegOpEventCb(const uint32_t event_id, const uint32_t sub_ev
   if (reg_op_event_cb_func_ != nullptr) {
     return reg_op_event_cb_func_(event_id, sub_event_id, cb);
   }
-  KERNEL_LOG_WARN("Function[%s] is null.", kRegOpEventCbFunc);
+  KERNEL_LOG_ERROR("Function[%s] is null.", kRegOpEventCbFunc);
   return false;
 }
 
@@ -129,7 +129,7 @@ void AsyncEventUtil::UnregOpEventCb(const uint32_t event_id, const uint32_t sub_
   if (unreg_op_event_cb_func_ != nullptr) {
     return unreg_op_event_cb_func_(event_id, sub_event_id);
   }
-  KERNEL_LOG_WARN("Function[%s] is null.", kUnregOpEventCbFunc);
+  KERNEL_LOG_ERROR("Function[%s] is null.", kUnregOpEventCbFunc);
 }
 
 }  // namespace aicpu
