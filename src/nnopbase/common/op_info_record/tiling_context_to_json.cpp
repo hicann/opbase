@@ -18,6 +18,7 @@
 #include "utils/indv_lib_wrapper.h"
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
+#include "opdev/platform.h"
 #include "bin_to_json.h"
 
 namespace aclnnOpInfoRecord {
@@ -29,6 +30,11 @@ const char *const DYNAMIC_STR = "dynamic";
 const char *const MC2_ATTR_GROUP_EP_STR = "group_ep";
 const char *const MC2_ATTR_GROUP_TP_STR = "group_tp";
 constexpr size_t MAX_HCCL_NET_LAYER_NUM = 3U;
+
+// 返回码定义
+constexpr int32_t RET_SUCCESS = 0;
+constexpr int32_t RET_ERROR = -1;
+constexpr int32_t RET_SKIP_SERIALIZATION = -2;
 
 nlohmann::json StrAttrsToJson(const gert::RuntimeAttrs *attrs, size_t index)
 {
@@ -306,13 +312,69 @@ nlohmann::json TransOutputInstanceToJson(const gert::TilingContext *ctx, size_t 
     return nullptr;
 }
 
+bool CheckTensorUnContiguous(const gert::TilingContext *ctx, size_t inputInstanceLoc)
+{
+    bool isView = ctx->InputIsView(inputInstanceLoc);
+    if (isView) {
+        auto* inputStride = ctx->GetInputStride(inputInstanceLoc);
+        
+        if (inputStride != nullptr && inputStride->GetDimNum() != 0) {
+            const auto* inputShape = ctx->GetInputShape(inputInstanceLoc);
+            if (inputShape == nullptr) {
+                return false;
+            }
+            const auto& storageShape = inputShape->GetStorageShape();
+            size_t dimNum = storageShape.GetDimNum();
+            
+            int64_t validStride = 1;
+            for (int64_t i = static_cast<int64_t>(dimNum) - 1; i >= 0; --i) {
+                int64_t dim = storageShape.GetDim(i);
+                int64_t stride = inputStride->GetStride(i);
+                
+                if (dim == 1) {
+                    continue;
+                }
+                if (validStride != stride) {
+                    OP_LOGW("Skip serialization: UnContiguous tensor, input[%zu], dim[%ld], expected=%ld, actual=%ld.",
+                            inputInstanceLoc, i, validStride, stride);
+                    return true;
+                }
+                
+                validStride *= dim;
+            }
+        }
+    }
+    return false; 
+}
+
+int32_t CheckInputSkipSerialize(const gert::TilingContext *ctx,
+    const gert::ComputeNodeInfo *computeNodeInfo, size_t irLoc, size_t inputInstanceLoc)
+{
+    const auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (socVersion != op::SocVersion::ASCEND950) {
+        return RET_SUCCESS;
+    }
+    const auto inputInstanceInfo = computeNodeInfo->GetInputInstanceInfo(irLoc);
+    if (inputInstanceInfo == nullptr) {
+        return RET_SUCCESS;
+    }
+    size_t instanceNum = inputInstanceInfo->GetInstanceNum();
+    size_t startLoc = inputInstanceLoc - instanceNum;
+    for (size_t instIdx = 0; instIdx < instanceNum; instIdx++) {
+        if (CheckTensorUnContiguous(ctx, startLoc + instIdx)) {
+            return RET_SKIP_SERIALIZATION;
+        }
+    }
+    return RET_SUCCESS;
+}
+
 int32_t ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann::json &supportInfoJsonConfig,
     const gert::ComputeNodeInfo *computeNodeInfo, nlohmann::json &j)
 {
     auto opImplFunc = GetOppImplement(computeNodeInfo->GetNodeType());
     if (opImplFunc == nullptr) {
         OP_LOGE(ACLNN_ERR_INNER, "[%s]TilingContextToJson get op impl func failed!", computeNodeInfo->GetNodeType());
-        return -1;
+        return RET_ERROR;
     }
     std::vector<std::pair<std::string, std::string>> inputIr = GetBuiltinIrFromJson(supportInfoJsonConfig, true);
 
@@ -321,22 +383,30 @@ int32_t ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann:
     for (size_t irLoc = 0UL; irLoc < inputIr.size(); irLoc++) {
         nlohmann::json tmpJ = TransInputInstanceToJson(
             ctx, inputInstanceLoc, irLoc, inputIr[irLoc].first, inputIr[irLoc].second);
-        if (!tmpJ.is_null() && opImplFunc->IsInputDataDependency(irLoc) && inputInstanceLoc >= 1) {
-            tmpJ["value_depend"] = true;
-            const auto *inputTensor = ctx->GetInputTensor(inputInstanceLoc - 1);
-            const auto funcIter = BIN_TO_JSON.find(inputTensor->GetDataType());
-            if (funcIter == BIN_TO_JSON.cend()) {
-                OP_LOGE(ACLNN_ERR_INNER,
-                    "[%s]Not support type[%s] in const data translate!",
-                    computeNodeInfo->GetNodeType(),
-                    ge::TypeUtils::DataTypeToSerialString(inputTensor->GetDataType()).c_str());
-                return -1;
+        
+        if (!tmpJ.is_null()) {
+            int32_t ret = CheckInputSkipSerialize(ctx, computeNodeInfo, irLoc, inputInstanceLoc);
+            if (ret == RET_SKIP_SERIALIZATION) {
+                return ret;
             }
-            if (inputTensor->GetAddr() == nullptr) {
-                OP_LOGW("Current operator [%s] is empty!", computeNodeInfo->GetNodeType());
-                tmpJ["const_data"] = "NULL";
-            } else {
-                tmpJ["const_data"] = funcIter->second(inputTensor->GetAddr(), inputTensor->GetSize());
+            
+            if (opImplFunc->IsInputDataDependency(irLoc) && inputInstanceLoc >= 1) {
+                tmpJ["value_depend"] = true;
+                const auto *inputTensor = ctx->GetInputTensor(inputInstanceLoc - 1);
+                const auto funcIter = BIN_TO_JSON.find(inputTensor->GetDataType());
+                if (funcIter == BIN_TO_JSON.cend()) {
+                    OP_LOGE(ACLNN_ERR_INNER,
+                        "[%s]Not support type[%s] in const data translate!",
+                        computeNodeInfo->GetNodeType(),
+                        ge::TypeUtils::DataTypeToSerialString(inputTensor->GetDataType()).c_str());
+                    return RET_ERROR;
+                }
+                if (inputTensor->GetAddr() == nullptr) {
+                    OP_LOGW("Current operator [%s] is empty!", computeNodeInfo->GetNodeType());
+                    tmpJ["const_data"] = "NULL";
+                } else {
+                    tmpJ["const_data"] = funcIter->second(inputTensor->GetAddr(), inputTensor->GetSize());
+                }
             }
         }
         OP_LOGD("[%s]inputs[%zu][%s]!", computeNodeInfo->GetNodeType(), irLoc, tmpJ.dump().c_str());
@@ -352,7 +422,7 @@ int32_t ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann:
         OP_LOGD("[%s]outputs[%zu][%s]!", computeNodeInfo->GetNodeType(), irLoc, tmpJ.dump().c_str());
         j["outputs"].emplace_back(std::move(tmpJ));
     }
-    return 0;
+    return RET_SUCCESS;
 }
 nlohmann::json AttrsToJson(const gert::ComputeNodeInfo *computeNodeInfo, const nlohmann::json &supportInfoJsonConfig)
 {
@@ -486,7 +556,12 @@ nlohmann::json TilingContextToJson(
         opJson["tune_mode"] = "all";
     }
 
-    if (ConstructInputOutputJson(ctx, supportInfoJsonConfig, computeNodeInfo, opJson) != 0) {
+    int32_t ret = ConstructInputOutputJson(ctx, supportInfoJsonConfig, computeNodeInfo, opJson);
+    if (ret == RET_SKIP_SERIALIZATION) {
+        OP_LOGW("TilingContextToJson: skip serialization due to uncontiguous tensor.");
+        return nullJ;
+    }
+    if (ret != RET_SUCCESS) {
         OP_LOGE(ACLNN_ERR_INNER, "Failed to construct input/output/attr.");
         return nullJ;
     }
