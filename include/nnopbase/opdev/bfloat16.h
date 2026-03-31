@@ -19,16 +19,6 @@
 
 namespace op {
 
-// Forward declarations
-struct Float8E4M3FN;
-struct Float8E5M2;
-struct Float8E8M0;
-struct Float6E3M2;
-struct Float6E2M3;
-struct Float4E2M1;
-struct Float4E1M2;
-struct HiFloat4;
-
 // Single precision complex.
 typedef std::complex<float> complex64;
 // Double precision complex.
@@ -166,16 +156,6 @@ struct bfloat16 {
     {
         return complex128(double(*this), double(0.0));
     }
-
-    // Conversion operators to float8/float6/float4 types (declarations only)
-    operator Float8E4M3FN() const;
-    operator Float8E5M2() const;
-    operator Float8E8M0() const;
-    operator Float6E3M2() const;
-    operator Float6E2M3() const;
-    operator Float4E2M1() const;
-    operator Float4E1M2() const;
-    operator HiFloat4() const;
 
     union FP32 {
         unsigned int u;

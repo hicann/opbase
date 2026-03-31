@@ -486,3 +486,368 @@ TEST_F(OpExecutorTest, DeterministicTest)
     deterministicValue = (deterministicValue == 0) ? 1 : 0;
     aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, deterministicValue);
 }
+
+// ============================================================================
+// 场景: float/double 类型的 aclScalar 通过 ConvertToTensor 转换为 float8/6/4 类型 tensor
+// ============================================================================
+
+// 1.1 Float scalar → Float8E4M3FN tensor (OCP FP8, bias=7, 最大值448, 无Infinity)
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat8E4M3FN)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E4M3FN);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E4M3FN);
+
+    // 验证: 1.0 → OCP E4M3FN 编码 0x38 (sign=0, exp=0111, man=000)
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E4M3FN result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 1.2 Float scalar → Float8E5M2 tensor (OCP FP8, bias=15, 最大值57344, 支持NaN/Infinity)
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat8E5M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E5M2);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E5M2);
+
+    // 验证: 1.0 → OCP E5M2 编码 0x30 (sign=0, exp=01111, man=00)
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E5M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 1.3 Float scalar → Float8E8M0 tensor (MX缩放因子, 纯指数格式, value=2^(exp-127))
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat8E8M0)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E8M0);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E8M0);
+
+    // 验证: 1.0 = 2^(127-127) = 2^0 → 编码 0x7F (OCP E8M0)
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E8M0 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 2.1 Float scalar → Float6E3M2 tensor (MX FP6, bias=3, 最大值28.0)
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat6E3M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT6_E3M2);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E3M2);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float6E3M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 2.2 Float scalar → Float6E2M3 tensor (MX FP6, bias=1, 最大值7.0)
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat6E2M3)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT6_E2M3);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E2M3);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float6E2M3 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 3.1 Float scalar → Float4E2M1 tensor (MX FP4, bias=1, 最大值6.0)
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat4E2M1)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E2M1);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E2M1);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float4E2M1 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 3.2 Float scalar → Float4E1M2 tensor (bias=1, 最大值1.75)
+TEST_F(OpExecutorTest, ConvertFloatScalarToFloat4E1M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E1M2);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E1M2);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float4E1M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.1 Double scalar → Float8E4M3FN tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat8E4M3FN)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E4M3FN);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E4M3FN);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E4M3FN result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.2 Double scalar → Float8E5M2 tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat8E5M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E5M2);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E5M2);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E5M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.3 Double scalar → Float8E8M0 tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat8E8M0)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E8M0);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E8M0);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E8M0 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.4 Double scalar → Float6E3M2 tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat6E3M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT6_E3M2);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E3M2);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float6E3M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.5 Double scalar → Float6E2M3 tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat6E2M3)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT6_E2M3);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E2M3);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float6E2M3 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.6 Double scalar → Float4E2M1 tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat4E2M1)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E2M1);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E2M1);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float4E2M1 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 4.7 Double scalar → Float4E1M2 tensor
+TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat4E1M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 1.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E1M2);
+    EXPECT_NE(tensor, nullptr);
+    EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E1M2);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float4E1M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
+}
+
+// 5.1 Float scalar 负值 → Float8E4M3FN
+TEST_F(OpExecutorTest, ConvertFloatScalarNegativeToFloat8E4M3FN)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = -1.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E4M3FN);
+    EXPECT_NE(tensor, nullptr);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E4M3FN result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), -1.0f);
+}
+
+// 5.2 Float scalar 零值 → Float8E5M2
+TEST_F(OpExecutorTest, ConvertFloatScalarZeroToFloat8E5M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 0.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E5M2);
+    EXPECT_NE(tensor, nullptr);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float8E5M2 result;
+    result.value = *data;
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 0.0f);
+}
+
+// 5.3 Float scalar 溢出值 → Float4E1M2 (最大值1.75, 输入2.0应被钳制到1.75)
+TEST_F(OpExecutorTest, ConvertFloatScalarOverflowToFloat4E1M2)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    float fValue = 2.0f;
+    auto scalar = executor.AllocScalar(fValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E1M2);
+    EXPECT_NE(tensor, nullptr);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float4E1M2 result;
+    result.value = *data;
+    // Float4E1M2无Infinity, 溢出应钳制到最大值1.75
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 1.75f);
+}
+
+// 5.4 Double scalar 溢出值 → Float4E2M1 (最大值6.0, 输入10.0应被钳制到6.0)
+TEST_F(OpExecutorTest, ConvertDoubleScalarOverflowToFloat4E2M1)
+{
+    op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+    aclOpExecutor executor;
+
+    double dValue = 10.0;
+    auto scalar = executor.AllocScalar(dValue);
+    ASSERT_NE(scalar, nullptr);
+
+    auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E2M1);
+    EXPECT_NE(tensor, nullptr);
+
+    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    op::Float4E2M1 result;
+    result.value = *data;
+    // OCP规范: FP4无Infinity, 溢出应钳制到最大值6.0
+    EXPECT_FLOAT_EQ(static_cast<float>(result), 6.0f);
+}

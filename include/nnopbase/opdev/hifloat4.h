@@ -16,9 +16,6 @@
 #include <limits>
 #include <ostream>
 
-#include "opdev/fp16_t.h"
-#include "opdev/bfloat16.h"
-
 namespace op {
 
 /**
@@ -66,80 +63,72 @@ struct HiFloat4 {
     static constexpr uint8_t MAN_MASK = 0x03;       // 0 0 11 (bits 1-0)
     static constexpr uint8_t MAX_EXP = 0x01;        // 1
 
+    // HiFloat4 format semantic constants
+    static constexpr int SIGN_SHIFT = 3;                    // Sign bit position
+    static constexpr uint8_t ABS_VALUE_MASK = 0x07;         // Mask excluding sign bit
+    static constexpr uint8_t HIGHEST_VALUE = 0x07;          // Max value 1.75
+    static constexpr uint8_t LOWEST_VALUE = 0x0F;           // Min value -1.75
+    static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x04;   // Min positive normal 1.0
+    static constexpr uint8_t BITS_MASK = 0x0F;              // 4-bit effective mask
+    static constexpr uint8_t EPSILON_VALUE = 0x01;          // Epsilon value
+
+    // ============= FP32 format constants =============
+    static constexpr int FP32_EXP_BIAS_VAL = 127;
+    static constexpr int FP32_MAN_LEN_VAL = 23;
+    static constexpr int FP32_SIGN_SHIFT_VAL = 31;
+    static constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+    static constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+    static constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
+
     // Default constructor - initialize to zero
     HiFloat4() : value(0) {}
 
-    constexpr HiFloat4(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & 0x0F)
+    constexpr HiFloat4(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK)
     {
     }
 
     HiFloat4(float v)
     {
-        value = float_to_hifloat4(v).value;
-    }
-
-    template<typename T>
-    HiFloat4 &operator=(T other)
-    {
-        value = float_to_hifloat4(static_cast<float>(other)).value;
-        return *this;
+        value = FloatToHiFloat4(v).value;
     }
 
     operator float() const
     {
-        return hifloat4_to_float(*this);
+        return HiFloat4ToFloat(*this);
     }
 
     operator double() const
     {
-        return static_cast<double>(hifloat4_to_float(*this));
-    }
-
-    HiFloat4 &operator=(const double &dVal)
-    {
-        value = float_to_hifloat4(static_cast<float>(dVal)).value;
-        return *this;
-    }
-
-    // Conversion to fp16_t
-    operator fp16_t() const
-    {
-        return fp16_t(hifloat4_to_float(*this));
-    }
-
-    // Conversion to bfloat16
-    operator bfloat16() const
-    {
-        return bfloat16(static_cast<float>(*this));
+        return static_cast<double>(HiFloat4ToFloat(*this));
     }
 
     static constexpr HiFloat4 Epsilon()
     {
         // 2^-2 = 0.25 (the difference between 1.0 and next representable value)
-        return HiFloat4(0x01, FromBits());  // 0 0 01 = denorm 0.25
+        return HiFloat4(EPSILON_VALUE, FromBits());  // 0 0 01 = denorm 0.25
     }
 
     static constexpr HiFloat4 Highest()
     {
         // exp=1, man=3 -> 2^0 * 1.75 = 1.75 (0 1 11 = 0x7)
-        return HiFloat4(0x07, FromBits());
+        return HiFloat4(HIGHEST_VALUE, FromBits());
     }
 
     static constexpr HiFloat4 Lowest()
     {
         // 1 1 11 = sign=1, exp=1, man=3 -> -2^0 * 1.75 = -1.75
-        return HiFloat4(0x0F, FromBits());  // 1 1 11 = -1.75
+        return HiFloat4(LOWEST_VALUE, FromBits());  // 1 1 11 = -1.75
     }
 
     static constexpr HiFloat4 MinPositiveNormal()
     {
         // 2^0 = 1.0 (0 1 00)
-        return HiFloat4(0x04, FromBits());
+        return HiFloat4(MIN_POS_NORMAL_VALUE, FromBits());
     }
 
     bool IsZero() const
     {
-        return (value & 0x07) == 0;  // 排除符号位
+        return (value & ABS_VALUE_MASK) == 0;  // 排除符号位
     }
 
     bool IsNaN() const
@@ -161,22 +150,21 @@ private:
         float f;
     };
 
-    static float hifloat4_to_float(HiFloat4 fp4)
+    static float HiFloat4ToFloat(HiFloat4 fp4)
     {
         if (fp4.IsZero()) {
             return (fp4.value & SIGN_MASK) ? -0.0f : 0.0f;
         }
 
-        uint32_t sign = (fp4.value & SIGN_MASK) >> 3;
+        uint32_t sign = (fp4.value & SIGN_MASK) >> SIGN_SHIFT;
         uint32_t exp = (fp4.value & EXP_MASK) >> MAN_BITS;
         uint32_t man = fp4.value & MAN_MASK;
 
         // FP32: 1 sign, 8 exp (bias 127), 23 man
         // HiFloat4: 1 sign, 1 exp (bias 1), 2 man
-        // Using FP32_EXP_BIAS and FP32_MAN_LEN from fp16_t.h
 
         int32_t fp32_exp;
-        uint32_t fp32_man = man << (FP32_MAN_LEN - MAN_BITS);
+        uint32_t fp32_man = man << (FP32_MAN_LEN_VAL - MAN_BITS);
 
         if (exp == 0) {
             // Denormalized number
@@ -192,48 +180,46 @@ private:
                 }
                 // Effective exponent for denorm is 1-bias=0
                 // fp32_exp = FP32_BIAS + (1-bias) - shift = 127 - shift
-                fp32_exp = 1 - EXP_BIAS + FP32_EXP_BIAS - shift;
-                fp32_man = (temp_man & MAN_MASK) << (FP32_MAN_LEN - MAN_BITS);
+                fp32_exp = 1 - EXP_BIAS + FP32_EXP_BIAS_VAL - shift;
+                fp32_man = (temp_man & MAN_MASK) << (FP32_MAN_LEN_VAL - MAN_BITS);
             } else {
                 fp32_exp = 0;
             }
         } else {
             // Normal number: value = 2^(1-1) * (1 + man/4) = (1 + man/4)
-            fp32_exp = 1 - EXP_BIAS + FP32_EXP_BIAS;  // 127
-            fp32_man |= (1 << FP32_MAN_LEN);  // Add implicit 1
+            fp32_exp = 1 - EXP_BIAS + FP32_EXP_BIAS_VAL;  // 127
+            fp32_man |= FP32_IMPLICIT_1_VAL;  // Add implicit 1
         }
 
         FP32 result;
-        result.u = (sign << 31) | ((fp32_exp & 0xFF) << FP32_MAN_LEN) | (fp32_man & 0x7FFFFF);
+        result.u = (sign << FP32_SIGN_SHIFT_VAL) | ((fp32_exp & FP32_EXP_MASK_8BIT) << FP32_MAN_LEN_VAL) | (fp32_man & FP32_MAN_MASK_23BIT);
         return result.f;
     }
 
-    static HiFloat4 float_to_hifloat4(float f)
+    static HiFloat4 FloatToHiFloat4(float f)
     {
         // HiFloat4 has no NaN, clamp NaN to positive max value (1.75)
         // NaN has no meaningful sign, so always clamp to +1.75
         if (std::isnan(f)) {
             // 0x07 = 0 11 1 = 2^1 * 1.75 = 1.75
-            return HiFloat4(0x07, FromBits());
+            return HiFloat4(HIGHEST_VALUE, FromBits());
         }
 
         FP32 fp32;
         fp32.f = f;
-        uint32_t sign = (fp32.u >> 31) & 1;
-        uint32_t exp = (fp32.u >> 23) & 0xFF;
-        uint32_t man = fp32.u & 0x7FFFFF;
-
-        // Using FP32_EXP_BIAS and FP32_MAN_LEN from fp16_t.h
+        uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1;
+        uint32_t exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
+        uint32_t man = fp32.u & FP32_MAN_MASK_23BIT;
 
         if (exp == 0 && man == 0) {
             // Zero
-            return HiFloat4(static_cast<uint8_t>(sign << 3), FromBits());
+            return HiFloat4(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
         }
 
         if (std::isinf(f)) {
             // HiFloat4 has no infinity, clamp to max value
             // 0x07 = +1.75, 0x0F = -1.75
-            return HiFloat4(static_cast<uint8_t>((sign << 3) | 0x07), FromBits());
+            return HiFloat4(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
         }
 
         // Calculate HiFloat4 exponent
@@ -242,18 +228,18 @@ private:
 
         if (exp == 0) {
             // Denormalized FP32 input
-            fp4_exp = 1 - FP32_EXP_BIAS + EXP_BIAS;
-            while ((man & 0x800000) == 0) {
+            fp4_exp = 1 - FP32_EXP_BIAS_VAL + EXP_BIAS;
+            while ((man & FP32_IMPLICIT_1_VAL) == 0) {
                 man <<= 1;
                 fp4_exp--;
             }
-            man &= 0x7FFFFF;
+            man &= FP32_MAN_MASK_23BIT;
         } else {
-            fp4_exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS + EXP_BIAS;
+            fp4_exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS_VAL + EXP_BIAS;
         }
 
         // Round mantissa from 23 bits to 2 bits with round-to-nearest-even
-        int mantissa_shift = FP32_MAN_LEN - MAN_BITS;
+        int mantissa_shift = FP32_MAN_LEN_VAL - MAN_BITS;
         uint32_t man_round_bit = (man >> (mantissa_shift - 1)) & 1;
         uint32_t man_sticky_bits = (man & ((1 << (mantissa_shift - 1)) - 1)) ? 1 : 0;
         uint32_t man_lsb = (man >> mantissa_shift) & 1;
@@ -270,7 +256,7 @@ private:
         // Handle overflow/underflow
         if (fp4_exp <= 0) {
             if (fp4_exp < -MAN_BITS) {
-                return HiFloat4(static_cast<uint8_t>(sign << 3), FromBits());
+                return HiFloat4(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
             }
             fp4_man = (fp4_man | (1 << MAN_BITS)) >> (1 - fp4_exp);
             fp4_exp = 0;
@@ -278,10 +264,10 @@ private:
             // Overflow - for HiFloat4, max exp is 1
             // HiFloat4 has no NaN, clamp to max value (preserving sign)
             // 0x07 = +1.75, 0x0F = -1.75
-            return HiFloat4(static_cast<uint8_t>((sign << 3) | 0x07), FromBits());
+            return HiFloat4(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
         }
 
-        uint8_t result = static_cast<uint8_t>((sign << 3) | (fp4_exp << MAN_BITS) | (fp4_man & MAN_MASK));
+        uint8_t result = static_cast<uint8_t>((sign << SIGN_SHIFT) | (fp4_exp << MAN_BITS) | (fp4_man & MAN_MASK));
         return HiFloat4(result, FromBits());
     }
 };

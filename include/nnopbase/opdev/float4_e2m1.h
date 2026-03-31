@@ -16,9 +16,6 @@
 #include <limits>
 #include <ostream>
 
-#include "opdev/fp16_t.h"
-#include "opdev/bfloat16.h"
-
 namespace op {
 
 /**
@@ -48,33 +45,41 @@ struct Float4E2M1 {
 
     uint8_t value;
 
-    // Constants for E2M1 format
+    // ============= E2M1 format constants =============
     // Bit layout: bit3=sign, bits2-1=exp, bit0=man
     static constexpr int EXP_BITS = 2;
     static constexpr int MAN_BITS = 1;
     static constexpr int EXP_BIAS = 1;
-    static constexpr uint8_t SIGN_MASK = 0x08;      // 1 00 0 (bit 3)
-    static constexpr uint8_t EXP_MASK = 0x06;       // 0 11 0 (bits 2-1)
-    static constexpr uint8_t MAN_MASK = 0x01;       // 0 00 1 (bit 0)
-    static constexpr uint8_t MAX_EXP = 0x03;        // 11
+    static constexpr int SIGN_SHIFT = 3;
+    static constexpr uint8_t SIGN_MASK = 0x08;          // 1 00 0 (bit 3)
+    static constexpr uint8_t EXP_MASK = 0x06;           // 0 11 0 (bits 2-1)
+    static constexpr uint8_t MAN_MASK = 0x01;           // 0 00 1 (bit 0)
+    static constexpr uint8_t MAX_EXP = 0x03;            // 11
+    static constexpr uint8_t ABS_VALUE_MASK = 0x07;     // 0 111 (exclude sign bit)
+    static constexpr uint8_t HIGHEST_VALUE = 0x07;      // 0 11 1 = 6.0 (max value)
+    static constexpr uint8_t LOWEST_VALUE = 0x0F;       // 1 11 1 = -6.0 (min value)
+    static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x02; // 0 01 0 = 1.0 (min positive normal)
+    static constexpr uint8_t BITS_MASK = 0x0F;          // 4-bit effective mask
+    static constexpr uint8_t EPSILON_VALUE = 0x01;      // 0 00 1 = 0.5 (epsilon)
+
+    // ============= FP32 format constants =============
+    static constexpr int FP32_EXP_BIAS_VAL = 127;
+    static constexpr int FP32_MAN_LEN_VAL = 23;
+    static constexpr int FP32_SIGN_SHIFT_VAL = 31;
+    static constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+    static constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+    static constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
 
     // Default constructor - initialize to zero
     Float4E2M1() : value(0) {}
 
-    constexpr Float4E2M1(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & 0x0F)
+    constexpr Float4E2M1(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK)
     {
     }
 
     Float4E2M1(float v)
     {
         value = FloatToFloat4E2M1(v).value;
-    }
-
-    template<typename T>
-    Float4E2M1 &operator=(T other)
-    {
-        value = FloatToFloat4E2M1(static_cast<float>(other)).value;
-        return *this;
     }
 
     operator float() const
@@ -87,52 +92,34 @@ struct Float4E2M1 {
         return static_cast<double>(Float4E2M1ToFloat(*this));
     }
 
-    Float4E2M1 &operator=(const double &dVal)
-    {
-        value = FloatToFloat4E2M1(static_cast<float>(dVal)).value;
-        return *this;
-    }
-
-    // Conversion to fp16_t
-    operator fp16_t() const
-    {
-        return fp16_t(Float4E2M1ToFloat(*this));
-    }
-
-    // Conversion to bfloat16
-    operator bfloat16() const
-    {
-        return bfloat16(static_cast<float>(*this));
-    }
-
     static constexpr Float4E2M1 Epsilon()
     {
         // 2^-1 = 0.5 (the difference between 1.0 and next representable value)
-        return Float4E2M1(0x01, FromBits());  // 0 00 1 = denorm 0.5
+        return Float4E2M1(EPSILON_VALUE, FromBits());  // 0 00 1 = denorm 0.5
     }
 
     static constexpr Float4E2M1 Highest()
     {
         // exp=3, man=1 -> 2^2 * 1.5 = 6.0 (0 11 1 = 0x7)
         // OCP MX E2M1 has no NaN, all bit patterns are valid
-        return Float4E2M1(0x07, FromBits());
+        return Float4E2M1(HIGHEST_VALUE, FromBits());
     }
 
     static constexpr Float4E2M1 Lowest()
     {
         // 1 11 1 = -6.0 (exp=3, man=1)
-        return Float4E2M1(0x0F, FromBits());
+        return Float4E2M1(LOWEST_VALUE, FromBits());
     }
 
     static constexpr Float4E2M1 MinPositiveNormal()
     {
         // 2^0 = 1.0 (0 01 0)
-        return Float4E2M1(0x02, FromBits());
+        return Float4E2M1(MIN_POS_NORMAL_VALUE, FromBits());
     }
 
     bool IsZero() const
     {
-        return (value & 0x07) == 0;  // 排除符号位
+        return (value & ABS_VALUE_MASK) == 0;
     }
 
     bool IsNaN() const
@@ -162,16 +149,15 @@ private:
 
         // OCP MX E2M1 has no NaN, all bit patterns are valid numbers
 
-        uint32_t sign = (fp4.value & SIGN_MASK) >> 3;
+        uint32_t sign = (fp4.value & SIGN_MASK) >> SIGN_SHIFT;
         uint32_t exp = (fp4.value & EXP_MASK) >> MAN_BITS;
         uint32_t man = fp4.value & MAN_MASK;
 
         // FP32: 1 sign, 8 exp (bias 127), 23 man
         // FP4 E2M1: 1 sign, 2 exp (bias 1), 1 man
-        // Using FP32_EXP_BIAS and FP32_MAN_LEN from fp16_t.h
 
-        int32_t fp32Exp = static_cast<int32_t>(exp) - EXP_BIAS + FP32_EXP_BIAS;
-        uint32_t fp32Man = man << (FP32_MAN_LEN - MAN_BITS);
+        int32_t fp32Exp = static_cast<int32_t>(exp) - EXP_BIAS + FP32_EXP_BIAS_VAL;
+        uint32_t fp32Man = man << (FP32_MAN_LEN_VAL - MAN_BITS);
 
         if (exp == 0) {
             // Denormalized number
@@ -179,16 +165,16 @@ private:
                 // OCP MX E2M1 denorm: value = 2^(1-bias) × (man/2) = 2^0 × 0.5 = 0.5
                 // FP32 表示: exp=126 对应 2^(-1), 配合隐含的 1.0 得到 0.5
                 // man=1 -> 0.5
-                fp32Exp = 1 - EXP_BIAS + FP32_EXP_BIAS - 1;  // = 126, 对应 2^(-1)
+                fp32Exp = 1 - EXP_BIAS + FP32_EXP_BIAS_VAL - 1;  // = 126, 对应 2^(-1)
                 fp32Man = 0;  // FP32 隐含的 1.0 正好表示 E2M1 的 man/2 = 0.5
             }
         } else {
             // Normal number - add implicit leading 1
-            fp32Man |= (1 << FP32_MAN_LEN);
+            fp32Man |= FP32_IMPLICIT_1_VAL;
         }
 
         FP32 result;
-        result.u = (sign << 31) | ((fp32Exp & 0xFF) << FP32_MAN_LEN) | (fp32Man & 0x7FFFFF);
+        result.u = (sign << FP32_SIGN_SHIFT_VAL) | ((fp32Exp & FP32_EXP_MASK_8BIT) << FP32_MAN_LEN_VAL) | (fp32Man & FP32_MAN_MASK_23BIT);
         return result.f;
     }
 
@@ -198,26 +184,24 @@ private:
         // NaN has no meaningful sign, so always clamp to +6.0
         if (std::isnan(f)) {
             // 0x07 = 0 11 1 = 2^2 * 1.5 = 6.0
-            return Float4E2M1(0x07, FromBits());
+            return Float4E2M1(HIGHEST_VALUE, FromBits());
         }
 
         FP32 fp32;
         fp32.f = f;
-        uint32_t sign = (fp32.u >> 31) & 1;
-        uint32_t exp = (fp32.u >> 23) & 0xFF;
-        uint32_t man = fp32.u & 0x7FFFFF;
-
-        // Using FP32_EXP_BIAS and FP32_MAN_LEN from fp16_t.h
+        uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1;
+        uint32_t exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
+        uint32_t man = fp32.u & FP32_MAN_MASK_23BIT;
 
         if (exp == 0 && man == 0) {
             // Zero
-            return Float4E2M1(static_cast<uint8_t>(sign << 3), FromBits());
+            return Float4E2M1(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
         }
 
         if (std::isinf(f)) {
             // E2M1 has no infinity, clamp to max value
             // 0x07 = 0 11 1 = 2^2 * 1.5 = 6.0, 0x0F = -6.0
-            return Float4E2M1(static_cast<uint8_t>((sign << 3) | 0x07), FromBits());
+            return Float4E2M1(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
         }
 
         // Calculate E2M1 exponent
@@ -226,18 +210,18 @@ private:
 
         if (exp == 0) {
             // Denormalized FP32 input
-            fp4Exp = 1 - FP32_EXP_BIAS + EXP_BIAS;
-            while ((man & 0x800000) == 0) {
+            fp4Exp = 1 - FP32_EXP_BIAS_VAL + EXP_BIAS;
+            while ((man & FP32_IMPLICIT_1_VAL) == 0) {
                 man <<= 1;
                 fp4Exp--;
             }
-            man &= 0x7FFFFF;
+            man &= FP32_MAN_MASK_23BIT;
         } else {
-            fp4Exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS + EXP_BIAS;
+            fp4Exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS_VAL + EXP_BIAS;
         }
 
         // Round mantissa from 23 bits to 1 bit with round-to-nearest-even
-        int mantissaShift = FP32_MAN_LEN - MAN_BITS;
+        int mantissaShift = FP32_MAN_LEN_VAL - MAN_BITS;
         uint32_t manRoundBit = (man >> (mantissaShift - 1)) & 1;
         uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) ? 1 : 0;
         uint32_t manLsb = (man >> mantissaShift) & 1;
@@ -254,7 +238,7 @@ private:
         // Handle overflow/underflow
         if (fp4Exp <= 0) {
             if (fp4Exp < -MAN_BITS) {
-                return Float4E2M1(static_cast<uint8_t>(sign << 3), FromBits());
+                return Float4E2M1(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
             }
             fp4Man = (fp4Man | (1 << MAN_BITS)) >> (1 - fp4Exp);
             fp4Exp = 0;
@@ -262,10 +246,10 @@ private:
             // Overflow - for E2M1, max exp is 3
             // OCP MX E2M1 has no NaN, clamp to max value (preserving sign)
             // 0x07 = 0 11 1 = +6.0, 0x0F = 1 11 1 = -6.0
-            return Float4E2M1(static_cast<uint8_t>((sign << 3) | 0x07), FromBits());
+            return Float4E2M1(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
         }
 
-        uint8_t result = static_cast<uint8_t>((sign << 3) | (fp4Exp << MAN_BITS) | (fp4Man & MAN_MASK));
+        uint8_t result = static_cast<uint8_t>((sign << SIGN_SHIFT) | (fp4Exp << MAN_BITS) | (fp4Man & MAN_MASK));
         return Float4E2M1(result, FromBits());
     }
 };

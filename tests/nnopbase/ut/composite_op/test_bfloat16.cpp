@@ -85,48 +85,48 @@ TEST_F(TestBFloat16, normal)
 TEST_F(TestBFloat16, ConvertToFloat8E4M3)
 {
     op::bfloat16 bf16_val(2.5f);
-    op::Float8E4M3FN e4m3 = bf16_val;
+    op::Float8E4M3FN e4m3(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e4m3), 2.5f, 0.1f);
 }
 
 TEST_F(TestBFloat16, ConvertToFloat8E5M2)
 {
     op::bfloat16 bf16_val(100.0f);
-    op::Float8E5M2 e5m2 = bf16_val;
+    op::Float8E5M2 e5m2(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e5m2), 100.0f, 10.0f);
 }
 
 TEST_F(TestBFloat16, ConvertToFloat8E8M0)
 {
     op::bfloat16 bf16_val(4.0f);
-    op::Float8E8M0 e8m0 = bf16_val;
+    op::Float8E8M0 e8m0(static_cast<float>(bf16_val));
     EXPECT_FLOAT_EQ(static_cast<float>(e8m0), 4.0f);
 }
 
 TEST_F(TestBFloat16, ConvertToFloat6E3M2)
 {
     op::bfloat16 bf16_val(4.0f);
-    op::Float6E3M2 e3m2 = bf16_val;
+    op::Float6E3M2 e3m2(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e3m2), 4.0f, 0.2f);
 }
 
 TEST_F(TestBFloat16, ConvertToFloat6E2M3)
 {
     op::bfloat16 bf16_val(3.0f);
-    op::Float6E2M3 e2m3 = bf16_val;
+    op::Float6E2M3 e2m3(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e2m3), 3.0f, 0.2f);
 }
 
 TEST_F(TestBFloat16, ConvertToFloat4E2M1)
 {
     op::bfloat16 bf16_val(2.0f);
-    op::Float4E2M1 e2m1 = bf16_val;
+    op::Float4E2M1 e2m1(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e2m1), 2.0f, 0.1f);
 }
 
 TEST_F(TestBFloat16, ConvertToFloat4E1M2)
 {
     op::bfloat16 bf16_val(1.5f);
-    op::Float4E1M2 e1m2 = bf16_val;
+    op::Float4E1M2 e1m2(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e1m2), 1.5f, 0.1f);
 }

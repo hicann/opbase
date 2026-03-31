@@ -16,9 +16,6 @@
 #include <limits>
 #include <ostream>
 
-#include "opdev/fp16_t.h"
-#include "opdev/bfloat16.h"
-
 namespace op {
 
 /**
@@ -50,15 +47,28 @@ struct Float8E8M0 {
 
     uint8_t value;
 
-    // Constants for E8M0 format (unsigned, 8 exponent bits)
+    // ============= FP32 format constants =============
+    static constexpr int FP32_MAN_LEN_VAL = 23;
+    static constexpr int FP32_SIGN_SHIFT_VAL = 31;
+    static constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+    static constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+    static constexpr uint32_t FP32_ROUND_THRESHOLD = 0x400000;  // 0.5 in mantissa representation
+
+    // ============= E8M0 format constants (unsigned, 8 exponent bits) =============
     static constexpr int EXP_BITS = 8;
     static constexpr int MAN_BITS = 0;
     static constexpr int EXP_BIAS = 127;
-    static constexpr uint8_t EXP_MASK = 0xFF;       // 11111111 (all 8 bits for exponent)
-    static constexpr uint8_t MAX_EXP = 0xFE;        // 254 (max normal exponent)
-    static constexpr uint8_t NAN_EXP = 0xFF;        // 255 (NaN)
-    static constexpr uint8_t ZERO_EXP = 0x00;       // 0 (zero)
-    static constexpr uint8_t NAN_VALUE = 0xFF;      // 255 (NaN only, no infinity encoding)
+    static constexpr uint8_t EXP_MASK = 0xFF;           // 11111111 (all 8 bits for exponent)
+    static constexpr uint8_t MAX_EXP_VAL = 0xFE;        // 254 (max normal exponent)
+    static constexpr uint8_t NAN_EXP_VAL = 0xFF;        // 255 (NaN)
+    static constexpr uint8_t ZERO_EXP_VAL = 0x00;       // 0 (zero)
+    static constexpr uint8_t NAN_VALUE = 0xFF;          // 255 (NaN only, no infinity encoding)
+    static constexpr uint8_t ZERO_VALUE = 0x00;         // 0 (zero)
+    static constexpr uint8_t ONE_VALUE = 0x7F;          // 127 (2^0 = 1.0)
+    static constexpr uint8_t HIGHEST_VALUE = 0xFE;      // 254 (max value: 2^127)
+    static constexpr uint8_t MIN_POSITIVE_VALUE = 0x01; // 1 (min positive: 2^-126)
+    static constexpr uint8_t EXP_OVERFLOW_THRESHOLD = 254;  // max allowed exponent before overflow
+    static constexpr int NAN_EXP_VAL_INT = 255;         // 255 as int for comparisons
 
     // Default constructor - initialize to zero
     Float8E8M0() : value(0) {}
@@ -69,54 +79,29 @@ struct Float8E8M0 {
 
     Float8E8M0(float v)
     {
-        value = float_to_float8_e8m0(v).value;
-    }
-
-    template<typename T>
-    Float8E8M0 &operator=(T other)
-    {
-        value = float_to_float8_e8m0(static_cast<float>(other)).value;
-        return *this;
+        value = FloatToFloat8E8M0(v).value;
     }
 
     operator float() const
     {
-        return float8_e8m0_to_float(*this);
+        return Float8E8M0ToFloat(*this);
     }
 
     operator double() const
     {
-        return static_cast<double>(float8_e8m0_to_float(*this));
-    }
-
-    Float8E8M0 &operator=(const double &dVal)
-    {
-        value = float_to_float8_e8m0(static_cast<float>(dVal)).value;
-        return *this;
-    }
-
-    // Conversion to fp16_t
-    operator fp16_t() const
-    {
-        return fp16_t(float8_e8m0_to_float(*this));
-    }
-
-    // Conversion to bfloat16
-    operator bfloat16() const
-    {
-        return bfloat16(static_cast<float>(*this));
+        return static_cast<double>(Float8E8M0ToFloat(*this));
     }
 
     static constexpr Float8E8M0 Epsilon()
     {
         // epsilon = nextafter(1.0) - 1.0 = 2.0 - 1.0 = 1.0
-        return Float8E8M0(0x7F, FromBits());  // 2^0 = 1.0
+        return Float8E8M0(ONE_VALUE, FromBits());  // 2^0 = 1.0
     }
 
     static constexpr Float8E8M0 Highest()
     {
         // 2^127 (exponent=254)
-        return Float8E8M0(0xFE, FromBits());
+        return Float8E8M0(HIGHEST_VALUE, FromBits());
     }
 
     static constexpr Float8E8M0 Lowest()
@@ -128,18 +113,18 @@ struct Float8E8M0 {
     static constexpr Float8E8M0 MinPositive()
     {
         // 2^-126 (exponent=1)
-        return Float8E8M0(0x01, FromBits());
+        return Float8E8M0(MIN_POSITIVE_VALUE, FromBits());
     }
 
     static constexpr Float8E8M0 One()
     {
         // 2^0 = 1.0 (exponent=127)
-        return Float8E8M0(0x7F, FromBits());
+        return Float8E8M0(ONE_VALUE, FromBits());
     }
 
     bool IsZero() const
     {
-        return value == 0;
+        return value == ZERO_VALUE;
     }
 
     bool IsNaN() const
@@ -164,7 +149,7 @@ struct Float8E8M0 {
     }
 
 private:
-    static float float8_e8m0_to_float(Float8E8M0 fp8)
+    static float Float8E8M0ToFloat(Float8E8M0 fp8)
     {
         if (fp8.IsZero()) {
             return 0.0f;
@@ -186,18 +171,18 @@ private:
             uint32_t u;
             float f;
         } result;
-        result.u = (exp << 23);  // sign=0, exponent=exp, mantissa=0
+        result.u = (exp << FP32_MAN_LEN_VAL);  // sign=0, exponent=exp, mantissa=0
         return result.f;
     }
 
-    static Float8E8M0 float_to_float8_e8m0(float f)
+    static Float8E8M0 FloatToFloat8E8M0(float f)
     {
         if (std::isnan(f)) {
             return Float8E8M0(NAN_VALUE, FromBits());
         }
 
         if (f == 0.0f) {
-            return Float8E8M0(0x00, FromBits());
+            return Float8E8M0(ZERO_VALUE, FromBits());
         }
 
         // E8M0 is unsigned, negative values are not representable
@@ -207,12 +192,7 @@ private:
 
         // E8M0 has no infinity encoding, clamp to max value (0xFE)
         if (std::isinf(f)) {
-            return Float8E8M0(0xFE, FromBits());
-        }
-
-        // E8M0 is unsigned, negative values are not representable
-        if (f < 0.0f) {
-            return Float8E8M0(NAN_VALUE, FromBits());
+            return Float8E8M0(HIGHEST_VALUE, FromBits());
         }
 
         // E8M0 can only represent powers of 2
@@ -223,24 +203,24 @@ private:
         } fp32;
         fp32.f = f;
 
-        uint32_t fp32Exp = (fp32.u >> 23) & 0xFF;
-        uint32_t fp32Man = fp32.u & 0x7FFFFF;
+        uint32_t fp32Exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
+        uint32_t fp32Man = fp32.u & FP32_MAN_MASK_23BIT;
 
         // Round to nearest power of 2
         // If mantissa >= 0x400000 (0.5), round up the exponent
-        if (fp32Man >= 0x400000) {
+        if (fp32Man >= FP32_ROUND_THRESHOLD) {
             fp32Exp++;
         }
 
         // Handle overflow
-        if (fp32Exp > 254) {
+        if (fp32Exp > EXP_OVERFLOW_THRESHOLD) {
             // E8M0 has no infinity encoding, clamp to max value (0xFE)
-            return Float8E8M0(0xFE, FromBits());
+            return Float8E8M0(HIGHEST_VALUE, FromBits());
         }
 
         // Handle underflow (fp32Exp == 0 means denormal or zero)
         if (fp32Exp == 0) {
-            return Float8E8M0(0x00, FromBits());
+            return Float8E8M0(ZERO_VALUE, FromBits());
         }
 
         // E8M0 stores only the exponent (same bias as FP32)
@@ -258,7 +238,7 @@ inline Float8E8M0 operator*(Float8E8M0 a, Float8E8M0 b)
 {
     // Multiplying two powers of 2: 2^a * 2^b = 2^(a+b)
     if (a.IsZero() || b.IsZero()) {
-        return Float8E8M0(0x00, Float8E8M0::FromBits());
+        return Float8E8M0(Float8E8M0::ZERO_VALUE, Float8E8M0::FromBits());
     }
     if (a.IsNaN() || b.IsNaN()) {
         return Float8E8M0(Float8E8M0::NAN_VALUE, Float8E8M0::FromBits());
@@ -269,11 +249,11 @@ inline Float8E8M0 operator*(Float8E8M0 a, Float8E8M0 b)
     int32_t exp_result = exp_a + exp_b + Float8E8M0::EXP_BIAS;
 
     if (exp_result <= 0) {
-        return Float8E8M0(0x00, Float8E8M0::FromBits());
+        return Float8E8M0(Float8E8M0::ZERO_VALUE, Float8E8M0::FromBits());
     }
-    if (exp_result >= 255) {
+    if (exp_result >= Float8E8M0::NAN_EXP_VAL_INT) {
         // Overflow to max value (E8M0 has no infinity encoding)
-        return Float8E8M0(0xFE, Float8E8M0::FromBits());
+        return Float8E8M0(Float8E8M0::HIGHEST_VALUE, Float8E8M0::FromBits());
     }
 
     return Float8E8M0(static_cast<uint8_t>(exp_result), Float8E8M0::FromBits());
@@ -292,7 +272,7 @@ inline Float8E8M0 operator/(Float8E8M0 a, Float8E8M0 b)
     }
     // Zero divided by non-zero: result is zero
     if (a.IsZero()) {
-        return Float8E8M0(0x00, Float8E8M0::FromBits());
+        return Float8E8M0(Float8E8M0::ZERO_VALUE, Float8E8M0::FromBits());
     }
     // E8M0 has no infinity encoding, IsInf() always returns false
 
@@ -301,11 +281,11 @@ inline Float8E8M0 operator/(Float8E8M0 a, Float8E8M0 b)
     int32_t exp_result = exp_a - exp_b + Float8E8M0::EXP_BIAS;
 
     if (exp_result <= 0) {
-        return Float8E8M0(0x00, Float8E8M0::FromBits());
+        return Float8E8M0(Float8E8M0::ZERO_VALUE, Float8E8M0::FromBits());
     }
-    if (exp_result >= 255) {
+    if (exp_result >= Float8E8M0::NAN_EXP_VAL) {
         // Overflow: E8M0 has no infinity encoding, clamp to max value
-        return Float8E8M0(0xFE, Float8E8M0::FromBits());
+        return Float8E8M0(Float8E8M0::HIGHEST_VALUE, Float8E8M0::FromBits());
     }
 
     return Float8E8M0(static_cast<uint8_t>(exp_result), Float8E8M0::FromBits());
