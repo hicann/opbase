@@ -886,7 +886,8 @@ aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor)
     CHECK_COND((NnopbaseGetSupportInfo(executor, supportList) == OK), ACLNN_ERR_INNER_FIND_KERNEL_ERROR,
                "Check soc version failed!");
     if (ParamCheck(executor, supportList)) {
-        OP_LOGE(ACLNN_ERR_INNER_FIND_KERNEL_ERROR, "The binary bin not found!");
+        OP_LOGE(ACLNN_ERR_INNER_FIND_KERNEL_ERROR, "The binary bin not found! "
+        "Probably because inputs do not match simplifiedKey in json or kernel package is not properly installed.");
         return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
     } else {
         return NnopbasePrintSupportInfo(executor, supportList);

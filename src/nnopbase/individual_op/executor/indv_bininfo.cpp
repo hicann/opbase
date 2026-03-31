@@ -66,8 +66,12 @@ aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, Nnopba
     binary.magic = NnopbaseGetBinaryMagic(useCoreTypeMagic, binInfo);
     binary.data = binInfo->bin;
     binary.length = binInfo->binLen;
-    NNOPBASE_ASSERT_RTOK_RETVAL(rtRegisterAllKernel(&binary, &binInfo->ccuBinHandle));
-    OP_LOGD("Finish mc2 kernel register.");
+    if (!binInfo->isStaticShape) {
+        NNOPBASE_ASSERT_RTOK_RETVAL(rtRegisterAllKernel(&binary, &binInfo->ccuBinHandle));
+        OP_LOGD("Finish mc2 kernel register.");
+    } else {
+        OP_LOGW("rtRegisterAllKernel does not support static kernel, skip registry.");
+    }
     return OK;
 }
 

@@ -328,12 +328,10 @@ void NnopbaseSplitStr(const std::string &configPath, const string &pattern, std:
         subStr = strs.substr(0, pos);
         if (!subStr.empty()) {
             subPaths.push_back(subStr);
-            OP_LOGD("Split str substr %s.", subStr.c_str());
         }
         strs = strs.substr(pos + 1U);
         pos = strs.find(pattern);
     }
-    OP_LOGD("Finish split str.");
 }
 
 aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::string &hostEnvCpu)
@@ -876,7 +874,7 @@ aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar *const 
                                                       NnopbaseUChar *const binKey, uint32_t *const size)
 {
     const size_t len = strlen(strKey);
-    OP_LOGI("Start convert customized verbose key %s, size=%zu.", strKey, len);
+    OP_LOGD("Start convert customized verbose key %s, size=%zu.", strKey, len);
     NnopbaseUChar *key = binKey;
     size_t i = 0U;
     int32_t index = NNOPBASE_OP_TYPE_INDEX;
@@ -910,16 +908,14 @@ aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar *const 
     }
 
     *size = static_cast<uint32_t>(key - binKey);
-
-    OP_LOGI("Finish convert customized verbose key, key size is [%u].", *size);
-
+    OP_LOGD("Finish convert customized verbose key, key size is [%u].", *size);
     return OK;
 }
 
 aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const strKey, NnopbaseUChar *const binKey, uint32_t *const size)
 {
     const size_t len = strlen(strKey);
-    OP_LOGI("Start convert dynamic verbose key %s, size=%zu.", strKey, len);
+    OP_LOGD("Start convert dynamic verbose key %s, size=%zu.", strKey, len);
     NnopbaseUChar *key = binKey;
     size_t i = 0U;
     int32_t index = NNOPBASE_OP_TYPE_INDEX;
@@ -965,7 +961,7 @@ aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const str
         key = NnopbaseAppend1Byte(key, type);
     }
     *size = static_cast<uint32_t>(key - binKey);
-    OP_LOGI("Finish convert dynamic verbose key, key size is [%u].", *size);
+    OP_LOGD("Finish convert dynamic verbose key, key size is [%u].", *size);
     return OK;
 }
 
@@ -1001,7 +997,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
                                                   NnopbaseUChar *const binKey, uint32_t *const size)
 {
     const size_t len = strlen(strKey);
-    OP_LOGI("Start convert static verbose key %s, size=%zu.", strKey, len);
+    OP_LOGD("Start convert static verbose key %s, size=%zu.", strKey, len);
     NnopbaseUChar *key = binKey;
     size_t i = 0U;
     uint64_t type = 0U;
@@ -1079,7 +1075,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
         key = NnopbaseAppend8Byte(key, type); // 字符串属性处于末尾
     }
     *size = static_cast<uint32_t>(key - binKey);
-    OP_LOGI("Finish convert static verbose key, key size is [%u].", *size);
+    OP_LOGD("Finish convert static verbose key, key size is [%u].", *size);
     return OK;
 }
 
@@ -1418,7 +1414,7 @@ aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollect
 aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter,
                                                                const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath)
 {
-    OP_LOGI("Start get path and read binary_info_config json");
+    OP_LOGI("Start get path and read binary_info_config json.");
     bool readConfigSucc = false;
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     for (size_t i = 0U; i < basePath.size(); i++) {

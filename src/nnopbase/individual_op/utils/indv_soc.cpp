@@ -106,6 +106,17 @@ uint32_t *IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) 
     return socSupportList;
 }
 
+uint32_t IndvSoc::GetSocEnum()
+{
+    const auto curSocVersion = this->GetCurSocVersion();
+    const auto socMap = GetSocTypeMap();
+    auto iter = socMap.find(curSocVersion);
+    if (iter != socMap.cend()) {
+        return iter->second;
+    }
+    return SOC_VERSION_INVALID;
+}
+
 void IndvSoc::Reset(void)
 {
     isInit = false;

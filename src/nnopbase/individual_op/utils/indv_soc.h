@@ -34,6 +34,7 @@ constexpr uint32_t SOC_VERSION_ASCEND310P = 5U;
 constexpr uint32_t SOC_VERSION_ASCEND310B = 6U;
 constexpr uint32_t SOC_VERSION_ASCEND610Lite = 8U;
 constexpr uint32_t SOC_VERSION_ASCEND910_96 = 13U;
+constexpr uint32_t SOC_VERSION_INVALID = 99U;
 class IndvSoc {
 public:
     static IndvSoc& GetInstance(void);
@@ -50,7 +51,7 @@ public:
     bool SupportL0ExceptionDump(void) const;
     bool IsCouplingArch(void) const;
     uint32_t *GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const;
-
+    uint32_t GetSocEnum();
     void Reset(void);
 private:
     IndvSoc(void);

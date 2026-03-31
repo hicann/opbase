@@ -60,13 +60,13 @@ aclnnStatus NnopbaseInit()
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorSetGlobalConfig());
     PrintNnopbaseInitTimeStampInfo();
     isInit = true;
-    OP_LOGI("NnopbaseInit end");
+    OP_LOGI("NnopbaseInit end.");
     return OK;
 }
 
 void NnopbaseReloadStaticBinJsonInfos(void)
 {
-    OP_LOGI("NnopbaseReloadStaticBinJsonInfos Start");
+    OP_LOGI("NnopbaseReloadStaticBinJsonInfos start.");
     NnopbaseExecutorClearSet(&g_nnopbaseSpaceSet);
     auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollecter);
     if (ret != OK) {
@@ -75,7 +75,7 @@ void NnopbaseReloadStaticBinJsonInfos(void)
         OP_LOGI("Reload static kernel informations success.");
     }
     nnopbase::ArgsPool::GetInstance().Finalize();
-    OP_LOGI("NnopbaseReloadStaticBinJsonInfos end");
+    OP_LOGI("NnopbaseReloadStaticBinJsonInfos end.");
 }
 
 aclnnStatus NnopbaseCreateExecutorSpace(void **space)
@@ -678,6 +678,11 @@ void NnopbaseAddOpTypeId(void *executor, const uint32_t opTypeId)
 {
     NNOPBASE_ASSERT_NOTNULL(executor);
     NnopbaseExecutorAddOpTypeId((NnopbaseExecutor *)executor, opTypeId);
+}
+
+uint32_t NnopbaseGetSocEnum()
+{
+    return nnopbase::IndvSoc::GetInstance().GetSocEnum();
 }
 
 aclnnStatus NnopbaseGetUnContiguousTensors(void *executor, const aclTensorList **inTensors)
