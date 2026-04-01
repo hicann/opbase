@@ -383,7 +383,6 @@ int32_t ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann:
     for (size_t irLoc = 0UL; irLoc < inputIr.size(); irLoc++) {
         nlohmann::json tmpJ = TransInputInstanceToJson(
             ctx, inputInstanceLoc, irLoc, inputIr[irLoc].first, inputIr[irLoc].second);
-        
         if (!tmpJ.is_null()) {
             int32_t ret = CheckInputSkipSerialize(ctx, computeNodeInfo, irLoc, inputInstanceLoc);
             if (ret == RET_SKIP_SERIALIZATION) {
