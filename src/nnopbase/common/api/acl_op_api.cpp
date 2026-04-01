@@ -478,13 +478,15 @@ aclnnStatus aclSetAclOpExecutorRepeatable(aclOpExecutor *executor)
 {
     CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
-    OP_LOGI("executor addr is %p, magic is %lu", executor, *magicNum);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetRepeatable(executor);
     } else if (executor->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
         return executor->SetRepeatable();
+    } else {
+        OP_LOGI("executor addr is %p, *magicNum is %lu, executor->GetMagicNumber() is %lu.",
+            executor, *magicNum, executor->GetMagicNumber());
+        return ACLNN_ERR_INNER;
     }
-    return ACLNN_ERR_INNER;
 }
 
 aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor *executor)
