@@ -246,6 +246,194 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         REPORT_PREDEFINED_ERR_MSG("EZ0007", msgKey, msgvalue);                                                  \
     } while (0)
 
+// ============================================================================
+// Input Validation Macros (EZ0008-EZ0011)
+// ============================================================================
+
+/**
+ * EZ0008: 输入shape异常
+ * opName:string - 算子名称
+ * inputName:string - 输入tensor名称
+ * incorrectShape:string - 实际的形状，格式如 "[1,128,128]"
+ * correctShape:string - 期望的形状，格式如 "[1,256,256]"
+ * errMessage: OP opName input inputName has incorrect shape [incorrectShape], it should be [correctShape].
+ */
+#define OP_LOGE_FOR_INVALID_INPUT_SHAPE(opName, inputName, incorrectShape, correctShape)                              \
+    do {                                                                                                              \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            opName, "OP %s input %s has incorrect shape [%s], it should be [%s].", opName, inputName, incorrectShape, \
+            correctShape);                                                                                            \
+        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_shape", "correct_shape"};        \
+        const std::vector<const char*> msgvalue = {opName, inputName, incorrectShape, correctShape};                  \
+        REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                        \
+    } while (0)
+
+/**
+ * EZ0009: 输入shape dim异常
+ * opName:string - 算子名称
+ * inputName:string - 输入tensor名称
+ * incorrectDim:string - 实际的维度，格式如 "2D" 或 "3D"
+ * correctDim:string - 期望的维度，格式如 "4D"
+ * errMessage: OP opName input inputName has incorrect shape dim [incorrectDim], it should be [correctDim].
+ */
+#define OP_LOGE_FOR_INVALID_INPUT_SHAPE_DIM(opName, inputName, incorrectDim, correctDim)                   \
+    do {                                                                                                   \
+        OP_LOGE_WITHOUT_REPORT(                                                                            \
+            opName, "OP %s input %s has incorrect shape dim [%s], it should be [%s].", opName, inputName,  \
+            incorrectDim, correctDim);                                                                     \
+        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_dim", "correct_dim"}; \
+        const std::vector<const char*> msgvalue = {opName, inputName, incorrectDim, correctDim};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                             \
+    } while (0)
+
+/**
+ * EZ0010: 输入shape异常（含原因）
+ * opName:string - 算子名称
+ * inputName:string - 输入tensor名称
+ * incorrectShape:string - 实际的形状（错误），格式如 "[1,128]" 或 "3D"
+ * reason:string - 异常原因描述
+ * errMessage: OP opName input inputName has incorrect shape [incorrectShape], reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_INPUT_SHAPE_WITH_REASON(opName, inputName, incorrectShape, reason)                 \
+    do {                                                                                                       \
+        OP_LOGE_WITHOUT_REPORT(                                                                                \
+            opName, "OP %s input %s has incorrect shape [%s], reason: %s.", opName, inputName, incorrectShape, \
+            reason);                                                                                           \
+        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_shape", "reason"};        \
+        const std::vector<const char*> msgvalue = {opName, inputName, incorrectShape, reason};                 \
+        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0011: 输入shape size异常
+ * opName:string - 算子名称
+ * inputName:string - 输入tensor名称
+ * incorrectSize:string - 实际的大小，元素总数
+ * correctSize:string - 期望的大小，元素总数
+ * errMessage: OP opName input inputName has incorrect shape size incorrectSize, it should be correctSize.
+ */
+#define OP_LOGE_FOR_INVALID_INPUT_SHAPESIZE(opName, inputName, incorrectSize, correctSize)                            \
+    do {                                                                                                              \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            opName, "OP %s input %s has incorrect shape size %s, it should be %s.", opName, inputName, incorrectSize, \
+            correctSize);                                                                                             \
+        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_size", "correct_size"};          \
+        const std::vector<const char*> msgvalue = {opName, inputName, incorrectSize, correctSize};                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                        \
+    } while (0)
+
+// ============================================================================
+// Output Validation Macros (EZ0012-EZ0017)
+// ============================================================================
+
+/**
+ * EZ0012: 输出shape异常
+ * opName:string - 算子名称
+ * outputName:string - 输出tensor名称
+ * incorrectShape:string - 实际的形状，格式如 "[1,128,128]"
+ * correctShape:string - 期望的形状，格式如 "[1,256,256]"
+ * errMessage: OP opName output outputName has incorrect shape [incorrectShape], it should be [correctShape].
+ */
+#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPE(opName, outputName, incorrectShape, correctShape)                      \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s output %s has incorrect shape [%s], it should be [%s].", opName, outputName,         \
+            incorrectShape, correctShape);                                                                      \
+        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_shape", "correct_shape"}; \
+        const std::vector<const char*> msgvalue = {opName, outputName, incorrectShape, correctShape};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                  \
+    } while (0)
+
+/**
+ * EZ0013: 输出shape dim异常
+ * opName:string - 算子名称
+ * outputName:string - 输出tensor名称
+ * incorrectDim:string - 实际的维度，格式如 "2D" 或 "3D"
+ * correctDim:string - 期望的维度，格式如 "4D"
+ * errMessage: OP opName output outputName has incorrect shape dim [incorrectDim], it should be [correctDim].
+ */
+#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPE_DIM(opName, outputName, incorrectDim, correctDim)                  \
+    do {                                                                                                    \
+        OP_LOGE_WITHOUT_REPORT(                                                                             \
+            opName, "OP %s output %s has incorrect shape dim [%s], it should be [%s].", opName, outputName, \
+            incorrectDim, correctDim);                                                                      \
+        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_dim", "correct_dim"}; \
+        const std::vector<const char*> msgvalue = {opName, outputName, incorrectDim, correctDim};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                              \
+    } while (0)
+
+/**
+ * EZ0014: 输出shape异常（含原因）
+ * opName:string - 算子名称
+ * outputName:string - 输出tensor名称
+ * incorrectShape:string - 实际的形状（错误），格式如 "[1,128]" 或 "3D"
+ * reason:string - 异常原因描述
+ * errMessage: OP opName output outputName has incorrect shape [incorrectShape], reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPE_WITH_REASON(opName, outputName, incorrectShape, reason)                 \
+    do {                                                                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                  \
+            opName, "OP %s output %s has incorrect shape [%s], reason: %s.", opName, outputName, incorrectShape, \
+            reason);                                                                                             \
+        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_shape", "reason"};         \
+        const std::vector<const char*> msgvalue = {opName, outputName, incorrectShape, reason};                  \
+        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                                   \
+    } while (0)
+
+/**
+ * EZ0015: 输出shape size异常
+ * opName:string - 算子名称
+ * outputName:string - 输出tensor名称
+ * incorrectSize:string - 实际的大小，元素总数
+ * correctSize:string - 期望的大小，元素总数
+ * errMessage: OP opName output outputName has incorrect shape size incorrectSize, it should be correctSize.
+ */
+#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPESIZE(opName, outputName, incorrectSize, correctSize)                  \
+    do {                                                                                                      \
+        OP_LOGE_WITHOUT_REPORT(                                                                               \
+            opName, "OP %s output %s has incorrect shape size %s, it should be %s.", opName, outputName,      \
+            incorrectSize, correctSize);                                                                      \
+        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgvalue = {opName, outputName, incorrectSize, correctSize};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                \
+    } while (0)
+
+/**
+ * EZ0016: 输出format异常
+ * opName:string - 算子名称
+ * outputName:string - 输出tensor名称
+ * incorrectFormat:string - 错误的格式
+ * correctFormat:string - 正确的格式
+ * errMessage: OP opName output outputName has incorrect format incorrectFormat, it should be correctFormat.
+ */
+#define OP_LOGE_FOR_INVALID_OUTPUT_FORMAT(opName, outputName, incorrectFormat, correctFormat)                         \
+    do {                                                                                                              \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            opName, "OP %s output %s has incorrect format %s, it should be %s.", opName, outputName, incorrectFormat, \
+            correctFormat);                                                                                           \
+        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_format", "correct_format"};     \
+        const std::vector<const char*> msgvalue = {opName, outputName, incorrectFormat, correctFormat};               \
+        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                        \
+    } while (0)
+
+/**
+ * EZ0017: 输出dtype异常
+ * opName:string - 算子名称
+ * outputName:string - 输出tensor名称
+ * incorrectDtype:string - 错误的数据类型
+ * correctDtype:string - 正确的数据类型
+ * errMessage: OP opName output outputName has incorrect dtype incorrectDtype, it should be correctDtype.
+ */
+#define OP_LOGE_FOR_INVALID_OUTPUT_DTYPE(opName, outputName, incorrectDtype, correctDtype)                          \
+    do {                                                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            opName, "OP %s output %s has incorrect dtype %s, it should be %s.", opName, outputName, incorrectDtype, \
+            correctDtype);                                                                                          \
+        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_dtype", "correct_dtype"};     \
+        const std::vector<const char*> msgvalue = {opName, outputName, incorrectDtype, correctDtype};               \
+        REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                      \
+    } while (0)
+
 #define OP_LOGD(opName, ...) D_OP_LOGD(Ops::Base::GetOpInfo(opName), __VA_ARGS__)
 #define OP_CHECK_IF(condition, log, return_expr) \
     do {                                         \

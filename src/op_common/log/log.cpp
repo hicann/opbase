@@ -331,6 +331,116 @@ const static std::string g_msg = R"(
         "Possible Cause": "N/A",
         "Solution": "1. Check input dtype.\n2. Dump GE Graph, find error node in graph and check input dtype."
       }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Input_Shape",
+      "ErrCode": "EZ0008",
+      "ErrMessage": "OP %s input %s has incorrect shape [%s], it should be [%s].",
+      "Arglist": "op_name, input_name, incorrect_shape, correct_shape",
+      "suggestion": {
+        "Possible Cause": "Input tensor shape does not match expected shape.",
+        "Solution": "1. Check input tensor shape.\n2. Refer to operator documentation for correct shape requirements."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Input_Shape",
+      "ErrCode": "EZ0009",
+      "ErrMessage": "OP %s input %s has incorrect shape dim [%s], it should be [%s].",
+      "Arglist": "op_name, input_name, incorrect_dim, correct_dim",
+      "suggestion": {
+        "Possible Cause": "Input tensor dimension (rank) does not match expected dimension.",
+        "Solution": "1. Check input tensor dimension.\n2. Ensure input has correct number of axes."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Input_Shape",
+      "ErrCode": "EZ0010",
+      "ErrMessage": "OP %s input %s has incorrect shape [%s], reason: %s.",
+      "Arglist": "op_name, input_name, incorrect_shape, reason",
+      "suggestion": {
+        "Possible Cause": "Input tensor shape validation failed.",
+        "Solution": "1. Review the reason provided.\n2. Check input tensor shape against operator requirements."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Input_Shape",
+      "ErrCode": "EZ0011",
+      "ErrMessage": "OP %s input %s has incorrect shape size %s, it should be %s.",
+      "Arglist": "op_name, input_name, incorrect_size, correct_size",
+      "suggestion": {
+        "Possible Cause": "Input tensor total element count does not match expected size.",
+        "Solution": "1. Check input tensor size.\n2. Ensure total elements match expected count."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Output_Shape",
+      "ErrCode": "EZ0012",
+      "ErrMessage": "OP %s output %s has incorrect shape [%s], it should be [%s].",
+      "Arglist": "op_name, output_name, incorrect_shape, correct_shape",
+      "suggestion": {
+        "Possible Cause": "Output tensor shape does not match expected shape.",
+        "Solution": "1. Check output tensor shape.\n2. Verify operator configuration produces correct output shape."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Output_Shape",
+      "ErrCode": "EZ0013",
+      "ErrMessage": "OP %s output %s has incorrect shape dim [%s], it should be [%s].",
+      "Arglist": "op_name, output_name, incorrect_dim, correct_dim",
+      "suggestion": {
+        "Possible Cause": "Output tensor dimension (rank) does not match expected dimension.",
+        "Solution": "1. Check output tensor dimension.\n2. Verify operator produces correct output rank."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Output_Shape",
+      "ErrCode": "EZ0014",
+      "ErrMessage": "OP %s output %s has incorrect shape [%s], reason: %s.",
+      "Arglist": "op_name, output_name, incorrect_shape, reason",
+      "suggestion": {
+        "Possible Cause": "Output tensor shape validation failed.",
+        "Solution": "1. Review the reason provided.\n2. Check operator implementation and configuration."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Output_Shape",
+      "ErrCode": "EZ0015",
+      "ErrMessage": "OP %s output %s has incorrect shape size %s, it should be %s.",
+      "Arglist": "op_name, output_name, incorrect_size, correct_size",
+      "suggestion": {
+        "Possible Cause": "Output tensor total element count does not match expected size.",
+        "Solution": "1. Check output tensor size.\n2. Verify operator produces correct output element count."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Output_Format",
+      "ErrCode": "EZ0016",
+      "ErrMessage": "OP %s output %s has incorrect format %s, it should be %s.",
+      "Arglist": "op_name, output_name, incorrect_format, correct_format",
+      "suggestion": {
+        "Possible Cause": "Output tensor format does not match expected format (e.g., NC, NHWC, NCHW).",
+        "Solution": "1. Check output tensor format.\n2. Verify operator configuration produces correct data format."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Output_Dtype",
+      "ErrCode": "EZ0017",
+      "ErrMessage": "OP %s output %s has incorrect dtype %s, it should be %s.",
+      "Arglist": "op_name, output_name, incorrect_dtype, correct_dtype",
+      "suggestion": {
+        "Possible Cause": "Output tensor data type does not match expected dtype.",
+        "Solution": "1. Check output tensor data type.\n2. Verify operator configuration produces correct data type."
+      }
     }
   ]
 }
