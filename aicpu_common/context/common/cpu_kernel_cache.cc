@@ -535,7 +535,10 @@ std::shared_ptr<CpuKernelContext> CpuKernelCache::GetCpuKernelContext(
   if (has_sess_info) {
     auto cache = GetCache(ext_kernel_id);
     if (cache != nullptr) {
-      KERNEL_LOG_INFO("Get kernel from cache success.");
+      if (ext_info_msg->workspace_size > 0UL) {
+        CpuKernelUtils::UpdateCustWorkSpaceInfo(cache->context.get(), ext_info_msg->workspace_size, ext_info_msg->workspace_addr);
+      }
+      KERNEL_LOG_DEBUG("get cache success, workspace addr=%ld.", ext_info_msg->workspace_addr, ext_info_msg->workspace_size);
       return cache->context;
     }
   }
@@ -569,20 +572,19 @@ std::shared_ptr<CpuKernelContext> CpuKernelCache::GetCpuKernelContext(
     return std::shared_ptr<CpuKernelContext>(nullptr);
   }
 
+  if (ext_info_msg->workspace_size > 0UL) {
+    CpuKernelUtils::UpdateCustWorkSpaceInfo(ctx.get(), ext_info_msg->workspace_size, ext_info_msg->workspace_addr);
+    KERNEL_LOG_DEBUG("workspace addr=%ld, workspace size is [%lu].", ext_info_msg->workspace_addr, ext_info_msg->workspace_size);
+  }
+
   if (has_sess_info) {
     CpuCacheData *cache_ptr = new (std::nothrow) CpuCacheData(nodedef_proto, ctx);
-    KERNEL_CHECK_NULLPTR(cache_ptr, std::shared_ptr<CpuKernelContext>(nullptr),
-                         "Create cpu cache data failed.")
+    KERNEL_CHECK_NULLPTR(cache_ptr, std::shared_ptr<CpuKernelContext>(nullptr), "Create cpu cache data failed.")
     std::shared_ptr<CpuCacheData> cache_shared = std::shared_ptr<CpuCacheData>(cache_ptr);
     SetCache(ext_kernel_id, cache_shared);
     KERNEL_LOG_INFO("Cache cpu kernel data success, kernel id[%lu].", ext_kernel_id);
   }
-  if (ext_info_msg->workspace_size > 0UL) {
-    CpuKernelUtils::UpdateCustWorkSpaceInfo(ctx.get(), ext_info_msg->workspace_size,
-                                            ext_info_msg->workspace_addr);
-    KERNEL_LOG_DEBUG("UpdateCustWorkSpaceInfo success, workspace size is [%lu].",
-                     ext_info_msg->workspace_size);
-  }
+
   KERNEL_LOG_INFO("Get cpu kernel context success, kernel id[%lu].", ext_kernel_id);
   return ctx;
 }
