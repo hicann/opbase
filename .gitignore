@@ -63,4 +63,7 @@ tbetoolkits-*.log
 *_result.csv
 
 # 3rd package
-/third_party/
+third_party/
+oat_reports/
+    
+log/
