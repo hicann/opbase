@@ -30,6 +30,9 @@ template <uint64_t schMode, class ElemDag>
 class ElementwiseSch16B {
  public:
   __aicore__ inline explicit ElementwiseSch16B(__tiling_data_ptr__ EleBaseTilingData16B* baseTilingData) {
+    uint64_t preCtrl = get_ctrl() & 0x1000000000000;
+    uint64_t newCtrl = preCtrl | 0x1000000000000008;
+    set_ctrl(newCtrl);
     tilingData = baseTilingData;
 
     dim0_ = tilingData->dim0;
