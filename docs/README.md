@@ -242,7 +242,7 @@ aclnn API开发时依赖的框架基础能力接口，如算子执行器（opExe
     -   [aicpu\_args\_handler](zh/nnopbase/opdev/aicpu_args_handler.md)
     -   [aicpu\_ext\_info\_handle](zh/nnopbase/opdev/aicpu_ext_info_handle.md)
     -   [aicpu\_task](zh/nnopbase/opdev/aicpu_task.md)
-    -   [aicpu\_uitls](zh/nnopbase/opdev/aicpu_uitls.md)
+    -   [aicpu\_uitls](zh/nnopbase/opdev/aicpu_utils.md)
 
 ## op\_common接口
 
