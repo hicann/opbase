@@ -109,7 +109,7 @@
         <file value="aicpu_ext_info_handle.h" install_mod="550"/>
         <file value="aicpu_kernel_launcher.h" install_mod="550"/>
         <file value="aicpu_task.h" install_mod="550"/>
-        <file value="aicpu_uitls.h" install_mod="550"/>
+        <file value="aicpu_utils.h" install_mod="550"/>
     </file_info>
     <file_info value="ops_base_lib" copy_type="delivery" src_path="" dst_path="ops_base/lib/aclnn" install_path="$(TARGET_ENV)/lib64" install_mod="440">
         <file value="libnnopbase.so" file_type="shared"/>

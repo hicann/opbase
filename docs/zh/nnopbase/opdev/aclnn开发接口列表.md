@@ -205,11 +205,11 @@
 <td class="cellrowborder" valign="top" width="24.87%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000002114052989_p11708195610316"><a name="zh-cn_topic_0000002114052989_p11708195610316"></a><a name="zh-cn_topic_0000002114052989_p11708195610316"></a>aclnn/opdev/aicpu/aicpu_task.h</p>
 </td>
 </tr>
-<tr id="zh-cn_topic_0000002114052989_row19708175620310"><td class="cellrowborder" valign="top" width="28.52%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000002114052989_p127085561238"><a name="zh-cn_topic_0000002114052989_p127085561238"></a><a name="zh-cn_topic_0000002114052989_p127085561238"></a><a href="aicpu_uitls.md">aicpu_uitls</a></p>
+<tr id="zh-cn_topic_0000002114052989_row19708175620310"><td class="cellrowborder" valign="top" width="28.52%" headers="mcps1.2.4.1.1 "><p id="zh-cn_topic_0000002114052989_p127085561238"><a name="zh-cn_topic_0000002114052989_p127085561238"></a><a name="zh-cn_topic_0000002114052989_p127085561238"></a><a href="aicpu_utils.md">aicpu_utils</a></p>
 </td>
 <td class="cellrowborder" valign="top" width="46.61%" headers="mcps1.2.4.1.2 "><p id="zh-cn_topic_0000002114052989_p970812561335"><a name="zh-cn_topic_0000002114052989_p970812561335"></a><a name="zh-cn_topic_0000002114052989_p970812561335"></a>AI CPU任务需要的一些公共接口。</p>
 </td>
-<td class="cellrowborder" valign="top" width="24.87%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000002114052989_p870825618320"><a name="zh-cn_topic_0000002114052989_p870825618320"></a><a name="zh-cn_topic_0000002114052989_p870825618320"></a>aclnn/opdev/aicpu/aicpu_uitls.h</p>
+<td class="cellrowborder" valign="top" width="24.87%" headers="mcps1.2.4.1.3 "><p id="zh-cn_topic_0000002114052989_p870825618320"><a name="zh-cn_topic_0000002114052989_p870825618320"></a><a name="zh-cn_topic_0000002114052989_p870825618320"></a>aclnn/opdev/aicpu/aicpu_utils.h</p>
 </td>
 </tr>
 </tbody>

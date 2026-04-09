@@ -9,7 +9,7 @@
  */
 
 #include "opdev/aicpu/aicpu_args_handler.h"
-#include "opdev/aicpu/aicpu_uitls.h"
+#include "opdev/aicpu/aicpu_utils.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "aicpu_task_struct.h"
 #include "exe_graph/runtime/tensor.h"

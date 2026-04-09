@@ -10,5 +10,5 @@
 
 -   **[aicpu\_task](aicpu_task.md)**  
 
--   **[aicpu\_uitls](aicpu_uitls.md)**  
+-   **[aicpu\_utils](aicpu_utils.md)**
 

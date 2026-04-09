@@ -14,7 +14,7 @@
 #include "ops_json_parse.h"
 #include "mmpa/mmpa_api.h"
 #include "opdev/op_log.h"
-#include "opdev/aicpu/aicpu_uitls.h"
+#include "opdev/aicpu/aicpu_utils.h"
 #include "opdev/op_errno.h"
 #include "file_utils.h"
 
