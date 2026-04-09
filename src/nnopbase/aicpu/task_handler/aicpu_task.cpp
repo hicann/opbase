@@ -24,7 +24,7 @@ namespace internal {
 namespace {
 constexpr uint16_t kModelId = 36; // AICPU
 const std::string kDefaultKernelSo = "libcpu_kernels.so";
-const std::set<std::string> pt_ops = {"Index", "IndexPut"};
+const std::set<std::string> pt_ops = {"Index", "IndexPut", "LeftShift"};
 const std::string kPtKernelSo = "libpt_kernels.so";
 constexpr uint32_t KERNEL_TYPE_FWK = 1U;
 constexpr uint32_t KERNEL_TYPE_AICPU = 2U;
