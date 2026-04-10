@@ -247,191 +247,315 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
     } while (0)
 
 // ============================================================================
-// Input Validation Macros (EZ0008-EZ0011)
+// General Parameter Validation Macros (EZ0008-EZ0024)
+// These macros do not distinguish between input/output and use generic "parameter" naming
 // ============================================================================
 
 /**
- * EZ0008: 输入shape异常
- * opName:string - 算子名称
- * inputName:string - 输入tensor名称
- * incorrectShape:string - 实际的形状，格式如 "[1,128,128]"
- * correctShape:string - 期望的形状，格式如 "[1,256,256]"
- * errMessage: OP opName input inputName has incorrect shape [incorrectShape], it should be [correctShape].
+ * EZ0008: Parameter shape error (single parameter, with correct shape)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectShape:string - Actual shape, format like "[1,128,128]"
+ * correctShape:string - Expected shape, format like "[1,256,256]"
+ * errMessage: OP opName's parameter paramName has incorrect shape [incorrectShape], it should be [correctShape].
  */
-#define OP_LOGE_FOR_INVALID_INPUT_SHAPE(opName, inputName, incorrectShape, correctShape)                              \
-    do {                                                                                                              \
-        OP_LOGE_WITHOUT_REPORT(                                                                                       \
-            opName, "OP %s input %s has incorrect shape [%s], it should be [%s].", opName, inputName, incorrectShape, \
-            correctShape);                                                                                            \
-        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_shape", "correct_shape"};        \
-        const std::vector<const char*> msgvalue = {opName, inputName, incorrectShape, correctShape};                  \
-        REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                        \
-    } while (0)
-
-/**
- * EZ0009: 输入shape dim异常
- * opName:string - 算子名称
- * inputName:string - 输入tensor名称
- * incorrectDim:string - 实际的维度，格式如 "2D" 或 "3D"
- * correctDim:string - 期望的维度，格式如 "4D"
- * errMessage: OP opName input inputName has incorrect shape dim [incorrectDim], it should be [correctDim].
- */
-#define OP_LOGE_FOR_INVALID_INPUT_SHAPE_DIM(opName, inputName, incorrectDim, correctDim)                   \
-    do {                                                                                                   \
-        OP_LOGE_WITHOUT_REPORT(                                                                            \
-            opName, "OP %s input %s has incorrect shape dim [%s], it should be [%s].", opName, inputName,  \
-            incorrectDim, correctDim);                                                                     \
-        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_dim", "correct_dim"}; \
-        const std::vector<const char*> msgvalue = {opName, inputName, incorrectDim, correctDim};           \
-        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                             \
-    } while (0)
-
-/**
- * EZ0010: 输入shape异常（含原因）
- * opName:string - 算子名称
- * inputName:string - 输入tensor名称
- * incorrectShape:string - 实际的形状（错误），格式如 "[1,128]" 或 "3D"
- * reason:string - 异常原因描述
- * errMessage: OP opName input inputName has incorrect shape [incorrectShape], reason: reason.
- */
-#define OP_LOGE_FOR_INVALID_INPUT_SHAPE_WITH_REASON(opName, inputName, incorrectShape, reason)                 \
-    do {                                                                                                       \
-        OP_LOGE_WITHOUT_REPORT(                                                                                \
-            opName, "OP %s input %s has incorrect shape [%s], reason: %s.", opName, inputName, incorrectShape, \
-            reason);                                                                                           \
-        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_shape", "reason"};        \
-        const std::vector<const char*> msgvalue = {opName, inputName, incorrectShape, reason};                 \
-        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                 \
-    } while (0)
-
-/**
- * EZ0011: 输入shape size异常
- * opName:string - 算子名称
- * inputName:string - 输入tensor名称
- * incorrectSize:string - 实际的大小，元素总数
- * correctSize:string - 期望的大小，元素总数
- * errMessage: OP opName input inputName has incorrect shape size incorrectSize, it should be correctSize.
- */
-#define OP_LOGE_FOR_INVALID_INPUT_SHAPESIZE(opName, inputName, incorrectSize, correctSize)                            \
-    do {                                                                                                              \
-        OP_LOGE_WITHOUT_REPORT(                                                                                       \
-            opName, "OP %s input %s has incorrect shape size %s, it should be %s.", opName, inputName, incorrectSize, \
-            correctSize);                                                                                             \
-        const std::vector<const char*> msgKey = {"op_name", "input_name", "incorrect_size", "correct_size"};          \
-        const std::vector<const char*> msgvalue = {opName, inputName, incorrectSize, correctSize};                    \
-        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                        \
-    } while (0)
-
-// ============================================================================
-// Output Validation Macros (EZ0012-EZ0017)
-// ============================================================================
-
-/**
- * EZ0012: 输出shape异常
- * opName:string - 算子名称
- * outputName:string - 输出tensor名称
- * incorrectShape:string - 实际的形状，格式如 "[1,128,128]"
- * correctShape:string - 期望的形状，格式如 "[1,256,256]"
- * errMessage: OP opName output outputName has incorrect shape [incorrectShape], it should be [correctShape].
- */
-#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPE(opName, outputName, incorrectShape, correctShape)                      \
+#define OP_LOGE_FOR_INVALID_SHAPE(opName, paramName, incorrectShape, correctShape)                            \
     do {                                                                                                        \
         OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s output %s has incorrect shape [%s], it should be [%s].", opName, outputName,         \
-            incorrectShape, correctShape);                                                                      \
-        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_shape", "correct_shape"}; \
-        const std::vector<const char*> msgvalue = {opName, outputName, incorrectShape, correctShape};           \
-        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                  \
+            opName, "OP %s's parameter %s has incorrect shape [%s], it should be [%s].", opName, paramName,    \
+            incorrectShape, correctShape);                                                                     \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "correct_shape"}; \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectShape, correctShape};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                 \
     } while (0)
 
 /**
- * EZ0013: 输出shape dim异常
- * opName:string - 算子名称
- * outputName:string - 输出tensor名称
- * incorrectDim:string - 实际的维度，格式如 "2D" 或 "3D"
- * correctDim:string - 期望的维度，格式如 "4D"
- * errMessage: OP opName output outputName has incorrect shape dim [incorrectDim], it should be [correctDim].
+ * EZ0009: Parameter shape error (single parameter, with reason)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectShape:string - Actual incorrect shape, format like "[1,128]"
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameter paramName has incorrect shape [incorrectShape]. Reason: reason.
  */
-#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPE_DIM(opName, outputName, incorrectDim, correctDim)                  \
-    do {                                                                                                    \
-        OP_LOGE_WITHOUT_REPORT(                                                                             \
-            opName, "OP %s output %s has incorrect shape dim [%s], it should be [%s].", opName, outputName, \
-            incorrectDim, correctDim);                                                                      \
-        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_dim", "correct_dim"}; \
-        const std::vector<const char*> msgvalue = {opName, outputName, incorrectDim, correctDim};           \
-        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                              \
-    } while (0)
-
-/**
- * EZ0014: 输出shape异常（含原因）
- * opName:string - 算子名称
- * outputName:string - 输出tensor名称
- * incorrectShape:string - 实际的形状（错误），格式如 "[1,128]" 或 "3D"
- * reason:string - 异常原因描述
- * errMessage: OP opName output outputName has incorrect shape [incorrectShape], reason: reason.
- */
-#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPE_WITH_REASON(opName, outputName, incorrectShape, reason)                 \
-    do {                                                                                                         \
-        OP_LOGE_WITHOUT_REPORT(                                                                                  \
-            opName, "OP %s output %s has incorrect shape [%s], reason: %s.", opName, outputName, incorrectShape, \
-            reason);                                                                                             \
-        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_shape", "reason"};         \
-        const std::vector<const char*> msgvalue = {opName, outputName, incorrectShape, reason};                  \
-        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                                   \
-    } while (0)
-
-/**
- * EZ0015: 输出shape size异常
- * opName:string - 算子名称
- * outputName:string - 输出tensor名称
- * incorrectSize:string - 实际的大小，元素总数
- * correctSize:string - 期望的大小，元素总数
- * errMessage: OP opName output outputName has incorrect shape size incorrectSize, it should be correctSize.
- */
-#define OP_LOGE_FOR_INVALID_OUTPUT_SHAPESIZE(opName, outputName, incorrectSize, correctSize)                  \
+#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(opName, paramName, incorrectShape, reason)                    \
     do {                                                                                                      \
         OP_LOGE_WITHOUT_REPORT(                                                                               \
-            opName, "OP %s output %s has incorrect shape size %s, it should be %s.", opName, outputName,      \
-            incorrectSize, correctSize);                                                                      \
-        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_size", "correct_size"}; \
-        const std::vector<const char*> msgvalue = {opName, outputName, incorrectSize, correctSize};           \
-        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                \
+            opName, "OP %s's parameter %s has incorrect shape [%s]. Reason: %s.", opName, paramName,          \
+            incorrectShape, reason);                                                                          \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "reason"};      \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectShape, reason};                \
+        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                                \
     } while (0)
 
 /**
- * EZ0016: 输出format异常
- * opName:string - 算子名称
- * outputName:string - 输出tensor名称
- * incorrectFormat:string - 错误的格式
- * correctFormat:string - 正确的格式
- * errMessage: OP opName output outputName has incorrect format incorrectFormat, it should be correctFormat.
+ * EZ0010: Parameters shape error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectShapes:string - Actual incorrect shapes
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have incorrect shapes incorrectShapes. Reason: reason.
  */
-#define OP_LOGE_FOR_INVALID_OUTPUT_FORMAT(opName, outputName, incorrectFormat, correctFormat)                         \
-    do {                                                                                                              \
-        OP_LOGE_WITHOUT_REPORT(                                                                                       \
-            opName, "OP %s output %s has incorrect format %s, it should be %s.", opName, outputName, incorrectFormat, \
-            correctFormat);                                                                                           \
-        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_format", "correct_format"};     \
-        const std::vector<const char*> msgvalue = {opName, outputName, incorrectFormat, correctFormat};               \
-        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                        \
+#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, paramNames, incorrectShapes, reason)                      \
+    do {                                                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                   \
+            opName, "OP %s's parameters %s have incorrect shapes %s. Reason: %s.", opName, paramNames,            \
+            incorrectShapes, reason);                                                                             \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_shapes", "reason"};         \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectShapes, reason};                  \
+        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                    \
     } while (0)
 
 /**
- * EZ0017: 输出dtype异常
- * opName:string - 算子名称
- * outputName:string - 输出tensor名称
- * incorrectDtype:string - 错误的数据类型
- * correctDtype:string - 正确的数据类型
- * errMessage: OP opName output outputName has incorrect dtype incorrectDtype, it should be correctDtype.
+ * EZ0011: Parameter shape dim error (single parameter, with correct dim)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectDim:string - Actual dimension, format like "2D" or "3D"
+ * correctDim:string - Expected dimension, format like "4D"
+ * errMessage: OP opName's parameter paramName has incorrect shape dim incorrectDim, it should be correctDim.
  */
-#define OP_LOGE_FOR_INVALID_OUTPUT_DTYPE(opName, outputName, incorrectDtype, correctDtype)                          \
+#define OP_LOGE_FOR_INVALID_SHAPEDIM(opName, paramName, incorrectDim, correctDim)                              \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect shape dim %s, it should be %s.", opName, paramName,     \
+            incorrectDim, correctDim);                                                                         \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "correct_dim"};     \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDim, correctDim};               \
+        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0012: Parameter shape dim error (single parameter, with reason)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectDim:string - Actual incorrect dimension
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameter paramName has incorrect shape dim incorrectDim. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName, paramName, incorrectDim, reason)                     \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect shape dim %s. Reason: %s.", opName, paramName,         \
+            incorrectDim, reason);                                                                             \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "reason"};         \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDim, reason};                  \
+        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                \
+    } while (0)
+
+/**
+ * EZ0013: Parameters shape dim error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectDims:string - Actual incorrect dimensions
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have incorrect shape dims incorrectDims. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(opName, paramNames, incorrectDims, reason)                    \
+    do {                                                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                   \
+            opName, "OP %s's parameters %s have incorrect shape dims %s. Reason: %s.", opName, paramNames,         \
+            incorrectDims, reason);                                                                               \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dims", "reason"};           \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectDims, reason};                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                                    \
+    } while (0)
+
+/**
+ * EZ0014: Parameter shape size error (single parameter, with correct size)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectSize:string - Actual size (total element count)
+ * correctSize:string - Expected size (total element count)
+ * errMessage: OP opName's parameter paramName has incorrect shape size incorrectSize, it should be correctSize.
+ */
+#define OP_LOGE_FOR_INVALID_SHAPESIZE(opName, paramName, incorrectSize, correctSize)                          \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect shape size %s, it should be %s.", opName, paramName,    \
+            incorrectSize, correctSize);                                                                       \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "correct_size"};  \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectSize, correctSize};             \
+        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0015: Parameters shape size error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectSizes:string - Actual incorrect sizes
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have incorrect shape sizes incorrectSizes. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(opName, paramNames, incorrectSizes, reason)                     \
     do {                                                                                                            \
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
-            opName, "OP %s output %s has incorrect dtype %s, it should be %s.", opName, outputName, incorrectDtype, \
-            correctDtype);                                                                                          \
-        const std::vector<const char*> msgKey = {"op_name", "output_name", "incorrect_dtype", "correct_dtype"};     \
-        const std::vector<const char*> msgvalue = {opName, outputName, incorrectDtype, correctDtype};               \
+            opName, "OP %s's parameters %s have incorrect shape sizes %s. Reason: %s.", opName, paramNames,         \
+            incorrectSizes, reason);                                                                                 \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_sizes", "reason"};            \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectSizes, reason};                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                      \
+    } while (0)
+
+/**
+ * EZ0016: Parameter format error (single parameter, with correct format)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectFormat:string - Actual format (e.g., "NHWC")
+ * correctFormat:string - Expected format (e.g., "NCHW")
+ * errMessage: OP opName's parameter paramName has incorrect format incorrectFormat, it should be correctFormat.
+ */
+#define OP_LOGE_FOR_INVALID_FORMAT(opName, paramName, incorrectFormat, correctFormat)                          \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect format %s, it should be %s.", opName, paramName,       \
+            incorrectFormat, correctFormat);                                                                   \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_format", "correct_format"}; \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectFormat, correctFormat};         \
+        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0017: Parameters format error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectFormats:string - Actual incorrect formats
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have incorrect formats incorrectFormats. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(opName, paramNames, incorrectFormats, reason)                      \
+    do {                                                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            opName, "OP %s's parameters %s have incorrect formats %s. Reason: %s.", opName, paramNames,              \
+            incorrectFormats, reason);                                                                               \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_formats", "reason"};           \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectFormats, reason};                    \
         REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                      \
+    } while (0)
+
+/**
+ * EZ0018: Parameter dtype error (single parameter, with correct dtype)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectDtype:string - Actual data type (e.g., "INT32")
+ * correctDtype:string - Expected data type (e.g., "FLOAT16")
+ * errMessage: OP opName's parameter paramName has incorrect dtype incorrectDtype, it should be correctDtype.
+ */
+#define OP_LOGE_FOR_INVALID_DTYPE(opName, paramName, incorrectDtype, correctDtype)                            \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect dtype %s, it should be %s.", opName, paramName,        \
+            incorrectDtype, correctDtype);                                                                     \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "correct_dtype"}; \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDtype, correctDtype};           \
+        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0019: Parameter dtype error (single parameter, with reason)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectDtype:string - Actual incorrect data type
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameter paramName has incorrect dtype incorrectDtype. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName, paramName, incorrectDtype, reason)                       \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect dtype %s. Reason: %s.", opName, paramName,             \
+            incorrectDtype, reason);                                                                           \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "reason"};       \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDtype, reason};                 \
+        REPORT_PREDEFINED_ERR_MSG("EZ0019", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0020: Parameters dtype error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectDtypes:string - Actual incorrect data types
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have incorrect dtypes incorrectDtypes. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, paramNames, incorrectDtypes, reason)                        \
+    do {                                                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            opName, "OP %s's parameters %s have incorrect dtypes %s. Reason: %s.", opName, paramNames,              \
+            incorrectDtypes, reason);                                                                               \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dtypes", "reason"};           \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectDtypes, reason};                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                                      \
+    } while (0)
+
+/**
+ * EZ0021: Parameter tensor num error (single parameter, with correct num)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectNum:int64_t - Actual tensor count
+ * correctNum:string - Expected tensor count
+ * errMessage: OP opName's parameter paramName has invalid tensor num incorrectNum, it should be correctNum.
+ */
+#define OP_LOGE_FOR_INVALID_TENSERNUM(opName, paramName, incorrectNum, correctNum)                             \
+    do {                                                                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                  \
+            opName, "OP %s's parameter %s has invalid tensor num %" PRId64 ", it should be %s.", opName,         \
+            paramName, static_cast<int64_t>(incorrectNum), correctNum);                                         \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_num", "correct_num"};      \
+        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                        \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectNumStr.c_str(), correctNum};      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                                   \
+    } while (0)
+
+/**
+ * EZ0022: Parameters tensor num error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectNums:string - Actual incorrect tensor counts
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have invalid tensor nums incorrectNums. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_TENSERNUMS_WITH_REASON(opName, paramNames, incorrectNums, reason)                      \
+    do {                                                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            opName, "OP %s's parameters %s have invalid tensor nums %s. Reason: %s.", opName, paramNames,           \
+            incorrectNums, reason);                                                                                 \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_nums", "reason"};             \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectNums, reason};                      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                      \
+    } while (0)
+
+/**
+ * EZ0023: Parameter value error (single parameter, with reason)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectValue:string - Actual incorrect value
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameter paramName has incorrect value incorrectValue. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, paramName, incorrectValue, reason)                      \
+    do {                                                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            opName, "OP %s's parameter %s has incorrect value %s. Reason: %s.", opName, paramName,              \
+            incorrectValue, reason);                                                                           \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_value", "reason"};       \
+        const std::vector<const char*> msgvalue = {opName, paramName, incorrectValue, reason};                 \
+        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0024: Parameters value error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectValues:string - Actual incorrect values
+ * reason:string - Reason for the error
+ * errMessage: OP opName's parameters paramNames have incorrect values incorrectValues. Reason: reason.
+ */
+#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName, paramNames, incorrectValues, reason)                        \
+    do {                                                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            opName, "OP %s's parameters %s have incorrect values %s. Reason: %s.", opName, paramNames,              \
+            incorrectValues, reason);                                                                               \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_values", "reason"};           \
+        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectValues, reason};                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                      \
     } while (0)
 
 #define OP_LOGD(opName, ...) D_OP_LOGD(Ops::Base::GetOpInfo(opName), __VA_ARGS__)
