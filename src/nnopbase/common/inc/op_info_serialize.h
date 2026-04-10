@@ -25,11 +25,12 @@ struct OpCompilerOption {
  
 struct OpKernelInfo {
     explicit OpKernelInfo(const std::string &bin_info_v, int8_t bin_type_v) :
-        bin_info(bin_info_v), bin_type(bin_type_v) {}
+        bin_info(bin_info_v), bin_type(bin_type_v), isMc2(false) {}
     explicit OpKernelInfo(const char *bin_info_v, int8_t bin_type_v) :
-        bin_info(bin_info_v), bin_type(bin_type_v) {}
+        bin_info(bin_info_v), bin_type(bin_type_v), isMc2(false) {}
     std::string bin_info;
     int8_t bin_type;
+    bool isMc2;
 };
  
 /*

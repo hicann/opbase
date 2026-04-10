@@ -268,7 +268,7 @@ int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord:
             OP_LOGE(ACLNN_ERR_INNER, "Json %s does not contains supportInfo keyword.", builtInJsonPath.c_str());
             return -1;
         }
-        nlohmann::json jsonDebug = TilingContextToJson(ctx, iniConfigMap, builtInJsonConfig["supportInfo"]);
+        nlohmann::json jsonDebug = TilingContextToJson(ctx, iniConfigMap, builtInJsonConfig["supportInfo"], kernelInfo->isMc2);
         if (jsonDebug.is_null()) {
             return 0;
         }

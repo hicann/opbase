@@ -38,6 +38,7 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoEmptyBinInfo)
     MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath).stubs().will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo("", 0);
+    EXPECT_EQ(kernelInfo.isMc2, false);
     gert::TilingContext ctx;
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(&ctx, opt, &kernelInfo), -1);
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), 0);

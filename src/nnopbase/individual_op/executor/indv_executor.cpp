@@ -767,11 +767,13 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->regInfo);
 
     auto tiling = executor->regInfo->tiling;
-    CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of %s!", executor->opType);
+    CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR,
+        "Cannot find tiling function of %s, Please ensure tiling function is properly registered!", executor->opType);
     ge::graphStatus ret =
         executor->regInfo->tiling(op::internal::PtrCastTo<gert::TilingContext>(executor->contextExt.context));
     CHECK_COND((ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR,
-               "%s do tiling failed, ret is %d.", executor->opType, ret);
+        "Execute %s tiling function failed, ret is %d. Please check your implementation of tiling function.",
+        executor->opType, ret);
     if (executor->tilingId != nullptr) {
         NnopbaseReportApiInfo(tilingBeginTime, *executor->tilingId);
     }
@@ -1031,6 +1033,7 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
         OP_LOGD("Dump node info, op type[%s] bin path %s, bin type %d.", executor->opType,
                 executor->args->binInfo->binPath.c_str(), binType);
         executor->opKernelInfo = aclnnOpInfoRecord::OpKernelInfo(executor->args->binInfo->binPath, binType);
+        executor->opKernelInfo.isMc2 = executor->mc2OpCfg.isMc2;
         aclnnOpInfoRecord::OpInfoSerialize(
             op::internal::PtrCastTo<const gert::TilingContext>(executor->contextExt.context),
             aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, g_nnopbaseSysCfgParams.deterministic),

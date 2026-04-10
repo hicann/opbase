@@ -339,6 +339,13 @@ aclnnStatus NnopbaseOverflowDump(NnopbaseExecutor *const executor, aclrtStream s
 {
     // NonFiniteCheck算子进来无需检测溢出，防止无限递归调用
     if ((Adx::AdumpGetDumpSwitch(Adx::DumpType::OP_OVERFLOW) != 0) && (std::string(executor->opType) != "NonFiniteCheck")) {
+        aclmdlRICaptureStatus status;
+        aclmdlRI captureMdl;
+        if ((aclmdlRICaptureGetInfo(stream, &status, &captureMdl) == ACL_SUCCESS) &&
+            (status == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE)) {
+            OP_LOGI("Skip stream synchronization during capture phase.");
+            return OK;
+        }
         NNOPBASE_ASSERT_RTOK_RETVAL(aclrtSynchronizeStream(stream));
         NnopbaseCheckOverflowAndDump(executor, stream);
     }

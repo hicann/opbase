@@ -27,8 +27,8 @@ constexpr size_t STR_PRE = 3UL;
 const char *const REQUIRED_STR = "required";
 const char *const OPTIONAL_STR = "optional";
 const char *const DYNAMIC_STR = "dynamic";
-const char *const MC2_ATTR_GROUP_EP_STR = "group_ep";
-const char *const MC2_ATTR_GROUP_TP_STR = "group_tp";
+const char *const ATTR_DTYPE_STR = "str";
+const char *const MC2_ATTR_GROUP_STR = "group";
 constexpr size_t MAX_HCCL_NET_LAYER_NUM = 3U;
 
 // 返回码定义
@@ -285,7 +285,7 @@ nlohmann::json TransOutputInstanceToJson(const gert::TilingContext *ctx, size_t 
 {
     const auto computeNodeInfo = ctx->GetComputeNodeInfo();
     const auto outputInstanceInfo = computeNodeInfo->GetOutputInstanceInfo(irLoc);
-    if (irType.empty() || irType.compare(REQUIRED_STR) == 0) {
+    if (irName.empty() || irType.empty() || irType.compare(REQUIRED_STR) == 0 || irType.compare(OPTIONAL_STR) == 0) {
         if (outputInstanceInfo == nullptr) {
             instanceLoc++;
             return nullptr;
@@ -308,7 +308,7 @@ nlohmann::json TransOutputInstanceToJson(const gert::TilingContext *ctx, size_t 
         instanceLoc += outputInstanceInfo->GetInstanceNum();
         return arrayJson;
     }
-    OP_LOGE(ACLNN_ERR_INNER, "TransInputInstanceToJson not support output ir type[%s]!", irType.c_str());
+    OP_LOGE(ACLNN_ERR_INNER, "TransOutputInstanceToJson not support output ir type[%s]!", irType.c_str());
     return nullptr;
 }
 
@@ -463,15 +463,20 @@ std::vector<std::pair<std::string, std::string>> GetMc2AttrGroupName(const nlohm
         if (attr.is_null()) {
             continue;
         }
+        std::string attrDtype = attr["dtype"].get<std::string>();
+        if (attrDtype.compare(ATTR_DTYPE_STR) != 0) {
+            continue;
+        }
         const std::string attrName = attr["name"].get<std::string>();
-        if (attrName.compare(MC2_ATTR_GROUP_EP_STR) != 0 && attrName.compare(MC2_ATTR_GROUP_TP_STR) != 0) {
+        if (attrName.find(MC2_ATTR_GROUP_STR) != 0) {
             continue;
         }
         const std::string actualGroupName = attr["value"].get<std::string>();
         if (actualGroupName.empty()) {
             OP_LOGW("Mc2 operator attribute %s has no value.", attrName.c_str());
-            return {};
+            continue;
         }
+        OP_LOGI("Add (%s, %s) to get hccl topology information.", attrName.c_str(), actualGroupName.c_str());
         mc2AttrActualGroupNames.push_back({attrName, actualGroupName});
     }
     return mc2AttrActualGroupNames;
@@ -531,7 +536,7 @@ void AddExtraInfoToOpJson(nlohmann::json &opJson, const nlohmann::json &attrs)
 
 nlohmann::json TilingContextToJson(
     const gert::TilingContext *ctx, const std::map<std::string, std::string> &iniConfigMap,
-    const nlohmann::json &supportInfoJsonConfig)
+    const nlohmann::json &supportInfoJsonConfig, bool isMc2)
 {
     const auto computeNodeInfo = ctx->GetComputeNodeInfo();
     nlohmann::json nullJ(nullptr);
@@ -569,7 +574,9 @@ nlohmann::json TilingContextToJson(
         return nullJ;
     }
     opJson["attrs"] = attrs;
-    AddExtraInfoToOpJson(opJson, attrs);
+    if (isMc2) {
+        AddExtraInfoToOpJson(opJson, attrs);
+    }
     return opJson;
 }
 } // namespace aclnnOpInfoRecord
