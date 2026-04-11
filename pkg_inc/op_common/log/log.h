@@ -493,7 +493,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * correctNum:string - Expected tensor count
  * errMessage: OP opName's parameter paramName has invalid tensor num incorrectNum, it should be correctNum.
  */
-#define OP_LOGE_FOR_INVALID_TENSERNUM(opName, paramName, incorrectNum, correctNum)                             \
+#define OP_LOGE_FOR_INVALID_TENSORNUM(opName, paramName, incorrectNum, correctNum)                             \
     do {                                                                                                         \
         OP_LOGE_WITHOUT_REPORT(                                                                                  \
             opName, "OP %s's parameter %s has invalid tensor num %" PRId64 ", it should be %s.", opName,         \
@@ -512,7 +512,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: OP opName's parameters paramNames have invalid tensor nums incorrectNums. Reason: reason.
  */
-#define OP_LOGE_FOR_INVALID_TENSERNUMS_WITH_REASON(opName, paramNames, incorrectNums, reason)                      \
+#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(opName, paramNames, incorrectNums, reason)                      \
     do {                                                                                                            \
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
             opName, "OP %s's parameters %s have invalid tensor nums %s. Reason: %s.", opName, paramNames,           \
