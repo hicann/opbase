@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <set>
 #include "indv_executor.h"
 #include "indv_tilingcontext_builder.h"
 #include "indv_args_pool.h"
