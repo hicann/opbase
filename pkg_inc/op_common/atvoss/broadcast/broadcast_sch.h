@@ -91,6 +91,7 @@ public:
             sch.Process();
         } else if constexpr (schMode == 202) {
             GET_TILING_DATA_PTR_WITH_STRUCT(BroadcastOneDimTilingDataAdvance, tilingDataPtr, tiling);
+            AscendC::InitSocState();
             BroadcastOneDimAdvanceSch<BrcDag> sch(tilingDataPtr); // 获取Schedule
             sch.Init(args...);
             sch.Process();
