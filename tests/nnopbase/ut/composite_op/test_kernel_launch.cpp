@@ -35,6 +35,8 @@
 #include "memset_op.h"
 
 #include "depends/platform/platform_stub.h"
+#include "kernel_launcher.h"
+#include "depends/acl/aclrt_stub.h"
 
 using namespace op;
 using namespace op::internal;
@@ -756,4 +758,78 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
     op::DestroyOpArgContext(ctx);
     PlatformInfoStub::GetInstance()->Reset();
     unsetenv("ENABLE_1982");
+}
+
+// ---- Capture Scenario Stub ----
+
+class CaptureActiveStub : public AclrtStub {
+public:
+    aclError aclmdlRICaptureGetInfo(
+        aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl) override
+    {
+        *status = ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE;
+        return ACL_SUCCESS;
+    }
+};
+
+class CaptureGetInfoFailStub : public AclrtStub {
+public:
+    aclError aclmdlRICaptureGetInfo(
+        aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl) override
+    {
+        return ACL_ERROR_FAILURE;
+    }
+};
+
+static void TestLaunchWithCaptureStub(AclrtStub *captureStub)
+{
+    if (captureStub != nullptr) {
+        AclrtStub::GetInstance()->Install(captureStub);
+    }
+
+    op::Shape selfShape{33, 15, 1, 48};
+    op::Shape otherShape{33, 15, 14, 48};
+    op::Shape outShape{33, 15, 14, 48};
+
+    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto other = std::make_unique<aclTensor>(otherShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    float alpha = 13.37;
+    auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+
+    uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    aclOpExecutor *executor = uniqueExecutor.get();
+    thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Axpy");
+    op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
+
+    auto ctx = op::MakeOpArgContext(OP_INPUT(self.get(), other.get()),
+                                    OP_OUTPUT(out.get()),
+                                    OP_ATTR(alpha),
+                                    OP_WORKSPACE(out.get()));
+    auto launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
+
+    auto rc = launcher->Launch();
+    EXPECT_EQ(rc, ACL_SUCCESS);
+
+    delete launcher;
+    if (captureStub != nullptr) {
+        AclrtStub::GetInstance()->UnInstall();
+    }
+}
+
+TEST_F(KernelLaunchUT, KernelLaunch_CaptureActive_SkipOverflow)
+{
+    CaptureActiveStub captureStub;
+    TestLaunchWithCaptureStub(&captureStub);
+}
+
+TEST_F(KernelLaunchUT, KernelLaunch_CaptureNone_NormalOverflow)
+{
+    TestLaunchWithCaptureStub(nullptr);
+}
+
+TEST_F(KernelLaunchUT, KernelLaunch_CaptureGetInfoFail_NormalOverflow)
+{
+    CaptureGetInfoFailStub failStub;
+    TestLaunchWithCaptureStub(&failStub);
 }

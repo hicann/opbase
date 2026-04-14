@@ -75,6 +75,13 @@ class AclrtStub {
         fakeAclrtInstance_ = nullptr;
     }
 
+    virtual aclError aclmdlRICaptureGetInfo(
+        aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl)
+    {
+        *status = ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+        return ACL_SUCCESS;
+    }
+
   private:
     thread_local static std::shared_ptr<AclrtStub> aclrtInstance_;
     thread_local static AclrtStub* fakeAclrtInstance_;

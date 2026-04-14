@@ -323,3 +323,9 @@ aclError aclrtGetSysParamOpt(aclSysParamOpt opt, int64_t *value)
     }
     return ACL_SUCCESS;
 }
+
+EXTERN_C
+aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl)
+{
+    return AclrtStub::GetInstance()->aclmdlRICaptureGetInfo(stream, status, captureMdl);
+}

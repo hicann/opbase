@@ -13,6 +13,8 @@
 
 #include <utility>
 
+#include "acl/acl_rt.h"
+
 #include "kernel_mgr.h"
 #include "opdev/op_arg_def.h"
 #include "op_dfx_internal.h"
@@ -192,9 +194,16 @@ public:
         }
 
         if (res == ACLNN_SUCCESS && op::internal::IsOverflowDumpEnable()) {
-            (void)op::internal::OverflowDumpProcess(
-                args_, const_cast<aclOpExecutor *>(executor_), executor_->GetStream(), opLogInfo_);
-            internal::GetLauncherCtx().ClearTilingCache();
+            aclmdlRICaptureStatus status;
+            aclmdlRI captureMdl;
+            if ((aclmdlRICaptureGetInfo(executor_->GetStream(), &status, &captureMdl) == ACL_SUCCESS) &&
+                (status == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE)) {
+                OP_LOGI("No need to perform overflow check in the capture scenario.");
+            } else {
+                (void)op::internal::OverflowDumpProcess(
+                    args_, const_cast<aclOpExecutor*>(executor_), executor_->GetStream(), opLogInfo_);
+                internal::GetLauncherCtx().ClearTilingCache();
+            }
         }
         if (isRepeatable) {
             launchCtx_ = std::move(internal::GetLauncherCtx());
