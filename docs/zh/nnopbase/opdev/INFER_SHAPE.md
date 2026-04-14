@@ -57,7 +57,7 @@ INFER_SHAPE(KERNEL_NAME, op_args...)
 ## 调用示例<a name="zh-cn_topic_0000002114052997_zh-cn_topic_0000001944142092_section1086173012323"></a>
 
 ```
-// 调用INFER_SHAPE推导batchmatmul算子的输入shape，其中BatchMatMulV3是算子的名字，OP_INPUT是算子输入参数，OP_OUTPUT是算子输出参数，OP_ATTR是算子的属性参数
+// 调用INFER_SHAPE推导batchmatmul算子的输出shape，其中BatchMatMulV3是算子的名字，OP_INPUT是算子输入参数，OP_OUTPUT是算子输出参数，OP_ATTR是算子的属性参数
 INFER_SHAPE(BatchMatMulV3, OP_INPUT(x1, x2, bias, nullptr), OP_OUTPUT(bmmOut), OP_ATTR(adjX1, adjX2, offsetX, opImplModeEnum));
 ```
 
