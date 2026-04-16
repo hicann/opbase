@@ -21,6 +21,7 @@
 #include "op_ctx_def.h"
 #include "opdev/op_errno.h"
 #include "opdev/op_dfx.h"
+#include "nnopbase_error_msg.h"
 
 namespace op::internal {
 class KernelContextHolder {
@@ -304,8 +305,11 @@ private:
             case OpArgType::OPARG_BOOL_LIST:
                 return UpdateAttrArg(idx, reinterpret_cast<aclBoolArray *>(arg->pointer), attrPtr);
             default:
-                OP_LOGE(ACLNN_ERR_INNER,
-                        "Attr Type NOT SUPPORTED. supported type[ge::DataType, aclScalar, std::string, aclIntArray, aclFloatArray, aclBoolArray, arithmetic type]");
+                std::string argTypeRange = "[OPARG_ACLSCALAR(2), OPARG_STRING(3), OPARG_BOOL(4), OPARG_INT(5), "
+                    "OPARG_UINT(6), OPARG_FLOAT(7), OPARG_DOUBLE(8), OPARG_DATATYPE(9), "
+                    "OPARG_INT_LIST(10), OPARG_FLOAT_LIST(12), OPARG_BOOL_LIST(13), OPARG_IMPLMODE(14)]";
+                auto typeStr = OpArgTypeToStr(arg.type);
+                OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(typeStr.GetString(), argTypeRange.c_str());
                 return ACLNN_ERR_INNER;
         }
     }

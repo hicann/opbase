@@ -38,6 +38,7 @@
 #include "thread_local_context.h"
 #include "op_info_serialize.h"
 #include "acl/acl_rt.h"
+#include "nnopbase_error_msg.h"
 
 namespace op::internal {
 
@@ -151,7 +152,10 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     fe::PlatFormInfos *platformInfo, const aclnnOpInfoRecord::OpCompilerOption &compileOptions,
     const aclnnOpInfoRecord::OpKernelInfo &opKernelInfo)
 {
-    CHECK_COND(tilingFuncs != nullptr, ACLNN_ERR_RUNTIME_ERROR, "OP tiling_funcs NULL");
+    if (tilingFuncs == nullptr) {
+        OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (!opJson.contains("compileInfo")) {
         tilingParseInfo_.compileInfo_ = nullptr;
     } else {

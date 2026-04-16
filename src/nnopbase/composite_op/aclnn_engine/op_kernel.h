@@ -44,6 +44,7 @@
 #include "rts_arg.h"
 #include "individual_op_internal.h"
 #include "bridge_dfx.h"
+#include "nnopbase_error_msg.h"
 
 namespace op {
 namespace internal {
@@ -645,7 +646,10 @@ public:
                         GetLauncherCtx().SaveTilingResCache(res);
                     }
                 }
-                CHECK_COND(res != nullptr, ACLNN_ERR_INNER_NULLPTR, "Tiling Failed.");
+                if (res == nullptr) {
+                    OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling");
+                    return ACLNN_ERR_INNER_NULLPTR;
+                }
 
                 if ((debugConfig_ & static_cast<uint32_t>(OpDebugConfig::OOM)) != 0) {
                     AppendTilingOOMInfo(res->tilingData_, args);
@@ -828,7 +832,10 @@ public:
             inputs,
             outputs,
             attrs);
-        CHECK_COND(res != nullptr, ACLNN_ERR_INNER_NULLPTR, "Tiling Failed.");
+        if (res == nullptr) {
+            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling");
+            return ACLNN_ERR_INNER_NULLPTR;
+        }
         num = res->workspaceSize_->GetSize();
         size = res->workspaceSize_->GetData();
         // add debug buf size

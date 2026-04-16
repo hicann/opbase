@@ -14,6 +14,7 @@
 #include "file_utils.h"
 #include "opdev/op_log.h"
 #include "acl/acl_rt.h"
+#include "nnopbase_error_msg.h"
 
 namespace op {
 namespace internal {
@@ -359,13 +360,11 @@ aclnnStatus OpKernelLib::Initialize()
             std::ifstream f(filePath);
             allKernelsJson_.merge_patch(Json::parse(f));
             OP_CHECK(allKernelsJson_.is_object(),
-                OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "Json %s content is not valid", filePath.c_str()),
+                OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(filePath.c_str(),
+                    "The operator JSON file is not in the standard key-value structure"),
                 return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
         } catch (std::exception &e) {
-            OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED,
-                "Json parse failed. json file: %s, error is %s",
-                filePath.c_str(),
-                e.what());
+            OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(filePath.c_str(), e.what());
             return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
         }
     }

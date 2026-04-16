@@ -20,6 +20,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/op_arg_def.h"
 #include "opdev/common_types.h"
+#include "nnopbase_error_msg.h"
 using namespace std;
 
 aclStorage::aclStorage(void *addr)
@@ -397,7 +398,14 @@ aclTensor::aclTensor(const aclScalar *value, op::DataType dataType)
             OP_CHECK(memset_s(dataAddr, typeSize, 0, typeSize) == EOK,
                 OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "memset_s failed."),
                 return);
-            OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "no supported data type[%s].", op::ToString(dataType).GetString());
+            std::string dtypeRange = "[DT_FLOAT(0), DT_FLOAT16(1), DT_INT8(2), DT_INT32(3), DT_UINT8(4), "
+                    "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
+                    "DT_DOUBLE(11), DT_BOOL(12), DT_COMPLEX64(16), DT_COMPLEX128(17), DT_BF16(27), "
+                    "DT_HIFLOAT8(34), DT_FLOAT8_E5M2(35), DT_FLOAT8_E4M3FN(36), DT_FLOAT8_E8M0(37), "
+                    "DT_FLOAT6_E3M2(38), DT_FLOAT6_E2M3(39), DT_FLOAT4_E2M1(40), DT_FLOAT4_E1M2(41)]";
+            std::string dataTypeStr = std::string(op::ToString(dataType).GetString()) +
+                "(" + std::to_string(static_cast<int32_t>(dataType)) + ")";
+            OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataTypeStr.c_str(), dtypeRange.c_str());
             throw std::invalid_argument("dataType not supported.");
             break;
     }
@@ -745,7 +753,12 @@ void aclTensor::SetData(int64_t index, const T value, op::DataType dataType)
                 SetDataByBool(index, dataAddr, value); break;
             }
             default: {
-                OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "no supported data type[%s].", op::ToString(dataType).GetString());
+                std::string dtypeRange = "[DT_FLOAT(0), DT_FLOAT16(1), DT_INT8(2), DT_INT32(3), DT_UINT8(4), "
+                    "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
+                    "DT_DOUBLE(11), DT_BOOL(12), DT_BF16(27)]";
+                std::string dataTypeStr = std::string(op::ToString(dataType).GetString()) +
+                    "(" + std::to_string(static_cast<int32_t>(dataType)) + ")";
+                OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataTypeStr.c_str(), dtypeRange.c_str());
             }
         }
     }
@@ -1364,7 +1377,14 @@ aclScalar::aclScalar(const void *data, op::DataType dataType)
         case op::DataType::DT_FLOAT4_E1M2:v.ui8 = *static_cast<const uint8_t *>(data); break;
         case op::DataType::DT_HIFLOAT8:v.ui8 = *static_cast<const uint8_t *>(data); break;
         default:
-            OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "no supported data type[%s].", op::ToString(dataType_).GetString());
+            std::string dtypeRange = "[DT_FLOAT(0), DT_FLOAT16(1), DT_INT8(2), DT_INT32(3), DT_UINT8(4), "
+                    "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
+                    "DT_DOUBLE(11), DT_BOOL(12), DT_COMPLEX64(16), DT_COMPLEX128(17), DT_BF16(27), "
+                    "DT_HIFLOAT8(34), DT_FLOAT8_E5M2(35), DT_FLOAT8_E4M3FN(36), DT_FLOAT8_E8M0(37), "
+                    "DT_FLOAT6_E3M2(38), DT_FLOAT6_E2M3(39), DT_FLOAT4_E2M1(40), DT_FLOAT4_E1M2(41)]";
+            std::string dataTypeStr = std::string(op::ToString(dataType_).GetString()) +
+                "(" + std::to_string(static_cast<int32_t>(dataType_)) + ")";
+            OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataTypeStr.c_str(), dtypeRange.c_str());
             throw std::invalid_argument("dataType not supported.");
             break;
     }
@@ -1818,7 +1838,12 @@ aclTensor::aclTensor(const T *value, uint64_t size, op::DataType dataType)
             break;
         }
         default:
-            OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "no supported data type[%s].", op::ToString(dataType).GetString());
+            std::string dtypeRange = "[DT_FLOAT(0), DT_FLOAT16(1), DT_INT8(2), DT_INT32(3), DT_UINT8(4), "
+                        "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
+                        "DT_DOUBLE(11), DT_BOOL(12), DT_BF16(27)]";
+            std::string dataTypeStr = std::string(op::ToString(dataType).GetString()) +
+                "(" + std::to_string(static_cast<int32_t>(dataType)) + ")";
+            OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataTypeStr.c_str(), dtypeRange.c_str());
             throw std::invalid_argument("dataType not supported.");
             break;
     }

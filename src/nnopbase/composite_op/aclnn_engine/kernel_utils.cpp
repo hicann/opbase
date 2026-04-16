@@ -11,6 +11,7 @@
 #include "opdev/op_log.h"
 #include "file_utils.h"
 #include "kernel_utils.h"
+#include "nnopbase_error_msg.h"
 
 namespace op {
 namespace internal {
@@ -21,16 +22,16 @@ gert::OppImplVersionTag GetOppImplVersion()
 {
     const char *homePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, homePath);
-    try {
-        string p = homePath;
-        const std::string kernelPath = p + "/opp_latest";
-        std::string oppKernelPath = RealPath(kernelPath);
-        OP_CHECK(oppKernelPath.empty(),
-                OP_LOGI("opp kernel path %s", oppKernelPath.c_str()),
-                return gert::OppImplVersionTag::kOppKernel);
-    } catch (...) {
+    if (homePath == nullptr) {
         OP_LOGW("ASCEND_HOME_PATH is null.");
+        return gert::OppImplVersionTag::kOpp;
     }
+    string p = homePath;
+    const std::string kernelPath = p + "/opp_latest";
+    std::string oppKernelPath = RealPath(kernelPath);
+    OP_CHECK(oppKernelPath.empty(),
+            OP_LOGI("opp kernel path %s", oppKernelPath.c_str()),
+            return gert::OppImplVersionTag::kOppKernel);
     return gert::OppImplVersionTag::kOpp;
 }
 
@@ -38,30 +39,29 @@ aclnnStatus GetOppKernelPath(std::string &oppKernelPath)
 {
     const char *homePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, homePath);
-    try {
+    if (homePath != nullptr) {
         string p = homePath;
         const std::string kernelPath = p + "/opp_latest";
         oppKernelPath = RealPath(kernelPath);
         OP_CHECK(oppKernelPath.empty(),
                 OP_LOGI("opp kernel path %s", oppKernelPath.c_str()),
                 return ACLNN_SUCCESS);
-    } catch (...) {
+    } else {
         OP_LOGW("ASCEND_HOME_PATH is null.");
     }
     const char *oppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPath);
-    try {
-        string p = oppPath;
-        oppKernelPath = RealPath(p);
-        if (!oppKernelPath.empty()) {
-            OP_LOGI("opp kernel path %s", oppKernelPath.c_str());
-            return ACLNN_SUCCESS;
-        } else {
-            OP_LOGE(ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND, "ASCEND_OPP_PATH is empty.");
-            return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND;
-        }
-    } catch (...) {
-        OP_LOGE(ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND, "ASCEND_OPP_PATH is null.");
+    if (oppPath == nullptr) {
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Get opp kernel path", "ASCEND_OPP_PATH");
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND;
+    }
+    string p = oppPath;
+    oppKernelPath = RealPath(p);
+    if (!oppKernelPath.empty()) {
+        OP_LOGI("opp kernel path %s", oppKernelPath.c_str());
+        return ACLNN_SUCCESS;
+    } else {
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Get opp kernel path", "ASCEND_OPP_PATH");
         return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND;
     }
 }

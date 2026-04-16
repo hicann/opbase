@@ -9,6 +9,7 @@
  */
 
 #include "opdev/shape_utils.h"
+#include "nnopbase_error_msg.h"
 #include <sstream>
 
 namespace op {
@@ -130,7 +131,14 @@ bool BroadcastInferShape(const op::Shape &self, const op::Shape &other, op::Shap
         int64_t dim1 = largerDimShape.GetDim(lenSub + i - 1);
         int64_t dim2 = smallerDimShape.GetDim(i - 1);
         if (!BroadcastDim(dim1, dim2)) {
-            OP_LOGE(ACL_ERROR_INVALID_PARAM, "%ld and %ld cannot broadcast.", dim1, dim2);
+            std::string largerDimShapeStr = "larger input" + std::string(op::ToString(largerDimShape).GetString());
+            std::string smallerDimShapeStr = "smaller input" + std::string(op::ToString(smallerDimShape).GetString());
+            std::string dim1Str = std::to_string(dim1);
+            std::string dim2Str = std::to_string(dim2);
+            std::string reason = "Shape dim " + dim1Str +
+                " of parameter " + largerDimShapeStr + " does not meet the broadcast relationship with shape dim " +
+                dim2Str + " of parameter " + smallerDimShapeStr;
+            OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(largerDimShapeStr.c_str(), dim1Str.c_str(), reason.c_str());
             return false;
         }
         broadcastShape.SetDim(lenSub + i - 1, dim1);

@@ -57,6 +57,46 @@ inline void GenDimension(char *&key, const std::array<TensorInfo, MAX_TENSOR_SIZ
 
 const std::string &OpArgTypeStr(int argType);
 
+inline ge::AscendString OpArgTypeToStr(OpArgType type)
+{
+    switch (type) {
+        case OpArgType::OPARG_ACLTENSOR:
+            return ge::AscendString("OPARG_ACLTENSOR(0)");
+        case OpArgType::OPARG_ACLTENSOR_LIST:
+            return ge::AscendString("OPARG_ACLTENSOR_LIST(1)");
+        case OpArgType::OPARG_ACLSCALAR:
+            return ge::AscendString("OPARG_ACLSCALAR(2)");
+        case OpArgType::OPARG_STRING:
+            return ge::AscendString("OPARG_STRING(3)");
+        case OpArgType::OPARG_BOOL:
+            return ge::AscendString("OPARG_BOOL(4)");
+        case OpArgType::OPARG_INT:
+            return ge::AscendString("OPARG_INT(5)");
+        case OpArgType::OPARG_UINT:
+            return ge::AscendString("OPARG_UINT(6)");
+        case OpArgType::OPARG_FLOAT:
+            return ge::AscendString("OPARG_FLOAT(7)");
+        case OpArgType::OPARG_DOUBLE:
+            return ge::AscendString("OPARG_DOUBLE(8)");
+        case OpArgType::OPARG_DATATYPE:
+            return ge::AscendString("OPARG_DATATYPE(9)");
+        case OpArgType::OPARG_INT_LIST:
+            return ge::AscendString("OPARG_INT_LIST(10)");
+        case OpArgType::OPARG_UINT_LIST:
+            return ge::AscendString("OPARG_UINT_LIST(11)");
+        case OpArgType::OPARG_FLOAT_LIST:
+            return ge::AscendString("OPARG_FLOAT_LIST(12)");
+        case OpArgType::OPARG_BOOL_LIST:
+            return ge::AscendString("OPARG_BOOL_LIST(13)");
+        case OpArgType::OPARG_IMPLMODE:
+            return ge::AscendString("OPARG_IMPLMODE(14)");
+        case OpArgType::OPARG_MEMSET_WORKSPACE:
+            return ge::AscendString("OPARG_MEMSET_WORKSPACE(15)");
+        default: 
+            return ge::AscendString(("UNKNOWN_OPARGTYPE(" + std::to_string(static_cast<int>(type)) + ")").c_str());
+    }
+}
+
 aclnnStatus GenKeyByArgImpl(char *&key, const std::array<TensorInfo, MAX_TENSOR_SIZE> &tensorInfos,
                             bool ignoreOptional, size_t idx, const aclTensor *tensor, int argType);
 aclnnStatus GenKeyByArgImpl(char *&key, const std::array<TensorInfo, MAX_TENSOR_SIZE> &tensorInfos,

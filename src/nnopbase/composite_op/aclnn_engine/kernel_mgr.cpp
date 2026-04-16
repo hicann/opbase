@@ -23,6 +23,7 @@
 #include "kernel_utils.h"
 #include "op_run_context.h"
 #include "../../common/inc/kernel_mgr.h"
+#include "nnopbase_error_msg.h"
 
 namespace op {
 namespace internal {
@@ -78,7 +79,7 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
     OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGE(ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND, "opp kernel real path can not be found. ret %d", ret),
+             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load static bin json", "ASCEND_OPP_PATH"),
              return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string configJsonPath = oppRealPath;
     auto &knlLib = OpKernelLib::GetInstance();
@@ -102,7 +103,7 @@ aclnnStatus KernelMgr::LoadDebugStaticBinJson()
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
     OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGE(ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND, "opp kernel real path can not be found. ret %d", ret),
+             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load debug static bin json", "ASCEND_OPP_PATH"),
              return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string debugConfigJsonPath = oppRealPath;
     auto &knlLib = OpKernelLib::GetInstance();
@@ -509,16 +510,12 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json &jsonObj)
     const std::string realJsonPath = RealPath(jsonPath_);
     std::ifstream f(realJsonPath);
     OP_CHECK(f.is_open(),
-        OP_LOGE(ACLNN_ERR_INNER,
-            "cannot open op kernel bin json file [%s], reason : %s",
-            realJsonPath.c_str(),
-            strerror(errno)),
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(realJsonPath.c_str(), strerror(errno)),
         return ACLNN_ERR_INNER);
     try {
         jsonObj = json::parse(f);
     } catch (nlohmann::json::exception &e) {
-        OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "json parse failed. json file: %s, real path: %s, Err msg: %s.",
-                jsonPath_.c_str(), realJsonPath.c_str(), e.what());
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(jsonPath_.c_str(), e.what());
         return ACLNN_ERR_INNER;
     }
     return ACLNN_SUCCESS;

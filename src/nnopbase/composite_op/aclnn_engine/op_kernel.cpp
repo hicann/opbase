@@ -24,6 +24,7 @@
 #include "opdev/op_errno.h"
 #include "opdev/shape_utils.h"
 #include "op_info_serialize.h"
+#include "nnopbase_error_msg.h"
 
 namespace op {
 namespace internal {
@@ -337,11 +338,24 @@ aclnnStatus OpKernelBin::GetBinData()
         GetOpBinaryDescByPath(relativeJsonPath_.c_str(), binInfo);
     if (ret == ACLNN_SUCCESS) {
         auto f = [&binInfo](std::string &binData) -> aclnnStatus {
-            binData = std::string(reinterpret_cast<const char *>(std::get<1>(binInfo).content),
-                                  static_cast<size_t>(std::get<1>(binInfo).len));
+            auto &binary = std::get<1>(binInfo);
+            if (binary.content == nullptr || binary.len <= 0) {
+                return ACLNN_ERR_INNER;
+            }
+            try {
+                binData = std::string(reinterpret_cast<const char *>(binary.content),
+                                        static_cast<size_t>(binary.len));
+            } catch (const std::bad_alloc &) {
+                return ACLNN_ERR_INNER;
+            }
             return ACLNN_SUCCESS;
         };
-        CHECK_RET_CODE(binData_.InitVar(f), "get builtin kernel bin data failed. %s", relativeJsonPath_.c_str());
+        ret = binData_.InitVar(f);
+        if (ret != ACLNN_SUCCESS) {
+            std::string retStr = std::to_string(ret);
+            OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(relativeJsonPath_.c_str(), retStr.c_str());
+            return ret;
+        }
         OP_LOGI("Get builtin op kernel bin obj [%s]", relativeJsonPath_.c_str());
         return ACLNN_SUCCESS;
     }
@@ -350,7 +364,12 @@ aclnnStatus OpKernelBin::GetBinData()
     auto f = [this](std::string &binData) -> aclnnStatus {
         return ReadFile2String(binPath_.c_str(), binData);
     };
-    CHECK_RET_CODE(binData_.InitVar(f), "ReadFile2String failed. %s", binPath_.c_str());
+    ret = binData_.InitVar(f);
+    if (ret != ACLNN_SUCCESS) {
+        std::string retStr = std::to_string(ret);
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binPath_.c_str(), retStr.c_str());
+        return ret;
+    }
     return ACLNN_SUCCESS;
 }
 
@@ -410,8 +429,11 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
     auto f = [this](aclrtFuncHandle &hdl) -> aclnnStatus {
         aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
         auto &opJson = binJson_.GetVar();
-        CHECK_COND(
-            opJson.contains("kernelName"), ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND, "json does not contain kernelName");
+        if (!opJson.contains("kernelName")) {
+            std::string reason = "The operator JSON file does not contain the kernel name";
+            OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(jsonPath_.c_str(), reason.c_str());
+            return ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND;
+        }
         kernelNameOfNoFatBin_ = opJson["kernelName"].get<std::string>();
         CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
             ACLNN_ERR_RUNTIME_ERROR,
@@ -1429,17 +1451,13 @@ aclnnStatus OpKernel::GetOpDescJson(bool debug)
     ifstream f(configJsonPath_);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
     OP_CHECK(f.is_open(),
-        OP_LOGE(ACLNN_ERR_INNER,
-            "cannot open config json file [%s], reason : %s",
-            configJsonPath_.c_str(),
-            strerror(errno)),
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), strerror(errno)),
         return ACLNN_ERR_INNER);
 #endif
     try {
         configJson_ = nlohmann::json::parse(f);
     } catch (nlohmann::json::exception &e) {
-        OP_LOGE(
-            ACLNN_ERR_INNER, "Cannot parse json for config file [%s], Err msg: %s", configJsonPath_.c_str(), e.what());
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(configJsonPath_.c_str(), e.what());
         return ACLNN_ERR_INNER;
     }
     return ACLNN_SUCCESS;
@@ -1453,7 +1471,8 @@ aclnnStatus OpKernel::AppendDynBin(const string &jsonPath, const string &binAndJ
 
     auto binListIter = configJson_.find(BIN_LIST);
     if (binListIter == configJson_.end()) {
-        OP_LOGE(ACLNN_ERR_INNER, "config json %s does not contains any bin list.", jsonPath.c_str());
+        std::string reason = "The operator JSON file does not contain the bin list";
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(jsonPath.c_str(), reason.c_str());
         return ACLNN_ERR_INNER;
     }
 
