@@ -345,7 +345,7 @@ aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::st
     std::ifstream ifs(sceneV1);
     if (!ifs.good()) {
         ifs.close();
-        OP_LOGI("Get %s failed, try another path.", sceneV1.c_str());
+        OP_LOGW("Get %s failed, try another path.", sceneV1.c_str());
         const NnopbaseChar *oppPathEnv = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
         NNOPBASE_ASSERT_NOTNULL_RETVAL(oppPathEnv);

@@ -114,6 +114,41 @@ inline void NnopbaseBuildCacheAttrInfo(NnopbaseExecutor *const executor, op::int
     }
 }
 
+aclnnStatus NnopbaseGetTilingKeyInfo(NnopbaseExecutor *const opExecutor, NnopbaseTaskRation &taskRation,
+                                     CoreType &coreType, uint32_t &ration)
+{
+    static const std::map<NnopbaseTaskRation, uint32_t> RATION_MAP {
+        {kRation01, 0U}, {kRation10, 0U}, {kRation11, 1U}, {kRation12, 2U}}; // ration is 2.
+
+    const uint64_t tilingKey = opExecutor->args->tilingInfo.tilingKey;
+    if (opExecutor->args->binInfo->tilingKeyInfo.find(tilingKey) != opExecutor->args->binInfo->tilingKeyInfo.end()) {
+        coreType = opExecutor->args->binInfo->tilingKeyInfo[tilingKey].coreType;
+        taskRation = opExecutor->args->binInfo->tilingKeyInfo[tilingKey].taskRation;
+        const auto &iter = RATION_MAP.find(taskRation);
+        CHECK_COND((iter != RATION_MAP.end()), ACLNN_ERR_PARAM_INVALID,
+                   "Op %s taskRation %d is not supported!", opExecutor->opType, taskRation);
+        ration = iter->second;
+    } else {
+        OP_LOGW("%s not find tilingKey %lu from tilingKeyInfo.", opExecutor->opType, tilingKey);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    return OK;
+}
+
+// 对混合算子，将ration编码到numBlocks高16位
+static void NnopbaseEncodeMixOpNumBlocks(NnopbaseExecutor *const executor, uint32_t &numBlocks)
+{
+    if (executor->args->binInfo->coreType == kMix) {
+        uint32_t ration = 2U;
+        if (executor->args->binInfo->multiKernelType == 1) {
+            NnopbaseTaskRation taskRation;
+            CoreType kernelType;
+            (void)NnopbaseGetTilingKeyInfo(executor, taskRation, kernelType, ration);
+        }
+        numBlocks = ((numBlocks & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
+    }
+}
+
 void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
     aclrtStream stream)
 {
@@ -129,6 +164,8 @@ void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlo
         OP_LOGI("Profiling for AclGraph is disabled.");
         return;
     }
+
+    NnopbaseEncodeMixOpNumBlocks(executor, numBlocks);
 
     uint32_t totalNum = executor->args->inputs.num + executor->args->outputs.num;
     uint64_t itemId = executor->itemId;
@@ -224,27 +261,6 @@ void NnopbaseReportContextIdInfo(const NnopbaseExecutor *const executor, const u
         static_cast<uint32_t>(true), &info, static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
     OP_LOGD("OP [%s] have report contextid info.", executor->opType);
     return;
-}
- 
-aclnnStatus NnopbaseGetTilingKeyInfo(NnopbaseExecutor *const opExecutor, NnopbaseTaskRation &taskRation,
-                                     CoreType &coreType, uint32_t &ration)
-{
-    static const std::map<NnopbaseTaskRation, uint32_t> RATION_MAP {
-        {kRation01, 0U}, {kRation10, 0U}, {kRation11, 1U}, {kRation12, 2U}}; // ration is 2.
-
-    const uint64_t tilingKey = opExecutor->args->tilingInfo.tilingKey;
-    if (opExecutor->args->binInfo->tilingKeyInfo.find(tilingKey) != opExecutor->args->binInfo->tilingKeyInfo.end()) {
-        coreType = opExecutor->args->binInfo->tilingKeyInfo[tilingKey].coreType;
-        taskRation = opExecutor->args->binInfo->tilingKeyInfo[tilingKey].taskRation;
-        const auto &iter = RATION_MAP.find(taskRation);
-        CHECK_COND((iter != RATION_MAP.end()), ACLNN_ERR_PARAM_INVALID,
-                   "Op %s taskRation %d is not supported!", opExecutor->opType, taskRation);
-        ration = iter->second;
-    } else {
-        OP_LOGW("%s not find tilingKey %lu from tilingKeyInfo.", opExecutor->opType, tilingKey);
-        return ACLNN_ERR_PARAM_INVALID;
-    }
-    return OK;
 }
 
 void NnopbaseReportContextIdInfoByRation(NnopbaseExecutor *const opExecutor, const uint64_t timeStamp,
