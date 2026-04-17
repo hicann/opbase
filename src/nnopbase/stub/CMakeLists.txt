@@ -71,6 +71,7 @@ set(STUB_NNOPBASE_INCLUDING_PATH
     ${TOP_DIR}/runtime/pkg_inc/runtime/
     ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common/
     ${TOP_DIR}/runtime/include/external/
+    ${TOP_DIR}/runtime/include/dfx
     ${TOP_DIR}/runtime/src/inc/runtime/
     ${TOP_DIR}/metadef/inc/external/
     ${TOP_DIR}/metadef/inc/
