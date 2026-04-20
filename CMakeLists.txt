@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
+include(cmake/fetch_cann_cmake.cmake)
 project(ops_base VERSION 1.0.0)
+init_cann_project()
 include(CMakePrintHelpers)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -53,10 +55,11 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/func.cmake)
 
     include(version.cmake)
+    set(ASCEND_INSTALL_PATH "${ASCEND_HOME_PATH}")
     if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
-        check_pkg_build_deps("opbase")
+        check_cann_pkg_build_deps("opbase")
     endif()
-    add_version_info_targets()
+    add_cann_version_info_targets()
 
     include_directories(
         ${OPS_BASE_INCLUDE}
