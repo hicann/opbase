@@ -226,11 +226,16 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
 void NnopbaseExecutorUpdateBinInfo(NnopbaseExecutor *executor);
 
 // add io
+struct NnopbaseTensorIoOptions {
+    bool isInput;
+    bool ignoreCont;
+};
+
 aclnnStatus NnopbaseExecutorAddTensor(NnopbaseExecutor *executor, const aclTensor *tensor,
                                       const uint32_t index, const bool isInput, const bool ignoreCont);
 aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors *tensors, const uint32_t index);
 aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor *executor, const aclTensorList *tensorList,
-                                              const uint32_t index, const bool isInput);
+                                              const uint32_t index, const bool isInput, const bool ignoreCont = false);
 aclnnStatus NnopbaseExecutorSetRef(NnopbaseExecutor *executor, const size_t inputIrIdx, const size_t outputIrIdx);
 aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *const attrAddr, const size_t attrLen,
     const size_t index, const size_t elementSize, const NnopbaseAttrDtype dtype);

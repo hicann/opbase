@@ -86,6 +86,8 @@ VISIBILITY_EXPORT aclnnStatus NnopbaseGetAttrAddr(void *executor, const size_t i
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddOutput(void *executor, const aclTensor *tensor, const uint32_t index);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddDynamicInput(void *executor, const aclTensorList *tensorList,
                                                       const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddIgnoreContiguousDynamicInput(void *executor, const aclTensorList *tensorList,
+                                                      const uint32_t index);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddDynamicOutput(
     void *executor, const aclTensorList *tensorList, const uint32_t index);
 

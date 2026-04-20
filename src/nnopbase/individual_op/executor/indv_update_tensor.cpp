@@ -267,7 +267,7 @@ static aclnnStatus NnopbaseAddInputsTensors(NnopbaseExecutor *executor, Nnopbase
 {
     NnopbaseParamInstance &irInsts = tensors->paramDescs.instances[index];
     if (irInsts.tensorList != nullptr) {
-        return NnopbaseExecutorAddDynamicTensors(executor, irInsts.tensorList, index, true);
+        return NnopbaseExecutorAddDynamicTensors(executor, irInsts.tensorList, index, true, irInsts.ignoreCont);
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorUpdateTensorsIndex(tensors, index));
         if (irInsts.intArray != nullptr) {

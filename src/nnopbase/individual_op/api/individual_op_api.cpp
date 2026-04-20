@@ -284,6 +284,22 @@ aclnnStatus NnopbaseAddDynamicInput(void *executor, const aclTensorList *tensorL
     }
 }
 
+aclnnStatus NnopbaseAddIgnoreContiguousDynamicInput(void *executor, const aclTensorList *tensorList,
+                                                     const uint32_t index)
+{
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    const auto tensors = &nnopExecutor->ownArgs.inputs;
+    if (NnopbasIsEnableNewCache(nnopExecutor)) {
+        tensors->paramDescs.instances[index].ignoreCont = true;
+        tensors->paramDescs.instances[index].tensorList = tensorList;
+        NnopbaseExecutorGenTensorListKey(&nnopExecutor->ownArgs, tensorList);
+        return OK;
+    } else {
+        return NnopbaseExecutorAddDynamicTensors(nnopExecutor, tensorList, index, true, true);
+    }
+}
+
 aclnnStatus NnopbaseAddOutput(void *executor, const aclTensor *tensor, const uint32_t index)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);

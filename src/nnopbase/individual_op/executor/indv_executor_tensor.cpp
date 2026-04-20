@@ -428,15 +428,15 @@ aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors *tensors, const u
 }
 
 static aclnnStatus NnopbaseCheckAndSaveTensor(NnopbaseExecutor *executor, const aclTensorList *tensorList,
-    const size_t startIndex, const uint32_t index, const bool isInput)
+    const size_t startIndex, const uint32_t index, const NnopbaseTensorIoOptions &options)
 {
-    NnopbaseTensors *tensors = isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
+    NnopbaseTensors *tensors = options.isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
     bool isEmpty = true;
     bool flag = false;
     ge::DataType dataType = ge::DataType::DT_UNDEFINED;
     for (uint64_t i = 0U; i < tensorList->Size(); i++) {
         if ((*tensorList)[i] != nullptr) {
-            if (isInput) {
+            if (options.isInput && (!options.ignoreCont)) {
                 NnopbaseCheckContiguous(tensors, (*tensorList)[i], startIndex + i, index);
             }
             isEmpty = isEmpty && ((*tensorList)[i]->IsEmpty());
@@ -461,7 +461,7 @@ static aclnnStatus NnopbaseCheckAndSaveTensor(NnopbaseExecutor *executor, const 
 }
 
 aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor *executor, const aclTensorList *tensorList,
-                                              const uint32_t index, const bool isInput)
+                                              const uint32_t index, const bool isInput, const bool ignoreCont)
 {
     NnopbaseTensors *tensors = isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
     if ((tensorList == nullptr) || (tensorList->Size() == 0U)) {
@@ -503,7 +503,8 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor *executor, const 
     if (tensors->num >= tensors->arrayLen) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorExtendIoCaches(tensors));
     }
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCheckAndSaveTensor(executor, tensorList, startIndex, index, isInput));
+    const NnopbaseTensorIoOptions options = {isInput, ignoreCont};
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCheckAndSaveTensor(executor, tensorList, startIndex, index, options));
     /* the first tensor of one dynamic tensor group is set as required, it will be used when generate verbose key. */
     tensors->extTensors[startIndex].isRequired = true;
     tensors->expectIndex = index + 1U;
