@@ -11,65 +11,39 @@ opbase是[CANN](https://hiascend.com/software/cann) （Compute Architecture for 
 
 <img src="docs/zh/figures/architecture.png" alt="架构图"  width="700px" height="320px">
 
- ## 📝版本配套
+## 📌版本配套
 
 本项目源码会跟随CANN软件版本发布，关于CANN软件版本与本项目标签的对应关系请参阅[release仓库](https://gitcode.com/cann/release-management)中的相应版本说明。
 请注意，为确保您的源码定制开发顺利进行，请选择配套的CANN版本与Gitcode标签源码，使用master分支可能存在版本不匹配的风险。
 
-## ⚡️快速入门
+## 🛠️环境准备
 
-若您希望**从零到一快速体验**项目能力，请访问下述简易教程。
+[环境部署](docs/zh/install/quick_install.md)是体验本项目能力的前提，请先完成NPU驱动、CANN包安装等，确保环境正常。
 
-1. [环境部署](docs/zh/context//quick_install.md)：本文是**QuickStart和各类教程的操作前提**，请先完成基础环境搭建和源码下载。
-2. [源码编译](docs/zh/context/quick_start.md#源码编译)：环境准备好后，可对源码修改（如能力拓展、bug修复等），通过根目录build.sh源码编译，生成的opbase包可部署到AI业务中。
-3. [本地验证](docs/zh/context/quick_start.md#本地验证)：基于build.sh执行UT/ST用例，快速验证项目功能。
+## ⬇️源码下载
 
-## 🔍 目录结构
+环境准备好后，根据环境中CANN版本下载与之配套的分支源码，\$\{tag\_version\}替换为配套的分支标签名。
 
-关键目录如下，详细目录介绍参见[项目目录](./docs/zh/context/dir_structure.md)。
-
+```bash
+git clone -b ${tag_version} https://gitcode.com/cann/ops-math.git
 ```
-├── aicpu_common                   # aicpu公共函数实现
-├── build.sh                       # 项目工程编译脚本
-├── cmake                          # 项目工程编译目录
-├── CMakeLists.txt                 # 算子编译配置文件
-├── docs                           # 项目文档介绍（zh为中文，en为英文）
-├── include                        # 项目公共头文件
-│   └── nnopbase                   # nnopbase模块头文件
-│        ├── aclnn                 # aclnn接口依赖头文件
-│        └── opdev                 # 算子开发依赖头文件
-│            ├── aicpu             # aicpu算子开发相关头文件
-│            └── op_common         # 算子通用接口头文件
-├── pkg_inc                        # 项目包间接口头文件目录
-│   └── op_common                  # op_common源码头文件
-├── LICENSE
-├── README.md
-├── requirements.txt               # 项目依赖的第三方软件包
-├── scripts                        # 项目脚本文件存放目录
-├── src
-│   └── nnopbase                   # nnopbase代码目录
-│       ├── aicpu                  # aicpu框架代码
-│       ├── common                 # nnopbase公共文件
-│       ├── composite_op           # 组合多算子框架代码
-│       ├── individual_op          # 单一算子框架代码
-│       ├── stub                   # 交叉编译场景打包脚本
-│       ├── tls_guardian           # 解决glibc问题补丁
-│       └── CMakeLists.txt         # nnopbase模块编译配置文件
-│   └── op_common                  # op_common源码实现
-│       ├── atvoss
-│       ├── log
-│       └── op_host
-└── tests                          # 测试工程目录
-```
+
+说明：对于WebIDE环境，已默认提供最新商发CANN版本配套的源码，如需获取其他版本源码，参考上述命令获取。
+
+## 📖学习教程
+
+- [快速入门](docs/QUICKSTART.md)：从零开始快速体验项目源码构建和功能本地验证（如UT/ST）操作。
+- [进阶教程](docs/README.md)：如需深入了解算子调用/开发场景下依赖的框架API、指南等，请查阅文档中心获取详细指引。
 
 ## 💬相关信息
 
+- [目录结构](docs/zh/appendix/dir_structure.md)
 - [贡献指南](CONTRIBUTING.md)
 - [安全声明](SECURITY.md)
 - [许可证](LICENSE)
 - [所属SIG](https://gitcode.com/cann/community/tree/master/CANN/sigs/ops-basic)
 
-## 🤝联系我们
+------
 
 本项目功能和文档正在持续更新和完善中，欢迎您关注最新版本。
 

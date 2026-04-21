@@ -1,8 +1,9 @@
 # CHANGELOG
- 	 
+   
 > 本文档记录各版本的重要变更，版本按时间倒序排列。
 
 ## v8.5.0-beta.1
+
 发布日期：2025-12-30
 
 opbase 首个 Beta 版本 v8.5.0-beta.1 现已发布。
@@ -11,9 +12,10 @@ opbase 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 使用方式请参阅[官方文档](https://gitcode.com/cann/opbase/blob/master/README.md)。
 
 ### 🔗 版本地址
+
 [CANN 8.5.0-beta 1](https://ascend.devcloud.huaweicloud.com/cann/run/software/8.5.0-beta.1/)
 
-```
+```text
 版本目录说明如下：
 ├── aarch64                 # CPU为ARM类型
 │   ├── ops                  # ops算子包目录，用于归档算子子包
@@ -22,9 +24,11 @@ opbase 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 │   ├── ops                  # ops算子包目录，用于归档算子子包
 │   ├── ...
 ```
+
 ### 📌 版本配套
 
 **CANN开源子包版本配套关系**
+
 | CANN子包版本                         | 版本源码标签                                                 | 配套CANN版本        |
 | ------------------------------------ | ------------------------------------------------------------ | ------------------- |
 | cann-opbase 8.5.0-beta.1             | [v8.5.0-beta.1](https://gitcode.com/cann/opbase/tags/v8.5.0-beta.1) | CANN   8.5.0-beta.1 |
@@ -46,5 +50,6 @@ opbase 首个 Beta 版本 v8.5.0-beta.1 现已发布。
 - 【资料优化】新增离线编译说明文档。([#56](https://gitcode.com/cann/opbase/pull/56))
 
 ### 🐛 问题修复
+
 - 现场机器离线状态下进行opbase编译报错。([Issue6](https://gitcode.com/cann/opbase/issues/6))
 - obpase包编译报错 non-constant-expression cannot be narrowed。([Issue22](https://gitcode.com/cann/opbase/issues/22))
