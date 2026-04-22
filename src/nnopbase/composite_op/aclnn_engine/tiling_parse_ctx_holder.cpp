@@ -259,7 +259,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
 
     auto rc = tilingFuncs->tiling_parse(PtrCastTo<gert::KernelContext>(tilingParseCtx_));
     CHECK_COND(rc == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Op [%s] tiling compile info parse failed", opTypeStr_.c_str());
-    OP_LOGI("Parse op [%s]  tiling compile info succ", opTypeStr_.c_str());
+    OP_LOGI("Parse op [%s] tiling compile info succ", opTypeStr_.c_str());
     return ACLNN_SUCCESS;
 }
 

@@ -28,26 +28,25 @@
         REPORT_PREDEFINED_ERR_MSG("EZ1002", msgKey, msgvalue);                                                      \
     } while (false)
 
-#define OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE_WITH_EXCEPTION(funcDesc, value, envName, reason)      \
+#define OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(file, reason)                                                         \
     do {                                                                                                            \
-        std::string msg = std::string(funcDesc) + " failed. Value " + value +                                       \
-            " for environment variable " + envName + " is invalid. Reason: " + reason + ".";                        \
-        const std::vector<const char *> msgKey = {"funcDesc", "value", "envName", "reason"};                        \
-        const std::vector<const char *> msgvalue = {funcDesc, value, envName, reason};                              \
+        std::string msg = std::string("Failed to open file ") + file + ". Reason: " + reason + ".";                 \
+        const std::vector<const char *> msgKey = {"file", "reason"};                                                \
+        const std::vector<const char *> msgvalue = {file, reason};                                                  \
         OP_LOGE_WITHOUT_REPORT("EZ1003", "%s", msg.c_str());                                                        \
         REPORT_PREDEFINED_ERR_MSG("EZ1003", msgKey, msgvalue);                                                      \
     } while (false)
 
-#define OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(file, reason)                                                         \
+#define OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(file, reason)                                                        \
     do {                                                                                                            \
-        std::string msg = std::string("Failed to open file ") + file + ". Reason: " + reason + ".";                 \
+        std::string msg = std::string("Failed to parse file ") + file + ". Reason: " + reason + ".";                \
         const std::vector<const char *> msgKey = {"file", "reason"};                                                \
         const std::vector<const char *> msgvalue = {file, reason};                                                  \
         OP_LOGE_WITHOUT_REPORT("EZ1004", "%s", msg.c_str());                                                        \
         REPORT_PREDEFINED_ERR_MSG("EZ1004", msgKey, msgvalue);                                                      \
     } while (false)
 
-#define OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(file, reason)                                                        \
+#define OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(file, reason)                                   \
     do {                                                                                                            \
         std::string msg = std::string("Failed to parse file ") + file + ". Reason: " + reason + ".";                \
         const std::vector<const char *> msgKey = {"file", "reason"};                                                \
@@ -56,45 +55,36 @@
         REPORT_PREDEFINED_ERR_MSG("EZ1005", msgKey, msgvalue);                                                      \
     } while (false)
 
-#define OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(file, reason)                                   \
-    do {                                                                                                            \
-        std::string msg = std::string("Failed to parse file ") + file + ". Reason: " + reason + ".";                \
-        const std::vector<const char *> msgKey = {"file", "reason"};                                                \
-        const std::vector<const char *> msgvalue = {file, reason};                                                  \
-        OP_LOGE_WITHOUT_REPORT("EZ1006", "%s", msg.c_str());                                                        \
-        REPORT_PREDEFINED_ERR_MSG("EZ1006", msgKey, msgvalue);                                                      \
-    } while (false)
-
 #define OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataType, dtypeRange)                                                   \
     do {                                                                                                            \
-        std::string opName = GetOpName();                                                                           \
+        std::string opName = op::internal::GetLogApiInfo();                                                         \
         std::string msg = "Operator " + opName + " does not support data type " + dataType +                        \
             ". The supported data type range is " + dtypeRange + ".";                                               \
         const std::vector<const char *> msgKey = {"opName", "dataType", "dtypeRange"};                              \
         const std::vector<const char *> msgvalue = {opName.c_str(), dataType, dtypeRange};                          \
-        OP_LOGE_WITHOUT_REPORT("EZ1007", "%s", msg.c_str());                                                        \
-        REPORT_PREDEFINED_ERR_MSG("EZ1007", msgKey, msgvalue);                                                      \
+        OP_LOGE_WITHOUT_REPORT("EZ1006", "%s", msg.c_str());                                                        \
+        REPORT_PREDEFINED_ERR_MSG("EZ1006", msgKey, msgvalue);                                                      \
     } while (false)
 
 #define OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(paraName, dim, reason)                                      \
     do {                                                                                                            \
-        std::string opName = GetOpName();                                                                           \
+        std::string opName = op::internal::GetLogApiInfo();                                                         \
         std::string msg = std::string("Input parameter ") + paraName + " of operator " + opName +                   \
             " has incorrect shape dim " + dim + ". Reason: " + reason + ".";                                        \
         const std::vector<const char *> msgKey = {"paraName", "opName", "dim", "reason"};                           \
         const std::vector<const char *> msgvalue = {paraName, opName.c_str(), dim, reason};                         \
-        OP_LOGE_WITHOUT_REPORT("EZ1008", "%s", msg.c_str());                                                        \
-        REPORT_PREDEFINED_ERR_MSG("EZ1008", msgKey, msgvalue);                                                      \
+        OP_LOGE_WITHOUT_REPORT("EZ1007", "%s", msg.c_str());                                                        \
+        REPORT_PREDEFINED_ERR_MSG("EZ1007", msgKey, msgvalue);                                                      \
     } while (false)
 
 #define OP_LOGE_FOR_EXECUTION_ERROR(reason)                                                                         \
     do {                                                                                                            \
-        std::string opName = GetOpName();                                                                           \
+        std::string opName = op::internal::GetLogApiInfo();                                                         \
         std::string msg = "Failed to execute operator " + opName + ". Reason: " + reason + ".";                     \
         const std::vector<const char *> msgKey = {"opName", "reason"};                                              \
         const std::vector<const char *> msgvalue = {opName.c_str(), reason};                                        \
-        OP_LOGE_WITHOUT_REPORT("EZ1009", "%s", msg.c_str());                                                        \
-        REPORT_PREDEFINED_ERR_MSG("EZ1009", msgKey, msgvalue);                                                      \
+        OP_LOGE_WITHOUT_REPORT("EZ1008", "%s", msg.c_str());                                                        \
+        REPORT_PREDEFINED_ERR_MSG("EZ1008", msgKey, msgvalue);                                                      \
     } while (false)
 
 

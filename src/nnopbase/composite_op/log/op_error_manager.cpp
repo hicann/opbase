@@ -56,25 +56,25 @@ static const std::string g_errorInfoJson = R"(
         "Arglist": "funcDesc, envName",
         "suggestion": {
             "Possible Cause": "N/A",
-            "Solution": "Reset the environment variable by referring to the setup guide."
-        }
-    },
-    {
-        "errClass": "Nnopbase Errors",
-        "errTitle": "Config_Error_Invalid_Environment_Variable",
-        "ErrCode": "EZ1003",
-        "ErrMessage": "%s failed. Value %s for environment variable %s is invalid. Reason: %s.",
-        "Arglist": "funcDesc, value, envName, reason",
-        "suggestion": {
-            "Possible Cause": "N/A",
-            "Solution": "Reset the environment variable by referring to the setup guide."
+            "Solution": "Reset the environment variable by referring to the Environment Variable Reference."
         }
     },
     {
         "errClass": "Nnopbase Errors",
         "errTitle": "File_Operation_Error_Open",
-        "ErrCode": "EZ1004",
+        "ErrCode": "EZ1003",
         "ErrMessage": "Failed to open file %s. Reason: %s.",
+        "Arglist": "file, reason",
+        "suggestion": {
+            "Possible Cause": "N/A",
+            "Solution": "N/A"
+        }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "File_Operation_Error_Parse",
+        "ErrCode": "EZ1004",
+        "ErrMessage": "Failed to parse file %s. Reason: %s.",
         "Arglist": "file, reason",
         "suggestion": {
             "Possible Cause": "N/A",
@@ -88,17 +88,6 @@ static const std::string g_errorInfoJson = R"(
         "ErrMessage": "Failed to parse file %s. Reason: %s.",
         "Arglist": "file, reason",
         "suggestion": {
-            "Possible Cause": "N/A",
-            "Solution": "N/A"
-        }
-    },
-    {
-        "errClass": "Nnopbase Errors",
-        "errTitle": "File_Operation_Error_Parse",
-        "ErrCode": "EZ1006",
-        "ErrMessage": "Failed to parse file %s. Reason: %s.",
-        "Arglist": "file, reason",
-        "suggestion": {
             "Possible Cause": "1.The custom operator JSON file is damaged. 2.The built-in operator JSON file is damaged.",
             "Solution": "1.Reinstall the custom operator package. 2.Reinstall the built-in operator package."
         }
@@ -106,7 +95,7 @@ static const std::string g_errorInfoJson = R"(
     {
         "errClass": "Nnopbase Errors",
         "errTitle": "Not_Supported_Data_Type",
-        "ErrCode": "EZ1007",
+        "ErrCode": "EZ1006",
         "ErrMessage": "Operator %s does not support data type %s. The supported data type range is %s.",
         "Arglist": "opName, dataType, dtypeRange",
         "suggestion": {
@@ -117,7 +106,7 @@ static const std::string g_errorInfoJson = R"(
     {
         "errClass": "Nnopbase Errors",
         "errTitle": "Invalid_Argument_Tensor_Input_Shape",
-        "ErrCode": "EZ1008",
+        "ErrCode": "EZ1007",
         "ErrMessage": "Input parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",
         "Arglist": "paraName, opName, dim, reason",
         "suggestion": {
@@ -128,7 +117,7 @@ static const std::string g_errorInfoJson = R"(
     {
         "errClass": "Nnopbase Errors",
         "errTitle": "Execution_Error",
-        "ErrCode": "EZ1009",
+        "ErrCode": "EZ1008",
         "ErrMessage": "Failed to execute operator %s. Reason: %s.",
         "Arglist": "opName, reason",
         "suggestion": {
