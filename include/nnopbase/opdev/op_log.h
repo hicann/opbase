@@ -103,14 +103,14 @@ inline std::string GetOpName()
  */
 #define DOplogSub(moduleId, submodule, level, fmt, ...)                                                               \
     do {                                                                                                              \
-        if (CheckLogLevelInner(moduleId, level) == 1) {                                                                    \
+        if (unlikely(CheckLogLevelInner(moduleId, level) == 1)) {                                                                    \
             DlogRecordInner(moduleId, level, "[%s:%d][%s]" fmt, GetFileName(__FILE__), __LINE__, submodule, ##__VA_ARGS__); \
         }                                                                                                             \
     } while (false)
 
 #define DDfxlogSub(moduleId, submodule, level, file, line, fmt, ...)                             \
     do {                                                                                         \
-        if (CheckLogLevelInner(moduleId, level) == 1) {                                               \
+        if (unlikely(CheckLogLevelInner(moduleId, level) == 1)) {                                               \
             DlogRecordInner(moduleId, level, "[%s:%d][%s]" fmt, file, line, submodule, ##__VA_ARGS__); \
         }                                                                                        \
     } while (false)
@@ -203,7 +203,7 @@ OpDfxLogSub(OP_ID, OP_LOG_DEBUG, file, line, func, opname, fmt, ##__VA_ARGS__)
 
 #define OP_CHECK_NOTNULL(val)                                                          \
     do {                                                                               \
-        if ((val) == nullptr) {                                                        \
+        if (unlikely((val) == nullptr)) {                                              \
             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Parameter[%s] must not be null.", #val); \
             return ACLNN_ERR_INNER_NULLPTR;                                            \
         }                                                                              \
@@ -212,7 +212,7 @@ OpDfxLogSub(OP_ID, OP_LOG_DEBUG, file, line, func, opname, fmt, ##__VA_ARGS__)
 #define RET_IF_NOT_SUCCESS(x)
 #define CHECK_RET(condition, ret_value)                                              \
     do {                                                                             \
-        if (!(condition)) {                                                          \
+        if (unlikely(!(condition))) {                                                \
             OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "check %s failed.", #condition); \
             return ret_value;                                                        \
         }                                                                            \
@@ -220,7 +220,7 @@ OpDfxLogSub(OP_ID, OP_LOG_DEBUG, file, line, func, opname, fmt, ##__VA_ARGS__)
 #define CHECK_RET_CODE(func, fmt, ...)                    \
     do {                                                  \
         aclnnStatus __rc = func;                          \
-        if (__rc != ACLNN_SUCCESS) {                      \
+        if (unlikely(__rc != ACLNN_SUCCESS)) {            \
             OP_LOGE(__rc, fmt, ##__VA_ARGS__);            \
             return __rc;                                  \
         }                                                 \
@@ -228,7 +228,7 @@ OpDfxLogSub(OP_ID, OP_LOG_DEBUG, file, line, func, opname, fmt, ##__VA_ARGS__)
 
 #define OP_CHECK(cond, log_func, return_expr) \
     do {                                      \
-        if (!(cond)) {                        \
+        if (unlikely(!(cond))) {              \
             log_func;                         \
             return_expr;                      \
         }                                     \
@@ -236,14 +236,14 @@ OpDfxLogSub(OP_ID, OP_LOG_DEBUG, file, line, func, opname, fmt, ##__VA_ARGS__)
 
 #define OP_CHECK_NO_RETURN(cond, log_func)    \
     do {                                      \
-        if (!(cond)) {                        \
+        if (unlikely(!(cond))) {              \
             log_func;                         \
         }                                     \
     } while (false)
 
 #define CHECK_COND(cond, ret, fmt, ...)       \
     do {                                      \
-        if (!(cond)) {                        \
+        if (unlikely(!(cond))) {              \
             OP_LOGE(ret, fmt, ##__VA_ARGS__); \
             return ret;                       \
         }                                     \

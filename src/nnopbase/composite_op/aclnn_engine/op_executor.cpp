@@ -1398,11 +1398,11 @@ static void DeleteExecutorForError(aclOpExecutor *executor)
 aclnnStatus CommonOpExecutorRun(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)
 {
     static thread_local OpCacheGuard cacheGuard;
-    if (executor == nullptr) {
+    if (unlikely(executor == nullptr)) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "executor is nullptr.");
         return ACLNN_ERR_PARAM_NULLPTR;
     }
-    if (workspaceSize > 0 && workspace == nullptr) {
+    if (unlikely(workspaceSize > 0 && workspace == nullptr)) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "workspace is nullptr.");
         DeleteExecutorForError(executor);
         return ACLNN_ERR_PARAM_NULLPTR;
