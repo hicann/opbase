@@ -181,7 +181,7 @@ private:
             return Float8E8M0(NAN_VALUE, FromBits());
         }
 
-        if (f == 0.0f) {
+        if (std::fpclassify(f) == FP_ZERO) {
             return Float8E8M0(ZERO_VALUE, FromBits());
         }
 
