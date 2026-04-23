@@ -283,10 +283,9 @@ void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDe
   const size_t lastUnderscore = opsRegisterName.find_last_of('_');
   if (lastUnderscore != std::string::npos) {
     const std::string suffix = opsRegisterName.substr(lastUnderscore + 1);
-    if (kCustomerWhiteList.count(suffix) == 0U || kCustomerWhiteList.count(dirName) == 0U) {
-      OP_LOGI("suffix[%s] or dirName[%s] is not in customer white list, "
-              "skip to insert customer ops info. ops register name is %s",
-              suffix.c_str(), dirName.c_str(), opsRegisterName.c_str());
+    if (kCustomerWhiteList.count(suffix) == 0U && dirName != "omni_custom_ops") {
+      OP_LOGI("suffix[%s] is not in customer white list, skip to insert customer ops info. opsRegisterName is %s",
+              suffix.c_str(), opsRegisterName.c_str());
       return;
     }
   } else {
