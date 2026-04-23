@@ -36,7 +36,6 @@ usage() {
     echo "Test Options:"
     echo $dotted_line
     echo "    -u             Build and run all unit tests"
-    echo "    -s             Build and run all system tests"
     echo "    --noexec       Only compile ut, do not execute"
     echo "    --cov          Enable code coverage for unit tests"
     echo "    --asan         Enable AddressSanitizer"
@@ -89,12 +88,6 @@ checkopts() {
         -u)
         ENABLE_UT="on"
         ENABLE_ST="off"
-        EXEC_TEST="on"
-        shift
-        ;;
-        -s)
-        ENABLE_UT="off"
-        ENABLE_ST="on"
         EXEC_TEST="on"
         shift
         ;;
