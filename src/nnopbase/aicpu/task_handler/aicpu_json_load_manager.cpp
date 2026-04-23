@@ -32,7 +32,7 @@ const std::string kAicpuCustOpsFilePath =
 constexpr size_t SOC_VERSION_LEN = 128U;
 constexpr int kMaxFileSizeLimit = INT_MAX;
 const std::string kSplitSeparator = ":";
-const std::set<std::string> kCustomerWhiteList = {"cv", "math", "nn", "transformer"};
+const std::set<std::string> kCustomerWhiteList = {"cv", "math", "nn", "transformer", "omni_custom_ops"};
 }
 
 bool JsonLoadManger::hasAicpuLoadBin_ = false;
@@ -270,12 +270,21 @@ aclnnStatus JsonLoadManger::ParseCustOpInfo() {
   return ACLNN_SUCCESS;
 }
 
-void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const OpInfoDescs &infoDesc) {
+void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs &infoDesc) {
+  if (!opsRegisterName.empty() && opsRegisterName.back() == '/') {
+    opsRegisterName.pop_back();
+    OP_LOGI("Ops register name: %s", opsRegisterName.c_str());
+  }
+
+  const size_t lastSlash = opsRegisterName.find_last_of('/');
+  const std::string dirName =
+      (lastSlash != std::string::npos) ? opsRegisterName.substr(lastSlash + 1) : opsRegisterName;
+
   const size_t lastUnderscore = opsRegisterName.find_last_of('_');
   if (lastUnderscore != std::string::npos) {
     const std::string suffix = opsRegisterName.substr(lastUnderscore + 1);
-    if (kCustomerWhiteList.count(suffix) == 0U) {
-      OP_LOGI("suffix[%s] is not in customer white list, skip to insert customer ops info. ops register name is %s",
+    if (kCustomerWhiteList.count(suffix) == 0U && dirName != "omni_custom_ops") {
+      OP_LOGI("suffix[%s] is not in customer white list, skip to insert customer ops info. opsRegisterName is %s",
               suffix.c_str(), opsRegisterName.c_str());
       return;
     }
@@ -283,6 +292,7 @@ void JsonLoadManger::FillCustOpInfos(const std::string opsRegisterName, const Op
     OP_LOGW("Failed to extract the sub-repository so suffix, unable to construct the custom so path.");
     return;
   }
+
   // const std::lock_guard<std::mutex> lock(custMutex_);
   for (const auto &opDesc : infoDesc.opInfos) {
     if (opDesc.opType.empty()) {
