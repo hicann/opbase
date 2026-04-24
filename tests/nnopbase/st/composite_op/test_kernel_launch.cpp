@@ -272,14 +272,13 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
-    size_t tilingDataLen = 100;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(1000, 2000);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -311,14 +310,13 @@ TEST_F(KernelLaunchUT, TestWithHandleBlockDimOffset1)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
-    size_t tilingDataLen = 100;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(1000, 2000);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -350,14 +348,13 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
-    size_t tilingDataLen = 100;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(1000, 2000);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;

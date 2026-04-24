@@ -193,6 +193,7 @@ public:
 private:
     TilingCtxOutput tilingOutput_{};
     TilingData *tilingData_{nullptr};
+    ExpandableRtsArgBuffer *rtsArgBuffer_{nullptr};
 
     void BuildTilingCtx();
 

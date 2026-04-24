@@ -39,12 +39,16 @@
 #include "op_kernel_lib.h"
 #include "depends/dump/dump_stub.h"
 #include "depends/acl/aclrt_stub.h"
+#include "test_comp_op_common.h"
 
 using Json = nlohmann::json;
 using namespace op::internal;
+using namespace op::internal::test;
 
 extern "C" void InitPTACacheThreadLocal();
 extern inline uint32_t SortOpTypeId();
+extern inline uint32_t AxpyOpTypeId();
+extern inline uint32_t AddNOpTypeId();
 
 class OpKernelUT : public testing::Test {
 protected:
@@ -54,6 +58,8 @@ protected:
         setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1); // does overwrite
         GetThreadLocalContext().cacheHasFull_ = true;
         SortOpTypeId();
+        AxpyOpTypeId();
+        AddNOpTypeId();
     }
 
     static void TearDownTestCase() {}
@@ -342,18 +348,18 @@ TEST_F(OpKernelUT, LaunchArgCacheTest) {
     rec = kernelBin.JsonLoad();
     EXPECT_EQ(rec, ACLNN_SUCCESS);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 32;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
     auto ctx = op::MakeOpArgContext(input, output);
-    LaunchArgInfo argInfo(
-        tilingData, tilingDataLen, false, false, ctx);
-    RtsArg arg(true, argInfo, 900, &buffer);
+    LaunchArgInfo argInfo(false, false, ctx);
+    RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     PrintRtArg(arg.GetRtsArg());
 
@@ -718,21 +724,21 @@ TEST_F(OpKernelUT, TestDoLaunchWithSplitAicAndAiv) {
     rec = kernelBin.JsonLoad();
     EXPECT_EQ(rec, ACLNN_SUCCESS);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
- 
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 32;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
+
     auto ctx = op::MakeOpArgContext(input, output);
-    LaunchArgInfo argInfo(
-        tilingData, tilingDataLen, false, false, ctx);
-    RtsArg arg(true, argInfo, 900, &buffer);
+    LaunchArgInfo argInfo(false, false, ctx);
+    RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     PrintRtArg(arg.GetRtsArg());
- 
+
     GetThreadLocalContext().hashKey_ = 0;
     GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
@@ -1148,18 +1154,17 @@ TEST_F(OpKernelUT, AssertExceptionDump)
     auto ctx = op::MakeOpArgContext(input, output, attr, mode);
     ctx->AppendOpWorkspaceArg(inputList);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // LAUNCH_ARG_SIZE = 128KB，用于存放 kernel launch args
-    size_t tilingDataLen = 100;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    // Seek 到 tiling data 的起始位置，预留 args 空间
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 32;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 800, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs(true);
     dumpStub.CheckResult();
     Adx::DumpStub::GetInstance()->UnInstall();
@@ -1341,24 +1346,24 @@ TEST_F(OpKernelUT, TestTilingOOMInfo1)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    constexpr size_t TEST_TILING_HOST_DATA_INIT_SMALL_CAP = 180;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_SMALL_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_SMALL_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
+    kernelBin->AppendTilingOOMInfo(&buffer, ctx);
+    tilingData = buffer.GetTilingDataPtr();
+    EXPECT_EQ(tilingData->data_size_, 8 * (21 + 11));
+    EXPECT_EQ(tilingData->capacity_, TEST_TILING_HOST_DATA_INIT_SMALL_CAP * 2);
 
-    kernelBin->AppendTilingOOMInfo(&tilingDataStruct, ctx);
-    EXPECT_EQ(tilingDataStruct.data_size_, 8 * (21 + 11));
-
-    int64_t *tilingVal = reinterpret_cast<int64_t *>(tilingDataStruct.data_);
+    int64_t *tilingVal = reinterpret_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (int64_t i = 0; i < 21; i++) {
         EXPECT_EQ(tilingVal[i], i);
     }
@@ -1455,24 +1460,21 @@ TEST_F(OpKernelUT, TestTilingOOMInfo2)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
+    kernelBin->AppendTilingOOMInfo(&buffer, ctx);
+    EXPECT_EQ(buffer.GetTilingDataPtr()->data_size_, 8 * (21 + 13));
 
-    kernelBin->AppendTilingOOMInfo(&tilingDataStruct, ctx);
-    EXPECT_EQ(tilingDataStruct.data_size_, 8 * (21 + 13));
-
-    int64_t *tilingVal = reinterpret_cast<int64_t *>(tilingDataStruct.data_);
+    int64_t *tilingVal = reinterpret_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (int64_t i = 0; i < 21; i++) {
         EXPECT_EQ(tilingVal[i], i);
     }
@@ -1571,23 +1573,23 @@ TEST_F(OpKernelUT, TestTilingOOMInfo3)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    constexpr size_t TEST_TILING_HOST_DATA_INIT_SMALL_CAP = 180;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_SMALL_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_SMALL_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-
-    kernelBin->AppendTilingOOMInfo(&tilingDataStruct, ctx);
-    EXPECT_EQ(tilingDataStruct.data_size_, 8 * (21 + 9));
-    int64_t *tilingVal = reinterpret_cast<int64_t *>(tilingDataStruct.data_);
+    kernelBin->AppendTilingOOMInfo(&buffer, ctx);
+    tilingData = buffer.GetTilingDataPtr();
+    EXPECT_EQ(tilingData->data_size_, 8 * (21 + 9));
+    EXPECT_EQ(tilingData->capacity_, TEST_TILING_HOST_DATA_INIT_SMALL_CAP * 2);
+    int64_t *tilingVal = reinterpret_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (int64_t i = 0; i < 21; i++) {
         EXPECT_EQ(tilingVal[i], i);
     }
@@ -1682,23 +1684,20 @@ TEST_F(OpKernelUT, TestTilingOOMInfo4)
     ctx->AppendOpWorkspaceArg(workspace1);
 
     // init tiling data
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(2000);
-    buffer.Seek(1000);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
-    size_t tilingDataLen = 8 * 21;
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-
-    kernelBin->AppendTilingOOMInfo(&tilingDataStruct, ctx);
-    EXPECT_EQ(tilingDataStruct.data_size_, 8 * (21 + 10));
-    int64_t *tilingVal = reinterpret_cast<int64_t *>(tilingDataStruct.data_);
+    kernelBin->AppendTilingOOMInfo(&buffer, ctx);
+    EXPECT_EQ(buffer.GetTilingDataPtr()->data_size_, 8 * (21 + 10));
+    int64_t *tilingVal = reinterpret_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (int64_t i = 0; i < 21; i++) {
         EXPECT_EQ(tilingVal[i], i);
     }
@@ -1738,12 +1737,12 @@ TEST_F(OpKernelUT, LoadJsonFail)
 
 TEST_F(OpKernelUT, TilingBufferEnlarge)
 {
-    ExtendedTilingBuffer buffer;
-    buffer.Init(4);
+    ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_EXPAND_CAP, TEST_TILING_HOST_DATA_EXPAND_CAP);
     int data = 1;
-    buffer.Append(&data, sizeof(int));
-    buffer.Append(&data, sizeof(int));
-    EXPECT_EQ(buffer.size_, 8);
+    buffer.AppendTilingHostData(&data, sizeof(int));
+    buffer.AppendTilingHostData(&data, sizeof(int));
+    EXPECT_EQ(buffer.GetTilingHostDataSize(), 8);
 }
 
 // ============== LocalMemorySize Parse Tests ==============

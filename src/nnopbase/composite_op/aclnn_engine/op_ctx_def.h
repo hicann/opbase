@@ -67,151 +67,85 @@ struct KernelExtendInfo {
 
 struct TilingData;
 
-struct ExtendedTilingBuffer {
+struct ExpandableRtsArgBuffer {
 public:
-    ExtendedTilingBuffer() = default;
-    ~ExtendedTilingBuffer()
-    {
-        if (addr_) {
-            std::free(addr_);
-            addr_ = nullptr;
-        }
-    }
+    ExpandableRtsArgBuffer() = default;
+    ~ExpandableRtsArgBuffer();
+    ExpandableRtsArgBuffer(const ExpandableRtsArgBuffer&) = delete;
+    ExpandableRtsArgBuffer& operator=(const ExpandableRtsArgBuffer&) = delete;
+    ExpandableRtsArgBuffer(ExpandableRtsArgBuffer&&) = delete;
+    ExpandableRtsArgBuffer& operator=(ExpandableRtsArgBuffer&&) = delete;
 
-    aclnnStatus Init(size_t size)
-    {
-        addr_ = std::malloc(size);
-        OP_CHECK(addr_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", size),
-            return ACLNN_ERR_INNER);
-        offset_ = 0;
-        size_ = size;
-        return ACLNN_SUCCESS;
-    }
+    // 初始化：分别指定 launch_arg 和 tiling_host_data 的初始容量
+    aclnnStatus Init(size_t launchArgCap, size_t tilingHostDataCap);
 
-    void *Data() const
-    {
-        return static_cast<uint8_t *>(addr_) + offset_;
-    }
+    // 扩容检测：使用版本计数器，每次扩容时递增。调用方通过比较前后版本号判断是否发生了扩容。
+    size_t GetGeneration() const { return generation_; }
 
-    // Get the base address of the buffer
-    void *BaseAddr() const
-    {
-        return addr_;
-    }
+    // --- TilingData 头部 ---
+    TilingData *GetTilingDataPtr() const { return static_cast<TilingData *>(baseAddr_); }
 
-    // Get the current offset
-    off_t GetOffset() const
-    {
-        return offset_;
-    }
+    // --- launch_arg 区域 ---
+    size_t GetLaunchArgCapacity() const { return launchArgCapacity_; }
+    size_t GetLaunchArgSize() const { return launchArgSize_; }
+    void SetLaunchArgSize(size_t size) { launchArgSize_ = size; }
+    aclnnStatus EnsureLaunchArgCapacity(size_t requiredSize);
 
-    // Set the TilingData pointer to be updated when buffer enlarges
-    void SetTilingDataPtr(TilingData **tilingDataPtr)
+    // --- tiling_host_data 区域 ---
+    // 返回 tiling data 地址（也是 tiling_host_data 起始地址和 launch_arg 区域的结束位置）
+    void *GetTilingDataAddr() const
     {
-        tilingDataPtr_ = tilingDataPtr;
+        return static_cast<uint8_t *>(baseAddr_) + tilingHostDataStart_;
     }
+    void *GetTilingHostDataCurEndAddr() const
+    {
+        return static_cast<uint8_t *>(baseAddr_) + tilingHostDataStart_ + tilingHostDataSize_;
+    }
+    size_t GetTilingHostDataCapacity() const { return tilingHostDataCapacity_; }
+    size_t GetTilingHostDataSize() const { return tilingHostDataSize_; }
+    size_t GetAlignedTilingDataSize() const { return alignedTilingDataSize_; }
+    size_t GetHostDataSize() const;
+    aclnnStatus UpdateTilingDataSize(size_t tilingDataSize);
+    aclnnStatus AppendTilingHostData(const void *data, size_t len);
+    aclnnStatus SeekTilingHostData(size_t len);
+    void ResetTilingHostDataCursor();
 
-    // Set the TilingCtxOutput::tilingData_ pointer to be updated when buffer enlarges
-    void SetTilingOutputDataPtr(TilingData **tilingOutputDataPtr)
-    {
-        tilingOutputDataPtr_ = tilingOutputDataPtr;
-    }
-
-    aclnnStatus Append(const void *data, size_t len)
-    {
-        if (offset_ + len > size_) {
-            OP_CHECK(Enlarge(offset_ + len) == ACLNN_SUCCESS,
-                OP_LOGE(ACLNN_ERR_INNER, "failed to enlarge, offset %ld, len %zu.", offset_, len),
-                return ACLNN_ERR_INNER);
-        }
-        OP_CHECK(memcpy_s(static_cast<uint8_t *>(addr_) + offset_, size_ - offset_, data, len) == EOK,
-            OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."), return ACLNN_ERR_INNER);
-        offset_ += len;
-        return ACLNN_SUCCESS;
-    }
-
-    aclnnStatus Seek(off_t len, std::ios_base::seekdir dir = std::ios_base::cur)
-    {
-        off_t newOffset = 0;
-        switch (dir) {
-            case std::ios_base::beg:
-                newOffset = len;
-                break;
-            case std::ios_base::cur:
-                newOffset = offset_ + len;
-                break;
-            case std::ios_base::end:
-                newOffset = size_ + len;
-                break;
-            default:
-                OP_LOGE(ACLNN_ERR_INNER, "invalid seek direction: %d.", dir);
-                return ACLNN_ERR_INNER;
-        }
-        if (static_cast<size_t>(newOffset) > size_) {
-            OP_CHECK(Enlarge(newOffset) == ACLNN_SUCCESS,
-                OP_LOGE(ACLNN_ERR_INNER, "failed to enlarge, size %ld.", newOffset), return ACLNN_ERR_INNER);
-        }
-        offset_ = newOffset;
-        OP_LOGD("seek len %ld offset %ld.", len, offset_);
-        return ACLNN_SUCCESS;
-    }
+    // --- 注册需要刷新的指针 ---
+    void RegisterHolderTilingDataPtr(TilingData **ptr) { holderTilingDataPtr_ = ptr; }
+    void RegisterOutputTilingDataPtr(TilingData **ptr) { outputTilingDataPtr_ = ptr; }
 
 private:
-    aclnnStatus Enlarge(size_t size);
+    aclnnStatus ExpandLaunchArg(size_t requiredCapacity);
+    aclnnStatus ExpandTilingHostData(size_t requiredCapacity);
+    void UpdateRegisteredPtrs();
 
-    void *addr_{ nullptr };
-    off_t offset_{ 0 };
-    size_t size_{ 0 };
-    TilingData **tilingDataPtr_{ nullptr };       // Pointer to TilingCtxHolder::tilingData_
-    TilingData **tilingOutputDataPtr_{ nullptr }; // Pointer to TilingCtxOutput::tilingData_
+    void *baseAddr_{nullptr};
+    size_t totalSize_{0};
+
+    // launch_arg 区域管理
+    size_t launchArgCapacity_{0};
+    size_t launchArgSize_{0};
+
+    // tiling_host_data 区域管理
+    size_t tilingHostDataStart_{0};
+    size_t tilingHostDataCapacity_{0};
+    size_t tilingHostDataSize_{0};
+    size_t alignedTilingDataSize_{0};  // tiling 数据长度（对齐后）
+
+    // 需要刷新的TilingData指针
+    TilingData **holderTilingDataPtr_{nullptr};
+    TilingData **outputTilingDataPtr_{nullptr};
+
+    // 扩容版本计数器
+    size_t generation_{0};
 };
 
 struct TilingData {
     size_t capacity_;
     size_t data_size_;
     void *data_;
-    ExtendedTilingBuffer *buffer_;
-    uint8_t reserved_[32];
+    uint8_t reserved_[40];
 };
-
-// Constants used by ExtendedTilingBuffer::Enlarge
-constexpr size_t LAUNCH_ARG_SIZE = 128 * 1024;      // kernel launch arg size before tiling data
-
-// Implementation of ExtendedTilingBuffer::Enlarge, must be after TilingData definition
-inline aclnnStatus ExtendedTilingBuffer::Enlarge(size_t size)
-{
-    OP_CHECK(size_ != 0, OP_LOGE(ACLNN_ERR_INNER, "Current size is 0."), return ACLNN_ERR_INNER);
-    constexpr size_t DOUBLE = 2;
-    size_t newSize = size_;
-    while (newSize < size) {
-        newSize *= DOUBLE;
-    }
-    OP_LOGI("ExtendedTilingBuffer Enlarge, current size: %zu, new size: %zu", size_, newSize);
-    void *newAddr = std::malloc(newSize);
-    OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", newSize),
-        return ACLNN_ERR_INNER);
-    OP_CHECK(memcpy_s(newAddr, newSize, addr_, size_) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
-        std::free(newAddr);
-        return ACLNN_ERR_INNER);
-    std::free(addr_);
-    addr_ = newAddr;
-    size_ = newSize;
-
-    // Update the TilingData pointer if registered
-    if (tilingDataPtr_ != nullptr && *tilingDataPtr_ != nullptr) {
-        *tilingDataPtr_ = static_cast<TilingData *>(addr_);
-        // Also update the data_ pointer inside TilingData
-        (*tilingDataPtr_)->data_ = static_cast<uint8_t *>(addr_) + sizeof(TilingData) + LAUNCH_ARG_SIZE;
-        OP_LOGI("ExtendedTilingBuffer updated TilingData ptr to %p, data_ to %p",
-                *tilingDataPtr_, (*tilingDataPtr_)->data_);
-    }
-    // Update the TilingCtxOutput::tilingData_ pointer if registered
-    if (tilingOutputDataPtr_ != nullptr) {
-        *tilingOutputDataPtr_ = static_cast<TilingData *>(addr_);
-        OP_LOGI("ExtendedTilingBuffer updated TilingCtxOutput::tilingData_ ptr to %p", *tilingOutputDataPtr_);
-    }
-    return ACLNN_SUCCESS;
-}
 
 // Tiling output
 struct TilingCtxOutput {
@@ -223,13 +157,17 @@ struct TilingCtxOutput {
     int64_t *tilingCond_;
     uint8_t *scheduleMode_;
     uint32_t *dynUBufSize_;
+    ExpandableRtsArgBuffer *rtsArgBuffer_;
 
     size_t inputNum_;
     size_t outputNum_;
 };
 
 constexpr size_t MAX_WORKSPACE_NUM = 64;            // max number of op workspace
-constexpr size_t MAX_TILING_DATA_SIZE = 800 * 1024; // max raw tiling data size
+// launch_arg 初始容量
+constexpr size_t LAUNCH_ARG_INIT_SIZE = 128 * 1024;
+// tiling_host_data 初始容量
+constexpr size_t TILING_HOST_DATA_INIT_SIZE = 800 * 1024;
 
 // MAX_ATTR_STRING_SIZE limit has been removed. String attr capacity is now dynamically managed.
 // The value is kept for reference only.

@@ -305,9 +305,10 @@ private:
 
 // There's how launch args are composed:
 // ffts_addr, input_addrs, output_addrs, outshape_addrs, workspace_addrs, tiling_addr, overflow_addr, host_data...
+// Note: constructor may throw std::bad_alloc if buffer expansion fails
 class RtsArg {
 public:
-    explicit RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, size_t hostDataCap, ExtendedTilingBuffer *buffer);
+    explicit RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, ExpandableRtsArgBuffer *rtsArgBuffer);
     ~RtsArg();
     aclnnStatus FillArgs(bool assertFlag = false);
     LaunchArgCache *DumpToCache();
@@ -334,8 +335,9 @@ private:
     void AppendArg(void *arg)
     {
         *hostAddr_ = arg;
-        tensorOffset_.push_back(PtrOffset(rtArg_.args, hostAddr_) / PTR_SIZE);
+        tensorOffset_.push_back(hostAddrOffset_ / PTR_SIZE);
         hostAddr_++;
+        hostAddrOffset_ += PTR_SIZE;
     }
 
     aclnnStatus AppendHostArg(void *hostData, size_t hostDataSize);
@@ -352,12 +354,11 @@ private:
         }
         *hostAddr_ = overflowAddr;
         hostAddr_++;
+        hostAddrOffset_ += PTR_SIZE;
     }
 
-    ExtendedTilingBuffer *GetExtendedTilingBuffer()
-    {
-        return buffer_;
-    }
+    // 刷新 rtArg_.args 和 hostAddr_（扩容后 baseAddr_ 改变时调用）
+    void RefreshRtArgsAddr();
 
     void AddExceptionDumpDataToCache(
         const LaunchArgInfo &argInfo, OpExecCache *cache, LaunchArgCache *launchCache) const;
@@ -371,11 +372,11 @@ private:
     void **hostAddr_{nullptr};
     std::vector<int32_t> tensorOffset_;
 
-    const void *tilingData_{nullptr};
+    size_t hostAddrOffset_{0};  // hostAddr_ 相对于 rtArg_.args 的偏移量（字节）
     void *exceptionDumpAddr_{nullptr};
     uint32_t exceptionDumpIndex_{0};
 
-    ExtendedTilingBuffer *buffer_{nullptr};
+    ExpandableRtsArgBuffer *rtsArgBuffer_{nullptr};
 
     static constexpr size_t MAX_HOST_INFO_NUM = 16;
     static constexpr size_t PTR_SIZE = 8;
@@ -389,7 +390,7 @@ int PrintExceptionDumpInfo(void *dump, size_t num);
 int PrintAICErrorDFXInfo(const void *dfxInfoAddr, const size_t argNum, const size_t dataSize);
 void PrintHostDataSize(const rtArgs_t &rtArg);
 void PrintTilingData(const rtArgs_t &rtArg);
-void AddArgInfoToCache(OpExecCache *cache, LaunchArgCache::ArgInfo *argInfo, const LaunchArgInfo &launchArgInfo, bool hasFftsAddr);
+void AddArgInfoToCache(OpExecCache *cache, LaunchArgCache::ArgInfo *argInfo, const LaunchArgInfo &launchArgInfo, bool hasFftsAddr, ExpandableRtsArgBuffer *rtsArgBuffer);
 void ReportRTSException(const LaunchArgCache *launchCache, void *cacheException);
 }  // namespace op::internal
 

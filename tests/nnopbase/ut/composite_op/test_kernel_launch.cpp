@@ -37,9 +37,11 @@
 #include "depends/platform/platform_stub.h"
 #include "kernel_launcher.h"
 #include "depends/acl/aclrt_stub.h"
+#include "test_comp_op_common.h"
 
 using namespace op;
 using namespace op::internal;
+using namespace op::internal::test;
 extern inline uint32_t SortOpTypeId();
 OP_TYPE_REGISTER(Axpy);
 OP_TYPE_REGISTER(MemSet);
@@ -55,6 +57,7 @@ protected:
         op::internal::GetThreadLocalContext().cacheHasFull_ = true;
         AxpyOpTypeId();
         SortOpTypeId();
+        AddNOpTypeId();
     }
     static void TearDownTestCase() {}
 
@@ -629,21 +632,15 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     auto input_arg = OP_INPUT(inputTensor);
     auto output_arg = OP_OUTPUT(out);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // LAUNCH_ARG_SIZE = 128KB，用于存放 kernel launch args
-    size_t tilingDataLen = 100;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    // Seek 到 tiling data 的起始位置，预留 args 空间
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
-    // 此时 tilingData 指向 buffer 基址 + sizeof(TilingData) + LAUNCH_ARG_SIZE
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
 
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -692,16 +689,13 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 100;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, true, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, true, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
@@ -734,16 +728,13 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 100;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;

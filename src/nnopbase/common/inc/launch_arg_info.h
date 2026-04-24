@@ -98,11 +98,8 @@ constexpr size_t ARG_VECTOR_CAP_SIZE = 32;
 
 class LaunchArgInfo {
 public:
-    LaunchArgInfo(void *tilingData, size_t tilingDataLen, bool genPlaceholder, bool hasDevPtrArg, OpArgContext *args)
-        : allArg_(addrInfo), argSize_(0), tilingData_(tilingData), tilingDataLen_(tilingDataLen),
-          devArgNum_(0), hostArgNum_(0), tensorNum_(0), dfxInfoDumpSize_(0), dfxInfoDumpAddr_(nullptr),
-          dfxInfoOffsetInTilingData_(0), genPlaceholder_(genPlaceholder), hasDevPtrArg_(hasDevPtrArg),
-          firstWorkspaceIdx_(0)
+    LaunchArgInfo(bool genPlaceholder, bool hasDevPtrArg, OpArgContext *args)
+        : allArg_(addrInfo), genPlaceholder_(genPlaceholder), hasDevPtrArg_(hasDevPtrArg)
     {
         allArg_.reserve(ARG_VECTOR_CAP_SIZE);
         if (args->ContainsOpArgType(OpArgDef::OP_INPUT_ARG)) {
@@ -169,21 +166,6 @@ public:
         dfxInfoOffsetInTilingData_ = offset;
     }
 
-    void *GetTilingData() const
-    {
-        return tilingData_;
-    }
-
-    size_t GetTilingDataLen() const
-    {
-        return tilingDataLen_;
-    }
-
-    void UpdateTilingDataLen(size_t dataSize)
-    {
-        tilingDataLen_ = dataSize;
-    }
-
     struct DevArgInfo {
         const aclTensor *tensor;
         void *devAddr;
@@ -239,9 +221,7 @@ public:
 
 private:
     std::vector<ArgAddr> &allArg_;
-    size_t argSize_;
-    void *tilingData_{nullptr};
-    size_t tilingDataLen_{0};
+    size_t argSize_{0};
     size_t devArgNum_{0};
     size_t hostArgNum_{0};
     size_t tensorNum_{0};

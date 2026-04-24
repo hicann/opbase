@@ -192,15 +192,13 @@ TEST_F(OpCacheSt, RtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    void *tilingData = buffer.Data();
-    size_t tilingDataLen = 32;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(1000, 2000);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 100;
 
-    op::internal::LaunchArgInfo argInfo(
-        tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -292,16 +290,13 @@ TEST_F(OpCacheSt, StaticRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(1000);
-    buffer.Seek(100);
-    char tilingbuf[1000];
-    void *tilingData = buffer.Data();
-    size_t tilingDataLen = 32;
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(1000, 2000);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 100;
 
-    op::internal::LaunchArgInfo argInfo(
-        tilingData, 0, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 

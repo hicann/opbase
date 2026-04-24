@@ -61,26 +61,31 @@ void TilingCtxHolder::BuildTilingCtx()
     OP_CHECK(tilingCtxValue_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "malloc failed. [%zu]", tilingValueSize), return );
     (void)memset_s(tilingCtxValue_, tilingValueSize, 0, tilingValueSize);
 
-    // launch_args|tiling_data
-    size_t tilingDataSize = LAUNCH_ARG_SIZE + MAX_TILING_DATA_SIZE + sizeof(TilingData);
-    ExtendedTilingBuffer *extendedBuffer = new (std::nothrow) ExtendedTilingBuffer();
-    OP_CHECK(extendedBuffer != nullptr, OP_LOGE(ACLNN_ERR_INNER, "malloc failed. [%zu]", sizeof(ExtendedTilingBuffer)),
+    // 创建 ExpandableRtsArgBuffer
+    rtsArgBuffer_ = new (std::nothrow) ExpandableRtsArgBuffer();
+    OP_CHECK(rtsArgBuffer_ != nullptr,
+        OP_LOGE(ACLNN_ERR_INNER, "malloc failed. [%zu]", sizeof(ExpandableRtsArgBuffer)),
         return );
-    aclnnStatus res = extendedBuffer->Init(tilingDataSize);
-    OP_CHECK(res == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "failed to init extended buffer. [%zu]", tilingDataSize),
+    aclnnStatus res = rtsArgBuffer_->Init(LAUNCH_ARG_INIT_SIZE, TILING_HOST_DATA_INIT_SIZE);
+    OP_CHECK(res == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to init expandable rts arg buffer."),
         return );
-    tilingData_ = static_cast<TilingData *>(extendedBuffer->Data());
-    OP_CHECK(tilingData_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "get tiling data is nullptr."), return );
-    // Register tilingData_ pointer so it gets updated when buffer enlarges
-    extendedBuffer->SetTilingDataPtr(&tilingData_);
-    tilingData_->capacity_ = MAX_TILING_DATA_SIZE;
-    tilingData_->data_size_ = 0;
 
-    // reserve launch arg space for kernel args when launching.
-    extendedBuffer->Seek(sizeof(TilingData) + LAUNCH_ARG_SIZE);
-    tilingData_->data_ = extendedBuffer->Data();
-    tilingData_->buffer_ = extendedBuffer;
-    OP_LOGI("TilingData: %p, cap: %zu", tilingData_, MAX_TILING_DATA_SIZE);
+    // 设置 TilingData
+    tilingData_ = rtsArgBuffer_->GetTilingDataPtr();
+    rtsArgBuffer_->RegisterHolderTilingDataPtr(&tilingData_);
+    tilingData_->capacity_ = TILING_HOST_DATA_INIT_SIZE;
+    tilingData_->data_size_ = 0;
+    tilingData_->data_ = rtsArgBuffer_->GetTilingDataAddr();
+
+    // 注册 tilingOutput_.tilingData_ 指针
+    tilingOutput_.tilingData_ = tilingData_;
+    rtsArgBuffer_->RegisterOutputTilingDataPtr(&tilingOutput_.tilingData_);
+
+    // 设置 tilingOutput_.rtsArgBuffer_
+    tilingOutput_.rtsArgBuffer_ = rtsArgBuffer_;
+
+    OP_LOGI("TilingData: %p, cap: %zu", tilingData_, TILING_HOST_DATA_INIT_SIZE);
 
     workspaceSizeVec_ = gert::ContinuousVector::Create<size_t>(MAX_WORKSPACE_NUM);
     if (workspaceSizeVec_ == nullptr) {
@@ -95,9 +100,6 @@ void TilingCtxHolder::BuildTilingCtx()
     tilingOutput_.tilingKey_ = PtrCastTo<uint64_t>(tilingCtxValue_[kOutputTilingKey].data.inplace);
     tilingOutput_.numBlocks_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputBlockDim].data.inplace);
     tilingOutput_.atomicCleanFlag_ = PtrCastTo<bool>(tilingCtxValue_[kOutputAtomicCleanFlag].data.inplace);
-    tilingOutput_.tilingData_ = tilingData_;
-    // Register tilingOutput_.tilingData_ pointer so it gets updated when buffer enlarges
-    extendedBuffer->SetTilingOutputDataPtr(&tilingOutput_.tilingData_);
     tilingOutput_.workspaceSize_ = PtrCastTo<gert::TypedContinuousVector<size_t>>(workspaceSizeVec_.get());
     tilingOutput_.tilingCond_ = PtrCastTo<int64_t>(tilingCtxValue_[kOutputTilingCond].data.inplace);
     tilingOutput_.scheduleMode_ = PtrCastTo<uint8_t>(tilingCtxValue_[kOutputScheduleMode].data.inplace);
@@ -159,6 +161,8 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
 
     // Reset tiling data.
     tilingData_->data_size_ = 0;
+    // 重新赋值 tilingCtxValue_（确保使用最新的 tilingData_ 地址）
+    tilingCtxValue_[kOutputTilingData].data.pointer = tilingData_;
     *tilingOutput_.atomicCleanFlag_ = false;
     *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
@@ -216,6 +220,8 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
 
     // Reset tiling data.
     tilingData_->data_size_ = 0;
+    // 重新赋值 tilingCtxValue_（确保使用最新的 tilingData_ 地址）
+    tilingCtxValue_[kOutputTilingData].data.pointer = tilingData_;
     *tilingOutput_.atomicCleanFlag_ = false;
     *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
@@ -260,6 +266,8 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder *kernelCt
 
     // Reset tiling data.
     tilingData_->data_size_ = 0;
+    // 重新赋值 tilingCtxValue_（确保使用最新的 tilingData_ 地址）
+    tilingCtxValue_[kOutputTilingData].data.pointer = tilingData_;
     *tilingOutput_.atomicCleanFlag_ = false;
     *tilingOutput_.numBlocks_ = 0;
     *tilingOutput_.tilingKey_ = 0;
@@ -307,7 +315,7 @@ TilingCtxHolder::~TilingCtxHolder()
 {
     FREE(tilingCtx_);
     FREE(tilingCtxValue_);
-    delete (tilingData_->buffer_);
+    delete rtsArgBuffer_;
 }
 } // namespace internal
 } // namespace op

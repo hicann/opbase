@@ -198,18 +198,15 @@ public:
     {
         OP_CHECK(res != nullptr, OP_LOGE(ACLNN_ERR_INNER, "DoLaunch failed. TilingCtxOutput can't be nullptr."),
                  return ACLNN_ERR_INNER);
-        LaunchArgInfo argInfo(res->tilingData_->data_, res->tilingData_->data_size_, genPlaceholder_, hasDevPtrArg_,
-                              args);
-        OP_CHECK_NO_RETURN(AppendAICErrorDFXInfo(argInfo, res->tilingData_) == ACLNN_SUCCESS,
+        LaunchArgInfo argInfo(genPlaceholder_, hasDevPtrArg_, args);
+        OP_CHECK_NO_RETURN(AppendAICErrorDFXInfo(argInfo, res->rtsArgBuffer_) == ACLNN_SUCCESS,
                            OP_LOGW("Append AIC Error DFX info failed!"));
-        OP_LOGD("tilingDataWrap %p, tilingData %p, size %zu, capacity %zu", res->tilingData_, res->tilingData_->data_,
-                res->tilingData_->data_size_, res->tilingData_->capacity_);
         uint64_t tilingkey = *(res->tilingKey_);
         uint32_t numBlocks = *(res->numBlocks_);
         try {
             bool hasFftsAddr = ((interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end())) &&
                                 GetCurrentPlatformInfo().GetFftsPlusMode());
-            RtsArg rtsArg(hasFftsAddr, argInfo, res->tilingData_->capacity_, res->tilingData_->buffer_);
+            RtsArg rtsArg(hasFftsAddr, argInfo, res->rtsArgBuffer_);
             OP_CHECK(rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS,
                 OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"),
                 return ACLNN_ERR_INNER);
@@ -339,45 +336,49 @@ public:
         return rc;
     }
 
-    aclnnStatus AppendTilingOOMInfo(TilingData *tilingData, OpArgContext *args) const
+    aclnnStatus AppendTilingOOMInfo(ExpandableRtsArgBuffer *buffer, OpArgContext *args) const
     {
+        TilingData *tilingData = buffer->GetTilingDataPtr();
+
         if (oriOpParaSize_ > 0 && tilingData->data_size_ < oriOpParaSize_) {
             tilingData->data_size_ = oriOpParaSize_;
         }
         constexpr size_t oomAlignCoef = 8;
         tilingData->data_size_ = AlignSize(tilingData->data_size_, oomAlignCoef);
-        OP_CHECK(tilingData->capacity_ >= tilingData->data_size_,
-                 OP_LOGW("tiling data capacity not enough, capacity: %zu, data size %zu",
-                         tilingData->capacity_, tilingData->data_size_),
-                 return ACLNN_ERR_INNER);
 
+        // 同步 buffer 游标到 tilingData->data_size_
+        OP_CHECK(buffer->UpdateTilingDataSize(tilingData->data_size_) == ACLNN_SUCCESS,
+            OP_LOGW("Failed to sync tiling host data cursor to %zu.", tilingData->data_size_),
+            return ACLNN_ERR_INNER);
+
+        // 通过 buffer 追加 tensor shape info
         CHECK_RET_CODE(args->GetOpArg(op::OP_INPUT_ARG)->VisitBy(
-            [this, tilingData](size_t idx, OpArg &elem) {
-                return AppendTensorShapeInfo(idx, elem, tilingData, op::OP_INPUT_ARG);
+            [this, buffer](size_t idx, OpArg &elem) {
+                return AppendTensorShapeInfo(idx, elem, buffer, op::OP_INPUT_ARG);
             }), "Append input tensor shape info failed.");
         CHECK_RET_CODE(args->GetOpArg(op::OP_OUTPUT_ARG)->VisitBy(
-            [this, tilingData](size_t idx, OpArg &elem) {
-                return AppendTensorShapeInfo(idx, elem, tilingData, op::OP_OUTPUT_ARG);
+            [this, buffer](size_t idx, OpArg &elem) {
+                return AppendTensorShapeInfo(idx, elem, buffer, op::OP_OUTPUT_ARG);
             }), "Append output tensor shape info failed.");
 
         if (args->ContainsOpArgType(op::OP_OUTSHAPE_ARG)) {
             CHECK_RET_CODE(
                 AppendTensorShapeInfo(
                     0, PtrCastTo<aclTensor>((*args->GetOpArg(op::OP_OUTSHAPE_ARG))[0]->pointer),
-                    tilingData, false),
+                    buffer, false),
                 "Append outshape info failed.");
         }
 
         if (args->ContainsOpArgType(op::OP_WORKSPACE_ARG)) {
             CHECK_RET_CODE(args->GetOpArg(op::OP_WORKSPACE_ARG)->VisitBy(
-                [this, tilingData](size_t idx, OpArg &elem) {
-                    return AppendTensorShapeInfo(idx, elem, tilingData, op::OP_WORKSPACE_ARG);
+                [this, buffer](size_t idx, OpArg &elem) {
+                    return AppendTensorShapeInfo(idx, elem, buffer, op::OP_WORKSPACE_ARG);
                 }), "Append workspace shape info failed.");
         }
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus AppendAICErrorDFXInfo(LaunchArgInfo &argInfo, TilingData *tilingData) const
+    aclnnStatus AppendAICErrorDFXInfo(LaunchArgInfo &argInfo, ExpandableRtsArgBuffer *buffer) const
     {
         if (!IsArgExceptionDumpEnable()) {
             return ACLNN_SUCCESS;
@@ -399,10 +400,9 @@ public:
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to dump failed!"), return ret);
         argInfo.SetDFXInfoDumpAddr(dfxInfoDumpAddr);
 
-        ret = AppendAICErrorDFXInfoToTilingData(tilingData, dfxInfoDumpIndex);
+        ret = AppendAICErrorDFXInfoToTilingData(buffer, dfxInfoDumpIndex);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to tiling data failed!"), return ret);
-        argInfo.SetDFXInfoOffsetInTilingData(tilingData->data_size_ - UINT64_BYTES);
-        argInfo.UpdateTilingDataLen(tilingData->data_size_);
+        argInfo.SetDFXInfoOffsetInTilingData(buffer->GetTilingDataPtr()->data_size_ - UINT64_BYTES);
 
         uint32_t *atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
         OP_LOGI("Dump addr: %p, space: %zu, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), print dfx info dump: %d",
@@ -477,9 +477,8 @@ public:
                                      op::OpTypeDict::ToString(opType_).GetString());
         }
 
-        LaunchArgInfo argInfo(res->tilingData_->data_, res->tilingData_->data_size_, genPlaceholder_, hasDevPtrArg_,
-                              args);
-        OP_CHECK_NO_RETURN(AppendAICErrorDFXInfo(argInfo, res->tilingData_) == ACLNN_SUCCESS,
+        LaunchArgInfo argInfo(genPlaceholder_, hasDevPtrArg_, args);
+        OP_CHECK_NO_RETURN(AppendAICErrorDFXInfo(argInfo, res->rtsArgBuffer_) == ACLNN_SUCCESS,
             OP_LOGW("Append AIC Error DFX info failed!"));
         uint64_t tilingkey = *(res->tilingKey_);
         // get the coreNums of the AIC and AIV.
@@ -487,132 +486,137 @@ public:
         uint32_t blockdimAic = std::get<0>(needCoreNumTupleOut);
         uint32_t blockdimAiv = std::get<1>(needCoreNumTupleOut);
 
-        RtsArg rtsArg(interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end()),
-                    argInfo, res->tilingData_->capacity_, res->tilingData_->buffer_);
+        try {
+            RtsArg rtsArg(interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end()),
+                        argInfo, res->rtsArgBuffer_);
 
-        CHECK_RET_CODE(InitFunctionHandle(isFatbin_, tilingkey), "Init function handle failed.");
+            CHECK_RET_CODE(InitFunctionHandle(isFatbin_, tilingkey), "Init function handle failed.");
 
-        int32_t ret;
-        std::vector<int32_t> tensorOffset;
-        {
-            OpDfxGuard
-                kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
-            OP_CHECK(rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS,
-                OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"),
-                return ACLNN_ERR_INNER);
-            tensorOffset = rtsArg.GetTensorOffset();
-            SetExceptionDumpInfo(blockdimAic, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
-            GetThreadLocalContext().numBlocks_ = blockdimAic;
+            int32_t ret;
+            std::vector<int32_t> tensorOffset;
+            {
+                OpDfxGuard
+                    kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
+                OP_CHECK(rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS,
+                    OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"),
+                    return ACLNN_ERR_INNER);
+                tensorOffset = rtsArg.GetTensorOffset();
+                SetExceptionDumpInfo(blockdimAic, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
+                GetThreadLocalContext().numBlocks_ = blockdimAic;
 
-            ret = aclrtRecordEvent(eventA, stream);
-            if (ret != ACL_SUCCESS) {
-                OP_LOGW("main record eventA fail.");
-                return ret;
+                ret = aclrtRecordEvent(eventA, stream);
+                if (ret != ACL_SUCCESS) {
+                    OP_LOGW("main record eventA fail.");
+                    return ret;
+                }
+                ret = aclrtStreamWaitEvent(secondStream, eventA);
+                if (ret != ACL_SUCCESS) {
+                    OP_LOGW("second wait eventA fail.");
+                    return ret;
+                }
+
+                // mainStream kernel launch
+                KernelLaunchConfig launchCfg;
+                launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar() :
+                                                   funcHandleWithKernelName_[currDevId_].GetVar();
+                launchCfg.numBlocks = blockdimAic;
+                launchCfg.schemMode = *(res->scheduleMode_);
+                launchCfg.blockDimOffset = 0;
+                launchCfg.dynUBufSize = 0;
+                launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
+
+                rtsArg.ReportExceptionDumpInfo();
+                ret = DoLaunchKernel(rtsArg, stream, launchCfg);
+                if (ret != ACLNN_SUCCESS) {
+                    OP_LOGW("main kernel launch with handle fail.");
+                    return ret;
+                }
+                OP_LOGI("mainStream kernel launch succeed.");
             }
-            ret = aclrtStreamWaitEvent(secondStream, eventA);
-            if (ret != ACL_SUCCESS) {
-                OP_LOGW("second wait eventA fail.");
-                return ret;
+            if (IsPrintFEnable()) {
+                DumpWorkspaceData(stream, args);
             }
-
-            // mainStream kernel launch
-            KernelLaunchConfig launchCfg;
-            launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar() :
-                                               funcHandleWithKernelName_[currDevId_].GetVar();
-            launchCfg.numBlocks = blockdimAic;
-            launchCfg.schemMode = *(res->scheduleMode_);
-            launchCfg.blockDimOffset = 0;
-            launchCfg.dynUBufSize = 0;
-            launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
-
-            rtsArg.ReportExceptionDumpInfo();
-            ret = DoLaunchKernel(rtsArg, stream, launchCfg);
-            if (ret != ACLNN_SUCCESS) {
-                OP_LOGW("main kernel launch with handle fail.");
-                return ret;
-            }
-            OP_LOGI("mainStream kernel launch succeed.");
-        }
-        if (IsPrintFEnable()) {
-            DumpWorkspaceData(stream, args);
-        }
-        if (op::internal::IsExceptionDumpEnable()) {
-            op::internal::PrepareExceptionDumpInfo(
-                args, GetThreadLocalContext().logInfo_, genPlaceholder_, hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
-        }
-        if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
-            MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
-            // only level1 profiling need to report addition info
-            if (op::internal::opProfilingSwitch.additionInfoFlag) {
-                op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                    GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
-                op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG),
-                                                 *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
-                                                 GetThreadLocalContext().profilingInfoId_.summaryItemId_);
-            }
-            ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
-        }
-        if (GetThreadLocalContext().cacheOpInfoSwitch_) {
-            TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
-            uint64_t attrId = GetAttrId(args);
-            ReportCacheOpInfo(taskInfo, args, opType_, attrId);
-        }
-        {
-            OpDfxGuard
-                kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
-            SetExceptionDumpInfo(blockdimAiv, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
-            GetThreadLocalContext().numBlocks_ = blockdimAiv;
-
-            // secondStream kernel launch
-            KernelLaunchConfig launchCfg;
-            launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
-                                                         : funcHandleWithKernelName_[currDevId_].GetVar();
-            launchCfg.numBlocks = blockdimAiv;
-            launchCfg.schemMode = *(res->scheduleMode_);
-            launchCfg.blockDimOffset = blockdimAic;
-            launchCfg.dynUBufSize = 0;
-            launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIV;
-
-            rtsArg.ReportExceptionDumpInfo();
-            ret = DoLaunchKernel(rtsArg, secondStream, launchCfg);
-            if (ret != ACLNN_SUCCESS) {
-                OP_LOGW("second kernel launch fail.");
-                return ret;
-            }
-
             if (op::internal::IsExceptionDumpEnable()) {
-                op::internal::PrepareExceptionDumpInfo(args, GetThreadLocalContext().logInfo_, genPlaceholder_,
-                                                       hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
+                op::internal::PrepareExceptionDumpInfo(
+                    args, GetThreadLocalContext().logInfo_, genPlaceholder_, hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
             }
+            if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
+                MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
+                // only level1 profiling need to report addition info
+                if (op::internal::opProfilingSwitch.additionInfoFlag) {
+                    op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
+                        GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
+                    op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG),
+                                                     *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
+                                                     GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                }
+                ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+            }
+            if (GetThreadLocalContext().cacheOpInfoSwitch_) {
+                TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
+                uint64_t attrId = GetAttrId(args);
+                ReportCacheOpInfo(taskInfo, args, opType_, attrId);
+            }
+            {
+                OpDfxGuard
+                    kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
+                SetExceptionDumpInfo(blockdimAiv, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
+                GetThreadLocalContext().numBlocks_ = blockdimAiv;
 
-            ret = aclrtRecordEvent(eventB, secondStream);
-            if (ret != ACL_SUCCESS) {
-                OP_LOGW("second record eventB fail.");
-                return ret;
+                // secondStream kernel launch
+                KernelLaunchConfig launchCfg;
+                launchCfg.funcHandle = isFatbin_ ? funcHandleWithTilingKey_[currDevId_][tilingkey].GetVar()
+                                                             : funcHandleWithKernelName_[currDevId_].GetVar();
+                launchCfg.numBlocks = blockdimAiv;
+                launchCfg.schemMode = *(res->scheduleMode_);
+                launchCfg.blockDimOffset = blockdimAic;
+                launchCfg.dynUBufSize = 0;
+                launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIV;
+
+                rtsArg.ReportExceptionDumpInfo();
+                ret = DoLaunchKernel(rtsArg, secondStream, launchCfg);
+                if (ret != ACLNN_SUCCESS) {
+                    OP_LOGW("second kernel launch fail.");
+                    return ret;
+                }
+
+                if (op::internal::IsExceptionDumpEnable()) {
+                    op::internal::PrepareExceptionDumpInfo(args, GetThreadLocalContext().logInfo_, genPlaceholder_,
+                                                           hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
+                }
+
+                ret = aclrtRecordEvent(eventB, secondStream);
+                if (ret != ACL_SUCCESS) {
+                    OP_LOGW("second record eventB fail.");
+                    return ret;
+                }
+                ret = aclrtStreamWaitEvent(stream, eventB);
+                if (ret != ACL_SUCCESS) {
+                    OP_LOGW("main wait eventB fail.");
+                    return ret;
+                }
+                OP_LOGI("secondStream kernel launch succeed.");
             }
-            ret = aclrtStreamWaitEvent(stream, eventB);
-            if (ret != ACL_SUCCESS) {
-                OP_LOGW("main wait eventB fail.");
-                return ret;
+            if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
+                MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AIV;
+                // only level1 profiling need to report addition info
+                if (op::internal::opProfilingSwitch.additionInfoFlag) {
+                    op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
+                        GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
+                    op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG),
+                                                     *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
+                                                     GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                }
+                ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
             }
-            OP_LOGI("secondStream kernel launch succeed.");
-        }
-        if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
-            MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AIV;
-            // only level1 profiling need to report addition info
-            if (op::internal::opProfilingSwitch.additionInfoFlag) {
-                op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                    GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
-                op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG),
-                                                 *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
-                                                 GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+            if (GetThreadLocalContext().cacheOpInfoSwitch_) {
+                TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
+                uint64_t attrId = GetAttrId(args);
+                ReportCacheOpInfo(taskInfo, args, opType_, attrId);
             }
-            ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
-        }
-        if (GetThreadLocalContext().cacheOpInfoSwitch_) {
-            TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
-            uint64_t attrId = GetAttrId(args);
-            ReportCacheOpInfo(taskInfo, args, opType_, attrId);
+        } catch (...) {
+            OP_LOGE(ACLNN_ERR_INNER, "DoLaunchWithSplitAicAndAiv rtsArg construct error");
+            return ACLNN_ERR_INNER;
         }
         return ACLNN_SUCCESS;
     }
@@ -652,7 +656,7 @@ public:
                 }
 
                 if ((debugConfig_ & static_cast<uint32_t>(OpDebugConfig::OOM)) != 0) {
-                    AppendTilingOOMInfo(res->tilingData_, args);
+                    AppendTilingOOMInfo(res->rtsArgBuffer_, args);
                 }
 
                 auto ws = PtrCastTo<gert::TypedContinuousVector<size_t>>(res->workspaceSize_);
@@ -1038,42 +1042,35 @@ private:
     }
 
     aclnnStatus AppendTensorShapeInfo(
-        size_t idx, const aclTensor *tensor, TilingData *tilingData, bool genPlaceholder) const
+        size_t idx, const aclTensor *tensor, ExpandableRtsArgBuffer *buffer, bool genPlaceholder) const
     {
         if (tensor == nullptr && !genPlaceholder) {
             OP_LOGW("Append tiling tensor shape, tensor is NULL: [%zu].", idx);
             return ACLNN_SUCCESS;
         }
-        if (tilingData->capacity_ <= tilingData->data_size_ ||
-            (tilingData->capacity_ - tilingData->data_size_) < sizeof(uint64_t)) {
-            OP_LOGW("tiling data remain size not enough, capacity %zu, data size %zu",
-                    tilingData->capacity_, tilingData->data_size_);
-            return ACLNN_ERR_INNER;
-        }
+        OP_CHECK(buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
+            OP_LOGW("Failed to seek tiling host data for tensor shape info"), return ACLNN_ERR_INNER);
         uint64_t tensorSize = 0;
         if (tensor) {
             tensorSize = AlignSize(CalcShapeBytes(tensor->Size(), tensor->GetDataType()), OP_KERNEL_BLOCK_SIZE);
         }
-        *PtrCastTo<uint64_t>(PtrShift(tilingData->data_, tilingData->data_size_)) = tensorSize;
-        tilingData->data_size_ += sizeof(uint64_t);
+        *PtrCastTo<uint64_t>(static_cast<uint8_t *>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) = tensorSize;
+        TilingData *tilingData = buffer->GetTilingDataPtr();
+        tilingData->data_size_ = buffer->GetTilingHostDataSize();
         OP_LOGD("Append tiling tensor shape size %lu: [%zu].", tensorSize, idx);
         return ACLNN_SUCCESS;
     }
 
     aclnnStatus AppendTensorShapeInfo(
-        size_t idx, const aclTensorList *tensor, TilingData *tilingData, bool genPlaceholder, bool hasDevPtrArg) const
+        size_t idx, const aclTensorList *tensor, ExpandableRtsArgBuffer *buffer, bool genPlaceholder, bool hasDevPtrArg) const
     {
         if (tensor == nullptr) {
             OP_LOGW("Append tiling tensor shape, tensorlist is NULL: [%zu].", idx);
             return ACLNN_SUCCESS;
         }
         if (hasDevPtrArg) {
-            if (tilingData->capacity_ <= tilingData->data_size_ ||
-                (tilingData->capacity_ - tilingData->data_size_) < sizeof(uint64_t)) {
-                OP_LOGW("tiling data remain size not enough, capacity %zu, data size %zu",
-                        tilingData->capacity_, tilingData->data_size_);
-                return ACLNN_ERR_INNER;
-            }
+            OP_CHECK(buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
+                OP_LOGW("Failed to seek tiling host data for tensor list shape info"), return ACLNN_ERR_INNER);
             size_t dataSize = PTR_OFFSET_SIZE;
             for (uint64_t i = 0; i < tensor->Size(); i++) {
                 dataSize += PRT_DIM_SIZE;
@@ -1081,13 +1078,15 @@ private:
                     dataSize += (*tensor)[i]->GetStorageShape().GetDimNum() * sizeof(int64_t);
                 }
             }
-            *PtrCastTo<uint64_t>(PtrShift(tilingData->data_, tilingData->data_size_)) = dataSize;
-            tilingData->data_size_ += sizeof(uint64_t);
+            *PtrCastTo<uint64_t>(static_cast<uint8_t *>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) = dataSize;
+
+            TilingData *tilingData = buffer->GetTilingDataPtr();
+            tilingData->data_size_ = buffer->GetTilingHostDataSize();
             OP_LOGD("Append tiling tensor(device ptr) shape size %lu: [%zu].", dataSize, idx);
             return ACLNN_SUCCESS;
         }
         for (uint64_t i = 0; i < tensor->Size(); i++) {
-            aclnnStatus ret = AppendTensorShapeInfo(idx, (*tensor)[i], tilingData, genPlaceholder);
+            aclnnStatus ret = AppendTensorShapeInfo(idx, (*tensor)[i], buffer, genPlaceholder);
             if (ret != ACLNN_SUCCESS) {
                 return ret;
             }
@@ -1096,10 +1095,10 @@ private:
     }
 
     aclnnStatus AppendTensorShapeInfo(
-        size_t idx, const std::vector<std::tuple<void *, const aclTensor *>> &arg, TilingData *tilingData) const
+        size_t idx, const std::vector<std::tuple<void *, const aclTensor *>> &arg, ExpandableRtsArgBuffer *buffer) const
     {
         for (const auto &elem : arg) {
-            aclnnStatus ret = AppendTensorShapeInfo(idx, std::get<1>(elem), tilingData, false);
+            aclnnStatus ret = AppendTensorShapeInfo(idx, std::get<1>(elem), buffer, false);
             if (ret != ACLNN_SUCCESS) {
                 return ret;
             }
@@ -1107,29 +1106,19 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus AppendTensorShapeInfo(size_t idx, OpArg &arg, TilingData *tilingData, OpArgDef opArgDef) const
+    aclnnStatus AppendTensorShapeInfo(size_t idx, OpArg &arg, ExpandableRtsArgBuffer *buffer, OpArgDef opArgDef) const
     {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
             bool genPlaceholder = (opArgDef == op::OP_INPUT_ARG) ? genPlaceholder_ : false;
-            return AppendTensorShapeInfo(idx, PtrCastTo<aclTensor>(arg->pointer), tilingData, genPlaceholder);
+            return AppendTensorShapeInfo(idx, PtrCastTo<aclTensor>(arg->pointer), buffer, genPlaceholder);
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
             bool genPlaceholder = (opArgDef == op::OP_INPUT_ARG) ? genPlaceholder_ : false;
             bool hasDevPtrArg = (opArgDef == op::OP_INPUT_ARG || opArgDef == op::OP_OUTPUT_ARG) ? hasDevPtrArg_ : false;
-            return AppendTensorShapeInfo(idx, PtrCastTo<aclTensorList>(arg->pointer), tilingData,
+            return AppendTensorShapeInfo(idx, PtrCastTo<aclTensorList>(arg->pointer), buffer,
                                          genPlaceholder, hasDevPtrArg);
         } else if (arg.type == OpArgType::OPARG_MEMSET_WORKSPACE) {
             return AppendTensorShapeInfo(idx,
-                *reinterpret_cast<std::vector<std::tuple<void *, const aclTensor *>> *>(arg->pointer), tilingData);
-        }
-        return ACLNN_SUCCESS;
-    }
-
-    inline aclnnStatus CheckDataRemainCapacity(size_t capaticy, size_t usedSize, size_t addSize) const
-    {
-        if ((capaticy < usedSize) || ((capaticy - usedSize) < addSize)) {
-            OP_LOGW("data remain size not enough, capacity: %zu, used size %zu, add size: %zu",
-                capaticy, usedSize, addSize);
-            return ACLNN_ERR_INNER;
+                *reinterpret_cast<std::vector<std::tuple<void *, const aclTensor *>> *>(arg->pointer), buffer);
         }
         return ACLNN_SUCCESS;
     }
@@ -1214,12 +1203,18 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus AppendAICErrorDFXInfoToTilingData(TilingData *tilingData, const uint64_t dfxInfoDumpIndex) const
+    aclnnStatus AppendAICErrorDFXInfoToTilingData(ExpandableRtsArgBuffer *buffer, const uint64_t dfxInfoDumpIndex) const
     {
-        auto ret = CheckDataRemainCapacity(tilingData->capacity_, tilingData->data_size_, UINT64_BYTES);
-        OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Tiling data capacity not enough"), return ret);
-        *PtrCastTo<uint64_t>(PtrShift(tilingData->data_, tilingData->data_size_)) = dfxInfoDumpIndex;
-        tilingData->data_size_ += UINT64_BYTES;
+        TilingData *tilingData = buffer->GetTilingDataPtr();
+        OP_CHECK(buffer->UpdateTilingDataSize(tilingData->data_size_) == ACLNN_SUCCESS,
+            OP_LOGW("Failed to sync tiling host data cursor"), return ACLNN_ERR_INNER);
+
+        OP_CHECK(buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
+            OP_LOGW("Failed to seek tiling host data for DFX info"), return ACLNN_ERR_INNER);
+        *PtrCastTo<uint64_t>(static_cast<uint8_t *>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) = dfxInfoDumpIndex;
+
+        tilingData = buffer->GetTilingDataPtr();
+        tilingData->data_size_ = buffer->GetTilingHostDataSize();
         return ACLNN_SUCCESS;
     }
 

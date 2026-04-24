@@ -44,8 +44,10 @@
 #include "op_kernel_lib.h"
 #include "depends/dump/dump_stub.h"
 #include "depends/acl/aclrt_stub.h"
+#include "test_comp_op_common.h"
 
 using namespace op::internal;
+using namespace op::internal::test;
 using char_t = char;
 
 typedef std::function<void(void)> Functional;
@@ -396,23 +398,17 @@ static void MultiDoLaunchNormalTest2() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
-    size_t tilingDataLen = 8 * 21;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-    tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
@@ -420,9 +416,11 @@ static void MultiDoLaunchNormalTest2() {
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
-    tilingOutput.tilingData_ = &tilingDataStruct;
+    tilingOutput.tilingData_ = tilingData;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.dynUBufSize_ = &dynUBufSize;
+    tilingOutput.rtsArgBuffer_ = &buffer;
+    buffer.RegisterOutputTilingDataPtr(&tilingOutput.tilingData_);
 
     // run launch
     MultiDoLaunchNormalTest2AclrtStub aclrtStub;
@@ -794,23 +792,19 @@ static void MultiDoLaunchNormalTest3() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
-    size_t tilingDataLen = 8 * 21;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    // launchArgCap=32 < 64 触发 launch arg 扩容
+    // tilingHostDataCap=200: tilingData(168) 不扩容，AppendDevicePtrArg 阶段(168+104=272>200) 触发扩容
+    buffer.Init(32, 200);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-    tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
@@ -818,9 +812,11 @@ static void MultiDoLaunchNormalTest3() {
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
-    tilingOutput.tilingData_ = &tilingDataStruct;
+    tilingOutput.tilingData_ = tilingData;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.dynUBufSize_ = &dynUBufSize;
+    tilingOutput.rtsArgBuffer_ = &buffer;
+    buffer.RegisterOutputTilingDataPtr(&tilingOutput.tilingData_);
 
     // run launch
     MultiDoLaunchNormalTest3AclrtStub aclrtStub;
@@ -1201,23 +1197,17 @@ static void MultiDoLaunchNormalTest4() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
-    size_t tilingDataLen = 8 * 21;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-    tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
@@ -1225,9 +1215,11 @@ static void MultiDoLaunchNormalTest4() {
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
-    tilingOutput.tilingData_ = &tilingDataStruct;
+    tilingOutput.tilingData_ = tilingData;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.dynUBufSize_ = &dynUBufSize;
+    tilingOutput.rtsArgBuffer_ = &buffer;
+    buffer.RegisterOutputTilingDataPtr(&tilingOutput.tilingData_);
 
     // run launch
     MultiDoLaunchNormalTest4AclrtStub aclrtStub;
@@ -1263,7 +1255,7 @@ static void MultiDoLaunchNormalTest4() {
     EXPECT_EQ(tensorOffset[7], 73);
     EXPECT_EQ(tensorOffset[8], 74);
     EXPECT_EQ(tensorOffset[9], 75);
-    EXPECT_EQ(tensorOffset[10],6);
+    EXPECT_EQ(tensorOffset[10], 6);
     EXPECT_EQ(tensorOffset[11], 7);
     EXPECT_EQ(tensorOffset[12], 8);
 
@@ -1618,23 +1610,19 @@ static void MultiDoLaunchAlignTest() {
     // init tiling res
     TilingCtxOutput tilingOutput{};
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // 使用足够大的 buffer 避免 enlargement，因为 enlargement 后 tilingDataStruct.data_ 指针会失效
-    size_t tilingDataLen = 8 * 21;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    // launchArgCap=64 < 120 触发 launch arg 扩容
+    // tilingHostDataCap=200: tilingData(168) 不扩容，AppendHostArg 阶段(168+80=248>200) 触发扩容
+    buffer.Init(64, 200);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-    tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
@@ -1642,9 +1630,11 @@ static void MultiDoLaunchAlignTest() {
 
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
-    tilingOutput.tilingData_ = &tilingDataStruct;
+    tilingOutput.tilingData_ = tilingData;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.dynUBufSize_ = &dynUBufSize;
+    tilingOutput.rtsArgBuffer_ = &buffer;
+    buffer.RegisterOutputTilingDataPtr(&tilingOutput.tilingData_);
 
     // run launch
     MultiDoLaunchAlignTestAclrtStub aclrtStub;
@@ -1771,22 +1761,17 @@ static void TestInvalidFunctionHandle() {
     kernelBin->binHandle_[0].InitVar(f);
 
     // init tiling data
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 8 * 21;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + 128 * 1024;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    int64_t *tilingData = static_cast<int64_t *>(buffer.Data());
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
     for (size_t i = 0; i < 21; i++) {
-        tilingData[i] = i;
+        tilingDataData[i] = i;
     }
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    TilingData tilingDataStruct;
-    tilingDataStruct.capacity_ = 128 * 1024;
-    tilingDataStruct.data_ = tilingData;
-    tilingDataStruct.data_size_ = tilingDataLen;
-    tilingDataStruct.buffer_ = &buffer;
     uint64_t tilingKey = 10020;
     int64_t numBlocks = 16;
     uint8_t scheduleMode = 1;
@@ -1795,9 +1780,11 @@ static void TestInvalidFunctionHandle() {
     TilingCtxOutput tilingOutput;
     tilingOutput.tilingKey_ = &tilingKey;
     tilingOutput.numBlocks_ = &numBlocks;
-    tilingOutput.tilingData_ = &tilingDataStruct;
+    tilingOutput.tilingData_ = tilingData;
     tilingOutput.scheduleMode_ = &scheduleMode;
     tilingOutput.dynUBufSize_ = &dynUBufSize;
+    tilingOutput.rtsArgBuffer_ = &buffer;
+    buffer.RegisterOutputTilingDataPtr(&tilingOutput.tilingData_);
 
     InvalidFunctionHandleAclrtStub aclrtStub;
     aclrtStub.returnInvalidHandleFlag = true;
@@ -1818,6 +1805,7 @@ static void TestInvalidFunctionHandle() {
     AclrtStub::GetInstance()->UnInstall();
 
     delete opExecCache;
+    delete cacheWrap;
 }
 
 TEST_F(OpKernelMultiThreadUT, SingleDoLaunchTest) {

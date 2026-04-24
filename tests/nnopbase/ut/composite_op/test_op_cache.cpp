@@ -34,8 +34,10 @@
 #include "kernel_launcher.h"
 #include "depends/platform/platform_stub.h"
 #include "runtime/runtime/rts/rts_kernel.h"
+#include "test_comp_op_common.h"
 
 using namespace op::internal;
+using namespace op::internal::test;
 
 extern inline uint32_t SortOpTypeId();
 extern inline uint32_t GeluOpTypeId();
@@ -208,17 +210,17 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 32;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(
-        tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -254,17 +256,17 @@ TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 60;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(
-        tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -325,17 +327,17 @@ TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 60;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(
-        tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -364,16 +366,17 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 60;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
@@ -528,16 +531,17 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 60;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, true, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, true, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
@@ -568,17 +572,14 @@ TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 0;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(
-        tilingData, 0, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
@@ -1109,16 +1110,17 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     auto output_arg = OP_OUTPUT(&out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    size_t tilingDataLen = 32;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    constexpr size_t TEST_TILING_DATA_LEN = 100;
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
+    tilingData->data_size_ = TEST_TILING_DATA_LEN;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
@@ -1163,7 +1165,7 @@ TEST_F(OpCacheUt, MurmurHashRemain)
 {
     const int len = 15;
     uint8_t buf[len];
-    memset(buf, 0, len);
+    memset_s(buf, len, 0, len);
     op::internal::OpCacheKey key(buf, len);
     op::internal::OpCacheKeyHash hasher;
     std::size_t hash = hasher(key);

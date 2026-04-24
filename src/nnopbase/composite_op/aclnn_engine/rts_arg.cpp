@@ -200,11 +200,13 @@ constexpr size_t TILING_AND_OVERFLOW = 2;
 constexpr size_t ONLY_OVERFLOW = 1;
 thread_local std::vector<aclrtPlaceHolderInfo> RtsArg::placeHolderInfo_{ MAX_HOST_INFO_NUM };
 
-RtsArg::RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, size_t hostDataCap, ExtendedTilingBuffer *buffer)
-    : hasFftsAddr_(hasFftsAddr), argInfo_(argInfo), rtArg_({}), buffer_(buffer)
+RtsArg::RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, ExpandableRtsArgBuffer *rtsArgBuffer)
+    : hasFftsAddr_(hasFftsAddr), argInfo_(argInfo), rtArg_({}), rtsArgBuffer_(rtsArgBuffer)
 {
-    // +2 for  tilingaddr and overflow_addr
-    if (argInfo.GetTilingDataLen() == 0) {
+    // tilingDataLen 从 buffer 获取（LaunchArgInfo 已移除 tilingData_/tilingDataLen_）
+    size_t tilingDataLen = rtsArgBuffer_->GetTilingDataPtr()->data_size_;
+    // +2 for tiling addr and overflow_addr
+    if (tilingDataLen == 0) {
         argNum_ = (hasFftsAddr ? 1 : 0) + argInfo.GetDevArgNum() + argInfo.GetHostArgNum() + ONLY_OVERFLOW;
         rtArg_.hasTiling = false;
         OP_LOGD("Kernel has no tiling: hasFftsAddr %d, devArgNum %zu, hostArgNum %zu, argNum %zu", hasFftsAddr,
@@ -215,41 +217,40 @@ RtsArg::RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, size_t hostDataCa
         OP_LOGD("Kernel has tiling: hasFftsAddr %d, devArgNum %zu, hostArgNum %zu, argNum %zu", hasFftsAddr,
             argInfo.GetDevArgNum(), argInfo.GetHostArgNum(), argNum_);
     }
-    rtArg_.args = PtrShift(argInfo.GetTilingData(), -static_cast<int64_t>((argNum_) * sizeof(void *)));
+
+    // 阶段1: 确保容量（可能触发扩容，但此时没有已填数据，无需刷新）
+    // 1a. 确保 launch_arg 容量并设置已用大小
+    size_t requiredLaunchArgSize = argNum_ * sizeof(void *);
+    OP_CHECK(rtsArgBuffer_->EnsureLaunchArgCapacity(requiredLaunchArgSize) == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to ensure launch arg capacity, required %zu.", requiredLaunchArgSize),
+        throw std::bad_alloc());
+    rtsArgBuffer_->SetLaunchArgSize(requiredLaunchArgSize);
+
+    // 1b. 确保 tiling_host_data 容量
+    size_t alignedTilingDataLen = AlignSize(tilingDataLen, HOST_VALUE_ALIGNMENT);
+    OP_CHECK(rtsArgBuffer_->UpdateTilingDataSize(alignedTilingDataLen) == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to ensure tiling host data size %zu.", alignedTilingDataLen),
+        throw std::bad_alloc());
+
+    // 阶段2: 从最终基地址设置指针（一次性，无需检测扩容）
+    rtArg_.args = static_cast<void *>(
+        static_cast<uint8_t *>(rtsArgBuffer_->GetTilingDataAddr()) - requiredLaunchArgSize);
     hostAddr_ = static_cast<void **>(rtArg_.args);
-    // Save the base address before Seek, which might trigger Enlarge
-    void *oldBase = GetExtendedTilingBuffer()->BaseAddr();
-    size_t alignLen = AlignSize(argInfo.GetTilingDataLen(), HOST_VALUE_ALIGNMENT);
-    OP_CHECK(GetExtendedTilingBuffer()->Seek(alignLen) == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignLen),
-        ;);
-    // Check if buffer was enlarged (base address changed)
-    void *newBase = GetExtendedTilingBuffer()->BaseAddr();
-    if (oldBase != newBase) {
-        // Update rtArg_.args and hostAddr_ based on new base address
-        // The offset of rtArg_.args from buffer base is: sizeof(TilingData) + LAUNCH_ARG_SIZE - argNum_ * sizeof(void*)
-        off_t argsOffset = static_cast<off_t>(sizeof(TilingData) + LAUNCH_ARG_SIZE - argNum_ * sizeof(void *));
-        rtArg_.args = static_cast<void *>(static_cast<uint8_t *>(newBase) + argsOffset);
-        hostAddr_ = static_cast<void **>(rtArg_.args);
-        OP_LOGI("RtsArg updated pointers after buffer enlargement, oldBase %p, newBase %p, argsOffset %ld",
-                oldBase, newBase, argsOffset);
-    }
-    // Calculate current tiling data pointer from buffer base (don't use argInfo.GetTilingData() which may be stale)
-    void *currentTilingData = static_cast<uint8_t *>(newBase) + sizeof(TilingData) + LAUNCH_ARG_SIZE;
-    if (alignLen > argInfo.GetTilingDataLen()) {
-        OP_CHECK((memset_s(PtrShift(currentTilingData, argInfo.GetTilingDataLen()),
-            alignLen - argInfo.GetTilingDataLen(), 0, alignLen - argInfo.GetTilingDataLen()) == EOK),
+    hostAddrOffset_ = 0;
+
+    // 清零对齐填充
+    if (alignedTilingDataLen > tilingDataLen) {
+        OP_CHECK((memset_s(PtrShift(rtsArgBuffer_->GetTilingDataAddr(), tilingDataLen),
+            alignedTilingDataLen - tilingDataLen, 0, alignedTilingDataLen - tilingDataLen) == EOK),
             OP_LOGW("Failed to memset."),
             ;);
     }
     placeHolderInfo_.clear();
-    OP_LOGD("tilingData %p, size %zu, alignLen %zu, cap %zu, rtArg_.args %p, hostAddr_ %p", argInfo.GetTilingData(),
-        argInfo.GetTilingDataLen(), alignLen, hostDataCap, rtArg_.args, hostAddr_);
 }
 
 RtsArg::~RtsArg()
 {
-    (void)GetExtendedTilingBuffer()->Seek(sizeof(TilingData) + LAUNCH_ARG_SIZE, std::ios_base::beg);
+    rtsArgBuffer_->ResetTilingHostDataCursor();
 }
 
 void RtsArg::ReportExceptionDumpInfo() const
@@ -377,8 +378,19 @@ aclnnStatus RtsArg::AppendFftsAddr()
         return ACLNN_ERR_RUNTIME_ERROR);
     *hostAddr_ = modeAddr;
     hostAddr_++;
+    hostAddrOffset_ += PTR_SIZE;
 
     return ACL_SUCCESS;
+}
+
+void RtsArg::RefreshRtArgsAddr()
+{
+    void *oldArgs = rtArg_.args;
+    rtArg_.args = static_cast<void *>(
+        static_cast<uint8_t *>(rtsArgBuffer_->GetTilingDataAddr()) - rtsArgBuffer_->GetLaunchArgSize());
+    hostAddr_ = reinterpret_cast<void **>(
+        static_cast<uint8_t *>(rtArg_.args) + hostAddrOffset_);
+    OP_LOGD("RefreshRtArgsAddr: args from %p to %p, hostAddrOffset %zu", oldArgs, rtArg_.args, hostAddrOffset_);
 }
 
 aclnnStatus RtsArg::AppendHostArg(void *hostData, size_t hostDataSize)
@@ -391,47 +403,40 @@ aclnnStatus RtsArg::AppendHostArg(void *hostData, size_t hostDataSize)
         isEmptyData = true;
     }
 
-    size_t alignLen = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
+    size_t savedGen = rtsArgBuffer_->GetGeneration();
+    size_t savedOffset = rtsArgBuffer_->GetTilingHostDataSize();
 
-    // Save buffer base and offsets before any operation that might trigger Enlarge
-    void *oldBase = GetExtendedTilingBuffer()->BaseAddr();
-    off_t dataStartOffset = GetExtendedTilingBuffer()->GetOffset();
-    off_t argsOffset = static_cast<off_t>(sizeof(TilingData) + LAUNCH_ARG_SIZE - argNum_ * sizeof(void *));
-    off_t hostAddrOffset = PtrOffset(GetExtendedTilingBuffer()->BaseAddr(), hostAddr_);
+    size_t alignedHostDataSize = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
+    OP_CHECK(rtsArgBuffer_->SeekTilingHostData(alignedHostDataSize) == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignedHostDataSize),
+        return ACLNN_ERR_INNER);
 
-    // Record data start position using offset (will be recalculated if buffer enlarges)
-    uint8_t *dataStart = static_cast<uint8_t *>(GetExtendedTilingBuffer()->Data());
-
-    CHECK_RET_CODE(GetExtendedTilingBuffer()->Seek(alignLen), "failed to seek buffer, len %zu.", alignLen);
-    void *newBase = GetExtendedTilingBuffer()->BaseAddr();
-    // Check if buffer was enlarged and update pointers if needed
-    if (oldBase != newBase) {
-        rtArg_.args = static_cast<void *>(static_cast<uint8_t *>(newBase) + argsOffset);
-        hostAddr_ = PtrCastTo<void *>(static_cast<uint8_t *>(newBase) + hostAddrOffset);
-        dataStart = static_cast<uint8_t *>(newBase) + dataStartOffset;
-        OP_LOGI("AppendHostArg updated pointers after buffer enlargement, oldBase %p, newBase %p", oldBase, newBase);
+    if (rtsArgBuffer_->GetGeneration() != savedGen) {
+        RefreshRtArgsAddr();
     }
+    void *hostDataAddr = static_cast<uint8_t *>(rtsArgBuffer_->GetTilingDataAddr()) + savedOffset;
 
     if (!isEmptyData) {
-        OP_CHECK(memcpy_s(dataStart, hostDataSize, hostData, hostDataSize) == EOK,
-            OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy."), return ACLNN_ERR_INNER);
-        if (alignLen > hostDataSize) {
-            OP_CHECK((memset_s(dataStart + hostDataSize, alignLen - hostDataSize, 0,
-                alignLen - hostDataSize) == EOK),
-                OP_LOGW("Failed to memset."),
-                ;);
+        OP_CHECK(memcpy_s(hostDataAddr, hostDataSize, hostData, hostDataSize) == EOK, OP_LOGW("Failed to memcpy."), ;);
+        if (alignedHostDataSize > hostDataSize) {
+            OP_CHECK((memset_s(
+                          static_cast<uint8_t*>(hostDataAddr) + hostDataSize, alignedHostDataSize - hostDataSize, 0,
+                          alignedHostDataSize - hostDataSize) == EOK),
+                     OP_LOGW("Failed to memset."),
+                     ;);
         }
     } else {
-        OP_CHECK((memset_s(dataStart, hostDataSize, 0, hostDataSize) == EOK),
+        OP_CHECK((memset_s(hostDataAddr, hostDataSize, 0, hostDataSize) == EOK),
             OP_LOGW("Failed to memset."),
             ;);
     }
 
     placeHolderInfo_.emplace_back(aclrtPlaceHolderInfo{
-        static_cast<decltype(rtArg_.placeHolderInfoPtr->addrOffset)>(PtrOffset(rtArg_.args, hostAddr_)),
-        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(PtrOffset(rtArg_.args, dataStart)) });
-    tensorOffset_.push_back(PtrOffset(rtArg_.args, hostAddr_) / PTR_SIZE);
+        static_cast<decltype(rtArg_.placeHolderInfoPtr->addrOffset)>(hostAddrOffset_),
+        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(PtrOffset(rtArg_.args, hostDataAddr)) });
+    tensorOffset_.push_back(hostAddrOffset_ / PTR_SIZE);
     hostAddr_++;
+    hostAddrOffset_ += PTR_SIZE;
     return ACLNN_SUCCESS;
 }
 
@@ -439,74 +444,65 @@ aclnnStatus RtsArg::AppendDevicePtrArg(const aclTensorList *tensors, size_t data
 {
     // ptr_offset / dimNum 1 / dim0...n / dimNum 1 / dim0...n / ... / ptr1 / ptr2 / ...
     size_t hostDataSize = dataSize + tensors->Size() * PTR_SIZE;
-    size_t alignSize = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
+    size_t alignedHostDataSize = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
 
-    // Save buffer base and offsets before any operation that might trigger Enlarge
-    void *oldBase = GetExtendedTilingBuffer()->BaseAddr();
-    off_t argsOffset = static_cast<off_t>(sizeof(TilingData) + LAUNCH_ARG_SIZE - argNum_ * sizeof(void *));
-    off_t hostAddrOffset = PtrOffset(static_cast<void *>(static_cast<uint8_t *>(oldBase) + argsOffset), hostAddr_);
-    off_t dataStartOffset = GetExtendedTilingBuffer()->GetOffset();
+    size_t savedGen = rtsArgBuffer_->GetGeneration();
+    size_t savedOffset = rtsArgBuffer_->GetTilingHostDataSize();
 
-    uint8_t *dataStart = static_cast<uint8_t *>(GetExtendedTilingBuffer()->Data());
+    OP_CHECK(rtsArgBuffer_->SeekTilingHostData(alignedHostDataSize) == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignedHostDataSize), return ACLNN_ERR_INNER);
 
-    int64_t *dataPtr = PtrCastTo<int64_t>(dataStart);
-    OP_CHECK(GetExtendedTilingBuffer()->Seek(alignSize) == ACLNN_SUCCESS,
-        OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignSize), return ACLNN_ERR_INNER);
-
-    // Check if buffer was enlarged and update pointers if needed
-    void *newBase = GetExtendedTilingBuffer()->BaseAddr();
-    if (oldBase != newBase) {
-        rtArg_.args = static_cast<void *>(static_cast<uint8_t *>(newBase) + argsOffset);
-        hostAddr_ = PtrCastTo<void *>(static_cast<uint8_t *>(newBase) + hostAddrOffset);
-        dataStart = static_cast<uint8_t *>(newBase) + dataStartOffset;
-        dataPtr = PtrCastTo<int64_t>(dataStart);
-        OP_LOGI("AppendDevicePtrArg updated pointers after 1st seek, oldBase %p, newBase %p", oldBase, newBase);
-        oldBase = newBase;
+    if (rtsArgBuffer_->GetGeneration() != savedGen) {
+        RefreshRtArgsAddr();
     }
 
-    int64_t *devicePtr = PtrCastTo<int64_t>(dataStart + dataSize);
-    *dataPtr++ = dataSize;
+    uint8_t *hostDataAddr = static_cast<uint8_t *>(rtsArgBuffer_->GetTilingDataAddr()) + savedOffset;
+    int64_t *shapeInfoPtr = PtrCastTo<int64_t>(hostDataAddr);
+    int64_t *deviceAddrPtr = PtrCastTo<int64_t>(hostDataAddr + dataSize);
+
+    *shapeInfoPtr++ = dataSize;
     for (size_t i = 0; i < tensors->Size(); i++) {
         if ((*tensors)[i] == nullptr) {
-            *dataPtr++ = (static_cast<int64_t>(1) << DEV_PTR_DIM_SHIFT_BIT) + static_cast<int64_t>(0);
-            tensorOffset_.push_back(PtrOffset(rtArg_.args, devicePtr) / PTR_SIZE);
-            void **p = PtrCastTo<void *>(PtrCastTo<void>(devicePtr));
+            *shapeInfoPtr++ = (static_cast<int64_t>(1) << DEV_PTR_DIM_SHIFT_BIT) + static_cast<int64_t>(0);
+            tensorOffset_.push_back(PtrOffset(rtArg_.args, deviceAddrPtr) / PTR_SIZE);
+            void **p = PtrCastTo<void *>(PtrCastTo<void>(deviceAddrPtr));
             *p = nullptr;
-            devicePtr++;
+            deviceAddrPtr++;
             continue;
         }
         const auto &shape = (*tensors)[i]->GetStorageShape();
         size_t dim = shape.GetDimNum();
-        *dataPtr++ = (static_cast<int64_t>(1) << DEV_PTR_DIM_SHIFT_BIT) + dim; // 低32位填维度大小, 高32位固定填1
+        *shapeInfoPtr++ = (static_cast<int64_t>(1) << DEV_PTR_DIM_SHIFT_BIT) + dim; // 低32位填维度大小, 高32位固定填1
         for (size_t j = 0; j < dim; j++) {
-            *dataPtr++ = shape.GetDim(j);
+            *shapeInfoPtr++ = shape.GetDim(j);
         }
-        tensorOffset_.push_back(PtrOffset(rtArg_.args, devicePtr) / PTR_SIZE);
-        *devicePtr++ = reinterpret_cast<int64_t>((*tensors)[i]->GetData());
+        tensorOffset_.push_back(PtrOffset(rtArg_.args, deviceAddrPtr) / PTR_SIZE);
+        *deviceAddrPtr++ = reinterpret_cast<int64_t>((*tensors)[i]->GetData());
     }
-    if (alignSize > hostDataSize) {
-        OP_CHECK((memset_s(dataStart + hostDataSize, alignSize - hostDataSize, 0, alignSize - hostDataSize) == EOK),
-            OP_LOGW("Failed to memset."),;);
+    if (alignedHostDataSize > hostDataSize) {
+        OP_CHECK((memset_s(
+                      hostDataAddr + hostDataSize, alignedHostDataSize - hostDataSize, 0,
+                      alignedHostDataSize - hostDataSize) == EOK),
+                 OP_LOGW("Failed to memset."),
+                 ;);
     }
 
     placeHolderInfo_.emplace_back(aclrtPlaceHolderInfo{
-        static_cast<decltype(rtArg_.placeHolderInfoPtr->addrOffset)>(PtrOffset(rtArg_.args, hostAddr_)),
-        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(PtrOffset(rtArg_.args, dataStart)) });
+        static_cast<decltype(rtArg_.placeHolderInfoPtr->addrOffset)>(hostAddrOffset_),
+        static_cast<decltype(rtArg_.placeHolderInfoPtr->dataOffset)>(PtrOffset(rtArg_.args, hostDataAddr)) });
     hostAddr_++;
+    hostAddrOffset_ += PTR_SIZE;
     return ACLNN_SUCCESS;
 }
 
 aclnnStatus RtsArg::FinalizeArg()
 {
     if (rtArg_.hasTiling != 0) {
-        // append tiling addr
-        rtArg_.tilingAddrOffset = static_cast<uint32_t>(PtrOffset(rtArg_.args, hostAddr_));
-        // Calculate current tiling data pointer from buffer base (don't use argInfo_.GetTilingData() which may be stale)
-        void *currentTilingData = static_cast<uint8_t *>(GetExtendedTilingBuffer()->BaseAddr()) +
-                                  sizeof(TilingData) + LAUNCH_ARG_SIZE;
-        rtArg_.tilingDataOffset = static_cast<uint32_t>(PtrOffset(rtArg_.args, currentTilingData));
+        rtArg_.tilingAddrOffset = static_cast<uint32_t>(hostAddrOffset_);
+        rtArg_.tilingDataOffset = static_cast<uint32_t>(PtrOffset(rtArg_.args, rtsArgBuffer_->GetTilingDataAddr()));
         placeHolderInfo_.emplace_back(aclrtPlaceHolderInfo{ rtArg_.tilingAddrOffset, rtArg_.tilingDataOffset });
         hostAddr_++;
+        hostAddrOffset_ += PTR_SIZE;
     } else {
         rtArg_.tilingAddrOffset = 0;
         rtArg_.tilingDataOffset = 0;
@@ -516,9 +512,21 @@ aclnnStatus RtsArg::FinalizeArg()
     AppendOverflowStatusAddr();
     rtArg_.placeHolderInfoPtr = placeHolderInfo_.data();
     rtArg_.placeHolderInfoNum = static_cast<uint32_t>(placeHolderInfo_.size());
-    rtArg_.argsSize = PtrOffset(rtArg_.args, GetExtendedTilingBuffer()->Data());
-    OP_LOGD("rtArg_.placeHolderInfoNum: %u, tiling addr offset: %u, data offset: %u", rtArg_.placeHolderInfoNum,
-        rtArg_.tilingAddrOffset, rtArg_.tilingDataOffset);
+    rtArg_.argsSize = PtrOffset(rtArg_.args, rtsArgBuffer_->GetTilingHostDataCurEndAddr());
+
+    // 打印RtsArg全部信息
+    OP_LOGI(
+        "TilingData ptr %p, tiling data data %p, tiling data size %zu, tiling data capacity %zu, "
+        "launch arg size %zu, launch arg capacity %zu, aligned tiling data len %zu, host data size %zu, "
+        "tiling host dataSize %zu, tiling host data capacity %zu, rtArg_.args %p, hostAddr_ %p, "
+        "args size %u, tiling data addr %p, tiling host data end addr %p",
+        rtsArgBuffer_->GetTilingDataPtr(), rtsArgBuffer_->GetTilingDataPtr()->data_,
+        rtsArgBuffer_->GetTilingDataPtr()->data_size_, rtsArgBuffer_->GetTilingDataPtr()->capacity_,
+        rtsArgBuffer_->GetLaunchArgSize(), rtsArgBuffer_->GetLaunchArgCapacity(),
+        rtsArgBuffer_->GetAlignedTilingDataSize(), rtsArgBuffer_->GetHostDataSize(),
+        rtsArgBuffer_->GetTilingHostDataSize(), rtsArgBuffer_->GetTilingHostDataCapacity(), rtArg_.args, hostAddr_,
+        rtArg_.argsSize, rtsArgBuffer_->GetTilingDataAddr(), rtsArgBuffer_->GetTilingHostDataCurEndAddr());
+
     return ACLNN_SUCCESS;
 }
 
@@ -552,7 +560,7 @@ aclnnStatus RtsArg::FillArgs(bool assertFlag)
 }
 
 void AddArgInfoToCache(OpExecCache *cache, LaunchArgCache::ArgInfo *argInfo, const LaunchArgInfo &launchArgInfo,
-    bool hasFftsAddr)
+    bool hasFftsAddr, ExpandableRtsArgBuffer *rtsArgBuffer)
 {
     size_t argIdx = 0;
     if (hasFftsAddr) {
@@ -666,11 +674,12 @@ void AddArgInfoToCache(OpExecCache *cache, LaunchArgCache::ArgInfo *argInfo, con
             OP_LOGD("Add cache device ptr, size: %zu", alignLen);
         }
     }
-    size_t tilingDataLen = launchArgInfo.GetTilingDataLen();
+    TilingData *tilingData = rtsArgBuffer->GetTilingDataPtr();
+    size_t tilingDataLen = tilingData->data_size_;
     size_t aligntilingDataLen = AlignSize(tilingDataLen, HostValueAlignment);
     void *p = cache->AddLaunchData(aligntilingDataLen);
     OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about aligntilingDataAddr, cache is invalid."), return );
-    OP_CHECK(memcpy_s(p, tilingDataLen, launchArgInfo.GetTilingData(), tilingDataLen) == EOK,
+    OP_CHECK(memcpy_s(p, tilingDataLen, tilingData->data_, tilingDataLen) == EOK,
         OP_LOGW("Failed to memcpy."),
         ;);
     if (aligntilingDataLen > tilingDataLen) {
@@ -733,8 +742,9 @@ LaunchArgCache *RtsArg::DumpToCache()
         return nullptr;
     }
     OP_CHECK(!(cache->CanUse()), OP_LOGI("OpExecCache has been can used, cant dump to cache."), return nullptr);
-    if (!cache->IsOpCacheValid() || argInfo_.GetTilingDataLen() == 0 ||
-        argInfo_.GetTilingDataLen() >= MAX_CACHE_TILING_SIZE) {
+    size_t tilingDataLen = rtsArgBuffer_->GetTilingDataPtr()->data_size_;
+    if (!cache->IsOpCacheValid() || tilingDataLen == 0 ||
+        tilingDataLen >= MAX_CACHE_TILING_SIZE) {
         OP_LOGI("hash key is zero, or dont has tiling, or tiling size bigger than cache limit, skip cache.");
         cache->MarkOpCacheInvalid();
         return nullptr;
@@ -753,7 +763,7 @@ LaunchArgCache *RtsArg::DumpToCache()
     launchCache->SetRtsApiType(LaunchArgCache::RTS_OLD);
     launchCache->SetOpType(op::internal::GetThreadLocalContext().logInfo_.l0Name);
     LaunchArgCache::ArgInfo *argInfo = launchCache->GetArgInfo();
-    AddArgInfoToCache(cache, argInfo, argInfo_, hasFftsAddr_);
+    AddArgInfoToCache(cache, argInfo, argInfo_, hasFftsAddr_, rtsArgBuffer_);
     AddExceptionDumpDataToCache(argInfo_, cache, launchCache);
     AddDFXInfoDumpDataToCache(argInfo_, cache, launchCache);
     return launchCache;

@@ -32,8 +32,10 @@
 #include "kernel_launcher.h"
 #include "thread_local_context.h"
 #include "tiling_parse_ctx_holder.h"
+#include "test_comp_op_common.h"
 
 using Json = nlohmann::json;
+using namespace op::internal::test;
 
 extern inline uint32_t SortOpTypeId();
 extern inline uint32_t AxpyOpTypeId();
@@ -407,17 +409,12 @@ TEST_F(KernelLaunchNewRtsUT, hasHostDataTest)
     auto output_arg = OP_OUTPUT(out);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
 
-    // 正确的 buffer 初始化：需要预留 sizeof(TilingData) + LAUNCH_ARG_SIZE 空间给 args
-    // LAUNCH_ARG_SIZE = 128KB，用于存放 kernel launch args
-    size_t tilingDataLen = 100;
-    size_t bufferSize = sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE + tilingDataLen;
-    op::internal::ExtendedTilingBuffer buffer;
-    buffer.Init(bufferSize);
-    // Seek 到 tiling data 的起始位置，预留 args 空间
-    buffer.Seek(sizeof(op::internal::TilingData) + op::internal::LAUNCH_ARG_SIZE);
-    void *tilingData = buffer.Data();
-    op::internal::LaunchArgInfo argInfo(tilingData, tilingDataLen, false, false, ctx);
-    op::internal::RtsArg arg(true, argInfo, 900, &buffer);
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 100;
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
     arg.DumpToCache();
 }
 
