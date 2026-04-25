@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "indv_args_pool.h"
+#include "indv_cache_key_builder.h"
 #include "mmpa/mmpa_api.h"
 #include "utils/thread_var_container.h"
 
@@ -17,112 +18,6 @@ namespace {
 constexpr size_t NNOPBASE_CACHE_ARGS_NUM = 10000U;
 constexpr size_t NNOPBASE_MAX_CACHE_NUM = 10000000U;
 constexpr size_t HASH_FACTOR = 2U;
-constexpr size_t NNOPBASE_BASE_BYTES = 6U; // datatype(1), format(1), dimNum(4)
-constexpr size_t NNOPBASE_SHAPE_BYTES = 8U; // shape dim
-
-size_t CalcKeyLen(NnopbaseExecutor *executor)
-{
-    auto inputs = &executor->ownArgs.inputs;
-    auto outputs = &executor->ownArgs.outputs;
-    auto attrs = &executor->attrs;
-    size_t keyLen = strlen(executor->opType);
-    for (uint32_t i = 0U; i < inputs->num; i++) {
-        if (inputs->extTensors[i].isNull) {
-            ++keyLen;
-            continue;
-        }
-        keyLen += NNOPBASE_BASE_BYTES +
-                  NNOPBASE_SHAPE_BYTES * inputs->extTensors[i].rt2Tensor.MutableStorageShape().GetDimNum();
-        if (inputs->extTensors[i].valueDepend) {
-            keyLen += inputs->extTensors[i].rt2Tensor.GetSize();
-        }
-    }
-    ++keyLen;
-    for (uint32_t i = 0U; i < outputs->num; i++) {
-        if (outputs->extTensors[i].isNull) {
-            ++keyLen;
-            continue;
-        }
-        keyLen += NNOPBASE_BASE_BYTES +
-                  NNOPBASE_SHAPE_BYTES * outputs->extTensors[i].rt2Tensor.MutableStorageShape().GetDimNum();
-    }
-    ++keyLen;
-    if (attrs->num > 0U) {
-        for (size_t i = 0U; i < attrs->num; i++) {
-            keyLen += attrs->attrs[i].addr.size;
-        }
-    }
-    ++keyLen;
-    keyLen += sizeof(NnopbaseCoreNum);
-    ++keyLen;
-    keyLen += sizeof(uint32_t);
-    return keyLen;
-}
-
-uint8_t *AddShapeInfo(const GertTensor &rt2Tensor, uint8_t *key)
-{
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(rt2Tensor.GetDataType()));
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(rt2Tensor.GetStorageFormat()));
-    const GertShape &shape = rt2Tensor.GetStorageShape();
-    const size_t dimNum = shape.GetDimNum();
-    key = static_cast<uint8_t *>(NnopbaseAppend4Byte(key, static_cast<uint32_t>(dimNum)));
-    for (size_t j = 0U; j < dimNum; j++) {
-        key = static_cast<uint8_t *>(NnopbaseAppend8Byte(key, static_cast<uint64_t>(shape.GetDim(j))));
-    }
-    return key;
-}
-
-// 溢出检测、确定性计算等是全局配置选项，不需要在后续每次匹配时都考虑
-// optype, input dtype/format/shape, output dtype/format/shape, attr
-void GenArgsKey(NnopbaseExecutor *executor)
-{
-    executor->ownArgs.keyLen = CalcKeyLen(executor);
-    OP_LOGI("KeyLen is %zu.", executor->ownArgs.keyLen);
-    if (executor->ownArgs.keyLen > executor->ownArgs.inputKey.size()) {
-        executor->ownArgs.inputKey.resize(executor->ownArgs.keyLen);
-    }
-
-    const auto inputs = &executor->ownArgs.inputs;
-    const auto outputs = &executor->ownArgs.outputs;
-    const auto attrs = &executor->attrs;
-    const auto coreNum = &executor->coreNum;
-    uint8_t *key = executor->ownArgs.inputKey.data();
-    key = static_cast<uint8_t *>(NnopbaseAppendBinary(key, executor->ownArgs.inputKey.size(), executor->opType, strlen(executor->opType)));
-    for (uint32_t i = 0U; i < inputs->num; i++) {
-        if (inputs->extTensors[i].isNull) {
-            key = NnopbaseAppend1Byte(key, '/');
-            continue;
-        }
-        key = AddShapeInfo(inputs->extTensors[i].rt2Tensor, key);
-        if (inputs->extTensors[i].valueDepend) {
-            const auto addr = inputs->extTensors[i].rt2Tensor.GetAddr();
-            const auto length = inputs->extTensors[i].rt2Tensor.GetSize();
-            key = static_cast<uint8_t *>(NnopbaseAppendBinary(key, length, addr, length));
-        }
-    }
-
-    key = NnopbaseAppend1Byte(key, '/');
-    for (uint32_t i = 0U; i < outputs->num; i++) {
-        if (outputs->extTensors[i].isNull) {
-            key = NnopbaseAppend1Byte(key, '/');
-            continue;
-        }
-        key = AddShapeInfo(outputs->extTensors[i].rt2Tensor, key);
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    if (attrs->num > 0U) {
-        for (size_t i = 0U; i < attrs->num; i++) {
-            key = op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr,
-                                                        attrs->attrs[i].addr.size));
-        }
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    key = op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, sizeof(NnopbaseCoreNum), coreNum, sizeof(NnopbaseCoreNum)));
-    key = NnopbaseAppend1Byte(key, '/');
-    uint32_t mc2RankId = nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread();
-    key = op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, sizeof(uint32_t), &mc2RankId, sizeof(uint32_t)));
-    executor->ownArgs.seed = NnopbaseHashBinary(executor->ownArgs.inputKey.data(), executor->ownArgs.keyLen);
-}
 } // namespace
 
 size_t ArgsPool::maxCacheNum = ArgsPool::GetCacheSizeLimit();
@@ -136,7 +31,7 @@ size_t ArgsPool::GetCacheSizeLimit()
         try {
             c = std::stoull(cacheLimit);
         } catch (const std::exception &e) {
-            OP_LOGI("Env variable ACLNN_CACHE_LIMIT[%s] is invalid! must be a number!", cacheLimit);
+            OP_LOGW("Env variable ACLNN_CACHE_LIMIT[%s] is invalid! must be a number!", cacheLimit);
         }
     }
     c = std::min(c, NNOPBASE_MAX_CACHE_NUM);
@@ -206,7 +101,7 @@ bool ArgsPool::MatchArgs(NnopbaseExecutor *executor)
         return false;
     }
     if (!executor->matchArgsV2) {
-        GenArgsKey(executor);
+        Indv::CacheKeyBuilder::GenerateCacheArgsKeyV1(executor);
     }
     {
         const std::lock_guard<std::mutex> lk(mutex);
@@ -221,7 +116,7 @@ bool ArgsPool::MatchArgs(NnopbaseExecutor *executor)
             }
         }
     }
-    OP_LOGI("Op %s not match args cache, seed is %zu, key len is %zu.", executor->opType,
+    OP_LOGI("Op %s cache miss, seed is %zu, key len is %zu.", executor->opType,
             executor->ownArgs.seed, executor->ownArgs.keyLen);
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheEnd);
     return false;
@@ -342,224 +237,3 @@ void ArgsPool::ReleaseFixedCache(NnopbaseExecutorArgs *const args)
     return;
 }
 } // nnopbase
-
-NnopbaseUChar *NnopbaseAddShapeInfo(const aclTensor *tensor, NnopbaseExecutorArgs *args)
-{
-    const op::Shape &shape = tensor->GetViewShape();
-    const size_t dimNum = shape.GetDimNum();
-    size_t len = nnopbase::NNOPBASE_BASE_BYTES + dimNum * nnopbase::NNOPBASE_SHAPE_BYTES;
-    if (args->remainKeyLen < len) {
-        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-    }
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data()) + args->keyLen;
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(tensor->GetDataType()));
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(tensor->GetStorageFormat()));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(dimNum));
-    for (size_t j = 0U; j < dimNum; j++) {
-        key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(shape.GetDim(j)));
-    }
-    args->remainKeyLen -= len;
-    args->keyLen += len;
-    return key;
-}
-
-NnopbaseUChar* NnopbaseGenPlaceHolderKey(NnopbaseExecutorArgs *args, NnopbaseUChar *key)
-{
-    if (args->remainKeyLen < 1) {
-        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-        key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    args->keyLen += 1;
-    args->remainKeyLen -= 1;
-    return key;
-}
-
-NnopbaseUChar* NnopbaseAddCoreNumInfo(const NnopbaseCoreNum *coreNum, NnopbaseExecutorArgs *args)
-{
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    key = NnopbaseGenPlaceHolderKey(args, key);
-    if (args->remainKeyLen < sizeof(NnopbaseCoreNum)) {
-        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-        key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    }
-    key = op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, args->remainKeyLen, coreNum, sizeof(NnopbaseCoreNum)));
-    args->keyLen += sizeof(NnopbaseCoreNum);
-    args->remainKeyLen -= sizeof(NnopbaseCoreNum);
-    return key;
-}
-
-NnopbaseUChar* AddMc2RankIdInfoToKey(const uint32_t *mc2RankId, NnopbaseExecutorArgs *args)
-{
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    key = NnopbaseGenPlaceHolderKey(args, key);
-    if (args->remainKeyLen < sizeof(uint32_t)) {
-        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-        key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    }
-    key = op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, args->remainKeyLen, mc2RankId, sizeof(uint32_t)));
-    args->keyLen += sizeof(uint32_t);
-    args->remainKeyLen -= sizeof(uint32_t);
-    return key;
-}
-
-void NnopbaseGenTensorKey(NnopbaseExecutorArgs *args, const aclTensor *tensor)
-{
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    if (tensor == nullptr) {
-        key = NnopbaseGenPlaceHolderKey(args, key);
-    } else {
-        key = NnopbaseAddShapeInfo(tensor, args);
-    }
-}
-
-void NnopbaseExecutorGenValueDependTensorKey(
-    NnopbaseExecutorArgs *args, const void *addr, const uint64_t dim, const uint64_t dataLen, ge::DataType dType)
-{
-    const size_t shapeLen = nnopbase::NNOPBASE_BASE_BYTES + nnopbase::NNOPBASE_SHAPE_BYTES;
-    if (args->remainKeyLen < shapeLen + dataLen) {
-        size_t multiples = (shapeLen + dataLen) / NNOPBASE_MAX_ARGS_KEY_LEN + 1;
-        args->remainKeyLen += multiples * NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + multiples * NNOPBASE_MAX_ARGS_KEY_LEN);
-    }
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dType));
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(ge::FORMAT_ND));
-    key = NnopbaseAppend4Byte(key, 1);
-    key = NnopbaseAppend8Byte(key, dim);
-    args->remainKeyLen -= shapeLen;
-    args->keyLen += shapeLen;
-    key = NnopbaseAppendBinary(key, args->remainKeyLen, addr, dataLen);
-    args->remainKeyLen -= dataLen;
-    args->keyLen += dataLen;
-}
-
-inline bool NnopbaseExecutorCompreTensor(const aclTensor *tensor, const aclTensor *prev)
-{
-    return (tensor->GetDataType() == prev->GetDataType()) && (tensor->GetViewShape() == prev->GetViewShape()) &&
-           (tensor->GetStorageFormat() == prev->GetStorageFormat());
-}
- 
-void NnopbaseExecutorGenTensorListKey(NnopbaseExecutorArgs *args, const aclTensorList *tensorList)
-{
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    if ((tensorList == nullptr) || (tensorList->Size() == 0U)) {
-        NnopbaseGenPlaceHolderKey(args, key);
-        return;
-    }
-    uint32_t cnt = 1U;
-    auto prev = (*tensorList)[0];
-    for (uint64_t i = 0U; i < tensorList->Size(); i++) {
-        if (i > 0U) {
-            if (((*tensorList)[i] != nullptr) && prev != nullptr &&
-                NnopbaseExecutorCompreTensor((*tensorList)[i], prev)) {
-                cnt++;
-            } else {
-                if (prev != nullptr) {
-                    key = NnopbaseAddShapeInfo(prev, args);
-                    if (args->remainKeyLen < 1) {
-                        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-                        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-                        key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-                    }
-                    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(cnt));
-                    args->keyLen += 1;
-                    args->remainKeyLen -= 1;
-                }
-                if ((*tensorList)[i] == nullptr) {
-                    key = NnopbaseGenPlaceHolderKey(args, key);
-                    prev = (*tensorList)[i];
-                    continue;
-                }
-                prev = (*tensorList)[i];
-                cnt = 1;
-            }
-        }
-    }
-    if (prev != nullptr) {
-        key = NnopbaseAddShapeInfo(prev, args);
-        if (args->remainKeyLen < 1) {
-            args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-            args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-            key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-        }
-        key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(cnt));
-        args->keyLen += 1;
-        args->remainKeyLen -= 1;
-    }
-}
-
-static NnopbaseUChar *NnopbaseAddScalarInfo(NnopbaseExecutorArgs *args, const ge::DataType dtype)
-{
-    // scalar dimNum为0，无需占用8字节填shape信息
-    if (args->remainKeyLen < nnopbase::NNOPBASE_BASE_BYTES) {
-        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-    }
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data()) + args->keyLen;
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dtype));
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(ge::FORMAT_ND));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(0U));
-    args->remainKeyLen -= nnopbase::NNOPBASE_BASE_BYTES;
-    args->keyLen += nnopbase::NNOPBASE_BASE_BYTES;
-    return key;
-}
-
-void NnopbaseExecutorGenScalarKey(NnopbaseExecutor *executor, const aclScalar *scalar, const uint32_t index,
-    const int32_t srcIndex, const ge::DataType dtype)
-{
-    NnopbaseExecutorArgs *args = &executor->ownArgs;
-    if (scalar == nullptr) {
-        NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-        key = NnopbaseGenPlaceHolderKey(args, key);
-    } else {
-        ge::DataType dataType = scalar->GetDataType();
-        if (dtype != ge::DT_UNDEFINED) {
-            dataType = dtype;
-        } else if ((srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index)) {
-            dataType = args->inputs.extTensors[args->inputs.paramDescs.instances[srcIndex].startIndex]
-                    .rt2Tensor.GetDataType();
-        }
-        (void)NnopbaseAddScalarInfo(args, dataType);
-    }
-}
-
-static NnopbaseUChar *NnopbaseAddScalarListInfo(NnopbaseExecutorArgs *args, const ge::DataType dtype, const uint64_t size)
-{
-    size_t len = nnopbase::NNOPBASE_BASE_BYTES + nnopbase::NNOPBASE_SHAPE_BYTES;
-    if (args->remainKeyLen < len) {
-        args->remainKeyLen += NNOPBASE_MAX_ARGS_KEY_LEN;
-        args->inputKey.resize(args->inputKey.size() + NNOPBASE_MAX_ARGS_KEY_LEN);
-    }
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data()) + args->keyLen;
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dtype));
-    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(ge::FORMAT_ND));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(1U));
-    key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(size));
-    args->remainKeyLen -= nnopbase::NNOPBASE_BASE_BYTES + nnopbase::NNOPBASE_SHAPE_BYTES;
-    args->keyLen += nnopbase::NNOPBASE_BASE_BYTES + nnopbase::NNOPBASE_SHAPE_BYTES;
-    return key;
-}
-
-void NnopbaseExecutorGenScalarListKey(NnopbaseExecutor *executor, const aclScalarList *scalarList, const uint32_t index,
-    const int32_t srcIndex, const ge::DataType dtype)
-{
-    NnopbaseExecutorArgs *args = &executor->ownArgs;
-    NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    if ((scalarList == nullptr) || (scalarList->Size() == 0U)) {
-        key = NnopbaseGenPlaceHolderKey(args, key);
-    } else {
-        ge::DataType dataType = (*scalarList)[0]->GetDataType();
-        if (dtype != ge::DT_UNDEFINED) {
-            dataType = dtype;
-        } else if ((srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index)) {
-            dataType = args->inputs.extTensors[args->inputs.paramDescs.instances[srcIndex].startIndex]
-                           .rt2Tensor.GetDataType();
-        }
-        (void)NnopbaseAddScalarListInfo(args, dataType, scalarList->Size());
-    }
-}

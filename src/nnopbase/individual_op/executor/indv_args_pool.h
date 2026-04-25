@@ -60,17 +60,4 @@ private:
     std::unordered_map<size_t, std::vector<NnopbaseExecutorArgs*>> fixedCacheMap;
 };
 } // nnopbase
-
-void NnopbaseGenTensorKey(NnopbaseExecutorArgs *args, const aclTensor *tensor);
-NnopbaseUChar *NnopbaseAddShapeInfo(const aclTensor *tensor, NnopbaseExecutorArgs *args);
-NnopbaseUChar* NnopbaseAddCoreNumInfo(const NnopbaseCoreNum *coreNum, NnopbaseExecutorArgs *args);
-NnopbaseUChar* AddMc2RankIdInfoToKey(const uint32_t *mc2RankId, NnopbaseExecutorArgs *args);
-NnopbaseUChar* NnopbaseGenPlaceHolderKey(NnopbaseExecutorArgs *args, NnopbaseUChar *key);
-void NnopbaseExecutorGenValueDependTensorKey(
-    NnopbaseExecutorArgs *args, const void *addr, const uint64_t dim, const uint64_t dataLen, ge::DataType dType);
-void NnopbaseExecutorGenTensorListKey(NnopbaseExecutorArgs *args, const aclTensorList *tensorList);
-void NnopbaseExecutorGenScalarKey(NnopbaseExecutor *executor, const aclScalar *scalar, const uint32_t index,
-    const int32_t srcIndex, const ge::DataType dtype);
-void NnopbaseExecutorGenScalarListKey(NnopbaseExecutor *executor, const aclScalarList *scalarList, const uint32_t index,
-    const int32_t srcIndex, const ge::DataType dtype);
 #endif

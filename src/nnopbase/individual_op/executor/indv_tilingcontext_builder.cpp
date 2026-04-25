@@ -231,7 +231,7 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor)
         values[index]->deleter = nullptr;
         index++;
         /* kInputsDetermintstic. */
-        values[index]->data.pointer = reinterpret_cast<void *>(NnopbaseGetGlobalDeterministic());
+        values[index]->data.pointer = reinterpret_cast<void *>(executor->deterministic);
         values[index]->deleter = nullptr;
         NnopbaseTilingSetContextOutputStep1(executor);
         executor->contextExt.hasPrepared = true;
@@ -456,7 +456,7 @@ aclnnStatus NnopnbaseBuildMemsetTilingContext(NnopbaseExecutor *executor)
         values[index]->deleter = nullptr;
         index++;
         /* kInputsDetermintstic. */
-        values[index]->data.pointer = reinterpret_cast<void *>(NnopbaseGetGlobalDeterministic());
+        values[index]->data.pointer = reinterpret_cast<void *>(executor->deterministic);
         values[index]->deleter = nullptr;
 
         NnopbaseSetMemsetTilingKeyAndNumBlocks(executor);

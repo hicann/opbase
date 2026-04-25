@@ -94,6 +94,7 @@ void NnopbaseExecutorReset(NnopbaseExecutor *executor)
     executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_END;
     executor->isCachedArgs = false;
     executor->matchArgsV2 = false;
+    executor->deterministic = false;
 }
 }
 
@@ -652,11 +653,6 @@ aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(NnopbaseExecutor *executor,
     return OK;
 }
 
-bool NnopbaseGetGlobalDeterministic()
-{
-    return g_nnopbaseSysCfgParams.deterministic;
-}
-
 void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor)
 {
     if (g_nnopbaseSysCfgParams.enableTimeStamp) {
@@ -929,7 +925,7 @@ aclnnStatus NnopbaseExecutorGetStreamAndEvent(
     if (g_isNnopbaseRegistedCallBack) {
         return OK;
     }
-    NNOPBASE_ASSERT_RTOK_RETVAL(rtRegStreamStateCallback("NnopbaseDestroySteam", NnopbaseDestroyStreamCallBack));
+    NNOPBASE_ASSERT_RTOK_RETVAL(rtRegStreamStateCallback("NnopbaseDestroyStream", NnopbaseDestroyStreamCallBack));
 
     g_isNnopbaseRegistedCallBack = true;
     return OK;
@@ -967,10 +963,10 @@ void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor *executor)
     } else {
         verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
     }
-    verKey = NnopbaseAppend1Byte(verKey, static_cast<NnopbaseUChar>(g_nnopbaseSysCfgParams.deterministic));
+    verKey = NnopbaseAppend1Byte(verKey, static_cast<NnopbaseUChar>(executor->deterministic));
     verKey = NnopbaseAppend1Byte(verKey, g_nnopbaseSysCfgParams.precision);
     OP_LOGI("Verbose opType is %s, deterministic value is %d, highPrecision value is %d, verboseLen is %u",
-        executor->regInfo->key.opType.c_str(), g_nnopbaseSysCfgParams.deterministic,
+        executor->regInfo->key.opType.c_str(), executor->deterministic,
         g_nnopbaseSysCfgParams.precision, executor->binInfoKey.len);
 
     for (uint32_t i = 0U; i < inputs->paramDescs.count; i++) {
@@ -1016,12 +1012,14 @@ void NnopbaseExecutorUpdateBinInfo(NnopbaseExecutor *executor)
     }
 }
 
-NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors, size_t tensorNum)
+NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors, size_t tensorNum,
+    bool usingStride)
 {
     NnopbaseUChar *addr;
     size_t length;
     for (size_t i = 0U; i < tensorNum; i++) {
         if (tensors->extTensors[i].isNull) {
+            OP_LOGI("Tensor[%zu] is null.", i);
             verKey = NnopbaseAppend8Byte(verKey, '_');
             continue;
         }
@@ -1038,7 +1036,11 @@ NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTens
         const size_t dimNum = shape.GetDimNum();
         for (size_t j = 0U; j < dimNum; j++) {
             verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(shape.GetDim(j)));
-            OP_LOGI("shape[%zu] is %ld", j, shape.GetDim(j));
+            OP_LOGI("Tensor[%zu] storageShape[%zu] is %ld", i, j, shape.GetDim(j));
+        }
+        if (usingStride) {
+            verKey = NnopbaseAppend8Byte(verKey, '_');
+            OP_LOGI("Stride is [], offset is '_'.");
         }
         if (tensors->extTensors[i].valueDepend) {
             addr = op::internal::PtrCastTo<NnopbaseUChar>(tensors->extTensors[i].rt2Tensor.GetAddr());
@@ -1079,14 +1081,13 @@ NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *
     return verKey;
 }
 
-size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor)
+size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor, bool usingStride)
 {
     const NnopbaseTensors *const inputs = &executor->ownArgs.inputs;
     const NnopbaseAttrs *const attrs = &executor->attrs;
     const NnopbaseTensors *const outputs = &executor->ownArgs.outputs;
     size_t len = executor->regInfo->key.opType.size() + NNOPBASE_OP_VERB_HEAD_LEN * sizeof(uint64_t);
-    OP_LOGD("Op %s after add [optype, deterministic and precision or performance], length is %zu.", executor->opType,
-            len);
+    OP_LOGD("Op %s after add [optype, deterministic and precision or performance], length is %zu.", executor->opType, len);
     const size_t inputTensorNum = static_cast<size_t>(inputs->nonDynamicCnt + inputs->dynamicCnt);
     for (size_t i = 0U; i < inputTensorNum; i++) {
         if (inputs->extTensors[i].isNull) {
@@ -1098,6 +1099,9 @@ size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor)
         }
         const GertShape &shape = inputs->extTensors[i].rt2Tensor.GetStorageShape();
         len += shape.GetDimNum() * sizeof(uint64_t);
+        if (usingStride) {
+            len += sizeof(uint64_t); // 自动框架暂不支持stride，填充offset(uint64_t)占位符，默认为0
+        }
         if (inputs->extTensors[i].valueDepend) {
             len += (inputs->extTensors[i].rt2Tensor.GetSize()
                     / (op::TypeSize(inputs->extTensors[i].rt2Tensor.GetDataType()))) * sizeof(uint64_t);
@@ -1115,31 +1119,35 @@ size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor)
         }
         const GertShape &shape = outputs->extTensors[i].rt2Tensor.GetStorageShape();
         len += shape.GetDimNum() * sizeof(uint64_t);
+        if (usingStride) {
+            len += sizeof(uint64_t); // 自动框架暂不支持stride，填充offset(uint64_t)占位符，默认为0
+        }
     }
     OP_LOGD("Op %s after add output, length is %zu.", executor->opType, len);
-    if (attrs->num != 0U) {
-        for (size_t i = 0U; i < attrs->num; i++) {
-            if (!attrs->attrs[i].addr.isVector) {
-                NnopbaseExecutorGet8ByteSize(attrs->attrs[i].addr.size, op::internal::PtrCastTo<uint32_t>(&len));
-            } else {
-                len += (attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize) * sizeof(uint64_t);
-            }
+    for (size_t i = 0U; i < attrs->num; i++) {
+        if (!attrs->attrs[i].addr.isVector) {
+            NnopbaseExecutorGet8ByteSize(attrs->attrs[i].addr.size, op::internal::PtrCastTo<uint32_t>(&len));
+        } else {
+            len += (attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize) * sizeof(uint64_t);
         }
     }
     OP_LOGD("Op %s after add attr, length is %zu.", executor->opType, len);
     return len;
 }
 
-aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor)
+aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor, bool usingStride)
 {
     NnopbaseTensors *inputs = &executor->ownArgs.inputs;
     NnopbaseAttrs *attrs = &executor->attrs;
     NnopbaseTensors *outputs = &executor->ownArgs.outputs;
-    /* verb key format: op_type/Deterministic/Precision/input num/output num/
-     * tensor desc.../attr num/attr value...
-     */
-    const size_t len = NnopbaseExecutorComputeGenKeySize(executor);
-    OP_LOGI("Op %s staticGenKey size %lu", executor->opType, len);
+    /*
+        when usingStride = false: 
+            verb key format = op_type/Deterministic/Precision/{dtype, format, (shape)}/.../attr binary
+        when usingStride = true: 
+            verb key format = op_type/Deterministic/Precision/{dtype, format, (shape),(stride),offset}/.../attr binary
+    */ 
+    const size_t len = NnopbaseExecutorComputeGenKeySize(executor, usingStride);
+    OP_LOGI("Op %s staticGenKey size %lu, usingStride = %d", executor->opType, len, usingStride);
     if (len > NNOPBASE_MAX_STATICKEY_LEN) {
         OP_LOGW("Op %s staticGenKey size is too large[%lu].", executor->opType, len);
         return ACLNN_ERR_PARAM_INVALID;
@@ -1156,18 +1164,16 @@ aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor)
     } else {
         verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
     }
-    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.deterministic));
+    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(executor->deterministic));
     verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.precision));
     OP_LOGI("Op %s HighPrecision value is %d, Deterministic value is %d, binInfoKey length is %u.", executor->opType,
-            g_nnopbaseSysCfgParams.precision, g_nnopbaseSysCfgParams.deterministic, executor->binInfoKey.bufLen);
+            g_nnopbaseSysCfgParams.precision, executor->deterministic, executor->binInfoKey.bufLen);
 
     const size_t inputTensorNum = inputs->nonDynamicCnt + inputs->dynamicCnt;
-    verKey = NnopbaseExecutorGenTensorsKey(verKey, inputs, inputTensorNum);
+    verKey = NnopbaseExecutorGenTensorsKey(verKey, inputs, inputTensorNum, usingStride);
     const size_t outputTensorNum = static_cast<size_t>(outputs->nonDynamicCnt + outputs->dynamicCnt);
-    verKey = NnopbaseExecutorGenTensorsKey(verKey, outputs, outputTensorNum);
-    if (attrs->num != 0U) {
-        verKey = NnopbaseExecutorGenAttrsKey(attrs, verKey);
-    }
+    verKey = NnopbaseExecutorGenTensorsKey(verKey, outputs, outputTensorNum, usingStride);
+    verKey = NnopbaseExecutorGenAttrsKey(attrs, verKey);
     executor->binInfoKey.len = static_cast<uint32_t>(verKey - &(executor->binInfoKey.verbose[0U]));
     executor->binInfoKey.hashKey = NnopbaseHashBinary(&(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len) %
                                    NNOPBASE_NORM_MAX_BIN_BUCKETS;

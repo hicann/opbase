@@ -68,10 +68,10 @@ void GetCustomVendorName(std::vector<std::string> &customPaths)
     }
     const std::string customOppPath = custOppPathEnv;
     if (customOppPath.empty()) {
-        OP_LOGI("Environment variable ASCEND_CUSTOM_OPP_PATH is defined, but it's empty.");
+        OP_LOGW("Environment variable ASCEND_CUSTOM_OPP_PATH is defined, but it's empty.");
         return;
     }
-    OP_LOGI("Value of env ASCEND_CUSTOM_OPP_PATH is %s.", customOppPath.c_str());
+    OP_LOGI("Environment variable[ASCEND_CUSTOM_OPP_PATH] is %s.", customOppPath.c_str());
     NnopbaseSplitStr(customOppPath, ":", customPaths);
 }
 
@@ -211,6 +211,8 @@ static constexpr int32_t NNOPBASE_COMPILE_ARGS_INDEX = 1;
 
 NnopbaseBinCollecter *gBinCollecter = nullptr;
 
+// if usingStride = false, [OpType, determin, precision, {dtype,format,shape}....attrs] to generate staticKey
+// if usingStride = true, [OpType, determin, precision, {dtype,format,shape,stride,offset}....attrs] to generate staticKey 
 NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
                                              const NnopbaseRegInfoKey *const regInfoKey,
                                              const NnopbaseStaticTensorNumInfo *const tensorNumInfo,
@@ -218,7 +220,8 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
                                              const NnopbaseAttrAddr *attrs[],
                                              const int64_t implMode,
                                              const int64_t deterMin,
-                                             const int64_t *const vDepend)
+                                             const int64_t *const vDepend,
+                                             const bool usingStride)
 {
     verKey =
         NnopbaseAppendBinary(verKey, NNOPBASE_MAX_STATICKEY_LEN, &(regInfoKey->opType[0U]), regInfoKey->opType.size());
@@ -244,12 +247,27 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
         verKey = NnopbaseAppend8Byte(verKey, dtype);
         format = tensors[i]->GetStorageFormat();
         verKey = NnopbaseAppend8Byte(verKey, format);
-        OP_LOGI("Get tensor[%ld] datatype is %d, format is %d", i, dtype, format);
-
+        OP_LOGI("Get tensor[%ld] datatype is %d, format is %d.", i, dtype, format);
         const gert::Shape &shape = tensors[i]->GetStorageShape();
         const size_t dimNum = shape.GetDimNum();
         for (size_t j = 0U; j < dimNum; j++) {
             verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(shape.GetDim(j)));
+        }
+        if (usingStride) {
+            const auto stride = tensors[i]->GetTensor()->GetStride();
+            const size_t strideDimNum = stride.GetDimNum();
+            const int64_t offset = tensors[i]->GetTensor()->GetOffset();
+            std::string strideStr = "[";
+            for (size_t j = 0U; j < strideDimNum; j++) {
+                verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(stride.GetStride(j)));
+                strideStr += std::to_string(stride.GetStride(j));
+                if (j != strideDimNum - 1) {
+                    strideStr += ", ";
+                }
+            }
+            strideStr += "]";
+            OP_LOGI("Tensor[%ld] strideDim is %zu, stride is[%s], offset is %lld.", i, strideDimNum, strideStr.c_str(), offset);
+            verKey = NnopbaseAppend8Byte(verKey, offset);
         }
         if (valueDepend[i]) {
             const int64_t elementSize = tensors[i]->Size();
@@ -285,7 +303,7 @@ NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey,
     return verKey;
 }
 
-const NnopbaseChar *NnopbaseCollecterGetSimplifiedKey(const NnopbaseChar *const opType, const uint64_t key,
+const NnopbaseChar *NnopbaseCollecterGetStaticKernelBin(const NnopbaseChar *const opType, const uint64_t key,
                                                 const NnopbaseUChar *verbose, const uint32_t verbLen,
                                                 const NnopbaseCoreNum *const coreNum)
 {
@@ -866,7 +884,7 @@ NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, co
         }
     }
     regInfo->binTbl.buckets[hashKey].isVist = false;
-    OP_LOGI("Cannot find %s binInfo, hashKey is %zu.", regInfo->key.opType.c_str(), hashKey);
+    OP_LOGI("There is no available %s binInfo for hashKey %zu.", regInfo->key.opType.c_str(), hashKey);
     return nullptr;
 }
 
@@ -1354,7 +1372,7 @@ aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo)
 {
     if (regInfo == nullptr) {
         // skip delete if there is no regInfo in table.
-        OP_LOGI("Cannot find static regInfo.");
+        OP_LOGW("Cannot find static regInfo.");
         return OK;
     }
     auto opType = regInfo->key.opType;

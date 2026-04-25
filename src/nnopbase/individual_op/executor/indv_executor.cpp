@@ -26,13 +26,15 @@
 #include "kernel_utils.h"
 #include "bridge_dfx.h"
 #include "acl/acl_rt.h"
-
+#include "version/runtime_version.h"
+#include "version/metadef_version.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 NnopbaseSysGlobalParams g_nnopbaseSysCfgParams = {nullptr, false, 0U, true, false, "", false};
 static std::mutex g_nnopbaseRegisterMtx;
+#define CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER 90000000
 namespace {
 constexpr uint32_t NNOPBASE_MAX_TENSOR_NUM = 50U;
 constexpr int32_t NNOPBASE_MODULE_TYPE_AICORE = 4;
@@ -85,6 +87,24 @@ void ResizeExecutorArgsBuf(NnopbaseExecutor *executor)
         executor->args->argsBuf.resize(argsLen);
     }
     OP_LOGI("Finish resizing %s args buffer.", executor->opType);
+}
+
+bool GenStaticKeyAndFindStaticBin(NnopbaseExecutor *executor, bool usingStride)
+{
+    if (NnopbaseExecutorGenStaticKey(executor, usingStride) != OK) {
+        return false;
+    }
+    // 已在缓存匹配流程调用控核接口，保证executor的coreNum不为非法值
+    auto coreNum = NnopbaseCoreNum({executor->coreNum.aicNum, executor->coreNum.aivNum});
+    auto binInfo = NnopbaseCollecterFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
+                                                &(executor->binInfoKey.verbose[0U]), 
+                                                executor->binInfoKey.len, &coreNum);
+    if ((binInfo != nullptr) && (NnopbaseKernelRegister(executor, binInfo) == OK)) {
+        executor->args->binInfo = binInfo;
+        executor->hasTiling = false;
+        return true;
+    }
+    return false;
 }
 }
 
@@ -669,16 +689,28 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
     }
-
-    auto &registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
-    auto opImpl = registry->GetOpImpl(executor->opType);
-    if (opImpl != nullptr && opImpl->exception_func != nullptr) {
-        OP_LOGI("Start to register customized exception dump parse function for op: %s.", executor->opType);
-        NNOPBASE_ASSERT_OK_RETVAL(aclrtBinarySetExceptionCallback(binInfo->binHandle,
-            reinterpret_cast<aclrtOpExceptionCallback>(opImpl->exception_func), nullptr));
-        OP_LOGI("Register customized exception dump parse function for op: %s successfully.", executor->opType);
+#if (RUNTIME_VERSION_NUM >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER) && (METADEF_VERSION_NUM >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER)
+    int32_t metadefVerNum = -1;
+    int32_t runtimeVerNum = -1;
+    auto aclRetForMetadef = aclsysGetVersionNum("metadef", &metadefVerNum);
+    auto aclRetForRts = aclsysGetVersionNum("runtime", &runtimeVerNum);
+    if (aclRetForMetadef == ACL_SUCCESS && aclRetForRts == ACL_SUCCESS &&
+        metadefVerNum >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER && runtimeVerNum >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER) {
+        auto &registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
+        auto opImpl = registry->GetOpImpl(executor->opType);
+        if (opImpl != nullptr && opImpl->exception_func != nullptr) {
+            OP_LOGI("Start to register customized exception dump parse function for op: %s.", executor->opType);
+            auto inst = nnopbase::IndvRtsWrapper::GetInstance();
+            if (inst == nullptr) {
+                return ACLNN_ERR_INNER;
+            }
+            NNOPBASE_ASSERT_OK_RETVAL(inst->AclrtBinarySetExceptionCallback(binInfo->binHandle,
+                reinterpret_cast<void *>(opImpl->exception_func), nullptr));
+            OP_LOGI("Register customized exception dump parse function for op: %s successfully.", executor->opType);
+        }
     }
+#endif
     if (binInfo->initValues.size() > 0U) {
         NNOPBASE_ASSERT_OK_RETVAL(SetTensorDataSizeToInitValue(executor));
         // 构造TilingParseContext，执行tilingParse函数
@@ -695,20 +727,11 @@ bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor *executor)
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindStaticEnd);
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kTilingStart);
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kTilingEnd);
-    // find static bin info, regInfo在此前已校验位非空
-    if (NnopbaseExecutorGenStaticKey(executor) != OK) {
-        return false;
+    if (!GenStaticKeyAndFindStaticBin(executor, true)) {
+        OP_LOGW("Cannot find static kernel bin with stride information, trying to find without stride again.");
+        return GenStaticKeyAndFindStaticBin(executor, false);
     }
-    // 已在缓存匹配流程调用控核接口，保证executor的coreNum不为非法值
-    auto coreNum = NnopbaseCoreNum({executor->coreNum.aicNum, executor->coreNum.aivNum});
-    auto binInfo = NnopbaseCollecterFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
-                                                &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len, &coreNum);
-    if ((binInfo != nullptr) && (NnopbaseKernelRegister(executor, binInfo) == OK)) {
-        executor->args->binInfo = binInfo;
-        executor->hasTiling = false;
-        return true;
-    }
-    return false;
+    return true;
 }
 
 static void NnopbaseExecutorGetWorkspaceSizes(NnopbaseExecutor *executor, uint64_t *workspaceLen)
@@ -1036,7 +1059,7 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
         executor->opKernelInfo.isMc2 = executor->mc2OpCfg.isMc2;
         aclnnOpInfoRecord::OpInfoSerialize(
             op::internal::PtrCastTo<const gert::TilingContext>(executor->contextExt.context),
-            aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, g_nnopbaseSysCfgParams.deterministic),
+            aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, executor->deterministic),
             &executor->opKernelInfo);
         OP_LOGI("Dump node info for operator %s finished.", executor->opType);  
     }
