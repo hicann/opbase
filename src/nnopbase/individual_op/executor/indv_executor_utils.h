@@ -233,8 +233,6 @@ static inline NnopbaseUChar *NnopbaseAppendBinary(void *buf, const size_t bufLen
 {
     if (src != nullptr && memcpy_s(buf, bufLen, src, srcLen) == EOK) {
         buf = op::internal::PtrCastTo<NnopbaseUChar>(buf) + srcLen;
-    } else {
-        OP_LOGW("Failed to append binary, probably because src is null or memcpy failed!");
     }
     return op::internal::PtrCastTo<NnopbaseUChar>(buf);
 }

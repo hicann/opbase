@@ -76,21 +76,6 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize)
 
     MOCKER_CPP(&gert::ComputeNodeInfo::GetInputTdInfo).stubs().will(returnValue((const gert::CompileTimeTensorDesc *)nodeType));
     MOCKER_CPP(&gert::TilingContext::GetInputShape).stubs().will(returnValue((const gert::StorageShape *)nodeType));
-    // mock for stride
-    static gert::Stride fakeStride({16, 4});
-    MOCKER_CPP(&gert::TilingContext::InputIsView).stubs().will(returnValue(true));
-    MOCKER_CPP(&gert::TilingContext::OutputIsView).stubs().will(returnValue(true));
-    MOCKER_CPP(&gert::TilingContext::GetInputStride).stubs()
-        .will(returnValue(static_cast<const gert::Stride*>(&fakeStride)));
-    MOCKER_CPP(&gert::TilingContext::GetOutputStride).stubs()
-        .will(returnValue(static_cast<const gert::Stride*>(&fakeStride)));
-    MOCKER_CPP(&gert::Stride::GetDimNum).stubs().will(returnValue((size_t)2));
-    MOCKER_CPP(&gert::Stride::GetStride).stubs()
-        .will(returnValue((int64_t)16))
-        .then(returnValue((int64_t)4));
-    MOCKER_CPP(&gert::TilingContext::GetInputOffset).stubs().will(returnValue((int64_t)128));
-    MOCKER_CPP(&gert::TilingContext::GetOutputOffset).stubs().will(returnValue((int64_t)256));
-
     // mock for shape
     MOCKER_CPP(&gert::Shape::GetDimNum).stubs().will(returnValue((size_t)1));
     MOCKER_CPP(&gert::StorageFormat::GetStorageFormat).stubs().will(returnValue((ge::Format)2));

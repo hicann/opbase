@@ -83,8 +83,8 @@ aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingF
 bool NnopbaseReadConfigFile(const std::string &configPath, std::vector<std::string> &subPath);
 NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey, const NnopbaseRegInfoKey *const regInfoKey,
     const NnopbaseStaticTensorNumInfo *const tensorNumInfo, const aclTensor* tensors[], const NnopbaseAttrAddr *attrs[],
-    const int64_t implMode, const int64_t deterMin, const int64_t *const vDepend, const bool usingStride);
-const char *NnopbaseCollecterGetStaticKernelBin(
+    const int64_t implMode, const int64_t deterMin, const int64_t *const vDepend);
+const char *NnopbaseCollecterGetSimplifiedKey(
     const NnopbaseChar *const opType, const uint64_t key, const NnopbaseUChar *verbose, const uint32_t verbLen,
     const NnopbaseCoreNum *const coreNum = nullptr);
 aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter);

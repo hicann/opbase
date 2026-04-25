@@ -21,7 +21,6 @@
 #include "executor/indv_tilingcontext_builder.h"
 #include "executor/indv_bininfo.h"
 #include "executor/indv_args_pool.h"
-#include "executor/indv_cache_key_builder.h"
 #include "profiling/prof_api.h"
 #include "aclnn/aclnn_base.h"
 #include "thread_local_context.h"
@@ -175,7 +174,7 @@ aclnnStatus NnopbaseAddInput(void *executor, const aclTensor *tensor, const uint
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbasIsEnableNewCache(nnopExecutor)) {
         tensors->paramDescs.instances[index].tensor = tensor;
-        Indv::CacheKeyBuilder::AppendTensor(&nnopExecutor->ownArgs, tensor);
+        NnopbaseGenTensorKey(&nnopExecutor->ownArgs, tensor);
         return OK;
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorUpdateTensorsIndex(tensors, index));
@@ -191,7 +190,7 @@ aclnnStatus NnopbaseAddIgnoreContinuesInput(void *executor, const aclTensor *ten
     if (NnopbasIsEnableNewCache(nnopExecutor)) {
         tensors->paramDescs.instances[index].ignoreCont = true;
         tensors->paramDescs.instances[index].tensor = tensor;
-        Indv::CacheKeyBuilder::AppendTensor(&nnopExecutor->ownArgs, tensor);
+        NnopbaseGenTensorKey(&nnopExecutor->ownArgs, tensor);
         return OK;
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorUpdateTensorsIndex(tensors, index));
@@ -208,13 +207,13 @@ aclnnStatus NnopbaseAddIntArrayInput(void *executor, const aclIntArray *array, c
         tensors->paramDescs.instances[index].intArray = array;
         auto args = &nnopExecutor->ownArgs;
         if (array != nullptr) {
-            Indv::CacheKeyBuilder::AppendValueDependTensor(args,
+            NnopbaseExecutorGenValueDependTensorKey(args,
             array->GetData(),
             array->Size(),
             array->Size() * sizeof(int64_t),
             ge::DataType::DT_INT64);
         } else {
-            Indv::CacheKeyBuilder::AppendPlaceHolder(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
+            NnopbaseGenPlaceHolderKey(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
         }
         return OK;
     } else {
@@ -232,13 +231,13 @@ aclnnStatus NnopbaseAddBoolArrayInput(void *executor, const aclBoolArray *array,
         tensors->paramDescs.instances[index].boolArray = array;
         auto args = &nnopExecutor->ownArgs;
         if (array != nullptr) {
-            Indv::CacheKeyBuilder::AppendValueDependTensor(args,
+            NnopbaseExecutorGenValueDependTensorKey(args,
             array->GetData(),
             array->Size(),
             array->Size() * sizeof(bool),
             ge::DataType::DT_BOOL);
         } else {
-            Indv::CacheKeyBuilder::AppendPlaceHolder(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
+            NnopbaseGenPlaceHolderKey(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
         }
         return OK;
     } else {
@@ -256,13 +255,13 @@ aclnnStatus NnopbaseAddFloatArrayInput(void *executor, const aclFloatArray *arra
         tensors->paramDescs.instances[index].floatArray = array;
         auto args = &nnopExecutor->ownArgs;
         if (array != nullptr) {
-            Indv::CacheKeyBuilder::AppendValueDependTensor(args,
+            NnopbaseExecutorGenValueDependTensorKey(args,
             array->GetData(),
             array->Size(),
             array->Size() * sizeof(float),
             ge::DataType::DT_FLOAT);
         } else {
-            Indv::CacheKeyBuilder::AppendPlaceHolder(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
+            NnopbaseGenPlaceHolderKey(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
         }
         return OK;
     } else {
@@ -278,7 +277,7 @@ aclnnStatus NnopbaseAddDynamicInput(void *executor, const aclTensorList *tensorL
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbasIsEnableNewCache(nnopExecutor)) {
         tensors->paramDescs.instances[index].tensorList = tensorList;
-        Indv::CacheKeyBuilder::AppendTensorList(&nnopExecutor->ownArgs, tensorList);
+        NnopbaseExecutorGenTensorListKey(&nnopExecutor->ownArgs, tensorList);
         return OK;
     } else {
         return NnopbaseExecutorAddDynamicTensors(nnopExecutor, tensorList, index, true);
@@ -294,7 +293,7 @@ aclnnStatus NnopbaseAddIgnoreContiguousDynamicInput(void *executor, const aclTen
     if (NnopbasIsEnableNewCache(nnopExecutor)) {
         tensors->paramDescs.instances[index].ignoreCont = true;
         tensors->paramDescs.instances[index].tensorList = tensorList;
-        Indv::CacheKeyBuilder::AppendTensorList(&nnopExecutor->ownArgs, tensorList);
+        NnopbaseExecutorGenTensorListKey(&nnopExecutor->ownArgs, tensorList);
         return OK;
     } else {
         return NnopbaseExecutorAddDynamicTensors(nnopExecutor, tensorList, index, true, true);
@@ -311,9 +310,9 @@ aclnnStatus NnopbaseAddOutput(void *executor, const aclTensor *tensor, const uin
         auto args = &nnopExecutor->ownArgs;
         // 输出和属性中间要用占位符隔开
         if (index == 0) {
-            Indv::CacheKeyBuilder::AppendPlaceHolder(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
+            NnopbaseGenPlaceHolderKey(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
         }
-        Indv::CacheKeyBuilder::AppendTensor(args, tensor);
+        NnopbaseGenTensorKey(args, tensor);
         return OK;
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorUpdateTensorsIndex(tensors, index));
@@ -340,9 +339,9 @@ aclnnStatus NnopbaseAddDynamicOutput(void *executor, const aclTensorList *tensor
         tensors->paramDescs.instances[index].tensorList = tensorList;
         auto args = &nnopExecutor->ownArgs;
         if (index == 0) {
-            Indv::CacheKeyBuilder::AppendPlaceHolder(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
+            NnopbaseGenPlaceHolderKey(args, PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen));
         }
-        Indv::CacheKeyBuilder::AppendTensorList(args, tensorList);
+        NnopbaseExecutorGenTensorListKey(args, tensorList);
         return OK;
     } else {
         return NnopbaseExecutorAddDynamicTensors(nnopExecutor, tensorList, index, false);
@@ -776,7 +775,7 @@ aclnnStatus NnopbaseAddScalarInput(void *executor, const aclScalar *scalar, cons
         tensors->paramDescs.instances[index].scalar = scalar;
         tensors->paramDescs.instances[index].scalarDtype = dtype;
         tensors->paramDescs.instances[index].srcIndex = srcIndex;
-        Indv::CacheKeyBuilder::AppendScalar(&nnopExecutor->ownArgs, scalar, index, srcIndex, dtype);
+        NnopbaseExecutorGenScalarKey(nnopExecutor, scalar, index, srcIndex, dtype);
         return OK;
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorUpdateTensorsIndex(tensors, index));
@@ -795,7 +794,7 @@ aclnnStatus NnopbaseAddScalarListInput(void *executor, const aclScalarList *scal
         tensors->paramDescs.instances[index].scalarList = scalarList;
         tensors->paramDescs.instances[index].scalarDtype = dtype;
         tensors->paramDescs.instances[index].srcIndex = srcIndex;
-        Indv::CacheKeyBuilder::AppendScalarList(&nnopExecutor->ownArgs, scalarList, index, srcIndex, dtype);
+        NnopbaseExecutorGenScalarListKey(nnopExecutor, scalarList, index, srcIndex, dtype);
         return OK;
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorUpdateTensorsIndex(tensors, index));
@@ -815,32 +814,19 @@ const NnopbaseChar *NnopbaseFindStaticKernel(const aclTensor* tensors[],
         }
     }
     thread_local static NnopbaseUChar verbose[NNOPBASE_MAX_STATICKEY_LEN];
-    NnopbaseUChar *verKey1 = verbose;
+    NnopbaseUChar *verKey = verbose;
     NnopbaseRegInfoKey regInfoKey;
     regInfoKey.opType = staticRuntimeInfo->opType;
     regInfoKey.hashKey =
         static_cast<uint64_t>(NnopbaseHashBinary(PtrCastTo<NnopbaseUChar>(regInfoKey.opType.c_str()), regInfoKey.opType.size()) %
                               NNOPBASE_NORM_MAX_BIN_BUCKETS);
     OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
-
-    verKey1 = NnopbaseCollecterGenStaticKey(verKey1, &regInfoKey, tensorNumInfo, tensors,
+    verKey = NnopbaseCollecterGenStaticKey(verKey, &regInfoKey, tensorNumInfo, tensors,
                                            attrs, staticRuntimeInfo->implMode,
-                                           staticRuntimeInfo->deterMode, valueDepend, true);
-    
+                                           staticRuntimeInfo->deterMode, valueDepend);
     NnopbaseCoreNum coreNum {staticRuntimeInfo->aicNum, staticRuntimeInfo->aivNum};
-    auto simplifiedKey = NnopbaseCollecterGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                       uint32_t(verKey1 - verbose), &coreNum);
-    if (simplifiedKey != nullptr) {
-        return simplifiedKey;
-    } else {
-        OP_LOGW("Cannot find static kernel bin with stride information, tring to find without stride again.");
-        NnopbaseUChar *verKey2 = verbose;
-        verKey2 = NnopbaseCollecterGenStaticKey(verKey2, &regInfoKey, tensorNumInfo, tensors,
-                                           attrs, staticRuntimeInfo->implMode,
-                                           staticRuntimeInfo->deterMode, valueDepend, false);
-        return NnopbaseCollecterGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                       uint32_t(verKey2 - verbose), &coreNum);
-    }
+    return NnopbaseCollecterGetSimplifiedKey(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
+                                       uint32_t(verKey - verbose), &coreNum);
 }
 
 aclnnStatus NnopbaseGetStreamAndEvent(const rtStream_t stream, rtStream_t *subStream,
@@ -936,7 +922,6 @@ bool NnopbaseMatchArgs(void *executor, uint64_t *workspaceLen)
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     RecordNnopbaseTime(nnopExecutor, NnopbaseTimeIdx::kGetWsStart);
     nnopbase::NnopbaseGetCoreNum(&nnopExecutor->coreNum.aicNum, &nnopExecutor->coreNum.aivNum);
-    nnopExecutor->deterministic = nnopbase::GetGlobalDeterministic();
     NnopbaseUpdatePlatformInfo(nnopExecutor);
     if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         nnopExecutor->ownArgs.enableCache = false;
@@ -948,28 +933,35 @@ bool NnopbaseMatchArgs(void *executor, uint64_t *workspaceLen)
     uint8_t *key = nnopExecutor->ownArgs.inputKey.data();
     key = PtrCastTo<NnopbaseUChar>(
         NnopbaseAppendBinary(key, strlen(nnopExecutor->opType), nnopExecutor->opType, strlen(nnopExecutor->opType)));
-    key = Indv::CacheKeyBuilder::AppendCoreNum(&nnopExecutor->ownArgs, &nnopExecutor->coreNum);
+
+    key = NnopbaseAddCoreNumInfo(&nnopExecutor->coreNum, &nnopExecutor->ownArgs);
     uint32_t mc2RankId = nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread();
-    key = Indv::CacheKeyBuilder::AppendMc2RankId(&nnopExecutor->ownArgs, &mc2RankId);
-    key = Indv::CacheKeyBuilder::AppendDeterministic(&nnopExecutor->ownArgs, &(nnopExecutor->deterministic));
+    OP_LOGD("Current mc2RankId is %u", mc2RankId);
+    key = AddMc2RankIdInfoToKey(&mc2RankId, &nnopExecutor->ownArgs);
     nnopExecutor->ownArgs.seed = NnopbaseHashBinary(
         PtrCastTo<NnopbaseUChar>(nnopExecutor->ownArgs.inputKey.data()), nnopExecutor->ownArgs.keyLen);
+
     if (nnopbase::ArgsPool::GetInstance().MatchArgs(nnopExecutor)) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateInputAddr(nnopExecutor));
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateOutputAddr(&nnopExecutor->args->outputs, &nnopExecutor->ownArgs.outputs));
         NnopbaseCheckHasContiguous(nnopExecutor);
         if (!nnopExecutor->args->inputs.unContiguousTensors.tensors.empty()) {
-            OP_LOGI("Executor addr %p, op %s has %zu uncontiguous inputs.", nnopExecutor,
-                nnopExecutor->opType, nnopExecutor->args->inputs.unContiguousTensors.tensors.size());
+            OP_LOGI("Executor addr %p, op %s has %zu uncontiguous inputs.",
+                nnopExecutor,
+                nnopExecutor->opType,
+                nnopExecutor->args->inputs.unContiguousTensors.tensors.size());
             return false;
         }
         NnopbaseSetCachedInfo(nnopExecutor);
         *workspaceLen = nnopExecutor->workspaces.length;
         OP_LOGI("Executor addr %p, op %s match args cache successfully, workspaceLen is %lu.",
-            nnopExecutor, nnopExecutor->opType, *workspaceLen);
+            nnopExecutor,
+            nnopExecutor->opType,
+            *workspaceLen);
         NnopbaseExecutorCopyCacheAttr(nnopExecutor);
         return true;
     }
+
     OP_LOGI("Executor addr %p, op %s not match args cache.", nnopExecutor, nnopExecutor->opType);
     CHECK_COND(NnopbaseAddIoTensors(nnopExecutor) == OK,
         false,

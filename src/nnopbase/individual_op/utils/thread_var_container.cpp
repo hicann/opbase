@@ -28,7 +28,6 @@ aclnnStatus ThreadVarContainer::SetCurMc2RankIdInThread(HcclComm commHandle)
 
 uint32_t ThreadVarContainer::GetCurMc2RankIdInThread()
 {
-    OP_LOGD("Current mc2RankId is %u.", mc2RankId);
     return mc2RankId;
 }
 }

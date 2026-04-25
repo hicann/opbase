@@ -720,7 +720,7 @@ TEST_F(NnopbaseExtUnitTest, Test1971Profiling3)
 
 TEST_F(NnopbaseExtUnitTest, Tes1971ProfilingForNotFindTilingKey4)
 {
-    uint32_t goldenData = 0u;
+    uint32_t goldenData;
     uint64_t tilingKey = 10U;
     RunCommonOpForProfiling("1971_for_mix_normal", kMixAiv, "ascend910b", tilingKey, goldenData, true);
 }

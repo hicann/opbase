@@ -140,7 +140,6 @@ typedef struct {
     bool matchArgsV2 = false; // 兼容之前的缓存匹配流程，true表示走的新流程，匹配的时候不用再重新生成key
     bool isCachedArgs = false;
     NnopbaseCoreNum coreNum{0, 0};
-    bool deterministic = false;
 } NnopbaseExecutor;
 
 typedef struct {
@@ -201,12 +200,11 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInf
 void NnopbaseExecutorDeInit(NnopbaseExecutor *executor);
 void StreamMapClear(rtStream_t stream);
 aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor, bool usingStride = false);
+aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor);
 void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor *executor);
-size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor, bool usingStride = false);
+size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor);
 NnopbaseUChar *NnopbaseExecutorGenAttrsKey(NnopbaseAttrs *attrs, NnopbaseUChar *verKey);
-NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors,
-    size_t tensorNum, bool usingStride = false);
+NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors, size_t tensorNum);
 bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor *executor);
 NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey, const NnopbaseUChar *addr);
 aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor *executor);
@@ -288,6 +286,7 @@ aclnnStatus NnopbaseExecutorAddScalarListInput(NnopbaseTensors *tensors, const a
 
 // global config
 aclnnStatus NnopbaseExecutorSetGlobalConfig();
+bool NnopbaseGetGlobalDeterministic();
 void NnopbaseReportContextIdInfoByRation(
     NnopbaseExecutor *const opExecutor, const uint64_t timeStamp, uint32_t &numBlocks, uint32_t &taskType);
 
