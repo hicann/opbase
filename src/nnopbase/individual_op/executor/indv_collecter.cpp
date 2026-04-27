@@ -299,7 +299,7 @@ const NnopbaseChar *NnopbaseCollecterGetSimplifiedKey(const NnopbaseChar *const 
         return nullptr;
     }
     OP_LOGI("Found %s static kernel, verboseLen: %u, hashKey is: %zu.", opType, verbLen, hashKey);
-    return binInfo->simplifiedKey.c_str();
+    return binInfo->binPath.c_str();
 }
 
 aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingFun *const tiling, gert::OppImplVersionTag oppImplVersion)

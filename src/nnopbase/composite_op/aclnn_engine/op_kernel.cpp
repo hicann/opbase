@@ -1157,17 +1157,16 @@ aclnnStatus OpKernel::HashAndInsert(const string &binAndJsonDir,
         jsonPath.append(binOrJsonPathPrefix);
         jsonPath.append(JSON_SUFFIX);
         if (keyParams.binType == BinType::STATIC_BIN) {
-            const std::string &simplifiedKey = key.key;
-            auto hash = HashBinary(simplifiedKey.c_str(), simplifiedKey.size());
+            auto hash = HashBinary(binPath.c_str(), binPath.size());
             const std::lock_guard<std::mutex> lock(staticKernelsMutex_);
             if (staticBins_.find(hash) != staticBins_.end()) {
-                OP_LOGD("This static bin has been added, key: %s", simplifiedKey.c_str());
+                OP_LOGD("This static bin has been added, key: %s", binPath.c_str());
                 continue;
             }
             staticBins_.emplace(hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath,
                                                                     key, hash, keyParams.binType,
                                                                     keyParams.genPlaceholder, false, this));
-            OP_LOGD("Static bin: key: %s, json: %s, bin: %s", simplifiedKey.c_str(), jsonPath.c_str(), binPath.c_str());
+            OP_LOGD("Static bin: key: %s, json: %s, bin: %s", key.key.c_str(), jsonPath.c_str(), binPath.c_str());
             continue;
         }
 
@@ -1572,7 +1571,7 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string
         KeyParams keyParams;
         keyParams.binType = BinType::STATIC_BIN;
         keyParams.keys.emplace_back();
-        keyParams.keys.back().key = simplifiedKey;
+        keyParams.keys.back().key = binPath;
 
         CHECK_COND(
             HashAndInsert(binAndJsonDir, binPath, pos, keyParams) == ACLNN_SUCCESS, ACLNN_ERR_INNER_KEY_CONFLICT,

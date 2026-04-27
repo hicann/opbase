@@ -233,7 +233,7 @@ protected:
 
 TEST_F(TestDebugKernel, TestStaticBinaryConv2D)
 {
-    string filePrefix = "static_kernel/ai_core/static_kernel_202307261051/Conv2D/Conv2D_high_performance_0";
+    string filePrefix = "debug_kernel/ascend910/Conv2D_high_performance_0";
     TestStaticBinaryConv2D(filePrefix);
 }
 
