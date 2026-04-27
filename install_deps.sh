@@ -74,36 +74,6 @@ detect_os() {
     fi
 }
 
-install_gawk() {
-    echo -e "\n==== Checking Gawk ===="
-
-    if command -v gawk &> /dev/null; then
-        echo "Gawk has been installed"
-        return
-    fi
-
-    echo "Installing Gawk..."
-    case "$OS" in
-        debian)
-            run_command sudo $PKG_MANAGER update
-            run_command sudo $PKG_MANAGER install -y gawk
-            ;;
-        rhel|euler)
-            run_command sudo $PKG_MANAGER install -y gawk
-            ;;
-        macos)
-            run_command brew install gawk
-            ;;
-    esac
-
-    if command -v gawk &> /dev/null; then
-        echo "Gawk installed successfully"
-    else
-        echo "Gawk installation failed"
-        exit 1
-    fi
-}
-
 install_python() {
     # Python version >= 3.7.0
     echo -e "\n==== Checking Python ===="
@@ -424,7 +394,6 @@ main() {
     echo "===================================================="
 
     detect_os
-    install_gawk
     install_python
     install_gcc
     install_cmake
