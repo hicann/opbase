@@ -10,6 +10,7 @@
 #include "indv_args.h"
 #include "indv_executor.h"
 #include "bridge_dfx.h"
+#include "utils/indv_soc.h"
 
 static inline NnopbaseUChar *NnopbasePrepareDimInfo(NnopbaseUChar *addr, const GertShape &shape)
 {
@@ -264,7 +265,7 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor *executor, const size_t tilingDataS
     if (executor->mc2OpCfg.isMc2) {
         argsLen += NNOPBAE_AICPU_PARAM_LEN * 2;  // 2 is soname/kernelname
         argsLen += (strlen(executor->opType) + NNOPBAE_MC2_AICPU_SUFFIX.length());
-        if (executor->collecter->isMc2FusionLaunch) {
+        if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
             argsLen += sizeof(NnopbaseHcclCommParamDesc); // 82上parsmdesc组在args最后
         }
     }
@@ -314,7 +315,7 @@ static void NnopbaseExecutorEncodeDynamicTensors(NnopbaseExecutorArgsAddr *argsA
     (*dynamicIOInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) - args);
     (*dynamicIOInfo)->dataOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr) - args);
     (*dynamicIOInfo)++;
-    if ((executor->mc2OpCfg.isMc2) && (!executor->collecter->isMc2FusionLaunch)) {
+    if ((executor->mc2OpCfg.isMc2) && (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType))) {
         aclrtPlaceHolderInfo **aicpuHostInputInfo = &argsAddr->aicpuHostInputInfo;
         const NnopbaseUChar *const aicpuArgs = (NnopbaseUChar*)executor->aicpuArgs.args;
         (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) - aicpuArgs);
@@ -353,7 +354,7 @@ static inline void NnopbaseExecutorEncodeHostInput(const NnopbaseExecutor *const
     *inputAddr = *hostInputData;
     (*hostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(inputAddr) - args);
     (*hostInputInfo)->dataOffset = static_cast<uint32_t>((*hostInputData) - args);
-    if ((executor->mc2OpCfg.isMc2) && (!executor->collecter->isMc2FusionLaunch)) {
+    if ((executor->mc2OpCfg.isMc2) && (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType))) {
         aclrtPlaceHolderInfo **aicpuHostInputInfo = &argsAddr->aicpuHostInputInfo;
         const NnopbaseUChar *const aicpuArgs = (NnopbaseUChar*)executor->aicpuArgs.args;
         (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(inputAddr) - aicpuArgs);

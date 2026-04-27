@@ -2903,3 +2903,54 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEventWithSameMainStream)
     rtStreamDestroy(stream);
     NnopbaseUnsetEnvAndClearFolder();
 }
+
+TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessWithAiCPU)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+
+    void *executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+
+    const char *opType = "bninference_d_kernel";
+    char inputDesc[] = {1, 1, 1};
+    char outputDesc[] = {1};
+    char attrDesc[] = {};
+    void *executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    ASSERT_NE(executor, nullptr);
+
+    NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    ASSERT_EQ(((NnopbaseExecutor *)executor)->mc2OpCfg.sType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    ASSERT_EQ(NnopbaseSetMc2(executor), OK);
+    NnopbaseExecutorGcSpace(executorSpace);
+    NnopbaseUnsetEnvAndClearFolder();
+}
+
+TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessForascend950WithAiCPU)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+
+    void *executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+
+    const char *opType = "bninference_d_kernel";
+    char inputDesc[] = {1, 1, 1};
+    char outputDesc[] = {1};
+    char attrDesc[] = {};
+    void *executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    ASSERT_NE(executor, nullptr);
+
+    NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurrentSocVersionInternal();
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
+    nnopbase::IndvSoc::GetInstance().Reset();
+    ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
+    ASSERT_EQ(((NnopbaseExecutor *)executor)->mc2OpCfg.sType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    ASSERT_EQ(NnopbaseSetMc2(executor), OK);
+
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(oriSocVersion));
+    nnopbase::IndvSoc::GetInstance().Reset();
+    NnopbaseExecutorGcSpace(executorSpace);
+    NnopbaseUnsetEnvAndClearFolder();
+}

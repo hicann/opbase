@@ -2367,9 +2367,11 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
     ASSERT_EQ(NnopbaseAddAttr(executor, static_cast<void*>(group), strlen(group) + 1, 0), OK);
     ASSERT_EQ(NnopbaseSetHcomGroup(executor, group), OK);
 
-    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurrentSocVersionInternal();
     auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
+    nnopbase::IndvSoc::GetInstance().Reset();
+    ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
     ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
@@ -2380,7 +2382,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
     }
 
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(oriSocVersion));
     ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
     const size_t kfcArgsFmtOffset = ((NnopbaseExecutor *)executor)->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset * sizeof(void *);
@@ -2542,6 +2544,15 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void *)> setHccl
                                          sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(socVersion)));
+    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND950 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
+        ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
+    } else {
+        ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = false;
+    }
+
     int *ptr = new int;
     void *addr = reinterpret_cast<void *>(ptr);
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
@@ -2566,14 +2577,6 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void *)> setHccl
     ASSERT_EQ(NnopbaseSetHcomGroup(executor, group), OK);
     setHcclServerTypeFunc(executor);
 
-    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch;
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion));
-    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND950 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
-        ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = true;
-    } else {
-        ((NnopbaseExecutor *)executor)->collecter->isMc2FusionLaunch = false;
-    }
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
     void *stream = nullptr;
@@ -2647,14 +2650,6 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeCCU)
     MOCKER(rtFusionLaunch).expects(atLeast(1)).will(returnValue(0));
     TestHcclServerType([](void *executor){
         NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
-    }, nnopbase::OPS_SUBPATH_ASCEND950);
-}
-
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeAICPU)
-{
-    MOCKER(rtFusionLaunch).expects(atLeast(0)).will(returnValue(0));
-    TestHcclServerType([](void *executor){
-        NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     }, nnopbase::OPS_SUBPATH_ASCEND950);
 }
 
@@ -3326,5 +3321,23 @@ TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibSuccess)
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankId(nullptr, nullptr), OK);
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().HcclGetCcuTaskInfo(nullptr, nullptr, nullptr), OK);
 
+    Adx::MmpaStub::GetInstance()->UnInstall();
+}
+
+TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeAICPU)
+{
+    MOCKER(rtFusionLaunch).expects(atLeast(0)).will(returnValue(0));
+    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormalStub);
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurrentSocVersionInternal();
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
+    nnopbase::IndvSoc::GetInstance().Reset();
+
+    ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
+    TestHcclServerType([](void *executor){
+        NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    }, nnopbase::OPS_SUBPATH_ASCEND950);
+    
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(oriSocVersion));
+    nnopbase::IndvSoc::GetInstance().Reset();
     Adx::MmpaStub::GetInstance()->UnInstall();
 }

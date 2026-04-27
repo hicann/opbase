@@ -30,6 +30,7 @@
 #include "depends/op/aclnn_bninference_d_kernel_stub.h"
 #include "depends/op/aclnn_custom_op_stub.h"
 #include "utils/indv_types.h"
+#include "executor/indv_mc2_aicpu.h"
 #define private public
 #include "executor/indv_args_pool.h"
 #undef private
@@ -2282,4 +2283,86 @@ TEST_F(NnopbaseExecutorUnitTest, AddRankIdToKeySuccess)
     args.keyLen = 0;
     NnopbaseUChar* key = AddMc2RankIdInfoToKey(&rankId, &args);
     ASSERT_EQ(sizeof(uint32_t) + 1, args.keyLen);
+}
+
+TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
+{
+    NnopbaseExecutor *executor = nullptr;
+    GetExecutor(executor);
+    ASSERT_NE(executor, nullptr);
+
+    executor->opType = strdup("test_op");
+    executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
+    executor->mc2OpCfg.isMc2 = true;
+    executor->collecter = new NnopbaseBinCollecter;
+    executor->collecter->isMc2FusionLaunch = false;
+    executor->args = new NnopbaseExecutorArgs;
+    executor->argsExt.hostInputInfoNum = 1U;
+    executor->aicpuArgs.hostInputInfoNum = 1U;
+    NnopbaseHcclCommParamDesc paramDesc = {0, 0, 0, 0, 0};
+    NnopbaseExecutorArgsAddr argsAddr = {nullptr, nullptr, nullptr, nullptr, &paramDesc};
+    argsAddr.ptr = executor->args->argsBuf.data() + 2 * sizeof(void *);
+    argsAddr.hostInputData = argsAddr.ptr + 2 * sizeof(aclrtPlaceHolderInfo);
+    argsAddr.aicpuHostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(
+        argsAddr.ptr + sizeof(aclrtPlaceHolderInfo));
+    argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
+    executor->aicpuArgs.args = argsAddr.ptr;
+    executor->argsExt.args = op::internal::PtrCastTo<void>(argsAddr.ptr + sizeof(void *));
+
+    NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
+    NnopbasePrepareMC2Params(executor, &argsAddr);
+    std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBAE_AICPU_PARAM_LEN);
+    const std::string expected_soName = "libccl_kernel.so" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("libccl_kernel.so"), '\0');
+    ASSERT_EQ(soName, expected_soName);
+    std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBAE_AICPU_PARAM_LEN), NNOPBAE_AICPU_PARAM_LEN);
+    const std::string expected_kernelName = "RunAicpuKfcSrvLaunch" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("RunAicpuKfcSrvLaunch"), '\0');
+    ASSERT_EQ(kernelName, expected_kernelName);
+
+    delete executor->args;
+    delete executor->collecter;
+    free(executor->opType);
+    delete executor;
+}
+
+TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950WithAiCPU)
+{
+    NnopbaseExecutor *executor = nullptr;
+    GetExecutor(executor);
+    ASSERT_NE(executor, nullptr);
+
+    executor->opType = strdup("test_op");
+    executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
+    executor->mc2OpCfg.isMc2 = true;
+    executor->collecter = new NnopbaseBinCollecter;
+    executor->collecter->isMc2FusionLaunch = false;
+    executor->args = new NnopbaseExecutorArgs;
+    executor->argsExt.hostInputInfoNum = 1U;
+    executor->aicpuArgs.hostInputInfoNum = 1U;
+    NnopbaseHcclCommParamDesc paramDesc = {0, 0, 0, 0, 0};
+    NnopbaseExecutorArgsAddr argsAddr = {nullptr, nullptr, nullptr, nullptr, &paramDesc};
+    argsAddr.ptr = executor->args->argsBuf.data() + 2 * sizeof(void *);
+    argsAddr.hostInputData = argsAddr.ptr + 2 * sizeof(aclrtPlaceHolderInfo);
+    argsAddr.aicpuHostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(
+        argsAddr.ptr + sizeof(aclrtPlaceHolderInfo));
+    argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
+    executor->aicpuArgs.args = argsAddr.ptr;
+    executor->argsExt.args = op::internal::PtrCastTo<void>(argsAddr.ptr + sizeof(void *));
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurrentSocVersionInternal();
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
+    nnopbase::IndvSoc::GetInstance().Reset();
+    ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
+    NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
+    NnopbasePrepareMC2Params(executor, &argsAddr);
+    std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBAE_AICPU_PARAM_LEN);
+    const std::string expected_soName = "libmc2_server.so" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("libmc2_server.so"), '\0');
+    ASSERT_EQ(soName, expected_soName);
+    std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBAE_AICPU_PARAM_LEN), NNOPBAE_AICPU_PARAM_LEN);
+    const std::string expected_kernelName = "Mc2ServerKernel" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("Mc2ServerKernel"), '\0');
+    ASSERT_EQ(kernelName, expected_kernelName);
+    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(oriSocVersion));
+
+    delete executor->args;
+    delete executor->collecter;
+    free(executor->opType);
+    delete executor;
 }

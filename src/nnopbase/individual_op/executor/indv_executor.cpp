@@ -509,7 +509,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
             static_cast<uint16_t>(executor->args->inputs.dynamicNum + executor->args->outputs.dynamicNum);
         OP_LOGD("hostInputInfoNum is %u", executor->argsExt.hostInputInfoNum);
         if (executor->mc2OpCfg.isMc2) {
-            if (executor->collecter->isMc2FusionLaunch) {
+            if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
                 executor->fusionArgs.hostInputInfoNum = executor->argsExt.hostInputInfoNum + 1U;
                 argsAddr.hostInputData = argsAddr.ptr + executor->fusionArgs.hostInputInfoNum * sizeof(aclrtPlaceHolderInfo);
                 // mc2算子会占用一个rtHostInputInfo_t存储tilingdata信息
@@ -539,7 +539,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
     }
     void **addr = nullptr;
     if (executor->mc2OpCfg.isMc2) {
-        if (executor->collecter->isMc2FusionLaunch) {
+        if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
             addr = (void **)args;
             executor->fusionArgs.args = args;
             executor->argsExt.args = args;
@@ -604,7 +604,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStrea
             static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) - 
                 op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args));
         if (executor->mc2OpCfg.isMc2) {
-            if (executor->collecter->isMc2FusionLaunch) {
+            if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
                 executor->fusionArgs.hostInputInfoPtr->addrOffset =
                     op::internal::PtrCastTo<NnopbaseUChar>(addr) -
                     op::internal::PtrCastTo<NnopbaseUChar>(executor->fusionArgs.args);
@@ -663,7 +663,7 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadJsonFile(binInfo, executor->collecter->oppPath,
         socVersion));
-    if (executor->mc2OpCfg.isMc2 && executor->collecter->isMc2FusionLaunch) {
+    if (executor->mc2OpCfg.isMc2 && nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collecter->useCoreTypeMagic, binInfo));
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
     } else {

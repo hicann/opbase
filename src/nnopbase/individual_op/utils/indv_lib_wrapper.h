@@ -131,6 +131,58 @@ private:
     std::unordered_map<std::string, void *> functions_;
 };
 
+class IndvMc2ClientWrapper : public NnopBaseLoadSo {
+public:
+    static IndvMc2ClientWrapper& GetInstance(void)
+    {
+        static IndvMc2ClientWrapper instance;
+        return instance;
+    }
+
+    // 调用端必须保证不多线程调用
+    aclnnStatus IndvMc2ClientWrapperInit(const char *loadSoPath)
+    {
+        hcclAllocComResourceByTilingHandle = nullptr;
+        closeSo();
+        aclnnStatus ret = openSo(loadSoPath);
+        if (ret != OK) {
+            OP_LOGW("Nnopbase load %s failed. retVal = %d.", loadSoPath);
+            return ret;
+        }
+        NNOPBASE_ASSERT_OK_RETVAL(LoadFunctions());
+        return OK;
+    }
+    aclnnStatus HcclAllocComResourceByTiling(
+        HcclComm comm, void *stream, void *TilingData, void **commContext)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
+
+        HcclResult ret = hcclAllocComResourceByTilingHandle(comm, stream, TilingData, commContext);
+        if (ret != HCCL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the HcclAllocComResourceByTiling "
+                    "function of the mc2_client module. ret = %d, comm = %p.", ret, comm);
+            return ACLNN_ERR_INNER;
+        }
+
+        return OK;
+    }
+private:
+    using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void *, void *, void **);
+    HcclAllocComResourceByTilingFunc hcclAllocComResourceByTilingHandle = nullptr;
+    IndvMc2ClientWrapper(void) {}
+    ~IndvMc2ClientWrapper() override
+    {
+        hcclAllocComResourceByTilingHandle = nullptr;
+        closeSo();
+    }
+
+    aclnnStatus LoadFunctions() override
+    {
+        hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>("HcclAllocComResourceByTiling");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
+        return OK;
+    }
+};
 
 class IndvHcclWrapper : public NnopBaseLoadSo {
 public:

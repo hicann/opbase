@@ -99,6 +99,19 @@ bool IndvSoc::IsCouplingArch(void) const
     return (socVersion == OPS_SUBPATH_ASCEND910 || socVersion == OPS_SUBPATH_ASCEND310P);
 }
 
+bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType) const
+{
+    return SupportMc2FusionLaunch() &&
+        ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) || (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU));
+}
+
+bool IndvSoc::NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType) const
+{
+    const bool isSupportedSocVersion = (socVersion == OPS_SUBPATH_ASCEND950) || 
+        (socVersion == OPS_SUBPATH_ASCEND910_96);
+    return (isSupportedSocVersion && (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU));
+}
+
 uint32_t *IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const
 {
     static uint32_t socSupportList[] = {SOC_VERSION_ASCEND910B, SOC_VERSION_ASCEND910_93};

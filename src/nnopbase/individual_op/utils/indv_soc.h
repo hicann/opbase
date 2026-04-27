@@ -15,6 +15,7 @@
 #include <map>
 #include <vector>
 #include "platform.h"
+#include "individual_op_api.h"
 
 namespace nnopbase {
 constexpr const char* OPS_SUBPATH_ASCEND910 = "ascend910";
@@ -50,6 +51,8 @@ public:
     bool NeedsExtraMemoryForOverflowDump(void) const;
     bool SupportL0ExceptionDump(void) const;
     bool IsCouplingArch(void) const;
+    bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType) const;
+    bool NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType) const;
     uint32_t *GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const;
     uint32_t GetSocEnum();
     void Reset(void);

@@ -39,6 +39,8 @@ extern "C" {
 
 NnopbaseExecutorSpaceSet g_nnopbaseSpaceSet;
 static std::mutex g_nnopbaseInitMtx;
+constexpr const char* LIBMC2_CLIENT_SO = "libmc2_client.so";
+constexpr const char* LIBHCCL_SO = "libhccl.so";
 
 aclnnStatus NnopbaseInit()
 {
@@ -844,8 +846,15 @@ aclnnStatus NnopbaseSetMc2(void *const executor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     ((NnopbaseExecutor *)executor)->mc2OpCfg.isMc2 = true;
     bool needLoadDavidHcclApi = nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch();
-    static const aclnnStatus ret = nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit("libhccl.so",
-        needLoadDavidHcclApi);
+    if (needLoadDavidHcclApi) {
+        const static aclnnStatus retVal = nnopbase::IndvMc2ClientWrapper::GetInstance().IndvMc2ClientWrapperInit(
+            LIBMC2_CLIENT_SO);
+        if (retVal != OK) {
+            OP_LOGW("Nnopbase load libmc2_client.so failed. retVal = %d.", retVal);
+        }
+    }
+    const static aclnnStatus ret = nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit(
+        LIBHCCL_SO, needLoadDavidHcclApi);
     CHECK_COND((ret == OK), ret, "Nnopbase load hccl module libhccl.so failed. ret = %d.", ret);
     return OK;
 }
