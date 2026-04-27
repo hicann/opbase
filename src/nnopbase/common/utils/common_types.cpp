@@ -523,7 +523,7 @@ bool aclTensor::IsFromWorkspace() const
 
 void aclTensor::SetStorageAddr(void *addr) const
 {
-    OP_LOGI("Set storage addr: %p", addr);
+    OP_LOGI("aclTensor: %p, aclStorage: %p, set addr: %p", this, storage_, addr);
     storage_->SetAddr(addr);
     tensor_->MutableTensorData().SetAddr(addr, nullptr);
 }

@@ -412,7 +412,7 @@ aclOpExecutor::aclOpExecutor()
 aclOpExecutor::~aclOpExecutor()
 {
     FreeGraphImpl(impl_->GetGraph());
-    OP_LOGI("~aclOpExecutor");
+    OP_LOGI("~aclOpExecutor, addr: %p", this);
     impl_->SetGraph(nullptr);
     for (size_t i = 0; i < kernelLaunchObjList_.size(); i++) {
         delete kernelLaunchObjList_[i];
@@ -1330,6 +1330,7 @@ uint64_t aclOpExecutor::GetMagicNumber()
 
 UniqueExecutor::UniqueExecutor(const char *funcName) : funcName_(funcName), uniqueExecutor_(new aclOpExecutor())
 {
+    OP_LOGI("Create executor: %p", uniqueExecutor_.get());
     OP_CHECK(uniqueExecutor_ != nullptr, 
              OP_LOGE(ACLNN_ERR_INNER, "executor constructed failed."),
              throw std::bad_alloc());
@@ -1407,7 +1408,7 @@ aclnnStatus CommonOpExecutorRun(void *workspace, uint64_t workspaceSize, aclOpEx
         DeleteExecutorForError(executor);
         return ACLNN_ERR_PARAM_NULLPTR;
     }
-    OP_LOGI("Workspace addr: %p, size: %lu", workspace, workspaceSize);
+    OP_LOGI("Workspace addr: %p, size: %lu, executor: %p", workspace, workspaceSize, executor);
     GetCacheOpInfoSwitch(stream);
     OpExecCacheWrap *cache = GetOpExecCacheFromExecutor(executor);
     if (cache != nullptr) {
