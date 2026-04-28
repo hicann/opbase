@@ -861,10 +861,12 @@ public:
 #else
         static SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
 #endif
-        bool needAlign =
-            (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND950) ? false : true;
+        bool needAlign = (socVersion == SocVersion::ASCEND910B ||
+                          socVersion == SocVersion::ASCEND950 ||
+                          socVersion == SocVersion::ASCEND350) ? false : true;
         MemsetVersion memsetVersion =
-            (socVersion == SocVersion::ASCEND950) ? MemsetVersion::MEMSET_V1_ASCENDC : MemsetVersion::MEMSET_V1;
+            (socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND350) ?
+                MemsetVersion::MEMSET_V1_ASCENDC : MemsetVersion::MEMSET_V1;
         CHECK_RET_CODE(SelectMemsetOpBin(memsetVersion, memSetValue_.size(), memsetBin), "Select MemSet op failed");
 
         // for multi thread

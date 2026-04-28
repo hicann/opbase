@@ -88,7 +88,9 @@ const string &KernelLibInfo::GetOpFile() const
 // ============================== OpKernelLib ====================================
 static std::unordered_map<std::string, std::string> socOpMapV2 = {
     {"Ascend910_95", "ascend910_95/"},
-    {"Ascend950", "ascend950/"}
+    {"Ascend950", "ascend950/"},
+    {"Ascend350_354e", "ascend350/"},
+ 	{"Ascend350_354f", "ascend350/"}
 };
 
 static std::string emptyString = "";

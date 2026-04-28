@@ -239,6 +239,7 @@ void PlatformInfoImpl::InitSocVersion()
             {"Ascend310B", SocVersion::ASCEND310B},
             {"Ascend310C", SocVersion::ASCEND310C},
             {"Ascend310P", SocVersion::ASCEND310P},
+            {"Ascend350", SocVersion::ASCEND350},
             {"Ascend610Lite", SocVersion::ASCEND610LITE},
             {"KirinX90", SocVersion::KIRINX90},
             {"Kirin9030", SocVersion::KIRIN9030}};
@@ -442,6 +443,7 @@ ge::AscendString ToString(SocVersion socVersion)
         {SocVersion::ASCEND310, "Ascend310"},               // SocVersion::ASCEND310
         {SocVersion::ASCEND310B, "Ascend310B"},             // SocVersion::ASCEND310B
         {SocVersion::ASCEND310C, "Ascend310C"},             // SocVersion::ASCEND310C
+        {SocVersion::ASCEND350, "Ascend350"},             // SocVersion::ASCEND350
         {SocVersion::ASCEND310P, "Ascend310P"},             // SocVersion::ASCEND310P
         {SocVersion::ASCEND610LITE, "Ascend610Lite"},       // SocVersion::ASCEND610LITE
         {SocVersion::KIRINX90, "KirinX90"},                 // SocVersion::KIRINX90
