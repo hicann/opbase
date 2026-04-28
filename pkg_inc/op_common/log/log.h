@@ -697,7 +697,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. The correct one should
  * be [correctValue].
  */
-#define OP_LOGR_FOR_INVALID_VALUE(opName, paramName, incorrectValue, correctValue)                             \
+#define OP_LOGE_FOR_INVALID_VALUE(opName, paramName, incorrectValue, correctValue)                             \
     do {                                                                                                       \
         std::string _safe_opName_(opName);                                                                     \
         std::string _safe_paramName_(paramName);                                                               \
@@ -724,7 +724,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of operator [opName] has invalid list size [incorrectSize]. The correct one should
  * be [correctSize].
  */
-#define OP_LOGR_FOR_INVALID_LISTSIZE(opName, paramName, incorrectSize, correctSize)                          \
+#define OP_LOGE_FOR_INVALID_LISTSIZE(opName, paramName, incorrectSize, correctSize)                          \
     do {                                                                                                     \
         std::string _safe_opName_(opName);                                                                   \
         std::string _safe_paramName_(paramName);                                                             \
