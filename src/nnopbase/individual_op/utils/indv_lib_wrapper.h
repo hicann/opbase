@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef __NNOPBASE_LIB_WRAPPER_H__
-#define __NNOPBASE_LIB_WRAPPER_H__
+#ifndef INDV_LIB_WRAPPER_H_
+#define INDV_LIB_WRAPPER_H_
 
 #include <string>
 #include <vector>
@@ -18,6 +18,7 @@
 #include "mmpa/mmpa_api.h"
 #include "hccl/base.h"
 #include "aclnn/acl_meta.h"
+#include "acl/acl_rt.h"
 #include "utils/indv_debug_assert.h"
 
 namespace nnopbase {
@@ -446,6 +447,70 @@ private:
     std::unordered_map<std::string, void*> loadedLibraries;
     std::mutex mutex_;
 };
+
+class IndvRtsWrapper : public NnopBaseLoadSo {
+public:
+    static IndvRtsWrapper* GetInstance(void)
+    {
+        static IndvRtsWrapper instance;
+        static std::once_flag initFlag;
+        static bool initSuccess = false;
+        std::call_once(initFlag, [&]() {
+            initSuccess = (instance.IndvRtsWrapperInit() == OK);
+        });
+        return initSuccess ? &instance : nullptr;
+    }
+
+    aclnnStatus AclrtBinarySetExceptionCallback(void* binHandle, void* callback, void* userData = nullptr)
+    {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(rtsRegisterExceptionCallbackHandle);
+        auto ret = rtsRegisterExceptionCallbackHandle(binHandle,
+            reinterpret_cast<customOpExceptionCallback>(callback), userData);
+        if (ret != ACL_SUCCESS) {
+            OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the aclrtBinarySetExceptionCallback "
+                    "function of the acl_rt module, ret = %d, calback = %p.", ret, callback);
+            return ACLNN_ERR_INNER;
+        }
+        return OK;
+    }
+
+private:
+    using customOpExceptionCallback = void (*)(aclrtExceptionInfo *, void *);
+    using NnopbaseRegisterExceptionCallbackFunc = aclError (*)(void*, customOpExceptionCallback, void*);
+    
+    IndvRtsWrapper() {};
+    ~IndvRtsWrapper() override
+    {
+        rtsRegisterExceptionCallbackHandle = nullptr;
+        closeSo();
+    }
+
+    aclnnStatus IndvRtsWrapperInit()
+    {
+        rtsRegisterExceptionCallbackHandle = nullptr;
+        closeSo();
+        const char *ascendHomePath = nullptr;
+        MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
+        if (ascendHomePath == nullptr) {
+            OP_LOGE(ACLNN_ERR_INNER, "Environment variable %s is not set. Failed to load libacl_rt.so.",
+                    MM_ENV_ASCEND_HOME_PATH);
+            return ACLNN_ERR_INNER;
+        }
+        std::string rtsLibraryPath = std::string(ascendHomePath) + "/lib64/libacl_rt.so";
+        NNOPBASE_ASSERT_OK_RETVAL(openSo(rtsLibraryPath.c_str()));
+        NNOPBASE_ASSERT_OK_RETVAL(LoadFunctions());
+        return OK;
+    }
+
+    aclnnStatus LoadFunctions() override
+    {
+        rtsRegisterExceptionCallbackHandle =
+            LoadFunction<NnopbaseRegisterExceptionCallbackFunc>("aclrtBinarySetExceptionCallback");
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(rtsRegisterExceptionCallbackHandle);
+        return OK;
+    }
+    NnopbaseRegisterExceptionCallbackFunc rtsRegisterExceptionCallbackHandle = nullptr;
+};
 } // nnopbase
 
-#endif // __NNOPBASE_LIB_WRAPPER_H__
+#endif // INDV_LIB_WRAPPER_H_

@@ -100,6 +100,10 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     target_compile_definitions(ops_base PRIVATE
         BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG
     )
+    if(DEFINED PRODUCT_SIDE AND "${PRODUCT_SIDE}" STREQUAL "device")
+        message(STATUS ">>> Detected PRODUCT_SIDE=device, enabling device-specific features")
+        target_compile_definitions(ops_base PRIVATE PRODUCT_SIDE_IS_DEVICE=1)
+    endif()
 
     if(ENABLE_UT OR ENABLE_ST)
         add_subdirectory(tests)

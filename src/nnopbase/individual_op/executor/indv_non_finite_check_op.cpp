@@ -188,7 +188,8 @@ std::vector<const GertTensor *> GetNonFiniteCheckInputTensors(const NnopbaseTens
     std::vector<const GertTensor *> res;
     for (size_t i = 0U; i < tensors.num; i++) {
         const auto &tensor = tensors.extTensors[i];
-        if (tensor.isNull) {
+        if (tensor.isNull || tensor.rt2Tensor.GetShapeSize() == 0) {
+            OP_LOGD("OutputTensor[%zu] is nullptr or shape size is 0, skip checking.", i);
             continue;
         }
         if (tensor.rt2Tensor.GetDataType() == dtype) {

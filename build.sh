@@ -183,7 +183,6 @@ build_ops_base() {
     -DENABLE_ST=${ENABLE_ST} \
     -DBUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG=ON \
     -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-    -DPRODUCT_SIDE=device \
     -DDCMAKE_WGET_FLAGS='--no-check-certificate' \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DBUILD_MODE=${BUILD_MODE} \

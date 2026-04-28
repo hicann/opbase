@@ -16,8 +16,10 @@
 #include "executor/indv_compute_node_info.h"
 #include "executor/indv_non_finite_check_op.h"
 #include "executor/indv_tilingcontext_builder.h"
+#include "executor/indv_cache_key_builder.h"
 #include "utils/file_faker.h"
 #include "utils/indv_soc.h"
+#include "utils/thread_var_container.h"
 #include "individual_op_api.h"
 #include "depends/op/op_stub.h"
 #include "depends/profiler/profiler_stub.h"
@@ -1326,6 +1328,8 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheNoAttrkey)
     // set core num
     executor->coreNum.aicNum = 24;
     executor->coreNum.aivNum = 24;
+    MOCKER_CPP(nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread)
+        .stubs().will(returnValue((uint32_t)0U));
     nnopbase::ArgsPool::GetInstance().MatchArgs(executor);
     vector<NnopbaseUChar> exp(10240, '\0');
     auto key = &exp[0U];
@@ -1334,9 +1338,12 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheNoAttrkey)
     key = NnopbaseAppend1Byte(key, '/');
     uint32_t rankId = 0U;
     key = NnopbaseAppendBinary(key, 4, &rankId, 4);
+    bool deterministic = false;
+    key = NnopbaseAppend1Byte(key, '/');
+    key = NnopbaseAppend1Byte(key, deterministic);
     auto keyLen = key - &exp[0U];
     ASSERT_EQ(keyLen, executor->ownArgs.keyLen);
-    for (size_t i = 0; i < executor->ownArgs.keyLen - 5U; ++i) {
+    for (size_t i = 0; i < executor->ownArgs.keyLen; ++i) {
         ASSERT_EQ(executor->ownArgs.inputKey[i], exp[i]);
     }
 
@@ -1362,6 +1369,8 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheWithAttrkey)
     // set core num
     executor->coreNum.aicNum = 24;
     executor->coreNum.aivNum = 24;
+    MOCKER_CPP(nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread)
+        .stubs().will(returnValue((uint32_t)0U));
     nnopbase::ArgsPool::GetInstance().MatchArgs(executor);
     vector<NnopbaseUChar> exp(10240, '\0');
     auto key = &exp[0U];
@@ -1371,10 +1380,12 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheWithAttrkey)
     key = NnopbaseAppend1Byte(key, '/');
     uint32_t rankId = 0U;
     key = NnopbaseAppendBinary(key, 4, &rankId, 4);
-
+    bool deterministic = false;
+    key = NnopbaseAppend1Byte(key, '/');
+    key = NnopbaseAppend1Byte(key, deterministic);
     auto keyLen = key - &exp[0U];
     ASSERT_EQ(keyLen, executor->ownArgs.keyLen);
-    for (size_t i = 0; i < executor->ownArgs.keyLen - 5U; ++i) {
+    for (size_t i = 0; i < executor->ownArgs.keyLen; ++i) {
         ASSERT_EQ(executor->ownArgs.inputKey[i], exp[i]);
     }
 
@@ -1920,7 +1931,7 @@ TEST_F(NnopbaseExecutorUnitTest, TestInvalidStaticShape)
     intValues = std::vector<int64_t>(100000);
     executor = GetIntArrayExecutor(executorSpace, intValues.data(), intValues.size());
     opExecutor = (NnopbaseExecutor *)executor;
-    ASSERT_EQ(NnopbaseExecutorGenStaticKey(opExecutor), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseExecutorGenStaticKey(opExecutor, false), ACLNN_ERR_PARAM_INVALID);
     ASSERT_EQ(NnopbaseExecutorGetStaticBinInfo(opExecutor), false);
     
     NnopbaseExecutorGcSpace(executorSpace);
@@ -2248,7 +2259,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseGenPlaceHolderKey)
 {
     NnopbaseExecutorArgs args;
     args.remainKeyLen = 0;
-    NnopbaseGenPlaceHolderKey(&args, args.inputKey.data());
+    Indv::CacheKeyBuilder::AppendPlaceHolder(&args, args.inputKey.data());
     std::vector<int64_t> shape = {1, 3, 1, 1, 1};
     aclTensor *tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
                                         nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
@@ -2258,19 +2269,18 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseGenPlaceHolderKey)
     aclTensorList *tensorList = aclCreateTensorList(tensor_list.data(), tensor_list.size());
 
     args.remainKeyLen = 0;
-    NnopbaseAddShapeInfo(tensor, &args);
-    NnopbaseExecutorGenTensorListKey(&args, tensorList);
+    Indv::CacheKeyBuilder::AppendShapeInfo(&args, tensor);
+    Indv::CacheKeyBuilder::AppendTensorList(&args, tensorList);
     aclDestroyTensorList(tensorList);
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnopbaseAddCoreNumInfo)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseAppendCoreNum)
 {
     NnopbaseExecutorArgs args;
-
     NnopbaseCoreNum coreNum = {1, 2};
     args.remainKeyLen = 1;
     args.keyLen = 0;
-    NnopbaseUChar* key = NnopbaseAddCoreNumInfo(&coreNum, &args);
+    NnopbaseUChar* key = Indv::CacheKeyBuilder::AppendCoreNum(&args, &coreNum);
     ASSERT_EQ(sizeof(NnopbaseCoreNum) + 1, args.keyLen);
 }
 
@@ -2280,6 +2290,6 @@ TEST_F(NnopbaseExecutorUnitTest, AddRankIdToKeySuccess)
     uint32_t rankId = 0U;
     args.remainKeyLen = 1;
     args.keyLen = 0;
-    NnopbaseUChar* key = AddMc2RankIdInfoToKey(&rankId, &args);
+    NnopbaseUChar* key = Indv::CacheKeyBuilder::AppendMc2RankId(&args, &rankId);
     ASSERT_EQ(sizeof(uint32_t) + 1, args.keyLen);
 }
