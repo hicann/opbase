@@ -18,5 +18,8 @@ set(NNOPBASE_INDIVIDUAL_OP_INCLUDING_PATH
     ${ASCEND_INCLUDE_DIR}/external/ac
 )
 
+if(DEFINED PRODUCT_SIDE AND "${PRODUCT_SIDE}" STREQUAL "device")
+    target_compile_definitions(nnopbase PRIVATE PRODUCT_SIDE_IS_DEVICE=1)
+endif()
 target_sources(nnopbase PRIVATE ${NNOPBASE_INDIVIDUAL_OP_SRCS})
 target_include_directories(nnopbase PRIVATE ${NNOPBASE_INDIVIDUAL_OP_INCLUDING_PATH})

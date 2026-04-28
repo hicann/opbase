@@ -64,7 +64,6 @@ std::set<std::string> g_opTypeBlackList = {
     "ArgMinWithValue",
     "FusedInferAttentionScore",
     "GatherV2",
-    "GatherV3",
     "ArgMaxWithValue",
     "Range"
 };

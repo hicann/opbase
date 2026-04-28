@@ -12,6 +12,7 @@
 #include "indv_executor.h"
 #include "indv_tilingcontext_builder.h"
 #include "indv_args_pool.h"
+#include "indv_cache_key_builder.h"
 #include "op_dfx_internal.h"
 
 namespace nnopbase {
@@ -541,7 +542,7 @@ aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *cons
         NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data()) + executor->ownArgs.keyLen;
         // 第0个属性和输入中间用占位符隔开
         if (index == 0) {
-            key = NnopbaseGenPlaceHolderKey(&executor->ownArgs, key);
+            key = Indv::CacheKeyBuilder::AppendPlaceHolder(&executor->ownArgs, key);
         }
         if (executor->ownArgs.remainKeyLen < attrLen) {
             size_t multiples = attrLen / NNOPBASE_MAX_ARGS_KEY_LEN + 1;

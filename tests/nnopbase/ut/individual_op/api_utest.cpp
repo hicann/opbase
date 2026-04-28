@@ -18,6 +18,7 @@
 #include "executor/indv_collecter.h"
 #include "utils/file_faker.h"
 #include "utils/indv_soc.h"
+#include "utils/thread_var_container.h"
 #include "depends/dump/dump_stub.h"
 #include "depends/mmpa/mmpa_stub.h"
 #include "depends/op/op_stub.h"
@@ -409,7 +410,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseCacheDynamicIoKey)
     void *executor = GetDynamicInputExecutor(executorSpace);
     ASSERT_NE(executor, nullptr);
     NnopbaseExecutor *opExecutor = (NnopbaseExecutor *)executor;
-
+    MOCKER_CPP(nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread)
+            .stubs().will(returnValue((uint32_t)0U));
     // set core num
     opExecutor->coreNum.aicNum = 24;
     opExecutor->coreNum.aivNum = 24;
@@ -437,13 +439,20 @@ TEST_F(NnopbaseUnitTest, NnopBaseCacheDynamicIoKey)
     key = NnopbaseAppend1Byte(key, '/');
     key = NnopbaseAppend4Byte(key, 24);
     key = NnopbaseAppend4Byte(key, 24);
-    key = NnopbaseAppend1Byte(key, '/');
+
+    // rank id
     uint32_t rankId = 0U;
+    key = NnopbaseAppend1Byte(key, '/');
     key = NnopbaseAppendBinary(key, 4, &rankId, 4);
+
+    // determinisitic
+    bool deterministic = false;
+    key = NnopbaseAppend1Byte(key, '/');
+    key = NnopbaseAppend1Byte(key, deterministic);
 
     auto keyLen = key - &exp[0U];
     ASSERT_EQ(keyLen, opExecutor->ownArgs.keyLen);
-    for (size_t i = 0; i < opExecutor->ownArgs.keyLen - 5U; ++i) {
+    for (size_t i = 0; i < opExecutor->ownArgs.keyLen; ++i) {
         ASSERT_EQ(opExecutor->ownArgs.inputKey[i], exp[i]);
     }
 
