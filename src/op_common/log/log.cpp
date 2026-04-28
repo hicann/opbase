@@ -259,87 +259,87 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_Shape",
       "ErrCode": "EZ0001",
-      "ErrMessage": "OP[%s] %sth input has incorrect shape[: %s], it should be[: %s].",
+      "ErrMessage": "The %sth input of operator %s has incorrect shape [%s]. The correct one should be [%s].",
       "Arglist": "op_name, index, incorrect_shape, correct_shape",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check whether the input shape is correct.\n2. Dump GE Graph, find error node in graph and check the shape."
+        "Solution": "Check whether the shape of the input tensor is correct."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Attr",
       "ErrCode": "EZ0002",
-      "ErrMessage": "OP[%s] attr[: %s], has incorrect value[: %s], it should be[: %s].",
+      "ErrMessage": "Attribute %s of operator %s has incorrect value %s. The correct one should be %s.",
       "Arglist": "op_name, attr_name, incorrect_val, correct_val",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check the value of the attribute in this api."
+        "Solution": "Check whether the operator attribute is correct."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Attr_Size",
       "ErrCode": "EZ0003",
-      "ErrMessage": "OP[%s] attr[: %s], has incorrect size[: %s], it should be[: %s].",
+      "ErrMessage": "Attribute %s of operator %s has incorrect size %s. The correct one should be %s.",
       "Arglist": "op_name, attr_name, incorrect_size, correct_size",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check the size of the attribute in this api"
+        "Solution": "Check whether the operator attribute is correct."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input",
       "ErrCode": "EZ0004",
-      "ErrMessage": "OP[%s] get [%s] failed.",
+      "ErrMessage": "Parameter %s of operator %s is required, but it is empty.",
       "Arglist": "op_name, param_name",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check the input information of the operator.\n2. Dump GE Graph and check the input in graph."
+        "Solution": "Check whether the requied parameters of the operator are correctly set."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_ShapeSize",
       "ErrCode": "EZ0005",
-      "ErrMessage": "OP[%s] %sth input has incorrect shape size[: %s], it should be[: %s].",
+      "ErrMessage": "The %sth input of operator %s has incorrect shape size %s. The correct one should be %s.",
       "Arglist": "op_name, index, incorrect_size, correct_size",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check input dimensions.\n2. Dump GE Graph, find error node in graph and check input dimension."
+        "Solution": "Check whether the shape of the input tensor is correct."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_Format",
       "ErrCode": "EZ0006",
-      "ErrMessage": "OP[%s] %s has incorrect format[: %s], it should be %s.",
+      "ErrMessage": "Input parameter %s of operator %s has incorrect format %s. The correct one should be %s.",
       "Arglist": "op_name, param_name, data_format, expected_format_list",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check input format.\n2. Dump GE Graph, find error node in graph and check input format."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_Dtype",
       "ErrCode": "EZ0007",
-      "ErrMessage": "OP[%s] %s has incorrect dtype[: %s], it should be %s.",
+      "ErrMessage": "Input parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",
       "Arglist": "op_name, param_name, data_dtype, expected_dtype_list",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check input dtype.\n2. Dump GE Graph, find error node in graph and check input dtype."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0008",
-      "ErrMessage": "OP %s's parameter %s has incorrect shape [%s], it should be [%s].",
+      "ErrMessage": "Parameter %s of operator %s has incorrect shape [%s]. The correct one should be [%s].",
       "Arglist": "op_name, param_name, incorrect_shape, correct_shape",
       "suggestion": {
-        "Possible Cause": "Parameter tensor shape does not match expected shape.",
+        "Possible Cause": "N/A",
         "Solution": "Check whether the shape of input/output tensor is correct."
       }
     },
@@ -347,10 +347,10 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0009",
-      "ErrMessage": "OP %s's parameter %s has incorrect shape [%s]. Reason: %s.",
+      "ErrMessage": "Parameter %s of operator %s has incorrect shape [%s]. Reason: %s.",
       "Arglist": "op_name, param_name, incorrect_shape, reason",
       "suggestion": {
-        "Possible Cause": "Parameter tensor shape validation failed.",
+        "Possible Cause": "N/A",
         "Solution": "Check whether the shape of input/output tensor is correct."
       }
     },
@@ -358,21 +358,21 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0010",
-      "ErrMessage": "OP %s's parameters %s have incorrect shapes %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of operator %s have incorrect shapes %s. Reason: %s.",
       "Arglist": "op_name, param_names, incorrect_shapes, reason",
       "suggestion": {
-        "Possible Cause": "Multiple parameter tensors have shape validation failures.",
-        "Solution": "Check whether the shapes of input/output tensors meet the requirements."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the shapes of input/output tensors meet the relationship."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Dim",
       "ErrCode": "EZ0011",
-      "ErrMessage": "OP %s's parameter %s has incorrect shape dim %s, it should be %s.",
+      "ErrMessage": "Parameter %s of operator %s has incorrect shape dim %s. The correct one should be %s.",
       "Arglist": "op_name, param_name, incorrect_dim, correct_dim",
       "suggestion": {
-        "Possible Cause": "Parameter tensor dimension does not match expected dimension.",
+        "Possible Cause": "N/A",
         "Solution": "Check whether the shape dimension of input/output tensor is correct."
       }
     },
@@ -380,10 +380,10 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Dim",
       "ErrCode": "EZ0012",
-      "ErrMessage": "OP %s's parameter %s has incorrect shape dim %s. Reason: %s.",
+      "ErrMessage": "Parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",
       "Arglist": "op_name, param_name, incorrect_dim, reason",
       "suggestion": {
-        "Possible Cause": "Parameter tensor dimension validation failed.",
+        "Possible Cause": "N/A",
         "Solution": "Check whether the shape dimension of input/output tensor is correct."
       }
     },
@@ -391,21 +391,21 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Dim",
       "ErrCode": "EZ0013",
-      "ErrMessage": "OP %s's parameters %s have incorrect shape dims %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of operator %s have incorrect shape dims %s. Reason: %s.",
       "Arglist": "op_name, param_names, incorrect_dims, reason",
       "suggestion": {
-        "Possible Cause": "Multiple parameter tensors have dimension validation failures.",
-        "Solution": "Check whether the shape dimensions of input/output tensors meet the requirements."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the shape dimensions of input/output tensors meet the relationship."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Size",
       "ErrCode": "EZ0014",
-      "ErrMessage": "OP %s's parameter %s has incorrect shape size %s, it should be %s.",
+      "ErrMessage": "Parameter %s of operator %s has incorrect shape size %s. The correct one should be %s.",
       "Arglist": "op_name, param_name, incorrect_size, correct_size",
       "suggestion": {
-        "Possible Cause": "Parameter tensor size does not match expected size.",
+        "Possible Cause": "N/A",
         "Solution": "Check whether the shape size of input/output tensor is correct."
       }
     },
@@ -413,110 +413,143 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Size",
       "ErrCode": "EZ0015",
-      "ErrMessage": "OP %s's parameters %s have incorrect shape sizes %s. Reason: %s.",
-      "Arglist": "op_name, param_names, incorrect_sizes, reason",
+      "ErrMessage": "Parameter %s of operator %s has incorrect shape size %s. Reason: %s.",
+      "Arglist": "op_name, param_name, incorrect_size, reason",
       "suggestion": {
-        "Possible Cause": "Multiple parameter tensors have size validation failures.",
-        "Solution": "Check whether the shape sizes of input/output tensors meet the requirements."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the shape size of input/output tensor meets the condition."
       }
     },
     {
       "errClass": "Operator Errors",
-      "errTitle": "Invalid_Argument_Tensor_Format",
+      "errTitle": "Invalid_Argument_Tensor_Shape_Size",
       "ErrCode": "EZ0016",
-      "ErrMessage": "OP %s's parameter %s has incorrect format %s, it should be %s.",
-      "Arglist": "op_name, param_name, incorrect_format, correct_format",
+      "ErrMessage": "Parameters %s of operator %s have incorrect shape sizes %s. Reason: %s.",
+      "Arglist": "op_name, param_names, incorrect_sizes, reason",
       "suggestion": {
-        "Possible Cause": "Parameter tensor format does not match expected format.",
-        "Solution": "Check whether the format of input/output tensor is correct."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the shape sizes of input/output tensors meet the relationship."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Format",
       "ErrCode": "EZ0017",
-      "ErrMessage": "OP %s's parameters %s have incorrect formats %s. Reason: %s.",
-      "Arglist": "op_name, param_names, incorrect_formats, reason",
+      "ErrMessage": "Parameter %s of operator %s has incorrect format %s. The correct one should be %s.",
+      "Arglist": "op_name, param_name, incorrect_format, correct_format",
       "suggestion": {
-        "Possible Cause": "Multiple parameter tensors have format validation failures.",
-        "Solution": "Check whether the formats of input/output tensors meet the conditions."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the format of input/output tensor is correct."
       }
     },
     {
       "errClass": "Operator Errors",
-      "errTitle": "Invalid_Argument_Tensor_Dtype",
+      "errTitle": "Invalid_Argument_Tensor_Format",
       "ErrCode": "EZ0018",
-      "ErrMessage": "OP %s's parameter %s has incorrect dtype %s, it should be %s.",
-      "Arglist": "op_name, param_name, incorrect_dtype, correct_dtype",
+      "ErrMessage": "Parameters %s of operator %s have incorrect formats %s. Reason: %s.",
+      "Arglist": "op_name, param_names, incorrect_formats, reason",
       "suggestion": {
-        "Possible Cause": "Parameter tensor data type does not match expected dtype.",
-        "Solution": "Check whether the dtype of input/output tensor is correct."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the formats of input/output tensors meet the condition."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Dtype",
       "ErrCode": "EZ0019",
-      "ErrMessage": "OP %s's parameter %s has incorrect dtype %s. Reason: %s.",
-      "Arglist": "op_name, param_name, incorrect_dtype, reason",
+      "ErrMessage": "Parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",
+      "Arglist": "op_name, param_name, incorrect_dtype, correct_dtype",
       "suggestion": {
-        "Possible Cause": "Parameter tensor data type validation failed.",
-        "Solution": "Check whether the dtype of input/output tensor meets the conditions."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the dtype of input/output tensor is correct."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Dtype",
       "ErrCode": "EZ0020",
-      "ErrMessage": "OP %s's parameters %s have incorrect dtypes %s. Reason: %s.",
-      "Arglist": "op_name, param_names, incorrect_dtypes, reason",
+      "ErrMessage": "Parameter %s of operator %s has incorrect dtype %s. Reason: %s.",
+      "Arglist": "op_name, param_name, incorrect_dtype, reason",
       "suggestion": {
-        "Possible Cause": "Multiple parameter tensors have data type validation failures.",
-        "Solution": "Check whether the dtypes of input/output tensors meet the conditions."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the dtype of input/output tensor meets the condition."
       }
     },
     {
       "errClass": "Operator Errors",
-      "errTitle": "Invalid_Argument",
+      "errTitle": "Invalid_Argument_Tensor_Dtype",
       "ErrCode": "EZ0021",
-      "ErrMessage": "OP %s's parameter %s has invalid tensor num %ld, it should be %s.",
-      "Arglist": "op_name, param_name, incorrect_num, correct_num",
+      "ErrMessage": "Parameters %s of operator %s have incorrect dtypes %s. Reason: %s.",
+      "Arglist": "op_name, param_names, incorrect_dtypes, reason",
       "suggestion": {
-        "Possible Cause": "Parameter tensor count does not match expected number.",
-        "Solution": "Check whether the tensor number of input tensorlist meets the conditions."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the dtypes of input/output tensors meet the condition."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0022",
-      "ErrMessage": "OP %s's parameters %s have invalid tensor nums %s. Reason: %s.",
-      "Arglist": "op_name, param_names, incorrect_nums, reason",
+      "ErrMessage": "Parameter %s of operator %s has invalid tensor num %ld. The correct one should be %s.",
+      "Arglist": "op_name, param_name, incorrect_num, correct_num",
       "suggestion": {
-        "Possible Cause": "Multiple parameter tensor count validations failed.",
-        "Solution": "Check whether the tensor numbers of input tensorlists meet the conditions."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the number of tensor in the input tensor list meets the condition."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0023",
-      "ErrMessage": "OP %s's parameter %s has incorrect value %s. Reason: %s.",
-      "Arglist": "op_name, param_name, incorrect_value, reason",
+      "ErrMessage": "Parameters %s of operator %s have invalid tensor nums %s. Reason: %s.",
+      "Arglist": "op_name, param_names, incorrect_nums, reason",
       "suggestion": {
-        "Possible Cause": "Parameter value validation failed.",
-        "Solution": "Check whether the parameter value is correct."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the number of tensors in the input tensor lists meets the conditions."
       }
     },
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0024",
-      "ErrMessage": "OP %s's parameters %s have incorrect values %s. Reason: %s.",
+      "ErrMessage": "Parameter %s of operator %s has incorrect value %s. The correct one should be %s.",
+      "Arglist": "op_name, param_name, incorrect_value, correct_value",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the parameter value is correct."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument",
+      "ErrCode": "EZ0025",
+      "ErrMessage": "Parameter %s of operator %s has invalid list size %s. The correct one should be %s.",
+      "Arglist": "op_name, param_name, incorrect_size, correct_size",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the parameter list size is correct."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument",
+      "ErrCode": "EZ0026",
+      "ErrMessage": "Parameter %s of operator %s has incorrect value %s. Reason: %s.",
+      "Arglist": "op_name, param_name, incorrect_value, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the parameter value is correct."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument",
+      "ErrCode": "EZ0027",
+      "ErrMessage": "Parameters %s of operator %s have incorrect values %s. Reason: %s.",
       "Arglist": "op_name, param_names, incorrect_values, reason",
       "suggestion": {
-        "Possible Cause": "Multiple parameter value validations failed.",
-        "Solution": "Check whether the parameter values meet the conditions."
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the parameter values meet the condition."
       }
     }
   ]

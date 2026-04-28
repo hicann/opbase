@@ -134,16 +134,22 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * index:int
  * incorrectShape:string
  * correctShape:string
- * errMessage:OP[opName] indexth input has incorrect shape[incorrectShape], it should be[correctShape].
+ * errMessage:The [index]th input of operator [opName] has incorrect shape [incorrectShape]. The correct one should be
+ * [correctShape].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_SHAPE(opName, index, incorrectShape, correctShape)                              \
     do {                                                                                                           \
+        std::string _safe_opName_(opName);                                                                         \
+        std::string _safe_incorrectShape_(incorrectShape);                                                         \
+        std::string _safe_correctShape_(correctShape);                                                             \
         std::string index_str = std::to_string(index);                                                             \
         OP_LOGE_WITHOUT_REPORT(                                                                                    \
-            opName, "OP[%s] %sth input has incorrect shape[: %s], it should be[: %s].", opName, index_str.c_str(), \
-            incorrectShape, correctShape);                                                                         \
+            _safe_opName_.c_str(),                                                                                 \
+            "The %sth input of operator %s has incorrect shape [%s]. The correct one should be [%s].",             \
+            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()); \
         const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_shape", "correct_shape"};          \
-        const std::vector<const char*> msgvalue = {opName, index_str.c_str(), incorrectShape, correctShape};       \
+        const std::vector<const char*> msgvalue = {                                                                \
+            _safe_opName_.c_str(), index_str.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0001", msgKey, msgvalue);                                                     \
     } while (0)
 
@@ -152,16 +158,23 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * attrName:string
  * incorrectVal:string
  * correctVal:string
- * errMessage:OP[opName] attr[: attrName], has incorrect value[: incorrectVal], it should be[: correctVal].
+ * errMessage:Attribute [attrName] of operator [opName] has incorrect value [incorrectVal]. The correct one should be
+ * [correctVal].
  */
-#define OP_LOGE_WITH_INVALID_ATTR(opName, attrName, incorrectVal, correctVal)                              \
-    do {                                                                                                   \
-        OP_LOGE_WITHOUT_REPORT(                                                                            \
-            opName, "OP[%s] attr[: %s], has incorrect value[: %s], it should be[: %s].", opName, attrName, \
-            incorrectVal, correctVal);                                                                     \
-        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_val", "correct_val"};  \
-        const std::vector<const char*> msgvalue = {opName, attrName, incorrectVal, correctVal};            \
-        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                             \
+#define OP_LOGE_WITH_INVALID_ATTR(opName, attrName, incorrectVal, correctVal)                                        \
+    do {                                                                                                             \
+        std::string _safe_opName_(opName);                                                                           \
+        std::string _safe_attrName_(attrName);                                                                       \
+        std::string _safe_incorrectVal_(incorrectVal);                                                               \
+        std::string _safe_correctVal_(correctVal);                                                                   \
+        OP_LOGE_WITHOUT_REPORT(                                                                                      \
+            _safe_opName_.c_str(),                                                                                   \
+            "Attribute %s of operator %s has incorrect value %s. The correct one should be %s.",                     \
+            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_val", "correct_val"};            \
+        const std::vector<const char*> msgvalue = {                                                                  \
+            _safe_opName_.c_str(), _safe_attrName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -169,29 +182,39 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * attrName:string
  * incorrectSize:string
  * correctSize:string
- * errMessage:OP[opName] attr[: attrName], has incorrect size[: incorrectSize], it should be[: correctSize].
+ * errMessage:Attribute [attrName] of operator [opName] has incorrect size [incorrectSize]. The correct one should be
+ * [correctSize].
  */
-#define OP_LOGE_WITH_INVALID_ATTR_SIZE(opName, attrName, incorrectSize, correctSize)                        \
-    do {                                                                                                    \
-        OP_LOGE_WITHOUT_REPORT(                                                                             \
-            opName, "OP[%s] attr[: %s], has incorrect size[: %s], it should be[: %s].", opName, attrName,   \
-            incorrectSize, correctSize);                                                                    \
-        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_size", "correct_size"}; \
-        const std::vector<const char*> msgvalue = {opName, attrName, incorrectSize, correctSize};           \
-        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                              \
+#define OP_LOGE_WITH_INVALID_ATTR_SIZE(opName, attrName, incorrectSize, correctSize)                                   \
+    do {                                                                                                               \
+        std::string _safe_opName_(opName);                                                                             \
+        std::string _safe_attrName_(attrName);                                                                         \
+        std::string _safe_incorrectSize_(incorrectSize);                                                               \
+        std::string _safe_correctSize_(correctSize);                                                                   \
+        OP_LOGE_WITHOUT_REPORT(                                                                                        \
+            _safe_opName_.c_str(), "Attribute %s of operator %s has incorrect size %s. The correct one should be %s.", \
+            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_size", "correct_size"};            \
+        const std::vector<const char*> msgvalue = {                                                                    \
+            _safe_opName_.c_str(), _safe_attrName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
  * opName:string
  * paramName:string
- * errMessage:OP[opName] get [paramName] failed.
+ * errMessage:Parameter [paramName] of operator [opName] is required, but it is empty.
  */
-#define OP_LOGE_WITH_INVALID_INPUT(opName, paramName)                                 \
-    do {                                                                              \
-        OP_LOGE_WITHOUT_REPORT(opName, "OP[%s] get [%s] failed.", opName, paramName); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name"};            \
-        const std::vector<const char*> msgvalue = {opName, param_name};               \
-        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                        \
+#define OP_LOGE_WITH_INVALID_INPUT(opName, paramName)                                                \
+    do {                                                                                             \
+        std::string _safe_opName_(opName);                                                           \
+        std::string _safe_paramName_(paramName);                                                     \
+        OP_LOGE_WITHOUT_REPORT(                                                                      \
+            _safe_opName_.c_str(), "Parameter %s of operator %s is required, but it is empty.", \
+            _safe_paramName_.c_str(), _safe_opName_.c_str());                                        \
+        const std::vector<const char*> msgKey = {"op_name", "param_name"};                           \
+        const std::vector<const char*> msgvalue = {_safe_opName_.c_str(), _safe_paramName_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                                       \
     } while (0)
 
 /**
@@ -199,17 +222,23 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * index:int
  * incorrectSize:string
  * correctSize:string
- * errMessage:OP[opName] indexth input has incorrect shape size[: incorrectSize], it should be[: correctSize].
+ * errMessage:The [index]th input of operator [opName] has incorrect shape size [incorrectSize]. The correct one should
+ * be [correctSize].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(opName, index, incorrectSize, correctSize)                    \
-    do {                                                                                                   \
-        std::string index_str = std::to_string(index);                                                     \
-        OP_LOGE_WITHOUT_REPORT(                                                                            \
-            opName, "OP[%s] %sth input has incorrect shape size[: %s], it should be[: %s].", opName,       \
-            index_str.c_str(), incorrectSize, correctSize);                                                \
-        const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_size", "correct_size"};    \
-        const std::vector<const char*> msgvalue = {opName, index_str.c_str(), incorrectSize, correctSize}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                             \
+#define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(opName, index, incorrectSize, correctSize)                          \
+    do {                                                                                                         \
+        std::string _safe_opName_(opName);                                                                       \
+        std::string _safe_incorrectSize_(incorrectSize);                                                         \
+        std::string _safe_correctSize_(correctSize);                                                             \
+        std::string index_str = std::to_string(index);                                                           \
+        OP_LOGE_WITHOUT_REPORT(                                                                                  \
+            _safe_opName_.c_str(),                                                                               \
+            "The %sth input of operator %s has incorrect shape size %s. The correct one should be %s.",          \
+            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_size", "correct_size"};          \
+        const std::vector<const char*> msgvalue = {                                                              \
+            _safe_opName_.c_str(), index_str.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                                   \
     } while (0)
 
 /**
@@ -217,15 +246,24 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string
  * dataFormat:string
  * expectedFormatList:string
- * errMessage:OP[opName] paramName has incorrect format[: dataFormat], it should be expectedFormatList.
+ * errMessage:Input parameter [paramName] of operator [opName] has incorrect format [dataFormat]. The correct one should
+ * be [expectedFormatList].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_FORMAT(opName, paramName, dataFormat, expectedFormatList)                      \
     do {                                                                                                          \
+        std::string _safe_opName_(opName);                                                                        \
+        std::string _safe_paramName_(paramName);                                                                  \
+        std::string _safe_dataFormat_(dataFormat);                                                                \
+        std::string _safe_expectedFormatList_(expectedFormatList);                                                \
         OP_LOGE_WITHOUT_REPORT(                                                                                   \
-            opName, "OP[%s] %s has incorrect format[: %s], it should be %s.", opName, paramName, dataFormat,      \
-            expectedFormatList);                                                                                  \
+            _safe_opName_.c_str(),                                                                                \
+            "Input parameter %s of operator %s has incorrect format %s. The correct one should be %s.",           \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataFormat_.c_str(),                           \
+            _safe_expectedFormatList_.c_str());                                                                   \
         const std::vector<const char*> msgKey = {"op_name", "param_name", "data_format", "expected_format_list"}; \
-        const std::vector<const char*> msgvalue = {opName, paramName, dataFormat, expectedFormatList};            \
+        const std::vector<const char*> msgvalue = {                                                               \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_dataFormat_.c_str(),                           \
+            _safe_expectedFormatList_.c_str()};                                                                   \
         REPORT_PREDEFINED_ERR_MSG("EZ0006", msgKey, msgvalue);                                                    \
     } while (0)
 
@@ -234,15 +272,24 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string
  * dataDtype:string
  * expectedDtypeList:string
- * errMessage:OP[opName] paramName has incorrect dtype[: dataDtype], it should be expectedDtypeList.
+ * errMessage:Input parameter [paramName] of operator [opName] has incorrect dtype [dataDtype]. The correct one should
+ * be [expectedDtypeList].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_DTYPE(opName, paramName, dataDtype, expectedDtypeList)                       \
     do {                                                                                                        \
+        std::string _safe_opName_(opName);                                                                      \
+        std::string _safe_paramName_(paramName);                                                                \
+        std::string _safe_dataDtype_(dataDtype);                                                                \
+        std::string _safe_expectedDtypeList_(expectedDtypeList);                                                \
         OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP[%s] %s has incorrect dtype[: %s], it should be %s.", opName, paramName, dataDtype,      \
-            expectedDtypeList);                                                                                 \
+            _safe_opName_.c_str(),                                                                              \
+            "Input parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",          \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataDtype_.c_str(),                          \
+            _safe_expectedDtypeList_.c_str());                                                                  \
         const std::vector<const char*> msgKey = {"op_name", "param_name", "data_dtype", "expected_dtype_list"}; \
-        const std::vector<const char*> msgvalue = {opName, paramName, dataDtype, expectedDtypeList};            \
+        const std::vector<const char*> msgvalue = {                                                             \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_dataDtype_.c_str(),                          \
+            _safe_expectedDtypeList_.c_str()};                                                                  \
         REPORT_PREDEFINED_ERR_MSG("EZ0007", msgKey, msgvalue);                                                  \
     } while (0)
 
@@ -257,15 +304,24 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectShape:string - Actual shape, format like "[1,128,128]"
  * correctShape:string - Expected shape, format like "[1,256,256]"
- * errMessage: OP opName's parameter paramName has incorrect shape [incorrectShape], it should be [correctShape].
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape [incorrectShape]. The correct one should
+ * be [correctShape].
  */
-#define OP_LOGE_FOR_INVALID_SHAPE(opName, paramName, incorrectShape, correctShape)                            \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect shape [%s], it should be [%s].", opName, paramName,    \
-            incorrectShape, correctShape);                                                                     \
+#define OP_LOGE_FOR_INVALID_SHAPE(opName, paramName, incorrectShape, correctShape)                             \
+    do {                                                                                                       \
+        std::string _safe_opName_(opName);                                                                     \
+        std::string _safe_paramName_(paramName);                                                               \
+        std::string _safe_incorrectShape_(incorrectShape);                                                     \
+        std::string _safe_correctShape_(correctShape);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                \
+            _safe_opName_.c_str(),                                                                             \
+            "Parameter %s of operator %s has incorrect shape [%s]. The correct one should be [%s].",           \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
+            _safe_correctShape_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "correct_shape"}; \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectShape, correctShape};           \
+        const std::vector<const char*> msgvalue = {                                                            \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectShape_.c_str(),                    \
+            _safe_correctShape_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                 \
     } while (0)
 
@@ -275,16 +331,21 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectShape:string - Actual incorrect shape, format like "[1,128]"
  * reason:string - Reason for the error
- * errMessage: OP opName's parameter paramName has incorrect shape [incorrectShape]. Reason: reason.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape [incorrectShape]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(opName, paramName, incorrectShape, reason)                    \
-    do {                                                                                                      \
-        OP_LOGE_WITHOUT_REPORT(                                                                               \
-            opName, "OP %s's parameter %s has incorrect shape [%s]. Reason: %s.", opName, paramName,          \
-            incorrectShape, reason);                                                                          \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "reason"};      \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectShape, reason};                \
-        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                                \
+#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(opName, paramName, incorrectShape, reason)                            \
+    do {                                                                                                            \
+        std::string _safe_opName_(opName);                                                                          \
+        std::string _safe_paramName_(paramName);                                                                    \
+        std::string _safe_incorrectShape_(incorrectShape);                                                          \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape [%s]. Reason: %s.",             \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                 \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -293,16 +354,21 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramNames:string - Parameter names
  * incorrectShapes:string - Actual incorrect shapes
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have incorrect shapes incorrectShapes. Reason: reason.
+ * errMessage: Parameters [paramNames] of operator [opName] have incorrect shapes [incorrectShapes]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, paramNames, incorrectShapes, reason)                      \
-    do {                                                                                                          \
-        OP_LOGE_WITHOUT_REPORT(                                                                                   \
-            opName, "OP %s's parameters %s have incorrect shapes %s. Reason: %s.", opName, paramNames,            \
-            incorrectShapes, reason);                                                                             \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_shapes", "reason"};         \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectShapes, reason};                  \
-        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                    \
+#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, paramNames, incorrectShapes, reason)                           \
+    do {                                                                                                              \
+        std::string _safe_opName_(opName);                                                                            \
+        std::string _safe_paramNames_(paramNames);                                                                    \
+        std::string _safe_incorrectShapes_(incorrectShapes);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shapes %s. Reason: %s.",              \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_shapes", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                   \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -311,16 +377,23 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectDim:string - Actual dimension, format like "2D" or "3D"
  * correctDim:string - Expected dimension, format like "4D"
- * errMessage: OP opName's parameter paramName has incorrect shape dim incorrectDim, it should be correctDim.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape dim [incorrectDim]. The correct one should
+ * be [correctDim].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIM(opName, paramName, incorrectDim, correctDim)                              \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect shape dim %s, it should be %s.", opName, paramName,     \
-            incorrectDim, correctDim);                                                                         \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "correct_dim"};     \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDim, correctDim};               \
-        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_SHAPEDIM(opName, paramName, incorrectDim, correctDim)                                     \
+    do {                                                                                                              \
+        std::string _safe_opName_(opName);                                                                            \
+        std::string _safe_paramName_(paramName);                                                                      \
+        std::string _safe_incorrectDim_(incorrectDim);                                                                \
+        std::string _safe_correctDim_(correctDim);                                                                    \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            _safe_opName_.c_str(),                                                                                    \
+            "Parameter %s of operator %s has incorrect shape dim %s. The correct one should be %s.",                  \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "correct_dim"};            \
+        const std::vector<const char*> msgvalue = {                                                                   \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -329,16 +402,21 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectDim:string - Actual incorrect dimension
  * reason:string - Reason for the error
- * errMessage: OP opName's parameter paramName has incorrect shape dim incorrectDim. Reason: reason.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape dim [incorrectDim]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName, paramName, incorrectDim, reason)                     \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect shape dim %s. Reason: %s.", opName, paramName,         \
-            incorrectDim, reason);                                                                             \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "reason"};         \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDim, reason};                  \
-        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                \
+#define OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName, paramName, incorrectDim, reason)                         \
+    do {                                                                                                          \
+        std::string _safe_opName_(opName);                                                                        \
+        std::string _safe_paramName_(paramName);                                                                  \
+        std::string _safe_incorrectDim_(incorrectDim);                                                            \
+        std::string _safe_reason_(reason);                                                                        \
+        OP_LOGE_WITHOUT_REPORT(                                                                                   \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",         \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                               \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                    \
     } while (0)
 
 /**
@@ -347,16 +425,21 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramNames:string - Parameter names
  * incorrectDims:string - Actual incorrect dimensions
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have incorrect shape dims incorrectDims. Reason: reason.
+ * errMessage: Parameters [paramNames] of operator [opName] have incorrect shape dims [incorrectDims]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(opName, paramNames, incorrectDims, reason)                    \
-    do {                                                                                                          \
-        OP_LOGE_WITHOUT_REPORT(                                                                                   \
-            opName, "OP %s's parameters %s have incorrect shape dims %s. Reason: %s.", opName, paramNames,         \
-            incorrectDims, reason);                                                                               \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dims", "reason"};           \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectDims, reason};                    \
-        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                                    \
+#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(opName, paramNames, incorrectDims, reason)                        \
+    do {                                                                                                            \
+        std::string _safe_opName_(opName);                                                                          \
+        std::string _safe_paramNames_(paramNames);                                                                  \
+        std::string _safe_incorrectDims_(incorrectDims);                                                            \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shape dims %s. Reason: %s.",        \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dims", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                 \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -365,197 +448,344 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectSize:string - Actual size (total element count)
  * correctSize:string - Expected size (total element count)
- * errMessage: OP opName's parameter paramName has incorrect shape size incorrectSize, it should be correctSize.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape size [incorrectSize]. The correct one
+ * should be [correctSize].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZE(opName, paramName, incorrectSize, correctSize)                          \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect shape size %s, it should be %s.", opName, paramName,    \
-            incorrectSize, correctSize);                                                                       \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "correct_size"};  \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectSize, correctSize};             \
-        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_SHAPESIZE(opName, paramName, incorrectSize, correctSize)                         \
+    do {                                                                                                     \
+        std::string _safe_opName_(opName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                             \
+        std::string _safe_incorrectSize_(incorrectSize);                                                     \
+        std::string _safe_correctSize_(correctSize);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                              \
+            _safe_opName_.c_str(),                                                                           \
+            "Parameter %s of operator %s has incorrect shape size %s. The correct one should be %s.",        \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_correctSize_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgvalue = {                                                          \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_correctSize_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                               \
     } while (0)
 
 /**
- * EZ0015: Parameters shape size error (multiple parameters, with reason)
+ * EZ0015: Parameter shape size error (single parameter, with reason)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectSize:string - Actual incorrect shape size
+ * reason:string - Reason for the error
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape size [incorrectSize]. Reason: [reason].
+ */
+#define OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName, paramName, incorrectSize, reason)                        \
+    do {                                                                                                           \
+        std::string _safe_opName_(opName);                                                                         \
+        std::string _safe_paramName_(paramName);                                                                   \
+        std::string _safe_incorrectSize_(incorrectSize);                                                           \
+        std::string _safe_reason_(reason);                                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                    \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape size %s. Reason: %s.",         \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                     \
+    } while (0)
+
+/**
+ * EZ0016: Parameters shape size error (multiple parameters, with reason)
  * opName:string - Operator name
  * paramNames:string - Parameter names
  * incorrectSizes:string - Actual incorrect sizes
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have incorrect shape sizes incorrectSizes. Reason: reason.
+ * errMessage: Parameters [paramNames] of operator [opName] have incorrect shape sizes [incorrectSizes]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(opName, paramNames, incorrectSizes, reason)                     \
-    do {                                                                                                            \
-        OP_LOGE_WITHOUT_REPORT(                                                                                     \
-            opName, "OP %s's parameters %s have incorrect shape sizes %s. Reason: %s.", opName, paramNames,         \
-            incorrectSizes, reason);                                                                                 \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_sizes", "reason"};            \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectSizes, reason};                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(opName, paramNames, incorrectSizes, reason)                       \
+    do {                                                                                                             \
+        std::string _safe_opName_(opName);                                                                           \
+        std::string _safe_paramNames_(paramNames);                                                                   \
+        std::string _safe_incorrectSizes_(incorrectSizes);                                                           \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_WITHOUT_REPORT(                                                                                      \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shape sizes %s. Reason: %s.",        \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_sizes", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                  \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
- * EZ0016: Parameter format error (single parameter, with correct format)
+ * EZ0017: Parameter format error (single parameter, with correct format)
  * opName:string - Operator name
  * paramName:string - Parameter name
  * incorrectFormat:string - Actual format (e.g., "NHWC")
  * correctFormat:string - Expected format (e.g., "NCHW")
- * errMessage: OP opName's parameter paramName has incorrect format incorrectFormat, it should be correctFormat.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect format [incorrectFormat]. The correct one should
+ * be [correctFormat].
  */
-#define OP_LOGE_FOR_INVALID_FORMAT(opName, paramName, incorrectFormat, correctFormat)                          \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect format %s, it should be %s.", opName, paramName,       \
-            incorrectFormat, correctFormat);                                                                   \
+#define OP_LOGE_FOR_INVALID_FORMAT(opName, paramName, incorrectFormat, correctFormat)                            \
+    do {                                                                                                         \
+        std::string _safe_opName_(opName);                                                                       \
+        std::string _safe_paramName_(paramName);                                                                 \
+        std::string _safe_incorrectFormat_(incorrectFormat);                                                     \
+        std::string _safe_correctFormat_(correctFormat);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                  \
+            _safe_opName_.c_str(),                                                                               \
+            "Parameter %s of operator %s has incorrect format %s. The correct one should be %s.",                \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
+            _safe_correctFormat_.c_str());                                                                       \
         const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_format", "correct_format"}; \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectFormat, correctFormat};         \
-        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                 \
+        const std::vector<const char*> msgvalue = {                                                              \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
+            _safe_correctFormat_.c_str()};                                                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                   \
     } while (0)
 
 /**
- * EZ0017: Parameters format error (multiple parameters, with reason)
+ * EZ0018: Parameters format error (multiple parameters, with reason)
  * opName:string - Operator name
  * paramNames:string - Parameter names
  * incorrectFormats:string - Actual incorrect formats
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have incorrect formats incorrectFormats. Reason: reason.
+ * errMessage: Parameters [paramNames] of operator [opName] have incorrect formats [incorrectFormats]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(opName, paramNames, incorrectFormats, reason)                      \
-    do {                                                                                                            \
-        OP_LOGE_WITHOUT_REPORT(                                                                                     \
-            opName, "OP %s's parameters %s have incorrect formats %s. Reason: %s.", opName, paramNames,              \
-            incorrectFormats, reason);                                                                               \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_formats", "reason"};           \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectFormats, reason};                    \
-        REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(opName, paramNames, incorrectFormats, reason)                          \
+    do {                                                                                                               \
+        std::string _safe_opName_(opName);                                                                             \
+        std::string _safe_paramNames_(paramNames);                                                                     \
+        std::string _safe_incorrectFormats_(incorrectFormats);                                                         \
+        std::string _safe_reason_(reason);                                                                             \
+        OP_LOGE_WITHOUT_REPORT(                                                                                        \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect formats %s. Reason: %s.",              \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_formats", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                    \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
- * EZ0018: Parameter dtype error (single parameter, with correct dtype)
+ * EZ0019: Parameter dtype error (single parameter, with correct dtype)
  * opName:string - Operator name
  * paramName:string - Parameter name
  * incorrectDtype:string - Actual data type (e.g., "INT32")
  * correctDtype:string - Expected data type (e.g., "FLOAT16")
- * errMessage: OP opName's parameter paramName has incorrect dtype incorrectDtype, it should be correctDtype.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect dtype [incorrectDtype]. The correct one should
+ * be [correctDtype].
  */
-#define OP_LOGE_FOR_INVALID_DTYPE(opName, paramName, incorrectDtype, correctDtype)                            \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect dtype %s, it should be %s.", opName, paramName,        \
-            incorrectDtype, correctDtype);                                                                     \
+#define OP_LOGE_FOR_INVALID_DTYPE(opName, paramName, incorrectDtype, correctDtype)                             \
+    do {                                                                                                       \
+        std::string _safe_opName_(opName);                                                                     \
+        std::string _safe_paramName_(paramName);                                                               \
+        std::string _safe_incorrectDtype_(incorrectDtype);                                                     \
+        std::string _safe_correctDtype_(correctDtype);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                \
+            _safe_opName_.c_str(),                                                                             \
+            "Parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",               \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
+            _safe_correctDtype_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "correct_dtype"}; \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDtype, correctDtype};           \
-        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                                 \
-    } while (0)
-
-/**
- * EZ0019: Parameter dtype error (single parameter, with reason)
- * opName:string - Operator name
- * paramName:string - Parameter name
- * incorrectDtype:string - Actual incorrect data type
- * reason:string - Reason for the error
- * errMessage: OP opName's parameter paramName has incorrect dtype incorrectDtype. Reason: reason.
- */
-#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName, paramName, incorrectDtype, reason)                       \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect dtype %s. Reason: %s.", opName, paramName,             \
-            incorrectDtype, reason);                                                                           \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "reason"};       \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectDtype, reason};                 \
+        const std::vector<const char*> msgvalue = {                                                            \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
+            _safe_correctDtype_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0019", msgKey, msgvalue);                                                 \
     } while (0)
 
 /**
- * EZ0020: Parameters dtype error (multiple parameters, with reason)
+ * EZ0020: Parameter dtype error (single parameter, with reason)
  * opName:string - Operator name
- * paramNames:string - Parameter names
- * incorrectDtypes:string - Actual incorrect data types
+ * paramName:string - Parameter name
+ * incorrectDtype:string - Actual incorrect data type
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have incorrect dtypes incorrectDtypes. Reason: reason.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect dtype [incorrectDtype]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, paramNames, incorrectDtypes, reason)                        \
+#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName, paramName, incorrectDtype, reason)                            \
     do {                                                                                                            \
+        std::string _safe_opName_(opName);                                                                          \
+        std::string _safe_paramName_(paramName);                                                                    \
+        std::string _safe_incorrectDtype_(incorrectDtype);                                                          \
+        std::string _safe_reason_(reason);                                                                          \
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
-            opName, "OP %s's parameters %s have incorrect dtypes %s. Reason: %s.", opName, paramNames,              \
-            incorrectDtypes, reason);                                                                               \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dtypes", "reason"};           \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectDtypes, reason};                    \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect dtype %s. Reason: %s.",               \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                 \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
- * EZ0021: Parameter tensor num error (single parameter, with correct num)
+ * EZ0021: Parameters dtype error (multiple parameters, with reason)
+ * opName:string - Operator name
+ * paramNames:string - Parameter names
+ * incorrectDtypes:string - Actual incorrect data types
+ * reason:string - Reason for the error
+ * errMessage: Parameters [paramNames] of operator [opName] have incorrect dtypes [incorrectDtypes]. Reason: [reason].
+ */
+#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, paramNames, incorrectDtypes, reason)                           \
+    do {                                                                                                              \
+        std::string _safe_opName_(opName);                                                                            \
+        std::string _safe_paramNames_(paramNames);                                                                    \
+        std::string _safe_incorrectDtypes_(incorrectDtypes);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect dtypes %s. Reason: %s.",              \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dtypes", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                   \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                                        \
+    } while (0)
+
+/**
+ * EZ0022: Parameter tensor num error (single parameter, with correct num)
  * opName:string - Operator name
  * paramName:string - Parameter name
  * incorrectNum:int64_t - Actual tensor count
  * correctNum:string - Expected tensor count
- * errMessage: OP opName's parameter paramName has invalid tensor num incorrectNum, it should be correctNum.
+ * errMessage: Parameter [paramName] of operator [opName] has invalid tensor num [incorrectNum]. The correct one should
+ * be [correctNum].
  */
-#define OP_LOGE_FOR_INVALID_TENSORNUM(opName, paramName, incorrectNum, correctNum)                             \
-    do {                                                                                                         \
-        OP_LOGE_WITHOUT_REPORT(                                                                                  \
-            opName, "OP %s's parameter %s has invalid tensor num %" PRId64 ", it should be %s.", opName,         \
-            paramName, static_cast<int64_t>(incorrectNum), correctNum);                                         \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_num", "correct_num"};      \
-        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                        \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectNumStr.c_str(), correctNum};      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                                   \
+#define OP_LOGE_FOR_INVALID_TENSORNUM(opName, paramName, incorrectNum, correctNum)                                \
+    do {                                                                                                          \
+        std::string _safe_opName_(opName);                                                                        \
+        std::string _safe_paramName_(paramName);                                                                  \
+        std::string _safe_correctNum_(correctNum);                                                                \
+        OP_LOGE_WITHOUT_REPORT(                                                                                   \
+            _safe_opName_.c_str(),                                                                                \
+            "Parameter %s of operator %s has invalid tensor num %ld. The correct one should be %s.",              \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), static_cast<int64_t>(incorrectNum),                  \
+            _safe_correctNum_.c_str());                                                                           \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_num", "correct_num"};        \
+        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                         \
+        const std::vector<const char*> msgvalue = {                                                               \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), incorrectNumStr.c_str(), _safe_correctNum_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                    \
     } while (0)
 
 /**
- * EZ0022: Parameters tensor num error (multiple parameters, with reason)
+ * EZ0023: Parameters tensor num error (multiple parameters, with reason)
  * opName:string - Operator name
  * paramNames:string - Parameter names
  * incorrectNums:string - Actual incorrect tensor counts
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have invalid tensor nums incorrectNums. Reason: reason.
+ * errMessage: Parameters [paramNames] of operator [opName] have invalid tensor nums [incorrectNums]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(opName, paramNames, incorrectNums, reason)                      \
+#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(opName, paramNames, incorrectNums, reason)                       \
     do {                                                                                                            \
+        std::string _safe_opName_(opName);                                                                          \
+        std::string _safe_paramNames_(paramNames);                                                                  \
+        std::string _safe_incorrectNums_(incorrectNums);                                                            \
+        std::string _safe_reason_(reason);                                                                          \
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
-            opName, "OP %s's parameters %s have invalid tensor nums %s. Reason: %s.", opName, paramNames,           \
-            incorrectNums, reason);                                                                                 \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have invalid tensor nums %s. Reason: %s.",         \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()); \
         const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_nums", "reason"};             \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectNums, reason};                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                      \
+        const std::vector<const char*> msgvalue = {                                                                 \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
- * EZ0023: Parameter value error (single parameter, with reason)
+ * EZ0024: Parameter value error (single parameter, with correct value)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectValue:string - Actual incorrect value
+ * correctValue:string - Expected correct value
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. The correct one should
+ * be [correctValue].
+ */
+#define OP_LOGR_FOR_INVALID_VALUE(opName, paramName, incorrectValue, correctValue)                             \
+    do {                                                                                                       \
+        std::string _safe_opName_(opName);                                                                     \
+        std::string _safe_paramName_(paramName);                                                               \
+        std::string _safe_incorrectValue_(incorrectValue);                                                     \
+        std::string _safe_correctValue_(correctValue);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                \
+            _safe_opName_.c_str(),                                                                             \
+            "Parameter %s of operator %s has incorrect value %s. The correct one should be %s.",               \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(),                    \
+            _safe_correctValue_.c_str());                                                                      \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_value", "correct_value"}; \
+        const std::vector<const char*> msgvalue = {                                                            \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectValue_.c_str(),                    \
+            _safe_correctValue_.c_str()};                                                                      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                 \
+    } while (0)
+
+/**
+ * EZ0025: Parameter list size error (single parameter, with correct size)
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectSize:string - Actual incorrect list size
+ * correctSize:string - Expected correct list size
+ * errMessage: Parameter [paramName] of operator [opName] has invalid list size [incorrectSize]. The correct one should
+ * be [correctSize].
+ */
+#define OP_LOGR_FOR_INVALID_LISTSIZE(opName, paramName, incorrectSize, correctSize)                          \
+    do {                                                                                                     \
+        std::string _safe_opName_(opName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                             \
+        std::string _safe_incorrectSize_(incorrectSize);                                                     \
+        std::string _safe_correctSize_(correctSize);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                              \
+            _safe_opName_.c_str(),                                                                           \
+            "Parameter %s of operator %s has invalid list size %s. The correct one should be %s.",           \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_correctSize_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgvalue = {                                                          \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_correctSize_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0025", msgKey, msgvalue);                                               \
+    } while (0)
+
+/**
+ * EZ0026: Parameter value error (single parameter, with reason)
  * opName:string - Operator name
  * paramName:string - Parameter name
  * incorrectValue:string - Actual incorrect value
  * reason:string - Reason for the error
- * errMessage: OP opName's parameter paramName has incorrect value incorrectValue. Reason: reason.
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, paramName, incorrectValue, reason)                      \
-    do {                                                                                                        \
-        OP_LOGE_WITHOUT_REPORT(                                                                                 \
-            opName, "OP %s's parameter %s has incorrect value %s. Reason: %s.", opName, paramName,              \
-            incorrectValue, reason);                                                                           \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_value", "reason"};       \
-        const std::vector<const char*> msgvalue = {opName, paramName, incorrectValue, reason};                 \
-        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, paramName, incorrectValue, reason)                            \
+    do {                                                                                                            \
+        std::string _safe_opName_(opName);                                                                          \
+        std::string _safe_paramName_(paramName);                                                                    \
+        std::string _safe_incorrectValue_(incorrectValue);                                                          \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect value %s. Reason: %s.",               \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_value", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                 \
+            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0026", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
- * EZ0024: Parameters value error (multiple parameters, with reason)
+ * EZ0027: Parameters value error (multiple parameters, with reason)
  * opName:string - Operator name
  * paramNames:string - Parameter names
  * incorrectValues:string - Actual incorrect values
  * reason:string - Reason for the error
- * errMessage: OP opName's parameters paramNames have incorrect values incorrectValues. Reason: reason.
+ * errMessage: Parameters [paramNames] of operator [opName] have incorrect values [incorrectValues]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName, paramNames, incorrectValues, reason)                        \
-    do {                                                                                                            \
-        OP_LOGE_WITHOUT_REPORT(                                                                                     \
-            opName, "OP %s's parameters %s have incorrect values %s. Reason: %s.", opName, paramNames,              \
-            incorrectValues, reason);                                                                               \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_values", "reason"};           \
-        const std::vector<const char*> msgvalue = {opName, paramNames, incorrectValues, reason};                    \
-        REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName, paramNames, incorrectValues, reason)                           \
+    do {                                                                                                              \
+        std::string _safe_opName_(opName);                                                                            \
+        std::string _safe_paramNames_(paramNames);                                                                    \
+        std::string _safe_incorrectValues_(incorrectValues);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_WITHOUT_REPORT(                                                                                       \
+            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect values %s. Reason: %s.",              \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_values", "reason"};             \
+        const std::vector<const char*> msgvalue = {                                                                   \
+            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                                        \
     } while (0)
 
 #define OP_LOGD(opName, ...) D_OP_LOGD(Ops::Base::GetOpInfo(opName), __VA_ARGS__)
