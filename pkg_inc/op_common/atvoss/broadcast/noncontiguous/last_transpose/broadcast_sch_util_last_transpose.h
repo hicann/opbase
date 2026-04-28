@@ -50,7 +50,7 @@ __aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> Bro
   AscendC::MultiCopyLoopInfo<NDDMA_MAX_DIMS_LAST_TRANSPOSE> loopInfo;
   int64_t axisInsideUb = NDDMA_MAX_DIMS_LAST_TRANSPOSE - (shapeLen - ubSplitAxis);
 
-  // 高位直接设置 loopSize为1 stride是否需要用乘积 还是直接用0就行？？？ 还是说根本不用设置？
+  // 高位直接设置 loopSize为1
   for (int64_t i = 0; i < axisInsideUb; i++) {
     loopInfo.loopSize[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - i] = 1;
     loopInfo.loopSrcStride[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - i] = inputStrides[ubSplitAxis];
@@ -153,7 +153,7 @@ __aicore__ inline void MovAlign2GM(AscendC::GlobalTensor<T1>& outputGm, AscendC:
   loopModeParams.loop2Size = 1;
   loopModeParams.loop2SrcStride = 0;
   loopModeParams.loop2DstStride = 0;
-  
+
   AscendC::SetLoopModePara(loopModeParams, DataCopyMVType::UB_TO_OUT);
   AscendC::DataCopyPad<T1, PaddingMode::Compact>(outputGm, ubTensor, dataCopyExtParams);
   AscendC::ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
