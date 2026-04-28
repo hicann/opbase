@@ -35,7 +35,7 @@ endif()
 # 生成安装配置文件
 set(CSV_OUTPUT ${CPACK_CMAKE_BINARY_DIR}/filelist.csv)
 execute_process(
-    COMMAND python3 ${CPACK_CMAKE_SOURCE_DIR}/scripts/package/package.py --pkg_name ops_base --os_arch linux-${CPACK_ARCH} --delivery_dir ${CPACK_CMAKE_BINARY_DIR}
+    COMMAND python3 ${CPACK_CMAKE_SOURCE_DIR}/scripts/package/package.py --pkg_name opbase --os_arch linux-${CPACK_ARCH} --delivery_dir ${CPACK_CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${CPACK_CMAKE_BINARY_DIR}
     OUTPUT_VARIABLE result
     ERROR_VARIABLE error
@@ -57,7 +57,21 @@ set(SCENE_OUT_PUT
 )
 configure_file(
     ${SCENE_OUT_PUT}
-    ${STAGING_DIR}/share/info/ops_base/
+    ${STAGING_DIR}/share/info/opbase/
+    COPYONLY
+)
+
+# 同时安装到 opp/ 目录
+configure_file(
+    ${SCENE_OUT_PUT}
+    ${STAGING_DIR}/opp/scene.info
+    COPYONLY
+)
+
+# 安装 version.info 到 opp/ 目录
+configure_file(
+    ${CPACK_CMAKE_BINARY_DIR}/version.opbase.info
+    ${STAGING_DIR}/opp/version.info
     COPYONLY
 )
 set(OPS_VERSION_OUT_PUT
@@ -65,14 +79,50 @@ set(OPS_VERSION_OUT_PUT
 )
 configure_file(
     ${OPS_VERSION_OUT_PUT}
-    ${STAGING_DIR}/share/info/ops_base/
+    ${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version/opbase_version.h
     COPYONLY
 )
 configure_file(
     ${CSV_OUTPUT}
-    ${STAGING_DIR}/share/info/ops_base/script
+    ${STAGING_DIR}/share/info/opbase/script
     COPYONLY
 )
+# 统一设置安装的文件权限为550
+execute_process(
+    COMMAND find ${STAGING_DIR} -type f -exec chmod 550 {} \;
+    RESULT_VARIABLE CHMOD_RESULT
+)
+if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version/opbase_version.h")
+    execute_process(COMMAND chmod 440 "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/version/opbase_version.h")
+endif()
+if(EXISTS "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
+    execute_process(COMMAND chmod 440 "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux/conf/path.cfg")
+endif() 
+if(EXISTS "${STAGING_DIR}/opp/scene.info")
+    execute_process(COMMAND chmod 440 "${STAGING_DIR}/opp/scene.info")
+endif() 
+# 定义库目录
+set(LIB_DIR "${STAGING_DIR}/${CMAKE_SYSTEM_PROCESSOR}-linux")
+
+# 检查目录是否存在
+if(EXISTS "${LIB_DIR}" AND IS_DIRECTORY "${LIB_DIR}")
+    # 递归查找所有静态库、动态库（含版本号）
+    file(GLOB_RECURSE LIB_FILES
+        "${LIB_DIR}/*.a"
+        "${LIB_DIR}/*.so"
+        "${LIB_DIR}/*.so.*"
+    )
+
+    # 遍历修改权限
+    foreach(LIB_FILE ${LIB_FILES})
+        execute_process(
+            COMMAND chmod 440 "${LIB_FILE}"
+            ERROR_QUIET
+            OUTPUT_QUIET
+        )
+    endforeach()
+endif()
+
 # makeself打包
 file(STRINGS ${CPACK_CMAKE_BINARY_DIR}/makeself.txt script_output)
 string(REPLACE " " ";" makeself_param_string "${script_output}")
@@ -88,8 +138,8 @@ message(STATUS "package: ${package_name}")
 
 execute_process(COMMAND bash ${MAKESELF_EXE}
         --header ${MAKESELF_HEADER_EXE}
-        --help-header share/info/ops_base/script/help.info
-        ${makeself_param_string} share/info/ops_base/script/install.sh
+        --help-header share/info/opbase/script/help.info
+        ${makeself_param_string} share/info/opbase/script/install.sh
         WORKING_DIRECTORY ${STAGING_DIR}
         RESULT_VARIABLE EXEC_RESULT
         ERROR_VARIABLE  EXEC_ERROR

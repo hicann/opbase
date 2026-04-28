@@ -340,7 +340,7 @@ aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::st
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(ascendHomePath);
     std::string modelPath = ascendHomePath;
-    std::string sceneV1 = modelPath + "/share/info/ops_base/" + SCENE;
+    std::string sceneV1 = modelPath + "/share/info/opbase/" + SCENE;
     OP_LOGI("Try to extract os and cpu info from %s.", sceneV1.c_str());
     std::ifstream ifs(sceneV1);
     if (!ifs.good()) {

@@ -136,11 +136,6 @@ target_compile_options(aicpu_cust_log PRIVATE
     -fPIC
 )
 
-install(TARGETS aicpu_cust_log OPTIONAL
-    EXPORT aicpu_cust_log-targets
-    LIBRARY DESTINATION ${INSTALL_SHARED_LIBRARY_DIR}
-)
-
 message(STATUS "PRODUCT_SIDE is ${PRODUCT_SIDE}")
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
 set(CMAKE_C_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)

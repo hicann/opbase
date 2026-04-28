@@ -27,9 +27,9 @@ message(STATUS "CMAKE_BINARY_DIR = ${CMAKE_BINARY_DIR}")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/makeself-fetch.cmake)
 
-set(script_prefix ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/ops_base/scripts)
+set(script_prefix ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/scripts)
 install(DIRECTORY ${script_prefix}/
-    DESTINATION share/info/ops_base/script
+    DESTINATION share/info/opbase/script
     FILE_PERMISSIONS
     OWNER_READ OWNER_WRITE OWNER_EXECUTE  # 文件权限
     GROUP_READ GROUP_EXECUTE
@@ -50,7 +50,7 @@ set(SCRIPTS_FILES
 )
 
 install(FILES ${SCRIPTS_FILES}
-    DESTINATION share/info/ops_base/script
+    DESTINATION share/info/opbase/script
 )
 set(COMMON_FILES
     ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/install_common_parser.sh
@@ -75,55 +75,62 @@ set(CONF_FILES
     ${CMAKE_SOURCE_DIR}/src/nnopbase/common/op_info_record/dump_tool_config.ini
 )
 install(FILES ${CMAKE_BINARY_DIR}/version.opbase.info
-    DESTINATION share/info/ops_base
+    DESTINATION share/info/opbase
     RENAME version.info
 )
 install(FILES ${CONF_FILES}
-    DESTINATION ops_base/conf
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/conf
 )
 install(FILES ${PACKAGE_FILES}
-    DESTINATION share/info/ops_base/script
-)
-install(FILES ${LATEST_MANGER_FILES}
-    DESTINATION latest_manager
-)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/scripts/package/latest_manager/scripts/
-    DESTINATION latest_manager
-)
-
-set(opp_source ${CMAKE_SOURCE_DIR}/include)
-install(DIRECTORY ${opp_source}/
-    DESTINATION ops_base/include
-    FILE_PERMISSIONS
-    OWNER_READ OWNER_WRITE
-    GROUP_READ GROUP_EXECUTE
+    DESTINATION share/info/opbase/script
 )
 
 set(pkg_inc_src ${CMAKE_SOURCE_DIR}/pkg_inc)
 install(DIRECTORY ${pkg_inc_src}/
-    DESTINATION ops_base/pkg_inc
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc
+    FILE_PERMISSIONS
+    OWNER_READ OWNER_WRITE
+    GROUP_READ GROUP_EXECUTE
+    PATTERN "aicpu_common" EXCLUDE
+)
+set(aicpu_common ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common)
+install(DIRECTORY ${aicpu_common}/
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu_common
     FILE_PERMISSIONS
     OWNER_READ OWNER_WRITE
     GROUP_READ GROUP_EXECUTE
 )
 install(TARGETS ops_base
-        LIBRARY DESTINATION ops_base/lib)
+        LIBRARY DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64)
 set(AICPU_LIBS
     aicpu_context
     aicpu_nodedef
     aicpu_context_host
     aicpu_nodedef_host
-    aicpu_cust_log
 )
 
 install(TARGETS ${AICPU_LIBS}
-    ARCHIVE DESTINATION ops_base/lib/aicpu_common
+    ARCHIVE DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
 )
 
 install(FILES ${PROTOBUF_STATIC_PKG_DIR}/lib/libbase_ascend_protobuf.a
-    DESTINATION ops_base/lib/aicpu_common)
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64)
 install(FILES ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
-    DESTINATION ops_base/lib/aicpu_common)
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64)
+install(TARGETS aicpu_cust_log
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/device/lib64)
+
+set(aicpu_headers_src 
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_attr_value.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor_shape.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_context.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_types.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cust_op/cust_cpu_utils.h
+    )
+install(FILES ${aicpu_headers_src}
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aicpu
+)
 
 message(STATUS "ASCEND_HOME_PATH: $ENV{ASCEND_HOME_PATH}")
 get_filename_component(COMPILER_PATH $ENV{ASCEND_HOME_PATH}/compiler REALPATH)
@@ -132,14 +139,14 @@ message(STATUS "VERSION PATH: ${VER_PATH}")
 
 set(aclnn_source ${CMAKE_SOURCE_DIR}/include/nnopbase/aclnn)
 install(DIRECTORY ${aclnn_source}/
-    DESTINATION ops_base/aclnn
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnn
     FILE_PERMISSIONS
     OWNER_READ OWNER_WRITE
     GROUP_READ GROUP_EXECUTE
 )
 set(opdev_source ${CMAKE_SOURCE_DIR}/include/nnopbase/opdev)
 install(DIRECTORY ${opdev_source}/
-    DESTINATION ops_base/aclnn/opdev
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnn/opdev
     FILE_PERMISSIONS
     OWNER_READ OWNER_WRITE
     GROUP_READ GROUP_EXECUTE
@@ -147,24 +154,24 @@ install(DIRECTORY ${opdev_source}/
 
 set(aclnnop_source ${CMAKE_SOURCE_DIR}/include/aclnnop)
 install(DIRECTORY ${aclnnop_source}/
-        DESTINATION ops_base/aclnnop
+        DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnnop
         FILE_PERMISSIONS
         OWNER_READ OWNER_WRITE
         GROUP_READ GROUP_EXECUTE
 )
 install(DIRECTORY ${aclnnop_source}/
-        DESTINATION ops_base/aclnnop/level2
+        DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnnop/level2
         FILE_PERMISSIONS
         OWNER_READ OWNER_WRITE
         GROUP_READ GROUP_EXECUTE
 )
 
 install(TARGETS nnopbase
-   LIBRARY DESTINATION ops_base/lib/aclnn
+   LIBRARY DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
 )
 
 install(TARGETS dummy_tls
-   LIBRARY DESTINATION ops_base/lib/aclnn
+   LIBRARY DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
 )
 
 install(TARGETS stub_nnopbase

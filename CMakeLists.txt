@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 include(cmake/fetch_cann_cmake.cmake)
-project(ops_base VERSION 1.0.0)
+project(opbase VERSION 1.0.0)
 init_cann_project()
 include(CMakePrintHelpers)
 
@@ -13,11 +13,11 @@ if(CCACHE_PROGRAM)
 endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    message(STATUS "Build ops_base with dependency cann pkgs installed")
-    option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build ops_base with dependency cann pkgs installed" TRUE)
+    message(STATUS "Build opbase with dependency cann pkgs installed")
+    option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build opbase with dependency cann pkgs installed" TRUE)
 else()
-    message(STATUS "Build ops_base with cann source exist")
-    option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build ops_base need cann source code" FALSE)
+    message(STATUS "Build opbase with cann source exist")
+    option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build opbase need cann source code" FALSE)
 endif()
 
 include(cmake/config.cmake)
