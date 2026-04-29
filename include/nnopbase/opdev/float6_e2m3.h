@@ -11,7 +11,6 @@
 #ifndef OP_API_FLOAT6_E2M3_H
 #define OP_API_FLOAT6_E2M3_H
 
-#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <ostream>
@@ -45,25 +44,7 @@ struct Float6E2M3 {
 
     uint8_t value;
 
-    // ============= FP32 format constants =============
-    static constexpr int FP32_EXP_BIAS_VAL = 127;
-    static constexpr int FP32_MAN_LEN_VAL = 23;
-    static constexpr int FP32_SIGN_SHIFT_VAL = 31;
-    static constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-    static constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-    static constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
-
     // ============= E2M3 format constants =============
-    // Bit layout: bit5=sign, bits4-3=exp, bits2-0=man
-    static constexpr int EXP_BITS = 2;
-    static constexpr int MAN_BITS = 3;
-    static constexpr int EXP_BIAS = 1;
-    static constexpr int SIGN_SHIFT = 5;
-    static constexpr uint8_t SIGN_MASK = 0x20;            // 1 00 000 (bit 5)
-    static constexpr uint8_t EXP_MASK = 0x18;             // 0 11 000 (bits 4-3)
-    static constexpr uint8_t MAN_MASK = 0x07;             // 0 00 111 (bits 2-0)
-    static constexpr uint8_t MAX_EXP = 0x03;              // 11
-    static constexpr uint8_t ABS_VALUE_MASK = 0x1F;       // 0 11111 (exclude sign bit)
     static constexpr uint8_t HIGHEST_VALUE = 0x1F;        // 0 11 111 = 7.5
     static constexpr uint8_t LOWEST_VALUE = 0x3F;         // 1 11 111 = -7.5
     static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x08; // 0 01 000 (min positive normal)
@@ -71,26 +52,16 @@ struct Float6E2M3 {
     static constexpr uint8_t EPSILON_VALUE = 0x01;        // 0 00 001 = denorm 0.125
 
     // Default constructor - initialize to zero
-    Float6E2M3() : value(0) {}
+    constexpr Float6E2M3() : value(0)
+    {}
 
     constexpr Float6E2M3(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK)
-    {
-    }
+    {}
 
-    Float6E2M3(float v)
-    {
-        value = FloatToFloat6E2M3(v).value;
-    }
+    Float6E2M3(float v);
 
-    operator float() const
-    {
-        return Float6E2M3ToFloat(*this);
-    }
-
-    operator double() const
-    {
-        return static_cast<double>(Float6E2M3ToFloat(*this));
-    }
+    operator float() const;
+    operator double() const;
 
     static constexpr Float6E2M3 Epsilon()
     {
@@ -116,23 +87,9 @@ struct Float6E2M3 {
         return Float6E2M3(MIN_POS_NORMAL_VALUE, FromBits());
     }
 
-    bool IsZero() const
-    {
-        return (value & ABS_VALUE_MASK) == 0;  // 排除符号位
-    }
-
-    bool IsNaN() const
-    {
-        // OCP MX E2M3 has no NaN representation
-        // All bit patterns represent valid numbers
-        return false;
-    }
-
-    bool IsInf() const
-    {
-        // E2M3 has no infinity representation
-        return false;
-    }
+    bool IsZero() const;
+    bool IsNaN() const;
+    bool IsInf() const;
 
 private:
     union FP32 {
@@ -140,121 +97,9 @@ private:
         float f;
     };
 
-    static float Float6E2M3ToFloat(Float6E2M3 fp6)
-    {
-        if (fp6.IsZero()) {
-            return (fp6.value & SIGN_MASK) ? -0.0f : 0.0f;
-        }
+    static float Float6E2M3ToFloat(Float6E2M3 fp6);
+    static Float6E2M3 FloatToFloat6E2M3(float f);
 
-        // OCP MX E2M3 has no NaN, all bit patterns are valid numbers
-
-        uint32_t sign = (fp6.value & SIGN_MASK) >> SIGN_SHIFT;
-        uint32_t exp = (fp6.value & EXP_MASK) >> MAN_BITS;
-        uint32_t man = fp6.value & MAN_MASK;
-
-        // FP32: 1 sign, 8 exp (bias 127), 23 man
-        // FP6 E2M3: 1 sign, 2 exp (bias 1), 3 man
-
-        int32_t fp32Exp = static_cast<int32_t>(exp) - EXP_BIAS + FP32_EXP_BIAS_VAL;
-        uint32_t fp32Man = man << (FP32_MAN_LEN_VAL - MAN_BITS);
-
-        if (exp == 0) {
-            // Denormalized number
-            if (man != 0) {
-                // Normalize: shift mantissa left until leading 1
-                int shift = 0;
-                while ((man & (1 << MAN_BITS)) == 0) {
-                    man <<= 1;
-                    shift++;
-                }
-                man &= MAN_MASK;  // Remove implicit leading 1
-                fp32Exp = 1 - EXP_BIAS + FP32_EXP_BIAS_VAL - shift;
-                fp32Man = man << (FP32_MAN_LEN_VAL - MAN_BITS);
-            }
-        } else {
-            // Normal number - add implicit leading 1
-            fp32Man |= FP32_IMPLICIT_1_VAL;
-        }
-
-        FP32 result;
-        result.u = (sign << FP32_SIGN_SHIFT_VAL) | ((fp32Exp & FP32_EXP_MASK_8BIT) << FP32_MAN_LEN_VAL) | (fp32Man & FP32_MAN_MASK_23BIT);
-        return result.f;
-    }
-
-    static Float6E2M3 FloatToFloat6E2M3(float f)
-    {
-        // OCP MX E2M3 has no NaN, clamp NaN to positive max value (7.5)
-        // NaN has no meaningful sign, so always clamp to +7.5
-        if (std::isnan(f)) {
-            // 0x1F = 0 11 111 = 2^2 * 1.875 = 7.5
-            return Float6E2M3(HIGHEST_VALUE, FromBits());
-        }
-
-        FP32 fp32;
-        fp32.f = f;
-        uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1;
-        uint32_t exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
-        uint32_t man = fp32.u & FP32_MAN_MASK_23BIT;
-
-        if (exp == 0 && man == 0) {
-            // Zero
-            return Float6E2M3(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
-        }
-
-        if (std::isinf(f)) {
-            // E2M3 has no infinity, clamp to max value
-            // 0x1F = +7.5, 0x3F = -7.5
-            return Float6E2M3(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
-        }
-
-        // Calculate E2M3 exponent
-        int32_t fp6Exp;
-        uint32_t fp6Man;
-
-        if (exp == 0) {
-            // Denormalized FP32 input
-            fp6Exp = 1 - FP32_EXP_BIAS_VAL + EXP_BIAS;
-            while ((man & FP32_IMPLICIT_1_VAL) == 0) {
-                man <<= 1;
-                fp6Exp--;
-            }
-            man &= FP32_MAN_MASK_23BIT;
-        } else {
-            fp6Exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS_VAL + EXP_BIAS;
-        }
-
-        // Round mantissa from 23 bits to 3 bits with round-to-nearest-even
-        int mantissaShift = FP32_MAN_LEN_VAL - MAN_BITS;
-        uint32_t manRoundBit = (man >> (mantissaShift - 1)) & 1;
-        uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) ? 1 : 0;
-        uint32_t manLsb = (man >> mantissaShift) & 1;
-
-        fp6Man = man >> mantissaShift;
-        if (manRoundBit && (manStickyBits || manLsb)) {
-            fp6Man++;
-            if (fp6Man > MAN_MASK) {
-                fp6Man = 0;
-                fp6Exp++;
-            }
-        }
-
-        // Handle overflow/underflow
-        if (fp6Exp <= 0) {
-            if (fp6Exp < -MAN_BITS) {
-                return Float6E2M3(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
-            }
-            fp6Man = (fp6Man | (1 << MAN_BITS)) >> (1 - fp6Exp);
-            fp6Exp = 0;
-        } else if (fp6Exp >= static_cast<int32_t>(MAX_EXP + 1)) {
-            // Overflow - for E2M3, max exp is 3
-            // OCP MX E2M3 has no NaN, clamp to max value (preserving sign)
-            // 0x1F = 0 11 111 = +7.5, 0x3F = 1 11 111 = -7.5
-            return Float6E2M3(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
-        }
-
-        uint8_t result = static_cast<uint8_t>((sign << SIGN_SHIFT) | (fp6Exp << MAN_BITS) | (fp6Man & MAN_MASK));
-        return Float6E2M3(result, FromBits());
-    }
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Float6E2M3 &dt)
@@ -263,189 +108,23 @@ inline std::ostream &operator<<(std::ostream &os, const Float6E2M3 &dt)
     return os;
 }
 
-inline Float6E2M3 operator+(Float6E2M3 a, Float6E2M3 b)
-{
-    return Float6E2M3(static_cast<float>(a) + static_cast<float>(b));
-}
-
-inline Float6E2M3 operator-(Float6E2M3 a, Float6E2M3 b)
-{
-    return Float6E2M3(static_cast<float>(a) - static_cast<float>(b));
-}
-
-inline Float6E2M3 operator*(Float6E2M3 a, Float6E2M3 b)
-{
-    return Float6E2M3(static_cast<float>(a) * static_cast<float>(b));
-}
-
-inline Float6E2M3 operator/(Float6E2M3 a, Float6E2M3 b)
-{
-    return Float6E2M3(static_cast<float>(a) / static_cast<float>(b));
-}
-
-inline Float6E2M3 operator-(Float6E2M3 a)
-{
-    a.value ^= Float6E2M3::SIGN_MASK;
-    return a;
-}
-
-inline bool operator==(Float6E2M3 a, Float6E2M3 b)
-{
-    return a.value == b.value;
-}
-
-inline bool operator!=(Float6E2M3 a, Float6E2M3 b)
-{
-    return a.value != b.value;
-}
-
-inline bool operator<(Float6E2M3 a, Float6E2M3 b)
-{
-    return static_cast<float>(a) < static_cast<float>(b);
-}
-
-inline bool operator<=(Float6E2M3 a, Float6E2M3 b)
-{
-    return static_cast<float>(a) <= static_cast<float>(b);
-}
-
-inline bool operator>(Float6E2M3 a, Float6E2M3 b)
-{
-    return static_cast<float>(a) > static_cast<float>(b);
-}
-
-inline bool operator>=(Float6E2M3 a, Float6E2M3 b)
-{
-    return static_cast<float>(a) >= static_cast<float>(b);
-}
-
-inline Float6E2M3 &operator+=(Float6E2M3 &a, Float6E2M3 b)
-{
-    a = a + b;
-    return a;
-}
-
-inline Float6E2M3 &operator-=(Float6E2M3 &a, Float6E2M3 b)
-{
-    a = a - b;
-    return a;
-}
-
-inline Float6E2M3 &operator*=(Float6E2M3 &a, Float6E2M3 b)
-{
-    a = a * b;
-    return a;
-}
-
-inline Float6E2M3 &operator/=(Float6E2M3 &a, Float6E2M3 b)
-{
-    a = a / b;
-    return a;
-}
-
-inline Float6E2M3 operator++(Float6E2M3 &a)
-{
-    a += Float6E2M3(1.0f);
-    return a;
-}
-
-inline Float6E2M3 operator--(Float6E2M3 &a)
-{
-    a -= Float6E2M3(1.0f);
-    return a;
-}
-
-inline Float6E2M3 operator++(Float6E2M3 &a, int)
-{
-    Float6E2M3 originalValue = a;
-    ++a;
-    return originalValue;
-}
-
-inline Float6E2M3 operator--(Float6E2M3 &a, int)
-{
-    Float6E2M3 originalValue = a;
-    --a;
-    return originalValue;
-}
-
 } // namespace op
 
 namespace std {
 
-template<>
-struct hash<op::Float6E2M3> {
-    size_t operator()(const op::Float6E2M3 &v) const
-    {
-        return hash<float>()(static_cast<float>(v));
-    }
-};
-
-using op::Float6E2M3;
-
-inline bool isinf(const Float6E2M3 &a [[maybe_unused]])
+inline bool isinf(const op::Float6E2M3 &a [[maybe_unused]])
 {
     return false;  // E2M3 has no infinity
 }
 
-inline bool isnan(const Float6E2M3 &a [[maybe_unused]])
+inline bool isnan(const op::Float6E2M3 &a [[maybe_unused]])
 {
     return false;  // OCP MX E2M3 has no NaN
 }
 
-inline bool isfinite(const Float6E2M3 &a [[maybe_unused]])
+inline bool isfinite(const op::Float6E2M3 &a [[maybe_unused]])
 {
     return true;  // All bit patterns are valid finite numbers
-}
-
-inline Float6E2M3 abs(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::abs(static_cast<float>(a)));
-}
-
-inline Float6E2M3 exp(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::exp(static_cast<float>(a)));
-}
-
-inline Float6E2M3 log(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::log(static_cast<float>(a)));
-}
-
-inline Float6E2M3 sqrt(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::sqrt(static_cast<float>(a)));
-}
-
-inline Float6E2M3 pow(const Float6E2M3 &a, const Float6E2M3 &b)
-{
-    return Float6E2M3(std::pow(static_cast<float>(a), static_cast<float>(b)));
-}
-
-inline Float6E2M3 sin(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::sin(static_cast<float>(a)));
-}
-
-inline Float6E2M3 cos(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::cos(static_cast<float>(a)));
-}
-
-inline Float6E2M3 tanh(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::tanh(static_cast<float>(a)));
-}
-
-inline Float6E2M3 floor(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::floor(static_cast<float>(a)));
-}
-
-inline Float6E2M3 ceil(const Float6E2M3 &a)
-{
-    return Float6E2M3(std::ceil(static_cast<float>(a)));
 }
 
 template<>

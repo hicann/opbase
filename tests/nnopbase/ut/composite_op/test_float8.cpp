@@ -115,24 +115,24 @@ TEST_F(TestFloat8E4M3, ArithmeticOperations)
     op::Float8E4M3FN b(3.0f);
 
     // Addition
-    op::Float8E4M3FN sum = a + b;
+    op::Float8E4M3FN sum(static_cast<float>(a) + static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(sum), 5.0f);
 
     // Subtraction
-    op::Float8E4M3FN diff = a - b;
+    op::Float8E4M3FN diff(static_cast<float>(a) - static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(diff), -1.0f);
 
     // Multiplication
-    op::Float8E4M3FN prod = a * b;
+    op::Float8E4M3FN prod(static_cast<float>(a) * static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(prod), 6.0f);
 
     // Division
-    op::Float8E4M3FN quot = a / b;
+    op::Float8E4M3FN quot(static_cast<float>(a) / static_cast<float>(b));
     // E4M3FN has limited precision for 2/3
     EXPECT_NEAR(static_cast<float>(quot), 0.6666667f, 0.05f);
 
     // Unary negation
-    op::Float8E4M3FN neg_a = -a;
+    op::Float8E4M3FN neg_a(-static_cast<float>(a));
     EXPECT_FLOAT_EQ(static_cast<float>(neg_a), -2.0f);
 }
 
@@ -142,29 +142,29 @@ TEST_F(TestFloat8E4M3, ComparisonOperations)
     op::Float8E4M3FN b(3.0f);
     op::Float8E4M3FN c(2.0f);
 
-    EXPECT_TRUE(a < b);
-    EXPECT_TRUE(a <= b);
-    EXPECT_TRUE(a <= c);
-    EXPECT_TRUE(a == c);
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b > a);
-    EXPECT_TRUE(b >= a);
+    EXPECT_TRUE(static_cast<float>(a) < static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) == static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) != static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(b) > static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(b) >= static_cast<float>(a));
 }
 
 TEST_F(TestFloat8E4M3, CompoundAssignment)
 {
     op::Float8E4M3FN a(2.0f);
 
-    a += op::Float8E4M3FN(3.0f);
+    a = op::Float8E4M3FN(static_cast<float>(a) + 3.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 5.0f);
 
-    a -= op::Float8E4M3FN(1.0f);
+    a = op::Float8E4M3FN(static_cast<float>(a) - 1.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 4.0f);
 
-    a *= op::Float8E4M3FN(2.0f);
+    a = op::Float8E4M3FN(static_cast<float>(a) * 2.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 8.0f);
 
-    a /= op::Float8E4M3FN(2.0f);
+    a = op::Float8E4M3FN(static_cast<float>(a) / 2.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 4.0f);
 }
 
@@ -226,7 +226,7 @@ TEST_F(TestFloat8E4M3, StdFunctions)
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
     EXPECT_TRUE(std::isfinite(val));
-    EXPECT_FLOAT_EQ(static_cast<float>(std::abs(neg_val)), 4.0f);
+    EXPECT_FLOAT_EQ(std::abs(static_cast<float>(neg_val)), 4.0f);
     EXPECT_TRUE(std::isnan(nan_val));
 }
 
@@ -244,38 +244,6 @@ TEST_F(TestFloat8E4M3, OutputStream)
     std::ostringstream oss;
     oss << val;
     EXPECT_EQ(oss.str(), "3.5");
-}
-
-// ============================================================================
-// Division by Zero Tests (OCP MX v1.0 - E4M3FN has NaN but no Infinity)
-// ============================================================================
-
-TEST_F(TestFloat8E4M3, DivisionByZero)
-{
-    // Per IEEE 754 and OCP MX v1.0:
-    // E4M3FN supports NaN (0x7F, 0xFF) but has NO Infinity encoding
-    // x/0 where x != 0 should return NaN (not infinity)
-
-    op::Float8E4M3FN positive(4.0f);
-    op::Float8E4M3FN zero(0.0f);
-
-    // Positive / zero = NaN (E4M3FN has no infinity)
-    op::Float8E4M3FN result_pos = positive / zero;
-    EXPECT_TRUE(result_pos.IsNaN()) << "Positive/zero should be NaN (E4M3FN has no infinity)";
-
-    // Negative / zero = NaN
-    op::Float8E4M3FN negative(-4.0f);
-    op::Float8E4M3FN result_neg = negative / zero;
-    EXPECT_TRUE(result_neg.IsNaN()) << "Negative/zero should be NaN (E4M3FN has no infinity)";
-
-    // Zero / zero = NaN
-    op::Float8E4M3FN zero_div_zero = zero / zero;
-    EXPECT_TRUE(zero_div_zero.IsNaN()) << "Zero/zero should be NaN";
-
-    // Compound assignment division by zero
-    op::Float8E4M3FN a(8.0f);
-    a /= zero;
-    EXPECT_TRUE(a.IsNaN()) << "Compound division by zero should be NaN";
 }
 
 // ============================================================================
@@ -387,24 +355,24 @@ TEST_F(TestFloat8E5M2, ArithmeticOperations)
     op::Float8E5M2 b(3.0f);
 
     // Addition
-    op::Float8E5M2 sum = a + b;
+    op::Float8E5M2 sum(static_cast<float>(a) + static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(sum), 5.0f);
 
     // Subtraction
-    op::Float8E5M2 diff = a - b;
+    op::Float8E5M2 diff(static_cast<float>(a) - static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(diff), -1.0f);
 
     // Multiplication
-    op::Float8E5M2 prod = a * b;
+    op::Float8E5M2 prod(static_cast<float>(a) * static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(prod), 6.0f);
 
     // Division
-    op::Float8E5M2 quot = a / b;
+    op::Float8E5M2 quot(static_cast<float>(a) / static_cast<float>(b));
     // E5M2 has limited precision for 2/3
     EXPECT_NEAR(static_cast<float>(quot), 0.6666667f, 0.05f);
 
     // Unary negation
-    op::Float8E5M2 neg_a = -a;
+    op::Float8E5M2 neg_a(-static_cast<float>(a));
     EXPECT_FLOAT_EQ(static_cast<float>(neg_a), -2.0f);
 }
 
@@ -414,29 +382,29 @@ TEST_F(TestFloat8E5M2, ComparisonOperations)
     op::Float8E5M2 b(3.0f);
     op::Float8E5M2 c(2.0f);
 
-    EXPECT_TRUE(a < b);
-    EXPECT_TRUE(a <= b);
-    EXPECT_TRUE(a <= c);
-    EXPECT_TRUE(a == c);
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b > a);
-    EXPECT_TRUE(b >= a);
+    EXPECT_TRUE(static_cast<float>(a) < static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) == static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) != static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(b) > static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(b) >= static_cast<float>(a));
 }
 
 TEST_F(TestFloat8E5M2, CompoundAssignment)
 {
     op::Float8E5M2 a(2.0f);
 
-    a += op::Float8E5M2(3.0f);
+    a = op::Float8E5M2(static_cast<float>(a) + 3.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 5.0f);
 
-    a -= op::Float8E5M2(1.0f);
+    a = op::Float8E5M2(static_cast<float>(a) - 1.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 4.0f);
 
-    a *= op::Float8E5M2(2.0f);
+    a = op::Float8E5M2(static_cast<float>(a) * 2.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 8.0f);
 
-    a /= op::Float8E5M2(2.0f);
+    a = op::Float8E5M2(static_cast<float>(a) / 2.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(a), 4.0f);
 }
 
@@ -498,7 +466,7 @@ TEST_F(TestFloat8E5M2, StdFunctions)
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
     EXPECT_TRUE(std::isfinite(val));
-    EXPECT_FLOAT_EQ(static_cast<float>(std::abs(neg_val)), 4.0f);
+    EXPECT_FLOAT_EQ(std::abs(static_cast<float>(neg_val)), 4.0f);
     EXPECT_TRUE(std::isnan(nan_val));
     EXPECT_TRUE(std::isinf(inf_val));
 }
@@ -523,41 +491,6 @@ TEST_F(TestFloat8E5M2, OutputStream)
     std::ostringstream oss2;
     oss2 << inf;
     EXPECT_STRCASEEQ(oss2.str().c_str(), "inf");
-}
-
-// ============================================================================
-// Division by Zero Tests (OCP MX v1.0 - E5M2 has both NaN and Infinity)
-// ============================================================================
-
-TEST_F(TestFloat8E5M2, DivisionByZero)
-{
-    // Per IEEE 754 and OCP MX v1.0:
-    // E5M2 supports both NaN and Infinity encodings
-    // +x/0 -> +Infinity, -x/0 -> -Infinity, 0/0 -> NaN
-
-    op::Float8E5M2 positive(4.0f);
-    op::Float8E5M2 zero(0.0f);
-
-    // Positive / zero = +Infinity
-    op::Float8E5M2 result_pos = positive / zero;
-    EXPECT_TRUE(result_pos.IsInf()) << "Positive/zero should be +Infinity";
-    EXPECT_FALSE(result_pos.IsNaN());
-
-    // Negative / zero = -Infinity
-    op::Float8E5M2 negative(-4.0f);
-    op::Float8E5M2 result_neg = negative / zero;
-    EXPECT_TRUE(result_neg.IsInf()) << "Negative/zero should be -Infinity";
-    EXPECT_FALSE(result_neg.IsNaN());
-
-    // Zero / zero = NaN
-    op::Float8E5M2 zero_div_zero = zero / zero;
-    EXPECT_TRUE(zero_div_zero.IsNaN()) << "Zero/zero should be NaN";
-    EXPECT_FALSE(zero_div_zero.IsInf());
-
-    // Compound assignment division by zero
-    op::Float8E5M2 a(8.0f);
-    a /= zero;
-    EXPECT_TRUE(a.IsInf()) << "Compound division by zero should be Infinity";
 }
 
 // ============================================================================
@@ -676,13 +609,13 @@ TEST_F(TestFloat8E8M0, Multiplication)
     // 2 * 4 = 8
     op::Float8E8M0 a(2.0f);
     op::Float8E8M0 b(4.0f);
-    op::Float8E8M0 prod = a * b;
+    op::Float8E8M0 prod(static_cast<float>(a) * static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(prod), 8.0f);
 
     // 1 * 2 = 2
     op::Float8E8M0 one(1.0f);
     op::Float8E8M0 two(2.0f);
-    prod = one * two;
+    prod = op::Float8E8M0(static_cast<float>(one) * static_cast<float>(two));
     EXPECT_FLOAT_EQ(static_cast<float>(prod), 2.0f);
 }
 
@@ -691,13 +624,13 @@ TEST_F(TestFloat8E8M0, Division)
     // 8 / 2 = 4
     op::Float8E8M0 a(8.0f);
     op::Float8E8M0 b(2.0f);
-    op::Float8E8M0 quot = a / b;
+    op::Float8E8M0 quot(static_cast<float>(a) / static_cast<float>(b));
     EXPECT_FLOAT_EQ(static_cast<float>(quot), 4.0f);
 
     // 4 / 2 = 2
     op::Float8E8M0 four(4.0f);
     op::Float8E8M0 two(2.0f);
-    quot = four / two;
+    quot = op::Float8E8M0(static_cast<float>(four) / static_cast<float>(two));
     EXPECT_FLOAT_EQ(static_cast<float>(quot), 2.0f);
 }
 
@@ -707,13 +640,13 @@ TEST_F(TestFloat8E8M0, ComparisonOperations)
     op::Float8E8M0 b(4.0f);
     op::Float8E8M0 c(2.0f);
 
-    EXPECT_TRUE(a < b);
-    EXPECT_TRUE(a <= b);
-    EXPECT_TRUE(a <= c);
-    EXPECT_TRUE(a == c);
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b > a);
-    EXPECT_TRUE(b >= a);
+    EXPECT_TRUE(static_cast<float>(a) < static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) == static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) != static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(b) > static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(b) >= static_cast<float>(a));
 }
 
 TEST_F(TestFloat8E8M0, StdFunctions)
@@ -730,7 +663,7 @@ TEST_F(TestFloat8E8M0, StdFunctions)
     EXPECT_FALSE(std::isinf(inf_input));  // infinity input is clamped to max, not stored as infinity
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
-    EXPECT_FLOAT_EQ(static_cast<float>(std::abs(val)), 4.0f);
+    EXPECT_FLOAT_EQ(std::abs(static_cast<float>(val)), 4.0f);
     // NaN input results in NaN
     EXPECT_TRUE(std::isnan(nan_input));
 }
@@ -772,40 +705,6 @@ TEST_F(TestFloat8E8M0, SpecialValues)
     op::Float8E8M0 nan_val(std::nanf(""));
     EXPECT_TRUE(nan_val.IsNaN());
     EXPECT_FALSE(nan_val.IsInf());
-}
-
-// ============================================================================
-// Division by Zero Tests (OCP MX v1.0 - E8M0 has NaN but no Infinity)
-// ============================================================================
-
-TEST_F(TestFloat8E8M0, DivisionByZero)
-{
-    // Per OCP MX v1.0:
-    // E8M0 supports NaN (0xFF) but has NO Infinity encoding
-    // x/0 where x != 0 should return NaN (not infinity)
-    // 0/0 should return NaN
-
-    op::Float8E8M0 positive(4.0f);
-    op::Float8E8M0 zero(0.0f);
-
-    // Non-zero / zero = NaN (E8M0 has no infinity)
-    op::Float8E8M0 result = positive / zero;
-    EXPECT_TRUE(result.IsNaN()) << "Non-zero/zero should be NaN (E8M0 has no infinity)";
-
-    // Zero / zero = NaN
-    op::Float8E8M0 zero_div_zero = zero / zero;
-    EXPECT_TRUE(zero_div_zero.IsNaN()) << "Zero/zero should be NaN";
-
-    // NaN operand handling - NaN / non-zero = NaN
-    op::Float8E8M0 nan_val(std::nanf(""));
-    op::Float8E8M0 two(2.0f);
-    op::Float8E8M0 nan_result = nan_val / two;
-    EXPECT_TRUE(nan_result.IsNaN()) << "NaN/anything should be NaN";
-
-    // Compound assignment division by zero
-    op::Float8E8M0 a(8.0f);
-    a /= zero;
-    EXPECT_TRUE(a.IsNaN()) << "Compound division by zero should be NaN";
 }
 
 // ============================================================================

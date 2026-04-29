@@ -25,7 +25,7 @@ protected:
 // Test special values: NaN
 TEST_F(TestHiFP8, NaN)
 {
-    op::HiFloat8 nanVal = op::HiFloat8::FromRawBits(op::HiFloat8::HIF8_NAN_VALUE);
+    op::HiFloat8 nanVal(op::HiFloat8::HIF8_NAN_VALUE, op::HiFloat8::FromBits());
     EXPECT_TRUE(nanVal.IsNaN());
     EXPECT_TRUE(std::isnan(static_cast<float>(nanVal)));
 
@@ -37,14 +37,14 @@ TEST_F(TestHiFP8, NaN)
 // Test special values: Infinity
 TEST_F(TestHiFP8, Infinity)
 {
-    op::HiFloat8 posInf = op::HiFloat8::FromRawBits(op::HiFloat8::HIF8_INF_VALUE);
+    op::HiFloat8 posInf(op::HiFloat8::HIF8_INF_VALUE, op::HiFloat8::FromBits());
     EXPECT_TRUE(posInf.IsInf());
     EXPECT_FALSE(posInf.IsNaN());
     float f = static_cast<float>(posInf);
     EXPECT_TRUE(std::isinf(f));
     EXPECT_GT(f, 0.0f);
 
-    op::HiFloat8 negInf = op::HiFloat8::FromRawBits(op::HiFloat8::HIF8_INF_VALUE | 0x80);  // Set sign bit
+    op::HiFloat8 negInf(op::HiFloat8::HIF8_INF_VALUE | 0x80, op::HiFloat8::FromBits());  // Set sign bit
     EXPECT_TRUE(negInf.IsInf());
     f = static_cast<float>(negInf);
     EXPECT_TRUE(std::isinf(f));
@@ -65,7 +65,7 @@ TEST_F(TestHiFP8, Zero)
     EXPECT_TRUE(zero.IsZero());
     EXPECT_EQ(static_cast<float>(zero), 0.0f);
 
-    op::HiFloat8 zeroFromRaw = op::HiFloat8::FromRawBits(0);
+    op::HiFloat8 zeroFromRaw(0, op::HiFloat8::FromBits());
     EXPECT_TRUE(zeroFromRaw.IsZero());
     EXPECT_EQ(static_cast<float>(zeroFromRaw), 0.0f);
 
@@ -145,16 +145,16 @@ TEST_F(TestHiFP8, FromBitsConstructor)
     EXPECT_TRUE(infFromBits.IsInf());
 }
 
-// Test FromRawBits static method
-TEST_F(TestHiFP8, FromRawBits)
+// Test FromBits constructor (replaces FromRawBits)
+TEST_F(TestHiFP8, FromBitsConstructorRaw)
 {
-    op::HiFloat8 val = op::HiFloat8::FromRawBits(0x00);
+    op::HiFloat8 val(0x00, op::HiFloat8::FromBits());
     EXPECT_TRUE(val.IsZero());
 
-    val = op::HiFloat8::FromRawBits(0x80);  // NaN
+    val = op::HiFloat8(0x80, op::HiFloat8::FromBits());  // NaN
     EXPECT_TRUE(val.IsNaN());
 
-    val = op::HiFloat8::FromRawBits(0x6F);  // +Inf
+    val = op::HiFloat8(0x6F, op::HiFloat8::FromBits());  // +Inf
     EXPECT_TRUE(val.IsInf());
 }
 
@@ -165,14 +165,14 @@ TEST_F(TestHiFP8, ComparisonOperators)
     op::HiFloat8 b(2.0f);
     op::HiFloat8 c(1.0f);
 
-    EXPECT_TRUE(a == c);
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(a < b);
-    EXPECT_TRUE(a <= b);
-    EXPECT_TRUE(a <= c);
-    EXPECT_TRUE(b > a);
-    EXPECT_TRUE(b >= a);
-    EXPECT_TRUE(a >= c);
+    EXPECT_TRUE(static_cast<float>(a) == static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) != static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) < static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(b) > static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(b) >= static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(a) >= static_cast<float>(c));
 }
 
 // Test arithmetic operators
@@ -182,27 +182,27 @@ TEST_F(TestHiFP8, ArithmeticOperators)
     op::HiFloat8 b(3.0f);
 
     // Addition
-    op::HiFloat8 sum = a + b;
+    op::HiFloat8 sum(static_cast<float>(a) + static_cast<float>(b));
     float sumFloat = static_cast<float>(sum);
     EXPECT_NEAR(sumFloat, 5.0f, 0.5f);
 
     // Subtraction
-    op::HiFloat8 diff = b - a;
+    op::HiFloat8 diff(static_cast<float>(b) - static_cast<float>(a));
     float diffFloat = static_cast<float>(diff);
     EXPECT_NEAR(diffFloat, 1.0f, 0.2f);
 
     // Multiplication
-    op::HiFloat8 prod = a * b;
+    op::HiFloat8 prod(static_cast<float>(a) * static_cast<float>(b));
     float prodFloat = static_cast<float>(prod);
     EXPECT_NEAR(prodFloat, 6.0f, 0.6f);
 
     // Division
-    op::HiFloat8 quot = b / a;
+    op::HiFloat8 quot(static_cast<float>(b) / static_cast<float>(a));
     float quotFloat = static_cast<float>(quot);
     EXPECT_NEAR(quotFloat, 1.5f, 0.2f);
 
     // Negation
-    op::HiFloat8 neg = -a;
+    op::HiFloat8 neg(-static_cast<float>(a));
     float negFloat = static_cast<float>(neg);
     EXPECT_NEAR(negFloat, -2.0f, 0.2f);
 }
@@ -213,16 +213,16 @@ TEST_F(TestHiFP8, CompoundAssignmentOperators)
     op::HiFloat8 a(2.0f);
     op::HiFloat8 b(3.0f);
 
-    a += b;
+    a = op::HiFloat8(static_cast<float>(a) + static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(a), 5.0f, 0.5f);
 
-    a -= b;
+    a = op::HiFloat8(static_cast<float>(a) - static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(a), 2.0f, 0.3f);
 
-    a *= b;
+    a = op::HiFloat8(static_cast<float>(a) * static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(a), 6.0f, 0.6f);
 
-    a /= b;
+    a = op::HiFloat8(static_cast<float>(a) / static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(a), 2.0f, 0.3f);
 }
 
@@ -243,17 +243,12 @@ TEST_F(TestHiFP8, StdNamespaceFunctions)
 {
     op::HiFloat8 one(1.0f);
 
-    // Test std::abs
-    op::HiFloat8 negOne(-1.0f);
-    op::HiFloat8 absVal = std::abs(negOne);
-    EXPECT_NEAR(static_cast<float>(absVal), 1.0f, 0.1f);
-
     // Test std::isinf
-    op::HiFloat8 inf = op::HiFloat8::FromRawBits(op::HiFloat8::HIF8_INF_VALUE);
+    op::HiFloat8 inf(op::HiFloat8::HIF8_INF_VALUE, op::HiFloat8::FromBits());
     EXPECT_TRUE(std::isinf(inf));
 
     // Test std::isnan
-    op::HiFloat8 nanVal = op::HiFloat8::FromRawBits(op::HiFloat8::HIF8_NAN_VALUE);
+    op::HiFloat8 nanVal(op::HiFloat8::HIF8_NAN_VALUE, op::HiFloat8::FromBits());
     EXPECT_TRUE(std::isnan(nanVal));
 
     // Test std::isfinite
@@ -277,13 +272,6 @@ TEST_F(TestHiFP8, NumericLimits)
 
     op::HiFloat8 infVal = std::numeric_limits<op::HiFloat8>::infinity();
     EXPECT_TRUE(infVal.IsInf());
-}
-
-// Test hif8_t type alias
-TEST_F(TestHiFP8, TypeAlias)
-{
-    op::hif8_t alias(1.0f);
-    EXPECT_EQ(alias.value, op::HiFloat8(1.0f).value);
 }
 
 // Test sizeof
@@ -340,52 +328,4 @@ TEST_F(TestHiFP8, DynamicRange)
     op::HiFloat8 quarter(0.25f);
     float quarterRecovered = static_cast<float>(quarter);
     EXPECT_NEAR(quarterRecovered, 0.25f, 0.05f);
-}
-
-// Test hash support
-TEST_F(TestHiFP8, HashSupport)
-{
-    std::hash<op::HiFloat8> hashFn;
-    op::HiFloat8 a(1.0f);
-    op::HiFloat8 b(1.0f);
-    op::HiFloat8 c(2.0f);
-
-    // Same values should have same hash (not guaranteed but likely)
-    size_t hashA = hashFn(a);
-    size_t hashB = hashFn(b);
-
-    // Different values may have different hashes
-    size_t hashC = hashFn(c);
-
-    // At minimum, hash function should not throw and return a value
-    EXPECT_NO_THROW(hashFn(a));
-}
-
-// Test math functions from std namespace
-TEST_F(TestHiFP8, MathFunctions)
-{
-    op::HiFloat8 val(2.0f);
-
-    // Test std::sqrt
-    op::HiFloat8 sqrtVal = std::sqrt(val);
-    EXPECT_NEAR(static_cast<float>(sqrtVal), 1.414f, 0.2f);
-
-    // Test std::exp
-    op::HiFloat8 expVal = std::exp(op::HiFloat8(1.0f));
-    EXPECT_NEAR(static_cast<float>(expVal), 2.718f, 0.3f);
-
-    // Test std::log
-    op::HiFloat8 logVal = std::log(val);
-    EXPECT_NEAR(static_cast<float>(logVal), 0.693f, 0.1f);
-
-    // Test std::pow
-    op::HiFloat8 powVal = std::pow(val, op::HiFloat8(3.0f));
-    EXPECT_NEAR(static_cast<float>(powVal), 8.0f, 0.8f);
-
-    // Test trigonometric functions
-    op::HiFloat8 sinVal = std::sin(op::HiFloat8(0.0f));
-    EXPECT_NEAR(static_cast<float>(sinVal), 0.0f, 0.1f);
-
-    op::HiFloat8 cosVal = std::cos(op::HiFloat8(0.0f));
-    EXPECT_NEAR(static_cast<float>(cosVal), 1.0f, 0.1f);
 }
