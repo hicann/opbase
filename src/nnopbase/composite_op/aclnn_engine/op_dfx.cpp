@@ -17,6 +17,7 @@
 #include "mmpa/mmpa_api.h"
 #include "dump/adump_pub.h"
 #include "profiling/aprof_pub.h"
+#include "platform/soc_spec.h"
 #include "register/op_binary_resource_manager.h"
 
 #include "opdev/op_def.h"
@@ -1300,12 +1301,12 @@ static bool IsSaturationOverflow(aclrtStream stream)
     void *descBuf;
     uint64_t descBufLen = sizeof(uint64_t) * 8;
 
-    SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
+    NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
     aclrtMallocAttrValue moduleIdValue;
     moduleIdValue.moduleId = kModelId;
     aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
     aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
-    auto ret = aclrtMallocWithCfg(&descBuf, (version == SocVersion::ASCEND910B) ?
+    auto ret = aclrtMallocWithCfg(&descBuf, (npuArch == NpuArch::DAV_2201) ?
         (descBufLen * 2) : descBufLen, ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg);
     CHECK_COND(ret == ACL_SUCCESS, false, "failed to call aclrtMallocWithCfg, ret %d", ret);
 
@@ -1313,7 +1314,7 @@ static bool IsSaturationOverflow(aclrtStream stream)
 
     uint64_t realAddr = PtrToValue(descBuf);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
-    if (version == SocVersion::ASCEND910B) {
+    if (npuArch == NpuArch::DAV_2201) {
         realAddr = PtrToValue(PtrShift(descBuf, descBufLen));
         ret = aclrtMemcpy(descBuf, sizeof(uint64_t), &realAddr, sizeof(uint64_t), ACL_MEMCPY_HOST_TO_DEVICE);
         CHECK_COND(ret == ACL_SUCCESS, false, "aclrtMemcpy failed, ret %d", ret);

@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 
 #include "register/op_impl_kernel_registry.h"
+#include "platform/soc_spec.h"
 
 #include "aclnn/acl_meta.h"
 #include "opdev/format_utils.h"
@@ -129,15 +130,15 @@ void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &c
     }
 
     std::string coreType = opJson["coreType"].get<std::string>();
-    SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
-    OP_LOGI("current soc version value: %d, core type: %s.", static_cast<int>(version), coreType.c_str());
+    NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    OP_LOGI("current npu arch value: %u, core type: %s.", npuArch, coreType.c_str());
     if (coreType == "VectorCore") {
         coreNum = vectorCoreNum;
         OP_LOGI("Set VectorCore core num: %u", coreNum);
     } else if (coreType == "MIX") {
         coreNum = CalcMixCoreNum(cubeCoreNum, vectorCoreNum, opJson);
         OP_LOGI("Set MIX core num: %u", coreNum);
-    } else if (version == SocVersion::ASCEND310P && (coreType == "MIX_AIV" || coreType == "MIX_VECTOR_CORE")) {
+    } else if (npuArch == NpuArch::DAV_2002 && (coreType == "MIX_AIV" || coreType == "MIX_VECTOR_CORE")) {
         coreNum = vectorCoreNum + cubeCoreNum;
         OP_LOGI("Set MIX_AIV core num: %u", coreNum);
     } else {

@@ -9,6 +9,7 @@
  */
 
 #include "bridge_dfx.h"
+#include "platform/soc_spec.h"
 #include "dump/adump_pub.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
@@ -47,10 +48,10 @@ bool IsOverflowDumpEnable()
 
 bool IsNeedL0ExceptionDump()
 {
-    static SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
+    static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
     static bool isNeed =
-        ((version == SocVersion::ASCEND910 || version == SocVersion::ASCEND310B) && IsArgExceptionDumpEnable());
-    OP_LOGI("soc version: %s, is L0 exception dump need: %d", ToString(version).GetString(), isNeed);
+        ((npuArch == NpuArch::DAV_1001 || npuArch == NpuArch::DAV_3002) && IsArgExceptionDumpEnable());
+    OP_LOGI("npu arch: %u, is L0 exception dump need: %d", npuArch, isNeed);
     return isNeed;
 }
 

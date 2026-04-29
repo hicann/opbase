@@ -17,6 +17,7 @@
 #include <mutex>
 
 #include "nlohmann/json.hpp"
+#include "platform/soc_spec.h"
 #include "dump/adump_pub.h"
 #include "acl/acl_rt.h"
 
@@ -413,8 +414,8 @@ public:
 
     bool IsNeedSplitAicAndAiv(const TilingCtxOutput *res, const op::PlatformInfo &platformInfo)
     {
-        SocVersion version = platformInfo.GetSocVersion();
-        if (version != SocVersion::ASCEND310P) {
+        NpuArch npuArch = platformInfo.GetCurNpuArch();
+        if (npuArch != NpuArch::DAV_2002) {
             return false;
         }
         uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
@@ -700,7 +701,8 @@ public:
         auto& platformInfo = GetCurrentPlatformInfo();
         bool needSplitAicAndAiv = IsNeedSplitAicAndAiv(res, platformInfo);
         if (!needSplitAicAndAiv) {
-            isVectorCoreEnableScenario_ = (platformInfo.GetSocVersion() == SocVersion::ASCEND310P) ? true : false;
+            NpuArch npuArch = platformInfo.GetCurNpuArch();
+            isVectorCoreEnableScenario_ = (npuArch == NpuArch::DAV_2002) ? true : false;
             return DoLaunchWithDfx(res, stream, args);
         } else {
             OP_LOGW("Entering two Kernel Launchs with AIC and AIV.");
@@ -857,16 +859,13 @@ public:
     {
         OpKernelBin *memsetBin = nullptr;
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
-        SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
+        NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
 #else
-        static SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
+        static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
 #endif
-        bool needAlign = (socVersion == SocVersion::ASCEND910B ||
-                          socVersion == SocVersion::ASCEND950 ||
-                          socVersion == SocVersion::ASCEND350) ? false : true;
-        MemsetVersion memsetVersion =
-            (socVersion == SocVersion::ASCEND950 || socVersion == SocVersion::ASCEND350) ?
-                MemsetVersion::MEMSET_V1_ASCENDC : MemsetVersion::MEMSET_V1;
+        bool needAlign = (npuArch == NpuArch::DAV_2201 || npuArch == NpuArch::DAV_3510) ? false : true;
+        MemsetVersion memsetVersion = (npuArch == NpuArch::DAV_3510) ?
+            MemsetVersion::MEMSET_V1_ASCENDC : MemsetVersion::MEMSET_V1;
         CHECK_RET_CODE(SelectMemsetOpBin(memsetVersion, memSetValue_.size(), memsetBin), "Select MemSet op failed");
 
         // for multi thread
