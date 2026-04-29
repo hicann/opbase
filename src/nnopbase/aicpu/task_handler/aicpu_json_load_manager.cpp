@@ -141,8 +141,7 @@ aclnnStatus JsonLoadManger::SetSupportedNewLaunchFlag()
     OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get SoC version failed.");
     return ACLNN_ERR_RUNTIME_ERROR;
   }
-  if ((strncmp(socVersion, "Ascend950", (sizeof("Ascend950") - 1UL)) == 0)
-      || (strncmp(socVersion, "Ascend910_96", (sizeof("Ascend910_96") - 1UL)) == 0)) {
+  if (strncmp(socVersion, "Ascend910_96", (sizeof("Ascend910_96") - 1UL)) == 0) {
     isSupportNewLaunch_ = false;
   }
   socVersion_ = std::string(socVersion);
