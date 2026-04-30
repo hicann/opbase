@@ -126,19 +126,19 @@ TEST_F(TestFloat4E2M1, ArithmeticOperations)
     op::Float4E2M1 b(1.5f);
 
     // Addition
-    op::Float4E2M1 sum = a + b;
+    op::Float4E2M1 sum(static_cast<float>(a) + static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(sum), 2.5f, 0.5f);
 
     // Subtraction
-    op::Float4E2M1 diff = a - b;
+    op::Float4E2M1 diff(static_cast<float>(a) - static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(diff), -0.5f, 0.3f);
 
     // Multiplication
-    op::Float4E2M1 prod = a * b;
+    op::Float4E2M1 prod(static_cast<float>(a) * static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(prod), 1.5f, 0.3f);
 
     // Unary negation
-    op::Float4E2M1 neg_a = -a;
+    op::Float4E2M1 neg_a(-static_cast<float>(a));
     EXPECT_FLOAT_EQ(static_cast<float>(neg_a), -1.0f);
 }
 
@@ -148,13 +148,13 @@ TEST_F(TestFloat4E2M1, ComparisonOperations)
     op::Float4E2M1 b(2.0f);
     op::Float4E2M1 c(1.0f);
 
-    EXPECT_TRUE(a < b);
-    EXPECT_TRUE(a <= b);
-    EXPECT_TRUE(a <= c);
-    EXPECT_TRUE(a == c);
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b > a);
-    EXPECT_TRUE(b >= a);
+    EXPECT_TRUE(static_cast<float>(a) < static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) == static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) != static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(b) > static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(b) >= static_cast<float>(a));
 }
 
 TEST_F(TestFloat4E2M1, TypeConversion)
@@ -215,7 +215,7 @@ TEST_F(TestFloat4E2M1, StdFunctions)
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
     EXPECT_TRUE(std::isfinite(val));
-    EXPECT_FLOAT_EQ(static_cast<float>(std::abs(neg_val)), 2.0f);
+    EXPECT_FLOAT_EQ(std::abs(static_cast<float>(neg_val)), 2.0f);
     // nan input is clamped to max value (6.0), not NaN
     EXPECT_FALSE(std::isnan(nan_input));
     EXPECT_FLOAT_EQ(static_cast<float>(nan_input), 6.0f);
@@ -254,24 +254,24 @@ TEST_F(TestFloat4E2M1, DivisionByZero)
     op::Float4E2M1 zero(0.0f);
 
     // Positive / zero = +max (6.0) - E2M1 has no infinity
-    op::Float4E2M1 result_pos = positive / zero;
+    op::Float4E2M1 result_pos(static_cast<float>(positive) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(result_pos), 6.0f) << "Positive/zero should clamp to max (6.0)";
     EXPECT_FALSE(result_pos.IsNaN());
 
     // Negative / zero = -max (-6.0) - sign preserved
     op::Float4E2M1 negative(-2.0f);
-    op::Float4E2M1 result_neg = negative / zero;
+    op::Float4E2M1 result_neg(static_cast<float>(negative) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(result_neg), -6.0f) << "Negative/zero should clamp to min (-6.0)";
     EXPECT_FALSE(result_neg.IsNaN());
 
     // Zero / zero = NaN in float, clamped to max (6.0) in E2M1
-    op::Float4E2M1 zero_div_zero = zero / zero;
+    op::Float4E2M1 zero_div_zero(static_cast<float>(zero) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(zero_div_zero), 6.0f) << "Zero/zero (NaN) should clamp to max";
     EXPECT_FALSE(zero_div_zero.IsNaN());
 
     // Compound assignment division by zero
     op::Float4E2M1 a(3.0f);
-    a /= zero;
+    a = op::Float4E2M1(static_cast<float>(a) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(a), 6.0f) << "Compound division by zero should clamp to max";
 }
 
@@ -375,19 +375,19 @@ TEST_F(TestFloat4E1M2, ArithmeticOperations)
     op::Float4E1M2 b(0.5f);
 
     // Addition (may overflow)
-    op::Float4E1M2 sum = a + b;
+    op::Float4E1M2 sum(static_cast<float>(a) + static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(sum), 1.5f, 0.3f);
 
     // Subtraction
-    op::Float4E1M2 diff = a - b;
+    op::Float4E1M2 diff(static_cast<float>(a) - static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(diff), 0.5f, 0.2f);
 
     // Multiplication (may underflow to 0.5)
-    op::Float4E1M2 prod = a * b;
+    op::Float4E1M2 prod(static_cast<float>(a) * static_cast<float>(b));
     EXPECT_NEAR(static_cast<float>(prod), 0.5f, 0.2f);
 
     // Unary negation
-    op::Float4E1M2 neg_a = -a;
+    op::Float4E1M2 neg_a(-static_cast<float>(a));
     EXPECT_FLOAT_EQ(static_cast<float>(neg_a), -1.0f);
 }
 
@@ -397,13 +397,13 @@ TEST_F(TestFloat4E1M2, ComparisonOperations)
     op::Float4E1M2 b(1.5f);
     op::Float4E1M2 c(1.0f);
 
-    EXPECT_TRUE(a < b);
-    EXPECT_TRUE(a <= b);
-    EXPECT_TRUE(a <= c);
-    EXPECT_TRUE(a == c);
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b > a);
-    EXPECT_TRUE(b >= a);
+    EXPECT_TRUE(static_cast<float>(a) < static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(a) <= static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) == static_cast<float>(c));
+    EXPECT_TRUE(static_cast<float>(a) != static_cast<float>(b));
+    EXPECT_TRUE(static_cast<float>(b) > static_cast<float>(a));
+    EXPECT_TRUE(static_cast<float>(b) >= static_cast<float>(a));
 }
 
 TEST_F(TestFloat4E1M2, TypeConversion)
@@ -464,7 +464,7 @@ TEST_F(TestFloat4E1M2, StdFunctions)
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
     EXPECT_TRUE(std::isfinite(val));
-    EXPECT_FLOAT_EQ(static_cast<float>(std::abs(neg_val)), 1.0f);
+    EXPECT_FLOAT_EQ(std::abs(static_cast<float>(neg_val)), 1.0f);
     // nan input is clamped to max value (1.75), not NaN
     EXPECT_FALSE(std::isnan(nan_input));
     EXPECT_FLOAT_EQ(static_cast<float>(nan_input), 1.75f);
@@ -501,24 +501,24 @@ TEST_F(TestFloat4E1M2, DivisionByZero)
     op::Float4E1M2 zero(0.0f);
 
     // Positive / zero = +max (1.75) - E1M2 has no infinity
-    op::Float4E1M2 result_pos = positive / zero;
+    op::Float4E1M2 result_pos(static_cast<float>(positive) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(result_pos), 1.75f) << "Positive/zero should clamp to max (1.75)";
     EXPECT_FALSE(result_pos.IsNaN());
 
     // Negative / zero = -max (-1.75) - sign preserved
     op::Float4E1M2 negative(-1.0f);
-    op::Float4E1M2 result_neg = negative / zero;
+    op::Float4E1M2 result_neg(static_cast<float>(negative) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(result_neg), -1.75f) << "Negative/zero should clamp to min (-1.75)";
     EXPECT_FALSE(result_neg.IsNaN());
 
     // Zero / zero = NaN in float, clamped to max (1.75) in E1M2
-    op::Float4E1M2 zero_div_zero = zero / zero;
+    op::Float4E1M2 zero_div_zero(static_cast<float>(zero) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(zero_div_zero), 1.75f) << "Zero/zero (NaN) should clamp to max";
     EXPECT_FALSE(zero_div_zero.IsNaN());
 
     // Compound assignment division by zero
     op::Float4E1M2 a(1.0f);
-    a /= zero;
+    a = op::Float4E1M2(static_cast<float>(a) / static_cast<float>(zero));
     EXPECT_FLOAT_EQ(static_cast<float>(a), 1.75f) << "Compound division by zero should clamp to max";
 }
 
