@@ -3,6 +3,7 @@
     <package_info>
         <product_name>cann</product_name>
         <func_name>opbase</func_name>
+        <share_info_name>opbase</share_info_name>
         <suffix>run</suffix>
         <install_script>share/info/opbase/script/install.sh</install_script>
         <help>share/info/opbase/script/help.info</help>

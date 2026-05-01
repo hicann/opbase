@@ -171,6 +171,9 @@ build_ops_base() {
     cd "${BASEPATH}"
 
     BUILD_OUT_PATH="${BASEPATH}/${BUILD_OUT}/"
+    if [ ! -d "${BUILD_OUT_PATH}" ]; then
+        mkdir -p "${BUILD_OUT_PATH}"
+    fi
     CMAKE_ARGS="\
     -DENABLE_UT=${ENABLE_UT} \
     -DENABLE_ST=${ENABLE_ST} \
@@ -180,7 +183,8 @@ build_ops_base() {
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DBUILD_MODE=${BUILD_MODE} \
     -DENABLE_PKG_ASAN=${ENABLE_PKG_ASAN} \
-    -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
+    -DENABLE_COVERAGE=${ENABLE_COVERAGE} \
+    -DCMAKE_INSTALL_PREFIX=${BUILD_OUT_PATH}"
 
     cmake_generate_make "${BASEPATH}" "${BUILD_PATH}" "${CMAKE_ARGS}"
 
@@ -188,13 +192,10 @@ build_ops_base() {
 
     # make package
     if [ 0 -ne $? ]; then
-        echo "execute command: make ${VERBOSE} -j${THREAD_NUM} && make install failed."
+        echo "execute command: make ${VERBOSE} -j${THREAD_NUM} && make package failed."
         return 1
     fi
-    if [ -f _CPack_Packages/makeself_staging/cann*.run ];then
-        mkdir -pv $BUILD_OUT_PATH
-        mv _CPack_Packages/makeself_staging/cann*.run $BUILD_OUT_PATH
-    else
+    if [ ! -f ${BUILD_OUT_PATH}/cann*.run ];then
         echo "package ops_base run failed"
         return 1
     fi
