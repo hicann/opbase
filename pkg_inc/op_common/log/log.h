@@ -147,9 +147,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_opName_.c_str(),                                                                                 \
             "The %sth input of operator %s has incorrect shape [%s]. The correct one should be [%s].",             \
             index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_shape", "correct_shape"};          \
+        const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_shape", "correct_shape"};          \
         const std::vector<const char*> msgvalue = {                                                                \
-            _safe_opName_.c_str(), index_str.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()}; \
+            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0001", msgKey, msgvalue);                                                     \
     } while (0)
 
@@ -171,9 +171,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_opName_.c_str(),                                                                                   \
             "Attribute %s of operator %s has incorrect value %s. The correct one should be %s.",                     \
             _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_val", "correct_val"};            \
+        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_val", "correct_val"};            \
         const std::vector<const char*> msgvalue = {                                                                  \
-            _safe_opName_.c_str(), _safe_attrName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()}; \
+            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                                       \
     } while (0)
 
@@ -194,9 +194,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                        \
             _safe_opName_.c_str(), "Attribute %s of operator %s has incorrect size %s. The correct one should be %s.", \
             _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "attr_name", "incorrect_size", "correct_size"};            \
+        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_size", "correct_size"};            \
         const std::vector<const char*> msgvalue = {                                                                    \
-            _safe_opName_.c_str(), _safe_attrName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
+            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                                         \
     } while (0)
 
@@ -210,10 +210,10 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_opName_(opName);                                                           \
         std::string _safe_paramName_(paramName);                                                     \
         OP_LOGE_WITHOUT_REPORT(                                                                      \
-            _safe_opName_.c_str(), "Parameter %s of operator %s is required, but it is empty.", \
+            _safe_opName_.c_str(), "Parameter %s of operator %s is required, but it is empty.",      \
             _safe_paramName_.c_str(), _safe_opName_.c_str());                                        \
-        const std::vector<const char*> msgKey = {"op_name", "param_name"};                           \
-        const std::vector<const char*> msgvalue = {_safe_opName_.c_str(), _safe_paramName_.c_str()}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name"};                           \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_opName_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                                       \
     } while (0)
 
@@ -235,9 +235,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_opName_.c_str(),                                                                               \
             "The %sth input of operator %s has incorrect shape size %s. The correct one should be %s.",          \
             index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "index", "incorrect_size", "correct_size"};          \
+        const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_size", "correct_size"};          \
         const std::vector<const char*> msgvalue = {                                                              \
-            _safe_opName_.c_str(), index_str.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
+            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                                   \
     } while (0)
 
@@ -260,9 +260,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Input parameter %s of operator %s has incorrect format %s. The correct one should be %s.",           \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataFormat_.c_str(),                           \
             _safe_expectedFormatList_.c_str());                                                                   \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "data_format", "expected_format_list"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "data_format", "expected_format_list"}; \
         const std::vector<const char*> msgvalue = {                                                               \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_dataFormat_.c_str(),                           \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataFormat_.c_str(),                           \
             _safe_expectedFormatList_.c_str()};                                                                   \
         REPORT_PREDEFINED_ERR_MSG("EZ0006", msgKey, msgvalue);                                                    \
     } while (0)
@@ -286,9 +286,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Input parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",          \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataDtype_.c_str(),                          \
             _safe_expectedDtypeList_.c_str());                                                                  \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "data_dtype", "expected_dtype_list"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "data_dtype", "expected_dtype_list"}; \
         const std::vector<const char*> msgvalue = {                                                             \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_dataDtype_.c_str(),                          \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataDtype_.c_str(),                          \
             _safe_expectedDtypeList_.c_str()};                                                                  \
         REPORT_PREDEFINED_ERR_MSG("EZ0007", msgKey, msgvalue);                                                  \
     } while (0)
@@ -318,9 +318,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Parameter %s of operator %s has incorrect shape [%s]. The correct one should be [%s].",           \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
             _safe_correctShape_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "correct_shape"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "correct_shape"}; \
         const std::vector<const char*> msgvalue = {                                                            \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectShape_.c_str(),                    \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
             _safe_correctShape_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                 \
     } while (0)
@@ -342,9 +342,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
             _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape [%s]. Reason: %s.",             \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_shape", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                                      \
     } while (0)
 
@@ -365,9 +365,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                       \
             _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shapes %s. Reason: %s.",              \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_shapes", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_shapes", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                        \
     } while (0)
 
@@ -390,9 +390,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_opName_.c_str(),                                                                                    \
             "Parameter %s of operator %s has incorrect shape dim %s. The correct one should be %s.",                  \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "correct_dim"};            \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "correct_dim"};            \
         const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                        \
     } while (0)
 
@@ -413,9 +413,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                   \
             _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",         \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dim", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                               \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                    \
     } while (0)
 
@@ -436,9 +436,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
             _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shape dims %s. Reason: %s.",        \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dims", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dims", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                                      \
     } while (0)
 
@@ -462,9 +462,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Parameter %s of operator %s has incorrect shape size %s. The correct one should be %s.",        \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
             _safe_correctSize_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
         const std::vector<const char*> msgvalue = {                                                          \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
             _safe_correctSize_.c_str()};                                                                     \
         REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                               \
     } while (0)
@@ -486,9 +486,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                    \
             _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape size %s. Reason: %s.",         \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                     \
     } while (0)
 
@@ -510,9 +510,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                      \
             _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shape sizes %s. Reason: %s.",        \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_sizes", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_sizes", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                  \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                       \
     } while (0)
 
@@ -536,9 +536,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Parameter %s of operator %s has incorrect format %s. The correct one should be %s.",                \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
             _safe_correctFormat_.c_str());                                                                       \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_format", "correct_format"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "correct_format"}; \
         const std::vector<const char*> msgvalue = {                                                              \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
             _safe_correctFormat_.c_str()};                                                                       \
         REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                   \
     } while (0)
@@ -560,9 +560,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                        \
             _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect formats %s. Reason: %s.",              \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_formats", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_formats", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                    \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                                         \
     } while (0)
 
@@ -586,9 +586,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",               \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
             _safe_correctDtype_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "correct_dtype"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "correct_dtype"}; \
         const std::vector<const char*> msgvalue = {                                                            \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
             _safe_correctDtype_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0019", msgKey, msgvalue);                                                 \
     } while (0)
@@ -610,9 +610,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
             _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect dtype %s. Reason: %s.",               \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_dtype", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                                      \
     } while (0)
 
@@ -633,9 +633,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                       \
             _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect dtypes %s. Reason: %s.",              \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_dtypes", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dtypes", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                                        \
     } while (0)
 
@@ -658,10 +658,10 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Parameter %s of operator %s has invalid tensor num %ld. The correct one should be %s.",              \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), static_cast<int64_t>(incorrectNum),                  \
             _safe_correctNum_.c_str());                                                                           \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_num", "correct_num"};        \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_num", "correct_num"};        \
         std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                         \
         const std::vector<const char*> msgvalue = {                                                               \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), incorrectNumStr.c_str(), _safe_correctNum_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), incorrectNumStr.c_str(), _safe_correctNum_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                    \
     } while (0)
 
@@ -682,9 +682,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
             _safe_opName_.c_str(), "Parameters %s of operator %s have invalid tensor nums %s. Reason: %s.",         \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_nums", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_nums", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                                      \
     } while (0)
 
@@ -708,9 +708,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Parameter %s of operator %s has incorrect value %s. The correct one should be %s.",               \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(),                    \
             _safe_correctValue_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_value", "correct_value"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "correct_value"}; \
         const std::vector<const char*> msgvalue = {                                                            \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectValue_.c_str(),                    \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(),                    \
             _safe_correctValue_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                 \
     } while (0)
@@ -732,12 +732,12 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctSize_(correctSize);                                                         \
         OP_LOGE_WITHOUT_REPORT(                                                                              \
             _safe_opName_.c_str(),                                                                           \
-            "Parameter %s of operator %s has invalid list size %s. The correct one should be %s.",           \
+            "Parameter %s of operator %s has incorrect element nums %s. The correct one should be %s.",      \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
             _safe_correctSize_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
         const std::vector<const char*> msgvalue = {                                                          \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
             _safe_correctSize_.c_str()};                                                                     \
         REPORT_PREDEFINED_ERR_MSG("EZ0025", msgKey, msgvalue);                                               \
     } while (0)
@@ -759,9 +759,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                     \
             _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect value %s. Reason: %s.",               \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_name", "incorrect_value", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_opName_.c_str(), _safe_paramName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0026", msgKey, msgvalue);                                                      \
     } while (0)
 
@@ -782,9 +782,9 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         OP_LOGE_WITHOUT_REPORT(                                                                                       \
             _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect values %s. Reason: %s.",              \
             _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"op_name", "param_names", "incorrect_values", "reason"};             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_values", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_opName_.c_str(), _safe_paramNames_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()}; \
+            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                                        \
     } while (0)
 
