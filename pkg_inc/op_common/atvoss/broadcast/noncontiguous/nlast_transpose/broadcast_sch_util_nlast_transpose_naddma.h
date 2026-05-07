@@ -73,7 +73,7 @@ __aicore__ inline int64_t BroadcastGetGmOffsetNDDMA(
 template <size_t N>
 __aicore__ inline int64_t CalAfterUbSplitAxisLen(const int64_t (&Dim)[N], int64_t shapeLen, int64_t ubSplitAxis)
 {
-    int64_t totalLen = 1;
+    int64_t totalLen = 0;
     for (int64_t i = ubSplitAxis + 1; i < shapeLen; i++) {
         if (totalLen == 0) {
             totalLen = Dim[i];

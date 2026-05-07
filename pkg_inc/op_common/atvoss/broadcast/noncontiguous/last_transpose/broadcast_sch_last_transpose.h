@@ -81,7 +81,6 @@ public:
         // 获取多核偏移信息
         BroadcastGetAxesIndices(axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(), tilingData->outputDims,
             tilingData->ubSplitAxis, tilingData->dimProductBeforeUbInner);
-        InitShapeOneFlag();
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum; ubLoopIdx += 1) {
             if (ubLoopIdx != 0) {
                 // 更新UB间循环偏移信息
@@ -127,21 +126,6 @@ protected:
         }
     }
 
-    __aicore__ inline void InitShapeOneFlag() {
-        for (int i = 0; i < BrcDag::CopyBrcSize; i++) {
-            int64_t strideSum = 0;
-            for (int j = 0; j < BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM; j++) {
-                strideSum += tilingData->inputBrcStrides[i][j];
-                if (strideSum != 0) {
-                    break;
-                }
-            }
-            if (strideSum == 0) {
-                inputIsShapeOne[i] = true;
-            }
-        }
-    }
-
     template <typename Op, int pos>
     __aicore__ inline void CopyInBrc(const int64_t (&axesIndices)[BROADCAST_MAX_DIMS_LAST_TRANSPOSE],  int64_t lastAxisLoopIdx, 
                                     int64_t notLastUBSplitSize, int64_t lastUBSplitSize,int32_t pingPong)
@@ -164,24 +148,7 @@ protected:
         inputGm.SetGlobalBuffer(reinterpret_cast<__gm__ inputType *>(this->inGm_[input::Pos]  + gmOffset * sizeof(inputType)));
 
         RUN_LOG("copyInBrcCount is %d , input::Pos is %d ,pingpong is %d", copyInBrcCount, input::Pos, pingPong);
-        // 输入为shape[1]使用Duplicate生成对应ub输入，当ubLoopIdx大于1时，直接return无需重复搬入Duplicate
-        if (inputIsShapeOne[copyInBrcCount]) {
-            if (lastAxisLoopIdx <= 1) {
-                GetTensor<TPosition::VECIN>(bufId);
-                AscendC::DataCopyPad(inTensor, inputGm, {1, sizeof(inputType), 0, 0}, {false, 0, 0, 0});
-                ReleaseTensor<TPosition::VECIN>(bufId);
-                GetTensor<TPosition::VECCALC>(bufId);
-                if constexpr (std::is_same_v<inputType, double>) {
-                    AscendC::Duplicate<int64_t>(
-                        inTensor.template ReinterpretCast<int64_t>(), inTensor.template ReinterpretCast<int64_t>(),
-                        tilingData->elemNum);
-                } else {
-                    AscendC::Duplicate<inputType>(inTensor, inTensor, tilingData->elemNum);
-                }
-                ReleaseTensor<TPosition::VECCALC>(bufId);
-            }
-            return;
-        }
+
         // 当内循环是last轴时，看last轴是不是brc轴. 由于此时last轴不参与合轴，所以只要满足前两次不缓存即可。
         // 当内循环是ub切分轴时，看ub切分轴tilingData->ubSplitAxis是不是brc轴.
         if (tilingData->inputBrcStrides[copyInBrcCount][tilingData->shapeLen - 1] != 0 || 
@@ -263,7 +230,6 @@ private:
     constexpr static int bufferNum = BrcDag::template GetBufferNum<true, true>();
     int copyInBrcCount = 0;
     const BroadcastLastTransposeTilingData<BrcDag> *tilingData;
-    bool inputIsShapeOne[BrcDag::CopyBrcSize] = {false};
 };
 } // namespace Base
 } // namespace Ops
