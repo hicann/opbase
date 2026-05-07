@@ -788,6 +788,166 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                                        \
     } while (0)
 
+/**
+ * EZ0028: Parameter stride error
+ * opName:string - Operator name
+ * paramName:string - Parameter name
+ * incorrectStride:string - Actual stride (e.g., "[1,1,1,1]")
+ * correctStride:string - Expected stride (e.g., "[1,1,1,1]")
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect stride [incorrectStride],
+ *             it should be [correctStride].
+ */
+#define OP_LOGE_FOR_INVALID_STRIDE(opName, paramName, incorrectStride, correctStride)                            \
+    do {                                                                                                         \
+        std::string _safe_opName_(opName);                                                                       \
+        std::string _safe_paramName_(paramName);                                                                 \
+        std::string _safe_incorrectStride_(incorrectStride);                                                     \
+        std::string _safe_correctStride_(correctStride);                                                         \
+        OP_LOGE_WITHOUT_REPORT(                                                                                  \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect stride %s, it should be %s.",      \
+            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectStride_.c_str(),                     \
+            _safe_correctStride_.c_str());                                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_stride", "correct_stride"}; \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_opName_.c_str(),              \
+            _safe_incorrectStride_.c_str(), _safe_correctStride_.c_str()};                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0028", msgKey, msgvalue);                                                   \
+    } while (0)
+
+/**
+ * EZ0029: File operation path error
+ * filePath:string - File path
+ * reason:string - Reason for the error
+ * errMessage: Input path [filePath] is invalid. Reason: [reason].
+ */
+#define OP_LOGE_FOR_FILE_PATH(opName, filePath, reason)                                                         \
+    do {                                                                                                        \
+        std::string _safe_opName_(opName);                                                                      \
+        std::string _safe_filePath_(filePath);                                                                  \
+        std::string _safe_reason_(reason);                                                                      \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            _safe_opName_.c_str(), "Input path %s is invalid. Reason: %s.", _safe_filePath_.c_str(),            \
+            _safe_reason_.c_str());                                                                             \
+        const std::vector<const char*> msgKey = {"file_path", "reason"};                                        \
+        const std::vector<const char*> msgvalue = {_safe_filePath_.c_str(), _safe_reason_.c_str()};             \
+        REPORT_PREDEFINED_ERR_MSG("EZ0029", msgKey, msgvalue);                                                  \
+    } while (0)
+
+/**
+ * EZ0030: File operation open error
+ * filePath:string - File path
+ * reason:string - Reason for the error
+ * errMessage: Failed to open file [filePath]. Reason: [reason].
+ */
+#define OP_LOGE_FOR_FILE_OPEN(opName, filePath, reason)                                                         \
+    do {                                                                                                        \
+        std::string _safe_opName_(opName);                                                                      \
+        std::string _safe_filePath_(filePath);                                                                  \
+        std::string _safe_reason_(reason);                                                                      \
+        OP_LOGE_WITHOUT_REPORT(                                                                                 \
+            _safe_opName_.c_str(), "Failed to open file %s. Reason: %s.", _safe_filePath_.c_str(),              \
+            _safe_reason_.c_str());                                                                             \
+        const std::vector<const char*> msgKey = {"file_path", "reason"};                                        \
+        const std::vector<const char*> msgvalue = {_safe_filePath_.c_str(), _safe_reason_.c_str()};             \
+        REPORT_PREDEFINED_ERR_MSG("EZ0030", msgKey, msgvalue);                                                  \
+    } while (0)
+
+/**
+ * EZ0031: File operation parse error
+ * fileName:string - File name
+ * reason:string - Reason for the error
+ * errMessage: Failed to parse file [fileName]. Reason: [reason].
+ */
+#define OP_LOGE_FOR_FILE_PARSE(opName, fileName, reason)                                                         \
+    do {                                                                                                         \
+        std::string _safe_opName_(opName);                                                                       \
+        std::string _safe_fileName_(fileName);                                                                   \
+        std::string _safe_reason_(reason);                                                                       \
+        OP_LOGE_WITHOUT_REPORT(                                                                                  \
+            _safe_opName_.c_str(), "Failed to parse file %s. Reason: %s.", _safe_fileName_.c_str(),              \
+            _safe_reason_.c_str());                                                                              \
+        const std::vector<const char*> msgKey = {"file_name", "reason"};                                         \
+        const std::vector<const char*> msgvalue = {_safe_fileName_.c_str(), _safe_reason_.c_str()};              \
+        REPORT_PREDEFINED_ERR_MSG("EZ0031", msgKey, msgvalue);                                                   \
+    } while (0)
+
+/**
+ * EZ0032: Config error (single item, with expect)
+ * value:string - Actual incorrect value
+ * item:string - configuration item name
+ * configFile:string - configuration file path
+ * expect:string - Expected value (e.g., "3")
+ * errMessage: Value [value] of configuration item [item] in configuration file [configFile] is invalid,
+ *             it should be [expect].
+ */
+#define OP_LOGE_FOR_INVALID_CONFIG(opName, configFile, item, value, expect)                                          \
+    do {                                                                                                             \
+        std::string _safe_opName_(opName);                                                                           \
+        std::string _safe_configFile_(configFile);                                                                   \
+        std::string _safe_item_(item);                                                                               \
+        std::string _safe_value_(value);                                                                             \
+        std::string _safe_expect_(expect);                                                                           \
+        OP_LOGE_WITHOUT_REPORT(                                                                                      \
+            _safe_opName_.c_str(),                                                                                   \
+            "Value %s of configuration item %s in configuration file %s is invalid, it should be %s.",               \
+            _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(), _safe_expect_.c_str());            \
+        const std::vector<const char*> msgKey = {"value", "item", "config_file", "expect"};                          \
+        const std::vector<const char*> msgvalue = {_safe_value_.c_str(), _safe_item_.c_str(),                        \
+            _safe_configFile_.c_str(), _safe_expect_.c_str()};                                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0032", msgKey, msgvalue);                                                       \
+    } while (0)
+
+/**
+ * EZ0033: Config error (single item, with reason)
+ * value:string - Actual incorrect value
+ * item:string - configuration item name
+ * configFile:string - configuration file path
+ * reason:string - Reason for the error
+ * errMessage: Value [value] of configuration item [item] in
+ *             configuration file [configFile] is invalid. Reason: [reason].
+ */
+#define OP_LOGE_FOR_INVALID_CONFIG_WITH_REASON(opName, configFile, item, value, reason)                              \
+    do {                                                                                                             \
+        std::string _safe_opName_(opName);                                                                           \
+        std::string _safe_configFile_(configFile);                                                                   \
+        std::string _safe_item_(item);                                                                               \
+        std::string _safe_value_(value);                                                                             \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_WITHOUT_REPORT(                                                                                      \
+            _safe_opName_.c_str(),                                                                                   \
+            "Value %s of configuration item %s in configuration file %s is invalid. Reason: %s.",                    \
+            _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str());            \
+        const std::vector<const char*> msgKey = {"value", "item", "config_file", "reason"};                          \
+        const std::vector<const char*> msgvalue = {_safe_value_.c_str(), _safe_item_.c_str(),                        \
+            _safe_configFile_.c_str(), _safe_reason_.c_str()};                                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0033", msgKey, msgvalue);                                                       \
+    } while (0)
+
+/**
+ * EZ0034: Config error (multiple items, with reason)
+ * values:string - Actual incorrect values
+ * items:string - configuration item names
+ * configFile:string - configuration file path
+ * reason:string - Reason for the error
+ * errMessage: Values [values] of configuration items [items] in
+ *             configuration file [configFile] are invalid. Reason: [reason].
+ */
+#define OP_LOGE_FOR_INVALID_CONFIGS_WITH_REASON(opName, configFile, items, values, reason)                          \
+    do {                                                                                                            \
+        std::string _safe_opName_(opName);                                                                          \
+        std::string _safe_configFile_(configFile);                                                                  \
+        std::string _safe_items_(items);                                                                            \
+        std::string _safe_values_(values);                                                                          \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_WITHOUT_REPORT(                                                                                     \
+            _safe_opName_.c_str(),                                                                                  \
+            "Values %s of configuration items %s in configuration file %s are invalid. Reason: %s.",                \
+            _safe_values_.c_str(), _safe_items_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str());         \
+        const std::vector<const char*> msgKey = {"values", "items", "config_file", "reason"};                       \
+        const std::vector<const char*> msgvalue = {_safe_values_.c_str(), _safe_items_.c_str(),                     \
+            _safe_configFile_.c_str(), _safe_reason_.c_str()};                                                      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0034", msgKey, msgvalue);                                                      \
+    } while (0)
+
 #define OP_LOGD(opName, ...) D_OP_LOGD(Ops::Base::GetOpInfo(opName), __VA_ARGS__)
 #define OP_CHECK_IF(condition, log, return_expr) \
     do {                                         \

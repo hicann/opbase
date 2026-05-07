@@ -551,6 +551,83 @@ const static std::string g_msg = R"(
         "Possible Cause": "N/A",
         "Solution": "Check whether the parameter values meet the condition."
       }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Stride",
+      "ErrCode": "EZ0028",
+      "ErrMessage": "Parameter %s of operator %s has incorrect stride %s, it should be %s.",
+      "Arglist": "param_name, op_name, incorrect_stride, correct_stride",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the stride of input/output tensor is correct."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "File_Operation_Error_Invalid_Path",
+      "ErrCode": "EZ0029",
+      "ErrMessage": "Input path %s is invalid. Reason: %s.",
+      "Arglist": "file_path, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Try again with a valid path."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "File_Operation_Error_Open",
+      "ErrCode": "EZ0030",
+      "ErrMessage": "Failed to open file %s. Reason: %s.",
+      "Arglist": "file_path, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "1. Configure the file path correctly. \n2. Configure the file permissions correctly. \n3. Reinstall the package."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "File_Operation_Error_Parse",
+      "ErrCode": "EZ0031",
+      "ErrMessage": "Failed to parse file %s. Reason: %s.",
+      "Arglist": "file_name, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Modify the configuration file by referring to the specifications in the user guide."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Config_Error",
+      "ErrCode": "EZ0032",
+      "ErrMessage": "Value %s of configuration item %s in configuration file %s is invalid, it should be %s.",
+      "Arglist": "value, item, config_file, expect",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Modify the configuration file by referring to the specifications in the user guide."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Config_Error",
+      "ErrCode": "EZ0033",
+      "ErrMessage": "Value %s of configuration item %s in configuration file %s is invalid. Reason: %s.",
+      "Arglist": "value, item, config_file, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Modify the configuration file by referring to the specifications in the user guide."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Config_Error",
+      "ErrCode": "EZ0034",
+      "ErrMessage": "Values %s of configuration items %s in configuration file %s are invalid. Reason: %s.",
+      "Arglist": "values, items, config_file, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Modify the configuration file by referring to the specifications in the user guide."
+      }
     }
   ]
 }
