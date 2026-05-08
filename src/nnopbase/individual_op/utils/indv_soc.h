@@ -46,13 +46,13 @@ public:
     const std::string &GetCurSocVersion(void);
     bool SupportCurrentSoc(void) const;
     bool UseCoreTypeMagic(void) const;
-    bool SupportMc2FusionLaunch(void) const;
+    bool SupportMc2FusionLaunch(void);
     bool NeedAlignInitValues(void) const;
     bool NeedsExtraMemoryForOverflowDump(void) const;
     bool SupportL0ExceptionDump(void) const;
     bool IsCouplingArch(void) const;
-    bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType) const;
-    bool NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType) const;
+    bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType);
+    bool NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType);
     uint32_t *GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const;
     uint32_t GetSocEnum();
     void Reset(void);

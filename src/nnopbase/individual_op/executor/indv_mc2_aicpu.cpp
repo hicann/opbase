@@ -28,7 +28,10 @@ namespace {
 aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor *executor, HcclComm comm, void *stream, void *tilingData,
     void **commCtx)
 {
-    if (nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2OpCfg.sType)) {
+    const bool supportA5AiCpu = nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2OpCfg.sType);
+    OP_LOGI("Nnopbase MC2 alloc resource route, sType[%d], supportA5AiCpu[%d].",
+        executor->mc2OpCfg.sType, supportA5AiCpu);
+    if (supportA5AiCpu) {
         return nnopbase::IndvMc2ClientWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData,
             commCtx);
     } else {

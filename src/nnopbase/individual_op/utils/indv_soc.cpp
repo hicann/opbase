@@ -72,9 +72,10 @@ bool IndvSoc::UseCoreTypeMagic(void) const
     return (socVersion == OPS_SUBPATH_ASCEND910B) || (socVersion == OPS_SUBPATH_ASCEND910_93);
 }
 
-bool IndvSoc::SupportMc2FusionLaunch(void) const
+bool IndvSoc::SupportMc2FusionLaunch(void)
 {
-    return (socVersion == OPS_SUBPATH_ASCEND950) || (socVersion == OPS_SUBPATH_ASCEND910_96);
+    const std::string &curSocVersion = GetCurSocVersion();
+    return (curSocVersion == OPS_SUBPATH_ASCEND950) || (curSocVersion == OPS_SUBPATH_ASCEND910_96);
 }
 
 bool IndvSoc::NeedAlignInitValues(void) const
@@ -99,17 +100,24 @@ bool IndvSoc::IsCouplingArch(void) const
     return (socVersion == OPS_SUBPATH_ASCEND910 || socVersion == OPS_SUBPATH_ASCEND310P);
 }
 
-bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType) const
+bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType)
 {
-    return SupportMc2FusionLaunch() &&
+    const bool isEnableCcuLaunch = SupportMc2FusionLaunch() &&
         ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) || (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU));
+    OP_LOGD("NnopbaseEnableCcuLaunch check, socVersion=%s, sType=%d, isEnableCcuLaunch=%d",
+            socVersion.c_str(), static_cast<int>(sType), isEnableCcuLaunch);
+    return isEnableCcuLaunch;
 }
 
-bool IndvSoc::NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType) const
+bool IndvSoc::NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType)
 {
-    const bool isSupportedSocVersion = (socVersion == OPS_SUBPATH_ASCEND950) || 
-        (socVersion == OPS_SUBPATH_ASCEND910_96);
-    return (isSupportedSocVersion && (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU));
+    const std::string &curSocVersion = GetCurSocVersion();
+    const bool isSupportedSocVersion = (curSocVersion == OPS_SUBPATH_ASCEND950) ||
+        (curSocVersion == OPS_SUBPATH_ASCEND910_96);
+    const bool isSupportA5AiCpu = (isSupportedSocVersion && (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU));
+    OP_LOGD("NnopbaseSupportA5AiCpu check, socVersion=%s, sType=%d, isSupportedSocVersion=%d, isSupportA5AiCpu=%d",
+            curSocVersion.c_str(), static_cast<int>(sType), isSupportedSocVersion, isSupportA5AiCpu);
+    return isSupportA5AiCpu;
 }
 
 uint32_t *IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const
