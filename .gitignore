@@ -65,5 +65,3 @@ tbetoolkits-*.log
 # 3rd package
 third_party/
 oat_reports/
-    
-log/
