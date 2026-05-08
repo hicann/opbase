@@ -1732,8 +1732,9 @@ public:
     bool returnInvalidHandleFlag{false};
 };
 
-static void TestInvalidFunctionHandle() {
-    OP_LOGI("Start to run UT TestInvalidFunctionHandle -->");
+// fat bin: true
+static void TestInvalidFunctionHandle1() {
+    OP_LOGI("Start to run UT TestInvalidFunctionHandle 1 -->");
     // init OpArgContext
     op::Shape selfShape{10};
     op::Shape outShape{10};
@@ -1798,9 +1799,119 @@ static void TestInvalidFunctionHandle() {
     auto rc = kernelBin->DoLaunch(&tilingOutput, stream, false, ctx, tensorOffset);
     EXPECT_EQ(rc, ACLNN_SUCCESS);
 
+    opExecCache->Finalize();
+    opExecCache->SetUse();
+
+    void *globalCacheBuf = GetCacheBuf();
+    int64_t *bufPtr = static_cast<int64_t *>(globalCacheBuf);
+    for (size_t i = 0; i < 200; i++) {
+        bufPtr[i] = i;
+    }
+
     aclrtStub.returnInvalidHandleFlag = true;
     OpExecCacheWrap *cacheWrap = CreateCacheWrap(opExecCache);
-    cacheWrap->Run(nullptr, stream);
+    rc = cacheWrap->Run(nullptr, stream);
+    EXPECT_EQ(rc, ACLNN_SUCCESS);
+    AclrtStub::GetInstance()->UnInstall();
+
+    delete opExecCache;
+    delete cacheWrap;
+}
+
+// fat bin: false
+static void TestInvalidFunctionHandle2() {
+    OP_LOGI("Start to run UT TestInvalidFunctionHandle 2 -->");
+    // init OpArgContext
+    op::Shape workspaceShape{10};
+
+    int workspace[10] = {0};
+    int *workspacePtr = workspace;
+    aclTensor wsTensor(workspaceShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, workspacePtr);
+    wsTensor.SetFromWorkspace(true);
+    wsTensor.SetWorkspaceOffset(0);
+    aclTensor *wsTensorPtr = &wsTensor;
+
+    auto workspace_arg = OP_WORKSPACE(wsTensorPtr);
+    auto ctx = op::MakeOpArgContext(workspace_arg);
+
+    // creat OpKernelBin
+    const char *p = std::getenv("ASCEND_OPP_PATH");
+    EXPECT_NE(p, nullptr);
+    KeyAndDetail key;
+    key.key = "hahaha";
+    size_t hashKey = 123;
+    char jsonPath[1024];
+    char binPath[1024];
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/MemSet_1a6864193b99ef93ef38616f04a712ab_high_performance.json",
+        p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/MemSet_1a6864193b99ef93ef38616f04a712ab_high_performance.o.o",
+        p);
+    uint32_t opType = op::OpTypeDict::ToOpType("Memset");
+    OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, false);
+
+    kernelBin.interCoreSync_ = false;
+    kernelBin.isFatbin_ = false;
+    kernelBin.currDevId_ = 0;
+    auto f = [](void *&hdl) -> aclnnStatus {
+        hdl = (void *)0x11223344;
+        return ACLNN_SUCCESS;
+    };
+    kernelBin.binHandle_[0].InitVar(f);
+
+    // init tiling data
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    int64_t *tilingDataData = static_cast<int64_t *>(buffer.GetTilingDataAddr());
+    for (size_t i = 0; i < 21; i++) {
+        tilingDataData[i] = i;
+    }
+    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_ = buffer.GetTilingDataAddr();
+    tilingData->data_size_ = sizeof(size_t) * 21;
+    tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
+
+    uint64_t tilingKey = 10020;
+    int64_t numBlocks = 16;
+    uint8_t scheduleMode = 1;
+    uint32_t dynUBufSize = 888;
+
+    TilingCtxOutput tilingOutput;
+    tilingOutput.tilingKey_ = &tilingKey;
+    tilingOutput.numBlocks_ = &numBlocks;
+    tilingOutput.tilingData_ = tilingData;
+    tilingOutput.scheduleMode_ = &scheduleMode;
+    tilingOutput.dynUBufSize_ = &dynUBufSize;
+    tilingOutput.rtsArgBuffer_ = &buffer;
+    buffer.RegisterOutputTilingDataPtr(&tilingOutput.tilingData_);
+
+    InvalidFunctionHandleAclrtStub aclrtStub;
+    aclrtStub.returnInvalidHandleFlag = true;
+    AclrtStub::GetInstance()->Install(&aclrtStub);
+    std::vector<int32_t> tensorOffset;
+    auto opExecCache = new OpExecCache();
+    opExecCache->hashKey_ = 1;
+    opExecCache->SetCacheBuf(GetCacheBuf());
+    GetOpCacheContext().SetOpCache(opExecCache);
+    aclrtStream stream = 0;
+    aclnnStatus rc = kernelBin.JsonLoad();
+    EXPECT_EQ(rc, ACLNN_SUCCESS);
+    rc = kernelBin.DoLaunch(&tilingOutput, stream, false, ctx, tensorOffset);
+    EXPECT_EQ(rc, ACLNN_SUCCESS);
+
+    opExecCache->Finalize();
+    opExecCache->SetUse();
+
+    void *globalCacheBuf = GetCacheBuf();
+    int64_t *bufPtr = static_cast<int64_t *>(globalCacheBuf);
+    for (size_t i = 0; i < 200; i++) {
+        bufPtr[i] = i;
+    }
+
+    aclrtStub.returnInvalidHandleFlag = true;
+    OpExecCacheWrap *cacheWrap = CreateCacheWrap(opExecCache);
+    rc = cacheWrap->Run(nullptr, stream);
     EXPECT_EQ(rc, ACLNN_SUCCESS);
     AclrtStub::GetInstance()->UnInstall();
 
@@ -1810,7 +1921,7 @@ static void TestInvalidFunctionHandle() {
 
 TEST_F(OpKernelMultiThreadUT, SingleDoLaunchTest) {
     vector<Functional> funVec = {MultiDoLaunchAlignTest, MultiDoLaunchNormalTest2,
-        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4, TestInvalidFunctionHandle};
+        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4, TestInvalidFunctionHandle1, TestInvalidFunctionHandle2};
     for(int i = 0; i < funVec.size(); i++) {
         funVec[i]();
     }
@@ -1818,12 +1929,12 @@ TEST_F(OpKernelMultiThreadUT, SingleDoLaunchTest) {
 
 TEST_F(OpKernelMultiThreadUT, MultiDoLaunchTest) {
     vector<Functional> funVec = {MultiDoLaunchAlignTest, MultiDoLaunchNormalTest2, 
-        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4, TestInvalidFunctionHandle};
+        MultiDoLaunchNormalTest3, MultiDoLaunchNormalTest4, TestInvalidFunctionHandle1, TestInvalidFunctionHandle2};
 
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(0, funVec.size()-1);
-    const uint64_t threadCount = funVec.size() * 150;
+    const uint64_t threadCount = funVec.size() * 180;
     vector<std::thread> threadVec;
     for (int i = 0; i<threadCount; i++) {
         threadVec.emplace_back(std::thread(funVec[distrib(gen)]));

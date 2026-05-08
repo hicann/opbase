@@ -235,6 +235,7 @@ public:
 
     KernelLaunchConfig &GetKernelLaunchConfig()
     {
+        launchCfg_.kernelNameOfNoFatBin = kernelNameOfNoFatBin_;
         return launchCfg_;
     }
 

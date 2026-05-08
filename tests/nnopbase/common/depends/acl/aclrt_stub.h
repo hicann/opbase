@@ -12,8 +12,13 @@
 #define ACLRT_STUB_H_
 
 #include <memory>
+#include <string>
+#include <algorithm>
+
 #include "acl/acl_base.h"
 #include "acl/acl_rt.h"
+
+#include "opdev/op_log.h"
 
 class AclrtStub {
     virtual ~AclrtStub() = default;
@@ -38,6 +43,11 @@ class AclrtStub {
     virtual aclError aclrtBinaryGetFunction(
         const aclrtBinHandle binHandle, const char *kernelName, aclrtFuncHandle *funcHandle)
     {
+        CHECK_COND(kernelName != nullptr, ACL_ERROR_INVALID_PARAM, "Parameter kernelName is nullptr.");
+        std::string name(kernelName);
+        CHECK_COND(
+            std::count(name.begin(), name.end(), '_') > 0, ACL_ERROR_INVALID_PARAM,
+            "Parameter kernelName is invalid, name: %s", kernelName);
         *funcHandle = (void *)0x43214321;
         return ACL_SUCCESS;
     }
