@@ -361,41 +361,6 @@ nlohmann::json TransOutputInstanceToJson(const gert::TilingContext *ctx, size_t 
     return nullptr;
 }
 
-bool CheckTensorUnContiguous(const gert::TilingContext *ctx, size_t inputInstanceLoc)
-{
-    bool isView = ctx->InputIsView(inputInstanceLoc);
-    if (isView) {
-        auto* inputStride = ctx->GetInputStride(inputInstanceLoc);
-        
-        if (inputStride != nullptr && inputStride->GetDimNum() != 0) {
-            const auto* inputShape = ctx->GetInputShape(inputInstanceLoc);
-            if (inputShape == nullptr) {
-                return false;
-            }
-            const auto& storageShape = inputShape->GetStorageShape();
-            size_t dimNum = storageShape.GetDimNum();
-            
-            int64_t validStride = 1;
-            for (int64_t i = static_cast<int64_t>(dimNum) - 1; i >= 0; --i) {
-                int64_t dim = storageShape.GetDim(i);
-                int64_t stride = inputStride->GetStride(i);
-                
-                if (dim == 1) {
-                    continue;
-                }
-                if (validStride != stride) {
-                    OP_LOGW("Skip serialization: UnContiguous tensor, input[%zu], dim[%ld], expected=%ld, actual=%ld.",
-                            inputInstanceLoc, i, validStride, stride);
-                    return true;
-                }
-                
-                validStride *= dim;
-            }
-        }
-    }
-    return false; 
-}
-
 aclnnStatus ConstructInputOutputJson(const gert::TilingContext *ctx, const nlohmann::json &supportInfoJsonConfig,
     const gert::ComputeNodeInfo *computeNodeInfo, nlohmann::json &j)
 {

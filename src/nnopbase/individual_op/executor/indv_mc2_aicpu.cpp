@@ -293,7 +293,6 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, rtStrea
     rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->ccuBinHandle, tilingKey, &launchCfg, nullptr};
     rtFunsionTaskInfo_t fusionTaskInfo = {};
     rtCcuTaskGroup_t ccuTaskGroup = {};
-    rtAicpuFusionInfo_t aicpuInfo = {};
     NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclGetCcuTaskInfo(
         executor->mc2OpCfg.hcomHandle[0], (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(), &ccuTaskGroup));
     fusionTaskInfo.subTask[0].type = RT_FUSION_CCU;

@@ -305,9 +305,9 @@ void CacheKeyBuilder::AppendScalar(NnopbaseExecutorArgs *args, const aclScalar *
         if (dtype != ge::DT_UNDEFINED) {
             dataType = dtype;
         } else if ((srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index) &&
-            srcIndex < args->inputs.paramDescs.instances.size() &&
-            args->inputs.extTensors.size() > args->inputs.paramDescs.instances[srcIndex].startIndex) {
-            dataType = args->inputs.extTensors[args->inputs.paramDescs.instances[srcIndex].startIndex]
+            static_cast<size_t>(srcIndex) < args->inputs.paramDescs.instances.size() &&
+            args->inputs.extTensors.size() > args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex) {
+            dataType = args->inputs.extTensors[args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex]
                     .rt2Tensor.GetDataType();
         }
         (void)AppendScalarInfo(args, dataType);
@@ -340,9 +340,9 @@ void CacheKeyBuilder::AppendScalarList(NnopbaseExecutorArgs *args, const aclScal
         if (dtype != ge::DT_UNDEFINED) {
             dataType = dtype;
         } else if ((srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index) &&
-            srcIndex < args->inputs.paramDescs.instances.size() &&
-            args->inputs.extTensors.size() > args->inputs.paramDescs.instances[srcIndex].startIndex) {
-            dataType = args->inputs.extTensors[args->inputs.paramDescs.instances[srcIndex].startIndex]
+            static_cast<size_t>(srcIndex) < args->inputs.paramDescs.instances.size() &&
+            args->inputs.extTensors.size() > args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex) {
+            dataType = args->inputs.extTensors[args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex]
                            .rt2Tensor.GetDataType();
         }
         (void)AppendScalarListInfo(args, dataType, scalarList->Size());
