@@ -19,31 +19,6 @@
 extern "C" {
 #endif
 
-#if defined(_MSC_VER)
-#ifdef FUNC_VISIBILITY
-#define ACL_FUNC_VISIBILITY _declspec(dllexport)
-#else
-#define ACL_FUNC_VISIBILITY
-#endif
-#else
-#ifdef FUNC_VISIBILITY
-#define ACL_FUNC_VISIBILITY __attribute__((visibility("default")))
-#else
-#define ACL_FUNC_VISIBILITY
-#endif
-#endif
-
-#ifdef __GNUC__
-#define ACL_DEPRECATED __attribute__((deprecated))
-#define ACL_DEPRECATED_MESSAGE(message) __attribute__((deprecated(message)))
-#elif defined(_MSC_VER)
-#define ACL_DEPRECATED __declspec(deprecated)
-#define ACL_DEPRECATED_MESSAGE(message) __declspec(deprecated(message))
-#else
-#define ACL_DEPRECATED
-#define ACL_DEPRECATED_MESSAGE(message)
-#endif
-
 #ifndef ACLNN_META
 #define ACLNN_META
 typedef struct aclOpExecutor aclOpExecutor;
