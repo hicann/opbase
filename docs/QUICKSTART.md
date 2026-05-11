@@ -164,31 +164,3 @@ Global Global test environment tear-down
 [  PASSED  ] ${n} tests.
 Execute ops_base_ut successful.
 ```
-
-### 执行ST
-
-```bash
-# 方式1: 编译并执行所有的ST测试用例
-bash build.sh -s
-# 方式2: 编译所有的ST测试用例但不执行
-bash build.sh -s --noexec
-# 方式3：执行ST并查看覆盖率
-bash build.sh -s --cov
-```
-
-以编译并执行所有的UT测试为例，执行上述命令后出现如下内容，表示执行成功
-
-```bash
-bash build.sh -s
-```
-
-执行完成后出现如下内容，表示执行成功。
-
-```bash
-Global Global test environment tear-down
-[==========] ${n} tests from ${m} test suites ran. (${x} ms total)
-[  PASSED  ] ${n} tests.
-Execute ops_base_st successful.
-```
-
-其中\$\{n\}表示执行了n个用例，\$\{m\}表示m项测试，\$\{x\}表示执行用例消耗的时间，单位为毫秒。

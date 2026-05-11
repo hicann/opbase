@@ -32,7 +32,7 @@ git clone -b ${tag_version} https://gitcode.com/cann/opbase.git
 
 ## 📖学习教程
 
-- [快速入门](docs/QUICKSTART.md)：从零开始快速体验项目源码构建和功能本地验证（如UT/ST）操作。
+- [快速入门](docs/QUICKSTART.md)：从零开始快速体验项目源码构建和功能本地验证（如UT）操作。
 - [进阶教程](docs/README.md)：如需深入了解算子调用/开发场景下依赖的框架API、指南等，请查阅文档中心获取详细指引。
 
 ## 💬相关信息
