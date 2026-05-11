@@ -48,7 +48,7 @@ public:
   {
     return customBinhandleInfos_[kernelSoPath].binHandle;
   }
-  static aclnnStatus LoadAicpuCustBinaryFromJson(const std::string &opType, std::string &kernelSoPath);
+  static aclnnStatus LoadAicpuCustBinaryFromJson(const std::string &opType, const std::string &kernelSoName, std::string &kernelSoPath);
   static aclnnStatus CustJsonLoadAndParse();
   static bool FindAndGetInCustomRegistry(const std::string &opType, std::string &kernelSo, std::string &functionName);
 private:

@@ -32,7 +32,8 @@ const std::string kAicpuCustOpsFilePath =
 constexpr size_t SOC_VERSION_LEN = 128U;
 constexpr int kMaxFileSizeLimit = INT_MAX;
 const std::string kSplitSeparator = ":";
-const std::set<std::string> kCustomerWhiteList = {"cv", "math", "nn", "transformer", "omni_custom_ops"};
+const std::string kCustOpsBlacklistVendorName = "custom_aicpu_ops";
+const std::string kCustOpsBlacklistSoName = "libcust_cpu_kernels.so";
 }
 
 bool JsonLoadManger::hasAicpuLoadBin_ = false;
@@ -149,19 +150,11 @@ aclnnStatus JsonLoadManger::SetSupportedNewLaunchFlag()
   return ACLNN_SUCCESS;
 }
 
-aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string &opType, std::string &kernelSoPath)
+aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string &opType, const std::string &kernelSoName, std::string &kernelSoPath)
 {
   std::unique_lock<std::mutex> lk(aicpuCustBinLoadMutex_);
   const std::string custRegisterPath = custRegisterInfos_[opType];
-  size_t lastUnderscore = custRegisterPath.find_last_of('_');
-  if (lastUnderscore != std::string::npos) {
-    std::string suffix = custRegisterPath.substr(lastUnderscore + 1);
-    kernelSoPath = custRegisterPath + kAicpuCustOpsFilePath + "lib" + suffix + "_aicpu_kernels.so";
-    OP_LOGI("Successfully extracted the sub-repository so suffix %s, custom so path constructed as %s.", suffix.c_str(), kernelSoPath.c_str());
-  } else {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to extract the sub-repository so suffix, unable to construct the custom so path.");
-    return ACLNN_ERR_PARAM_INVALID;
-  }
+  kernelSoPath = custRegisterPath + kAicpuCustOpsFilePath + kernelSoName;
   if (customBinhandleInfos_[kernelSoPath].hasLoad) {
     OP_LOGI("The custom kernel so %s has loaded, no need to reload.", kernelSoPath.c_str());
     return ACLNN_SUCCESS;
@@ -279,21 +272,16 @@ void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDe
   const std::string dirName =
       (lastSlash != std::string::npos) ? opsRegisterName.substr(lastSlash + 1) : opsRegisterName;
 
-  const size_t lastUnderscore = opsRegisterName.find_last_of('_');
-  if (lastUnderscore != std::string::npos) {
-    const std::string suffix = opsRegisterName.substr(lastUnderscore + 1);
-    if (kCustomerWhiteList.count(suffix) == 0U && dirName != "omni_custom_ops") {
-      OP_LOGI("suffix[%s] is not in customer white list, skip to insert customer ops info. opsRegisterName is %s",
-              suffix.c_str(), opsRegisterName.c_str());
-      return;
-    }
-  } else {
-    OP_LOGW("Failed to extract the sub-repository so suffix, unable to construct the custom so path.");
-    return;
-  }
-  // const std::lock_guard<std::mutex> lock(custMutex_);
   for (const auto &opDesc : infoDesc.opInfos) {
     if (opDesc.opType.empty()) {
+      continue;
+    }
+
+    if (dirName == kCustOpsBlacklistVendorName && opDesc.opInfo.kernelSo == kCustOpsBlacklistSoName) {
+      OP_LOGI("vendor name[%s] and so name[%s] are in blacklist, skip to insert customer ops info. "
+              "ops register name is %s, op type is %s.",
+              dirName.c_str(), opDesc.opInfo.kernelSo.c_str(),
+              opsRegisterName.c_str(), opDesc.opType.c_str());
       continue;
     }
 

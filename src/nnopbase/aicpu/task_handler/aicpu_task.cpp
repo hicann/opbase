@@ -184,7 +184,7 @@ aclnnStatus AicpuCCTask::GetKernelNameAndSoName(std::string &kernelSoName)
         OP_LOGI("The Operator %s found in custom registry: kernel so name is %s, function name is %s.",
                 opType_.c_str(), kernelSoName.c_str(), functionName_.c_str());
         std::string kernelSoPath = "";
-        AICPU_ASSERT_OK_RETVAL(JsonLoadManger::LoadAicpuCustBinaryFromJson(opType_, kernelSoPath));
+        AICPU_ASSERT_OK_RETVAL(JsonLoadManger::LoadAicpuCustBinaryFromJson(opType_, kernelSoName, kernelSoPath));
         aicpuBinHandle_ = JsonLoadManger::GetAicpuCustBinaryHandle(kernelSoPath);
         AICPU_ASSERT_NOTNULL_RETVAL(aicpuBinHandle_);
         // If not specifically configured, the RTS interface will be updated to the actual so name, causing inconsistency with the so name on the device side.
