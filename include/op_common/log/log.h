@@ -25,7 +25,7 @@
 #include "dlog_pub.h"
 #include "graph/ge_error_codes.h"
 #include "graph/types.h"
-#include "util/opbase_export.h"
+#include "op_common/op_host/util/opbase_export.h"
 namespace Ops {
 namespace Base {
 

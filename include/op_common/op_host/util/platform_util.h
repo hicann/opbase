@@ -19,7 +19,7 @@
 #include "exe_graph/runtime/tiling_context.h"
 #include "exe_graph/runtime/tiling_parse_context.h"
 #include "tiling/platform/platform_ascendc.h"
-#include "log/log.h"
+#include "op_common/log/log.h"
 
 namespace Ops {
 namespace Base {

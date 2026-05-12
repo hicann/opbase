@@ -18,7 +18,7 @@
 
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "util/shape_util.h"
-#include "log/log.h"
+#include "op_common/log/log.h"
 #include "util/opbase_export.h"
 
 namespace Ops {
