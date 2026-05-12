@@ -153,15 +153,34 @@ cmake_generate_make() {
     fi
     mk_dir "${build_path}"
     cd "${build_path}"
-    [ -f CMakeCache.txt ] && rm CMakeCache.txt
-    [ -f Makefile ] && rm Makefile
-    [ -f cmake_install.cmake ] && rm cmake_install.cmake
-    [ -d CMakeFiles ] && rm -rf CMakeFiles
-    echo "${cmake_args}"
-    cmake ${cmake_args} ${source_path}
-    if [ 0 -ne $? ]; then
-        echo "execute command: cmake ${cmake_args} .. failed."
-        exit 1
+    if [[ "${MAKE_CLEAN_ALL}" == "on" ]]; then
+        [ -f CMakeCache.txt ] && rm CMakeCache.txt
+        [ -f Makefile ] && rm Makefile
+        [ -f cmake_install.cmake ] && rm cmake_install.cmake
+        [ -d CMakeFiles ] && rm -rf CMakeFiles
+    fi
+    local cache_param_file=".cmake_build_params"
+    local need_reconfigure=0
+    if [ -f CMakeCache.txt ] && [ -f Makefile ]; then
+        if [ -f "${cache_param_file}" ] && [ "$(cat "${cache_param_file}")" = "${cmake_args}" ]; then
+            echo "CMake cache exists and parameters unchanged, skipping reconfiguration for incremental build"
+        else
+            echo "CMake parameters changed, forcing reconfiguration"
+            rm -f CMakeCache.txt Makefile cmake_install.cmake
+            rm -rf CMakeFiles
+            need_reconfigure=1
+        fi
+    else
+        need_reconfigure=1
+    fi
+    if [[ "${need_reconfigure}" -eq 1 ]]; then
+        echo "${cmake_args}"
+        cmake ${cmake_args} ${source_path}
+        if [ 0 -ne $? ]; then
+            echo "execute command: cmake ${cmake_args} .. failed."
+            exit 1
+        fi
+        echo "${cmake_args}" > "${cache_param_file}"
     fi
 }
 
