@@ -20,6 +20,13 @@ else()
     option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build opbase need cann source code" FALSE)
 endif()
 
+if (NOT DEFINED CMAKE_MODULE_PATH)
+    set(CMAKE_MODULE_PATH
+        ${CANN_CMAKE_DIR}/modules
+        ${CANN_3RD_LIB_PATH}/cmake/modules
+    )
+endif()
+
 include(cmake/config.cmake)
 include(cmake/intf_pub_linux.cmake)
 include(cmake/variables.cmake)
@@ -56,23 +63,36 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
 
     include(version.cmake)
     set(ASCEND_INSTALL_PATH "${ASCEND_HOME_PATH}")
+    set(ASCEND_INCLUDE_DIR ${ASCEND_HOME_PATH}/include)
+
+    # 设置 CMAKE_MODULE_PATH 和 CMAKE_PREFIX_PATH 以支持 find_cann_package
+    list(APPEND CMAKE_MODULE_PATH
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules
+    )
+    list(APPEND CMAKE_PREFIX_PATH
+        ${ASCEND_HOME_PATH}
+    )
+
+    find_cann_package(metadef MODULE REQUIRED)
+    find_cann_package(graph MODULE REQUIRED)
+    find_cann_package(tiling_api MODULE REQUIRED)
+    find_cann_package(unified_dlog MODULE REQUIRED)
+    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(error_manager MODULE REQUIRED)
+    find_cann_package(ascend_dump MODULE REQUIRED)
+    find_cann_package(acl_rt MODULE REQUIRED)
+
     if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         check_cann_pkg_build_deps("opbase")
     endif()
     add_cann_version_info_targets()
 
-    include_directories(
+    # 本地头文件 target（pkg_inc 下的本地头文件优先于 CANN 安装目录）
+    add_library(ops_base_internal_headers INTERFACE)
+    target_include_directories(ops_base_internal_headers INTERFACE
         ${OPS_BASE_INCLUDE}
         ${OPS_BASE_INCLUDE}/op_common
-        ${ASCEND_HOME_PATH}/include
-        ${ASCEND_HOME_PATH}/include/external
-        ${ASCEND_HOME_PATH}/include/base
-        ${ASCEND_HOME_PATH}/include/toolchain
-        ${ASCEND_HOME_PATH}/pkg_inc
-        ${ASCEND_HOME_PATH}/pkg_inc/aicpu
-        ${ASCEND_HOME_PATH}/pkg_inc/base
-        ${ASCEND_HOME_PATH}/pkg_inc/aicpu/aicpu_schedule
-        ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common
     )
 
     add_library(ops_base SHARED ${OPS_BASE_SRC})
@@ -81,19 +101,21 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         -fPIC
         -fvisibility=hidden
     )
+
     target_link_libraries(ops_base
         PRIVATE
-        ${ASCEND_HOME_PATH}/lib64/libexe_graph.so
-        ${ASCEND_HOME_PATH}/lib64/libgraph_base.so
-        ${ASCEND_HOME_PATH}/lib64/libgraph.so
+        ops_base_internal_headers
+        exe_graph
+        graph_base
+        graph
         -Wl,--no-as-needed
-        ${ASCEND_HOME_PATH}/lib64/libregister.so
+        register
         -Wl,--as-needed
         -Wl,--whole-archive
-        ${ASCEND_HOME_PATH}/lib64/libtiling_api.a
+        tiling_api
         -Wl,--no-whole-archive
         $<BUILD_INTERFACE:intf_pub_cxx17>
-        ${ASCEND_HOME_PATH}/lib64/libunified_dlog.so
+        unified_dlog
     )
 
     add_subdirectory(aicpu_common/context)

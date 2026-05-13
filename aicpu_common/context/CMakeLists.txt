@@ -51,6 +51,10 @@ set(local_context_inc_path
   ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/utils
   ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cust_op
   ${C_SEC_INCLUDE}
+  ${ASCEND_HOME_PATH}/pkg_inc
+  ${ASCEND_HOME_PATH}/pkg_inc/base
+  ${ASCEND_HOME_PATH}/pkg_inc/aicpu
+  ${ASCEND_HOME_PATH}/pkg_inc/aicpu/aicpu_schedule
 )
 
 set(nodedef_src_files

@@ -95,6 +95,7 @@ set(NNOPBASE_TEST_HEADER_FILES
     ${ASCEND_INCLUDE_DIR}/transformer/
 
     ${ASCEND_PKG_INC_DIR}/
+    ${ASCEND_PKG_INC_DIR}/aicpu/
     ${ASCEND_PKG_INC_DIR}/dump/
     ${ASCEND_PKG_INC_DIR}/profiling/
     ${ASCEND_PKG_INC_DIR}/runtime/

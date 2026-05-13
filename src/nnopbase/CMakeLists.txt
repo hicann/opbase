@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -12,34 +12,28 @@ cmake_minimum_required(VERSION 3.14)
 
 project(nnopbase C CXX)
 
-# include path
-set(ASCEND_INCLUDE_DIR ${ASCEND_HOME_PATH}/include)
-set(EXPERIMENT_INCLUDE_DIR ${ASCEND_HOME_PATH}/include/experiment)
-
 # local path
 set(NNOPBASE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(OPS_BASE_PATH ${NNOPBASE_PATH}/../..)
 get_filename_component(OPS_BASE_PATH "${OPS_BASE_PATH}" ABSOLUTE)
-set(CMAKE_MODULE_PATH ${OPS_BASE_PATH}/cmake/modules)
 
-# set include path
-set(COMMON_INCLUDING_PATH
+
+# local headers target
+add_library(nnopbase_internal_headers INTERFACE)
+target_include_directories(nnopbase_internal_headers INTERFACE
     ${OPS_BASE_PATH}/include/
     ${OPS_BASE_PATH}/include/nnopbase/
     ${OPS_BASE_PATH}/include/nnopbase/opdev
-
     ${NNOPBASE_PATH}/individual_op/
     ${NNOPBASE_PATH}/composite_op/
     ${NNOPBASE_PATH}/common/inc
+)
 
-    ${ASCEND_INCLUDE_DIR}/
-    ${ASCEND_INCLUDE_DIR}/transformer/
-    ${ASCEND_INCLUDE_DIR}/external/
+# nnopbase
+add_library(nnopbase SHARED)
 
-    ${ASCEND_HOME_PATH}/pkg_inc
-    ${ASCEND_HOME_PATH}/pkg_inc/aicpu
-    ${ASCEND_HOME_PATH}/pkg_inc/runtime
-    ${ASCEND_HOME_PATH}/pkg_inc/runtime/runtime
+# source code compile in yellow zone
+target_include_directories(nnopbase BEFORE  PRIVATE 
     ${TOP_DIR}/runtime/pkg_inc/
     ${TOP_DIR}/runtime/pkg_inc/runtime/
     ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common/
@@ -53,15 +47,10 @@ set(COMMON_INCLUDING_PATH
     ${TOP_DIR}/abl/libc_sec/src/
 )
 
-# nnopbase
-#add_library(nnopbase SHARED ${opInfoRecordSrc})
-#target_include_directories(nnopbase PRIVATE ${COMMON_INCLUDING_PATH} ${opInfoRecordInclude})
-add_library(nnopbase SHARED)
-target_include_directories(nnopbase BEFORE PRIVATE ${COMMON_INCLUDING_PATH})
-
 target_link_libraries(nnopbase
     PRIVATE
         intf_pub_cxx17
+        nnopbase_internal_headers
         -Wl,--no-as-needed
         runtime
         unified_dlog
@@ -82,10 +71,6 @@ target_link_libraries(nnopbase
         ${opInfoRecordLinkLibraries}
         ascend_protobuf_shared_headers
     PUBLIC
-)
-
-target_link_directories(nnopbase PRIVATE
-    ${ASCEND_HOME_PATH}/lib64/
 )
 
 target_compile_definitions(nnopbase PRIVATE google=ascend_private ACLNN_LOG_FMT_CHECK LOG_CPP)

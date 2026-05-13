@@ -18,7 +18,7 @@ set(AICPU_PROTO_INCLUDING_PATH
     ${NNOPBASE_PATH}/../include/nnopbase/
     ${NNOPBASE_PATH}/composite_op/
     ${NNOPBASE_PATH}/common/
-    ${EXPERIMENT_INCLUDE_DIR}/datagw
+    ${ASCEND_HOME_PATH}/include/experiment/datagw
     ${ASCEND_HOME_PATH}/pkg_inc
     ${ASCEND_HOME_PATH}/pkg_inc/aicpu
     ${ASCEND_HOME_PATH}/pkg_inc/profiling

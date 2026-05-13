@@ -231,7 +231,6 @@ build_ops_base_llt() {
     -DENABLE_ST=${ENABLE_ST} \
     -DBUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG=ON \
     -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-    -DPRODUCT_SIDE=device \
     -DDCMAKE_WGET_FLAGS='--no-check-certificate' \
     -DENABLE_DEBUG=${ENABLE_DEBUG} \
     -DBUILD_MODE=${BUILD_MODE} \

@@ -46,27 +46,25 @@ add_custom_command(
             && echo "Generating nnopbase stub files end."      
 )
 
-set(STUB_NNOPBASE_INCLUDING_PATH
-    ${OPS_BASE_PATH}/include/
-    ${OPS_BASE_PATH}/include/nnopbase/
-    ${OPS_BASE_PATH}/include/nnopbase/opdev
+
+add_custom_target(nnopbase_stub DEPENDS ${STUB_SRC_LIST})
+
+add_library(stub_internal_headers INTERFACE)
+target_include_directories(stub_internal_headers INTERFACE
     ${OPS_BASE_PATH}/include/nnopbase/aclnn
     ${OPS_BASE_PATH}/include/nnopbase/opdev/aicpu
-
-    ${NNOPBASE_PATH}/individual_op/
     ${NNOPBASE_PATH}/individual_op/api
-    ${NNOPBASE_PATH}/composite_op/
     ${NNOPBASE_PATH}/composite_op/aclnn_engine
     ${NNOPBASE_PATH}/composite_op/mem_mgr/
-    ${NNOPBASE_PATH}/common/inc
     ${NNOPBASE_PATH}/common
+)
 
-    ${ASCEND_INCLUDE_DIR}/
-    ${ASCEND_INCLUDE_DIR}/transformer/
-    ${ASCEND_INCLUDE_DIR}/external/
+add_library(stub_nnopbase SHARED ${STUB_SRC_LIST})
 
-    ${ASCEND_HOME_PATH}/pkg_inc
-    ${ASCEND_HOME_PATH}/pkg_inc/aicpu
+add_dependencies(stub_nnopbase nnopbase_stub)
+
+# source code compile in yellow zone
+target_include_directories(stub_nnopbase PRIVATE
     ${TOP_DIR}/runtime/pkg_inc/
     ${TOP_DIR}/runtime/pkg_inc/runtime/
     ${TOP_DIR}/runtime/pkg_inc/aicpu_sched/common/
@@ -81,27 +79,18 @@ set(STUB_NNOPBASE_INCLUDING_PATH
     ${TOP_DIR}/abl/libc_sec/src/
 )
 
-
-add_custom_target(nnopbase_stub DEPENDS ${STUB_SRC_LIST})
-
-add_library(stub_nnopbase SHARED ${STUB_SRC_LIST})
-
-add_dependencies(stub_nnopbase nnopbase_stub)
-
-target_include_directories(stub_nnopbase PRIVATE ${STUB_NNOPBASE_INCLUDING_PATH})
-
 target_compile_options(stub_nnopbase PRIVATE -O2 -fno-common -Wno-extra -Wfloat-equal -Wno-unused-parameter -D_FORTIFY_SOURCE=2)
 
 target_link_libraries(stub_nnopbase
     PRIVATE
         intf_pub_cxx17
+        metadef_headers
+        runtime_headers
+        nnopbase_internal_headers
+        stub_internal_headers
         c_sec
         json
     PUBLIC
-)
-
-target_link_directories(stub_nnopbase PRIVATE
-    ${ASCEND_HOME_PATH}/lib64/
 )
 
 set_target_properties(stub_nnopbase PROPERTIES
