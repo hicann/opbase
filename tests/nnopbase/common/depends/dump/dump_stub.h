@@ -78,6 +78,10 @@ class DumpStub {
         return;
     }
 
+    virtual bool AdumpIsDumpEnable(DumpType type) {
+        return false;
+    }
+
   private:
     thread_local static std::shared_ptr<DumpStub> instance_;
     thread_local static DumpStub* fake_instance_;

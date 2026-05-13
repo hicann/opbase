@@ -37,12 +37,18 @@ uint64_t AdumpGetDumpSwitch(DumpType type) {
 }
 void AdumpPrintWorkSpace(const void *workSpaceAddr, const size_t dumpWorkSpaceSize,
                          aclrtStream stream, const char *opType) {
-    return DumpStub::GetInstance()->AdumpPrintWorkSpace(workSpaceAddr, dumpWorkSpaceSize, stream, opType);
+    auto dumpStub = DumpStub::GetInstance();
+    dumpStub->AdumpPrintWorkSpace(workSpaceAddr, dumpWorkSpaceSize, stream, opType);
+}
+
+bool AdumpIsDumpEnable(DumpType type) {
+    return DumpStub::GetInstance()->AdumpIsDumpEnable(type);
 }
 
 void AdumpPrintAndGetTimeStampInfo(const void *workSpaceAddr, const size_t dumpWorkSpaceSize,
     aclrtStream stream, const char *opType, std::vector<MsprofAicTimeStampInfo> &timeStampInfo)
 {
-    return DumpStub::GetInstance()->AdumpPrintAndGetTimeStampInfo(workSpaceAddr, dumpWorkSpaceSize, stream, opType, timeStampInfo);
+    auto dumpStub = DumpStub::GetInstance();
+    dumpStub->AdumpPrintAndGetTimeStampInfo(workSpaceAddr, dumpWorkSpaceSize, stream, opType, timeStampInfo);
 }
 } // namespace Adx

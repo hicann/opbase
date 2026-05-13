@@ -16,6 +16,15 @@
 #include "runtime/runtime/kernel.h"
 #include "mockcpp/mockcpp.hpp"
 
+namespace {
+void SetSocVersion(const std::string &version)
+{
+    auto &soc = nnopbase::IndvSoc::GetInstance();
+    soc.socVersion = version;
+    soc.isInit = true;
+}
+}
+
 class NnopbaseKernelLaunchUt : public testing::Test {
 protected:
     void SetUp() {}
@@ -71,7 +80,14 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     executor->collecter->oppPath = "/usr/local/Ascend/latest/opp";
     executor->opType = "AddCustom";
     std::string socVersion = "ascend910b";
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(socVersion));
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    struct SocVersionGuard {
+        std::string originalVersion;
+        ~SocVersionGuard() {
+            SetSocVersion(originalVersion);
+        }
+    } socGuard{oriSocVersion};
+    SetSocVersion(socVersion);
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);
     EXPECT_EQ(nnopbase::GetMagicFormBin(true, &binInfo), "ACL_RT_BINARY_MAGIC_ELF_AICORE");
     EXPECT_EQ(binInfo.hasReg, true);

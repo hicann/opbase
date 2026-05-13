@@ -27,6 +27,7 @@
 #include "depends/mmpa/mmpa_stub.h"
 #include "depends/runtime/runtime_stub.h"
 #include "depends/platform/platform_stub.h"
+#include "depends/acl/aclrt_stub.h"
 #include "op_cache_internal.h"
 #include "depends/op/op_stub.h"
 #include "depends/op/aclnn_bninference_d_kernel_stub.h"
@@ -36,6 +37,15 @@
 #define private public
 #include "executor/indv_args_pool.h"
 #undef private
+
+namespace {
+void SetSocVersion(const std::string &version)
+{
+    auto &soc = nnopbase::IndvSoc::GetInstance();
+    soc.socVersion = version;
+    soc.isInit = true;
+}
+}
 
 class NnopbaseExecutorUnitTest : public testing::Test {
 protected:
@@ -54,13 +64,21 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseBuildAndRunMemsetTilingParse)
     executor->args = args;
     executor->args->binInfo = binInfo;
     binInfo->memsetInfo = std::make_shared<MemsetOpInfo>();
-    MOCKER(NnopbaseExecutorPlatFormInfosInit).stubs().will(returnValue(ACLNN_ERR_RUNTIME_ERROR));
+    binInfo->memsetInfo->binInfo = std::make_shared<MemsetOpBinInfo>();
+    binInfo->memsetInfo->binInfo->coreType = kAicore;
+    struct SpaceRegistryGuard {
+        ~SpaceRegistryGuard()
+        {
+            auto spaceRegistry = std::make_shared<gert::OpImplSpaceRegistryV2>();
+            gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(spaceRegistry);
+        }
+    } spaceRegistryGuard;
+    gert::DefaultOpImplSpaceRegistryV2::GetInstance().ClearSpaceRegistry();
     auto ret = NnopbaseBuildAndRunMemsetTilingParse(executor->args->binInfo->memsetInfo);
-    ASSERT_EQ(ret, ACLNN_ERR_RUNTIME_ERROR);
+    ASSERT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
     delete binInfo;
     delete args;
     delete executor;
-    GlobalMockObject::verify();
 }
 
 TEST_F(NnopbaseExecutorUnitTest, ExecutorInitWithoutAttr)
@@ -779,13 +797,32 @@ TEST_F(NnopbaseExecutorUnitTest, profilingAivOp)
     ProfilerStub::GetInstance()->UnInstall();
 }
 
+struct CacheLastTaskErrStub : public AclrtStub {
+    aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, size_t infoSize) override
+    {
+        return static_cast<aclError>(1);
+    }
+};
+
+struct StreamAttrErrStub : public AclrtStub {
+    aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType,
+        aclrtStreamAttrValue *value) override
+    {
+        return static_cast<aclError>(1);
+    }
+};
+
 TEST_F(NnopbaseExecutorUnitTest, CacheOpShapeError)
 {
-    MOCKER(aclrtCacheLastTaskOpInfo).stubs().will(returnValue(1));
+    CacheLastTaskErrStub cacheErrStub;
+    AclrtStub::GetInstance()->Install(&cacheErrStub);
     EXPECT_EQ(RunBnProfiling(), OK);
-    MOCKER(aclrtGetStreamAttribute).stubs().will(returnValue(1));
+    AclrtStub::GetInstance()->UnInstall();
+
+    StreamAttrErrStub streamAttrErrStub;
+    AclrtStub::GetInstance()->Install(&streamAttrErrStub);
     EXPECT_EQ(RunBnProfiling(), OK);
-    GlobalMockObject::verify();
+    AclrtStub::GetInstance()->UnInstall();
 }
 
 TEST_F(NnopbaseExecutorUnitTest, NnopTestInfNanOverflow)
@@ -1161,13 +1198,14 @@ class UtDump : public Adx::DumpStub {
         EXPECT_EQ(opName, std::string("_L0bninference_d_kernel"));
         return 0;
     }
+
+    bool AdumpIsDumpEnable(Adx::DumpType type) override { return true; }
 };
 
 TEST_F(NnopbaseExecutorUnitTest, NnobaseDumpTensorWorkspaceCheck)
 {
     UtDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
-    MOCKER_CPP(static_cast<bool(*)(Adx::DumpType)>(&Adx::AdumpIsDumpEnable)).stubs().will(returnValue(true));
 
     NnopbaseExecutor *executor = nullptr;
     GetExecutor(executor);
@@ -1329,8 +1367,6 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheNoAttrkey)
     // set core num
     executor->coreNum.aicNum = 24;
     executor->coreNum.aivNum = 24;
-    MOCKER_CPP(nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread)
-        .stubs().will(returnValue((uint32_t)0U));
     nnopbase::ArgsPool::GetInstance().MatchArgs(executor);
     vector<NnopbaseUChar> exp(10240, '\0');
     auto key = &exp[0U];
@@ -1370,8 +1406,6 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheWithAttrkey)
     // set core num
     executor->coreNum.aicNum = 24;
     executor->coreNum.aivNum = 24;
-    MOCKER_CPP(nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread)
-        .stubs().will(returnValue((uint32_t)0U));
     nnopbase::ArgsPool::GetInstance().MatchArgs(executor);
     vector<NnopbaseUChar> exp(10240, '\0');
     auto key = &exp[0U];
@@ -2042,13 +2076,12 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSupportScalarConvertDtypeWithInput)
 
 TEST_F(NnopbaseExecutorUnitTest, LoadTilingSoFailed)
 {
-    std::string osType = "linu";
-    std::string cpuType = "x86_6";
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
     basePath.push_back(std::make_pair("/usr/local", gert::OppImplVersionTag::kOpp));
-    MOCKER(NnopbaseGetCurEnvPackageOsAndCpuType).stubs().with(outBound(osType), outBound(cpuType)).will(returnValue(OK));
+    setenv("ASCEND_HOME_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
+    setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
     ASSERT_NE(NnopbaseLoadTilingSo(basePath), OK);
-    GlobalMockObject::verify();
+    NnopbaseUnsetEnvAndClearFolder();
 }
 
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForStream)
@@ -2208,14 +2241,14 @@ TEST_F(NnopbaseExecutorUnitTest, TestOutputAutomicCleanSuccessFor1971)
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
 
-    auto oriSocVersion = nnopbase::IndvSoc::GetCurSocVersion();
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND910B)));
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND910B);
     ((NnopbaseExecutor *)executor)->args->binInfo->initValues.clear();
     NnopbaseInitValueInfo info = {2, op::DataType::DT_FLOAT, 0.0, 0, 0};
     ((NnopbaseExecutor *)executor)->args->binInfo->initValues.push_back(info);
     ASSERT_EQ(SetTensorDataSizeToInitValue((NnopbaseExecutor *)executor), OK);
     ASSERT_EQ(((NnopbaseExecutor *)executor)->args->binInfo->initValues[0].tensorDataSize, 4U);
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurSocVersion).stubs().will(returnValue(oriSocVersion));
+    SetSocVersion(oriSocVersion);
 
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
@@ -2357,9 +2390,14 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
     executor->aicpuArgs.args = argsAddr.ptr;
     executor->argsExt.args = op::internal::PtrCastTo<void>(argsAddr.ptr + sizeof(void *));
-    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurrentSocVersionInternal();
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
-    nnopbase::IndvSoc::GetInstance().Reset();
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    struct SocVersionGuard {
+        std::string originalVersion;
+        ~SocVersionGuard() {
+            SetSocVersion(originalVersion);
+        }
+    } socGuard{oriSocVersion};
+    SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND950);
     ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
     NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
     NnopbasePrepareMC2Params(executor, &argsAddr);
@@ -2369,7 +2407,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBAE_AICPU_PARAM_LEN), NNOPBAE_AICPU_PARAM_LEN);
     const std::string expected_kernelName = "Mc2ServerKernel" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("Mc2ServerKernel"), '\0');
     ASSERT_EQ(kernelName, expected_kernelName);
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(oriSocVersion));
+    // SOC version will be restored by SocVersionGuard destructor
 
     delete executor->args;
     delete executor->collecter;

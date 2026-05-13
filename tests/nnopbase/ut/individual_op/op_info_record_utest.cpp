@@ -10,32 +10,48 @@
 
 #include <gtest/gtest.h>
 #include <fstream>
-#include "mockcpp/mockcpp.hpp"
+#include <cstdio>
 #include "acl/acl_op.h"
 #include "register/op_impl_kernel_registry.h"
 #include "graph/types.h"
 #include "graph/operator_factory.h"
 #include "graph/utils/type_utils.h"
 #include "register/op_impl_registry.h"
+#include "opdev/common_types.h"
+#include "opdev/op_def.h"
+#include "opdev/op_dfx.h"
+#include "op_run_context.h"
 #include "op_info_serialize.h"
 #include "ini_parse.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 #include "lib_path.h"
 #include "nlohmann/json.hpp"
+
 class OpInfoRecordUtest: public testing::Test {
 protected:
-    virtual void SetUp() {}
+    virtual void SetUp()
+    {
+        aclnnOpInfoRecord::Path confDir = aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath().Append("conf");
+        ASSERT_TRUE(confDir.CreateDirectory(true));
+        std::ifstream src("../../../../tests/nnopbase/common/depends/conf/dump_tool_config.ini", std::ios::binary);
+        ASSERT_TRUE(src.is_open());
+        aclnnOpInfoRecord::Path confFile = confDir.Concat("dump_tool_config.ini");
+        std::ofstream dst(confFile.GetString(), std::ios::binary);
+        ASSERT_TRUE(dst.is_open());
+        dst << src.rdbuf();
+    }
+
     virtual void TearDown()
     {
-        GlobalMockObject::verify();
+        gert::DefaultOpImplSpaceRegistryV2::GetInstance().ClearSpaceRegistry();
+        aclnnOpInfoRecord::Path confFile = aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath()
+            .Concat("conf/dump_tool_config.ini");
+        (void)std::remove(confFile.GetCString());
     }
 };
 
 TEST_F(OpInfoRecordUtest, Utest_OpInfoEmptyBinInfo)
 {
-    std::string path = "../../../../tests/nnopbase/common/depends/";
-    MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
-    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath).stubs().will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo("", 0);
     EXPECT_EQ(kernelInfo.isMc2, false);
@@ -46,88 +62,36 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoEmptyBinInfo)
 
 TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize)
 {
-    std::string path = "../../../../tests/nnopbase/common/depends/";
-    MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
-    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath).stubs().will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
-    aclnnOpInfoRecord::OpKernelInfo kernelInfo("../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/ascend910/add_n/AddN_8b4ec10fbb39c5c0a65192c606400b29_high_performance.json", 0);
-    gert::TilingContext ctx;
-    const ge::char_t *nodeName = "Utest_OpInfoSerialize";
-    MOCKER_CPP(&gert::TilingContext::GetComputeNodeInfo).stubs().will(returnValue((const gert::ComputeNodeInfo *)nodeName));
-    MOCKER_CPP(&gert::ComputeNodeInfo::GetNodeName).stubs().will(returnValue(nodeName));
-    const ge::char_t *nodeType = "Add";
-    MOCKER_CPP(&gert::ComputeNodeInfo::GetNodeType).stubs().will(returnValue(nodeType));
-    MOCKER_CPP(&gert::ComputeNodeInfo::GetAttrs).stubs().will(returnValue((const gert::RuntimeAttrs *)nodeType));
+    aclnnOpInfoRecord::OpKernelInfo kernelInfo(
+        "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json", 0);
+    op::Shape shape{33, 15, 1, 48};
+    auto self = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto other = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto out = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    float alpha = 13.37;
+    auto input = OP_INPUT(self.get(), other.get());
+    auto output = OP_OUTPUT(out.get());
+    auto attr = OP_ATTR(alpha);
+    auto ctx = op::MakeOpArgContext(input, output, attr);
+    auto spaceRegistry = std::make_shared<gert::OpImplSpaceRegistryV2>();
+    gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(spaceRegistry);
+    uint32_t opType = op::GenOpTypeId("Axpy");
+    gert::TilingContext *tilingCtx = op::internal::OpRunContextMgr::opRunCtx_.UpdateTilingCtx(
+        opType,
+        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    ASSERT_NE(tilingCtx, nullptr);
 
-    // mock for attr_to_json
-    MOCKER_CPP(&gert::RuntimeAttrs::GetAttrNum).stubs().will(returnValue((size_t)1));
-    MOCKER_CPP(&gert::RuntimeAttrs::GetStr).stubs().will(returnValue((const char *)nodeName));
-    bool stubGetBool = false;
-    MOCKER_CPP(&gert::RuntimeAttrs::GetBool).stubs().will(returnValue((const bool *)&stubGetBool));
-    MOCKER_CPP(&gert::RuntimeAttrs::GetInt).stubs().will(returnValue((const int64_t *)nodeName));
-    MOCKER_CPP(&gert::RuntimeAttrs::GetFloat).stubs().will(returnValue((const float *)nodeName));
-
-    MOCKER_CPP(&gert::RuntimeAttrs::GetListInt).stubs().will(returnValue((const gert::TypedContinuousVector<int64_t> *)nodeName));
-    MOCKER_CPP(&gert::TypedContinuousVector<int64_t>::GetData).stubs().will(returnValue((const int64_t *)nodeName));
-    MOCKER_CPP(&gert::TypedContinuousVector<int64_t>::GetSize).stubs().will(returnValue((size_t)1));
-    MOCKER_CPP(&gert::RuntimeAttrs::GetListFloat).stubs().will(returnValue((const gert::TypedContinuousVector<float> *)nodeName));
-    MOCKER_CPP(&gert::TypedContinuousVector<float>::GetData).stubs().will(returnValue((const float *)nodeName));
-    MOCKER_CPP(&gert::TypedContinuousVector<float>::GetSize).stubs().will(returnValue((size_t)1));
-
-    MOCKER_CPP(&gert::ComputeNodeInfo::GetInputTdInfo).stubs().will(returnValue((const gert::CompileTimeTensorDesc *)nodeType));
-    MOCKER_CPP(&gert::TilingContext::GetInputShape).stubs().will(returnValue((const gert::StorageShape *)nodeType));
-    // mock for stride
-    static gert::Stride fakeStride({16, 4});
-    MOCKER_CPP(&gert::TilingContext::InputIsView).stubs().will(returnValue(true));
-    MOCKER_CPP(&gert::TilingContext::OutputIsView).stubs().will(returnValue(true));
-    MOCKER_CPP(&gert::TilingContext::GetInputStride).stubs()
-        .will(returnValue(static_cast<const gert::Stride*>(&fakeStride)));
-    MOCKER_CPP(&gert::TilingContext::GetOutputStride).stubs()
-        .will(returnValue(static_cast<const gert::Stride*>(&fakeStride)));
-    MOCKER_CPP(&gert::Stride::GetDimNum).stubs().will(returnValue((size_t)2));
-    MOCKER_CPP(&gert::Stride::GetStride).stubs()
-        .will(returnValue((int64_t)16))
-        .then(returnValue((int64_t)4));
-    MOCKER_CPP(&gert::TilingContext::GetInputOffset).stubs().will(returnValue((int64_t)128));
-    MOCKER_CPP(&gert::TilingContext::GetOutputOffset).stubs().will(returnValue((int64_t)256));
-
-    // mock for shape
-    MOCKER_CPP(&gert::Shape::GetDimNum).stubs().will(returnValue((size_t)1));
-    MOCKER_CPP(&gert::StorageFormat::GetStorageFormat).stubs().will(returnValue((ge::Format)2));
-    MOCKER_CPP(&gert::Shape::GetDim).stubs().will(returnValue((int64_t)2));
-    MOCKER_CPP(&gert::StorageFormat::GetOriginFormat).stubs().will(returnValue((ge::Format)2));
-
-    MOCKER_CPP(&gert::OpImplKernelRegistry::OpImplFunctions::IsInputDataDependency).stubs().will(returnValue(false)).then(returnValue(true));
-    MOCKER_CPP(&gert::OpImplKernelRegistry::OpImplFunctions::IsTilingInputDataDependency).stubs()
-        .will(returnValue(false)).then(returnValue(true));
-    MOCKER_CPP(&gert::Tensor::GetDataType).stubs()
-        .will(returnValue(ge::DT_INT8))
-        .then(returnValue(ge::DT_UINT8))
-        .then(returnValue(ge::DT_INT16))
-        .then(returnValue(ge::DT_UINT16))
-        .then(returnValue(ge::DT_INT32))
-        .then(returnValue(ge::DT_UINT32))
-        .then(returnValue(ge::DT_INT64))
-        .then(returnValue(ge::DT_UINT64))
-        .then(returnValue(ge::DT_FLOAT))
-        .then(returnValue(ge::DT_DOUBLE));
-    MOCKER_CPP(&gert::TensorData::GetSize).stubs().will(returnValue((size_t)10));
-    MOCKER_CPP(&gert::Tensor::GetAddr, const void *(gert::Tensor::*)() const).stubs().will(returnValue((const void *)nodeName));
-    MOCKER_CPP(&gert::TilingContext::GetInputTensor).stubs().will(returnValue((const gert::Tensor *)nodeName));
-    MOCKER_CPP(&gert::ComputeNodeInfo::GetInputInstanceInfo).stubs().will(returnValue((const gert::AnchorInstanceInfo *)nodeName));
-    MOCKER_CPP(&gert::CompileTimeTensorDesc::GetDataType).stubs().will(returnValue(ge::DT_INT8));
-    MOCKER_CPP(&gert::AnchorInstanceInfo::GetInstanceNum).stubs().will(returnValue((size_t)2));
-    MOCKER_CPP(&ge::TypeUtils::DataTypeToSerialString).stubs().will(returnValue(std::string("DT_FLOAT16")));
-
-    EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(&ctx, opt, &kernelInfo), 0);
-    EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), -1);
+    EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(tilingCtx, opt, &kernelInfo), 0);
+    EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), 0);
+    op::DestroyOpArgContext(ctx);
 }
 
 TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize_without_supportInfo)
 {
-    std::string path = "../../../../tests/nnopbase/common/depends/";
-    MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
-    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath).stubs().will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo("../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
     gert::TilingContext ctx;

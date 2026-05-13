@@ -56,11 +56,10 @@ public:
     uint32_t *GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const;
     uint32_t GetSocEnum();
     void Reset(void);
-private:
-    IndvSoc(void);
     bool isInit = false;
     std::string socVersion;
-
+private:
+    IndvSoc(void);
     void Init(void);
 
     const std::map<std::string, uint32_t> supportSocMap = {

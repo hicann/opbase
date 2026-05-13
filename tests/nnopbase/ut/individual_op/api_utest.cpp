@@ -40,6 +40,13 @@ extern aclnnStatus NnopbaseInit();
 
 namespace {
 static const NnopbaseCoreNum coreNum{24, 48};
+
+void SetSocVersion(const std::string &version)
+{
+    auto &soc = nnopbase::IndvSoc::GetInstance();
+    soc.socVersion = version;
+    soc.isInit = true;
+}
 }
 
 class NnopbaseUnitTest : public testing::Test {
@@ -410,8 +417,6 @@ TEST_F(NnopbaseUnitTest, NnopBaseCacheDynamicIoKey)
     void *executor = GetDynamicInputExecutor(executorSpace);
     ASSERT_NE(executor, nullptr);
     NnopbaseExecutor *opExecutor = (NnopbaseExecutor *)executor;
-    MOCKER_CPP(nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread)
-            .stubs().will(returnValue((uint32_t)0U));
     // set core num
     opExecutor->coreNum.aicNum = 24;
     opExecutor->coreNum.aivNum = 24;
@@ -1341,7 +1346,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFailed)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
-    const char *opType = "Flash";
+    const char *opType = "Flash1";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
     aclTensor *tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
                                         nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
@@ -1356,7 +1361,6 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFailed)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    MOCKER(NnopbaseInit).stubs().will(returnValue(ACLNN_ERR_RUNTIME_ERROR));
     NnopbaseStaticTensorNumInfo tensorNumInfo;
     tensorNumInfo.numTensors = numTensors;
     tensorNumInfo.numDynamic = numDynamic;
@@ -1433,7 +1437,6 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelRefreshFailed)
     int64_t deterMin = 0;
     const int64_t valueDepend[] = {};
     int64_t numValueDepend = 0;
-    MOCKER(NnopbaseRefreshStaticKernelInfos).stubs().will(returnValue(ACLNN_ERR_PARAM_NULLPTR));
     NnopbaseStaticTensorNumInfo tensorNumInfo;
     tensorNumInfo.numTensors = numTensors;
     tensorNumInfo.numDynamic = numDynamic;
@@ -2951,15 +2954,20 @@ TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessForascend950WithAiCPU)
     ASSERT_NE(executor, nullptr);
 
     NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
-    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurrentSocVersionInternal();
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(std::string(nnopbase::OPS_SUBPATH_ASCEND950)));
-    nnopbase::IndvSoc::GetInstance().Reset();
+
+    auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    struct SocVersionGuard {
+        std::string originalVersion;
+        ~SocVersionGuard() {
+            SetSocVersion(originalVersion);
+        }
+    } socGuard{oriSocVersion};
+    SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND950);
     ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
     ASSERT_EQ(((NnopbaseExecutor *)executor)->mc2OpCfg.sType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     ASSERT_EQ(NnopbaseSetMc2(executor), OK);
 
-    MOCKER_CPP(&nnopbase::IndvSoc::GetCurrentSocVersionInternal).stubs().will(returnValue(oriSocVersion));
-    nnopbase::IndvSoc::GetInstance().Reset();
+    // SOC version will be restored by SocVersionGuard destructor
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();
 }

@@ -21,6 +21,7 @@
 #include "opdev/op_log.h"
 
 class AclrtStub {
+  public:
     virtual ~AclrtStub() = default;
     static AclrtStub* GetInstance()
     {
@@ -76,6 +77,7 @@ class AclrtStub {
     {
         return ACL_SUCCESS;
     }
+
     void Install(AclrtStub* instance)
     {
         fakeAclrtInstance_ = instance;
@@ -83,6 +85,18 @@ class AclrtStub {
 
     void UnInstall() {
         fakeAclrtInstance_ = nullptr;
+    }
+
+    virtual aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType,
+        aclrtStreamAttrValue *value)
+    {
+        value->cacheOpInfoSwitch = 1;
+        return ACL_SUCCESS;
+    }
+
+    virtual aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, size_t infoSize)
+    {
+        return ACL_SUCCESS;
     }
 
     virtual aclError aclmdlRICaptureGetInfo(

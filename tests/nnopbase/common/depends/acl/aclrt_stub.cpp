@@ -294,14 +294,13 @@ aclError aclrtGetDeviceInfo(uint32_t deviceId, aclrtDevAttr attr, int64_t *value
 EXTERN_C
 aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value)
 {
-    value->cacheOpInfoSwitch = 1;
-    return ACL_SUCCESS;
+    return AclrtStub::GetInstance()->aclrtGetStreamAttribute(stream, stmAttrType, value);
 }
 
 EXTERN_C
 aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, size_t infoSize)
 {
-    return ACL_SUCCESS;
+    return AclrtStub::GetInstance()->aclrtCacheLastTaskOpInfo(infoPtr, infoSize);
 }
 
 int64_t gDeterministicNew = 0;

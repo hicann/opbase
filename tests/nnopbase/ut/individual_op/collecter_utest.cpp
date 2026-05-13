@@ -23,6 +23,15 @@
 
 using namespace std;
 
+namespace {
+void SetSocVersion(const std::string &version)
+{
+    auto &soc = nnopbase::IndvSoc::GetInstance();
+    soc.socVersion = version;
+    soc.isInit = true;
+}
+}
+
 class NnopbaseCollecterUnitTest : public testing::Test {
 protected:
     void SetUp() {setenv("ASCEND_C", "1", 1);}
@@ -54,8 +63,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_get_soc_version_ok)
 {
     NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
     std::string socVersion = std::string(nnopbase::OPS_SUBPATH_ASCEND910B);
-    MOCKER_CPP(&op::PlatformInfo::GetSocVersion).stubs().will(returnValue(op::SocVersion::ASCEND910B));
-    nnopbase::IndvSoc::GetInstance().Reset();
+    SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND910B);
     ASSERT_EQ(socVersion, nnopbase::IndvSoc::GetInstance().GetCurSocVersion());
     int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter);
     ASSERT_EQ(ret, OK);
