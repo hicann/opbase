@@ -13,6 +13,10 @@
 
 #include "graph/types.h"
 
+#warning \
+    "'op_common/data_type_utils.h' is scheduled to be deprecated in June 2027, and will be replaced by the file with the same name under include/aclnn/opdev in the CANN package installation path.\
+	We apologize for any inconvenience caused and appreciate your timely migration to the new interface."
+
 namespace opcommon {
 static constexpr auto u1 = ge::DataType::DT_UINT8;
 static constexpr auto i1 = ge::DataType::DT_INT8;

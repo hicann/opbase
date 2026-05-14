@@ -184,6 +184,17 @@ install(DIRECTORY ${aclnnop_source}/
         OWNER_READ OWNER_WRITE
         GROUP_READ GROUP_EXECUTE
 )
+install(CODE "
+set(level2_dest \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnnop/level2\")
+file(GLOB level2_headers \"\${level2_dest}/*.h\")
+foreach(h \${level2_headers})
+  execute_process(
+    COMMAND python3 \"${PROJECT_SOURCE_DIR}/scripts/package/common/py/utils/add_deprecation_warning.py\" \"\${h}\"
+  )
+endforeach()
+"
+  COMPONENT opbase
+)
 
 install(TARGETS nnopbase
    LIBRARY DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
