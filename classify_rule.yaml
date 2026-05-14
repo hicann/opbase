@@ -49,7 +49,10 @@ HPTG2@ops-base:
       opensource_style: null
       kernel_style: null
     unrelease:
-      test_code: null
+      test_code:
+        - ops-base/tests/nnopbase/common/depends/
+        - ops-base/tests/nnopbase/ut/composite_op/
+        - ops-base/tests/nnopbase/st/composite_op/
       non_delivery: null
       open_source: null
 
