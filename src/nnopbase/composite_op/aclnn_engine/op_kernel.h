@@ -1042,6 +1042,17 @@ private:
         }
     }
 
+    static bool IsAscend950OrLater()
+    {
+#if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
+        NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+#else
+        static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+#endif
+        return npuArch != NpuArch::DAV_RESV &&
+            static_cast<uint32_t>(npuArch) >= static_cast<uint32_t>(NpuArch::DAV_3510);
+    }
+
     aclnnStatus AppendTensorShapeInfo(
         size_t idx, const aclTensor *tensor, ExpandableRtsArgBuffer *buffer, bool genPlaceholder) const
     {
@@ -1053,7 +1064,15 @@ private:
             OP_LOGW("Failed to seek tiling host data for tensor shape info"), return ACLNN_ERR_INNER);
         uint64_t tensorSize = 0;
         if (tensor) {
-            tensorSize = AlignSize(CalcShapeBytes(tensor->Size(), tensor->GetDataType()), OP_KERNEL_BLOCK_SIZE);
+            int64_t storageSize = CalcShapeBytes(tensor->Size(), tensor->GetDataType());
+            if (tensor->GetViewOffset() > 0 && IsAscend950OrLater()) {
+                tensorSize = storageSize;
+                OP_LOGD("Use unaligned tensor shape size for tensor with view offset, viewOffset: %ld, "
+                        "tensorSize: %lu.",
+                        tensor->GetViewOffset(), tensorSize);
+            } else {
+                tensorSize = AlignSize(storageSize, OP_KERNEL_BLOCK_SIZE);
+            }
         }
         *PtrCastTo<uint64_t>(static_cast<uint8_t *>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) = tensorSize;
         TilingData *tilingData = buffer->GetTilingDataPtr();

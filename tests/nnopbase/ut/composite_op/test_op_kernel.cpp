@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <filesystem>
+#include <thread>
 
 #include "acl/acl.h"
 #include "aclnn/acl_meta.h"
@@ -52,6 +53,11 @@ extern inline uint32_t AddNOpTypeId();
 
 class OpKernelUT : public testing::Test {
 protected:
+    struct ViewOffsetTilingSizeResult {
+        bool ok{false};
+        uint64_t tensorSize{0};
+    };
+
     static void SetUpTestCase()
     {
         // aclInit(nullptr)
@@ -106,6 +112,80 @@ protected:
         std::unique_ptr<OpKernelBin> kernelBin = std::make_unique<OpKernelBin>(
             opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, genPlaceholder, hasDevPtrArg);
         return std::move(kernelBin);
+    }
+
+    static ViewOffsetTilingSizeResult CollectViewOffsetTensorSize(const char *npuArch)
+    {
+        struct NpuArchEnvGuard {
+            ~NpuArchEnvGuard()
+            {
+                unsetenv("ASCEND_NPU_ARCH");
+            }
+        } guard;
+
+        if (npuArch == nullptr) {
+            unsetenv("ASCEND_NPU_ARCH");
+        } else {
+            setenv("ASCEND_NPU_ARCH", npuArch, 1);
+        }
+        uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
+        const char *p = std::getenv("ASCEND_OPP_PATH");
+        if (p == nullptr) {
+            return {};
+        }
+        KeyAndDetail key;
+        key.key = "hahaha";
+        size_t hashKey = 123;
+        char jsonPath[1024];
+        char binPath[1024];
+        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
+            p);
+        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
+            p);
+        OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey,
+            BinType::DYNAMIC_BIN, false, false);
+        if (kernelBin.JsonLoad() != ACLNN_SUCCESS) {
+            return {};
+        }
+
+        std::array<uint8_t, 64> tensorData{};
+        aclTensor base(op::Shape({18}), op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, tensorData.data());
+        aclOpExecutor exe;
+        aclTensor *view = exe.CreateView(&base, op::Shape({17}), op::Shape({18}), base.GetViewStrides(), 1);
+        if (view == nullptr) {
+            return {};
+        }
+
+        auto ctx = op::MakeOpArgContext(OP_INPUT(view));
+        if (ctx == nullptr) {
+            return {};
+        }
+        op::internal::ExpandableRtsArgBuffer buffer;
+        buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+        op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+        tilingData->data_ = buffer.GetTilingDataAddr();
+        tilingData->data_size_ = 0;
+        tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
+
+        ViewOffsetTilingSizeResult result;
+        result.ok = kernelBin.AppendTilingOOMInfo(&buffer, ctx) == ACLNN_SUCCESS;
+        if (result.ok) {
+            result.tensorSize = *reinterpret_cast<uint64_t *>(buffer.GetTilingDataAddr());
+        }
+        op::DestroyOpArgContext(ctx);
+        return result;
+    }
+
+    static ViewOffsetTilingSizeResult CollectViewOffsetTensorSizeInNewThread(const char *npuArch)
+    {
+        ViewOffsetTilingSizeResult result;
+        std::thread thread([&result, npuArch]() {
+            result = CollectViewOffsetTensorSize(npuArch);
+        });
+        thread.join();
+        return result;
     }
 };
 
@@ -1273,6 +1353,23 @@ TEST_F(OpKernelUT, TestGetSocVersion) {
     EXPECT_STREQ(opKnlLib4.GetSocPath().c_str(), "ascend310p/");
 
     unsetenv("ASCEND_C");
+}
+
+TEST_F(OpKernelUT, TestTilingOOMInfoViewOffsetUsesStorageSizeFromAscend950)
+{
+    ViewOffsetTilingSizeResult ascend910bResult = CollectViewOffsetTensorSizeInNewThread("2201");
+    ViewOffsetTilingSizeResult ascend950Result = CollectViewOffsetTensorSizeInNewThread("3510");
+    ViewOffsetTilingSizeResult laterArchResult = CollectViewOffsetTensorSizeInNewThread("3801");
+    ViewOffsetTilingSizeResult reservedArchResult = CollectViewOffsetTensorSizeInNewThread(nullptr);
+
+    ASSERT_TRUE(ascend910bResult.ok);
+    ASSERT_TRUE(ascend950Result.ok);
+    ASSERT_TRUE(laterArchResult.ok);
+    ASSERT_TRUE(reservedArchResult.ok);
+    EXPECT_EQ(ascend910bResult.tensorSize, 64);
+    EXPECT_EQ(ascend950Result.tensorSize, 34);
+    EXPECT_EQ(laterArchResult.tensorSize, 34);
+    EXPECT_EQ(reservedArchResult.tensorSize, 64);
 }
 
 TEST_F(OpKernelUT, TestTilingOOMInfo1)

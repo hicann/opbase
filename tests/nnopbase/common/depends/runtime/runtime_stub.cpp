@@ -41,6 +41,17 @@ rtError_t rtGetSocVersion(char *version, const uint32_t maxLen)
 }
 
 EXTERN_C
+rtError_t rtGetSocSpec(const char *label, const char *key, char *val, const uint32_t maxLen)
+{
+    const char *arch = std::getenv("ASCEND_NPU_ARCH");
+    if (arch == nullptr || strcmp(label, "version") != 0 || strcmp(key, "NpuArch") != 0) {
+        return 1;
+    }
+    strncpy(val, arch, maxLen);
+    return RT_ERROR_NONE;
+}
+
+EXTERN_C
 rtError_t rtRegisterAllKernel(const rtDevBinary_t *bin, void **handle)
 {
     return RT_ERROR_NONE;
