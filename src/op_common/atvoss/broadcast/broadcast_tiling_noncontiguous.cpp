@@ -36,7 +36,7 @@ uint64_t GetBlockSplitFactorLastTranspose(
     int64_t ubOuterLastAxis = 1;
     int64_t ubTailLastAxis = 1;
 
-    int64_t axisBeforelastAxisSplitFactor = 128 * BROADCAST_BITS_NUM / minDtypeBits;
+    int64_t axisBeforelastAxisSplitFactor = 128 / minDtypeBlockAlignSize;
     // -2轴切分至少128B, last轴转置至少有两维，所以不用考虑一维场景
     int64_t ubFormer =
         axisBeforelastAxis > axisBeforelastAxisSplitFactor ? axisBeforelastAxisSplitFactor : axisBeforelastAxis;
