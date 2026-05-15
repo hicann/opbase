@@ -517,11 +517,11 @@ aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *cons
     const size_t index, const size_t elementSize, const NnopbaseAttrDtype dtype)
 {
     NnopbaseAttrs &opAttrs = executor->attrs;
-    CHECK_COND(index < opAttrs.num,
-        ACLNN_ERR_PARAM_INVALID,
-        "Op %s add attr failed, indx is %zu, but attr num is %zu.",
-        executor->opType, index, opAttrs.num);
-    NNOPBASE_ASSERT_TRUE_RETVAL(index < opAttrs.num);
+    if (index >= opAttrs.num) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_INDEX_OUT_OF_RANGE(std::to_string(index).c_str(), "index",
+        std::to_string(opAttrs.num).c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     CHECK_COND(attrAddr != nullptr,
         ACLNN_ERR_INNER_NULLPTR,
         "Add attr[%zu] failed, please check the value of input attr[%zu].",

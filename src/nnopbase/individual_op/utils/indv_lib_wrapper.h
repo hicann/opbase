@@ -20,6 +20,7 @@
 #include "aclnn/acl_meta.h"
 #include "acl/acl_rt.h"
 #include "utils/indv_debug_assert.h"
+#include "nnopbase_error_msg.h"
 
 namespace nnopbase {
 class NnopBaseLoadSo {
@@ -543,11 +544,9 @@ private:
         closeSo();
         const char *ascendHomePath = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
-        if (ascendHomePath == nullptr) {
-            OP_LOGE(ACLNN_ERR_INNER, "Environment variable %s is not set. Failed to load libacl_rt.so.",
-                    MM_ENV_ASCEND_HOME_PATH);
-            return ACLNN_ERR_INNER;
-        }
+        OP_CHECK(ascendHomePath != nullptr,
+            OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load libacl_rt.so", 
+            "ASCEND_HOME_PATH"), return ACLNN_ERR_INNER_NULLPTR);
         std::string rtsLibraryPath = std::string(ascendHomePath) + "/lib64/libacl_rt.so";
         NNOPBASE_ASSERT_OK_RETVAL(openSo(rtsLibraryPath.c_str()));
         NNOPBASE_ASSERT_OK_RETVAL(LoadFunctions());

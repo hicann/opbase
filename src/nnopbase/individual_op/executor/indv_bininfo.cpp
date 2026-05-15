@@ -21,6 +21,7 @@
 #include "utils/thread_var_container.h"
 #include "register/op_binary_resource_manager.h"
 #include "acl/acl_rt.h"
+#include "nnopbase_error_msg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -520,9 +521,9 @@ aclnnStatus NnopbaseReadJsonConfig(const std::string &binaryInfoPath, nlohmann::
     OP_LOGI("Get jsonfile path: %s", binaryInfoPath.c_str());
 
     std::ifstream ifs(binaryInfoPath.c_str());
-    if (!ifs.is_open()) {
-         OP_LOGW("Open jsonfile path for %s failed.", binaryInfoPath.c_str());
-         return ACLNN_ERR_PARAM_INVALID;
+    if (!ifs.is_open()) {	 
+        OP_LOGW("Failed to open file %s.", binaryInfoPath.c_str());	 
+        return ACLNN_ERR_PARAM_INVALID;
     }
     try {
         ifs >> binaryInfoConfig;

@@ -124,6 +124,50 @@ static const std::string g_errorInfoJson = R"(
             "Possible Cause": "N/A",
             "Solution": "1.If the tiling or infershape function does not exsit, check whether the tiling or infershape function is registered successfully. 2.If the tiling or infershape function fails to be executed, check the implementation logic of the tiling or infershape function."
         }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "Execution_Error",
+        "ErrCode": "EZ1009",
+        "ErrMessage": "Failed to execute operator %s. Reason: %s.",
+        "Arglist": "opName, reason",
+        "suggestion": {
+            "Possible Cause": "N/A",
+            "Solution": "N/A"
+        }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "Invalid_Argument",
+        "ErrCode": "EZ1010",
+        "ErrMessage": "Value %s for parameter %s is invalid. Reason: %s.",
+        "Arglist": "opName, paraName, reason",
+        "suggestion": {
+            "Possible Cause": "N/A",
+            "Solution": "N/A"
+        }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "Invalid_Argument_Null_Pointer",
+        "ErrCode": "EZ1011",
+        "ErrMessage": "%s failed because %s cannot be a NULL pointer.",
+        "Arglist": "functionName, paraName",
+        "suggestion": {
+            "Possible Cause": "N/A",
+            "Solution": "N/A"
+        }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "Invalid_Argument",
+        "ErrCode": "EZ1012",
+        "ErrMessage": "Value %zu for parameter %s is out of range, it should be smaller than %zu.",
+        "Arglist": "value, paraName, maxValue",
+        "suggestion": {
+            "Possible Cause": "N/A",
+            "Solution": "N/A"
+        }
     }
     ]
 })";

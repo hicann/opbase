@@ -366,7 +366,9 @@ aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::st
 {
     const NnopbaseChar *ascendHomePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(ascendHomePath);
+    OP_CHECK(ascendHomePath != nullptr,
+            OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("NnopbaseGetCurEnvPackageOsAndCpuType", 
+            "ASCEND_HOME_PATH"), return ACLNN_ERR_PARAM_NULLPTR);
     std::string modelPath = ascendHomePath;
     std::string sceneV1 = modelPath + "/share/info/opbase/" + SCENE;
     OP_LOGI("Try to extract os and cpu info from %s.", sceneV1.c_str());
@@ -376,6 +378,9 @@ aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::st
         OP_LOGW("Get %s failed, try another path.", sceneV1.c_str());
         const NnopbaseChar *oppPathEnv = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
+        OP_CHECK(oppPathEnv != nullptr,
+                OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("NnopbaseGetCurEnvPackageOsAndCpuType", 
+                "ASCEND_OPP_PATH"), return ACLNN_ERR_PARAM_NULLPTR);
         NNOPBASE_ASSERT_NOTNULL_RETVAL(oppPathEnv);
         modelPath = oppPathEnv;
         std::string sceneV2 = modelPath + "/" + SCENE;

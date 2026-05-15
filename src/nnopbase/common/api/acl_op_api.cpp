@@ -333,9 +333,9 @@ aclnnStatus aclInitTensor(aclTensor *tensor, const int64_t *viewDims, uint64_t v
 aclnnStatus aclSetInputTensorAddr(aclOpExecutor *executor, [[maybe_unused]] const size_t index,
                                   aclTensor *tensor, void *addr)
 {
-    CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t realIndex = index;
@@ -354,9 +354,9 @@ aclnnStatus AclSetInputTensorAddr(aclOpExecutor *executor, const size_t index,
 aclnnStatus aclSetOutputTensorAddr(aclOpExecutor *executor, [[maybe_unused]] const size_t index,
                                    aclTensor *tensor, void *addr)
 {
-    CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetOutputTensorAddr(executor, index, tensor->GetData());
@@ -374,14 +374,14 @@ aclnnStatus aclSetDynamicInputTensorAddr(aclOpExecutor *executor, size_t irIndex
     const size_t relativeIndex, aclTensorList *tensors, void *addr)
 {
     OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
-    CHECK_RET(tensors != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
     CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID, "Set dynamic input tensor addr failed. "
                "relativeIndex[%zu] is out of tensors size[%lu].", relativeIndex, tensors->Size());
 
     auto tensor = (*tensors)[relativeIndex];
     CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t tensorIrIndex = irIndex;
@@ -401,14 +401,14 @@ aclnnStatus aclSetDynamicOutputTensorAddr(aclOpExecutor *executor, size_t irInde
     const size_t relativeIndex, aclTensorList *tensors, void *addr)
 {
     OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
-    CHECK_RET(tensors != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
     CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID, "Set dynamic output tensor addr failed. "
                "relativeIndex[%zu] is out of tensors size[%lu].", relativeIndex, tensors->Size());
     auto tensor = (*tensors)[relativeIndex];
 
     CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetDynamicOutputTensorAddr(executor, irIndex, relativeIndex, tensor->GetData());
@@ -424,9 +424,9 @@ aclnnStatus AclSetDynamicOutputTensorAddr(aclOpExecutor *executor, size_t irInde
 
 aclnnStatus aclSetTensorAddr(aclOpExecutor *executor, [[maybe_unused]] const size_t index, aclTensor *tensor, void *addr)
 {
-    CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
 
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
@@ -449,13 +449,13 @@ aclnnStatus aclSetDynamicTensorAddr(
     aclOpExecutor *executor, size_t irIndex, const size_t relativeIndex, aclTensorList *tensors, void *addr)
 {
     OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
-    CHECK_RET(tensors != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
     CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID, "Set dynamic tensor addr failed. "
                "relativeIndex[%zu] is out of tensors size[%lu].", relativeIndex, tensors->Size());
 
     auto tensor = (*tensors)[relativeIndex];
     tensor->SetStorageAddr(addr);
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t tensorIrIndex = 0U;
@@ -476,7 +476,7 @@ aclnnStatus AclSetDynamicTensorAddr(
 
 aclnnStatus aclSetAclOpExecutorRepeatable(aclOpExecutor *executor)
 {
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     OP_LOGI("executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.",
             executor, *magicNum, executor->GetMagicNumber());
@@ -490,7 +490,7 @@ aclnnStatus aclSetAclOpExecutorRepeatable(aclOpExecutor *executor)
 
 aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor *executor)
 {
-    CHECK_RET(executor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t *magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     OP_LOGI("executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.",
             executor, *magicNum, executor->GetMagicNumber());
@@ -509,15 +509,15 @@ aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor *executor)
 
 aclnnStatus aclSetRawTensorAddr(aclTensor *tensor, void *addr)
 {
-    CHECK_RET(tensor != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_PARAM_NULLPTR);
     tensor->SetStorageAddr(addr);
     return OK;
 }
 
 aclnnStatus aclGetRawTensorAddr(const aclTensor *tensor, void **addr)
 {
-    CHECK_RET(tensor != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(addr != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(addr, ACLNN_ERR_PARAM_NULLPTR);
     *addr = tensor->GetStorageAddr();
     return OK;
 }
@@ -534,10 +534,10 @@ aclnnStatus aclnnReselectStaticKernel()
 aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, aclTensor **tensors,
                              size_t inputTensorNum, size_t outputTensorNum, aclrtStream stream)
 {
-    CHECK_RET(opType != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(opName != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(tensors != nullptr, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(stream != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(opType, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(opName, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(stream, ACLNN_ERR_PARAM_NULLPTR);
     OP_LOGI("start dump tensors. opType: %s, opName: %s.", opType, opName);
     std::vector<Adx::TensorInfoV2> dumpTensors;
     std::vector<const aclTensor *> inputTensors;

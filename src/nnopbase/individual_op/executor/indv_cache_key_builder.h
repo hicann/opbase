@@ -27,7 +27,7 @@ public:
     static void AppendScalar(NnopbaseExecutorArgs* args, const aclScalar* scalar,
                             const uint32_t index, const int32_t srcIndex, const ge::DataType dtype);
     static void AppendScalarList(NnopbaseExecutorArgs* args, const aclScalarList* scalarList,
-                                const uint32_t index, const int32_t srcIndex, ge::DataType dtype);
+                                const uint32_t index, const int32_t srcIndex, const ge::DataType dtype);
     static void GenerateCacheArgsKeyV1(NnopbaseExecutor *executor);
 
 private:

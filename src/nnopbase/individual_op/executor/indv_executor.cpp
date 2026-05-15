@@ -121,7 +121,11 @@ void NnopbaseExecutorClearSet(NnopbaseExecutorSpaceSet *set)
 aclnnStatus NnopbaseExecutorGetAttr(NnopbaseExecutor *executor, const size_t index, NnopbaseAttrAddr **attr)
 {
     NnopbaseAttrs *opAttrs = &executor->attrs;
-    NNOPBASE_ASSERT_TRUE_RETVAL(index < opAttrs->num);
+    if (index >= opAttrs->num) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_INDEX_OUT_OF_RANGE(std::to_string(index).c_str(),
+            "index", std::to_string(opAttrs->num).c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     *attr = &(opAttrs->attrs[index].addr);
     OP_LOGI("[NnopbaseExecutorAddAttr] index %zu", index);
     return OK;
@@ -343,7 +347,7 @@ aclnnStatus NnopbaseSetUnContiguousExecutorRepeatable(NnopbaseExecutor *executor
 
 aclnnStatus NnopbaseSetRepeatable(void *executor)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = (static_cast<NnopbaseExecutor *>(executor))->opType;
     (static_cast<NnopbaseExecutor *>(executor))->repeateFlag = true;
     aclnnStatus ret = OK;
@@ -795,13 +799,16 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor *executor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->regInfo);
 
     auto tiling = executor->regInfo->tiling;
-    CHECK_COND((tiling != nullptr), ACLNN_ERR_INNER_TILING_ERROR,
-        "Cannot find tiling function of %s, Please ensure tiling function is properly registered!", executor->opType);
+    if (tiling == nullptr) {
+        OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+        return ACLNN_ERR_INNER_TILING_ERROR;
+    }
     ge::graphStatus ret =
         executor->regInfo->tiling(op::internal::PtrCastTo<gert::TilingContext>(executor->contextExt.context));
-    CHECK_COND((ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR,
-        "Execute %s tiling function failed, ret is %d. Please check your implementation of tiling function.",
-        executor->opType, ret);
+    if (ret != ge::GRAPH_SUCCESS) {
+        OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling function");
+        return ACLNN_ERR_INNER_TILING_ERROR;
+    }
     if (executor->tilingId != nullptr) {
         NnopbaseReportApiInfo(tilingBeginTime, *executor->tilingId);
     }
@@ -913,11 +920,15 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
 aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor)
 {
     OpSocSupportInfo supportList{};
-    CHECK_COND((NnopbaseGetSupportInfo(executor, supportList) == OK), ACLNN_ERR_INNER_FIND_KERNEL_ERROR,
-               "Check soc version failed!");
+    if (NnopbaseGetSupportInfo(executor, supportList) != OK) {
+        std::string errMsg = "SoC version " + nnopbase::IndvSoc::GetInstance().GetCurSocVersion() + \
+            " verification failed. This SoC is not configured through the AddConfig API of the OpDef class";
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+        return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
+    }
     if (ParamCheck(executor, supportList)) {
-        OP_LOGE(ACLNN_ERR_INNER_FIND_KERNEL_ERROR, "The binary bin not found! "
-        "Probably because inputs do not match simplifiedKey in json or kernel package is not properly installed.");
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION("The dtype or format of the actual input or output"
+            " parameter of the operator is inconsistent with that defined in the operator prototype OpDef");
         return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
     } else {
         return NnopbasePrintSupportInfo(executor, supportList);
@@ -1287,36 +1298,29 @@ aclnnStatus NnopbaseExecutorRefreshOutputShape(NnopbaseExecutor *executor)
     if (executor->args->outputs.outPutShapeSize > executor->outputShapeData.size()) {
         executor->outputShapeData.resize(executor->args->outputs.outPutShapeSize);
     }
-
     auto ret = memset_s(
         executor->outputShapeData.data(), executor->args->outputs.outPutShapeSize, 0, executor->args->outputs.outPutShapeSize);
-    CHECK_COND(ret == EOK,
-        ACLNN_ERR_INNER,
+    CHECK_COND(ret == EOK, ACLNN_ERR_INNER,
         "Memset outputShapeData failed, ret %d, outputShapeData addr is %p, outPutShapeSize is %zu.",
-        ret,
-        executor->outputShapeData.data(),
-        executor->args->outputs.outPutShapeSize);
+        ret, executor->outputShapeData.data(), executor->args->outputs.outPutShapeSize);
     ret = aclrtMemcpy(executor->outputShapeData.data(),
-        executor->outputShapeData.size(),
-        outPutShape,
-        executor->args->outputs.outPutShapeSize,
-        ACL_MEMCPY_DEVICE_TO_HOST);
+        executor->outputShapeData.size(), outPutShape, executor->args->outputs.outPutShapeSize, ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_COND(ret == ACL_SUCCESS,
         ACLNN_ERR_RUNTIME_ERROR,
         "Memcpy outputShape data failed, ret is %d, src is %p, size is %zu bytes, dst is %p, size is %zu bytes.",
-        ret,
-        executor->outputShapeData.data(),
-        executor->outputShapeData.size(),
-        outPutShape,
-        executor->args->outputs.outPutShapeSize);
-
+        ret, executor->outputShapeData.data(), executor->outputShapeData.size(), outPutShape, executor->args->outputs.outPutShapeSize);
     // outputShape: [output_shape1_dim, output_shape1, output_shape2_dim, output_shape2]
     // output_shape1_dim=2, output_shape1=[32,64,0,0,0,0,0,0]
     uint64_t *hostData = op::internal::PtrCastTo<uint64_t>(executor->outputShapeData.data());
     for (auto it = executor->args->outputs.outPutShapeMap.begin(); it != executor->args->outputs.outPutShapeMap.end(); ++it) {
         gert::Shape newShape;
         uint64_t dimNum = hostData[0] & 0x7F; // 最高位1表示uint64_t类型，解析dimNum要去掉
-        CHECK_COND(dimNum <= 8, ACLNN_ERR_PARAM_INVALID, "DimNum is %lu, cannot be greater than 8.", dimNum); // 最大8维
+        if (dimNum > 8U) {  // 最大dimNum不能超过8
+            std::string reason = "DimNum of " + std::to_string(it->first) + "th output is " + std::to_string(dimNum) +\
+                ", dim number cannot be greater than 8";
+            OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(reason.c_str());
+            return ACLNN_ERR_PARAM_INVALID;
+        }
         newShape.SetDimNum(dimNum);
         constexpr uint64_t dimsize = 9; // 9 表示1个count和8个dim
         for (uint64_t i = 0; i < dimNum; i++) {
@@ -1326,7 +1330,6 @@ aclnnStatus NnopbaseExecutorRefreshOutputShape(NnopbaseExecutor *executor)
         it->second->SetStorageShape(newShape);
         it->second->SetOriginalShape(newShape);
         it->second->SetViewShape(newShape);
-
         OP_LOGI("Refresh output[%u] shape successfully, shape is %s", it->first, op::ToString(newShape).GetString());
     }
     return OK;

@@ -27,6 +27,7 @@
 #include "thread_local_context.h"
 #include "opdev/platform.h"
 #include "op_dfx_internal.h"
+#include "nnopbase_error_msg.h"
 
 void NnopbaseOpLogE(const aclnnStatus code, const NnopbaseChar *const expr)
 {
@@ -157,9 +158,9 @@ aclnnStatus NnopbaseRunForWorkspace(void *executor, uint64_t *workspaceLen)
 
 aclnnStatus NnopbaseRunWithWorkspace(void *executor, aclrtStream stream, void *workspace, uint64_t workspaceLen)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
     if (workspaceLen > 0U) {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(workspace);
+        NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(workspace, ACLNN_ERR_PARAM_NULLPTR);
     }
 
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
@@ -167,7 +168,14 @@ aclnnStatus NnopbaseRunWithWorkspace(void *executor, aclrtStream stream, void *w
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = nnopExecutor->opType;
     OP_LOGI("Run op %s with workspace len %lu bytes, executor addr %p, executor workspace len %lu bytes.",
             nnopExecutor->opType, workspaceLen, nnopExecutor, nnopExecutor->workspaces.length);
-    NNOPBASE_ASSERT_TRUE_RETVAL(workspaceLen >= nnopExecutor->workspaces.length);
+    if (workspaceLen < nnopExecutor->workspaces.length) {
+        std::string reason = "The passed workspace size " + std::to_string(workspaceLen) + \
+            " does not meet the workspace size " + \
+            std::to_string(nnopExecutor->workspaces.length) + " actually required by the operator";
+        OP_LOGE_FOR_INVALID_ARGUMENT_WITHOUT_SOLUTION(std::to_string(workspaceLen).c_str(), "workspaceLen",
+            reason.c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     return NnopbaseExecutorRunWithWorkspace(nnopExecutor, stream, workspace, workspaceLen);
 }
 aclnnStatus NnopbaseAddInput(void *executor, const aclTensor *tensor, const uint32_t index)
@@ -367,10 +375,7 @@ aclnnStatus NnopbaseAddParamName(void *executor, const uint32_t index, const cha
     } else {
         tensors = &(((NnopbaseExecutor *)executor)->ownArgs.outputs);
     }
-
-    CHECK_COND(index < tensors->paramDescs.count,
-        ACLNN_ERR_PARAM_INVALID, "Tensor index [%zu] is greater than or equal to IrTensor num: %d",
-        index, tensors->paramDescs.count);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(index, "index", tensors->paramDescs.count);
     tensors->paramDescs.instances[index].name = name;
     return OK;
 }
@@ -442,9 +447,9 @@ aclnnStatus NnopbaseAddArrayAttrWithDtype(void *executor, void *array, const siz
 
 aclnnStatus NnopbaseGetAttrAddr(void *executor, const size_t index, void **attrAddr, size_t *attrLen)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(attrAddr);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(attrLen);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(attrAddr, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(attrLen, ACLNN_ERR_PARAM_NULLPTR);
     aclnnStatus ret;
     NnopbaseAttrAddr *attr = nullptr;
     ret = NnopbaseExecutorGetAttr((NnopbaseExecutor *)executor, index, &attr);
@@ -457,16 +462,16 @@ aclnnStatus NnopbaseGetAttrAddr(void *executor, const size_t index, void **attrA
 
 void NnopbaseSetUserHandle(void *executor, void *handle)
 {
-    NNOPBASE_ASSERT_NOTNULL(executor);
+    if (executor == nullptr) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_NULL_POINTER("NnopbaseSetUserHandle", "executor");
+        return;
+    }
     ((NnopbaseExecutor *)executor)->userHandle = handle;
 }
 
 void *NnopbaseGetUserHandle(void *executor)
 {
-    if (executor == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "NnopbaseGetUserHandle failed, input executor is null.");
-        return nullptr;
-    }
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, nullptr);
     return ((NnopbaseExecutor *)executor)->userHandle;
 }
 
@@ -494,7 +499,11 @@ void NnopbaseGetInputTensorAddr(void *executor, size_t index, void **addr)
     NNOPBASE_ASSERT_NOTNULL(executor);
     NNOPBASE_ASSERT_NOTNULL(addr);
     auto tensors = &(((NnopbaseExecutor *)executor)->args->inputs);
-    NNOPBASE_ASSERT_TRUE(index < tensors->arrayLen);
+    if (index >= tensors->arrayLen) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_INDEX_OUT_OF_RANGE(std::to_string(index).c_str(),
+            "index", std::to_string(tensors->arrayLen).c_str());
+        return;
+    }
     *addr = tensors->extTensors[index].rt2Tensor.GetAddr();
 }
 
@@ -503,18 +512,21 @@ void NnopbaseGetOutputTensorAddr(void *executor, size_t index, void **addr)
     NNOPBASE_ASSERT_NOTNULL(executor);
     NNOPBASE_ASSERT_NOTNULL(addr);
     auto tensors = &(((NnopbaseExecutor *)executor)->args->outputs);
-    NNOPBASE_ASSERT_TRUE(index < tensors->arrayLen);
+    if (index >= tensors->arrayLen) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_INDEX_OUT_OF_RANGE(std::to_string(index).c_str(),
+            "index", std::to_string(tensors->arrayLen).c_str());
+        return;
+    }
     *addr = tensors->extTensors[index].rt2Tensor.GetAddr();
 }
 
 aclnnStatus NnopbaseGetInputTensorCount(const void *const executor, const size_t irIndex, uint32_t *const count)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(count);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(count, ACLNN_ERR_PARAM_NULLPTR);
 
     const auto &tensors = (PtrCastTo<NnopbaseExecutor>(executor))->args->inputs;
-    CHECK_COND((irIndex < tensors.paramDescs.count), ACLNN_ERR_PARAM_INVALID, "Get input tensor count "
-               "failed. irIndex[%zu] is out of input num[%u].", irIndex, tensors.paramDescs.count);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
     *count = tensors.paramDescs.instances[irIndex].num;
  
     return OK;
@@ -522,12 +534,11 @@ aclnnStatus NnopbaseGetInputTensorCount(const void *const executor, const size_t
  
 aclnnStatus NnopbaseGetOutputTensorCount(const void *const executor, const size_t irIndex, uint32_t *const count)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(count);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(count, ACLNN_ERR_PARAM_NULLPTR);
 
     const auto &tensors = (PtrCastTo<NnopbaseExecutor>(executor))->args->outputs;
-    CHECK_COND((irIndex < tensors.paramDescs.count), ACLNN_ERR_PARAM_INVALID, "Get output tensor count "
-               "failed. irIndex[%zu] is out of output num[%u].", irIndex, tensors.paramDescs.count);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
     *count = tensors.paramDescs.instances[irIndex].num;
  
     return OK;
@@ -539,10 +550,9 @@ static aclnnStatus NnopbaseGetDynamicTensorAddrs(const NnopbaseTensors &tensors,
                                                  const size_t addrSize,
                                                  uint32_t *const count)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(addrs);
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(count);
-    CHECK_COND((irIndex < tensors.paramDescs.count), ACLNN_ERR_PARAM_INVALID, "Get tensor addrs failed. "
-               "irIndex[%zu] is out of input or output num[%u].", irIndex, tensors.paramDescs.count);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(addrs, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(count, ACLNN_ERR_PARAM_NULLPTR);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
     CHECK_COND(tensors.paramDescs.instances[irIndex].isDynamic, ACLNN_ERR_PARAM_INVALID,
                "Get tensor addrs failed. tensor[%zu] must is dynamic. isDynamic = %d.",
                irIndex, tensors.paramDescs.instances[irIndex].isDynamic);
@@ -566,7 +576,7 @@ static aclnnStatus NnopbaseGetDynamicTensorAddrs(const NnopbaseTensors &tensors,
 aclnnStatus NnopbaseGetDynamicInputTensorAddrs(const void *const executor, const size_t irIndex, void **const addrs,
                                                const size_t addrSize, uint32_t *const count)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
     return NnopbaseGetDynamicTensorAddrs(
         (PtrCastTo<NnopbaseExecutor>(executor))->args->inputs, irIndex, addrs, addrSize, count);
 }
@@ -574,21 +584,24 @@ aclnnStatus NnopbaseGetDynamicInputTensorAddrs(const void *const executor, const
 aclnnStatus NnopbaseGetDynamicOutputTensorAddrs(const void *const executor, const size_t irIndex, void **const addrs,
                                                 const size_t addrSize, uint32_t *const count)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
     return NnopbaseGetDynamicTensorAddrs(
         (PtrCastTo<NnopbaseExecutor>(executor))->args->outputs, irIndex, addrs, addrSize, count);
 }
 
 aclnnStatus NnopbaseSetInputTensorAddr(void *executor, const size_t index, const void *const addr)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
 
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     auto &tensors = nnopExecutor->args->inputs;
-    CHECK_COND((index < tensors.num), ACLNN_ERR_PARAM_INVALID, "Set input tensor addrs failed. "
-               "index[%zu] is out of tensor num[%u].", index, tensors.num);
-    CHECK_COND(!tensors.extTensors[index].isNull, ACLNN_ERR_PARAM_INVALID, "Set input tensor addrs failed. "
-               "The source address of the tensor is null. tensor index = %zu.", index);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(index, "index", tensors.num);
+    if (tensors.extTensors[index].isNull) {
+        std::string errMsg = "The " + std::to_string(index) + "th input in operator " + nnopExecutor->opType + \
+            " is a null pointer. The address cannot be updated through the aclSetTensorAddr/aclSetInputTensorAddr API";
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     NNOPBASE_ASSERT_OK_RETVAL(tensors.extTensors[index].rt2Tensor.MutableTensorData().SetAddr(addr, nullptr));
     return NnopbaseSetRefTensorAddr(nnopExecutor,
         index,
@@ -599,14 +612,17 @@ aclnnStatus NnopbaseSetInputTensorAddr(void *executor, const size_t index, const
 
 aclnnStatus NnopbaseSetOutputTensorAddr(void *executor, const size_t index, const void *const addr)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
 
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     auto &tensors = nnopExecutor->args->outputs;
-    CHECK_COND((index < tensors.num), ACLNN_ERR_PARAM_INVALID, "Set output tensor addrs failed. "
-               "index[%zu] is out of tensor num[%u].", index, tensors.num);
-    CHECK_COND(!tensors.extTensors[index].isNull, ACLNN_ERR_PARAM_INVALID, "Set output tensor addrs failed. "
-               "The source address of the tensor is null. tensor index = %zu.", index);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(index, "index", tensors.num);
+    if (tensors.extTensors[index].isNull) {
+        std::string errMsg = "The " + std::to_string(index) + "th output in operator " + nnopExecutor->opType + \
+            " is a null pointer. The address cannot be updated through the aclSetTensorAddr/aclSetOutputTensorAddr API";
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     NNOPBASE_ASSERT_OK_RETVAL(tensors.extTensors[index].rt2Tensor.MutableTensorData().SetAddr(addr, nullptr));
     return OK;
 }
@@ -614,20 +630,22 @@ aclnnStatus NnopbaseSetOutputTensorAddr(void *executor, const size_t index, cons
 aclnnStatus NnopbaseSetDynamicInputTensorAddr(void *executor, size_t irIndex, const size_t relativeIndex,
                                               const void *const addr)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
 
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     auto &tensors = nnopExecutor->args->inputs;
-    CHECK_COND((irIndex < tensors.paramDescs.count), ACLNN_ERR_PARAM_INVALID, "Set intput tensor addrs failed. "
-               "index[%zu] is out of input num[%u].", irIndex, tensors.paramDescs.count);
-    CHECK_COND((relativeIndex < tensors.paramDescs.instances[irIndex].num), ACLNN_ERR_PARAM_INVALID,
-                "Set input tensor addrs failed. tensor index[%zu] is out of tensor num[%u].",
-                relativeIndex, tensors.paramDescs.instances[irIndex].num);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(relativeIndex, "relativeIndex", tensors.paramDescs.instances[irIndex].num);
 
     const size_t index = static_cast<size_t>(tensors.paramDescs.instances[irIndex].startIndex) + relativeIndex;
-    CHECK_COND(!tensors.extTensors[index].isNull, ACLNN_ERR_PARAM_INVALID, "Set input tensor addrs failed. "
-               "The source address of the tensor is null. irIndex = %zu, relativeIndex = %zu, tensor index = %zu.",
-               irIndex, relativeIndex, index);
+    if (tensors.extTensors[index].isNull) {
+        std::string errMsg = "The " + std::to_string(irIndex) + "th tensor in the " + std::to_string(relativeIndex)\
+            + "th input tensorList in operator " + nnopExecutor->opType + \
+            " is a null pointer. The address cannot be updated through"\
+            " the aclSetDynamicInputTensorAddr/AclSetDynamicInputTensorAddr/aclSetDynamicTensorAddr API";
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     NNOPBASE_ASSERT_OK_RETVAL(tensors.extTensors[index].rt2Tensor.MutableTensorData().SetAddr(addr, nullptr));
     auto &inInstances = tensors.paramDescs.instances;
     if (inInstances[irIndex].refIdx != -1) {
@@ -639,20 +657,21 @@ aclnnStatus NnopbaseSetDynamicInputTensorAddr(void *executor, size_t irIndex, co
 aclnnStatus NnopbaseSetDynamicOutputTensorAddr(void *executor, size_t irIndex, const size_t relativeIndex,
                                                const void *const addr)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
 
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     auto &tensors = nnopExecutor->args->outputs;
-    CHECK_COND((irIndex < tensors.paramDescs.count), ACLNN_ERR_PARAM_INVALID, "Set output tensor addrs failed. "
-               "index[%zu] is out of input num[%u].", irIndex, tensors.paramDescs.count);
-    CHECK_COND((relativeIndex < tensors.paramDescs.instances[irIndex].num), ACLNN_ERR_PARAM_INVALID,
-                "Set output tensor addrs failed. tensor index[%zu] is out of tensor num[%u].",
-                relativeIndex, tensors.paramDescs.instances[irIndex].num);
-
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(relativeIndex, "relativeIndex", tensors.paramDescs.instances[irIndex].num);
     const size_t index = static_cast<size_t>(tensors.paramDescs.instances[irIndex].startIndex) + relativeIndex;
-    CHECK_COND(!tensors.extTensors[index].isNull, ACLNN_ERR_PARAM_INVALID, "Set output tensor addrs failed. "
-               "The source address of the tensor is null. irIndex = %zu, relativeIndex = %zu, tensor index = %zu.",
-               irIndex, relativeIndex, index);
+    if (tensors.extTensors[index].isNull) {
+        std::string errMsg = "The " + std::to_string(irIndex) + "th tensor in the " + std::to_string(relativeIndex)\
+            + "th output tensorList in operator " + nnopExecutor->opType + \
+            " is a null pointer. The address cannot be updated through"\
+            " the aclSetDynamicOutputTensorAddr/AclSetDynamicOutputTensorAddr/aclSetDynamicTensorAddr API";
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     NNOPBASE_ASSERT_OK_RETVAL(tensors.extTensors[index].rt2Tensor.MutableTensorData().SetAddr(addr, nullptr));
     return OK;
 }
@@ -662,8 +681,7 @@ aclnnStatus NnopbaseDisableOptionalInput(void *executor, const size_t irIndex)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     auto &tensors = nnopExecutor->args->inputs;
-    CHECK_COND((irIndex < tensors.paramDescs.count), ACLNN_ERR_PARAM_INVALID, "Disable optional input failed. "
-               "index[%zu] is out of input num[%u].", irIndex, tensors.paramDescs.count);
+    NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
     tensors.paramDescs.instances[irIndex].isDisable = true;
     tensors.paramDescs.activeInputCount--;
     return OK;
