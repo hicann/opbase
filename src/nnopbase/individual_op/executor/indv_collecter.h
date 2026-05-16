@@ -76,7 +76,8 @@ aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter 
 void NnopbaseGetCustomOpApiPath(std::vector<std::string> &basePath);
 void NnopbaseGetOppApiPath(std::vector<std::string> &basePath);
 void NnopbaseGetCustomOppPath(std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath);
-void NnopbaseGetOppPath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath);
+void NnopbaseGetOppPath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath,
+    int32_t &builtInStartIndex);
 aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::string &hostEnvCpu);
 aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath);
 aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingFun *const tiling, gert::OppImplVersionTag oppImplVersion);
@@ -93,7 +94,7 @@ void NnopbaseSplitStr(const std::string &configPath, const std::string &pattern,
 aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
     nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion);
 aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter,
-    const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath);
+    const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath, int32_t builtInStartIndex);
 aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
     nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion);
 NnopbaseUChar *NnopbaseBeyond8BtyeCopy(

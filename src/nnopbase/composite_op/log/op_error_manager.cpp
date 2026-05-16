@@ -141,7 +141,7 @@ static const std::string g_errorInfoJson = R"(
         "errTitle": "Invalid_Argument",
         "ErrCode": "EZ1010",
         "ErrMessage": "Value %s for parameter %s is invalid. Reason: %s.",
-        "Arglist": "opName, paraName, reason",
+        "Arglist": "value, paraName, reason",
         "suggestion": {
             "Possible Cause": "N/A",
             "Solution": "N/A"
@@ -162,7 +162,7 @@ static const std::string g_errorInfoJson = R"(
         "errClass": "Nnopbase Errors",
         "errTitle": "Invalid_Argument",
         "ErrCode": "EZ1012",
-        "ErrMessage": "Value %zu for parameter %s is out of range, it should be smaller than %zu.",
+        "ErrMessage": "Value %s for parameter %s is out of range, it should be smaller than %s.",
         "Arglist": "value, paraName, maxValue",
         "suggestion": {
             "Possible Cause": "N/A",

@@ -75,39 +75,14 @@ void GetCustomVendorName(std::vector<std::string> &customPaths)
     NnopbaseSplitStr(customOppPath, ":", customPaths);
 }
 
-void NnopbaseGetBasePath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath)
+void NnopbaseGetBasePath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath,
+    int32_t &builtInStartIndex)
 {
     // 处理自研 高优先级在前 低优先级在后
     OP_LOGI("Start to get basePath.");
     NnopbaseGetCustomOppPath(basePath);
-    NnopbaseGetOppPath(collecter, basePath);
+    NnopbaseGetOppPath(collecter, basePath, builtInStartIndex);
     OP_LOGI("Get basePath finished, basePath size is %zu.", basePath.size());
-}
-
-static bool GetBuiltInOpsPath(std::string &socVersionPath)
-{
-    std::vector<std::string> latestChildDir;
-    uint32_t depth = 0;
-    uint32_t maxDepth = 0;
-    IndvPath::GetChildDirs(socVersionPath, latestChildDir, depth, maxDepth);
-    // 判断子路径是否包含ops
-    bool isOpsPath = false;
-    for (const std::string &str : OPS_PATH_VEC) {
-        for (const std::string &dir : latestChildDir) {
-            if (dir.find(str) == std::string::npos) {
-                continue;
-            }
-            OP_LOGI("Get ops path: %s.", dir.c_str());
-            isOpsPath = true;
-            break;
-        }
-    }
-    // 判断latest下是否包含ops路径
-    if (isOpsPath) {
-        return true;
-    }
-
-    return false;
 }
 
 std::string GetBuiltInBasePath(gert::OppImplVersionTag &oppImplVersion)
@@ -446,7 +421,8 @@ bool NnopbaseReadConfigFile(const std::string &configPath, std::vector<std::stri
     return true;
 }
 
-void NnopbaseGetOppPath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath)
+void NnopbaseGetOppPath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath,
+    int32_t &builtInStartIndex)
 {
     OP_LOGI("Start to get opp kernel base path, default custom opp kernel is in ASCEND_OPP_PATH.");
     const NnopbaseChar *oppPathEnv = nullptr;
@@ -473,6 +449,7 @@ void NnopbaseGetOppPath(NnopbaseBinCollecter *const collecter, std::vector<std::
     // 追加built_in
     if (!oppKernelBase.empty()) {
         basePath.push_back(std::make_pair(oppKernelBase + "/built-in", oppImplVersion));
+        builtInStartIndex = static_cast<int32_t>(basePath.size() - 1U);
         OP_LOGI("Add opp kernel built-in base path %s.", oppKernelBase.c_str());
     }
 }
@@ -1445,28 +1422,32 @@ aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollect
 }
 
 aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter,
-                                                               const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath)
+                                                               const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath,
+                                                               int32_t builtInStartIndex)
 {
     OP_LOGI("Start get path and read binary_info_config json.");
     bool readConfigSucc = false;
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     for (size_t i = 0U; i < basePath.size(); i++) {
         nlohmann::json binaryInfoConfig;
-        std::string binaryBasePath = basePath[i].first + "/op_impl/ai_core/tbe/kernel/config/" + socVersion;
-        if (!GetBuiltInOpsPath(binaryBasePath)) {
+        const std::string binaryBasePath = basePath[i].first + "/op_impl/ai_core/tbe/kernel/config/" + socVersion;
+        bool foundConfig = false;
+        if (static_cast<int32_t>(i) == builtInStartIndex) {
+            OP_LOGI("Start finding built-in operator binary_info_config.json.");
+            for (const std::string &pkgName : OPS_PATH_VEC) {
+                const std::string binaryInfoPath = binaryBasePath + "/" + pkgName + "/binary_info_config.json";
+                if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK &&
+                    NnopbaseCollecterReadDynamicKernelOpInfoConfig(collecter, binaryInfoConfig, basePath[i].first, basePath[i].second, pkgName) == OK) {
+                    readConfigSucc = true;
+                    foundConfig = true;
+                }
+            }
+        }
+        // 算子子包路径查找失败后再找旧有算子整包配置路径
+        if (!foundConfig) {
             const std::string binaryInfoPath = binaryBasePath + "/binary_info_config.json";
             if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK &&
                 NnopbaseCollecterReadDynamicKernelOpInfoConfig(collecter, binaryInfoConfig, basePath[i].first, basePath[i].second) == OK) {
-                readConfigSucc = true;
-            }
-            continue;
-        }
-
-        OP_LOGI("Get ops path and read new json file.");
-        for (const std::string &pkgName : OPS_PATH_VEC) {
-            const std::string binaryInfoPath = binaryBasePath + "/" + pkgName + "/binary_info_config.json";
-            if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK &&
-                NnopbaseCollecterReadDynamicKernelOpInfoConfig(collecter, binaryInfoConfig, basePath[i].first, basePath[i].second, pkgName) == OK) {
                 readConfigSucc = true;
             }
         }
@@ -1507,7 +1488,8 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
 {
     OP_LOGI("[NnopbaseCollecter] Collecter work start.");
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
-    NnopbaseGetBasePath(collecter, basePath);
+    int32_t builtInStartIndex = -1;
+    NnopbaseGetBasePath(collecter, basePath, builtInStartIndex);
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
     
     if (basePath.size() > 0) {
@@ -1529,7 +1511,7 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
     
     const aclnnStatus retForDynamicKernelInfo =
-        NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath);
+        NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath, builtInStartIndex);
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
     CHECK_COND((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
         "Get path and read binary_info_config.json failed, "
