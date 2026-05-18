@@ -100,9 +100,11 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default) {
 
     NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> bath_path;
-    NnopbaseGetOppPath(bin_collecter, bath_path);
+    int32_t builtInStartIndex = -1;
+    NnopbaseGetOppPath(bin_collecter, bath_path, builtInStartIndex);
     unsetenv("ASCEND_OPP_PATH");
     EXPECT_EQ(bath_path.size(), 2);
+    EXPECT_EQ(builtInStartIndex, bath_path.size() - 1);
     delete bin_collecter;
 }
 

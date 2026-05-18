@@ -518,7 +518,7 @@ aclnnStatus NnopbaseGetOpJsonPath(const std::string &binPath, std::string &jsonP
 
 aclnnStatus NnopbaseReadJsonConfig(const std::string &binaryInfoPath, nlohmann::json &binaryInfoConfig)
 {
-    OP_LOGI("Get jsonfile path: %s", binaryInfoPath.c_str());
+    OP_LOGI("Reading json path: %s", binaryInfoPath.c_str());
 
     std::ifstream ifs(binaryInfoPath.c_str());
     if (!ifs.is_open()) {	 
