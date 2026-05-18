@@ -228,6 +228,20 @@ class CpuKernelCache : public KernelCache<CpuCacheData> {
 
   uint32_t UpdateInputTensor(const std::vector<uint64_t> &io_addrs,
     ExtInfoMsg &ext_info_msg, CpuKernelContext &ctx, size_t &addr_index) const;
+
+  /*
+   * parse run kernel parameters: io addrs and ExtInfoMsg.
+   * @return int32_t: 0 indicates success, while the others fail
+   */
+  int32_t ParseRunKernelParam(void *param, std::vector<uint64_t> &io_addrs,
+                              char *&node_def, uint32_t &node_def_len,
+                              std::shared_ptr<ExtInfoMsg> &ext_info_msg) const;
+
+  /*
+   * dispatch cpu kernel based on V2/V1 registry.
+   * @return uint32_t: raw kernel status code
+   */
+  uint32_t DispatchCpuKernel(CpuKernelContext &ctx, ExtInfoMsg &ext_info_msg) const;
 };
 }  // namespace aicpu
 #endif  // AICPU_CPU_KERNEL_CACHE_H_

@@ -590,18 +590,16 @@ std::shared_ptr<CpuKernelContext> CpuKernelCache::GetCpuKernelContext(
 }
 
 /*
- * run kernel.
+ * parse io addrs and ext info from kernel param.
  */
-int32_t CpuKernelCache::RunKernel(void *param) {
+int32_t CpuKernelCache::ParseRunKernelParam(void *param, std::vector<uint64_t> &io_addrs,
+                                            char *&node_def, uint32_t &node_def_len,
+                                            std::shared_ptr<ExtInfoMsg> &ext_info_msg) const {
   AicpuParamHead *param_head = static_cast<AicpuParamHead *>(param);
-  uint32_t node_def_len = 0;
-  char *node_def = nullptr;
-  std::vector<uint64_t> io_addrs;
   uint32_t ret = ParseIoAddr(param_head, io_addrs, node_def, node_def_len);
   if (ret != KERNEL_STATUS_OK) {
     return -1;
   }
-  std::shared_ptr<ExtInfoMsg> ext_info_msg = nullptr;
   try {
     ext_info_msg = std::make_shared<ExtInfoMsg>();
   } catch (std::bad_alloc &) {
@@ -612,27 +610,52 @@ int32_t CpuKernelCache::RunKernel(void *param) {
   if (ret != KERNEL_STATUS_OK) {
     return -1;
   }
+  return 0;
+}
+
+/*
+ * dispatch cpu kernel: V2 优先, V1 兜底.
+ */
+uint32_t CpuKernelCache::DispatchCpuKernel(CpuKernelContext &ctx, ExtInfoMsg &ext_info_msg) const {
+  const std::string &op_type = ctx.GetOpType();
+  const bool hit_v2 = CpuKernelRegister::Instance().IsRegisteredV2(op_type);
+  if (ext_info_msg.async_flag) {
+    auto cb = [this, &ctx, &ext_info_msg]() { return UpdateFWKOutputShape(ext_info_msg, ctx); };
+    return hit_v2 ? CpuKernelRegister::Instance().RunCpuKernelAsyncV2(
+                        ctx, ext_info_msg.wait_type, ext_info_msg.wait_id, cb)
+                  : CpuKernelRegister::Instance().RunCpuKernelAsync(
+                        ctx, ext_info_msg.wait_type, ext_info_msg.wait_id, cb);
+  }
+  return hit_v2 ? CpuKernelRegister::Instance().RunCpuKernelV2(ctx)
+                : CpuKernelRegister::Instance().RunCpuKernel(ctx);
+}
+
+int32_t CpuKernelCache::RunKernel(void *param) {
+  std::vector<uint64_t> io_addrs;
+  char *node_def = nullptr;
+  uint32_t node_def_len = 0;
+  std::shared_ptr<ExtInfoMsg> ext_info_msg = nullptr;
+  int32_t pre_ret = ParseRunKernelParam(param, io_addrs, node_def, node_def_len, ext_info_msg);
+  if (pre_ret != 0) {
+    return pre_ret;
+  }
 
   std::shared_ptr<NodeDef> node_def_proto = nullptr;
   auto ctx = GetCpuKernelContext(ext_info_msg, node_def, node_def_len, node_def_proto);
   KERNEL_CHECK_NULLPTR(ctx, static_cast<int32_t>(KERNEL_STATUS_INNER_ERROR), "Get cpu kernel context from buff failed.")
 
-  ret = UpdateTensor(io_addrs, *ext_info_msg, *ctx);
+  uint32_t ret = UpdateTensor(io_addrs, *ext_info_msg, *ctx);
   if (ret != KERNEL_STATUS_OK) {
     return -1;
   }
 
-  if (ext_info_msg->async_flag) {
-    ret = CpuKernelRegister::Instance().RunCpuKernelAsync(
-        *ctx, ext_info_msg->wait_type, ext_info_msg->wait_id,
-        [&, ctx, ext_info_msg]() { return UpdateFWKOutputShape(*ext_info_msg, *ctx); });
-  } else {
-    ret = CpuKernelRegister::Instance().RunCpuKernel(*ctx);
+  ret = DispatchCpuKernel(*ctx, *ext_info_msg);
+  if (!ext_info_msg->async_flag) {
     if (ret != KERNEL_STATUS_OK) {
       if ((ret == KERNEL_STATUS_SILENT_FAULT) || (ret == KERNEL_STATUS_DETECT_FAULT) ||
           (ret == KERNEL_STATUS_DETECT_FAULT_NORAS) || (ret == KERNEL_STATUS_DETECT_LOW_BIT_FAULT) ||
           (ret == KERNEL_STATUS_DETECT_LOW_BIT_FAULT_NORAS)) {
-        return ret;
+        return static_cast<int32_t>(ret);
       }
       return -1;
     }
@@ -652,24 +675,13 @@ int32_t CpuKernelCache::RunKernel(void *param) {
  */
 int32_t CpuKernelCache::RunCpuKernelWithBlock(void *param, struct BlkDimInfo *blkdim_info)
 {
-  AicpuParamHead *param_head = static_cast<AicpuParamHead *>(param);
   std::vector<uint64_t> io_addrs;
   char *node_def = nullptr;
   uint32_t node_def_len = 0;
-  uint32_t ret = ParseIoAddr(param_head, io_addrs, node_def, node_def_len);
-  if (ret != KERNEL_STATUS_OK) {
-    return -1;
-  }
   std::shared_ptr<ExtInfoMsg> ext_info_msg = nullptr;
-  try {
-    ext_info_msg = std::make_shared<ExtInfoMsg>();
-  } catch(std::bad_alloc &) {
-    KERNEL_LOG_ERROR("Create ExtInfoMsg failed");
-    return -1;
-  }
-  ret = ParseExtMsg(param_head, *ext_info_msg);
-  if (ret != KERNEL_STATUS_OK) {
-    return -1;
+  int32_t pre_ret = ParseRunKernelParam(param, io_addrs, node_def, node_def_len, ext_info_msg);
+  if (pre_ret != 0) {
+    return pre_ret;
   }
 
   std::shared_ptr<NodeDef> node_def_proto = nullptr;
@@ -678,19 +690,13 @@ int32_t CpuKernelCache::RunCpuKernelWithBlock(void *param, struct BlkDimInfo *bl
   KERNEL_CHECK_NULLPTR(ctx, static_cast<int32_t>(KERNEL_STATUS_INNER_ERROR),
                        "Get cpu kernel context from buff failed.")
 
-  ret = UpdateTensor(io_addrs, *ext_info_msg, *ctx);
+  uint32_t ret = UpdateTensor(io_addrs, *ext_info_msg, *ctx);
   if (ret != KERNEL_STATUS_OK) {
     return -1;
   }
 
-  if (ext_info_msg->async_flag) {
-    ret = CpuKernelRegister::Instance().RunCpuKernelAsync(
-        *ctx, ext_info_msg->wait_type, ext_info_msg->wait_id,
-        [&, ctx, ext_info_msg]() {
-          return UpdateFWKOutputShape(*ext_info_msg, *ctx);
-        });
-  } else {
-    ret = CpuKernelRegister::Instance().RunCpuKernel(*ctx);
+  ret = DispatchCpuKernel(*ctx, *ext_info_msg);
+  if (!ext_info_msg->async_flag) {
     if (ret != KERNEL_STATUS_OK) {
       return -1;
     }
