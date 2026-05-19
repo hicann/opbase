@@ -35,6 +35,8 @@ HPTG2@ops-base:
   src:
     release:
       style:
+        - ops-base/include/op_common/log/
+        - ops-base/include/op_common/op_host/
         - ops-base/include/nnopbase/
         - ops-base/pkg_inc/op_common/log/
         - ops-base/pkg_inc/op_common/op_host/
@@ -62,6 +64,7 @@ VC2@ops-base:
       style:
         - ops-base/pkg_inc/op_common/atvoss/
         - ops-base/pkg_inc/op_common/op_kernel/
+        - ops-base/include/op_common/op_kernel/
         - ops-base/src/op_common/atvoss/
       opensource_style: null
       kernel_style: null
