@@ -106,8 +106,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * index:int
  * incorrectShape:string
  * correctShape:string
- * errMessage:The [index]th input of operator [opName] has incorrect shape [incorrectShape]. The correct one should be
- * [correctShape].
+ * errMessage:The [index]th input of operator [opName] has incorrect shape [incorrectShape]. It should be [correctShape].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_SHAPE(opName, index, incorrectShape, correctShape)                              \
     do {                                                                                                           \
@@ -117,7 +116,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string index_str = std::to_string(index);                                                             \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                   \
             _safe_opName_.c_str(),                                                                                 \
-            "The %sth input of operator %s has incorrect shape [%s]. The correct one should be [%s].",             \
+            "The %sth input of operator %s has incorrect shape [%s]. It should be [%s].",                          \
             index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()); \
         const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_shape", "correct_shape"};          \
         const std::vector<const char*> msgvalue = {                                                                \
@@ -130,8 +129,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * attrName:string
  * incorrectVal:string
  * correctVal:string
- * errMessage:Attribute [attrName] of operator [opName] has incorrect value [incorrectVal]. The correct one should be
- * [correctVal].
+ * errMessage:Attribute [attrName] of operator [opName] has incorrect value [incorrectVal]. It should be [correctVal].
  */
 #define OP_LOGE_WITH_INVALID_ATTR(opName, attrName, incorrectVal, correctVal)                                        \
     do {                                                                                                             \
@@ -141,7 +139,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctVal_(correctVal);                                                                   \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                     \
             _safe_opName_.c_str(),                                                                                   \
-            "Attribute %s of operator %s has incorrect value %s. The correct one should be %s.",                     \
+            "Attribute %s of operator %s has incorrect value %s. It should be %s.",                                  \
             _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()); \
         const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_val", "correct_val"};            \
         const std::vector<const char*> msgvalue = {                                                                  \
@@ -154,8 +152,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * attrName:string
  * incorrectSize:string
  * correctSize:string
- * errMessage:Attribute [attrName] of operator [opName] has incorrect size [incorrectSize]. The correct one should be
- * [correctSize].
+ * errMessage:Attribute [attrName] of operator [opName] has incorrect size [incorrectSize]. It should be [correctSize].
  */
 #define OP_LOGE_WITH_INVALID_ATTR_SIZE(opName, attrName, incorrectSize, correctSize)                                   \
     do {                                                                                                               \
@@ -164,7 +161,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_incorrectSize_(incorrectSize);                                                               \
         std::string _safe_correctSize_(correctSize);                                                                   \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                       \
-            _safe_opName_.c_str(), "Attribute %s of operator %s has incorrect size %s. The correct one should be %s.", \
+            _safe_opName_.c_str(), "Attribute %s of operator %s has incorrect size %s. It should be %s.",              \
             _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
         const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_size", "correct_size"};            \
         const std::vector<const char*> msgvalue = {                                                                    \
@@ -194,8 +191,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * index:int
  * incorrectSize:string
  * correctSize:string
- * errMessage:The [index]th input of operator [opName] has incorrect shape size [incorrectSize]. The correct one should
- * be [correctSize].
+ * errMessage:The [index]th input of operator [opName] has incorrect shape size [incorrectSize]. It should be [correctSize].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(opName, index, incorrectSize, correctSize)                          \
     do {                                                                                                         \
@@ -205,7 +201,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string index_str = std::to_string(index);                                                           \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
             _safe_opName_.c_str(),                                                                               \
-            "The %sth input of operator %s has incorrect shape size %s. The correct one should be %s.",          \
+            "The %sth input of operator %s has incorrect shape size %s. It should be %s.",                       \
             index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
         const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_size", "correct_size"};          \
         const std::vector<const char*> msgvalue = {                                                              \
@@ -218,7 +214,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string
  * dataFormat:string
  * expectedFormatList:string
- * errMessage:Input parameter [paramName] of operator [opName] has incorrect format [dataFormat]. The correct one should
+ * errMessage:Input parameter [paramName] of operator [opName] has incorrect format [dataFormat]. It should
  * be [expectedFormatList].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_FORMAT(opName, paramName, dataFormat, expectedFormatList)                      \
@@ -229,7 +225,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_expectedFormatList_(expectedFormatList);                                                \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                  \
             _safe_opName_.c_str(),                                                                                \
-            "Input parameter %s of operator %s has incorrect format %s. The correct one should be %s.",           \
+            "Input parameter %s of operator %s has incorrect format %s. It should be %s.",                        \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataFormat_.c_str(),                           \
             _safe_expectedFormatList_.c_str());                                                                   \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "data_format", "expected_format_list"}; \
@@ -244,7 +240,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string
  * dataDtype:string
  * expectedDtypeList:string
- * errMessage:Input parameter [paramName] of operator [opName] has incorrect dtype [dataDtype]. The correct one should
+ * errMessage:Input parameter [paramName] of operator [opName] has incorrect dtype [dataDtype]. It should
  * be [expectedDtypeList].
  */
 #define OP_LOGE_WITH_INVALID_INPUT_DTYPE(opName, paramName, dataDtype, expectedDtypeList)                       \
@@ -255,7 +251,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_expectedDtypeList_(expectedDtypeList);                                                \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                \
             _safe_opName_.c_str(),                                                                              \
-            "Input parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",          \
+            "Input parameter %s of operator %s has incorrect dtype %s. It should be %s.",                       \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataDtype_.c_str(),                          \
             _safe_expectedDtypeList_.c_str());                                                                  \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "data_dtype", "expected_dtype_list"}; \
@@ -276,7 +272,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectShape:string - Actual shape, format like "[1,128,128]"
  * correctShape:string - Expected shape, format like "[1,256,256]"
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape [incorrectShape]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape [incorrectShape]. It should
  * be [correctShape].
  */
 #define OP_LOGE_FOR_INVALID_SHAPE(opName, paramName, incorrectShape, correctShape)                             \
@@ -287,7 +283,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctShape_(correctShape);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
             _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect shape [%s]. The correct one should be [%s].",           \
+            "Parameter %s of operator %s has incorrect shape [%s]. It should be [%s].",                        \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
             _safe_correctShape_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "correct_shape"}; \
@@ -349,7 +345,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectDim:string - Actual dimension, format like "2D" or "3D"
  * correctDim:string - Expected dimension, format like "4D"
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape dim [incorrectDim]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape dim [incorrectDim]. It should
  * be [correctDim].
  */
 #define OP_LOGE_FOR_INVALID_SHAPEDIM(opName, paramName, incorrectDim, correctDim)                                     \
@@ -360,7 +356,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctDim_(correctDim);                                                                    \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
             _safe_opName_.c_str(),                                                                                    \
-            "Parameter %s of operator %s has incorrect shape dim %s. The correct one should be %s.",                  \
+            "Parameter %s of operator %s has incorrect shape dim %s. It should be %s.",                               \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()); \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "correct_dim"};            \
         const std::vector<const char*> msgvalue = {                                                                   \
@@ -420,7 +416,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectSize:string - Actual size (total element count)
  * correctSize:string - Expected size (total element count)
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape size [incorrectSize]. The correct one
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect shape size [incorrectSize]. It
  * should be [correctSize].
  */
 #define OP_LOGE_FOR_INVALID_SHAPESIZE(opName, paramName, incorrectSize, correctSize)                         \
@@ -431,7 +427,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctSize_(correctSize);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                             \
             _safe_opName_.c_str(),                                                                           \
-            "Parameter %s of operator %s has incorrect shape size %s. The correct one should be %s.",        \
+            "Parameter %s of operator %s has incorrect shape size %s. It should be %s.",                     \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
             _safe_correctSize_.c_str());                                                                     \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
@@ -494,7 +490,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectFormat:string - Actual format (e.g., "NHWC")
  * correctFormat:string - Expected format (e.g., "NCHW")
- * errMessage: Parameter [paramName] of operator [opName] has incorrect format [incorrectFormat]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect format [incorrectFormat]. It should
  * be [correctFormat].
  */
 #define OP_LOGE_FOR_INVALID_FORMAT(opName, paramName, incorrectFormat, correctFormat)                            \
@@ -505,7 +501,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctFormat_(correctFormat);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
             _safe_opName_.c_str(),                                                                               \
-            "Parameter %s of operator %s has incorrect format %s. The correct one should be %s.",                \
+            "Parameter %s of operator %s has incorrect format %s. It should be %s.",                             \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
             _safe_correctFormat_.c_str());                                                                       \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "correct_format"}; \
@@ -544,7 +540,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectDtype:string - Actual data type (e.g., "INT32")
  * correctDtype:string - Expected data type (e.g., "FLOAT16")
- * errMessage: Parameter [paramName] of operator [opName] has incorrect dtype [incorrectDtype]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect dtype [incorrectDtype]. It should
  * be [correctDtype].
  */
 #define OP_LOGE_FOR_INVALID_DTYPE(opName, paramName, incorrectDtype, correctDtype)                             \
@@ -555,7 +551,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctDtype_(correctDtype);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
             _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect dtype %s. The correct one should be %s.",               \
+            "Parameter %s of operator %s has incorrect dtype %s. It should be %s.",                            \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
             _safe_correctDtype_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "correct_dtype"}; \
@@ -617,7 +613,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectNum:int64_t - Actual tensor count
  * correctNum:string - Expected tensor count
- * errMessage: Parameter [paramName] of operator [opName] has invalid tensor num [incorrectNum]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has invalid tensor num [incorrectNum]. It should
  * be [correctNum].
  */
 #define OP_LOGE_FOR_INVALID_TENSORNUM(opName, paramName, incorrectNum, correctNum)                                \
@@ -627,7 +623,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctNum_(correctNum);                                                                \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                  \
             _safe_opName_.c_str(),                                                                                \
-            "Parameter %s of operator %s has invalid tensor num %ld. The correct one should be %s.",              \
+            "Parameter %s of operator %s has invalid tensor num %ld. It should be %s.",                           \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), static_cast<int64_t>(incorrectNum),                  \
             _safe_correctNum_.c_str());                                                                           \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_num", "correct_num"};        \
@@ -666,7 +662,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectValue:string - Actual incorrect value
  * correctValue:string - Expected correct value
- * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. It should
  * be [correctValue].
  */
 #define OP_LOGE_FOR_INVALID_VALUE(opName, paramName, incorrectValue, correctValue)                             \
@@ -677,7 +673,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctValue_(correctValue);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
             _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect value %s. The correct one should be %s.",               \
+            "Parameter %s of operator %s has incorrect value %s. It should be %s.",                            \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(),                    \
             _safe_correctValue_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "correct_value"}; \
@@ -693,7 +689,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string - Parameter name
  * incorrectSize:string - Actual incorrect list size
  * correctSize:string - Expected correct list size
- * errMessage: Parameter [paramName] of operator [opName] has invalid list size [incorrectSize]. The correct one should
+ * errMessage: Parameter [paramName] of operator [opName] has invalid list size [incorrectSize]. It should
  * be [correctSize].
  */
 #define OP_LOGE_FOR_INVALID_LISTSIZE(opName, paramName, incorrectSize, correctSize)                          \
@@ -704,7 +700,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctSize_(correctSize);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                             \
             _safe_opName_.c_str(),                                                                           \
-            "Parameter %s of operator %s has incorrect element nums %s. The correct one should be %s.",      \
+            "Parameter %s of operator %s has incorrect element nums %s. It should be %s.",                   \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
             _safe_correctSize_.c_str());                                                                     \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
