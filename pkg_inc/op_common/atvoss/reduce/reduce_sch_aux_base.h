@@ -42,6 +42,7 @@ public:
     constexpr static int32_t Dim = Pattern::Dim;
     constexpr static int32_t VL_ELEMS = Ops::Base::GetVRegSize() / sizeof(DataType);
     constexpr static uint64_t UB_BLOCK = Ops::Base::GetUbBlockSize();
+    constexpr static int32_t MIN_DTYPE_BYTES = OpDag::MinDtypeBytes;
 
 public:
     uint64_t loopAStartIndex_ = 0;
@@ -633,10 +634,20 @@ public:
         CalculateOutView(view, shape, outLen, outRepeat);
         newView.axis[0].repeat = outLen;
         newView.axis[1].repeat = outRepeat;
-
+        // 混合精度场景，MTE3搬出需要跳搬(lp_norm_v2存在此场景)
+        uint64_t inDtypeBlockAlign = Ops::Base::CeilAlign(outLen, UB_BLOCK / sizeof(InDType));
+        if (sizeof(InDType) != sizeof(OutDType)) {
+            newView.axis[1].srcStride = inDtypeBlockAlign;
+        } else {
+            newView.axis[1].srcStride = outLen;
+        }
         S newShape;
         newShape.value[0] = 1;
-        newShape.value[1] = outRepeat * Ops::Base::CeilAlign(outLen, UB_BLOCK / sizeof(InDType));
+        if constexpr (Pattern::TailA) {
+            newShape.value[1] = outRepeat * Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
+        } else {
+            newShape.value[1] = outRepeat * inDtypeBlockAlign;
+        }
         RunPostOp<OpDag::ReduceOpPos>(aIndex, newView, newShape);
     }
 
@@ -647,11 +658,10 @@ public:
         using Input = typename ElemOp::Args::template At<1>;
         using Output = typename ElemOp::Args::template At<0>;
         static_assert(Placeholder::IsOutHolder<Output>::Value, "output args should be out holder");
-        static_assert(IsSameType<typename Output::DType, OutDType>::value,
-                      "CopyOut data type is inconsistent with Op data type.");
+        using outDtype = typename Output::DType;
 
-        GlobalTensor<OutDType> globalTensor;
-        globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ OutDType*>(output_[Output::Pos].GetPhyAddr(0)));
+        GlobalTensor<outDtype> globalTensor;
+        globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ outDtype*>(output_[Output::Pos].GetPhyAddr(0)));
 
         if constexpr (Vec::IsReduceOp<typename Input::Fun>::Value) {
             SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
@@ -659,8 +669,8 @@ public:
         } else {
             uint8_t bufId = GetPostBufId<GetFunOutputPos<Input>()>();
             uint8_t syncId = bufId + preBufNum_;
-            LocalTensor<OutDType> src =
-                sch_->ReduceSch::template AllocTensorAux<OutDType, GetFunOutputPos<Input>()>(bufId);
+            LocalTensor<outDtype> src =
+                sch_->ReduceSch::template AllocTensorAux<outDtype, GetFunOutputPos<Input>()>(bufId);
             GetTensor<TPosition::VECOUT>(syncId);
             sch_->ReduceSch::template CopyOutAux(globalTensor, src, view);
             ReleaseTensor<TPosition::VECOUT>(syncId);
@@ -681,7 +691,7 @@ public:
         newView.axis[0].repeat = outLen;
         newView.axis[1].repeat = outRepeat;
         if constexpr (Pattern::TailA) {
-            newView.axis[1].srcStride = Ops::Base::CeilAlign(outLen, UB_BLOCK / sizeof(InDType));
+            newView.axis[1].srcStride = Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
         } else {
             newView.axis[1].srcStride = outLen;
         }
@@ -711,7 +721,7 @@ public:
         sch_->ReduceSch::template GetCacheAux(outTensor, (cacheCount_ - 1) * dimAAlign);
         GlobalTensor<PromoteDType> globalTensor;
         globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ PromoteDType*>(workspace_[0].GetPhyAddr(0)));
-        sch_->ReduceSch::template CopyOutAuxGroup(globalTensor, outTensor, newView);
+        sch_->ReduceSch::template CopyOutAux(globalTensor, outTensor, newView);
     }
 
     template <typename T>

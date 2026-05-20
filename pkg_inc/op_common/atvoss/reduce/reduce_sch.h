@@ -630,19 +630,6 @@ public:
             DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
             copyOutParams.blockCount = view.axis[1].repeat;
             copyOutParams.blockLen = view.axis[0].repeat * sizeof(T);
-            DataCopyPad(dst[view.addr], src, copyOutParams);
-        }
-    }
-
-    template <class T, class V>
-    __aicore__ inline void CopyOutAuxGroup(const GlobalTensor<T>& dst, const LocalTensor<T>& src, V& view)
-    {
-        if constexpr (CheckCopyOut<ReduceOp>(0)) {
-            reduceOp_->CopyOut(dst, src, view);
-        } else {
-            DataCopyExtParams copyOutParams = {1, 1, 0, 0, 0};
-            copyOutParams.blockCount = view.axis[1].repeat;
-            copyOutParams.blockLen = view.axis[0].repeat * sizeof(T);
             copyOutParams.srcStride = (view.axis[1].srcStride - view.axis[0].repeat) * sizeof(T) / UB_BLOCK;
             DataCopyPad(dst[view.addr], src, copyOutParams);
         }
