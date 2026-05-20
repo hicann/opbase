@@ -114,7 +114,7 @@ uint32_t CpuKernelRegister::RunCpuKernelCommon(CpuKernelContext &ctx, const std:
   auto start = std::chrono::steady_clock::now();
   uint32_t ret = kernel->Compute(ctx);
   auto end = std::chrono::steady_clock::now();
-  KERNEL_LOG_INFO("op type [%s] run cpu kernel finished, run time [%lf] us.", type.c_str(),
+  KERNEL_LOG_INFO("op type [%s] run cpu kernel finished, run time is [%lf] us.", type.c_str(),
       std::chrono::duration<double, std::micro>(end - start).count());
   if (ret != KERNEL_STATUS_OK) {
     return ret;
@@ -209,7 +209,7 @@ uint32_t CpuKernelRegister::RunCpuKernelAsyncCommon(CpuKernelContext &ctx,
   auto done = [notify_info, kernel, type, cb, start](uint32_t status) {
     auto end = std::chrono::steady_clock::now();
     double dr_us = std::chrono::duration<double, std::micro>(end-start).count();
-    KERNEL_LOG_INFO("op type [%s] run cpu kernel async finished, run time [%lf] us.", type.c_str(), dr_us);
+    KERNEL_LOG_INFO("op type [%s] run cpu kernel async finished, run time is [%lf] us.", type.c_str(), dr_us);
     if (status == KERNEL_STATUS_OK) {
       KERNEL_LOG_INFO("op type [%s] run cpu kernel async success.", type.c_str());
       status = cb();
