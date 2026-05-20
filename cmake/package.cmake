@@ -184,6 +184,16 @@ install(DIRECTORY ${aclnnop_source}/
         OWNER_READ OWNER_WRITE
         GROUP_READ GROUP_EXECUTE
 )
+
+set(op_common_source ${CMAKE_SOURCE_DIR}/include/op_common)
+install(DIRECTORY ${op_common_source}/
+        DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/op_common
+        COMPONENT opbase
+        FILE_PERMISSIONS
+        OWNER_READ OWNER_WRITE
+        GROUP_READ GROUP_EXECUTE
+)
+
 install(CODE "
 set(level2_dest \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnnop/level2\")
 file(GLOB level2_headers \"\${level2_dest}/*.h\")

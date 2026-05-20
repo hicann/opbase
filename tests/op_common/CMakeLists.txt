@@ -3,6 +3,8 @@ project(op_common_utest)
 file(GLOB_RECURSE UT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 include_directories(
+    ${OPS_BASE_DIR}/include
+    ${OPS_BASE_DIR}/include/op_common
     ${OPS_BASE_INCLUDE}
     ${OPS_BASE_INCLUDE}/op_common
     ${ASCEND_HOME_PATH}/include

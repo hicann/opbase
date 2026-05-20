@@ -91,6 +91,8 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     # 本地头文件 target（pkg_inc 下的本地头文件优先于 CANN 安装目录）
     add_library(ops_base_internal_headers INTERFACE)
     target_include_directories(ops_base_internal_headers INTERFACE
+        ${OPS_BASE_DIR}/include
+        ${OPS_BASE_DIR}/include/op_common
         ${OPS_BASE_INCLUDE}
         ${OPS_BASE_INCLUDE}/op_common
     )
