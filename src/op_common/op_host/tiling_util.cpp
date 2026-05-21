@@ -13,7 +13,7 @@
  * \brief
  */
 
-#include "op_common/op_host/tiling_util.h"
+#include "op_common/op_host/tiling_base_util.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "platform/soc_spec.h"
 

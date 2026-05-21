@@ -121,8 +121,8 @@
         <file value="infershape_reduce_util.h" install_mod="550"/>
         <file value="infershape_elewise_util.h" install_mod="550"/>
         <file value="infershape_broadcast_util.h" install_mod="550"/>
-        <file value="tiling_base.h" install_mod="550"/>
-        <file value="tiling_util.h" install_mod="550"/>
+        <file value="tiling_base_class.h" install_mod="550"/>
+        <file value="tiling_base_util.h" install_mod="550"/>
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/include/op_common/op_host/util" install_path="$(TARGET_ENV)/include/op_common/op_host/util" install_type="all">
         <file value="bfloat16.h" install_mod="550"/>
