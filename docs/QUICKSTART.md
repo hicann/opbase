@@ -141,19 +141,15 @@ pip3 install -r requirements.txt
 
 ### 执行UT
 
+#### 编译并执行UT
+
 ```bash
-# 方式1: 编译并执行所有的UT测试用例
+# 编译并执行所有的UT测试用例
 bash build.sh -u
-# 方式2: 编译所有的UT测试用例但不执行
+# 编译所有的UT测试用例但不执行
 bash build.sh -u --noexec
-# 方式3：执行UT并查看覆盖率
+# 执行UT并查看覆盖率
 bash build.sh -u --cov
-```
-
-以编译并执行所有的UT测试为例，执行上述命令后出现如下内容，表示执行成功
-
-```bash
-bash build.sh -u
 ```
 
 执行完成后出现如下内容，表示执行成功。
@@ -164,3 +160,25 @@ Global Global test environment tear-down
 [  PASSED  ] ${n} tests.
 Execute ops_base_ut successful.
 ```
+
+#### 单独运行已编译的UT测试
+
+若已完成UT编译（通过 `bash build.sh -u` 或 `bash build.sh -u --noexec`），可直接运行生成的测试二进制文件，无需重新编译。
+
+```bash
+# 设置环境变量
+source ${ASCEND_HOME_PATH}/bin/setenv.bash
+export LD_LIBRARY_PATH=build/:$LD_LIBRARY_PATH
+
+# 运行nnopbase UT测试
+cd build/tests/nnopbase/ut/
+./nnopbase_utest
+
+# 运行op_common UT测试
+cd build/tests/op_common/
+./op_common_utest
+```
+
+其中 `${ASCEND_HOME_PATH}` 为CANN安装路径，默认为 `/usr/local/Ascend/cann`。
+
+> **说明**：googletest支持通过命令行参数过滤指定测试用例，例如 `./nnopbase_utest --gtest_filter=TestSuiteName.TestCaseName`，更多用法参见[googletest文档](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests)。

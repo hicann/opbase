@@ -151,9 +151,17 @@ install_gcc() {
     case "$OS" in
         debian)
             run_command sudo $PKG_MANAGER update
-            run_command sudo $PKG_MANAGER install -y gcc-9 g++-9
-            run_command sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 \
-                --slave /usr/bin/g++ g++ /usr/bin/g++-9
+            local debian_ver=0
+            if [[ -f /etc/debian_version ]]; then
+                debian_ver=$(grep -oP '^\d+' /etc/debian_version 2>/dev/null || echo "0")
+            fi
+            if [[ "$debian_ver" -ge 10 ]] 2>/dev/null; then
+                run_command sudo $PKG_MANAGER install -y gcc g++
+            else
+                run_command sudo $PKG_MANAGER install -y gcc-9 g++-9
+                run_command sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 \
+                    --slave /usr/bin/g++ g++ /usr/bin/g++-9
+            fi
             ;;
         rhel)
             if grep -q "release 7" /etc/redhat-release; then
@@ -293,21 +301,20 @@ install_pigz() {
 }
 
 install_patch() {
-    # patch版本号>=2.7 :cite[3]
-    echo -e "\n==== 检查patch ===="
     local req_ver="2.7.0"
+    echo -e "\n==== Checking patch ===="
     local curr_ver=""
 
     if command -v patch &> /dev/null; then
         curr_ver=$(patch --version 2>&1 | head -n1 | awk '{print $3}')
-        echo "check patch version: $curr_ver"
+        echo "Current patch version: $curr_ver"
         if version_ge "$curr_ver" "$req_ver"; then
-            echo "patch meets requirements"
+            echo "patch version meets requirements"
             return
         fi
     fi
 
-    echo "安装patch..."
+    echo "Installing patch..."
     case "$OS" in
         debian)
             run_command sudo $PKG_MANAGER update
@@ -324,14 +331,14 @@ install_patch() {
     if command -v patch &> /dev/null; then
         curr_ver=$(patch --version 2>&1 | head -n1 | awk '{print $3}')
         if version_ge "$curr_ver" "$req_ver"; then
-            echo "patch installed success（$curr_ver）"
+            echo "patch installed successfully ($curr_ver)"
             return
         else
-            echo "patch version ，请手动安装解决"
+            echo "patch version still doesn't meet requirements, please install manually"
             exit 1
         fi
     else
-        echo "patch version still doesn't meet requirements, please install manually"
+        echo "patch installation failed, please install manually"
         exit 1
     fi
 }
@@ -363,7 +370,7 @@ install_dos2unix() {
 }
 
 install_git() {
-    echo -e "\n==== 检查git ===="
+    echo -e "\n==== Checking git ===="
 
     if command -v git &> /dev/null; then
         echo "git has been installed"
@@ -372,7 +379,7 @@ install_git() {
 
     echo "Installing git..."
     case "$OS" in
-        debian|rhel)
+        debian|rhel|euler)
             run_command sudo $PKG_MANAGER install -y git
             ;;
         macos)
@@ -385,6 +392,56 @@ install_git() {
     else
         echo "git installation failed"
         exit 1
+    fi
+}
+
+install_googletest() {
+    local gtest_ver="release-1.11.0"
+    local gtest_install_prefix="/usr/local"
+    echo -e "\n==== Checking googletest ===="
+
+    if pkg-config --exists gtest 2>/dev/null; then
+        echo "googletest has been installed"
+        return
+    fi
+
+    if [[ -f "${gtest_install_prefix}/lib/libgtest.a" ]] || [[ -f "${gtest_install_prefix}/lib64/libgtest.a" ]]; then
+        echo "googletest has been installed"
+        return
+    fi
+
+    echo "Installing googletest ${gtest_ver}..."
+    local tmp_dir=$(mktemp -d)
+    local orig_dir=$(pwd)
+    trap "rm -rf ${tmp_dir}" EXIT
+
+    if ! curl -fsSL "https://github.com/google/googletest/archive/refs/tags/${gtest_ver}.tar.gz" -o "${tmp_dir}/googletest.tar.gz"; then
+        echo "Warning: Failed to download googletest, skipping. You can install it manually later."
+        rm -rf "${tmp_dir}"
+        trap - EXIT
+        cd "${orig_dir}"
+        return
+    fi
+
+    tar -xzf "${tmp_dir}/googletest.tar.gz" -C "${tmp_dir}"
+    local src_dir="${tmp_dir}/googletest-${gtest_ver#release-}"
+    if [[ ! -d "$src_dir" ]]; then
+        src_dir=$(find "${tmp_dir}" -maxdepth 1 -type d -name "googletest*" | head -1)
+    fi
+
+    mkdir -p "${src_dir}/build" && cd "${src_dir}/build"
+    cmake .. -DCMAKE_INSTALL_PREFIX="${gtest_install_prefix}" -DBUILD_SHARED_LIBS=OFF
+    make -j$(nproc 2>/dev/null || echo 1)
+    sudo make install
+
+    cd "${orig_dir}"
+    rm -rf "${tmp_dir}"
+    trap - EXIT
+
+    if [[ -f "${gtest_install_prefix}/lib/libgtest.a" ]] || [[ -f "${gtest_install_prefix}/lib64/libgtest.a" ]]; then
+        echo "googletest installed successfully (${gtest_ver})"
+    else
+        echo "Warning: googletest installation may have failed. UT tests require googletest."
     fi
 }
 
@@ -401,6 +458,7 @@ main() {
     install_patch
     install_dos2unix
     install_git
+    install_googletest
 
     echo -e "===================================================="
     echo "All dependencies installed successfully!"
