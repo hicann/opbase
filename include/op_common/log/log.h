@@ -283,7 +283,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_correctShape_(correctShape);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
             _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect shape [%s]. It should be [%s].",                        \
+            "Parameter %s of operator %s has incorrect shape %s. It should be %s.",                        \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
             _safe_correctShape_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "correct_shape"}; \
@@ -308,7 +308,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_incorrectShape_(incorrectShape);                                                          \
         std::string _safe_reason_(reason);                                                                          \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                    \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape [%s]. Reason: %s.",             \
+            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape %s. Reason: %s.",             \
             _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()); \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "reason"};             \
         const std::vector<const char*> msgvalue = {                                                                 \
