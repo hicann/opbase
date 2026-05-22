@@ -259,7 +259,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_Shape",
       "ErrCode": "EZ0001",
-      "ErrMessage": "The %sth input of operator %s has incorrect shape [%s]. It should be [%s].",
+      "ErrMessage": "The %sth input of %s has incorrect shape [%s]. It should be [%s].",
       "Arglist": "index, op_name, incorrect_shape, correct_shape",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -270,7 +270,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Attr",
       "ErrCode": "EZ0002",
-      "ErrMessage": "Attribute %s of operator %s has incorrect value %s. It should be %s.",
+      "ErrMessage": "Attribute %s of %s has incorrect value %s. It should be %s.",
       "Arglist": "attr_name, op_name, incorrect_val, correct_val",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -281,7 +281,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Attr_Size",
       "ErrCode": "EZ0003",
-      "ErrMessage": "Attribute %s of operator %s has incorrect size %s. It should be %s.",
+      "ErrMessage": "Attribute %s of %s has incorrect size %s. It should be %s.",
       "Arglist": "attr_name, op_name, incorrect_size, correct_size",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -292,7 +292,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input",
       "ErrCode": "EZ0004",
-      "ErrMessage": "Parameter %s of operator %s is required, but it is empty.",
+      "ErrMessage": "Parameter %s of %s is required, but it is empty.",
       "Arglist": "param_name, op_name",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -303,7 +303,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_ShapeSize",
       "ErrCode": "EZ0005",
-      "ErrMessage": "The %sth input of operator %s has incorrect shape size %s. It should be %s.",
+      "ErrMessage": "The %sth input of %s has incorrect shape size %s. It should be %s.",
       "Arglist": "index, op_name, incorrect_size, correct_size",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -314,7 +314,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_Format",
       "ErrCode": "EZ0006",
-      "ErrMessage": "Input parameter %s of operator %s has incorrect format %s. It should be %s.",
+      "ErrMessage": "Input parameter %s of %s has incorrect format %s. It should be %s.",
       "Arglist": "param_name, op_name, data_format, expected_format_list",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -325,7 +325,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Input_Dtype",
       "ErrCode": "EZ0007",
-      "ErrMessage": "Input parameter %s of operator %s has incorrect dtype %s. It should be %s.",
+      "ErrMessage": "Input parameter %s of %s has incorrect dtype %s. It should be %s.",
       "Arglist": "param_name, op_name, data_dtype, expected_dtype_list",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -336,7 +336,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0008",
-      "ErrMessage": "Parameter %s of operator %s has incorrect shape [%s]. It should be [%s].",
+      "ErrMessage": "Parameter %s of %s has incorrect shape [%s]. It should be [%s].",
       "Arglist": "param_name, op_name, incorrect_shape, correct_shape",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -347,7 +347,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0009",
-      "ErrMessage": "Parameter %s of operator %s has incorrect shape [%s]. Reason: %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect shape [%s]. Reason: %s.",
       "Arglist": "param_name, op_name, incorrect_shape, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -358,7 +358,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0010",
-      "ErrMessage": "Parameters %s of operator %s have incorrect shapes %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have incorrect shapes %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_shapes, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -369,7 +369,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Dim",
       "ErrCode": "EZ0011",
-      "ErrMessage": "Parameter %s of operator %s has incorrect shape dim %s. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect shape dim %s. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_dim, correct_dim",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -380,7 +380,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Dim",
       "ErrCode": "EZ0012",
-      "ErrMessage": "Parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect shape dim %s. Reason: %s.",
       "Arglist": "param_name, op_name, incorrect_dim, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -391,7 +391,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Dim",
       "ErrCode": "EZ0013",
-      "ErrMessage": "Parameters %s of operator %s have incorrect shape dims %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have incorrect shape dims %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_dims, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -402,7 +402,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Size",
       "ErrCode": "EZ0014",
-      "ErrMessage": "Parameter %s of operator %s has incorrect shape size %s. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect shape size %s. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_size, correct_size",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -413,7 +413,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Size",
       "ErrCode": "EZ0015",
-      "ErrMessage": "Parameter %s of operator %s has incorrect shape size %s. Reason: %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect shape size %s. Reason: %s.",
       "Arglist": "param_name, op_name, incorrect_size, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -424,7 +424,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape_Size",
       "ErrCode": "EZ0016",
-      "ErrMessage": "Parameters %s of operator %s have incorrect shape sizes %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have incorrect shape sizes %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_sizes, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -435,7 +435,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Format",
       "ErrCode": "EZ0017",
-      "ErrMessage": "Parameter %s of operator %s has incorrect format %s. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect format %s. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_format, correct_format",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -446,7 +446,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Format",
       "ErrCode": "EZ0018",
-      "ErrMessage": "Parameters %s of operator %s have incorrect formats %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have incorrect formats %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_formats, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -457,7 +457,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Dtype",
       "ErrCode": "EZ0019",
-      "ErrMessage": "Parameter %s of operator %s has incorrect dtype %s. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect dtype %s. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_dtype, correct_dtype",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -468,7 +468,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Dtype",
       "ErrCode": "EZ0020",
-      "ErrMessage": "Parameter %s of operator %s has incorrect dtype %s. Reason: %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect dtype %s. Reason: %s.",
       "Arglist": "param_name, op_name, incorrect_dtype, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -479,7 +479,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Dtype",
       "ErrCode": "EZ0021",
-      "ErrMessage": "Parameters %s of operator %s have incorrect dtypes %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have incorrect dtypes %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_dtypes, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -490,7 +490,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0022",
-      "ErrMessage": "Parameter %s of operator %s has invalid tensor num %ld. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has invalid tensor num %ld. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_num, correct_num",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -501,7 +501,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0023",
-      "ErrMessage": "Parameters %s of operator %s have invalid tensor nums %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have invalid tensor nums %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_nums, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -512,7 +512,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0024",
-      "ErrMessage": "Parameter %s of operator %s has incorrect value %s. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect value %s. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_value, correct_value",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -523,7 +523,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0025",
-      "ErrMessage": "Parameter %s of operator %s has invalid list size %s. It should be %s.",
+      "ErrMessage": "Parameter %s of %s has invalid list size %s. It should be %s.",
       "Arglist": "param_name, op_name, incorrect_size, correct_size",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -534,7 +534,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0026",
-      "ErrMessage": "Parameter %s of operator %s has incorrect value %s. Reason: %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect value %s. Reason: %s.",
       "Arglist": "param_name, op_name, incorrect_value, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -545,7 +545,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0027",
-      "ErrMessage": "Parameters %s of operator %s have incorrect values %s. Reason: %s.",
+      "ErrMessage": "Parameters %s of %s have incorrect values %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_values, reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -556,7 +556,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Stride",
       "ErrCode": "EZ0028",
-      "ErrMessage": "Parameter %s of operator %s has incorrect stride %s, it should be %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect stride %s, it should be %s.",
       "Arglist": "param_name, op_name, incorrect_stride, correct_stride",
       "suggestion": {
         "Possible Cause": "N/A",

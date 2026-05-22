@@ -101,162 +101,176 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         }                                                                              \
     } while (0)
 
+// ============================================================================
+// 以下接口仅供算子或aclnn实现使用
+// ============================================================================
+
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * index:int
  * incorrectShape:string
  * correctShape:string
- * errMessage:The [index]th input of operator [opName] has incorrect shape [incorrectShape]. It should be [correctShape].
+ * errMessage:The [index]th input of [entityName] has incorrect shape [incorrectShape]. It should be
+ * [correctShape].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_SHAPE(opName, index, incorrectShape, correctShape)                              \
-    do {                                                                                                           \
-        std::string _safe_opName_(opName);                                                                         \
-        std::string _safe_incorrectShape_(incorrectShape);                                                         \
-        std::string _safe_correctShape_(correctShape);                                                             \
-        std::string index_str = std::to_string(index);                                                             \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                   \
-            _safe_opName_.c_str(),                                                                                 \
-            "The %sth input of operator %s has incorrect shape [%s]. It should be [%s].",                          \
-            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()); \
-        const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_shape", "correct_shape"};          \
-        const std::vector<const char*> msgvalue = {                                                                \
-            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0001", msgKey, msgvalue);                                                     \
+#define OP_LOGE_WITH_INVALID_INPUT_SHAPE(entityName, index, incorrectShape, correctShape)                              \
+    do {                                                                                                               \
+        std::string _safe_entityName_(entityName);                                                                     \
+        std::string _safe_incorrectShape_(incorrectShape);                                                             \
+        std::string _safe_correctShape_(correctShape);                                                                 \
+        std::string index_str = std::to_string(index);                                                                 \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                       \
+            _safe_entityName_.c_str(), "The %sth input of %s has incorrect shape [%s]. It should be [%s].",            \
+            index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()); \
+        const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_shape", "correct_shape"};              \
+        const std::vector<const char*> msgvalue = {                                                                    \
+            index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0001", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * attrName:string
  * incorrectVal:string
  * correctVal:string
- * errMessage:Attribute [attrName] of operator [opName] has incorrect value [incorrectVal]. It should be [correctVal].
+ * errMessage:Attribute [attrName] of [entityName] has incorrect value [incorrectVal]. It should be
+ * [correctVal].
  */
-#define OP_LOGE_WITH_INVALID_ATTR(opName, attrName, incorrectVal, correctVal)                                        \
-    do {                                                                                                             \
-        std::string _safe_opName_(opName);                                                                           \
-        std::string _safe_attrName_(attrName);                                                                       \
-        std::string _safe_incorrectVal_(incorrectVal);                                                               \
-        std::string _safe_correctVal_(correctVal);                                                                   \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                     \
-            _safe_opName_.c_str(),                                                                                   \
-            "Attribute %s of operator %s has incorrect value %s. It should be %s.",                                  \
-            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()); \
-        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_val", "correct_val"};            \
-        const std::vector<const char*> msgvalue = {                                                                  \
-            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                                       \
+#define OP_LOGE_WITH_INVALID_ATTR(entityName, attrName, incorrectVal, correctVal)                         \
+    do {                                                                                                  \
+        std::string _safe_entityName_(entityName);                                                        \
+        std::string _safe_attrName_(attrName);                                                            \
+        std::string _safe_incorrectVal_(incorrectVal);                                                    \
+        std::string _safe_correctVal_(correctVal);                                                        \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
+            _safe_entityName_.c_str(), "Attribute %s of %s has incorrect value %s. It should be %s.",     \
+            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectVal_.c_str(),              \
+            _safe_correctVal_.c_str());                                                                   \
+        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_val", "correct_val"}; \
+        const std::vector<const char*> msgvalue = {                                                       \
+            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectVal_.c_str(),              \
+            _safe_correctVal_.c_str()};                                                                   \
+        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                            \
     } while (0)
 
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * attrName:string
  * incorrectSize:string
  * correctSize:string
- * errMessage:Attribute [attrName] of operator [opName] has incorrect size [incorrectSize]. It should be [correctSize].
+ * errMessage:Attribute [attrName] of [entityName] has incorrect size [incorrectSize]. It should be
+ * [correctSize].
  */
-#define OP_LOGE_WITH_INVALID_ATTR_SIZE(opName, attrName, incorrectSize, correctSize)                                   \
-    do {                                                                                                               \
-        std::string _safe_opName_(opName);                                                                             \
-        std::string _safe_attrName_(attrName);                                                                         \
-        std::string _safe_incorrectSize_(incorrectSize);                                                               \
-        std::string _safe_correctSize_(correctSize);                                                                   \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                       \
-            _safe_opName_.c_str(), "Attribute %s of operator %s has incorrect size %s. It should be %s.",              \
-            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
-        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_size", "correct_size"};            \
-        const std::vector<const char*> msgvalue = {                                                                    \
-            _safe_attrName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                                         \
+#define OP_LOGE_WITH_INVALID_ATTR_SIZE(entityName, attrName, incorrectSize, correctSize)                    \
+    do {                                                                                                    \
+        std::string _safe_entityName_(entityName);                                                          \
+        std::string _safe_attrName_(attrName);                                                              \
+        std::string _safe_incorrectSize_(incorrectSize);                                                    \
+        std::string _safe_correctSize_(correctSize);                                                        \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                            \
+            _safe_entityName_.c_str(), "Attribute %s of %s has incorrect size %s. It should be %s.",        \
+            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
+            _safe_correctSize_.c_str());                                                                    \
+        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_size", "correct_size"}; \
+        const std::vector<const char*> msgvalue = {                                                         \
+            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
+            _safe_correctSize_.c_str()};                                                                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                              \
     } while (0)
 
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string
- * errMessage:Parameter [paramName] of operator [opName] is required, but it is empty.
+ * errMessage:Parameter [paramName] of [entityName] is required, but it is empty.
  */
-#define OP_LOGE_WITH_INVALID_INPUT(opName, paramName)                                                \
-    do {                                                                                             \
-        std::string _safe_opName_(opName);                                                           \
-        std::string _safe_paramName_(paramName);                                                     \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                     \
-            _safe_opName_.c_str(), "Parameter %s of operator %s is required, but it is empty.",      \
-            _safe_paramName_.c_str(), _safe_opName_.c_str());                                        \
-        const std::vector<const char*> msgKey = {"param_name", "op_name"};                           \
-        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_opName_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                                       \
+#define OP_LOGE_WITH_INVALID_INPUT(entityName, paramName)                                                            \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                                     \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                     \
+            _safe_entityName_.c_str(), "Parameter %s of %s is required, but it is empty.", _safe_paramName_.c_str(), \
+            _safe_entityName_.c_str());                                                                              \
+        const std::vector<const char*> msgKey = {"param_name", "op_name"};                                           \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str()};             \
+        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * index:int
  * incorrectSize:string
  * correctSize:string
- * errMessage:The [index]th input of operator [opName] has incorrect shape size [incorrectSize]. It should be [correctSize].
+ * errMessage:The [index]th input of [entityName] has incorrect shape size [incorrectSize]. It should be
+ * [correctSize].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(opName, index, incorrectSize, correctSize)                          \
-    do {                                                                                                         \
-        std::string _safe_opName_(opName);                                                                       \
-        std::string _safe_incorrectSize_(incorrectSize);                                                         \
-        std::string _safe_correctSize_(correctSize);                                                             \
-        std::string index_str = std::to_string(index);                                                           \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
-            _safe_opName_.c_str(),                                                                               \
-            "The %sth input of operator %s has incorrect shape size %s. It should be %s.",                       \
-            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
-        const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_size", "correct_size"};          \
-        const std::vector<const char*> msgvalue = {                                                              \
-            index_str.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                                   \
+#define OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(entityName, index, incorrectSize, correctSize)                          \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_incorrectSize_(incorrectSize);                                                             \
+        std::string _safe_correctSize_(correctSize);                                                                 \
+        std::string index_str = std::to_string(index);                                                               \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                     \
+            _safe_entityName_.c_str(), "The %sth input of %s has incorrect shape size %s. It should be %s.",         \
+            index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
+        const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_size", "correct_size"};              \
+        const std::vector<const char*> msgvalue = {                                                                  \
+            index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string
  * dataFormat:string
  * expectedFormatList:string
- * errMessage:Input parameter [paramName] of operator [opName] has incorrect format [dataFormat]. It should
+ * errMessage:Input parameter [paramName] of [entityName] has incorrect format [dataFormat]. It should
  * be [expectedFormatList].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_FORMAT(opName, paramName, dataFormat, expectedFormatList)                      \
+#define OP_LOGE_WITH_INVALID_INPUT_FORMAT(entityName, paramName, dataFormat, expectedFormatList)                  \
     do {                                                                                                          \
-        std::string _safe_opName_(opName);                                                                        \
+        std::string _safe_entityName_(entityName);                                                                \
         std::string _safe_paramName_(paramName);                                                                  \
         std::string _safe_dataFormat_(dataFormat);                                                                \
         std::string _safe_expectedFormatList_(expectedFormatList);                                                \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                  \
-            _safe_opName_.c_str(),                                                                                \
-            "Input parameter %s of operator %s has incorrect format %s. It should be %s.",                        \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataFormat_.c_str(),                           \
+            _safe_entityName_.c_str(), "Input parameter %s of %s has incorrect format %s. It should be %s.",      \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataFormat_.c_str(),                       \
             _safe_expectedFormatList_.c_str());                                                                   \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "data_format", "expected_format_list"}; \
         const std::vector<const char*> msgvalue = {                                                               \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataFormat_.c_str(),                           \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataFormat_.c_str(),                       \
             _safe_expectedFormatList_.c_str()};                                                                   \
         REPORT_PREDEFINED_ERR_MSG("EZ0006", msgKey, msgvalue);                                                    \
     } while (0)
 
 /**
- * opName:string
+ * 此接口仅供算子或aclnn实现使用
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string
  * dataDtype:string
  * expectedDtypeList:string
- * errMessage:Input parameter [paramName] of operator [opName] has incorrect dtype [dataDtype]. It should
+ * errMessage:Input parameter [paramName] of [entityName] has incorrect dtype [dataDtype]. It should
  * be [expectedDtypeList].
  */
-#define OP_LOGE_WITH_INVALID_INPUT_DTYPE(opName, paramName, dataDtype, expectedDtypeList)                       \
+#define OP_LOGE_WITH_INVALID_INPUT_DTYPE(entityName, paramName, dataDtype, expectedDtypeList)                   \
     do {                                                                                                        \
-        std::string _safe_opName_(opName);                                                                      \
+        std::string _safe_entityName_(entityName);                                                              \
         std::string _safe_paramName_(paramName);                                                                \
         std::string _safe_dataDtype_(dataDtype);                                                                \
         std::string _safe_expectedDtypeList_(expectedDtypeList);                                                \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                \
-            _safe_opName_.c_str(),                                                                              \
-            "Input parameter %s of operator %s has incorrect dtype %s. It should be %s.",                       \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataDtype_.c_str(),                          \
+            _safe_entityName_.c_str(), "Input parameter %s of %s has incorrect dtype %s. It should be %s.",     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataDtype_.c_str(),                      \
             _safe_expectedDtypeList_.c_str());                                                                  \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "data_dtype", "expected_dtype_list"}; \
         const std::vector<const char*> msgvalue = {                                                             \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_dataDtype_.c_str(),                          \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataDtype_.c_str(),                      \
             _safe_expectedDtypeList_.c_str()};                                                                  \
         REPORT_PREDEFINED_ERR_MSG("EZ0007", msgKey, msgvalue);                                                  \
     } while (0)
@@ -267,517 +281,558 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
 // ============================================================================
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0008: Parameter shape error (single parameter, with correct shape)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectShape:string - Actual shape, format like "[1,128,128]"
  * correctShape:string - Expected shape, format like "[1,256,256]"
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape [incorrectShape]. It should
+ * errMessage: Parameter [paramName] of [entityName] has incorrect shape [incorrectShape]. It should
  * be [correctShape].
  */
-#define OP_LOGE_FOR_INVALID_SHAPE(opName, paramName, incorrectShape, correctShape)                             \
+#define OP_LOGE_FOR_INVALID_SHAPE(entityName, paramName, incorrectShape, correctShape)                         \
     do {                                                                                                       \
-        std::string _safe_opName_(opName);                                                                     \
+        std::string _safe_entityName_(entityName);                                                             \
         std::string _safe_paramName_(paramName);                                                               \
         std::string _safe_incorrectShape_(incorrectShape);                                                     \
         std::string _safe_correctShape_(correctShape);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect shape %s. It should be %s.",                        \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape %s. It should be %s.",          \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),                \
             _safe_correctShape_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "correct_shape"}; \
         const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(),                    \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),                \
             _safe_correctShape_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                 \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0009: Parameter shape error (single parameter, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectShape:string - Actual incorrect shape, format like "[1,128]"
  * reason:string - Reason for the error
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape [incorrectShape]. Reason: [reason].
+ * errMessage: Parameter [paramName] of [entityName] has incorrect shape [incorrectShape]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(opName, paramName, incorrectShape, reason)                            \
-    do {                                                                                                            \
-        std::string _safe_opName_(opName);                                                                          \
-        std::string _safe_paramName_(paramName);                                                                    \
-        std::string _safe_incorrectShape_(incorrectShape);                                                          \
-        std::string _safe_reason_(reason);                                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                    \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape %s. Reason: %s.",             \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectShape_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(entityName, paramName, incorrectShape, reason)            \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramName_(paramName);                                                        \
+        std::string _safe_incorrectShape_(incorrectShape);                                              \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape %s. Reason: %s.",        \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),         \
+            _safe_reason_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),         \
+            _safe_reason_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                          \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0010: Parameters shape error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectShapes:string - Actual incorrect shapes
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have incorrect shapes [incorrectShapes]. Reason: [reason].
+ * errMessage: Parameters [paramNames] of [entityName] have incorrect shapes [incorrectShapes]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, paramNames, incorrectShapes, reason)                           \
-    do {                                                                                                              \
-        std::string _safe_opName_(opName);                                                                            \
-        std::string _safe_paramNames_(paramNames);                                                                    \
-        std::string _safe_incorrectShapes_(incorrectShapes);                                                          \
-        std::string _safe_reason_(reason);                                                                            \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shapes %s. Reason: %s.",              \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_shapes", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                        \
+#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(entityName, paramNames, incorrectShapes, reason)           \
+    do {                                                                                                  \
+        std::string _safe_entityName_(entityName);                                                        \
+        std::string _safe_paramNames_(paramNames);                                                        \
+        std::string _safe_incorrectShapes_(incorrectShapes);                                              \
+        std::string _safe_reason_(reason);                                                                \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
+            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect shapes %s. Reason: %s.",       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShapes_.c_str(),         \
+            _safe_reason_.c_str());                                                                       \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_shapes", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShapes_.c_str(),         \
+            _safe_reason_.c_str()};                                                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                            \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0011: Parameter shape dim error (single parameter, with correct dim)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectDim:string - Actual dimension, format like "2D" or "3D"
  * correctDim:string - Expected dimension, format like "4D"
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape dim [incorrectDim]. It should
+ * errMessage: Parameter [paramName] of [entityName] has incorrect shape dim [incorrectDim]. It should
  * be [correctDim].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIM(opName, paramName, incorrectDim, correctDim)                                     \
-    do {                                                                                                              \
-        std::string _safe_opName_(opName);                                                                            \
-        std::string _safe_paramName_(paramName);                                                                      \
-        std::string _safe_incorrectDim_(incorrectDim);                                                                \
-        std::string _safe_correctDim_(correctDim);                                                                    \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
-            _safe_opName_.c_str(),                                                                                    \
-            "Parameter %s of operator %s has incorrect shape dim %s. It should be %s.",                               \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "correct_dim"};            \
-        const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                        \
+#define OP_LOGE_FOR_INVALID_SHAPEDIM(entityName, paramName, incorrectDim, correctDim)                      \
+    do {                                                                                                   \
+        std::string _safe_entityName_(entityName);                                                         \
+        std::string _safe_paramName_(paramName);                                                           \
+        std::string _safe_incorrectDim_(incorrectDim);                                                     \
+        std::string _safe_correctDim_(correctDim);                                                         \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                           \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape dim %s. It should be %s.",  \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(),              \
+            _safe_correctDim_.c_str());                                                                    \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "correct_dim"}; \
+        const std::vector<const char*> msgvalue = {                                                        \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(),              \
+            _safe_correctDim_.c_str()};                                                                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                             \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0012: Parameter shape dim error (single parameter, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectDim:string - Actual incorrect dimension
  * reason:string - Reason for the error
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape dim [incorrectDim]. Reason: [reason].
+ * errMessage: Parameter [paramName] of [entityName] has incorrect shape dim [incorrectDim]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName, paramName, incorrectDim, reason)                         \
-    do {                                                                                                          \
-        std::string _safe_opName_(opName);                                                                        \
-        std::string _safe_paramName_(paramName);                                                                  \
-        std::string _safe_incorrectDim_(incorrectDim);                                                            \
-        std::string _safe_reason_(reason);                                                                        \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                  \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",         \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                               \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                    \
+#define OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(entityName, paramName, incorrectDim, reason)                         \
+    do {                                                                                                              \
+        std::string _safe_entityName_(entityName);                                                                    \
+        std::string _safe_paramName_(paramName);                                                                      \
+        std::string _safe_incorrectDim_(incorrectDim);                                                                \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape dim %s. Reason: %s.",                  \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "reason"};                 \
+        const std::vector<const char*> msgvalue = {                                                                   \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0013: Parameters shape dim error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectDims:string - Actual incorrect dimensions
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have incorrect shape dims [incorrectDims]. Reason: [reason].
+ * errMessage: Parameters [paramNames] of [entityName] have incorrect shape dims [incorrectDims]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(opName, paramNames, incorrectDims, reason)                        \
-    do {                                                                                                            \
-        std::string _safe_opName_(opName);                                                                          \
-        std::string _safe_paramNames_(paramNames);                                                                  \
-        std::string _safe_incorrectDims_(incorrectDims);                                                            \
-        std::string _safe_reason_(reason);                                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                    \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shape dims %s. Reason: %s.",        \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dims", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDims_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(entityName, paramNames, incorrectDims, reason)        \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramNames_(paramNames);                                                      \
+        std::string _safe_incorrectDims_(incorrectDims);                                                \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect shape dims %s. Reason: %s.", \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDims_.c_str(),         \
+            _safe_reason_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dims", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDims_.c_str(),         \
+            _safe_reason_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                          \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0014: Parameter shape size error (single parameter, with correct size)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectSize:string - Actual size (total element count)
  * correctSize:string - Expected size (total element count)
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape size [incorrectSize]. It
+ * errMessage: Parameter [paramName] of [entityName] has incorrect shape size [incorrectSize]. It
  * should be [correctSize].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZE(opName, paramName, incorrectSize, correctSize)                         \
+#define OP_LOGE_FOR_INVALID_SHAPESIZE(entityName, paramName, incorrectSize, correctSize)                     \
     do {                                                                                                     \
-        std::string _safe_opName_(opName);                                                                   \
+        std::string _safe_entityName_(entityName);                                                           \
         std::string _safe_paramName_(paramName);                                                             \
         std::string _safe_incorrectSize_(incorrectSize);                                                     \
         std::string _safe_correctSize_(correctSize);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                             \
-            _safe_opName_.c_str(),                                                                           \
-            "Parameter %s of operator %s has incorrect shape size %s. It should be %s.",                     \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape size %s. It should be %s.",   \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
             _safe_correctSize_.c_str());                                                                     \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
         const std::vector<const char*> msgvalue = {                                                          \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
             _safe_correctSize_.c_str()};                                                                     \
         REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                               \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0015: Parameter shape size error (single parameter, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectSize:string - Actual incorrect shape size
  * reason:string - Reason for the error
- * errMessage: Parameter [paramName] of operator [opName] has incorrect shape size [incorrectSize]. Reason: [reason].
+ * errMessage: Parameter [paramName] of [entityName] has incorrect shape size [incorrectSize]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName, paramName, incorrectSize, reason)                        \
-    do {                                                                                                           \
-        std::string _safe_opName_(opName);                                                                         \
-        std::string _safe_paramName_(paramName);                                                                   \
-        std::string _safe_incorrectSize_(incorrectSize);                                                           \
-        std::string _safe_reason_(reason);                                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                   \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect shape size %s. Reason: %s.",         \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                     \
+#define OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)                        \
+    do {                                                                                                               \
+        std::string _safe_entityName_(entityName);                                                                     \
+        std::string _safe_paramName_(paramName);                                                                       \
+        std::string _safe_incorrectSize_(incorrectSize);                                                               \
+        std::string _safe_reason_(reason);                                                                             \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                       \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape size %s. Reason: %s.",                  \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "reason"};                 \
+        const std::vector<const char*> msgvalue = {                                                                    \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0016: Parameters shape size error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectSizes:string - Actual incorrect sizes
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have incorrect shape sizes [incorrectSizes]. Reason:
+ * errMessage: Parameters [paramNames] of [entityName] have incorrect shape sizes [incorrectSizes]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(opName, paramNames, incorrectSizes, reason)                       \
-    do {                                                                                                             \
-        std::string _safe_opName_(opName);                                                                           \
-        std::string _safe_paramNames_(paramNames);                                                                   \
-        std::string _safe_incorrectSizes_(incorrectSizes);                                                           \
-        std::string _safe_reason_(reason);                                                                           \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                     \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect shape sizes %s. Reason: %s.",        \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_sizes", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                  \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                       \
+#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(entityName, paramNames, incorrectSizes, reason)       \
+    do {                                                                                                 \
+        std::string _safe_entityName_(entityName);                                                       \
+        std::string _safe_paramNames_(paramNames);                                                       \
+        std::string _safe_incorrectSizes_(incorrectSizes);                                               \
+        std::string _safe_reason_(reason);                                                               \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                         \
+            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect shape sizes %s. Reason: %s.", \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSizes_.c_str(),         \
+            _safe_reason_.c_str());                                                                      \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_sizes", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                      \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSizes_.c_str(),         \
+            _safe_reason_.c_str()};                                                                      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                           \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0017: Parameter format error (single parameter, with correct format)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectFormat:string - Actual format (e.g., "NHWC")
  * correctFormat:string - Expected format (e.g., "NCHW")
- * errMessage: Parameter [paramName] of operator [opName] has incorrect format [incorrectFormat]. It should
+ * errMessage: Parameter [paramName] of [entityName] has incorrect format [incorrectFormat]. It should
  * be [correctFormat].
  */
-#define OP_LOGE_FOR_INVALID_FORMAT(opName, paramName, incorrectFormat, correctFormat)                            \
+#define OP_LOGE_FOR_INVALID_FORMAT(entityName, paramName, incorrectFormat, correctFormat)                        \
     do {                                                                                                         \
-        std::string _safe_opName_(opName);                                                                       \
+        std::string _safe_entityName_(entityName);                                                               \
         std::string _safe_paramName_(paramName);                                                                 \
         std::string _safe_incorrectFormat_(incorrectFormat);                                                     \
         std::string _safe_correctFormat_(correctFormat);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
-            _safe_opName_.c_str(),                                                                               \
-            "Parameter %s of operator %s has incorrect format %s. It should be %s.",                             \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect format %s. It should be %s.",           \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),                 \
             _safe_correctFormat_.c_str());                                                                       \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "correct_format"}; \
         const std::vector<const char*> msgvalue = {                                                              \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormat_.c_str(),                     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),                 \
             _safe_correctFormat_.c_str()};                                                                       \
         REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                   \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0018: Parameters format error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectFormats:string - Actual incorrect formats
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have incorrect formats [incorrectFormats]. Reason: [reason].
+ * errMessage: Parameters [paramNames] of [entityName] have incorrect formats [incorrectFormats]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(opName, paramNames, incorrectFormats, reason)                          \
-    do {                                                                                                               \
-        std::string _safe_opName_(opName);                                                                             \
-        std::string _safe_paramNames_(paramNames);                                                                     \
-        std::string _safe_incorrectFormats_(incorrectFormats);                                                         \
-        std::string _safe_reason_(reason);                                                                             \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                       \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect formats %s. Reason: %s.",              \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_formats", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                    \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                                         \
+#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(entityName, paramNames, incorrectFormats, reason)          \
+    do {                                                                                                   \
+        std::string _safe_entityName_(entityName);                                                         \
+        std::string _safe_paramNames_(paramNames);                                                         \
+        std::string _safe_incorrectFormats_(incorrectFormats);                                             \
+        std::string _safe_reason_(reason);                                                                 \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                           \
+            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect formats %s. Reason: %s.",       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormats_.c_str(),         \
+            _safe_reason_.c_str());                                                                        \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_formats", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                        \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormats_.c_str(),         \
+            _safe_reason_.c_str()};                                                                        \
+        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                             \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0019: Parameter dtype error (single parameter, with correct dtype)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectDtype:string - Actual data type (e.g., "INT32")
  * correctDtype:string - Expected data type (e.g., "FLOAT16")
- * errMessage: Parameter [paramName] of operator [opName] has incorrect dtype [incorrectDtype]. It should
+ * errMessage: Parameter [paramName] of [entityName] has incorrect dtype [incorrectDtype]. It should
  * be [correctDtype].
  */
-#define OP_LOGE_FOR_INVALID_DTYPE(opName, paramName, incorrectDtype, correctDtype)                             \
+#define OP_LOGE_FOR_INVALID_DTYPE(entityName, paramName, incorrectDtype, correctDtype)                         \
     do {                                                                                                       \
-        std::string _safe_opName_(opName);                                                                     \
+        std::string _safe_entityName_(entityName);                                                             \
         std::string _safe_paramName_(paramName);                                                               \
         std::string _safe_incorrectDtype_(incorrectDtype);                                                     \
         std::string _safe_correctDtype_(correctDtype);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect dtype %s. It should be %s.",                            \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect dtype %s. It should be %s.",          \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),                \
             _safe_correctDtype_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "correct_dtype"}; \
         const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(),                    \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),                \
             _safe_correctDtype_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0019", msgKey, msgvalue);                                                 \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0020: Parameter dtype error (single parameter, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectDtype:string - Actual incorrect data type
  * reason:string - Reason for the error
- * errMessage: Parameter [paramName] of operator [opName] has incorrect dtype [incorrectDtype]. Reason: [reason].
+ * errMessage: Parameter [paramName] of [entityName] has incorrect dtype [incorrectDtype]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName, paramName, incorrectDtype, reason)                            \
-    do {                                                                                                            \
-        std::string _safe_opName_(opName);                                                                          \
-        std::string _safe_paramName_(paramName);                                                                    \
-        std::string _safe_incorrectDtype_(incorrectDtype);                                                          \
-        std::string _safe_reason_(reason);                                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                    \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect dtype %s. Reason: %s.",               \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(entityName, paramName, incorrectDtype, reason)            \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramName_(paramName);                                                        \
+        std::string _safe_incorrectDtype_(incorrectDtype);                                              \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect dtype %s. Reason: %s.",        \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),         \
+            _safe_reason_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),         \
+            _safe_reason_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                          \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0021: Parameters dtype error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectDtypes:string - Actual incorrect data types
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have incorrect dtypes [incorrectDtypes]. Reason: [reason].
+ * errMessage: Parameters [paramNames] of [entityName] have incorrect dtypes [incorrectDtypes]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, paramNames, incorrectDtypes, reason)                           \
-    do {                                                                                                              \
-        std::string _safe_opName_(opName);                                                                            \
-        std::string _safe_paramNames_(paramNames);                                                                    \
-        std::string _safe_incorrectDtypes_(incorrectDtypes);                                                          \
-        std::string _safe_reason_(reason);                                                                            \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect dtypes %s. Reason: %s.",              \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dtypes", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                                        \
+#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(entityName, paramNames, incorrectDtypes, reason)           \
+    do {                                                                                                  \
+        std::string _safe_entityName_(entityName);                                                        \
+        std::string _safe_paramNames_(paramNames);                                                        \
+        std::string _safe_incorrectDtypes_(incorrectDtypes);                                              \
+        std::string _safe_reason_(reason);                                                                \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
+            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect dtypes %s. Reason: %s.",       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtypes_.c_str(),         \
+            _safe_reason_.c_str());                                                                       \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dtypes", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtypes_.c_str(),         \
+            _safe_reason_.c_str()};                                                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                            \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0022: Parameter tensor num error (single parameter, with correct num)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectNum:int64_t - Actual tensor count
  * correctNum:string - Expected tensor count
- * errMessage: Parameter [paramName] of operator [opName] has invalid tensor num [incorrectNum]. It should
+ * errMessage: Parameter [paramName] of [entityName] has invalid tensor num [incorrectNum]. It should
  * be [correctNum].
  */
-#define OP_LOGE_FOR_INVALID_TENSORNUM(opName, paramName, incorrectNum, correctNum)                                \
-    do {                                                                                                          \
-        std::string _safe_opName_(opName);                                                                        \
-        std::string _safe_paramName_(paramName);                                                                  \
-        std::string _safe_correctNum_(correctNum);                                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                  \
-            _safe_opName_.c_str(),                                                                                \
-            "Parameter %s of operator %s has invalid tensor num %ld. It should be %s.",                           \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), static_cast<int64_t>(incorrectNum),                  \
-            _safe_correctNum_.c_str());                                                                           \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_num", "correct_num"};        \
-        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                         \
-        const std::vector<const char*> msgvalue = {                                                               \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), incorrectNumStr.c_str(), _safe_correctNum_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                    \
+#define OP_LOGE_FOR_INVALID_TENSORNUM(entityName, paramName, incorrectNum, correctNum)                                \
+    do {                                                                                                              \
+        std::string _safe_entityName_(entityName);                                                                    \
+        std::string _safe_paramName_(paramName);                                                                      \
+        std::string _safe_correctNum_(correctNum);                                                                    \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
+            _safe_entityName_.c_str(), "Parameter %s of %s has invalid tensor num %ld. It should be %s.",             \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), static_cast<int64_t>(incorrectNum),                  \
+            _safe_correctNum_.c_str());                                                                               \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_num", "correct_num"};            \
+        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                             \
+        const std::vector<const char*> msgvalue = {                                                                   \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), incorrectNumStr.c_str(), _safe_correctNum_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0023: Parameters tensor num error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectNums:string - Actual incorrect tensor counts
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have invalid tensor nums [incorrectNums]. Reason: [reason].
+ * errMessage: Parameters [paramNames] of [entityName] have invalid tensor nums [incorrectNums]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(opName, paramNames, incorrectNums, reason)                       \
-    do {                                                                                                            \
-        std::string _safe_opName_(opName);                                                                          \
-        std::string _safe_paramNames_(paramNames);                                                                  \
-        std::string _safe_incorrectNums_(incorrectNums);                                                            \
-        std::string _safe_reason_(reason);                                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                    \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have invalid tensor nums %s. Reason: %s.",         \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_nums", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectNums_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(entityName, paramNames, incorrectNums, reason)       \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramNames_(paramNames);                                                      \
+        std::string _safe_incorrectNums_(incorrectNums);                                                \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameters %s of %s have invalid tensor nums %s. Reason: %s.",  \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectNums_.c_str(),         \
+            _safe_reason_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_nums", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectNums_.c_str(),         \
+            _safe_reason_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                          \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0024: Parameter value error (single parameter, with correct value)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectValue:string - Actual incorrect value
  * correctValue:string - Expected correct value
- * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. It should
+ * errMessage: Parameter [paramName] of [entityName] has incorrect value [incorrectValue]. It should
  * be [correctValue].
  */
-#define OP_LOGE_FOR_INVALID_VALUE(opName, paramName, incorrectValue, correctValue)                             \
+#define OP_LOGE_FOR_INVALID_VALUE(entityName, paramName, incorrectValue, correctValue)                         \
     do {                                                                                                       \
-        std::string _safe_opName_(opName);                                                                     \
+        std::string _safe_entityName_(entityName);                                                             \
         std::string _safe_paramName_(paramName);                                                               \
         std::string _safe_incorrectValue_(incorrectValue);                                                     \
         std::string _safe_correctValue_(correctValue);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_opName_.c_str(),                                                                             \
-            "Parameter %s of operator %s has incorrect value %s. It should be %s.",                            \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(),                    \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect value %s. It should be %s.",          \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),                \
             _safe_correctValue_.c_str());                                                                      \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "correct_value"}; \
         const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(),                    \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),                \
             _safe_correctValue_.c_str()};                                                                      \
         REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                 \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0025: Parameter list size error (single parameter, with correct size)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectSize:string - Actual incorrect list size
  * correctSize:string - Expected correct list size
- * errMessage: Parameter [paramName] of operator [opName] has invalid list size [incorrectSize]. It should
+ * errMessage: Parameter [paramName] of [entityName] has invalid list size [incorrectSize]. It should
  * be [correctSize].
  */
-#define OP_LOGE_FOR_INVALID_LISTSIZE(opName, paramName, incorrectSize, correctSize)                          \
+#define OP_LOGE_FOR_INVALID_LISTSIZE(entityName, paramName, incorrectSize, correctSize)                      \
     do {                                                                                                     \
-        std::string _safe_opName_(opName);                                                                   \
+        std::string _safe_entityName_(entityName);                                                           \
         std::string _safe_paramName_(paramName);                                                             \
         std::string _safe_incorrectSize_(incorrectSize);                                                     \
         std::string _safe_correctSize_(correctSize);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                             \
-            _safe_opName_.c_str(),                                                                           \
-            "Parameter %s of operator %s has incorrect element nums %s. It should be %s.",                   \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect element nums %s. It should be %s.", \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
             _safe_correctSize_.c_str());                                                                     \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
         const std::vector<const char*> msgvalue = {                                                          \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectSize_.c_str(),                   \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
             _safe_correctSize_.c_str()};                                                                     \
         REPORT_PREDEFINED_ERR_MSG("EZ0025", msgKey, msgvalue);                                               \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0026: Parameter value error (single parameter, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectValue:string - Actual incorrect value
  * reason:string - Reason for the error
- * errMessage: Parameter [paramName] of operator [opName] has incorrect value [incorrectValue]. Reason: [reason].
+ * errMessage: Parameter [paramName] of [entityName] has incorrect value [incorrectValue]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, paramName, incorrectValue, reason)                            \
-    do {                                                                                                            \
-        std::string _safe_opName_(opName);                                                                          \
-        std::string _safe_paramName_(paramName);                                                                    \
-        std::string _safe_incorrectValue_(incorrectValue);                                                          \
-        std::string _safe_reason_(reason);                                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                    \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect value %s. Reason: %s.",               \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                 \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectValue_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0026", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(entityName, paramName, incorrectValue, reason)            \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramName_(paramName);                                                        \
+        std::string _safe_incorrectValue_(incorrectValue);                                              \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect value %s. Reason: %s.",        \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),         \
+            _safe_reason_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),         \
+            _safe_reason_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0026", msgKey, msgvalue);                                          \
     } while (0)
 
 /**
+ * 此接口仅供算子或aclnn实现使用
  * EZ0027: Parameters value error (multiple parameters, with reason)
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramNames:string - Parameter names
  * incorrectValues:string - Actual incorrect values
  * reason:string - Reason for the error
- * errMessage: Parameters [paramNames] of operator [opName] have incorrect values [incorrectValues]. Reason: [reason].
+ * errMessage: Parameters [paramNames] of [entityName] have incorrect values [incorrectValues]. Reason:
+ * [reason].
  */
-#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName, paramNames, incorrectValues, reason)                           \
-    do {                                                                                                              \
-        std::string _safe_opName_(opName);                                                                            \
-        std::string _safe_paramNames_(paramNames);                                                                    \
-        std::string _safe_incorrectValues_(incorrectValues);                                                          \
-        std::string _safe_reason_(reason);                                                                            \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
-            _safe_opName_.c_str(), "Parameters %s of operator %s have incorrect values %s. Reason: %s.",              \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_values", "reason"};             \
-        const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_paramNames_.c_str(), _safe_opName_.c_str(), _safe_incorrectValues_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                                        \
+#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(entityName, paramNames, incorrectValues, reason)           \
+    do {                                                                                                  \
+        std::string _safe_entityName_(entityName);                                                        \
+        std::string _safe_paramNames_(paramNames);                                                        \
+        std::string _safe_incorrectValues_(incorrectValues);                                              \
+        std::string _safe_reason_(reason);                                                                \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
+            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect values %s. Reason: %s.",       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValues_.c_str(),         \
+            _safe_reason_.c_str());                                                                       \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_values", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                       \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValues_.c_str(),         \
+            _safe_reason_.c_str()};                                                                       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                            \
     } while (0)
 
 /**
  * EZ0028: Parameter stride error
- * opName:string - Operator name
+ * entityName:string - 算子名称或aclnn接口名称
  * paramName:string - Parameter name
  * incorrectStride:string - Actual stride (e.g., "[1,1,1,1]")
  * correctStride:string - Expected stride (e.g., "[1,1,1,1]")
- * errMessage: Parameter [paramName] of operator [opName] has incorrect stride [incorrectStride],
+ * errMessage: Parameter [paramName] of [entityName] has incorrect stride [incorrectStride],
  *             it should be [correctStride].
  */
-#define OP_LOGE_FOR_INVALID_STRIDE(opName, paramName, incorrectStride, correctStride)                            \
+#define OP_LOGE_FOR_INVALID_STRIDE(entityName, paramName, incorrectStride, correctStride)                        \
     do {                                                                                                         \
-        std::string _safe_opName_(opName);                                                                       \
+        std::string _safe_entityName_(entityName);                                                               \
         std::string _safe_paramName_(paramName);                                                                 \
         std::string _safe_incorrectStride_(incorrectStride);                                                     \
         std::string _safe_correctStride_(correctStride);                                                         \
         OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
-            _safe_opName_.c_str(), "Parameter %s of operator %s has incorrect stride %s, it should be %s.",      \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectStride_.c_str(),                     \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect stride %s, it should be %s.",           \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectStride_.c_str(),                 \
             _safe_correctStride_.c_str());                                                                       \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_stride", "correct_stride"}; \
         const std::vector<const char*> msgvalue = {                                                              \
-            _safe_paramName_.c_str(), _safe_opName_.c_str(), _safe_incorrectStride_.c_str(),                     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectStride_.c_str(),                 \
             _safe_correctStride_.c_str()};                                                                       \
         REPORT_PREDEFINED_ERR_MSG("EZ0028", msgKey, msgvalue);                                                   \
     } while (0)
