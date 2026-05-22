@@ -388,7 +388,7 @@ void RtsArg::RefreshRtArgsAddr()
     void *oldArgs = rtArg_.args;
     rtArg_.args = static_cast<void *>(
         static_cast<uint8_t *>(rtsArgBuffer_->GetTilingDataAddr()) - rtsArgBuffer_->GetLaunchArgSize());
-    hostAddr_ = reinterpret_cast<void **>(
+    hostAddr_ = PtrCastTo<void *>(
         static_cast<uint8_t *>(rtArg_.args) + hostAddrOffset_);
     OP_LOGD("RefreshRtArgsAddr: args from %p to %p, hostAddrOffset %zu", oldArgs, rtArg_.args, hostAddrOffset_);
 }
@@ -560,7 +560,7 @@ aclnnStatus RtsArg::FillArgs(bool assertFlag)
 }
 
 void AddArgInfoToCache(OpExecCache *cache, LaunchArgCache::ArgInfo *argInfo, const LaunchArgInfo &launchArgInfo,
-    bool hasFftsAddr, ExpandableRtsArgBuffer *rtsArgBuffer)
+    bool hasFftsAddr, const ExpandableRtsArgBuffer *rtsArgBuffer)
 {
     size_t argIdx = 0;
     if (hasFftsAddr) {

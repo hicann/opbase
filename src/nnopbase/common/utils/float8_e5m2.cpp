@@ -12,7 +12,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <limits>
 
 namespace {
     // FP32 format constants
@@ -38,10 +37,8 @@ namespace {
 
 namespace op {
 
-Float8E5M2::Float8E5M2(float v)
-{
-    value = FloatToFloat8E5M2(v).value;
-}
+Float8E5M2::Float8E5M2(float v) : value(FloatToFloat8E5M2(v).value)
+{}
 
 Float8E5M2::operator float() const
 {
@@ -71,7 +68,7 @@ bool Float8E5M2::IsInf() const
 float Float8E5M2::Float8E5M2ToFloat(Float8E5M2 fp8)
 {
     if (fp8.IsZero()) {
-        return (fp8.value & SIGN_MASK) ? -0.0f : 0.0f;
+        return (fp8.value & SIGN_MASK) != 0 ? -0.0f : 0.0f;
     }
 
     if (fp8.IsNaN()) {
@@ -79,7 +76,7 @@ float Float8E5M2::Float8E5M2ToFloat(Float8E5M2 fp8)
     }
 
     if (fp8.IsInf()) {
-        return (fp8.value & SIGN_MASK) ? -std::numeric_limits<float>::infinity() :
+        return (fp8.value & SIGN_MASK) != 0 ? -std::numeric_limits<float>::infinity() :
                                          std::numeric_limits<float>::infinity();
     }
 
@@ -159,11 +156,11 @@ Float8E5M2 Float8E5M2::FloatToFloat8E5M2(float f)
     // Round mantissa from 23 bits to 2 bits with round-to-nearest-even
     int mantissaShift = FP32_MAN_LEN_VAL - MAN_BITS;
     uint32_t manRoundBit = (man >> (mantissaShift - 1)) & 1;
-    uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) ? 1 : 0;
+    uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) != 0 ? 1 : 0;
     uint32_t manLsb = (man >> mantissaShift) & 1;
 
     fp8Man = man >> mantissaShift;
-    if (manRoundBit && (manStickyBits || manLsb)) {
+    if ((manRoundBit != 0) && ((manStickyBits != 0) || (manLsb != 0))) {
         fp8Man++;
         if (fp8Man > MAN_MASK) {
             fp8Man = 0;

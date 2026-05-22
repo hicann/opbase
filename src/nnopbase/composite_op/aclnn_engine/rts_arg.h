@@ -391,7 +391,9 @@ int PrintExceptionDumpInfo(void *dump, size_t num);
 int PrintAICErrorDFXInfo(const void *dfxInfoAddr, const size_t argNum, const size_t dataSize);
 void PrintHostDataSize(const rtArgs_t &rtArg);
 void PrintTilingData(const rtArgs_t &rtArg);
-void AddArgInfoToCache(OpExecCache *cache, LaunchArgCache::ArgInfo *argInfo, const LaunchArgInfo &launchArgInfo, bool hasFftsAddr, ExpandableRtsArgBuffer *rtsArgBuffer);
+void AddArgInfoToCache(
+    OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, const LaunchArgInfo& launchArgInfo, bool hasFftsAddr,
+    const ExpandableRtsArgBuffer* rtsArgBuffer);
 void ReportRTSException(const LaunchArgCache *launchCache, void *cacheException);
 }  // namespace op::internal
 

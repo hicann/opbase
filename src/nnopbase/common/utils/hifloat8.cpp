@@ -193,10 +193,8 @@ int8_t ExtractExponent(uint8_t dot, uint8_t mantissa_width, uint8_t raw)
 }  // anonymous namespace
 
 namespace op {
-HiFloat8::HiFloat8(float f32)
-{
-    value = BitsFromFp32(BitCast<uint32_t>(f32));
-}
+HiFloat8::HiFloat8(float f32) : value(BitsFromFp32(BitCast<uint32_t>(f32)))
+{}
 
 HiFloat8::operator float() const
 {

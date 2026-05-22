@@ -11,7 +11,6 @@
 #ifndef OP_API_HIFLOAT4_H
 #define OP_API_HIFLOAT4_H
 
-#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <ostream>
