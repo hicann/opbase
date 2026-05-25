@@ -412,6 +412,8 @@ void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream &stream)
     if (stream != nullptr) {
         OP_CHECK_NO_RETURN(aclrtGetStreamAttribute(stream, stmAttrType, &value) == ACL_SUCCESS,
             OP_LOGW("aclrtGetStreamAttribute is not working as expected."));
+    } else {
+        OP_LOGI("stream is nullptr, cannot get cache op info switch from stream attribute.");
     }
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
     op::internal::GetThreadLocalContext().cacheOpInfoSwitch_  = true;
