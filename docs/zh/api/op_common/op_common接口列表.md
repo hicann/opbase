@@ -20,10 +20,10 @@
   </tr></thead>
 <tbody>
   <tr>
-    <td rowspan="6">log</td>
+    <td rowspan="33">log</td>
     <td><a href='OP_LOGE.md'>OP_LOGE</a></td>
     <td>打印算子ERROR级别日志。</td>
-    <td rowspan="6">include/op_common/log/log.h</td>
+    <td rowspan="33">include/op_common/log/log.h</td>
   </tr>
   <tr>
     <td><a href='OP_LOGD.md'>OP_LOGD</a></td>
@@ -44,7 +44,115 @@
   <tr>
     <td><a href='OP_CHECK_NULL_WITH_CONTEXT.md'>OP_CHECK_NULL_WITH_CONTEXT</a></td>
     <td>根据传入的context上下文，校验传入的指针是否为nullptr。</td>
-  </tr> 
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_INPUT_SHAPE.md'>OP_LOGE_WITH_INVALID_INPUT_SHAPE</a></td>
+    <td>记录并上报算子输入形状校验错误，上报EZ0001错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_ATTR.md'>OP_LOGE_WITH_INVALID_ATTR</a></td>
+    <td>记录并上报算子属性值校验错误，上报EZ0002错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_ATTR_SIZE.md'>OP_LOGE_WITH_INVALID_ATTR_SIZE</a></td>
+    <td>记录并上报算子属性大小校验错误，上报EZ0003错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_INPUT.md'>OP_LOGE_WITH_INVALID_INPUT</a></td>
+    <td>记录并上报算子输入参数为空校验错误，上报EZ0004错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE.md'>OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE</a></td>
+    <td>记录并上报算子输入形状大小校验错误，上报EZ0005错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_INPUT_FORMAT.md'>OP_LOGE_WITH_INVALID_INPUT_FORMAT</a></td>
+    <td>记录并上报算子输入格式校验错误，上报EZ0006错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_WITH_INVALID_INPUT_DTYPE.md'>OP_LOGE_WITH_INVALID_INPUT_DTYPE</a></td>
+    <td>记录并上报算子输入数据类型校验错误，上报EZ0007错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPE.md'>OP_LOGE_FOR_INVALID_SHAPE</a></td>
+    <td>记录并上报参数形状校验错误，上报EZ0008错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON.md'>OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON</a></td>
+    <td>记录并上报参数形状校验错误（带原因），上报EZ0009错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON.md'>OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON</a></td>
+    <td>记录并上报多参数形状校验错误（带原因），上报EZ0010错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPEDIM.md'>OP_LOGE_FOR_INVALID_SHAPEDIM</a></td>
+    <td>记录并上报参数形状维度校验错误，上报EZ0011错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON.md'>OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON</a></td>
+    <td>记录并上报参数形状维度校验错误（带原因），上报EZ0012错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON.md'>OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON</a></td>
+    <td>记录并上报多参数形状维度校验错误（带原因），上报EZ0013错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPESIZE.md'>OP_LOGE_FOR_INVALID_SHAPESIZE</a></td>
+    <td>记录并上报参数形状大小校验错误，上报EZ0014错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON.md'>OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON</a></td>
+    <td>记录并上报参数形状大小校验错误（带原因），上报EZ0015错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON.md'>OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON</a></td>
+    <td>记录并上报多参数形状大小校验错误（带原因），上报EZ0016错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_FORMAT.md'>OP_LOGE_FOR_INVALID_FORMAT</a></td>
+    <td>记录并上报参数格式校验错误，上报EZ0017错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON.md'>OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON</a></td>
+    <td>记录并上报多参数格式校验错误（带原因），上报EZ0018错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_DTYPE.md'>OP_LOGE_FOR_INVALID_DTYPE</a></td>
+    <td>记录并上报参数数据类型校验错误，上报EZ0019错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON.md'>OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON</a></td>
+    <td>记录并上报参数数据类型校验错误（带原因），上报EZ0020错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON.md'>OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON</a></td>
+    <td>记录并上报多参数数据类型校验错误（带原因），上报EZ0021错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_TENSORNUM.md'>OP_LOGE_FOR_INVALID_TENSORNUM</a></td>
+    <td>记录并上报参数张量数量校验错误，上报EZ0022错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON.md'>OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON</a></td>
+    <td>记录并上报多参数张量数量校验错误（带原因），上报EZ0023错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_VALUE.md'>OP_LOGE_FOR_INVALID_VALUE</a></td>
+    <td>记录并上报参数值校验错误，上报EZ0024错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_LISTSIZE.md'>OP_LOGE_FOR_INVALID_LISTSIZE</a></td>
+    <td>记录并上报参数列表大小校验错误，上报EZ0025错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_VALUE_WITH_REASON.md'>OP_LOGE_FOR_INVALID_VALUE_WITH_REASON</a></td>
+    <td>记录并上报参数值校验错误（带原因），上报EZ0026错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_VALUES_WITH_REASON.md'>OP_LOGE_FOR_INVALID_VALUES_WITH_REASON</a></td>
+    <td>记录并上报多参数值校验错误（带原因），上报EZ0027错误码。</td>
+  </tr>
   <tr>
     <td rowspan="5">math</td>
     <td><a href='FloorDiv.md'>FloorDiv</a></td>
