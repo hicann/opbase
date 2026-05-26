@@ -12,7 +12,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <limits>
 
 namespace {
     // FP32 format constants
@@ -37,10 +36,8 @@ namespace {
 
 namespace op {
 
-Float4E2M1::Float4E2M1(float v)
-{
-    value = FloatToFloat4E2M1(v).value;
-}
+Float4E2M1::Float4E2M1(float v) : value(FloatToFloat4E2M1(v).value)
+{}
 
 Float4E2M1::operator float() const
 {
@@ -73,7 +70,7 @@ bool Float4E2M1::IsInf() const
 float Float4E2M1::Float4E2M1ToFloat(Float4E2M1 fp4)
 {
     if (fp4.IsZero()) {
-        return (fp4.value & SIGN_MASK) ? -0.0f : 0.0f;
+        return (fp4.value & SIGN_MASK) != 0 ? -0.0f : 0.0f;
     }
 
     // OCP MX E2M1 has no NaN, all bit patterns are valid numbers
@@ -153,11 +150,11 @@ Float4E2M1 Float4E2M1::FloatToFloat4E2M1(float f)
     // Round mantissa from 23 bits to 1 bit with round-to-nearest-even
     int mantissaShift = FP32_MAN_LEN_VAL - MAN_BITS;
     uint32_t manRoundBit = (man >> (mantissaShift - 1)) & 1;
-    uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) ? 1 : 0;
+    uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) != 0 ? 1 : 0;
     uint32_t manLsb = (man >> mantissaShift) & 1;
 
     fp4Man = man >> mantissaShift;
-    if (manRoundBit && (manStickyBits || manLsb)) {
+    if ((manRoundBit != 0) && ((manStickyBits != 0) || (manLsb != 0))) {
         fp4Man++;
         if (fp4Man > MAN_MASK) {
             fp4Man = 0;

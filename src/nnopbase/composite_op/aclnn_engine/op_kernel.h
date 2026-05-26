@@ -1138,7 +1138,7 @@ private:
                                          genPlaceholder, hasDevPtrArg);
         } else if (arg.type == OpArgType::OPARG_MEMSET_WORKSPACE) {
             return AppendTensorShapeInfo(idx,
-                *reinterpret_cast<std::vector<std::tuple<void *, const aclTensor *>> *>(arg->pointer), buffer);
+                *PtrCastTo<std::vector<std::tuple<void *, const aclTensor *>>>(arg->pointer), buffer);
         }
         return ACLNN_SUCCESS;
     }

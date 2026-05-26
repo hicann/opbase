@@ -1458,57 +1458,49 @@ aclScalar::aclScalar(op::bfloat16 value)
     v.f = value;
 }
 
-aclScalar::aclScalar(op::Float8E5M2 value)
+aclScalar::aclScalar(op::Float8E5M2 value) : dataType_(op::DataType::DT_FLOAT8_E5M2)
 {
-    dataType_ = op::DataType::DT_FLOAT8_E5M2;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::Float8E4M3FN value)
+aclScalar::aclScalar(op::Float8E4M3FN value) : dataType_(op::DataType::DT_FLOAT8_E4M3FN)
 {
-    dataType_ = op::DataType::DT_FLOAT8_E4M3FN;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::Float8E8M0 value)
+aclScalar::aclScalar(op::Float8E8M0 value) : dataType_(op::DataType::DT_FLOAT8_E8M0)
 {
-    dataType_ = op::DataType::DT_FLOAT8_E8M0;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::Float6E3M2 value)
+aclScalar::aclScalar(op::Float6E3M2 value) : dataType_(op::DataType::DT_FLOAT6_E3M2)
 {
-    dataType_ = op::DataType::DT_FLOAT6_E3M2;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::Float6E2M3 value)
+aclScalar::aclScalar(op::Float6E2M3 value) : dataType_(op::DataType::DT_FLOAT6_E2M3)
 {
-    dataType_ = op::DataType::DT_FLOAT6_E2M3;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::Float4E2M1 value)
+aclScalar::aclScalar(op::Float4E2M1 value) : dataType_(op::DataType::DT_FLOAT4_E2M1)
 {
-    dataType_ = op::DataType::DT_FLOAT4_E2M1;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::Float4E1M2 value)
+aclScalar::aclScalar(op::Float4E1M2 value) : dataType_(op::DataType::DT_FLOAT4_E1M2)
 {
-    dataType_ = op::DataType::DT_FLOAT4_E1M2;
     v.ui8 = value.value;
 }
 
-aclScalar::aclScalar(op::HiFloat4 value)
+aclScalar::aclScalar(op::HiFloat4 value) : dataType_(op::DataType::DT_FLOAT4_E1M2)
 {
-    dataType_ = op::DataType::DT_FLOAT4_E1M2;
     v.ui8 = value.value;
+    OP_LOGW("This is a reserved function for future, aclScalar of hifloat4 type cannot be created currently.");
 }
 
-aclScalar::aclScalar(op::HiFloat8 value)
+aclScalar::aclScalar(op::HiFloat8 value) : dataType_(op::DataType::DT_HIFLOAT8)
 {
-    dataType_ = op::DataType::DT_HIFLOAT8;
     v.ui8 = value.value;
 }
 

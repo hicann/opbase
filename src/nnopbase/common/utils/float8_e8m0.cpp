@@ -12,7 +12,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <limits>
 
 namespace {
     // ============= FP32 format constants =============
@@ -35,10 +34,8 @@ namespace {
 
 namespace op {
 
-Float8E8M0::Float8E8M0(float v)
-{
-    value = FloatToFloat8E8M0(v).value;
-}
+Float8E8M0::Float8E8M0(float v) : value(FloatToFloat8E8M0(v).value)
+{}
 
 Float8E8M0::operator float() const
 {
