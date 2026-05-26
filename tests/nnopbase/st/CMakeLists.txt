@@ -63,6 +63,7 @@ set(NNOPBASE_STEST_HEADERS
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/json/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
+    ${CMAKE_BINARY_DIR}/mockcpp/include/
 
     ${ASCEND_INCLUDE_DIR}/
     ${ASCEND_INCLUDE_DIR}/experiment/metadef/
@@ -166,7 +167,7 @@ target_link_libraries(nnopbase_stest PRIVATE
     -ldl
     $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
     ${opInfoRecordLinkLibraries}
-    ${CANN_3RD_LIB_PATH}/mockcpp/lib/libmockcpp.a
+    mockcpp
   PUBLIC
 )
 

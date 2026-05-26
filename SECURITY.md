@@ -27,13 +27,13 @@
 
 |      类型  |      开源代码地址   |       文件名    |   公网IP地址/公网URL地址/域名/邮箱地址/压缩文件地址   |  用途说明   |
 | :------------: |:------------:|:----------------------------| :----------------------------------------------- |:-----------------------------------------|
-|  依赖  | 不涉及  | cmake/third_party/makeself-fetch.cmake | <https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz> | 从gitcode下载makeself源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (makeself-fetch.cmake) | <https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz> | 从gitcode下载makeself源码，作用编译依赖 |
 |  依赖  | 不涉及  | cmake/third_party/protobuf.cmake | <https://gitcode.com/cann-src-third-party/protobuf/releases/download/v3.13.0/protobuf-3.13.0.tar.gz> | 从gitcode下载protobuf源码，作用编译依赖 |
-|  依赖  | 不涉及  | cmake/third_party/gtest.cmake | <https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz> | 从gitcode下载googletest源码，作用编译依赖 |
-|  依赖  | 不涉及  | cmake/third_party/eigen.cmake | <https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz> | 从gitcode下载eigen源码，作用编译依赖 |
-|  依赖  | 不涉及  | cmake/third_party/nlohmann_json.cmake | <https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip> | 从gitcode下载json源码，作用编译依赖 |
-|  依赖  | 不涉及  | cmake/third_party/boost.cmake | <https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/boost_1_87_0.tar.gz> | 从gitcode下载boost源码，作用编译依赖 |
-|  依赖  | 不涉及  | cmake/third_party/mockcpp.cmake | <https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7.tar.gz> | 从gitcode下载mockcpp源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (gtest.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz> | 从obs公共仓下载googletest源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (eigen.cmake) | <https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz> | 从gitcode下载eigen源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (json.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.11.3.tar.gz> | 从obs公共仓下载json源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (boost.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/boost/boost_1_87_0.tar.gz> | 从obs公共仓下载boost源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (mockcpp.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/mockcpp/mockcpp-2.7.tar.gz> | 从obs公共仓下载mockcpp源码，作用编译依赖 |
 |  依赖  | 不涉及  | cmake | <https://apt.kitware.com/keys/kitware-archive-latest.asc> | 从kitware下载cmake软件，作用编译依赖 |
 |  依赖  | 不涉及  | cmake | <https://apt.kitware.com/ubuntu/> | 从kitware下载cmake软件，作用编译依赖 |
 

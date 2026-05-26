@@ -39,7 +39,7 @@ if(NOT OPS_BASE_INCLUDE)
 endif()
 
 include("${OPS_BASE_PATH}/cmake/intf_pub_linux.cmake")
-include("${OPS_BASE_PATH}/cmake/third_party/nlohmann_json.cmake")
+add_cann_third_party(json)
 
 add_subdirectory(op_common)
 add_subdirectory(nnopbase)
