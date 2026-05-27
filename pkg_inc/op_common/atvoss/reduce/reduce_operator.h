@@ -537,6 +537,8 @@ public:
             paddingValue = INT32_MAX;
         } else if constexpr (IsSameType<U, int64_t>::value) {
             paddingValue = INT64_MAX;
+        } else if constexpr (IsSameType<U, int16_t>::value) {
+            paddingValue = INT16_MAX;
         }
         return paddingValue;
     }
