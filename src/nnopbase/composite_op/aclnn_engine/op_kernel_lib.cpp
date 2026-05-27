@@ -141,7 +141,7 @@ const std::string &OpKernelLib::GetSocPath()
     }
 
     auto soc = aclrtGetSocName();
-    OP_LOGI("aclrtGetSocName %s", soc);
+    OP_CHECK(soc != nullptr, OP_LOGW("aclrtGetSocName return nullptr."), return socPath_);
     const string &devtype = string(soc);
     const auto &iter = socOpMap.find(devtype);
     if (iter != socOpMap.end()) {
@@ -150,6 +150,7 @@ const std::string &OpKernelLib::GetSocPath()
         socPath_ = GetSocPathV2(devtype);
     }
     OP_CHECK_NO_RETURN(!socPath_.empty(), OP_LOGW("Invalid device type:%s.", soc));
+    OP_LOGI("aclrtGetSocName: %s, soc path: %s", soc, socPath_.c_str());
     return socPath_;
 }
 

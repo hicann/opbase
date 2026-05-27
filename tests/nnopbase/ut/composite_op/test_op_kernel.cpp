@@ -1352,6 +1352,10 @@ TEST_F(OpKernelUT, TestGetSocVersion) {
     OpKernelLib opKnlLib4;
     EXPECT_STREQ(opKnlLib4.GetSocPath().c_str(), "ascend310p/");
 
+    setenv("ASCEND_C", "999", 1);
+    OpKernelLib opKnlLib5;
+    EXPECT_STREQ(opKnlLib5.GetSocPath().c_str(), "");
+
     unsetenv("ASCEND_C");
 }
 

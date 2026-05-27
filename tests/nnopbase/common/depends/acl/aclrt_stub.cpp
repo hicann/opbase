@@ -61,6 +61,8 @@ const char *aclrtGetSocName()
             str = "Ascend950DT_9591";
         } else if (valStr == "3") {
             str = "Ascend310P1";
+        } else if (valStr == "999") {
+            return nullptr;
         }
     }
     strncpy(aclSocVersion, str.c_str(), 100);
