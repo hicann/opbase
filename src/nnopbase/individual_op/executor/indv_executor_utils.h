@@ -43,7 +43,7 @@ inline bool EnableNnopbaseArgsCache()
 {
     const char *disAbleArgsCache = nullptr;
     MM_SYS_GET_ENV(MM_ENV_DISABLE_L2_CACHE, disAbleArgsCache);
-    return disAbleArgsCache == nullptr ? true : strcmp(disAbleArgsCache, "1") != 0; // 1表示使能
+    return disAbleArgsCache == nullptr ? true : strcmp(disAbleArgsCache, "1") != 0; // 1表示开启
 }
 
 inline bool GetGlobalDeterministic()
@@ -93,10 +93,10 @@ inline aclnnStatus NnopbaseSetOverFlowAddr(void *&addr)
 
 inline bool GetDebugKernel()
 {
-    int64_t value = 0; // 0表示不使能debug kernel
+    int64_t value = 0; // 0表示不开启debug kernel
     const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &value); // SYS_OPT_ENABLE_DEBUG_KERNEL = 1
     OP_LOGD("Get system param debug kernel ret = %d.", ret);
-    return (value == 1); // 1表示使能debug kernel
+    return (value == 1); // 1表示开启debug kernel
 }
 
 static inline void NnopbaseSetDtypeAndSize(const aclIntArray *array, gert::Tensor *rt2Tensor)

@@ -2,7 +2,7 @@
 
 ## 功能说明
 
-通过[aclSetAclOpExecutorRepeatable](aclSetAclOpExecutorRepeatable.md)使能aclOpExecutor可复用后，若**输入Device内存地址变更**，需要刷新**输入aclTensorList**中记录的Device内存地址。
+通过[aclSetAclOpExecutorRepeatable](aclSetAclOpExecutorRepeatable.md)开启aclOpExecutor可复用后，若**输入Device内存地址变更**，需要刷新**输入aclTensorList**中记录的Device内存地址。
 
 ## 函数原型
 

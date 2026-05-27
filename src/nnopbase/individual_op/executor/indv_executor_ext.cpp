@@ -389,8 +389,8 @@ void NnopbaseExecutorFixCache(NnopbaseExecutor *executor)
 // NnopbaseInit内部调用，调用前已保证设置锁
 aclnnStatus NnopbaseExecutorSetGlobalConfig()
 {
-    g_nnopbaseSysCfgParams.enableTimeStamp = nnopbase::EnableNnopbaseTimeStamp(); // 是否使能性能打点
-    g_nnopbaseSysCfgParams.enableArgsCache = nnopbase::EnableNnopbaseArgsCache(); // 是否使能args(tiling)缓存
+    g_nnopbaseSysCfgParams.enableTimeStamp = nnopbase::EnableNnopbaseTimeStamp(); // 是否开启性能打点
+    g_nnopbaseSysCfgParams.enableArgsCache = nnopbase::EnableNnopbaseArgsCache(); // 是否开启args(tiling)缓存
     g_nnopbaseSysCfgParams.deterministic = nnopbase::GetGlobalDeterministic(); // 确定性设置
     g_nnopbaseSysCfgParams.implMode = nnopbase::NnopbaseGetImplMode(g_nnopbaseSysCfgParams.precision); // 高性能/高精度模式设置
     NNOPBASE_ASSERT_OK_RETVAL(nnopbase::NnopbaseSetOverFlowAddr(g_nnopbaseSysCfgParams.overflowAddr)); // 设置溢出检测地址

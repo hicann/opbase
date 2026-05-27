@@ -203,7 +203,7 @@ public:
         hcclGetRankIdHandle = nullptr;
         hcclGetCcuTaskInfoHandle = nullptr;
 
-        // 静态Mc2使能场景重构Topo结构落盘Json用
+        // 静态Mc2开启场景重构Topo结构落盘Json用
         hcclGetRankSizeHandle = nullptr;
         hcclRankGraphGetLayersHandle = nullptr;
         hcclRankGraphGetRankSizeByLayerHandle = nullptr;
@@ -364,7 +364,7 @@ private:
     using HcclGetCcuTaskInfoFunc = HcclResult (*)(HcclComm, void *, void *);
     using HcclGetRankIdFunc = HcclResult (*)(HcclComm, uint32_t *);
 
-    // 静态Mc2使能场景重构Topo结构落盘Json用
+    // 静态Mc2开启场景重构Topo结构落盘Json用
     using HcclGetRankSizeFunc = HcclResult (*)(HcclComm, uint32_t *);
     using HcclRankGraphGetLayersFunc = HcclResult (*)(HcclComm, uint32_t **, uint32_t *);
     using HcclRankGraphGetRankSizeByLayerFunc = HcclResult (*)(HcclComm, uint32_t, uint32_t* );
@@ -381,7 +381,7 @@ private:
         hcclGetCcuTaskInfoHandle = nullptr;
         hcclGetRankIdHandle = nullptr;
 
-        // 静态Mc2使能场景重构Topo结构落盘Json用
+        // 静态Mc2开启场景重构Topo结构落盘Json用
         hcclGetRankSizeHandle = nullptr;
         hcclRankGraphGetLayersHandle = nullptr;
         hcclRankGraphGetRankSizeByLayerHandle = nullptr;
@@ -402,7 +402,7 @@ private:
         hcclGetRankIdHandle = LoadFunction<HcclGetRankIdFunc>("HcclGetRankId");
         NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankIdHandle);
 
-        // 静态Mc2使能场景重构Topo结构落盘Json用
+        // 静态Mc2开启场景重构Topo结构落盘Json用
         hcclGetRankSizeHandle = LoadFunction<HcclGetRankSizeFunc>("HcclGetRankSize");
         NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankSizeHandle);
         hcclRankGraphGetLayersHandle = LoadFunction<HcclRankGraphGetLayersFunc>("HcclRankGraphGetLayers");
@@ -429,7 +429,7 @@ private:
     HcclGetCcuTaskInfoFunc hcclGetCcuTaskInfoHandle = nullptr;
     HcclGetRankIdFunc hcclGetRankIdHandle = nullptr;
 
-    // 静态Mc2使能场景重构Topo结构落盘Json用
+    // 静态Mc2开启场景重构Topo结构落盘Json用
     HcclGetRankSizeFunc hcclGetRankSizeHandle = nullptr;
     HcclRankGraphGetLayersFunc hcclRankGraphGetLayersHandle = nullptr;
     HcclRankGraphGetRankSizeByLayerFunc hcclRankGraphGetRankSizeByLayerHandle = nullptr;

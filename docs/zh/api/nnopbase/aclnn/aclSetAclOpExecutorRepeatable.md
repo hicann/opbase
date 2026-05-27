@@ -2,7 +2,7 @@
 
 ## 功能说明
 
-使能aclOpExecutor为可复用状态。当用户想复用已有的aclOpExecutor时，必须在一阶段接口aclxxXxxGetworkspaceSize运行完成后，立即使用该接口使能复用，后续可多次调用第二段接口aclxxXxx进行算子执行。
+开启aclOpExecutor为可复用状态。当用户想复用已有的aclOpExecutor时，必须在一阶段接口aclxxXxxGetworkspaceSize运行完成后，立即使用该接口开启复用，后续可多次调用第二段接口aclxxXxx进行算子执行。
 
 aclOpExecutor是框架定义的算子执行器，用于执行算子计算的容器，开发者无需关注其内部实现。
 
@@ -28,8 +28,8 @@ aclnnStatus aclSetAclOpExecutorRepeatable(aclOpExecutor *executor)
 
 ## 约束说明
 
-- 目前采用AI CPU和AI Core计算单元的算子支持使能aclOpExecutor可复用。
-- 调用单算子API执行接口时，如下场景无法使能aclOpExecutor复用：
+- 目前采用AI CPU和AI Core计算单元的算子支持开启aclOpExecutor可复用。
+- 调用单算子API执行接口时，如下场景无法开启aclOpExecutor复用：
 
   - 如果使用了HostToDevice、DeviceToDevice拷贝相关的L0层API，如CopyToNpu、CopyNpuToNpu、CopyToNpuSync等，不支持aclOpExecutor复用。
   - 如果使用了L0层ViewCopy接口，同时ViewCopy的源地址和目的地址相同时，不支持aclOpExecutor复用。

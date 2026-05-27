@@ -25,7 +25,7 @@
 | PtrCastTo(From *ptr) | 将ptr转换为指定类型的指针。 |
 | PtrCastTo(const From *ptr) | 将ptr转换为指定类型的指针。 |
 | GenOpTypeId(const char *opName) | 以给定的算子名生成唯一的算子id。 |
-| IsDumpEnabled() | 判断是否使能dump。 |
+| IsDumpEnabled() | 判断是否开启dump。 |
 | InitThreadLocalContext() | 初始化线程局部上下文信息。 |
 | AddInputTensorToThreadLocalCtx(const aclTensor *const t) | 线程局部上下文信息中增加input tensor信息。 |
 | AddInputTensorToThreadLocalCtx(aclTensor *const t) | 线程局部上下文信息中增加input tensor信息。 |

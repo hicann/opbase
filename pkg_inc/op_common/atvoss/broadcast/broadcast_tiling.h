@@ -1082,7 +1082,7 @@ private:
         // 重新计算分核参数
         uint64_t  ubOuter = (dimLength + tileNum - 1) / tileNum;
         uint64_t  blockFormer = (ubOuter + coreNum - 1) / coreNum;
-        // 将核数再减少一半，减少核启动开销，并使能核内doublebuffer流水
+        // 将核数再减少一半，减少核启动开销，并开启核内doublebuffer流水
         if (blockFormer == 1) {
             blockFormer = DB_LOOP;
         }

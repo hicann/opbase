@@ -167,7 +167,7 @@ std::string GetOpSoPackageName(const std::string &path) {
 
 bool MatchBinWithCoreNum(const NnopbaseBinInfo *const binInfo, const NnopbaseCoreNum *const coreNum)
 {
-    // 不具备校验的条件或未使能校验，直接返回匹配成功   
+    // 不具备校验的条件或未开启校验，直接返回匹配成功
     if (coreNum == nullptr || binInfo->extraKernelDesc == nullptr || binInfo->extraKernelDesc->coreNum == nullptr) { return true; }
     const auto &binCoreNum = binInfo->extraKernelDesc->coreNum;
     OP_LOGD("Match static bin with runtime coreNum[%u, %u], while coreNum of candidate static kernel is [%u, %u].",

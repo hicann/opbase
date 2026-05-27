@@ -52,7 +52,7 @@
 | [OP_ATTR](OP_ATTR.md) | ADD_TO_LAUNCHER_LIST_AICORE中，打包算子属性参数。 | aclnn/opdev/op_arg_def.h |
 | [OP_EMPTY_ARG](OP_EMPTY_ARG.md) | ADD_TO_LAUNCHER_LIST_AICORE中，用于占位一个空的输入或输出。 | aclnn/opdev/op_arg_def.h |
 | [OP_INPUT](OP_INPUT.md) | ADD_TO_LAUNCHER_LIST_AICORE中，打包算子输入aclTensor。 | aclnn/opdev/op_arg_def.h |
-| [OP_MODE](OP_MODE.md) | ADD_TO_LAUNCHER_LIST_AICORE中，打包算子运行选项，例如是否使能HF32。 | aclnn/opdev/op_arg_def.h |
+| [OP_MODE](OP_MODE.md) | ADD_TO_LAUNCHER_LIST_AICORE中，打包算子运行选项，例如是否开启HF32。 | aclnn/opdev/op_arg_def.h |
 | [OP_OUTPUT](OP_OUTPUT.md) | ADD_TO_LAUNCHER_LIST_AICORE中，打包算子输出aclTensor。 | aclnn/opdev/op_arg_def.h |
 | [OP_OUTSHAPE](OP_OUTSHAPE.md) | ADD_TO_LAUNCHER_LIST_AICORE中，针对第三类算子，设置存放输出shape的aclTensor。 | aclnn/opdev/op_arg_def.h |
 | [OP_OPTION](OP_OPTION.md) | ADD_TO_LAUNCHER_LIST_AICORE中，打包算子指定的精度模式。 | aclnn/opdev/op_arg_def.h |

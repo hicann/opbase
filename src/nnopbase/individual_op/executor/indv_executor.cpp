@@ -1021,7 +1021,7 @@ aclnnStatus NnopbaseExecutorMatchCache(NnopbaseExecutor *executor)
         NnopbaseUpdatePlatformInfo(executor);
     }
 
-    // 开启dump不使能缓存匹配
+    // 开启dump不开启缓存匹配
     if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         executor->ownArgs.enableCache = false;
     } else if (NnopbaseExecutorCachedArgs(executor)) {
