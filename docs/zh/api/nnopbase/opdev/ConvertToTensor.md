@@ -7,32 +7,32 @@
 ## 函数原型
 
 ```cpp
-aclTensor *ConvertToTensor(const aclIntArray *value, DataType dataType)
+const aclTensor *ConvertToTensor(const aclIntArray *value, DataType dataType)
 ```
 
 ```cpp
-aclTensor *ConvertToTensor(const aclBoolArray *value, DataType dataType)
+const aclTensor *ConvertToTensor(const aclBoolArray *value, DataType dataType)
 ```
 
 ```cpp
-aclTensor *ConvertToTensor(const aclFloatArray *value, DataType dataType)
+const aclTensor *ConvertToTensor(const aclFloatArray *value, DataType dataType)
 ```
 
 ```cpp
-aclTensor *ConvertToTensor(const aclFp16Array *value, DataType dataType)
+const aclTensor *ConvertToTensor(const aclFp16Array *value, DataType dataType)
 ```
 
 ```cpp
-aclTensor *ConvertToTensor(const aclBf16Array *value, DataType dataType)
+const aclTensor *ConvertToTensor(const aclBf16Array *value, DataType dataType)
 ```
 
 ```cpp
-aclTensor *ConvertToTensor(const aclScalar *value, DataType dataType)
+const aclTensor *ConvertToTensor(const aclScalar *value, DataType dataType)
 ```
 
 ```cpp
 template<typename T> 
-aclTensor *ConvertToTensor(const T *value, uint64_t size, DataType dataType)
+const aclTensor *ConvertToTensor(const T *value, uint64_t size, DataType dataType)
 ```
 
 ## 参数说明
@@ -110,7 +110,7 @@ aclTensor *ConvertToTensor(const T *value, uint64_t size, DataType dataType)
 void Func(aclOpExecutor *executor) {
     int64_t val = 5;
     aclScalar *scalar = executor->AllocScalar(val);
-    aclTensor *tensor = executor->ConvertToTensor(scalar, DT_INT64);
+    const aclTensor *tensor = executor->ConvertToTensor(scalar, DT_INT64);
     tensor = executor->ConvertToTensor(&val, 1, DT_INT64);
 }
 ```
