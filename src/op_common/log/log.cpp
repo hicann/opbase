@@ -80,8 +80,6 @@ std::string ToString(const gert::Shape& shape)
     return ToString(ToVector(shape));
 }
 
-#ifdef BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG
-
 const static std::string g_msg = R"(
 {
   "error_info_list": [
@@ -634,6 +632,5 @@ const static std::string g_msg = R"(
 )";
 REG_FORMAT_ERROR_MSG(g_msg.c_str(), g_msg.length());
 
-#endif
 } // namespace Base
 } // namespace Ops
