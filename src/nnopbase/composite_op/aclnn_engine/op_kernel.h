@@ -11,10 +11,17 @@
 #ifndef OP_API_COMMON_INC_OPDEV_INTERNAL_OP_KERNEL_H
 #define OP_API_COMMON_INC_OPDEV_INTERNAL_OP_KERNEL_H
 
-#include <vector>
-#include <utility>
-#include <set>
+#include <cmath>
+#include <cstring>
+#include <map>
 #include <mutex>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <string>
+#include <type_traits>
+#include <tuple>
+#include <vector>
 
 #include "nlohmann/json.hpp"
 #include "platform/soc_spec.h"

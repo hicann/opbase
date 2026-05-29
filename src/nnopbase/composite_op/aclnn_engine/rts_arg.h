@@ -21,6 +21,7 @@
 #include "kernel_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_cache.h"
+#include "opdev/op_log.h"
 #include "kernel_arg.h"
 #include "op_ctx_def.h"
 

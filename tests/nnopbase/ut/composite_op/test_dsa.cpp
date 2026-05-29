@@ -15,6 +15,7 @@
 #include "opdev/op_dfx.h"
 #include "dsa_task.h"
 #include "opdev/make_op_executor.h"
+#include "opdev/shape_utils.h"
 #include "thread_local_context.h"
 
 OP_TYPE_REGISTER(DSARandomNormal);

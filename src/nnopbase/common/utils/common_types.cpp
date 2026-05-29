@@ -1051,6 +1051,19 @@ bool aclScalar::CheckOverflows() const
     return true;
 }
 
+template<typename T, typename FloatType>
+static T ConvertCustomFloatTo(uint8_t bits)
+{
+    FloatType val(bits, FloatType::FromBits());
+    if constexpr (std::is_same<FloatType, typename std::decay<T>::type>::value) {
+        return val;
+    } else if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+        return std::abs(static_cast<float>(val)) >= std::numeric_limits<float>::epsilon();
+    } else {
+        return static_cast<T>(static_cast<float>(val));
+    }
+}
+
 template<typename T>
 T aclScalar::To() const
 {
@@ -1068,55 +1081,19 @@ T aclScalar::To() const
                 return static_cast<T>(op::fp16_t(v.ui16).toDouble());
             }
         case op::DataType::DT_BF16:
-            return static_cast<T>(BFloat16());
-        case op::DataType::DT_FLOAT8_E5M2:
-            if constexpr (std::is_same<op::Float8E5M2, typename std::decay<T>::type>::value) {
-                return op::Float8E5M2(v.ui8, op::Float8E5M2::FromBits());
+            if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+                return std::abs(static_cast<float>(BFloat16())) >= std::numeric_limits<float>::epsilon();
             } else {
-                return static_cast<T>(static_cast<float>(op::Float8E5M2(v.ui8, op::Float8E5M2::FromBits())));
+                return static_cast<T>(BFloat16());
             }
-        case op::DataType::DT_FLOAT8_E4M3FN:
-            if constexpr (std::is_same<op::Float8E4M3FN, typename std::decay<T>::type>::value) {
-                return op::Float8E4M3FN(v.ui8, op::Float8E4M3FN::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::Float8E4M3FN(v.ui8, op::Float8E4M3FN::FromBits())));
-            }
-        case op::DataType::DT_FLOAT8_E8M0:
-            if constexpr (std::is_same<op::Float8E8M0, typename std::decay<T>::type>::value) {
-                return op::Float8E8M0(v.ui8, op::Float8E8M0::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::Float8E8M0(v.ui8, op::Float8E8M0::FromBits())));
-            }
-        case op::DataType::DT_FLOAT6_E3M2:
-            if constexpr (std::is_same<op::Float6E3M2, typename std::decay<T>::type>::value) {
-                return op::Float6E3M2(v.ui8, op::Float6E3M2::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::Float6E3M2(v.ui8, op::Float6E3M2::FromBits())));
-            }
-        case op::DataType::DT_FLOAT6_E2M3:
-            if constexpr (std::is_same<op::Float6E2M3, typename std::decay<T>::type>::value) {
-                return op::Float6E2M3(v.ui8, op::Float6E2M3::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::Float6E2M3(v.ui8, op::Float6E2M3::FromBits())));
-            }
-        case op::DataType::DT_FLOAT4_E2M1:
-            if constexpr (std::is_same<op::Float4E2M1, typename std::decay<T>::type>::value) {
-                return op::Float4E2M1(v.ui8, op::Float4E2M1::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::Float4E2M1(v.ui8, op::Float4E2M1::FromBits())));
-            }
-        case op::DataType::DT_FLOAT4_E1M2:
-            if constexpr (std::is_same<op::Float4E1M2, typename std::decay<T>::type>::value) {
-                return op::Float4E1M2(v.ui8, op::Float4E1M2::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::Float4E1M2(v.ui8, op::Float4E1M2::FromBits())));
-            }
-        case op::DataType::DT_HIFLOAT8:
-            if constexpr (std::is_same<op::HiFloat8, typename std::decay<T>::type>::value) {
-                return op::HiFloat8(v.ui8, op::HiFloat8::FromBits());
-            } else {
-                return static_cast<T>(static_cast<float>(op::HiFloat8(v.ui8, op::HiFloat8::FromBits())));
-            }
+        case op::DataType::DT_FLOAT8_E5M2: return ConvertCustomFloatTo<T, op::Float8E5M2>(v.ui8);
+        case op::DataType::DT_FLOAT8_E4M3FN: return ConvertCustomFloatTo<T, op::Float8E4M3FN>(v.ui8);
+        case op::DataType::DT_FLOAT8_E8M0: return ConvertCustomFloatTo<T, op::Float8E8M0>(v.ui8);
+        case op::DataType::DT_FLOAT6_E3M2: return ConvertCustomFloatTo<T, op::Float6E3M2>(v.ui8);
+        case op::DataType::DT_FLOAT6_E2M3: return ConvertCustomFloatTo<T, op::Float6E2M3>(v.ui8);
+        case op::DataType::DT_FLOAT4_E2M1: return ConvertCustomFloatTo<T, op::Float4E2M1>(v.ui8);
+        case op::DataType::DT_FLOAT4_E1M2: return ConvertCustomFloatTo<T, op::Float4E1M2>(v.ui8);
+        case op::DataType::DT_HIFLOAT8: return ConvertCustomFloatTo<T, op::HiFloat8>(v.ui8);
         case op::DataType::DT_INT8: return static_cast<T>(v.i8);
         case op::DataType::DT_INT16: return static_cast<T>(v.i16);
         case op::DataType::DT_UINT16:
@@ -1142,36 +1119,21 @@ T aclScalar::To() const
         case op::DataType::DT_COMPLEX64:
             if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
                 return v.complex64;
+            } else if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
+                return std::complex<double>(v.complex64);
             }
-            if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
-                complex<double> complex128(v.complex64);
-                return complex128;
-            }
+            OP_LOGW("data type[DT_COMPLEX64] does not support conversion to non-complex types.");
+            return T{};
         case op::DataType::DT_COMPLEX128:
             if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
                 return v.complex128;
-            }
-            if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
+            } else if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
                 return static_cast<std::complex<float>>(v.complex128);
             }
-        case op::DataType::DT_STRING:
-        case op::DataType::DT_DUAL_SUB_INT8:
-        case op::DataType::DT_DUAL_SUB_UINT8:
-        case op::DataType::DT_QINT8:
-        case op::DataType::DT_QINT16:
-        case op::DataType::DT_QINT32:
-        case op::DataType::DT_QUINT8:
-        case op::DataType::DT_QUINT16:
-        case op::DataType::DT_RESOURCE:
-        case op::DataType::DT_STRING_REF:
-        case op::DataType::DT_DUAL:
-        case op::DataType::DT_VARIANT:
-        case op::DataType::DT_UNDEFINED:
-        case op::DataType::DT_INT4:
-        case op::DataType::DT_UINT1:
-        case op::DataType::DT_INT2:
-        case op::DataType::DT_UINT2:
-        default:OP_LOGW("no supported data type[%s].", op::ToString(dataType_).GetString());
+            OP_LOGW("data type[DT_COMPLEX128] does not support conversion to non-complex types.");
+            return T{};
+        default:
+            OP_LOGW("data type[%s] does not support To conversion.", op::ToString(dataType_).GetString());
             return T{};
     }
 }

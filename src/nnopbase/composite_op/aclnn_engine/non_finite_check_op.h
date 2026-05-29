@@ -11,21 +11,23 @@
 #ifndef __NON_FINITE_CHECK_OP_H__
 #define __NON_FINITE_CHECK_OP_H__
 
-#include "acl/acl.h"
-#include "opdev/op_def.h"
+#include <unordered_map>
+#include <string>
+
+#include "acl/acl_rt.h"
+#include "acl/acl_base_rt.h"
+
+#include "aclnn/acl_meta.h"
 #include "kernel_utils.h"
-#include "kernel_arg.h"
-#include "opdev/op_dfx.h"
 #include "kernel_arg.h"
 #include "kernel_mgr.h"
 #include "op_kernel.h"
 #include "bridge_pool.h"
+#include "opdev/op_def.h"
+#include "opdev/op_dfx.h"
 #include "opdev/op_log.h"
 #include "opdev/op_executor.h"
-#include "acl/acl_rt.h"
-
-#include <unordered_map>
-#include <string>
+#include "opdev/op_errno.h"
 
 namespace op {
 namespace internal {

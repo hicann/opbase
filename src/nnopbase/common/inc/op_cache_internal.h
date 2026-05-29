@@ -15,7 +15,9 @@
 #include <type_traits>
 #include <mutex>
 
+#include "acl/acl_base_rt.h"
 #include "profiling/aprof_pub.h"
+
 #include "aclnn/acl_meta.h"
 #include "opdev/op_cache.h"
 #include "thread_local_context.h"

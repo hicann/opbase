@@ -12,16 +12,18 @@
 #define OP_API_COMMON_INC_OPDEV_INTERNAL_OUTSHAPE_H
 
 #include <type_traits>
+
+#include "acl/acl_rt.h"
+
 #include "aclnn/acl_meta.h"
-#include "opdev/common_types.h"
+#include "block_pool.h"
 #include "kernel_arg.h"
 #include "kernel_utils.h"
 #include "opdev/op_def.h"
 #include "opdev/op_errno.h"
 #include "opdev/op_log.h"
 #include "opdev/op_dfx.h"
-#include "block_pool.h"
-#include "acl/acl_rt.h"
+#include "opdev/common_types.h"
 
 namespace op::internal {
 

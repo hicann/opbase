@@ -130,7 +130,169 @@ TEST_F(CommonTypesTest, TestAclScalar_ToTypes)
         std::string scalarString = "zyx";
         aclScalar scalar(&scalarString, DataType::DT_STRING);
         EXPECT_EQ(static_cast<int32_t>(0), scalar.ToInt32());
-    } catch (...) {} 
+    } catch (...) {}
+}
+
+// ============================================================================
+// Test ConvertCustomFloatTo: 以自定义浮点类型为源类型，验证 To<T>() 转换
+// 覆盖 ConvertCustomFloatTo 的三个分支:
+//   Branch 1: T == FloatType (identity conversion)
+//   Branch 2: T == bool (std::abs(float(val)) >= epsilon)
+//   Branch 3: T == float/double/int 等 (static_cast<T>(static_cast<float>(val)))
+// 参考规范: OCP Microscaling Formats (MX) v1.0
+// ============================================================================
+TEST_F(CommonTypesTest, TestAclScalar_ConvertCustomFloatTo)
+{
+// Helper macro: 验证自定义浮点源类型 → 各目标类型的转换
+#define CHECK_CUSTOM_FLOAT_SCALAR_TO(customType, floatVal)                                               \
+    do {                                                                                                 \
+        customType customFloatVal(floatVal);                                                             \
+        aclScalar scalar(customFloatVal);                                                                \
+        float expectedFloat = static_cast<float>(customFloatVal);                                        \
+        /* Branch 3: general conversion */                                                               \
+        EXPECT_FLOAT_EQ(expectedFloat, scalar.ToFloat());                                               \
+        EXPECT_DOUBLE_EQ(static_cast<double>(expectedFloat), scalar.ToDouble());                         \
+        EXPECT_EQ(static_cast<int32_t>(expectedFloat), scalar.ToInt32());                                \
+        EXPECT_EQ(static_cast<int64_t>(expectedFloat), scalar.ToInt64());                                \
+        EXPECT_EQ(static_cast<uint8_t>(expectedFloat), scalar.ToUint8());                                \
+        /* Branch 2: bool conversion */                                                                  \
+        bool expectedBool = (expectedFloat >= std::numeric_limits<float>::epsilon()) ||                  \
+                            (expectedFloat <= -std::numeric_limits<float>::epsilon());                   \
+        EXPECT_EQ(expectedBool, scalar.ToBool());                                                        \
+        /* Branch 1: identity conversion */                                                              \
+        auto identityResult = scalar.To<customType>();                                                   \
+        EXPECT_EQ(customFloatVal.value, identityResult.value);                                           \
+    } while (0)
+
+    // --- Float8E5M2 (OCP FP8, bias=15, 支持 NaN/Infinity) ---
+    // OCP: 1.0f → sign=0 exp=01111 man=00, value = 2^(15-15) × 1.0 = 1.0
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E5M2, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E5M2, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E5M2, -1.0f);
+
+    // --- Float8E4M3FN (OCP FP8, bias=7, 无 Infinity, 支持 NaN) ---
+    // OCP: 1.0f → sign=0 exp=0111 man=000, value = 2^(7-7) × 1.0 = 1.0
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E4M3FN, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E4M3FN, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E4M3FN, -1.0f);
+
+    // --- Float8E8M0 (MX缩放因子, 8位纯指数, 无符号, value=2^(exp-127)) ---
+    // OCP: 1.0f → exp=127, value = 2^(127-127) = 1.0 (0x7F)
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E8M0, 1.0f);
+    // OCP: 0.0f → 0x00 (zero)
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E8M0, 0.0f);
+    // OCP: 2.0f → exp=128, value = 2^(128-127) = 2.0 (0x80)
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E8M0, 2.0f);
+
+    // --- Float6E3M2 (MX FP6, bias=3, 最大值 28.0) ---
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float6E3M2, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float6E3M2, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float6E3M2, -1.0f);
+
+    // --- Float6E2M3 (MX FP6, bias=1, 最大值 7.0) ---
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float6E2M3, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float6E2M3, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float6E2M3, -1.0f);
+
+    // --- Float4E2M1 (MX FP4, bias=1, 最大值 6.0) ---
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E2M1, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E2M1, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E2M1, -1.0f);
+
+    // --- Float4E1M2 (MX FP4, bias=1, 最大值 1.75) ---
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E1M2, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E1M2, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E1M2, -1.0f);
+
+    // --- HiFloat8 (Huawei tapered precision format) ---
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat8, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat8, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat8, -1.0f);
+
+#undef CHECK_CUSTOM_FLOAT_SCALAR_TO
+}
+
+// 使用 OCP 规范定义的 bit pattern 验证 ConvertCustomFloatTo 的正确性
+TEST_F(CommonTypesTest, TestAclScalar_ConvertCustomFloatTo_OcpBitPatterns)
+{
+    // ---- Float8E5M2 (OCP E5M2, bias=15) ----
+    // 0x3C = 0_01111_00 → 2^(15-15) × (1+0/4) = 1.0
+    {
+        uint8_t bits = 0x3C;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E5M2);
+        EXPECT_FLOAT_EQ(1.0f, scalar.ToFloat());
+        EXPECT_EQ(1, scalar.ToInt32());
+        EXPECT_TRUE(scalar.ToBool());
+        auto idResult = scalar.To<op::Float8E5M2>();
+        EXPECT_EQ(bits, idResult.value);
+    }
+    // 0x00 = 0_00000_00 → 0.0
+    {
+        uint8_t bits = 0x00;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E5M2);
+        EXPECT_FLOAT_EQ(0.0f, scalar.ToFloat());
+        EXPECT_EQ(0, scalar.ToInt32());
+        EXPECT_FALSE(scalar.ToBool());
+    }
+    // 0xBC = 1_01111_00 → -1.0
+    {
+        uint8_t bits = 0xBC;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E5M2);
+        EXPECT_FLOAT_EQ(-1.0f, scalar.ToFloat());
+        EXPECT_EQ(-1, scalar.ToInt32());
+    }
+
+    // ---- Float8E4M3FN (OCP E4M3FN, bias=7) ----
+    // 0x38 = 0_0111_000 → 2^(7-7) × (1+0/8) = 1.0
+    {
+        uint8_t bits = 0x38;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E4M3FN);
+        EXPECT_FLOAT_EQ(1.0f, scalar.ToFloat());
+        EXPECT_EQ(1, scalar.ToInt32());
+        EXPECT_TRUE(scalar.ToBool());
+        auto idResult = scalar.To<op::Float8E4M3FN>();
+        EXPECT_EQ(bits, idResult.value);
+    }
+    // 0x00 = 0_0000_000 → 0.0
+    {
+        uint8_t bits = 0x00;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E4M3FN);
+        EXPECT_FLOAT_EQ(0.0f, scalar.ToFloat());
+        EXPECT_FALSE(scalar.ToBool());
+    }
+    // 0xB8 = 1_0111_000 → -1.0
+    {
+        uint8_t bits = 0xB8;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E4M3FN);
+        EXPECT_FLOAT_EQ(-1.0f, scalar.ToFloat());
+        EXPECT_EQ(-1, scalar.ToInt32());
+    }
+
+    // ---- Float8E8M0 (OCP E8M0, bias=127) ----
+    // 0x7F = exp(127) → 2^(127-127) = 1.0
+    {
+        uint8_t bits = 0x7F;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E8M0);
+        EXPECT_FLOAT_EQ(1.0f, scalar.ToFloat());
+        EXPECT_EQ(1, scalar.ToInt32());
+        EXPECT_TRUE(scalar.ToBool());
+        auto idResult = scalar.To<op::Float8E8M0>();
+        EXPECT_EQ(bits, idResult.value);
+    }
+    // 0x00 = zero
+    {
+        uint8_t bits = 0x00;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E8M0);
+        EXPECT_FLOAT_EQ(0.0f, scalar.ToFloat());
+        EXPECT_FALSE(scalar.ToBool());
+    }
+    // 0x80 = exp(128) → 2^(128-127) = 2.0
+    {
+        uint8_t bits = 0x80;
+        aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E8M0);
+        EXPECT_FLOAT_EQ(2.0f, scalar.ToFloat());
+        EXPECT_EQ(2, scalar.ToInt32());
+    }
 }
 
 TEST_F(CommonTypesTest, TestAclScalarCheckOverflowsFloatToOther)

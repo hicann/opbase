@@ -10,21 +10,24 @@
  
 #ifndef OP_API_WORKSPACE_OP_CACHE_H
 #define OP_API_WORKSPACE_OP_CACHE_H
-#include <vector>
-#include <thread>
-#include <chrono>
-#include <mutex>
+
 #include <atomic>
-#include <queue>
-#include <unordered_map>
-#include "opdev/common_types.h"
-#include <string.h>
 #include <cstdint>
-#include <iomanip>
-#include "opdev/shape_utils.h"
-#include "opdev/op_dfx.h"
-#include "opdev/op_cache_container.h"
-#include "opdev/fast_vector.h"
+#include <mutex>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "securec.h"
+#include "acl/acl_base_rt.h"
+
+#include "aclnn/acl_meta.h"
+#include "common_types.h"
+#include "op_cache_container.h"
+#include "op_log.h"
+#include "shape_utils.h"
 
 namespace op {
 namespace internal {
