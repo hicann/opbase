@@ -221,7 +221,7 @@ aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &
             ParseDynamicKernelInStaticLib(configFileNames[0]) != ACLNN_SUCCESS,
             OP_LOGI("Parse dynamic kernel from static lib successfully"), return ACLNN_SUCCESS);
     }
-    OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "Parse dynamic kernel config fail.");
+    OP_LOGE_FOR_CONFIG_FILE_NOT_EXIST_IN_DYNAMIC_SHAPE();
     return ACLNN_ERR_INNER;
 }
 
@@ -279,7 +279,7 @@ aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &
             ParseDynamicKernelInStaticLib(configFileNames[0]) != ACLNN_SUCCESS,
             OP_LOGI("Parse dynamic kernel from static lib successfully"), return ACLNN_SUCCESS);
     }
-    OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "Parse dynamic kernel config fail.");
+    OP_LOGE_FOR_CONFIG_FILE_NOT_EXIST_IN_DYNAMIC_SHAPE();
     return ACLNN_ERR_INNER;
 }
 
@@ -508,9 +508,10 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json &jsonObj)
     OP_LOGW("No builtin op kernel bin json [%s]", relativeJsonPath_.c_str());
 
     const std::string realJsonPath = RealPath(jsonPath_);
-    std::ifstream f(realJsonPath);
+    const std::string &openPath = realJsonPath.empty() ? jsonPath_ : realJsonPath;
+    std::ifstream f(openPath);
     OP_CHECK(f.is_open(),
-        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(realJsonPath.c_str(), strerror(errno)),
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), strerror(errno)),
         return ACLNN_ERR_INNER);
     try {
         jsonObj = json::parse(f);

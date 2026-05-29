@@ -1490,10 +1490,8 @@ public:
         size_t hash = HashBinary(initAddr, (integralKey - initAddr));
         auto iter = bins_.find(hash);
         if (iter == bins_.end()) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Cannot find bin of op %s, integral key %s.",
-                    op::OpTypeDict::ToString(opType_).GetString(),
-                    GetReadableKey(std::string(initAddr, integralKey - initAddr), len).c_str());
+            OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION("The dtype or format of the actual input or output"
+            " parameter of the operator is inconsistent with that defined in the operator prototype OpDef");
             op::internal::BlockPool::Free(initAddr);
             return nullptr;
         }

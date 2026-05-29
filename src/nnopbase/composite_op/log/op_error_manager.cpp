@@ -168,6 +168,17 @@ static const std::string g_errorInfoJson = R"(
             "Possible Cause": "N/A",
             "Solution": "N/A"
         }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "Config_Error",
+        "ErrCode": "EZ1013",
+        "ErrMessage": "In the dynamic shape scenario, the JSON configuration file of operator %s cannot be found.",
+        "Arglist": "opName",
+        "suggestion": {
+            "Possible Cause": "1.The operator package of the corresponding SoC version is not correctly installed. 2.If the operator is a custom operator, the environment variable ASCEND_CUSTOM_OPP_PATH of the custom operator may not be configured or be incorrectly configured. 3.If the operator is a built-in operator, the environment variable ASCEND_OPP_PATH of the built-in operator may not be configured or be incorrectly configured.",
+            "Solution": "1.Install the operator package of the corresponding SoC version correctly. 2.Set ASCEND_CUSTOM_OPP_PATH to the actual installation path of the custom operator package. 3.Set ASCEND_OPP_PATH to the actual installation path of the built-in operator package."
+        }
     }
     ]
 })";
