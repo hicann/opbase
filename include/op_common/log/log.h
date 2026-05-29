@@ -276,7 +276,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
     } while (0)
 
 // ============================================================================
-// General Parameter Validation Macros (EZ0008-EZ0024)
+// General Parameter Validation Macros (EZ0xxx)
 // These macros do not distinguish between input/output and use generic "parameter" naming
 // ============================================================================
 
@@ -542,6 +542,32 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),                 \
             _safe_correctFormat_.c_str()};                                                                       \
         REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                   \
+    } while (0)
+
+/**
+ * 此接口仅供算子或aclnn实现使用
+ * EZ0035: Parameter format error (single parameter, with reason)
+ * entityName:string - 算子名称或aclnn接口名称
+ * paramName:string - Parameter name
+ * incorrectFormat:string - Actual incorrect format
+ * reason:string - Reason for the error
+ * errMessage: Parameter [paramName] of [entityName] has incorrect format [incorrectFormat]. Reason: [reason].
+ */
+#define OP_LOGE_FOR_INVALID_FORMAT_WITH_REASON(entityName, paramName, incorrectFormat, reason)             \
+    do {                                                                                                   \
+        std::string _safe_entityName_(entityName);                                                         \
+        std::string _safe_paramName_(paramName);                                                           \
+        std::string _safe_incorrectFormat_(incorrectFormat);                                               \
+        std::string _safe_reason_(reason);                                                                 \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                           \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect format %s. Reason: %s.",          \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),           \
+            _safe_reason_.c_str());                                                                        \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "reason"};   \
+        const std::vector<const char*> msgvalue = {                                                        \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),           \
+            _safe_reason_.c_str()};                                                                        \
+        REPORT_PREDEFINED_ERR_MSG("EZ0035", msgKey, msgvalue);                                             \
     } while (0)
 
 /**
@@ -970,6 +996,23 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         const std::vector<const char*> msgvalue = {                                                         \
             _safe_values_.c_str(), _safe_items_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0034", msgKey, msgvalue);                                              \
+    } while (0)
+
+/**
+ * EZ0036: Graph node error (single parameter, with reason)
+ * node_name:string - graph node name
+ * reason:string - Reason for the error
+ */
+#define OP_LOGE_FOR_INVALID_GRAPH_NODE(nodeName, reason)                                                \
+    do {                                                                                                \
+        std::string _safe_nodeName_(nodeName);                                                          \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_nodeName_.c_str(), "The input graph contains an invalid node %s. Reason: %s.",        \
+            _safe_nodeName_.c_str(), _safe_reason_.c_str());                                            \
+        const std::vector<const char*> msgKey = {"node_name", "reason"};                                \
+        const std::vector<const char*> msgvalue = {_safe_nodeName_.c_str(), _safe_reason_.c_str()};     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0036", msgKey, msgvalue);                                          \
     } while (0)
 
 #ifndef OP_LOG_LIBOPAPI_ONLY

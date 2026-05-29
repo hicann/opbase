@@ -443,6 +443,17 @@ const static std::string g_msg = R"(
     {
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Format",
+      "ErrCode": "EZ0035",
+      "ErrMessage": "Parameter %s of %s has incorrect format %s. Reason: %s.",
+      "Arglist": "param_name, op_name, incorrect_format, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the format of input/output tensor meet the condition."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Tensor_Format",
       "ErrCode": "EZ0018",
       "ErrMessage": "Parameters %s of %s have incorrect formats %s. Reason: %s.",
       "Arglist": "param_names, op_name, incorrect_formats, reason",
@@ -625,6 +636,17 @@ const static std::string g_msg = R"(
       "suggestion": {
         "Possible Cause": "N/A",
         "Solution": "Modify the configuration file by referring to the specifications in the user guide."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument_Graph",
+      "ErrCode": "EZ0036",
+      "ErrMessage": "The input graph contains an invalid node %s. Reason: %s.",
+      "Arglist": "node_name, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "1. Refer to the official document for details about the dump graph. 2. Confirm and modify the input graph structure."
       }
     }
   ]
