@@ -82,6 +82,7 @@ public:
     ~BlockPool()
     {
         UnInit();
+        Alive().store(false, std::memory_order_release);
     }
 
     static void *Malloc(size_t size)
@@ -112,6 +113,12 @@ public:
     static bool InHugeMemRange(void *p)
     {
         return get_instance().InHugeMemRangeImpl(p);
+    }
+
+    static std::atomic<bool> &Alive()
+    {
+        static std::atomic<bool> alive{true};
+        return alive;
     }
 
 private:
@@ -302,7 +309,24 @@ class BlockCache {
 public:
     BlockCache() = default;
 
-    ~BlockCache() = default;
+    ~BlockCache()
+    {
+        bool poolAlive = BlockPool::Alive().load(std::memory_order_acquire);
+        for (int i = 0; i < BlockPool::MAX_STORE; i++) {
+            BlockStore::BlockHeader *head = cacheHead_[i];
+            while (head != nullptr) {
+                BlockStore::BlockHeader *next =
+                    reinterpret_cast<BlockStore::BlockHeader *>(head->cacheExt_);
+                head->cacheExt_ = BlockStore::NOT_IN_CACHE;
+                if (poolAlive) {
+                    BlockPool::Free(head + 1);
+                }
+                head = next;
+            }
+            cacheHead_[i] = nullptr;
+            cacheCount_[i] = 0;
+        }
+    }
 
     static void *CacheAlloc(size_t size)
     {
