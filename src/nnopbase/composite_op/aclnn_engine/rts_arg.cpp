@@ -60,7 +60,7 @@ bool IsNeedOverflowStatusAddr()
 
 static int HostDataType(uint32_t offset, const rtArgs_t &rtArg)
 {
-    if (offset == rtArg.tilingAddrOffset) {
+    if (rtArg.hasTiling != 0 && offset == rtArg.tilingAddrOffset) {
         return TilingHolder;
     }
     aclrtPlaceHolderInfo *placeHolderInfo = rtArg.placeHolderInfoPtr;
@@ -76,12 +76,12 @@ static int HostDataType(uint32_t offset, const rtArgs_t &rtArg)
 
 void PrintHostDataSize(const rtArgs_t &rtArg)
 {
-    uint32_t hostDataNum = (rtArg.hasTiling != 0) ? rtArg.placeHolderInfoNum - 1 : rtArg.placeHolderInfoNum;
-    OP_LOGI("host data number: %u", hostDataNum);
     aclrtPlaceHolderInfo *placeHolderInfo = rtArg.placeHolderInfoPtr;
-    if (placeHolderInfo == nullptr || rtArg.placeHolderInfoNum == 0) {
-        return;
-    }
+    OP_CHECK(placeHolderInfo != nullptr, OP_LOGW("placeHolderInfo is nullptr"), return);
+    OP_CHECK(rtArg.placeHolderInfoNum != 0, OP_LOGW("placeHolderInfoNum is 0"), return);
+
+    uint32_t hostDataNum = (rtArg.hasTiling != 0) ? rtArg.placeHolderInfoNum - 1 : rtArg.placeHolderInfoNum;
+    OP_LOGI("hasTiling: %u, host data number: %u", rtArg.hasTiling, hostDataNum);
     uint32_t dataLen = 0;
     for (uint16_t i = 0; i < hostDataNum; i++) {
         if (placeHolderInfo[i].addrOffset == rtArg.tilingAddrOffset) {
@@ -113,6 +113,11 @@ void PrintTilingData(const rtArgs_t &rtArg)
         OP_LOGI("Op does not have tiling");
         return;
     }
+    if (rtArg.tilingDataOffset >= rtArg.argsSize) {
+        OP_LOGW("tilingDataOffset %u >= argsSize %u, hasTiling %u, skip print.",
+            rtArg.tilingDataOffset, rtArg.argsSize, rtArg.hasTiling);
+        return;
+    }
     uint32_t tilingLen = 0;
     aclrtPlaceHolderInfo *placeHolderInfo = rtArg.placeHolderInfoPtr;
     if (placeHolderInfo != nullptr && rtArg.placeHolderInfoNum > 1 &&
@@ -132,17 +137,30 @@ void PrintTilingData(const rtArgs_t &rtArg)
 
 int PrintRtArg(const rtArgs_t &rtArg)
 {
-    uint32_t hostDataNum = (rtArg.hasTiling != 0) ? rtArg.placeHolderInfoNum - 1 : rtArg.placeHolderInfoNum;
+    if (rtArg.hasTiling != 0 && rtArg.placeHolderInfoNum == 0) {
+        OP_LOGW("Has tiling data but placeHolderInfoNum is 0");
+    }
+    uint32_t hostDataNum = (rtArg.hasTiling != 0 && rtArg.placeHolderInfoNum > 0) ?
+        rtArg.placeHolderInfoNum - 1 : rtArg.placeHolderInfoNum;
     OP_LOGD("opType: %s, argsSize: %u, placeHolderInfoNum: %u, hostDataNum: %u, hasTiling %d, tilingAddrOffset: %u, "
         "tilingDataOffset: %u",
         op::internal::GetThreadLocalContext().logInfo_.l0Name, rtArg.argsSize, rtArg.placeHolderInfoNum, hostDataNum,
         rtArg.hasTiling, rtArg.tilingAddrOffset, rtArg.tilingDataOffset);
+    OP_CHECK(rtArg.args != nullptr, OP_LOGW("args is null, no need to print."), return -1);
+
     aclrtPlaceHolderInfo *placeHolderInfo = rtArg.placeHolderInfoPtr;
-    auto hostDataOffset = static_cast<decltype(rtArg.tilingDataOffset)>(0xffffffffffffffff);
+    uint32_t hostDataOffset = static_cast<uint32_t>(0xffffffff);
     if (placeHolderInfo != nullptr && rtArg.placeHolderInfoNum != 0) {
         for (uint32_t i = 0; i < rtArg.placeHolderInfoNum; i++) {
             hostDataOffset = std::min(hostDataOffset, placeHolderInfo[i].dataOffset);
         }
+    } else {
+        OP_LOGW("No placeholder info, use argsSize as loop bound.");
+        hostDataOffset = rtArg.argsSize;
+    }
+    if (hostDataOffset > rtArg.argsSize) {
+        OP_LOGW("hostDataOffset %u exceeds argsSize %u, clamping to argsSize.", hostDataOffset, rtArg.argsSize);
+        hostDataOffset = rtArg.argsSize;
     }
     void **addr = (void **)(rtArg.args);
     int hosti = 0;
