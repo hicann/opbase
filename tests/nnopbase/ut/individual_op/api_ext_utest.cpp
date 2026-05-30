@@ -581,7 +581,7 @@ void RunCommonOp(std::string opName, CoreType coreType, std::string socVersion, 
 
 class UtNnopbaseExecptionDump : public Adx::DumpStub {
   public:
-    void AdumpPrintAndGetTimeStampInfo(const void *workSpaceAddr, const size_t dumpWorkSpaceSize, rtStream_t stream,
+    void AdumpPrintAndGetTimeStampInfo(const void *workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
         const char *opType, std::vector<MsprofAicTimeStampInfo> &timeStampInfo) {
         MsprofAicTimeStampInfo timeInfo = {8662162037790U, 0U, 10U, 20619064410912U};
         timeStampInfo.push_back(timeInfo);
@@ -1747,7 +1747,7 @@ TEST_F(NnopbaseExtUnitTest, TestAddOutputShapeTensorSuccess)
 class ThirdOpRuntimeStub : public RuntimeStub {
   public:
     rtError_t rtKernelLaunchWithHandleV2(void *hdl, const uint64_t tilingKey, uint32_t blockDim, rtArgsEx_t *argsInfo,
-    rtSmDesc_t *smDesc, rtStream_t stm, const rtTaskCfgInfo_t *cfgInfo)
+    rtSmDesc_t *smDesc, aclrtStream stm, const rtTaskCfgInfo_t *cfgInfo)
     {
         uint64_t **outPutShape = (uint64_t **)((uint8_t *)(argsInfo->args) + 5 * sizeof(uint64_t *)); // 5 is input and output
         (*outPutShape)[0] = 5 | 0x80;
@@ -1765,7 +1765,7 @@ class ThirdOpRuntimeStub : public RuntimeStub {
         return RT_ERROR_NONE;
     }
 
-rtError_t rtsLaunchKernelWithHostArgs(rtFuncHandle funcHandle, uint32_t blockDim, rtStream_t stm, rtKernelLaunchCfg_t *cfg,
+rtError_t rtsLaunchKernelWithHostArgs(rtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stm, rtKernelLaunchCfg_t *cfg,
     void *hostArgs, uint32_t argsSize, aclrtPlaceHolderInfo *placeHolderArray, uint32_t placeHolderNum)
     {
         uint64_t **outPutShape = (uint64_t **)((uint8_t *)(hostArgs) + 5 * sizeof(uint64_t *)); // 5 is input and output
@@ -3245,7 +3245,7 @@ HcclResult HcclAllocComResourceNorma(HcclComm comm, void *stream, void *TilingDa
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetAicpuOpStreamAndNotifyNorma(HcclComm comm, rtStream_t *Opstream, uint8_t notifyCnt, void **aicpuNotify)
+HcclResult HcclGetAicpuOpStreamAndNotifyNorma(HcclComm comm, aclrtStream *Opstream, uint8_t notifyCnt, void **aicpuNotify)
 {
     *Opstream = &x;
     return HCCL_SUCCESS;
@@ -3398,7 +3398,7 @@ TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibSuccess)
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit("libhccl.so", true), OK);
     ASSERT_EQ(
         nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(nullptr, nullptr, nullptr, nullptr), OK);
-    rtStream_t aicpuStream = nullptr;
+    aclrtStream aicpuStream = nullptr;
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().HcclGetAicpuOpStreamAndNotify(
         nullptr, &aicpuStream, 2, nullptr), OK);
     HcclComm commHandle = nullptr;

@@ -311,13 +311,6 @@ rtError_t rtSetExceptionExtInfo(const rtArgsSizeInfo_t *const sizeInfo)
 }
 
 EXTERN_C
-rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flags)
-{
-    *stream = (void *)(new uint8_t[1]);
-    return RT_ERROR_NONE;
-}
-
-EXTERN_C
 rtError_t rtStreamDestroy(rtStream_t stream)
 {
     if (stream != nullptr) {

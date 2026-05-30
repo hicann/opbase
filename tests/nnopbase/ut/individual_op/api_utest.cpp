@@ -2841,15 +2841,15 @@ TEST_F(NnopbaseUnitTest, NnopbaseAddScalarInputWithErrorDtype)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-rtStream_t mainStream;
-rtStream_t subStream;
-rtEvent_t eventA;
-rtEvent_t eventB;
+aclrtStream mainStream;
+aclrtStream subStream;
+aclrtEvent eventA;
+aclrtEvent eventB;
 
 TEST_F(NnopbaseUnitTest, NnopbaseFirstGetStreamAndEvent)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    rtStreamCreateWithFlags(&mainStream, 0, RT_STREAM_FAST_LAUNCH | RT_STREAM_FAST_SYNC);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&mainStream, 0, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC), ACL_SUCCESS);
     std::shared_ptr<std::mutex> ptr;
     ASSERT_EQ(NnopbaseGetStreamAndEvent(mainStream, &subStream, &eventA, &eventB, ptr), OK);
     NnopbaseUnsetEnvAndClearFolder();
@@ -2858,10 +2858,10 @@ TEST_F(NnopbaseUnitTest, NnopbaseFirstGetStreamAndEvent)
 TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEventWithoutMainStream)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    rtStream_t stream = (void *)(new uint8_t[1]);
-    rtStream_t secondStream;
-    rtEvent_t event1;
-    rtEvent_t event2;
+    aclrtStream stream = (void *)(new uint8_t[1]);
+    aclrtStream secondStream;
+    aclrtEvent event1;
+    aclrtEvent event2;
     std::shared_ptr<std::mutex> ptr;
     ASSERT_EQ(NnopbaseGetStreamAndEvent(stream, &secondStream, &event1, &event2, ptr), OK);
     ASSERT_NE(stream, mainStream);
@@ -2876,9 +2876,9 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEventWithoutMainStream)
 TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEvent)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    rtStream_t secondStream;
-    rtEvent_t event1;
-    rtEvent_t event2;
+    aclrtStream secondStream;
+    aclrtEvent event1;
+    aclrtEvent event2;
     std::shared_ptr<std::mutex> ptr;
     ASSERT_EQ(NnopbaseGetStreamAndEvent(mainStream, &secondStream, &event1, &event2, ptr), OK);
     ASSERT_EQ(secondStream, subStream);
@@ -2892,19 +2892,19 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEvent)
 TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEventWithSameMainStream)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    rtStream_t stream;
-    rtStreamCreateWithFlags(&stream, 0, RT_STREAM_FAST_LAUNCH | RT_STREAM_FAST_SYNC);
-    rtStream_t secondStream;
-    rtEvent_t event1;
-    rtEvent_t event2;
+    aclrtStream stream;
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&stream, 0, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC), ACL_SUCCESS);
+    aclrtStream secondStream;
+    aclrtEvent event1;
+    aclrtEvent event2;
     std::shared_ptr<std::mutex> ptr1;
     ASSERT_EQ(NnopbaseGetStreamAndEvent(stream, &secondStream, &event1, &event2, ptr1), OK);
     ASSERT_NE(secondStream, nullptr);
     ASSERT_NE(event1, nullptr);
     ASSERT_NE(event2, nullptr);
-    rtStream_t thirdStream;
-    rtEvent_t event3;
-    rtEvent_t event4;
+    aclrtStream thirdStream;
+    aclrtEvent event3;
+    aclrtEvent event4;
     std::shared_ptr<std::mutex> ptr2;
     ASSERT_EQ(NnopbaseGetStreamAndEvent(stream, &thirdStream, &event3, &event4, ptr2), OK);
     ASSERT_EQ(secondStream, thirdStream);

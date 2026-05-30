@@ -234,7 +234,7 @@ public:
         return OK;
     }
 
-    aclnnStatus HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t *Opstream, uint8_t notifyCnt, void **aicpuNotify)
+    aclnnStatus HcclGetAicpuOpStreamAndNotify(HcclComm comm, aclrtStream *Opstream, uint8_t notifyCnt, void **aicpuNotify)
     {
         NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetAicpuOpStreamAndNotifyHandle);
 
@@ -359,7 +359,7 @@ public:
 
 private:
     using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void *, void *, void **);
-    using HcclGetAicpuOpStreamAndNotifyFunc = HcclResult (*)(HcclComm, rtStream_t *, uint8_t, void **);
+    using HcclGetAicpuOpStreamAndNotifyFunc = HcclResult (*)(HcclComm, aclrtStream *, uint8_t, void **);
     using HcomGetCommHandleByGroupFunc = HcclResult (*)(const char *, HcclComm *);
     using HcclGetCcuTaskInfoFunc = HcclResult (*)(HcclComm, void *, void *);
     using HcclGetRankIdFunc = HcclResult (*)(HcclComm, uint32_t *);

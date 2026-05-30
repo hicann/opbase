@@ -332,7 +332,7 @@ aclnnStatus NnopbaseExecutorExtendIoCaches(NnopbaseTensors *tensors)
     return OK;
 }
 
-void StreamMapClear(rtStream_t stream) {
+void StreamMapClear(aclrtStream stream) {
     if (g_nnopbaseStreamMap.find(stream) != g_nnopbaseStreamMap.end()) {
         OP_LOGI("Start clear stream. Main stream is %p, subStream %p, eventA %p, eventB %p",
             stream,
@@ -346,7 +346,6 @@ void StreamMapClear(rtStream_t stream) {
         OP_CHECK_NO_RETURN(aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventB) == ACL_SUCCESS,
             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy event %p failed.", g_nnopbaseStreamMap[stream].eventB));
         g_nnopbaseStreamMap.erase(stream);
-        OP_LOGD("After g_nnopbaseStreamMap.size() is %zu.", g_nnopbaseStreamMap.size());
     }
     return;
 }
@@ -569,7 +568,7 @@ static aclnnStatus NnopbaseExecutorPrepareMemsetArgs(NnopbaseExecutor *executor)
     return OK;
 }
 
-aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stream)
+aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, aclrtStream stream)
 {
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     auto memsetInfo = executor->args->binInfo->memsetInfo;
@@ -867,35 +866,21 @@ aclnnStatus NnopbaseExecutorAddScalarListInput(NnopbaseTensors *tensors, const a
     return OK;
 }
 
-void NnopbaseDestroyStreamCallBack(rtStream_t stream, const bool isCreate)
+void NnopbaseDestroyStreamCallBack(aclrtStream stream, const bool isCreate)
 {
     if (isCreate) {
         return;
     }
-    if (g_nnopbaseStreamMap.find(stream) != g_nnopbaseStreamMap.end()) {
-        OP_LOGI("Start callback main stream is %p, subStream %p, eventA %p, eventB %p",
-            stream,
-            g_nnopbaseStreamMap[stream].stream,
-            g_nnopbaseStreamMap[stream].eventA,
-            g_nnopbaseStreamMap[stream].eventB);
-        OP_CHECK_NO_RETURN(aclrtDestroyStream(g_nnopbaseStreamMap[stream].stream) == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy stream %p failed.", g_nnopbaseStreamMap[stream].stream));
-        OP_CHECK_NO_RETURN(aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventA) == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy event %p failed.", g_nnopbaseStreamMap[stream].eventA));
-        OP_CHECK_NO_RETURN(aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventB) == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy event %p failed.", g_nnopbaseStreamMap[stream].eventB));
-        g_nnopbaseStreamMap.erase(stream);
-        OP_LOGD("After g_nnopbaseStreamMap.size() is %zu.", g_nnopbaseStreamMap.size());
-    }
+    StreamMapClear(stream);
     return;
 }
 
 aclnnStatus NnopbaseExecutorGetStreamAndEvent(
-    const rtStream_t stream, rtStream_t *subStream, rtEvent_t *evtA, rtEvent_t *evtB,
+    const aclrtStream stream, aclrtStream *subStream, aclrtEvent *evtA, aclrtEvent *evtB,
     std::shared_ptr<std::mutex> &streamLckPtr)
 {
     const std::lock_guard<std::mutex> lock(g_nnopbaseStreamMtx);
-    rtStream_t mainStream = stream;
+    aclrtStream mainStream = stream;
     if (stream == nullptr) {
         OP_LOGI("Main stream is nullptr.");
         NNOPBASE_ASSERT_RTOK_RETVAL(aclrtCtxGetCurrentDefaultStream(&mainStream));
@@ -911,12 +896,12 @@ aclnnStatus NnopbaseExecutorGetStreamAndEvent(
         *evtB = g_nnopbaseStreamMap[mainStream].eventB;
         OP_LOGI("Found main stream is %p, subStream %p, eventA %p, eventB %p", mainStream, *subStream, *evtA, *evtB);
     } else {
-        CHECK_COND(aclrtCreateStreamWithConfig(subStream, RT_STREAM_PRIORITY_DEFAULT,
-                                           RT_STREAM_FAST_LAUNCH | RT_STREAM_FAST_SYNC) == ACL_SUCCESS,
+        CHECK_COND(aclrtCreateStreamWithConfig(subStream, 0U,
+                                           ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC) == ACL_SUCCESS,
                    ACLNN_ERR_RUNTIME_ERROR, "Create stream %p failed.", subStream);
-        CHECK_COND(rtEventCreateExWithFlag(evtA, RT_EVENT_WITH_FLAG) == ACL_SUCCESS,
+        CHECK_COND(aclrtCreateEventExWithFlag(evtA, ACL_EVENT_SYNC) == ACL_SUCCESS,
                    ACLNN_ERR_RUNTIME_ERROR, "Create event %p failed.", evtA);
-        CHECK_COND(rtEventCreateExWithFlag(evtB, RT_EVENT_WITH_FLAG) == ACL_SUCCESS,
+        CHECK_COND(aclrtCreateEventExWithFlag(evtB, ACL_EVENT_SYNC) == ACL_SUCCESS,
                    ACLNN_ERR_RUNTIME_ERROR, "Create event %p failed.", evtB);
         g_nnopbaseStreamMap[mainStream] = {*subStream, *evtA, *evtB};
     }

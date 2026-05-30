@@ -330,3 +330,26 @@ aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *statu
 {
     return AclrtStub::GetInstance()->aclmdlRICaptureGetInfo(stream, status, captureMdl);
 }
+
+EXTERN_C
+aclError aclrtCreateStreamWithConfig(aclrtStream *stream, uint32_t priority, uint32_t flag)
+{
+    *stream = (void *)(new uint8_t[1]);
+    return ACL_SUCCESS;
+}
+
+EXTERN_C
+aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
+{
+    *event = (void *)(new uint8_t[1]);
+    return ACL_SUCCESS;
+}
+
+EXTERN_C
+aclError aclrtDestroyEvent(aclrtEvent event)
+{
+    if (event != nullptr) {
+        delete[] static_cast<uint8_t *>(event);
+    }
+    return ACL_SUCCESS;
+}

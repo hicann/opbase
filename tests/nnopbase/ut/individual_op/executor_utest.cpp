@@ -838,7 +838,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopTestInfNanOverflow)
 
 class OverflowRuntimeStub : public RuntimeStub {
   public:
-    rtError_t rtsNpuGetFloatOverFlowDebugStatus(void *outputAddrPtr, uint64_t outputSize, uint32_t checkMode, rtStream_t stm)
+    rtError_t rtsNpuGetFloatOverFlowDebugStatus(void *outputAddrPtr, uint64_t outputSize, uint32_t checkMode, aclrtStream stm)
     {
         ((uint8_t *)outputAddrPtr)[0U] = 1;
         return RT_ERROR_NONE;
@@ -2089,13 +2089,13 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForStream)
     extern std::unordered_map<void *, NnopbaseStreamForCombineExecution> g_nnopbaseStreamMap;
     g_nnopbaseStreamMap.clear();
 
-    rtStream_t mainStream;
-    EXPECT_EQ(rtStreamCreateWithFlags(&mainStream, 0, 0), RT_ERROR_NONE);
+    aclrtStream mainStream;
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&mainStream, 0, 0), ACL_SUCCESS);
     EXPECT_NE(mainStream, nullptr);
     NnopbaseStreamForCombineExecution nnopbaseStream;
-    EXPECT_EQ(rtStreamCreateWithFlags(&nnopbaseStream.stream, 0, 0), RT_ERROR_NONE);
-    EXPECT_EQ(rtStreamCreateWithFlags(&nnopbaseStream.eventA, 0, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
-    EXPECT_EQ(rtStreamCreateWithFlags(&nnopbaseStream.eventB, 0, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.stream, 0, 0), ACL_SUCCESS);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.eventA, 0, ACL_EVENT_SYNC), ACL_SUCCESS);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.eventB, 0, ACL_EVENT_SYNC), ACL_SUCCESS);
     g_nnopbaseStreamMap[mainStream] = nnopbaseStream;
 
     NnopbaseDestroyStreamCallBack(mainStream, false);
@@ -2109,9 +2109,9 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForContextWithDefalut
     g_nnopbaseStreamMap.clear();
 
     NnopbaseStreamForCombineExecution nnopbaseStream;
-    EXPECT_EQ(rtStreamCreateWithFlags(&nnopbaseStream.stream, 0, 0), RT_ERROR_NONE);
-    EXPECT_EQ(rtStreamCreateWithFlags(&nnopbaseStream.eventA, 0, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
-    EXPECT_EQ(rtStreamCreateWithFlags(&nnopbaseStream.eventB, 0, RT_EVENT_DDSYNC_NS), RT_ERROR_NONE);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.stream, 0, 0), ACL_SUCCESS);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.eventA, 0, ACL_EVENT_SYNC), ACL_SUCCESS);
+    EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.eventB, 0, ACL_EVENT_SYNC), ACL_SUCCESS);
     g_nnopbaseStreamMap[nullptr] = nnopbaseStream;
 
     NnopbaseDestroyStreamCallBack(nullptr, false);

@@ -108,7 +108,7 @@ typedef struct {
     BinInfoKey binInfoKey;
     NnopbaseRTArgsExt argsExt;
     NnopbaseKernelRunContextExt contextExt;
-    rtStream_t stream;
+    aclrtStream stream;
     bool hasTiling;
     bool isWork;
     NnopbaseDfxId *tilingId;
@@ -123,8 +123,8 @@ typedef struct {
     std::vector<void *> contextAddr;
     rtAicpuArgsEx_t aicpuArgs;
     rtFusionArgsEx_t fusionArgs;
-    std::vector<rtStream_t> aicpuStream;
-    std::vector<std::pair<rtStream_t, rtStream_t>> aicpuNotify;
+    std::vector<aclrtStream> aicpuStream;
+    std::vector<std::pair<aclrtStream, aclrtStream>> aicpuNotify;
     aclOpExecutor *inUnContExe;
     aclOpExecutor *viewCopyExe;
     size_t inUncontWsSize;
@@ -179,9 +179,9 @@ typedef struct {
 } NnopbaseOpInfo;
 
 typedef struct {
-    rtStream_t stream;
-    rtEvent_t eventA;
-    rtEvent_t eventB;
+    aclrtStream stream;
+    aclrtEvent eventA;
+    aclrtEvent eventB;
 } NnopbaseStreamForCombineExecution; // CUB+AIV or AICPU+AICORE组合执行场景
 
 typedef struct {
@@ -190,16 +190,16 @@ typedef struct {
     uint32_t aivNumBlocksOffset;
 } NnopbaseBlockInfoForVectorCore;
 
-aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, rtStream_t stream);
+aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, aclrtStream stream);
 aclnnStatus NnopbaseExecutorGetStreamAndEvent(
-    const rtStream_t stream, rtStream_t *subStream, rtEvent_t *evtA, rtEvent_t *evtB,
+    const aclrtStream stream, aclrtStream *subStream, aclrtEvent *evtA, aclrtEvent *evtB,
     std::shared_ptr<std::mutex> &streamLckPtr);
 aclnnStatus NnopbaseCreateStreamResource(NnopbaseStreamForCombineExecution *nnopbaseStream);
-void NnopbaseDestroyStreamCallBack(rtStream_t stream, const bool isCreate);
+void NnopbaseDestroyStreamCallBack(aclrtStream stream, const bool isCreate);
 
 aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInfo opInfo);
 void NnopbaseExecutorDeInit(NnopbaseExecutor *executor);
-void StreamMapClear(rtStream_t stream);
+void StreamMapClear(aclrtStream stream);
 aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor, bool usingStride = false);
 void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor *executor);
@@ -214,7 +214,7 @@ aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor *executor);
 // prepare args for launch
 void **NnopbaseExecutorPrepareNullTensors(
     const NnopbaseExecutor *const executor, void **addr, size_t *tensorIndex);
-aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStream_t const stream);
+aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, aclrtStream const stream);
 void **NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor *executor, void **addr,
                                               NnopbaseExecutorArgsAddr *argsAddr);
 void **NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor *executor, void **addr,
@@ -248,7 +248,7 @@ aclnnStatus NnopbaseExecutorExtendIoCaches(NnopbaseTensors *tensors);
 void NnopbaseExecutorFixCache(NnopbaseExecutor *executor);
 
 // execute
-aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor *executor, rtStream_t stream, void *workspace,
+aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor *executor, aclrtStream stream, void *workspace,
                                              const uint64_t workspaceLen);
 aclnnStatus NnopbaseExecutorRunForWorkspace(NnopbaseExecutor *executor, uint64_t *workspaceLen);
 void NnopbaseExecutorClear(NnopbaseExecutor *executor);
@@ -296,7 +296,7 @@ void PrintNnopbaseInitTimeStampInfo();
 
 // for mesmet
 aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, rtStream_t stream);
+aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, aclrtStream stream);
 
 aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(
     NnopbaseExecutor *executor, CoreType &coreType, NnopbaseTaskRation &taskRation);

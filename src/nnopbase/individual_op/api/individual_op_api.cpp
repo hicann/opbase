@@ -868,8 +868,8 @@ const NnopbaseChar *NnopbaseFindStaticKernel(const aclTensor* tensors[],
     }
 }
 
-aclnnStatus NnopbaseGetStreamAndEvent(const rtStream_t stream, rtStream_t *subStream,
-    rtEvent_t *evtA, rtEvent_t *evtB, std::shared_ptr<std::mutex> &streamLckPtr)
+aclnnStatus NnopbaseGetStreamAndEvent(const aclrtStream stream, aclrtStream *subStream,
+    aclrtEvent *evtA, aclrtEvent *evtB, std::shared_ptr<std::mutex> &streamLckPtr)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(subStream);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(evtA);

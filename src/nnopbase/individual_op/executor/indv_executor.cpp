@@ -485,7 +485,7 @@ static aclnnStatus NnopbaseExecutorUpdateAddr(
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, rtStream_t const stream)
+aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, aclrtStream const stream)
 {
     if (NnopbaseSkipKernelLaunch(executor)) {
         return OK;
@@ -1082,7 +1082,7 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
     return OK;
 }
 
-static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtStream_t stream,
+static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, aclrtStream stream,
                                                 const uint32_t numBlocks, const bool is195x = false)
 {
     aclrtFuncHandle funcHandle;
@@ -1117,7 +1117,7 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor *executor, rtSt
     return OK;
 }
 
-static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *executor, rtStream_t stream,
+static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *executor, aclrtStream stream,
                                                           const uint32_t numBlocks, const uint8_t schemMode, const uint32_t numBlocksOffset)
 {
     aclrtFuncHandle funcHandle;
@@ -1167,7 +1167,7 @@ static aclnnStatus NnopbaseExecutorVectorCoreLaunchKernel(NnopbaseExecutor *exec
 }
 
 static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
-    NnopbaseExecutor *executor, rtStream_t stream, const NnopbaseBlockInfoForVectorCore &blockInfo)
+    NnopbaseExecutor *executor, aclrtStream stream, const NnopbaseBlockInfoForVectorCore &blockInfo)
 {
     OP_LOGI("AicNumBlocks is %u, aivNumBlocks is %u, aivNumBlocksOffset is %u.",
             blockInfo.aicNumBlocks,
@@ -1203,7 +1203,7 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
 }
 
 static aclnnStatus NnopbaseExecutorRunKernelForVectorCore(
-    NnopbaseExecutor *executor, rtStream_t stream, uint32_t numBlocks, const CoreType coreType)
+    NnopbaseExecutor *executor, aclrtStream stream, uint32_t numBlocks, const CoreType coreType)
 {
     NnopbaseBlockInfoForVectorCore blockInfo = {};
     uint32_t deviceId = 0;
@@ -1259,7 +1259,7 @@ static inline void NnopbaseExecutorSetWorkspaces(NnopbaseExecutor *executor, voi
     }
 }
 
-aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, rtStream_t stream)
+aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor *executor, aclrtStream stream)
 {
     OP_LOGI("Launch kernel.");
     if (NnopbaseSkipKernelLaunch(executor)) {
@@ -1335,7 +1335,7 @@ aclnnStatus NnopbaseExecutorRefreshOutputShape(NnopbaseExecutor *executor)
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor *executor, rtStream_t stream, void *workspace,
+aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor *executor, aclrtStream stream, void *workspace,
                                              const uint64_t workspaceLen)
 {
     std::unique_ptr<NnopbaseGuard> guard = nullptr;
