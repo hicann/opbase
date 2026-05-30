@@ -15,6 +15,10 @@ if(NOT CANN_3RD_LIB_PATH)
     set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party)
 endif()
 
+if (NOT CANN_3RD_PKG_PATH)
+    set(CANN_3RD_PKG_PATH ${PROJECT_SOURCE_DIR}/third_party/pkg)
+endif ()
+
 file(GLOB_RECURSE OPS_BASE_SRC CACHE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/op_host/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/op_common/op_host/util/*.cpp

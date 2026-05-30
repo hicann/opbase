@@ -196,6 +196,7 @@ build_ops_base() {
     CMAKE_ARGS="\
     -DENABLE_UT=${ENABLE_UT} \
     -DENABLE_ST=${ENABLE_ST} \
+    -DBUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG=ON \
     -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
     -DDCMAKE_WGET_FLAGS='--no-check-certificate' \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
@@ -228,6 +229,7 @@ build_ops_base_llt() {
     CMAKE_ARGS="\
     -DENABLE_UT=${ENABLE_UT} \
     -DENABLE_ST=${ENABLE_ST} \
+    -DBUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG=ON \
     -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
     -DDCMAKE_WGET_FLAGS='--no-check-certificate' \
     -DENABLE_DEBUG=${ENABLE_DEBUG} \

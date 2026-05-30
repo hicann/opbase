@@ -22,7 +22,7 @@ else ()
 endif ()
 # 打印路径
 message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_BINARY_DIR = ${CMAKE_BINARY_DIR}")
 
 set(script_prefix ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/scripts)
@@ -72,7 +72,7 @@ set(LATEST_MANGER_FILES
 )
 set(CONF_FILES
     ${CANN_CMAKE_DIR}/scripts/package/cfg/path.cfg
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nnopbase/common/op_info_record/dump_tool_config.ini
+    ${CMAKE_SOURCE_DIR}/src/nnopbase/common/op_info_record/dump_tool_config.ini
 )
 install(FILES ${CMAKE_BINARY_DIR}/version.opbase.info
     DESTINATION share/info/opbase
@@ -88,7 +88,7 @@ install(FILES ${PACKAGE_FILES}
     COMPONENT opbase
 )
 
-set(pkg_inc_src ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc)
+set(pkg_inc_src ${CMAKE_SOURCE_DIR}/pkg_inc)
 install(DIRECTORY ${pkg_inc_src}/
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc
     COMPONENT opbase
@@ -97,7 +97,7 @@ install(DIRECTORY ${pkg_inc_src}/
     GROUP_READ GROUP_EXECUTE
     PATTERN "aicpu_common" EXCLUDE
 )
-set(aicpu_common ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common)
+set(aicpu_common ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common)
 install(DIRECTORY ${aicpu_common}/
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu_common
     COMPONENT opbase
@@ -135,12 +135,12 @@ install(TARGETS aicpu_cust_log
 )
 
 set(aicpu_headers_src 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_attr_value.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor_shape.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_context.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_types.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cust_op/cust_cpu_utils.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_attr_value.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor_shape.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_context.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_types.h
+    ${CMAKE_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cust_op/cust_cpu_utils.h
     )
 install(FILES ${aicpu_headers_src}
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aicpu
@@ -152,7 +152,7 @@ get_filename_component(COMPILER_PATH $ENV{ASCEND_HOME_PATH}/compiler REALPATH)
 get_filename_component(VER_PATH "${COMPILER_PATH}" DIRECTORY)
 message(STATUS "VERSION PATH: ${VER_PATH}")
 
-set(aclnn_source ${CMAKE_CURRENT_SOURCE_DIR}/include/nnopbase/aclnn)
+set(aclnn_source ${CMAKE_SOURCE_DIR}/include/nnopbase/aclnn)
 install(DIRECTORY ${aclnn_source}/
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnn
     COMPONENT opbase
@@ -160,7 +160,7 @@ install(DIRECTORY ${aclnn_source}/
     OWNER_READ OWNER_WRITE
     GROUP_READ GROUP_EXECUTE
 )
-set(opdev_source ${CMAKE_CURRENT_SOURCE_DIR}/include/nnopbase/opdev)
+set(opdev_source ${CMAKE_SOURCE_DIR}/include/nnopbase/opdev)
 install(DIRECTORY ${opdev_source}/
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnn/opdev
     COMPONENT opbase
@@ -169,7 +169,7 @@ install(DIRECTORY ${opdev_source}/
     GROUP_READ GROUP_EXECUTE
 )
 
-set(aclnnop_source ${CMAKE_CURRENT_SOURCE_DIR}/include/aclnnop)
+set(aclnnop_source ${CMAKE_SOURCE_DIR}/include/aclnnop)
 install(DIRECTORY ${aclnnop_source}/
         DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aclnnop
         COMPONENT opbase
@@ -185,7 +185,7 @@ install(DIRECTORY ${aclnnop_source}/
         GROUP_READ GROUP_EXECUTE
 )
 
-set(op_common_source ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common)
+set(op_common_source ${CMAKE_SOURCE_DIR}/include/op_common)
 install(DIRECTORY ${op_common_source}/
         DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/op_common
         COMPONENT opbase
