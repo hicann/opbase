@@ -294,8 +294,6 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
 
 TEST_F(KernelLaunchNewRtsUT, KernelLaunchUT_Outshape2)
 {
-    setenv("MEMCPY_ENV", "1", 1);
-    AxpyOpTypeId();
     op::Shape selfShape{33, 15, 64};
     op::Shape outShape{33, 15, 64};
     op::Shape idxShape{33, 15, 64};
@@ -332,36 +330,17 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUT_Outshape2)
     std::string attrStr;
     op::internal::ReportAttrInfo(*ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG), attrStr, attrInfos);
 
-    constexpr size_t kOutshapeElemCount = 36;
-    auto outshapeBuf2 = std::make_unique<int64_t[]>(kOutshapeElemCount);
-    memset(outshapeBuf2.get(), 0, sizeof(int64_t) * kOutshapeElemCount);
-    outshapeBuf2[0] = 3;
-    outshapeBuf2[1] = 33;
-    outshapeBuf2[2] = 15;
-    outshapeBuf2[3] = 64;
-    auto outshape2 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_INT64, op::Format::FORMAT_ND, outshapeBuf2.get());
+    auto outshape2 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_INT64, op::Format::FORMAT_ND, nullptr);
     auto outshape_arg2 = OP_OUTSHAPE(outshape2.get(), 0);
     auto ctx2 = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg2, attr_arg);
     op::internal::RefreshOutputShape(0, *ctx2->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG),
                                      *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
-    auto outshapeBuf3 = std::make_unique<float[]>(kOutshapeElemCount);
-    memset(outshapeBuf3.get(), 0, sizeof(float) * kOutshapeElemCount);
-    outshapeBuf3[0] = 3.0f;
-    outshapeBuf3[1] = 33.0f;
-    outshapeBuf3[2] = 15.0f;
-    outshapeBuf3[3] = 64.0f;
-    auto outshape3 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, outshapeBuf3.get());
+    auto outshape3 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto outshape_arg3 = OP_OUTSHAPE(outshape3.get(), 0);
     auto ctx3 = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg3, attr_arg);
     op::internal::RefreshOutputShape(0, *ctx3->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG),
                                      *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
-    auto outshapeBuf4 = std::make_unique<float[]>(kOutshapeElemCount);
-    memset(outshapeBuf4.get(), 0, sizeof(float) * kOutshapeElemCount);
-    outshapeBuf4[0] = 3.0f;
-    outshapeBuf4[1] = 33.0f;
-    outshapeBuf4[2] = 15.0f;
-    outshapeBuf4[3] = 64.0f;
-    auto outshape4 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, outshapeBuf4.get());
+    auto outshape4 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto outshape_arg4 = OP_OUTSHAPE(outshape4.get(), 0);
     auto ctx4 = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg4, attr_arg);
     op::internal::RefreshOutputShape(0, *ctx4->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG),
@@ -375,7 +354,6 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUT_Outshape2)
     op::DestroyOpArgContext(ctx3);
     op::DestroyOpArgContext(ctx4);
     op::DestroyOpArgContext(ctx5);
-    unsetenv("MEMCPY_ENV");
 }
 
 TEST_F(KernelLaunchNewRtsUT, GetAclTensorCountTerst1)
