@@ -560,7 +560,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput1)
     uint64_t *ptr = (uint64_t *)((NnopbaseUChar *)((NnopbaseTilingData *)(((NnopbaseExecutor *)executor)
                                                                               ->args->tilingInfo.tilingData))
                                      ->GetData() + alignTilingDataSize);
-    size_t expIOSize[] = {32, 32, 32, 32};
+    size_t expIOSize[] = {4, 4, 4, 4};
     for (size_t i = 0; i < 4; i++) {
         ASSERT_EQ(ptr[i], expIOSize[i]);
     }

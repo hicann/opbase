@@ -50,8 +50,7 @@ static void NnopbaseExecutorPrepareIOSize(
             if (isInput || executor->args->outputs.outPutShapeMap.find(i) == executor->args->outputs.outPutShapeMap.end()) {
                 shapeInfoPtr = NnopbasePrepareDimInfo(shapeInfoPtr, shape);
             }
-            size_t alignTensorSize = op::internal::AlignSize(extTensors[j].rt2Tensor.GetSize(), NNOPBASE_BLOCK_SIZE);
-            addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, alignTensorSize);
+            addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, extTensors[j].rt2Tensor.GetSize());
             j += 1U;
         } else {
             const size_t startIndex = paramInstance[i].startIndex;
@@ -90,21 +89,18 @@ static void NnopbaseExecutorSetDfxInfo(const NnopbaseExecutor *const executor)
     NnopbaseExecutorPrepareIOSize(executor, addr, shapeInfoPtr, false);
 
     if (executor->args->outputs.outPutShapeSize != 0U) {
-        addr = nnopbase::NnopbaseAppendByte<uint64_t>(
-            addr, op::internal::AlignSize(executor->args->outputs.outPutShapeSize, NNOPBASE_BLOCK_SIZE));
+        addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, executor->args->outputs.outPutShapeSize);
     }
 
     const uint64_t workSpaceSize = workspacesSizes->GetSize() == 0UL ? 0UL : workspacesSizes->GetData()[0];
     if ((executor->args->binInfo->dfxInfo.isPrintEnable) || (executor->args->binInfo->dfxInfo.isAssertEnable) ||
         (executor->args->binInfo->dfxInfo.isTimeStampEnable)) {
-        addr = nnopbase::NnopbaseAppendByte<uint64_t>(
-            addr, op::internal::AlignSize(workSpaceSize + executor->args->binInfo->debugBufSize, NNOPBASE_BLOCK_SIZE));
+        addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, workSpaceSize + executor->args->binInfo->debugBufSize);
     } else {
-        addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, op::internal::AlignSize(workSpaceSize, NNOPBASE_BLOCK_SIZE));
+        addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, workSpaceSize);
     }
     for (size_t i = 1U; i < workspacesSizes->GetSize(); i++) {
-        addr = nnopbase::NnopbaseAppendByte<uint64_t>(
-            addr, op::internal::AlignSize(workspacesSizes->GetData()[i], NNOPBASE_BLOCK_SIZE));
+        addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, workspacesSizes->GetData()[i]);
     }
 }
 
