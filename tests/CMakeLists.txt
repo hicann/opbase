@@ -26,12 +26,8 @@ if(NOT CANN_3RD_LIB_PATH)
     set(CANN_3RD_LIB_PATH ${OPS_BASE_PATH}/third_party)
 endif()
 
-if (NOT CANN_3RD_PKG_PATH)
-    set(CANN_3RD_PKG_PATH ${OPS_BASE_PATH}/third_party/pkg)
-endif ()
 set(FORCE_REBUILD_CANN_3RD TRUE)
 message(STATUS "CANN_3RD_LIB_PATH: ${CANN_3RD_LIB_PATH}")
-message(STATUS "CANN_3RD_PKG_PATH: ${CANN_3RD_PKG_PATH}")
 
 # path of op common headers
 if(NOT OPS_BASE_INCLUDE)

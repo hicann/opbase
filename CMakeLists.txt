@@ -2,15 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 include(cmake/fetch_cann_cmake.cmake)
 project(opbase VERSION 1.0.0)
 init_cann_project()
-include(CMakePrintHelpers)
-
-set(CMAKE_CXX_STANDARD 17)
-
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-  set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     message(STATUS "Build opbase with dependency cann pkgs installed")
