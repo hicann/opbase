@@ -1,4 +1,4 @@
-# 公共接口列表
+﻿# 公共接口列表
 
 本章是调用CANN API过程中依赖的公共Meta接口，如创建/释放aclTensor、aclScalar、aclIntArray等。
 
@@ -42,11 +42,11 @@
 | [aclSetOutputTensorAddr](aclSetOutputTensorAddr.md) | 开启aclOpExecutor可复用后，若输出Device内存地址变更，需要刷新输出aclTensor中记录的Device内存地址。 | aclnn/acl_meta.h |
 | [aclSetRawTensorAddr](aclSetRawTensorAddr.md) | 刷新aclTensor中原始记录的Device内存地址。 | aclnn/acl_meta.h |
 | [aclSetTensorAddr](aclSetTensorAddr.md) | 开启aclOpExecutor可复用后，若输入或输出Device内存地址变更，需要刷新对应aclTensor中记录的Device内存地址。 | aclnn/acl_meta.h |
-| AclSetInputTensorAddr | [预留接口](预留接口.md)，开发者无需关注。 | aclnn/acl_meta.h |
-| AclSetOutputTensorAddr | [预留接口](预留接口.md)，开发者无需关注。 | aclnn/acl_meta.h |
-| AclSetDynamicInputTensorAddr | [预留接口](预留接口.md)，开发者无需关注。 | aclnn/acl_meta.h |
-| AclSetDynamicOutputTensorAddr | [预留接口](预留接口.md)，开发者无需关注。 | aclnn/acl_meta.h |
-| AclSetTensorAddr | [预留接口](预留接口.md)，开发者无需关注。 | aclnn/acl_meta.h |
-| AclSetDynamicTensorAddr | [预留接口](预留接口.md)，开发者无需关注。 | aclnn/acl_meta.h |
+| AclSetInputTensorAddr | [预留接口](reserved_interface.md)，开发者无需关注。 | aclnn/acl_meta.h |
+| AclSetOutputTensorAddr | [预留接口](reserved_interface.md)，开发者无需关注。 | aclnn/acl_meta.h |
+| AclSetDynamicInputTensorAddr | [预留接口](reserved_interface.md)，开发者无需关注。 | aclnn/acl_meta.h |
+| AclSetDynamicOutputTensorAddr | [预留接口](reserved_interface.md)，开发者无需关注。 | aclnn/acl_meta.h |
+| AclSetTensorAddr | [预留接口](reserved_interface.md)，开发者无需关注。 | aclnn/acl_meta.h |
+| AclSetDynamicTensorAddr | [预留接口](reserved_interface.md)，开发者无需关注。 | aclnn/acl_meta.h |
 | [aclnnInit](aclnnInit.md) | aclnn API的初始化函数。 | aclnn/aclnn_base.h |
 | [aclnnFinalize](aclnnFinalize.md) | aclnn API的去初始化函数。 | aclnn/aclnn_base.h |

@@ -1,6 +1,6 @@
-# 公共接口
+﻿# 公共接口
 
-- **[公共接口列表](公共接口列表.md)**  
+- **[公共接口列表](public_interface_list.md)**  
 
 - **[aclCreateBoolArray](aclCreateBoolArray.md)**  
 
@@ -78,6 +78,6 @@
 
 - **[aclnnFinalize](aclnnFinalize.md)**  
 
-- **[预留接口](预留接口.md)**  
+- **[预留接口](reserved_interface.md)**  
 
-- **[公共接口返回码](公共接口返回码.md)**  
+- **[公共接口返回码](public_interface_return_code.md)**  

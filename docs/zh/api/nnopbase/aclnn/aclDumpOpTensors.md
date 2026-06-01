@@ -1,4 +1,4 @@
-# aclDumpOpTensors
+﻿# aclDumpOpTensors
 
 ## 功能说明
 
@@ -23,7 +23,7 @@ aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, aclTensor *
 
 ## 返回值说明
 
-返回0表示成功，返回其他值表示失败，返回码列表参见[公共接口返回码](公共接口返回码.md)。
+返回0表示成功，返回其他值表示失败，返回码列表参见[公共接口返回码](public_interface_return_code.md)。
 
 ## 约束说明
 

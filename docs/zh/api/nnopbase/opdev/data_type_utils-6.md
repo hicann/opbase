@@ -1,4 +1,4 @@
-# data\_type\_utils
+﻿# data\_type\_utils
 
 - **[IsComplexType](IsComplexType.md)**  
 
@@ -6,7 +6,7 @@
 
 - **[IsIntegralType](IsIntegralType.md)**  
 
-- **[IsIntegralType（含bool）](IsIntegralType（含bool）.md)**  
+- **[IsIntegralType（含bool）](IsIntegralType_bool.md)**  
 
 - **[CanCast](CanCast.md)**  
 

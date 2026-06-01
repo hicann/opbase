@@ -1,4 +1,4 @@
-# aclnn开发接口列表
+﻿# aclnn开发接口列表
 
 无论是CANN内置算子或自定义算子，均可通过aclnn API直调算子，无需提供IR（Intermediate Representation）定义。
 
@@ -25,7 +25,7 @@
 | [op_config](op_config.md) | 提供了算子运行时相关的配置信息，如确定性计算开关等。 | aclnn/opdev/op_config.h |
 | [op_def](op_def.md) | 定义基础枚举及常量，例如精度模式OpImplMode等。 | aclnn/opdev/op_def.h |
 | [op_dfx](op_dfx.md) | 详细介绍了DfxGuard类，用于接口打印及上报profiling。 | aclnn/opdev/op_dfx.h |
-| [aclnn返回码](aclnn返回码.md) | 定义了aclnn错误码。 | aclnn/opdev/op_errno.h |
+| [aclnn返回码](aclnn_return_code.md) | 定义了aclnn错误码。 | aclnn/opdev/op_errno.h |
 | [op_executor](op_executor.md) | 详细介绍了aclOpExecutor类。 | aclnn/opdev/op_executor.h |
 | [op_log](op_log.md) | 定义aclnn中日志打印宏。 | aclnn/opdev/op_log.h |
 | [platform](platform.md) | 详细介绍了PlatformInfo类，用于存放SOC平台信息。 | aclnn/opdev/platform.h |

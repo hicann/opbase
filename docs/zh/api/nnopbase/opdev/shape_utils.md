@@ -1,4 +1,4 @@
-# shape\_utils
+﻿# shape\_utils
 
 - **[ToShape](ToShape.md)**  
 
@@ -10,4 +10,4 @@
 
 - **[BroadcastInferShape](BroadcastInferShape.md)**  
 
-- **[预留接口](预留接口_shape_utils.md)**  
+- **[预留接口](reserved_interface_shape_utils.md)**  

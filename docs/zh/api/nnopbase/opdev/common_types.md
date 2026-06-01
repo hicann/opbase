@@ -1,4 +1,4 @@
-# common\_types
+﻿# common\_types
 
 - **[GetStorageShape](GetStorageShape.md)**  
 
@@ -50,4 +50,4 @@
 
 - **[CheckOverflows](CheckOverflows.md)**  
 
-- **[预留接口](预留接口_common_types.md)**  
+- **[预留接口](reserved_interface_common_types.md)**  

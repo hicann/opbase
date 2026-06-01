@@ -1,7 +1,7 @@
-# opdev API
+﻿# opdev API
 
-- [aclnn开发接口列表](aclnn开发接口列表.md)
-- [常用宏和类](常用宏和类.md)
+- [aclnn开发接口列表](aclnn_development_interface_list.md)
+- [常用宏和类](common_macros_and_classes.md)
   - [ADD\_TO\_LAUNCHER\_LIST\_AICORE](ADD_TO_LAUNCHER_LIST_AICORE.md)
   - [ADD\_TO\_LAUNCHER\_LIST\_AICPU](ADD_TO_LAUNCHER_LIST_AICPU.md)
   - [CREATE\_EXECUTOR](CREATE_EXECUTOR.md)
@@ -51,7 +51,7 @@
   - [SetFp16Data](SetFp16Data.md)
   - [SetBf16Data](SetBf16Data.md)
   - [CheckOverflows](CheckOverflows.md)
-  - [预留接口](预留接口_common_types.md)
+  - [预留接口](reserved_interface_common_types.md)
 
 - [data\_type\_utils](data_type_utils.md)
   - [IsBasicType](IsBasicType.md)
@@ -60,14 +60,14 @@
   - [TypeSize](TypeSize.md)
   - [ToOpDataType](ToOpDataType.md)
   - [ToAclDataType](ToAclDataType.md)
-  - [预留接口](预留接口_data_type_utils.md)
+  - [预留接口](reserved_interface_data_type_utils.md)
 
 - [format\_utils](format_utils.md)
   - [IsPrivateFormat](IsPrivateFormat.md)
   - [GetPrimaryFormat](GetPrimaryFormat.md)
   - [ToOpFormat](ToOpFormat.md)
   - [ToAclFormat](ToAclFormat.md)
-  - [预留接口](预留接口_format_utils.md)
+  - [预留接口](reserved_interface_format_utils.md)
 
 - [fp16\_t](fp16_t.md)
 - [framework\_op](framework_op.md)
@@ -96,7 +96,7 @@
   - [ReleaseTo](ReleaseTo.md)
   - [Getworkspacesize](Getworkspacesize.md)
   - [AbandonCache](AbandonCache.md)
-  - [预留接口](预留接口_op_executor.md)
+  - [预留接口](reserved_interface_op_executor.md)
 
 - [op\_log](op_log.md)
 - [platform](platform.md)
@@ -104,7 +104,7 @@
   - [GetSocVersion](GetSocVersion.md)
   - [GetSocLongVersion](GetSocLongVersion.md)
   - [GetBlockSize](GetBlockSize.md)
-  - [预留接口](预留接口_platform.md)
+  - [预留接口](reserved_interface_platform.md)
 
 - [pool\_allocator](pool_allocator.md)
 - [shape\_utils](shape_utils.md)
@@ -113,28 +113,28 @@
   - [ToContiguousStrides](ToContiguousStrides.md)
   - [CheckBroadcastShape](CheckBroadcastShape.md)
   - [BroadcastInferShape](BroadcastInferShape.md)
-  - [预留接口](预留接口_shape_utils.md)
+  - [预留接口](reserved_interface_shape_utils.md)
 
 - [small\_vector](small_vector.md)
 - [tensor\_view\_utils](tensor_view_utils.md)
   - [IsContiguous](IsContiguous.md)
-  - [预留接口](预留接口_tensor_view_utils.md)
+  - [预留接口](reserved_interface_tensor_view_utils.md)
 
-- [op\_common相关接口](op_common相关接口.md)
+- [op\_common相关接口](op_common_related_interface.md)
   - [data\_type\_utils](data_type_utils-6.md)
     - [IsComplexType](IsComplexType.md)
     - [IsFloatingType](IsFloatingType.md)
     - [IsIntegralType](IsIntegralType.md)
-    - [IsIntegralType（含bool）](IsIntegralType（含bool）.md)
+    - [IsIntegralType（含bool）](IsIntegralType_bool.md)
     - [CanCast](CanCast.md)
     - [PromoteType](PromoteType.md)
 
-- [aicpu相关接口](aicpu相关接口.md)
-  - [AicpuTask类](AicpuTask类.md)
-  - [AicpuTaskSpace类](AicpuTaskSpace类.md)
+- [aicpu相关接口](aicpu_related_interface.md)
+  - [AicpuTask类](AicpuTaskClass.md)
+  - [AicpuTaskSpace类](AicpuTaskSpaceClass.md)
   - [aicpu\_args\_handler](aicpu_args_handler.md)
   - [aicpu\_ext\_info\_handle](aicpu_ext_info_handle.md)
   - [aicpu\_task](aicpu_task.md)
   - [aicpu\_uitls](aicpu_utils.md)
 
-- [aclnn返回码](aclnn返回码.md)
+- [aclnn返回码](aclnn_return_code.md)

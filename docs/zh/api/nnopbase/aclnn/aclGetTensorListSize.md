@@ -1,4 +1,4 @@
-# aclGetTensorListSize
+﻿# aclGetTensorListSize
 
 ## 功能说明
 
@@ -19,7 +19,7 @@ aclnnStatus aclGetTensorListSize(const aclTensorList *tensorList, uint64_t *size
 
 ## 返回值说明
 
-返回0表示成功，返回其他值表示失败，返回码列表参见[公共接口返回码](公共接口返回码.md)。
+返回0表示成功，返回其他值表示失败，返回码列表参见[公共接口返回码](public_interface_return_code.md)。
 
 可能失败的原因：
 

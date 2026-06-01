@@ -1,4 +1,4 @@
-# platform
+﻿# platform
 
 - **[GetCurrentPlatformInfo](GetCurrentPlatformInfo.md)**  
 
@@ -8,4 +8,4 @@
 
 - **[GetBlockSize](GetBlockSize.md)**  
 
-- **[预留接口](预留接口_platform.md)**  
+- **[预留接口](reserved_interface_platform.md)**  

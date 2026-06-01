@@ -1,6 +1,6 @@
-# 框架能力接口
+﻿# 框架能力接口
 
-- **[常用宏和类](常用宏和类.md)**  
+- **[常用宏和类](common_macros_and_classes.md)**  
 
 - **[bfloat16](bfloat16.md)**  
 
@@ -42,6 +42,6 @@
 
 - **[tensor\_view\_utils](tensor_view_utils.md)**  
 
-- **[op\_common相关接口](op_common相关接口.md)**  
+- **[op\_common相关接口](op_common_related_interface.md)**  
 
-- **[aicpu相关接口](aicpu相关接口.md)**  
+- **[aicpu相关接口](aicpu_related_interface.md)**  
