@@ -45,12 +45,14 @@ aclnnStatus NnopbaseCopyTensor(const GertTensor &src, NnopbaseTensor &dst)
 {
     dst.isNull = false;
     auto &rt2Tensor = dst.rt2Tensor;
-    rt2Tensor.GetShape() = src.GetShape(); // 包含 Origin & Storage Shape
+    rt2Tensor.GetShape() = src.GetShape();
     rt2Tensor.SetDataType(src.GetDataType());
-    rt2Tensor.MutableFormat() = src.GetFormat(); // 包含 Origin & Storage Format
+    rt2Tensor.MutableFormat() = src.GetFormat();
     rt2Tensor.MutableTensorData().SetPlacement(src.GetPlacement());
     rt2Tensor.SetSize(src.GetSize());
     NNOPBASE_ASSERT_OK_RETVAL(rt2Tensor.MutableTensorData().SetAddr(src.GetTensorData().GetAddr(), nullptr));
+    rt2Tensor.MutableStride() = src.GetStride();
+    rt2Tensor.SetOffset(src.GetOffset());
     return OK;
 }
 
@@ -91,6 +93,8 @@ aclnnStatus NnopbaseNonFiniteCheckAddOutputs(NnopbaseExecutor *executor, void *c
     rt2Tensor.SetStorageFormat(ge::FORMAT_ND);
     rt2Tensor.MutableTensorData().SetPlacement(gert::kOnDeviceHbm);
     rt2Tensor.SetSize(sizeof(float));
+    rt2Tensor.MutableStride().SetDimNum(0U);
+    rt2Tensor.SetOffset(0);
     NNOPBASE_ASSERT_OK_RETVAL(rt2Tensor.MutableTensorData().SetAddr(outputAddr, nullptr));
     return OK;
 }

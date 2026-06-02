@@ -175,7 +175,7 @@ static void NnopbaseGetInitValue(nlohmann::json &opJson, NnopbaseBinInfo *binInf
 {
     binInfo->initValues.clear();
     try {
-        for (size_t i = 0; i < opJson["parameters"].size(); i++) {
+        for (size_t i = 0U; i < opJson["parameters"].size(); i++) {
             const auto &param = opJson["parameters"][i];
             if (!param.is_null()) {
                 if (!param.contains("dtype")) {

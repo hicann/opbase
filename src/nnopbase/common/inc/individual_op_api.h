@@ -157,6 +157,11 @@ VISIBILITY_EXPORT aclnnStatus NnopbaseAddParamName(
 
 VISIBILITY_EXPORT void NnopbaseSetMatchArgsFlag(void *executor);
 VISIBILITY_EXPORT bool NnopbaseMatchArgs(void *executor, uint64_t *workspaceLen);
+VISIBILITY_EXPORT const char *NnopbaseGetSocName();
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddSocNameList(void *executor, OpSupportList *list,
+                                                     const char *const *socNameList,
+                                                     size_t socNameListLen);
+VISIBILITY_EXPORT bool NnopbaseSupportTensorV2();                                               
 
 // for mc2 op
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetMc2(void *const executor);
@@ -164,6 +169,8 @@ VISIBILITY_EXPORT aclnnStatus NnopbaseSetHcomGroup(void *const executor, char *c
 VISIBILITY_EXPORT void NnopbaseSetHcclServerType(void *executor, NnopbaseHcclServerType sType);
 VISIBILITY_EXPORT void NnopbaseSetHcclServerTypeList(void *executor, NnopbaseHcclServerType *hcclServerTypeList, 
                                                      const uint32_t *socSupportList, size_t socSupportListLen);
+VISIBILITY_EXPORT aclnnStatus NnopbaseSetHcclServerTypeBySocName(void *executor, NnopbaseHcclServerType *hcclServerTypeList,
+                                                           const char *const *socNameList, size_t socNameListLen);
 
 VISIBILITY_EXPORT void NnopbaseSetZeroEleOutputLaunchFlag(void *executor);                                          
 VISIBILITY_EXPORT void *NnopbaseGetApiFunc(const char *funcName);
@@ -177,7 +184,7 @@ VISIBILITY_EXPORT aclnnStatus NnopbaseSetFormatMatchMode(void *executor, const u
 // for fallback
 VISIBILITY_EXPORT void *NnopbaseGetOpApiFunc(const char *funcName);
 VISIBILITY_EXPORT aclTensor *NnopbaseConvertTensor(const gert::Tensor* tensor);
-VISIBILITY_EXPORT aclTensorList *NnopbaseConvertTensorList(std::vector<const gert::Tensor*> &tenserList);
+VISIBILITY_EXPORT aclTensorList *NnopbaseConvertTensorList(std::vector<const gert::Tensor*> &tensorList);
 VISIBILITY_EXPORT aclBoolArray *NnopbaseCovertBoolArray(const gert::Tensor* tensor);
 VISIBILITY_EXPORT aclIntArray *NnopbaseCovertIntArray(const gert::Tensor* tensor);
 VISIBILITY_EXPORT aclFloatArray *NnopbaseCovertFloatArray(const gert::Tensor* tensor);

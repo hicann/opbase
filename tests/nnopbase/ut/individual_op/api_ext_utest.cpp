@@ -173,7 +173,7 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310PMixAic)
         free(workspace);
     }
 
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -224,7 +224,7 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310PMixAiv)
     if (workspaceLen > 0U) {
         free(workspace);
     }
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -281,7 +281,7 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310PMixAivBlockDim)
     if (workspaceLen > 0U) {
         free(workspace);
     }
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -338,7 +338,7 @@ TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310PMixAivBlockDim2)
     if (workspaceLen > 0U) {
         free(workspace);
     }
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -390,7 +390,7 @@ TEST_F(NnopbaseExtUnitTest, TestStaticLaunchUtForAscend310PMixAic)
     if (workspaceLen > 0U) {
         free(workspace);
     }
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -442,7 +442,7 @@ TEST_F(NnopbaseExtUnitTest, TestStaticLaunchUtForAscend310PMixAiv)
     if (workspaceLen > 0U) {
         free(workspace);
     }
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -500,7 +500,7 @@ TEST_F(NnopbaseExtUnitTest, TestStaticLaunchUtForAscend310PBlockDim)
     if (workspaceLen > 0U) {
         free(workspace);
     }
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -579,7 +579,7 @@ void RunCommonOp(std::string opName, CoreType coreType, std::string socVersion, 
     op::internal::opProfilingSwitch.additionInfoFlag = false;
 }
 
-class UtNnopbaseExecptionDump : public Adx::DumpStub {
+class UtNnopbaseExceptionDump : public Adx::DumpStub {
   public:
     void AdumpPrintAndGetTimeStampInfo(const void *workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
         const char *opType, std::vector<MsprofAicTimeStampInfo> &timeStampInfo) {
@@ -592,7 +592,7 @@ class UtNnopbaseExecptionDump : public Adx::DumpStub {
 // test for 1971 
 TEST_F(NnopbaseExtUnitTest, Test1971MixJsonInfo1)
 {
-    UtNnopbaseExecptionDump dumpStub;
+    UtNnopbaseExceptionDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
     op::internal::opProfilingSwitch.timeStampFlag = true;
     MixRationParam goldenData;
@@ -771,7 +771,7 @@ TEST_F(NnopbaseExtUnitTest, Test1971Profiling3)
     RunCommonOpForProfiling("1971_for_mix_normal", kMixAiv, "ascend910b", tilingKey, goldenData, false);
 }
 
-TEST_F(NnopbaseExtUnitTest, Tes1971ProfilingForNotFindTilingKey4)
+TEST_F(NnopbaseExtUnitTest, Test1971ProfilingForNotFindTilingKey4)
 {
     uint32_t goldenData = 0u;
     uint64_t tilingKey = 10U;
@@ -902,12 +902,12 @@ TEST_F(NnopbaseExtUnitTest, TestStaticBin05) // 不支持场景
 }
 
 class MmpaNormalStub;
-extern MmpaNormalStub mmpaNormalStub;
+extern MmpaNormalStub mmpaNormallStub;
 
 struct MmpaNormalStubGuard {
     MmpaNormalStubGuard()
     {
-        Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormalStub);
+        Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormallStub);
     }
     ~MmpaNormalStubGuard()
     {
@@ -1226,7 +1226,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseRunSuccessWithHostInput)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExtUnitTest, TestRepeate01)
+TEST_F(NnopbaseExtUnitTest, TestRepeat01)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1295,7 +1295,7 @@ TEST_F(NnopbaseExtUnitTest, TestRepeate01)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExtUnitTest, TestRepeate02)
+TEST_F(NnopbaseExtUnitTest, TestRepeat02)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1380,7 +1380,7 @@ TEST_F(NnopbaseExtUnitTest, TestRepeate02)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExtUnitTest, TestRepeateErr01)
+TEST_F(NnopbaseExtUnitTest, TestRepeatErr01)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1429,7 +1429,7 @@ TEST_F(NnopbaseExtUnitTest, TestRepeateErr01)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExtUnitTest, TestRepeateErr02)
+TEST_F(NnopbaseExtUnitTest, TestRepeatErr02)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1642,7 +1642,7 @@ TEST_F(NnopbaseExtUnitTest, TestApiFunc)
     Adx::MmpaStub::GetInstance()->UnInstall();
 }
 
-TEST_F(NnopbaseExtUnitTest, NnopBaseEmptyTemsorSuccessWithMultiKernelType)
+TEST_F(NnopbaseExtUnitTest, NnopBaseEmptyTensorSuccessWithMultiKernelType)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1840,7 +1840,7 @@ TEST_F(NnopbaseExtUnitTest, TestAddTwoOutputShapeTensorFailed)
     unsetenv("MEMCPY_ENV");
 }
 
-TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanErrorWithInput)
+TEST_F(NnopbaseExtUnitTest, TestOutputAtomicCleanErrorWithInput)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1879,7 +1879,7 @@ TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanErrorWithInput)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanErrorWithDynamicOutput)
+TEST_F(NnopbaseExtUnitTest, TestOutputAtomicCleanErrorWithDynamicOutput)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1923,7 +1923,7 @@ TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanErrorWithDynamicOutput)
 }
 
 #if 0 // comment out for ge decoupling
-TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanSuccess)
+TEST_F(NnopbaseExtUnitTest, TestOutputAtomicCleanSuccess)
 {
     op::internal::opProfilingSwitch.reportFlag = true;
     op::internal::opProfilingSwitch.additionInfoFlag = true;
@@ -1989,7 +1989,7 @@ TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanSuccess)
     op::internal::opProfilingSwitch.additionInfoFlag = false;
 }
 
-TEST_F(NnopbaseExtUnitTest, TestOutputAutomicCleanCacheSuccess)
+TEST_F(NnopbaseExtUnitTest, TestOutputAtomicCleanCacheSuccess)
 {
     op::internal::opProfilingSwitch.recordOpArgFlag = false;
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
@@ -2115,7 +2115,7 @@ TEST_F(NnopbaseExtUnitTest, TestOutputShapeTensorWithOOM)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExtUnitTest, NnopBaseReportAtrAndHostInfo)
+TEST_F(NnopbaseExtUnitTest, NnopBaseReportAttrAndHostInfo)
 {
     op::internal::opProfilingSwitch.level2ProfilingFlag = true;
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
@@ -2404,7 +2404,7 @@ TEST_F(NnopbaseExtUnitTest, TestGetOpApiFunc)
 TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
 {
     setenv("ASCEND_C", ASCEND_DAVID_SOC_VERSION, 1);
-    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormalStub);
+    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormallStub);
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit("libhccl.so", true), OK);
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -2483,7 +2483,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
         ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U : tilingDataSize;  // 8byte对齐
     const size_t hostInfoOffset = ((NnopbaseExecutor *)executor)->args->binInfo->oomFlag
                                       ? alignTilingDataSize + 8 + paramSize
-                                      : tilingDataSize + 8;  // 8字节是automicIndex
+                                      : tilingDataSize + 8;  // 8字节是atomicIndex
     NnopbaseUChar *tilingdata =
         (NnopbaseUChar *)(((NnopbaseTilingData *)(((NnopbaseExecutor *)executor)->args->tilingInfo.tilingData))
                               ->GetData());
@@ -2508,7 +2508,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
 TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
 {
     setenv("ASCEND_C", ASCEND_DAVID_SOC_VERSION, 1);
-    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormalStub);
+    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormallStub);
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit("libhccl.so", true), OK);
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -2590,7 +2590,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
         ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U : tilingDataSize;  // 8byte对齐
     const size_t hostInfoOffset = ((NnopbaseExecutor *)executor)->args->binInfo->oomFlag
                                       ? alignTilingDataSize + 8 + paramSize
-                                      : tilingDataSize + 8;  // 8字节是automicIndex
+                                      : tilingDataSize + 8;  // 8字节是atomicIndex
     NnopbaseUChar *tilingdata =
         (NnopbaseUChar *)(((NnopbaseTilingData *)(((NnopbaseExecutor *)executor)->args->tilingInfo.tilingData))
                               ->GetData());
@@ -2707,7 +2707,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessWithServerTypeACIPUWithEmptyOut
 {
     // is out empty
     TestHcclServerType([](void *executor){
-        ((NnopbaseExecutor *)executor)->repeateFlag = true;
+        ((NnopbaseExecutor *)executor)->repeatFlag = true;
         ((NnopbaseExecutor *)executor)->isOutEmpty = true;
         NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     }, nnopbase::OPS_SUBPATH_ASCEND910);
@@ -2717,7 +2717,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessWithServerTypeACIPUWithNoEmptyO
 {
     // is out empty
     TestHcclServerType([](void *executor){
-        ((NnopbaseExecutor *)executor)->repeateFlag = false;
+        ((NnopbaseExecutor *)executor)->repeatFlag = false;
         NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     }, nnopbase::OPS_SUBPATH_ASCEND910);
 }
@@ -3169,7 +3169,6 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseRunSuccessWithUnContiguousTensor)
 
 class NnopbaseLibWrapperUnitTest : public testing::Test {
 protected:
-protected:
     void SetUp() {setenv("ASCEND_C", "1", 1);}
     void TearDown() {unsetenv("ASCEND_C");}
 };
@@ -3227,12 +3226,12 @@ HcclResult HcclGetRankSizeException(HcclComm comm, uint32_t *rankSize)
     return HCCL_E_PARA;
 }
 
-HcclResult HcclGetCcuTaskInfoNorma(HcclComm comm, void* fusionArgs, void* ccuTaskGroup)
+HcclResult HcclGetCcuTaskInfoNormal(HcclComm comm, void* fusionArgs, void* ccuTaskGroup)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetRankIdNorma(HcclComm comm, uint32_t *rankId)
+HcclResult HcclGetRankIdNormal(HcclComm comm, uint32_t *rankId)
 {
     if (rankId != nullptr) {
         *rankId = 0U;
@@ -3240,44 +3239,44 @@ HcclResult HcclGetRankIdNorma(HcclComm comm, uint32_t *rankId)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllocComResourceNorma(HcclComm comm, void *stream, void *TilingData, void **commContext)
+HcclResult HcclAllocComResourceNormal(HcclComm comm, void *stream, void *TilingData, void **commContext)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetAicpuOpStreamAndNotifyNorma(HcclComm comm, aclrtStream *Opstream, uint8_t notifyCnt, void **aicpuNotify)
+HcclResult HcclGetAicpuOpStreamAndNotifyNormal(HcclComm comm, aclrtStream *Opstream, uint8_t notifyCnt, void **aicpuNotify)
 {
     *Opstream = &x;
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomGetCommHandleByGroupNorma(const char *group, HcclComm *commHandle)
+HcclResult HcomGetCommHandleByGroupNormal(const char *group, HcclComm *commHandle)
 {
     *commHandle = (HcclComm *)(&x);
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclRankGraphGetLayersNorma(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
+HcclResult HcclRankGraphGetLayersNormal(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclRankGraphGetRankSizeByLayerNorma(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+HcclResult HcclRankGraphGetRankSizeByLayerNormal(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclRankGraphGetTopoTypeByLayerNorma(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
+HcclResult HcclRankGraphGetTopoTypeByLayerNormal(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetHcclBufferNorma(HcclComm comm, void** buffer, uint64_t* size)
+HcclResult HcclGetHcclBufferNormal(HcclComm comm, void** buffer, uint64_t* size)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetRankSizeNorma(HcclComm comm, uint32_t *rankSize)
+HcclResult HcclGetRankSizeNormal(HcclComm comm, uint32_t *rankSize)
 {
     return HCCL_SUCCESS;
 }
@@ -3325,32 +3324,32 @@ class MmpaNormalStub : public Adx::MmpaStub {
     void *mmDlsym(void *handle, const char *funcName)
     {
         if (strncmp(funcName, "HcclAllocComResourceByTiling", strlen("HcclAllocComResourceByTiling")) == 0) {
-            return  (void *)HcclAllocComResourceNorma;
+            return  (void *)HcclAllocComResourceNormal;
         } else if (strncmp(funcName, "HcclGetAicpuOpStreamAndNotify", strlen("HcclGetAicpuOpStreamAndNotify")) == 0) {
-            return  (void *)HcclGetAicpuOpStreamAndNotifyNorma;
+            return  (void *)HcclGetAicpuOpStreamAndNotifyNormal;
         } else if (strncmp(funcName, "HcomGetCommHandleByGroup", strlen("HcomGetCommHandleByGroup")) == 0) {
-            return  (void *)HcomGetCommHandleByGroupNorma;
+            return  (void *)HcomGetCommHandleByGroupNormal;
         } else if (strncmp(funcName, "HcclGetRankId", strlen("HcclGetRankId")) == 0) {
-            return  (void *)HcclGetRankIdNorma;
+            return  (void *)HcclGetRankIdNormal;
         } else if (strncmp(funcName, "HcclGetCcuTaskInfo", strlen("HcclGetCcuTaskInfo")) == 0) {
-            return (void *)HcclGetCcuTaskInfoNorma;
+            return (void *)HcclGetCcuTaskInfoNormal;
         } else if (strncmp(funcName, "HcclRankGraphGetRankSizeByLayer", strlen("HcclRankGraphGetRankSizeByLayer")) == 0) {
-            return (void *)HcclRankGraphGetRankSizeByLayerNorma;
+            return (void *)HcclRankGraphGetRankSizeByLayerNormal;
         } else if (strncmp(funcName, "HcclRankGraphGetLayers", strlen("HcclRankGraphGetLayers")) == 0) {
-            return (void *)HcclRankGraphGetLayersNorma;
+            return (void *)HcclRankGraphGetLayersNormal;
         } else if (strncmp(funcName, "HcclRankGraphGetTopoTypeByLayer", strlen("HcclRankGraphGetTopoTypeByLayer")) == 0) {
-            return  (void *)HcclRankGraphGetTopoTypeByLayerNorma;
+            return  (void *)HcclRankGraphGetTopoTypeByLayerNormal;
         } else if (strncmp(funcName, "HcclGetRankSize", strlen("HcclGetRankSize")) == 0) {
-            return (void *)HcclGetRankSizeNorma;
+            return (void *)HcclGetRankSizeNormal;
         } else if (strncmp(funcName, "HcclGetHcclBuffer", strlen("HcclGetHcclBuffer")) == 0) {
-            return (void *)HcclGetHcclBufferNorma;
+            return (void *)HcclGetHcclBufferNormal;
         } else {
             return nullptr;
         }
     }
 };
 
-MmpaNormalStub mmpaNormalStub;
+MmpaNormalStub mmpaNormallStub;
 
 TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibException)
 {
@@ -3393,7 +3392,7 @@ TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibException)
 
 TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibSuccess)
 {
-    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormalStub);
+    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormallStub);
 
     ASSERT_EQ(nnopbase::IndvHcclWrapper::GetInstance().IndvHcclWrapperInit("libhccl.so", true), OK);
     ASSERT_EQ(
@@ -3411,7 +3410,7 @@ TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibSuccess)
 
 TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeAICPU)
 {
-    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormalStub);
+    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub *)&mmpaNormallStub);
     TestHcclServerType([](void *executor){
         NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     }, nnopbase::OPS_SUBPATH_ASCEND950);

@@ -47,8 +47,8 @@ static constexpr size_t NNOPBASE_MAX_ARGS_KEY_LEN = 10240U;
 static constexpr size_t NNOPBASE_SEVENS_BYTES = 7U;
 static constexpr size_t NNOPBASE_EIGHT_BYTES = 8U;
 static constexpr int32_t INFO_TYPE_CORE_NUM = 3;
-static constexpr size_t NNOPBAE_AICPU_PARAM_LEN = 32U;
-static const std::string NNOPBAE_MC2_AICPU_SUFFIX = "Mc2AicpuKernel";
+static constexpr size_t NNOPBASE_AICPU_PARAM_LEN = 32U;
+static const std::string NNOPBASE_MC2_AICPU_SUFFIX = "Mc2AicpuKernel";
 constexpr size_t NNOPBASE_BLOCK_SIZE = 32U;
 constexpr int32_t INDV_LAUNCH_KERNEL_RTS_DYN_UBUF_SIZE = 2;
 
@@ -89,7 +89,7 @@ typedef struct {
 
 typedef struct {
     uint64_t magicNum = NNOPBASE_EXECUTOR_MAGIC_NUMBER; // 首8字节标识该executor类型属于nnopbase不可更改顺序
-    bool repeateFlag;
+    bool repeatFlag;
     NnopbaseAttrs attrs;
     uint64_t *tilingKey;
     uint32_t *numBlocks;
@@ -115,6 +115,7 @@ typedef struct {
     OpSupportList *supportList;
     uint32_t *socSupportList;
     uint32_t socSupportListLen;
+    bool socSupportListOwned = false;
     uint32_t opTypeId;
     int32_t poolIndex;
     void *userHandle;
@@ -195,7 +196,7 @@ aclnnStatus NnopbaseExecutorGetStreamAndEvent(
     const aclrtStream stream, aclrtStream *subStream, aclrtEvent *evtA, aclrtEvent *evtB,
     std::shared_ptr<std::mutex> &streamLckPtr);
 aclnnStatus NnopbaseCreateStreamResource(NnopbaseStreamForCombineExecution *nnopbaseStream);
-void NnopbaseDestroyStreamCallBack(aclrtStream stream, const bool isCreate);
+void NnopbaseDestroyStreamCallback(aclrtStream stream, const bool isCreate);
 
 aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInfo opInfo);
 void NnopbaseExecutorDeInit(NnopbaseExecutor *executor);
@@ -275,7 +276,7 @@ void NnopbaseInnerReportLaunchInfo(const uint64_t beginTime, const uint64_t item
 void NnopbaseReportTimeStampInfo(const std::vector<MsprofAicTimeStampInfo> &timeStampInfo);
 void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t numBlocks, const uint32_t taskType,
     const uint64_t launchBeginTime, aclrtStream stream);
-void NnopbasePreportAttrAndHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp);
+void NnopbaseReportAttrAndHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp);
 std::string NnopbaseGetHostInfoStr(const NnopbaseTensors &tensors);
 std::string NnopbaseGetAttrVal(const NnopbaseAttrs &attrs);
 void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlocks, uint32_t taskType,
@@ -294,7 +295,7 @@ void NnopbaseReportContextIdInfoByRation(
 void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor);
 void PrintNnopbaseInitTimeStampInfo();
 
-// for mesmet
+// for memset
 aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, aclrtStream stream);
 
@@ -326,7 +327,7 @@ aclnnStatus NnopbaseAddIoTensors(NnopbaseExecutor *executor);
 void NnopbaseClearParamInstance(NnopbaseTensors *tensors);
 aclnnStatus UpdateArgsIoAddr(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors);
 void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors &dstUncontTensors, NnopbaseUnContTensors &srcUncontTensors);
-bool NnopbasIsEnableNewCache(const NnopbaseExecutor *executor);
+bool NnopbaseIsV2CacheKeyEnabled(const NnopbaseExecutor *executor);
 void NnopbaseCheckHasContiguous(NnopbaseExecutor *executor);
 void NnopbaseSaveUnContiguousTensors(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors);
 

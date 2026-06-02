@@ -64,7 +64,7 @@ std::string ConvertToStr(const GertTensor &tensor)
     const int32_t dtypeSize = GetSizeByDataType(dataType);
     const void *addr = tensor.GetAddr();
     std::string res;
-    for (size_t i = 0; i < len; i++) {
+    for (size_t i = 0U; i < len; i++) {
         res += ToString(op::internal::PtrCastTo<const T>(op::internal::PtrCastTo<const uint8_t>(addr) + i * dtypeSize));
         if (i + 1 < len) { // 非最后一个
             // 逗号后不能加空格，fp32类型数据用sqlite解析的时候会受空格影响导致少数据

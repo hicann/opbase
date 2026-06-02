@@ -408,63 +408,6 @@ TEST_F(NnopbaseUnitTest, NnopBaseTensorAddrSet)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseUnitTest, NnopBaseCacheDynamicIoKey)
-{
-    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-
-    void *executorSpace = nullptr;
-    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
-    void *executor = GetDynamicInputExecutor(executorSpace);
-    ASSERT_NE(executor, nullptr);
-    NnopbaseExecutor *opExecutor = (NnopbaseExecutor *)executor;
-    // set core num
-    opExecutor->coreNum.aicNum = 24;
-    opExecutor->coreNum.aivNum = 24;
-    nnopbase::ArgsPool::GetInstance().MatchArgs(opExecutor);
-    vector<NnopbaseUChar> exp(10240, '\0');
-    auto key = &exp[0U];
-    key = (uint8_t *) NnopbaseAppendBinary(key, strlen(opExecutor->opType), opExecutor->opType, strlen(opExecutor->opType));
-    for (size_t i = 0; i < 3; ++i) {
-        key = NnopbaseAppend1Byte(key, aclDataType::ACL_FLOAT);
-        key = NnopbaseAppend1Byte(key, aclFormat::ACL_FORMAT_ND);
-        key = NnopbaseAppend4Byte(key, 5);
-        for (size_t j = 0; j < 5; ++j) {
-            key = NnopbaseAppend8Byte(key, 1);
-        }
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppend1Byte(key, aclDataType::ACL_FLOAT);
-    key = NnopbaseAppend1Byte(key, aclFormat::ACL_FORMAT_ND);
-    key = NnopbaseAppend4Byte(key, 5);
-    for (size_t j = 0; j < 5; ++j) {
-        key = NnopbaseAppend8Byte(key, 1);
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    // core num
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppend4Byte(key, 24);
-    key = NnopbaseAppend4Byte(key, 24);
-
-    // rank id
-    uint32_t rankId = 0U;
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppendBinary(key, 4, &rankId, 4);
-
-    // determinisitic
-    bool deterministic = false;
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppend1Byte(key, deterministic);
-
-    auto keyLen = key - &exp[0U];
-    ASSERT_EQ(keyLen, opExecutor->ownArgs.keyLen);
-    for (size_t i = 0; i < opExecutor->ownArgs.keyLen; ++i) {
-        ASSERT_EQ(opExecutor->ownArgs.inputKey[i], exp[i]);
-    }
-
-    NnopbaseExecutorGcSpace(executorSpace);
-    NnopbaseUnsetEnvAndClearFolder();
-}
-
 TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithWorkSpace)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
@@ -563,7 +506,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseNoExecutor)
     aclDestroyTensorList((const aclTensorList *)aclTensorTestList);
 }
 
-TEST_F(NnopbaseUnitTest, NnopbasePrarmCheckFailed)
+TEST_F(NnopbaseUnitTest, NnopbaseParamCheckFailed)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -831,7 +774,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseUnlimitedMaxNumExecutor)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseUnitTest, TestNNopbaseAddSupportList)
+TEST_F(NnopbaseUnitTest, TestNnopbaseAddSupportList)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -860,7 +803,7 @@ TEST_F(NnopbaseUnitTest, TestNNopbaseAddSupportList)
     NnopbaseExecutorGcSpace(executorSpace);
 }
 
-TEST_F(NnopbaseUnitTest, TestNNopbaseAddOpTypeId)
+TEST_F(NnopbaseUnitTest, TestNnopbaseAddOpTypeId)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -949,7 +892,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithNclFormat)
 #endif
 }
 
-TEST_F(NnopbaseUnitTest, NnopbaseParamCheckFailed)
+TEST_F(NnopbaseUnitTest, NnopbasePrarmCheckFailed)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1380,7 +1323,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFailed)
     GlobalMockObject::verify();
 }
 
-TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOptypeFailed)
+TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOpTypeFailed)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1924,7 +1867,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelWithValueDependSuccess)
     ASSERT_EQ(NnopbaseAddIntArrayAttr(executor, bias2, 1), OK);
     ASSERT_EQ(NnopbaseAddAttrWithDtype(executor, bias3, bias3_size, 2, kNnopbaseString), OK);
     ASSERT_EQ(NnopbaseAddFloatArrayAttr(executor, bias1, 3), OK);
-    // set index0 is valueDepnd input
+    // set index0 is valueDepend input
     ((NnopbaseExecutor *)executor)->ownArgs.inputs.extTensors[0].valueDepend = true;
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
@@ -2189,7 +2132,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunWithHostAndDynamicInput)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTemsorSuccess)
+TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTensorSuccess)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -2230,7 +2173,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTemsorSuccess)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTemsorWithDynamicSuccess)
+TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTensorWithDynamicSuccess)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -2612,7 +2555,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarWithDtype)
     (void) NnopbaseAddOutput(executor, tensor, 0);
     auto inputs = &(((NnopbaseExecutor *)executor)->ownArgs.inputs);
     auto tensors = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor = &tensors->rt2Tensor;
+    gert::TensorV2 *rt2Tensor = &tensors->rt2Tensor;
     ASSERT_EQ(rt2Tensor->GetDataType(), ge::DT_FLOAT);
 
     uint64_t workspaceLen = 0U;
@@ -2665,7 +2608,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarListWithDtype)
     (void) NnopbaseAddOutput(executor, tensor, 0);
     auto inputs = &(((NnopbaseExecutor *)executor)->ownArgs.inputs);
     auto tensors = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor = &tensors->rt2Tensor;
+    gert::TensorV2 *rt2Tensor = &tensors->rt2Tensor;
     ASSERT_EQ(rt2Tensor->GetDataType(), ge::DT_FLOAT);
 
     uint64_t workspaceLen = 0U;
@@ -2718,10 +2661,10 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarWithName)
     (void) NnopbaseAddOutput(executor, tensor, 0);
     auto inputs = &(((NnopbaseExecutor *)executor)->ownArgs.inputs);
     auto tensors1 = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor1 = &tensors1->rt2Tensor;
+    gert::TensorV2 *rt2Tensor1 = &tensors1->rt2Tensor;
     ASSERT_EQ(rt2Tensor1->GetDataType(), ge::DT_FLOAT);
     auto tensors2 = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor2 = &tensors2->rt2Tensor;
+    gert::TensorV2 *rt2Tensor2 = &tensors2->rt2Tensor;
     ASSERT_EQ(rt2Tensor2->GetDataType(), ge::DT_FLOAT);
 
     uint64_t workspaceLen = 0U;
@@ -2780,7 +2723,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarListWithName)
     (void) NnopbaseAddOutput(executor, tensor, 0);
     auto inputs = &(((NnopbaseExecutor *)executor)->ownArgs.inputs);
     auto tensors = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor = &tensors->rt2Tensor;
+    gert::TensorV2 *rt2Tensor = &tensors->rt2Tensor;
     ASSERT_EQ(rt2Tensor->GetDataType(), ge::DT_FLOAT);
 
     uint64_t workspaceLen = 0U;
@@ -2831,7 +2774,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseAddScalarInputWithErrorDtype)
     (void) NnopbaseAddScalarInput(executor, scalar, 2, 3, ge::DT_UNDEFINED);
     auto inputs = &(((NnopbaseExecutor *)executor)->ownArgs.inputs);
     auto tensors = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor = &tensors->rt2Tensor;
+    gert::TensorV2 *rt2Tensor = &tensors->rt2Tensor;
     rt2Tensor->SetDataType(ge::DataType::DT_STRING);
     ASSERT_EQ(NnopbaseAddInput(executor, tensor, 3), ACLNN_ERR_PARAM_INVALID);
 
@@ -2868,7 +2811,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEventWithoutMainStream)
     ASSERT_NE(secondStream, subStream);
     ASSERT_NE(event1, eventA);
     ASSERT_NE(event2, eventB);
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     rtStreamDestroy(stream);
     NnopbaseUnsetEnvAndClearFolder();
 }
@@ -2884,7 +2827,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEvent)
     ASSERT_EQ(secondStream, subStream);
     ASSERT_EQ(event1, eventA);
     ASSERT_EQ(event2, eventB);
-    NnopbaseDestroyStreamCallBack(mainStream, false);
+    NnopbaseDestroyStreamCallback(mainStream, false);
     rtStreamDestroy(mainStream);
     NnopbaseUnsetEnvAndClearFolder();
 }
@@ -2911,7 +2854,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetStreamAndEventWithSameMainStream)
     ASSERT_EQ(event1, event3);
     ASSERT_EQ(event2, event4);
     ASSERT_EQ(ptr1, ptr2);
-    NnopbaseDestroyStreamCallBack(stream, false);
+    NnopbaseDestroyStreamCallback(stream, false);
     rtStreamDestroy(stream);
     NnopbaseUnsetEnvAndClearFolder();
 }

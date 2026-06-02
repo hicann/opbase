@@ -16,7 +16,9 @@ namespace {
 inline bool CompareTensor(const aclTensor *tensor, const aclTensor *prev)
 {
     return (tensor->GetDataType() == prev->GetDataType()) && (tensor->GetViewShape() == prev->GetViewShape()) &&
-           (tensor->GetStorageFormat() == prev->GetStorageFormat());
+           (tensor->GetStorageFormat() == prev->GetStorageFormat()) &&
+           (tensor->GetViewStrides() == prev->GetViewStrides()) &&
+           (tensor->GetViewOffset() == prev->GetViewOffset());
 }
 
 uint8_t *AddShapeInfo(const GertTensor &rt2Tensor, uint8_t *key)
@@ -25,10 +27,17 @@ uint8_t *AddShapeInfo(const GertTensor &rt2Tensor, uint8_t *key)
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(rt2Tensor.GetStorageFormat()));
     const GertShape &shape = rt2Tensor.GetStorageShape();
     const size_t dimNum = shape.GetDimNum();
-    key = static_cast<uint8_t *>(NnopbaseAppend4Byte(key, static_cast<uint32_t>(dimNum)));
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dimNum));
     for (size_t j = 0U; j < dimNum; j++) {
         key = static_cast<uint8_t *>(NnopbaseAppend8Byte(key, static_cast<uint64_t>(shape.GetDim(j))));
     }
+    const auto &stride = rt2Tensor.GetStride();
+    const size_t strideNum = stride.GetDimNum();
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(strideNum));
+    for (size_t j = 0U; j < strideNum; j++) {
+        key = static_cast<uint8_t *>(NnopbaseAppend8Byte(key, static_cast<uint64_t>(stride.GetStride(j))));
+    }
+    key = static_cast<uint8_t *>(NnopbaseAppend8Byte(key, static_cast<uint64_t>(rt2Tensor.GetOffset())));
     return key;
 }
 }
@@ -45,7 +54,10 @@ size_t CacheKeyBuilder::CalculateCacheKeyLenV1(NnopbaseExecutor *executor)
             continue;
         }
         keyLen += BASE_BYTES +
-                  SHAPE_BYTES * inputs->extTensors[i].rt2Tensor.MutableStorageShape().GetDimNum();
+                  SHAPE_BYTES * inputs->extTensors[i].rt2Tensor.GetStorageShape().GetDimNum() +
+                  STRIDE_NUM_BYTES +
+                  SHAPE_BYTES * inputs->extTensors[i].rt2Tensor.GetStride().GetDimNum() +
+                  OFFSET_BYTES;
         if (inputs->extTensors[i].valueDepend) {
             keyLen += inputs->extTensors[i].rt2Tensor.GetSize();
         }
@@ -57,7 +69,10 @@ size_t CacheKeyBuilder::CalculateCacheKeyLenV1(NnopbaseExecutor *executor)
             continue;
         }
         keyLen += BASE_BYTES +
-                  SHAPE_BYTES * outputs->extTensors[i].rt2Tensor.MutableStorageShape().GetDimNum();
+                  SHAPE_BYTES * outputs->extTensors[i].rt2Tensor.GetStorageShape().GetDimNum() +
+                  STRIDE_NUM_BYTES +
+                  SHAPE_BYTES * outputs->extTensors[i].rt2Tensor.GetStride().GetDimNum() +
+                  OFFSET_BYTES;
     }
     ++keyLen;
     if (attrs->num > 0U) {
@@ -143,15 +158,22 @@ NnopbaseUChar* CacheKeyBuilder::AppendShapeInfo(NnopbaseExecutorArgs *args, cons
 {
     const op::Shape &shape = tensor->GetViewShape();
     const size_t dimNum = shape.GetDimNum();
-    size_t len = BASE_BYTES + dimNum * SHAPE_BYTES;
+    const auto &strides = tensor->GetViewStrides();
+    const size_t strideNum = strides.size();
+    size_t len = BASE_BYTES + dimNum * SHAPE_BYTES + STRIDE_NUM_BYTES + strideNum * SHAPE_BYTES + OFFSET_BYTES;
     EnsureCapacity(args, len);
     NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data()) + args->keyLen;
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(tensor->GetDataType()));
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(tensor->GetStorageFormat()));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(dimNum));
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dimNum));
     for (size_t j = 0U; j < dimNum; j++) {
         key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(shape.GetDim(j)));
     }
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(strideNum));
+    for (size_t j = 0U; j < strideNum; j++) {
+        key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(strides[j]));
+    }
+    key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(tensor->GetViewOffset()));
     args->remainKeyLen -= len;
     args->keyLen += len;
     return key;
@@ -228,7 +250,7 @@ void CacheKeyBuilder::AppendValueDependTensor(
     NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dType));
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(ge::FORMAT_ND));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(1U));
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(1U));
     key = NnopbaseAppend8Byte(key, dim);
     args->remainKeyLen -= shapeLen;
     args->keyLen += shapeLen;
@@ -288,7 +310,7 @@ NnopbaseUChar *CacheKeyBuilder::AppendScalarInfo(NnopbaseExecutorArgs *args, con
     NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data()) + args->keyLen;
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dtype));
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(ge::FORMAT_ND));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(0U));
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(0U));
     args->remainKeyLen -= BASE_BYTES;
     args->keyLen += BASE_BYTES;
     return key;
@@ -322,7 +344,7 @@ NnopbaseUChar* CacheKeyBuilder::AppendScalarListInfo(NnopbaseExecutorArgs *args,
     NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data()) + args->keyLen;
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(dtype));
     key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(ge::FORMAT_ND));
-    key = NnopbaseAppend4Byte(key, static_cast<uint32_t>(1U));
+    key = NnopbaseAppend1Byte(key, static_cast<NnopbaseUChar>(1U));
     key = NnopbaseAppend8Byte(key, static_cast<uint64_t>(size));
     args->remainKeyLen -= BASE_BYTES + SHAPE_BYTES;
     args->keyLen += BASE_BYTES + SHAPE_BYTES;

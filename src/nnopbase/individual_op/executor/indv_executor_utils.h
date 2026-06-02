@@ -99,19 +99,19 @@ inline bool GetDebugKernel()
     return (value == 1); // 1表示开启debug kernel
 }
 
-static inline void NnopbaseSetDtypeAndSize(const aclIntArray *array, gert::Tensor *rt2Tensor)
+static inline void NnopbaseSetDtypeAndSize(const aclIntArray *array, GertTensor *rt2Tensor)
 {
     rt2Tensor->SetDataType(ge::DataType::DT_INT64);
     rt2Tensor->SetSize(static_cast<size_t>(array->Size()) * sizeof(int64_t));
 }
 
-static inline void NnopbaseSetDtypeAndSize(const aclBoolArray *array, gert::Tensor *rt2Tensor)
+static inline void NnopbaseSetDtypeAndSize(const aclBoolArray *array, GertTensor *rt2Tensor)
 {
     rt2Tensor->SetDataType(ge::DataType::DT_BOOL);
     rt2Tensor->SetSize(static_cast<size_t>(array->Size()) * sizeof(bool));
 }
 
-static inline void NnopbaseSetDtypeAndSize(const aclFloatArray *array, gert::Tensor *rt2Tensor)
+static inline void NnopbaseSetDtypeAndSize(const aclFloatArray *array, GertTensor *rt2Tensor)
 {
     rt2Tensor->SetDataType(ge::DataType::DT_FLOAT);
     rt2Tensor->SetSize(static_cast<size_t>(array->Size()) * sizeof(float));
@@ -124,7 +124,7 @@ aclnnStatus NnopbaseSaveArray(const T *array, NnopbaseTensor *tensor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tensor);
     tensor->isNull = false;
 
-    gert::Tensor *rt2Tensor = &tensor->rt2Tensor;
+    GertTensor *rt2Tensor = &tensor->rt2Tensor;
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
     rt2Tensor->MutableOriginShape() = {static_cast<int64_t>(array->Size())};
     rt2Tensor->MutableStorageShape() = {static_cast<int64_t>(array->Size())};
@@ -136,6 +136,8 @@ aclnnStatus NnopbaseSaveArray(const T *array, NnopbaseTensor *tensor)
 
     NNOPBASE_ASSERT_TRUE_RETVAL(
         (rt2Tensor->MutableTensorData().SetAddr(array->GetData(), nullptr)) == ge::GRAPH_SUCCESS);
+    rt2Tensor->MutableStride().SetDimNum(0U);
+    rt2Tensor->SetOffset(0);
     OP_LOGI("Get ValueDepend Input StorageFormat %d, dataType %d, shape [%lu], addr is %p.",
         rt2Tensor->GetStorageFormat(), rt2Tensor->GetDataType(),
         array->Size(), rt2Tensor->GetAddr());

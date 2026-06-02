@@ -139,7 +139,7 @@ aclnnStatus NnopbaseExecutorSetRef(NnopbaseExecutor *executor, const size_t inpu
                "Get input ir index %zu is out of input num %zu.", inputIrIdx, inInstances.size());
     CHECK_COND((outputIrIdx < outInstances.size()), ACLNN_ERR_PARAM_INVALID,
                "Get output ir index %zu is out of output num %zu.", outputIrIdx, outInstances.size());
-    OP_LOGD("Op %s set ref input idx %zu, output indx %zu.", executor->opType, inputIrIdx, outputIrIdx);
+    OP_LOGD("Op %s set ref input idx %zu, output index %zu.", executor->opType, inputIrIdx, outputIrIdx);
     inInstances[inputIrIdx].refIdx = outputIrIdx;
     outInstances[outputIrIdx].refIdx = inputIrIdx;
     return OK;
@@ -268,7 +268,7 @@ static inline bool Compare(const TensorDesc &paramDesc, const GertTensor &tensor
 
 static inline void DynamicIoCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc, const size_t index, bool *match)
 {
-    // dynamic输入只匹配第一个tensor的dtype和foramt
+    // dynamic输入只匹配第一个tensor的dtype和format
     const size_t startIndex = tensors->paramDescs.instances[index].startIndex;
     if (!Compare(ioDesc[index], tensors->extTensors[startIndex].rt2Tensor)) {
         *match = false;
@@ -349,7 +349,7 @@ aclnnStatus NnopbaseSetRepeatable(void *executor)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = (static_cast<NnopbaseExecutor *>(executor))->opType;
-    (static_cast<NnopbaseExecutor *>(executor))->repeateFlag = true;
+    (static_cast<NnopbaseExecutor *>(executor))->repeatFlag = true;
     aclnnStatus ret = OK;
     NnopbaseExecutorFixCache(static_cast<NnopbaseExecutor*>(executor));
     if ((static_cast<NnopbaseExecutor *>(executor))->inUnContExe != nullptr) {
@@ -837,7 +837,7 @@ static aclnnStatus NnopbaseExecutorCopyAttr(NnopbaseExecutor *executor)
     NnopbaseAttrs &attrs = executor->attrs;
     executor->args->attrsData.resize(attrs.totalDataLen);
     size_t offset = 0;
-    for (size_t i = 0; i < attrs.num; i++) {
+    for (size_t i = 0U; i < attrs.num; i++) {
         CHECK_COND((memcpy_s((op::internal::PtrCastTo<uint8_t>(executor->args->attrsData.data()) + offset),
                         attrs.attrs[i].addr.size,
                         attrs.attrs[i].addr.addr,
@@ -969,7 +969,7 @@ void NnopbaseExecutorCopyCacheAttr(NnopbaseExecutor *executor)
 {
     if (op::internal::opProfilingSwitch.level2ProfilingFlag) {
         size_t offset = 0;
-        for (size_t i = 0; i < executor->attrs.num; i++) {
+        for (size_t i = 0U; i < executor->attrs.num; i++) {
             executor->attrs.attrs[i].addr.addr = op::internal::PtrCastTo<void>(executor->args->attrsData.data() + offset);
             offset += executor->attrs.attrs[i].addr.size;
         }
@@ -1077,7 +1077,7 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor *executor)
             op::internal::PtrCastTo<const gert::TilingContext>(executor->contextExt.context),
             aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, executor->deterministic),
             &executor->opKernelInfo);
-        OP_LOGI("Dump node info for operator %s finished.", executor->opType);  
+        OP_LOGI("Dump node info for operator %s finished.", executor->opType);
     }
     return OK;
 }
@@ -1339,7 +1339,7 @@ aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor *executor, aclrtSt
                                              const uint64_t workspaceLen)
 {
     std::unique_ptr<NnopbaseGuard> guard = nullptr;
-    if (!executor->repeateFlag) {
+    if (!executor->repeatFlag) {
         guard = std::make_unique<NnopbaseGuard>([&executor]() { NnopbaseExecutorClear(executor); });
     }
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args);

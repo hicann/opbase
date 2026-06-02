@@ -259,8 +259,8 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor *executor, const size_t tilingDataS
         }
     }
     if (executor->mc2OpCfg.isMc2) {
-        argsLen += NNOPBAE_AICPU_PARAM_LEN * 2;  // 2 is soname/kernelname
-        argsLen += (strlen(executor->opType) + NNOPBAE_MC2_AICPU_SUFFIX.length());
+        argsLen += NNOPBASE_AICPU_PARAM_LEN * 2;  // 2 is soname/kernelname
+        argsLen += (strlen(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX.length());
         if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
             argsLen += sizeof(NnopbaseHcclCommParamDesc); // 82上parsmdesc组在args最后
         }
@@ -344,7 +344,7 @@ static inline void NnopbaseExecutorEncodeHostInput(const NnopbaseExecutor *const
     aclrtPlaceHolderInfo **hostInputInfo = &argsAddr->hostInputInfo;
     NnopbaseUChar *addr = (NnopbaseUChar*)tensor->GetAddr();
     size_t size = tensor->GetSize();
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0U; i < size; i++) {
         (*hostInputData)[i] = addr[i];
     }
     *inputAddr = *hostInputData;

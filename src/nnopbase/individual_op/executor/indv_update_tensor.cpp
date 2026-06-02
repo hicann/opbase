@@ -139,8 +139,8 @@ static aclnnStatus NnopbaseUpdateScalarListAddr(
 
 static aclnnStatus NnopbaseSetRt2Tensor(NnopbaseTensor *dstTensors, NnopbaseTensor *srcTensor)
 {
-    gert::Tensor *dstRt2Tensor = &dstTensors->rt2Tensor;
-    gert::Tensor *srcRt2Tensor = &srcTensor->rt2Tensor;
+    GertTensor *dstRt2Tensor = &dstTensors->rt2Tensor;
+    GertTensor *srcRt2Tensor = &srcTensor->rt2Tensor;
     dstRt2Tensor->MutableOriginShape() = srcRt2Tensor->MutableOriginShape();
     dstRt2Tensor->MutableStorageShape() = srcRt2Tensor->MutableStorageShape();
     dstRt2Tensor->SetDataType(srcRt2Tensor->GetDataType());
@@ -149,6 +149,8 @@ static aclnnStatus NnopbaseSetRt2Tensor(NnopbaseTensor *dstTensors, NnopbaseTens
     dstRt2Tensor->MutableTensorData().SetPlacement(srcRt2Tensor->MutableTensorData().GetPlacement());
     dstRt2Tensor->MutableTensorData().SetSize(srcRt2Tensor->MutableTensorData().GetSize());
     NNOPBASE_ASSERT_OK_RETVAL(dstRt2Tensor->MutableTensorData().SetAddr(srcRt2Tensor->GetAddr(), nullptr));
+    dstRt2Tensor->MutableStride() = srcRt2Tensor->GetStride();
+    dstRt2Tensor->SetOffset(srcRt2Tensor->GetOffset());
     return OK;
 }
 
@@ -361,7 +363,7 @@ void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors &dstUncontTensors, Nnopb
     dstUncontTensors.refContTensors = srcUncontTensors.refContTensors;
 }
 
-bool NnopbasIsEnableNewCache(const NnopbaseExecutor *executor)
+bool NnopbaseIsV2CacheKeyEnabled(const NnopbaseExecutor *executor)
 {
     return ((executor->matchArgsV2) && (g_nnopbaseSysCfgParams.enableArgsCache) &&
             !op::internal::GetOpProfilingRecordArgFlag());

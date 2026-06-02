@@ -138,6 +138,32 @@ uint32_t IndvSoc::GetSocEnum()
     return SOC_VERSION_INVALID;
 }
 
+bool IndvSoc::IsSupportedSocName(const std::string &name) const
+{
+    return supportSocMap.find(name) != supportSocMap.cend();
+}
+
+uint32_t IndvSoc::GetSocEnumByName(const std::string &name) const
+{
+    auto iter = supportSocMap.find(name);
+    if (iter != supportSocMap.cend()) {
+        return iter->second;
+    }
+    return SOC_VERSION_INVALID;
+}
+
+std::string IndvSoc::GetSupportedSocNamesStr() const
+{
+    std::string result;
+    for (const auto &entry : supportSocMap) {
+        if (!result.empty()) {
+            result += ", ";
+        }
+        result += entry.first;
+    }
+    return result;
+}
+
 void IndvSoc::Reset(void)
 {
     isInit = false;

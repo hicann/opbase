@@ -97,7 +97,7 @@ aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollec
     const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath, int32_t builtInStartIndex);
 aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
     nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion);
-NnopbaseUChar *NnopbaseBeyond8BtyeCopy(
+NnopbaseUChar *NnopbaseBeyond8ByteCopy(
     const int32_t start, const int32_t end, const NnopbaseChar *const strKey, NnopbaseUChar *verKey);
 aclnnStatus NnopbaseCollecterOpRegInfoInit(NnopbaseRegInfo *regInfo, const NnopbaseJsonInfo &jsonInfo,
                                            const uint64_t hashKey, gert::OppImplVersionTag oppImplVersion);

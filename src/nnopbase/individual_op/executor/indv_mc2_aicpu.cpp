@@ -17,10 +17,10 @@
 extern "C" {
 #endif
 
-const NnopbaseUChar NNOPBASE_MC2_AICPU_SO_NAME[NNOPBAE_AICPU_PARAM_LEN] = {"libccl_kernel.so"};
-const NnopbaseUChar NNOPBASE_MC2_AICPU_KERNEL_NAME[NNOPBAE_AICPU_PARAM_LEN] = {"RunAicpuKfcSrvLaunch"};
-const NnopbaseUChar NNOPBASE_MC2_SERVER_SO_NAME[NNOPBAE_AICPU_PARAM_LEN] = {"libmc2_server.so"};
-const NnopbaseUChar NNOPBASE_MC2_SERVER_KERNEL_NAME[NNOPBAE_AICPU_PARAM_LEN] = {"Mc2ServerKernel"};
+const NnopbaseUChar NNOPBASE_MC2_AICPU_SO_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"libccl_kernel.so"};
+const NnopbaseUChar NNOPBASE_MC2_AICPU_KERNEL_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"RunAicpuKfcSrvLaunch"};
+const NnopbaseUChar NNOPBASE_MC2_SERVER_SO_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"libmc2_server.so"};
+const NnopbaseUChar NNOPBASE_MC2_SERVER_KERNEL_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"Mc2ServerKernel"};
 constexpr uint8_t NNOPBASE_MC2_NOTIFY_COUNT = 2;
 constexpr uint16_t NNOPBASE_HCCL_DEFAULT_TIME = 1836;
 
@@ -194,7 +194,7 @@ void NnopbaseCopyMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
 
     // 3 is soname/kernelname/opname
     executor->aicpuArgs.argsSize =
-        executor->argsExt.argsSize + sizeof(NnopbaseHcclCommParamDesc) + NNOPBAE_AICPU_PARAM_LEN * 3U;
+        executor->argsExt.argsSize + sizeof(NnopbaseHcclCommParamDesc) + NNOPBASE_AICPU_PARAM_LEN * 3U;
 }
 
 void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
@@ -214,7 +214,7 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
     const NnopbaseUChar *pKernelName = isA5AiCpu ? NNOPBASE_MC2_SERVER_KERNEL_NAME :
                                                                           NNOPBASE_MC2_AICPU_KERNEL_NAME;
 
-    for (size_t i = 0; i < NNOPBAE_AICPU_PARAM_LEN; i++) {
+    for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pSoName[i]);
     }
 
@@ -224,11 +224,11 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
         executor->aicpuArgs.kernelNameAddrOffset = static_cast<uint16_t>(argsAddr->hostInputData - args);
     }
 
-    for (size_t i = 0; i < NNOPBAE_AICPU_PARAM_LEN; i++) {
+    for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pKernelName[i]);
     }
 
-    const std::string opName = std::string(executor->opType) + NNOPBAE_MC2_AICPU_SUFFIX;
+    const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     OP_CHECK(memcpy_s(argsAddr->hostInputData, opName.length(), &opName[0], opName.length()) == EOK,
         OP_LOGW("Memcpy aicpu opName failed, opName is %s, length %zu.", opName.c_str(), opName.length()),
         return); 
@@ -264,7 +264,7 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetAicpuTimeout(&time));
     executor->aicpuArgs.timeout = time;
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
-    const std::string opType = std::string(executor->opType) + NNOPBAE_MC2_AICPU_SUFFIX;
+    const std::string opType = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     const uint32_t numBlocks =
         executor->args->tilingInfo.aicpuNumBlocks == 0U ? 1U : executor->args->tilingInfo.aicpuNumBlocks;
     NNOPBASE_ASSERT_RTOK_RETVAL(rtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC,

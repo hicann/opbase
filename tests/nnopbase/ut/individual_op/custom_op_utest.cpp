@@ -51,17 +51,17 @@ string GetModelPath() {
 
 TEST_F(NnopbaseOpPathTest, test_custom_opp_path_no_specified) {
     unsetenv("ASCEND_CUSTOM_OPP_PATH");
-    std::vector<std::pair<std::string, gert::OppImplVersionTag>> bath_path;
-    NnopbaseGetCustomOppPath(bath_path);
-    EXPECT_EQ(bath_path.size(), 0);
+    std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
+    NnopbaseGetCustomOppPath(base_path);
+    EXPECT_EQ(base_path.size(), 0);
 }
 
 TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified_with_empty) {
     setenv("ASCEND_CUSTOM_OPP_PATH", "", 1);
-    std::vector<std::pair<std::string, gert::OppImplVersionTag>> bath_path;
-    NnopbaseGetCustomOppPath(bath_path);
+    std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
+    NnopbaseGetCustomOppPath(base_path);
     unsetenv("ASCEND_CUSTOM_OPP_PATH");
-    EXPECT_EQ(bath_path.size(), 0);
+    EXPECT_EQ(base_path.size(), 0);
 }
 
 TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified) {
@@ -78,10 +78,10 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified) {
     custom_path.append("/Nnopbase_test/"); // invalid path
     setenv("ASCEND_CUSTOM_OPP_PATH", custom_path.c_str(), 1);
 
-    std::vector<std::pair<std::string, gert::OppImplVersionTag>> bath_path;
-    NnopbaseGetCustomOppPath(bath_path);
+    std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
+    NnopbaseGetCustomOppPath(base_path);
     unsetenv("ASCEND_CUSTOM_OPP_PATH");
-    EXPECT_EQ(bath_path.size(), 1);
+    EXPECT_EQ(base_path.size(), 1);
 }
 
 TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default) {
@@ -99,12 +99,12 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default) {
     system(("echo 'load_priority=mdc' > " + path_config).c_str());
 
     NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
-    std::vector<std::pair<std::string, gert::OppImplVersionTag>> bath_path;
+    std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
     int32_t builtInStartIndex = -1;
-    NnopbaseGetOppPath(bin_collecter, bath_path, builtInStartIndex);
+    NnopbaseGetOppPath(bin_collecter, base_path, builtInStartIndex);
     unsetenv("ASCEND_OPP_PATH");
-    EXPECT_EQ(bath_path.size(), 2);
-    EXPECT_EQ(builtInStartIndex, bath_path.size() - 1);
+    EXPECT_EQ(base_path.size(), 2);
+    EXPECT_EQ(builtInStartIndex, base_path.size() - 1);
     delete bin_collecter;
 }
 

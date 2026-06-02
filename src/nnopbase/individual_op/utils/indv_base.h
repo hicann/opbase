@@ -45,7 +45,7 @@ static constexpr size_t NNOPBASE_WORKSPACE_STRUCT_SIZE = sizeof(gert::Continuous
 static constexpr size_t NNOPBASE_BYTE_FOR_HEX = 2U;
 
 enum NnopbaseTimeIdx {
-    kAferCreateExecutor = 0U,
+    kAfterCreateExecutor = 0U,
     kGetWsStart,
     kMatchCacheStart,
     kMatchCacheEnd,
@@ -108,7 +108,7 @@ typedef struct {
 typedef gert::TypedContinuousVector<size_t> NnopbaseWorkspaceSizes;
 
 typedef struct {
-    uint8_t tilingData[NNOPBASE_TILIING_DATA_STRUCT_SIZE] = {};
+    uint8_t tilingData[NNOPBASE_TILING_DATA_STRUCT_SIZE] = {};
     uint8_t workspacesSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE] = {};
     uint64_t tilingKey = 0UL;
     uint32_t numBlocks = 0U;
@@ -124,7 +124,7 @@ typedef struct {
     size_t num;
     uint64_t length;
     uint32_t workspaceArgsOffset[NNOPBASE_NORM_MAX_WORKSPACE_NUMS];
-    std::vector<gert::Tensor> workspaceTensor;
+    std::vector<GertTensor> workspaceTensor;
 } NnopbaseWorkSpaces;
 
 typedef struct {
@@ -181,7 +181,7 @@ struct NnopbaseUnContTensors {
     std::vector<const aclTensor *> refUnContTensors;
     NnopbaseTensorList refUnContTensorList;
     std::vector<aclTensor *> refContTensors;
-    aclTensorList *refContTensorList;
+    aclTensorList *refContTensorList = nullptr;
 };
 
 typedef struct {

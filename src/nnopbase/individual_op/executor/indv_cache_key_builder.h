@@ -37,8 +37,10 @@ private:
     static void EnsureCapacity(NnopbaseExecutorArgs* args, size_t len);
     static size_t CalculateCacheKeyLenV1(NnopbaseExecutor *executor);
 
-    static constexpr size_t BASE_BYTES = 6U;
+    static constexpr size_t BASE_BYTES = 3U;
     static constexpr size_t SHAPE_BYTES = 8U;
+    static constexpr size_t OFFSET_BYTES = 8U;
+    static constexpr size_t STRIDE_NUM_BYTES = 1U;
 };
 
 } // namespace Indv

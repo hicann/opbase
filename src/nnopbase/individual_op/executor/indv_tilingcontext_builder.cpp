@@ -230,7 +230,7 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor)
         values[index]->data.pointer = nullptr;
         values[index]->deleter = nullptr;
         index++;
-        /* kInputsDetermintstic. */
+        /* kInputsDeterministic. */
         values[index]->data.pointer = reinterpret_cast<void *>(executor->deterministic);
         values[index]->deleter = nullptr;
         NnopbaseTilingSetContextOutputStep1(executor);
@@ -384,7 +384,7 @@ void NnopbaseBuildMemsetAttrs(NnopbaseExecutor *executor)
     std::array<void*, attrNum> attrAddr {nullptr, nullptr, nullptr, nullptr};
 
     void *attrPtr = op::internal::PtrCastTo<uint8_t>(attrDef + 1) + sizeof(size_t) * attrNum;
-    for (size_t i = 0; i < attrNum; i++) {
+    for (size_t i = 0U; i < attrNum; i++) {
         attrDef->offset[i] = op::internal::PtrOffset(attrDef, attrPtr);
         attrAddr[i] = attrPtr;
         attrPtr = op::internal::PtrShift(attrPtr, attrSizeArr[i]);
@@ -400,7 +400,7 @@ void NnopbaseBuildMemsetAttrs(NnopbaseExecutor *executor)
         elem->SetSize(nodeExt->node->irInputsNum);
     }
 
-    for (size_t i = 0; i < nodeExt->node->irInputsNum; i++) {
+    for (size_t i = 0U; i < nodeExt->node->irInputsNum; i++) {
         const auto &elem = executor->args->binInfo->initValues[i];
         size_t *pTensorSize = static_cast<size_t*>(attrTensorSize->MutableData()) + i;
         size_t *pDtype = static_cast<size_t*>(attrDtype->MutableData()) + i;
@@ -436,7 +436,7 @@ static void NnopbaseSetMemsetTilingKeyAndNumBlocks(NnopbaseExecutor *const execu
     values[index]->deleter = nullptr;
 }
 
-aclnnStatus NnopnbaseBuildMemsetTilingContext(NnopbaseExecutor *executor)
+aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor *executor)
 {
     NnopbaseKernelRunContextExt *contextExt = &executor->args->binInfo->memsetInfo->contextExt;
     if (!contextExt->hasPrepared) {
@@ -455,7 +455,7 @@ aclnnStatus NnopnbaseBuildMemsetTilingContext(NnopbaseExecutor *executor)
         values[index]->data.pointer = nullptr;
         values[index]->deleter = nullptr;
         index++;
-        /* kInputsDetermintstic. */
+        /* kInputsDeterministic. */
         values[index]->data.pointer = reinterpret_cast<void *>(executor->deterministic);
         values[index]->deleter = nullptr;
 

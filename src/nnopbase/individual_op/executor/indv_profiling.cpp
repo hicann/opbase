@@ -481,7 +481,7 @@ static void NnopbaseReportInfo(const std::string &valStr, const uint64_t itemId,
     OP_LOGI("NnopbaseReportInfo, res = %d, compactInfo.timeStamp = %lu", res, compactInfo.timeStamp);
 }
 
-static void NnopbasePreportAttrInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp)
+static void NnopbaseReportAttrInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp)
 {
     std::string attrStr = NnopbaseGetAttrVal(executor->attrs);
     if (!attrStr.empty()) {
@@ -533,7 +533,7 @@ std::string NnopbaseGetHostInfoStr(const NnopbaseTensors &tensors)
 {
     std::string inputStr;
     size_t j = 0U;
-    for (size_t i = 0; i < tensors.paramDescs.count; i++) {
+    for (size_t i = 0U; i < tensors.paramDescs.count; i++) {
         inputStr += NnopbaseGetHostTensorStr(tensors, i, j);
     }
     if (!inputStr.empty() && inputStr.back() == '|') {
@@ -542,7 +542,7 @@ std::string NnopbaseGetHostInfoStr(const NnopbaseTensors &tensors)
     return inputStr;
 }
 
-static void NnopbasePreportHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp)
+static void NnopbaseReportHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp)
 {
     std::string inputStr = NnopbaseGetHostInfoStr(executor->args->inputs);
     if (!inputStr.empty()) {
@@ -550,11 +550,11 @@ static void NnopbasePreportHostInfo(const NnopbaseExecutor *const executor, cons
     }
 }
 
-void NnopbasePreportAttrAndHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp)
+void NnopbaseReportAttrAndHostInfo(const NnopbaseExecutor *const executor, const uint64_t timeStamp)
 {
     if (op::internal::opProfilingSwitch.level2ProfilingFlag) {
-        NnopbasePreportAttrInfo(executor, timeStamp);
-        NnopbasePreportHostInfo(executor, timeStamp);
+        NnopbaseReportAttrInfo(executor, timeStamp);
+        NnopbaseReportHostInfo(executor, timeStamp);
     }
 }
 

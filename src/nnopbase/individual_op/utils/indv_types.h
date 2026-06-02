@@ -24,7 +24,7 @@
 #include "opdev/common_types.h"
 #include "aclnn/acl_meta.h"
 
-using GertTensor = gert::Tensor;
+using GertTensor = gert::TensorV2;
 using GertShape = gert::Shape;
 using GeFormat = ge::Format;
 using NnopbaseAnchorInstanceInfo = gert::AnchorInstanceInfo;
@@ -58,7 +58,7 @@ enum InputsAppend {
     kInputsCompileInfo,
     kInputsPlatformInfo,
     kInputsTilingFunc,
-    kInputsDetermintstic,
+    kInputsDeterministic,
     kInputsAppendEnd
 };
 
@@ -80,10 +80,10 @@ typedef struct {
 
 // TilingData class
 using NnopbaseTilingData = gert::TilingData;
-static constexpr int32_t NNOPBASE_TILIING_DATA_STRUCT_SIZE = sizeof(NnopbaseTilingData);
+static constexpr int32_t NNOPBASE_TILING_DATA_STRUCT_SIZE = sizeof(NnopbaseTilingData);
 
 typedef unsigned int (*TilingFun)(gert::TilingContext *);
-typedef unsigned int (TilingFunProtopyte)(gert::TilingContext *);
+typedef unsigned int (TilingFunPrototype)(gert::TilingContext *);
 
 #ifdef __cplusplus
 }

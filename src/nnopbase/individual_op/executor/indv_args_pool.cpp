@@ -193,6 +193,9 @@ void ArgsPool::Put(NnopbaseExecutorArgs *const args)
 
 void ArgsPool::FixCache(NnopbaseExecutorArgs *const args)
 {
+    if (args == nullptr) {
+        return;
+    }
     const std::lock_guard<std::mutex> lk(mutex);
     auto &argsList = argsMap[args->seed];
     for (auto it = argsList.begin(); it != argsList.end(); it++) {
@@ -219,7 +222,6 @@ void ArgsPool::ReleaseFixedCache(NnopbaseExecutorArgs *const args)
 {
     auto cacheListIter = fixedCacheMap.find(args->seed);
     if (cacheListIter == fixedCacheMap.cend()) {
-        OP_LOGD("Cannot find seed %zu in fixed cache pool, args: %p", args->seed, args);
         return;
     }
     auto &fixedCacheList = cacheListIter->second;

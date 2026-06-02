@@ -521,7 +521,7 @@ public:
             reinterpret_cast<customOpExceptionCallback>(callback), userData);
         if (ret != ACL_SUCCESS) {
             OP_LOGE(ACLNN_ERR_INNER, "Nnopbase fails to invoke the aclrtBinarySetExceptionCallback "
-                    "function of the acl_rt module, ret = %d, calback = %p.", ret, callback);
+                    "function of the acl_rt module, ret = %d, callback = %p.", ret, callback);
             return ACLNN_ERR_INNER;
         }
         return OK;

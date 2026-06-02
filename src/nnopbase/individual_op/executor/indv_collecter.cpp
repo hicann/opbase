@@ -769,7 +769,7 @@ void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& sta
                     kernelDesc.runInfo->tilingData.emplace_back(byte);
                 }
             }
-            OP_LOGI("Parse runInfo success. aicpuNumBlocks is %u, numBlocks is %u, locamMemorySize is %u,"
+            OP_LOGI("Parse runInfo success. aicpuNumBlocks is %u, numBlocks is %u, localMemorySize is %u,"
             " scheduleMode is %u, tilingCond is %u, tilingKey is %llu, clearAtomic is %u, staticTilingData size is %u, workspaceNum is %zu",
             kernelDesc.runInfo->aicpuNumBlocks, kernelDesc.runInfo->numBlocks, kernelDesc.runInfo->dynUBufSize, kernelDesc.runInfo->scheduleMode,
             kernelDesc.runInfo->tilingCond, kernelDesc.runInfo->tilingKey, kernelDesc.runInfo->clearAtomic, kernelDesc.runInfo->tilingData.size(),
@@ -975,7 +975,7 @@ aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const str
     return OK;
 }
 
-NnopbaseUChar *NnopbaseBeyond8BtyeCopy(const int32_t start, const int32_t end, const NnopbaseChar *const strKey,
+NnopbaseUChar *NnopbaseBeyond8ByteCopy(const int32_t start, const int32_t end, const NnopbaseChar *const strKey,
                                        NnopbaseUChar *verKey)
 {
     uint64_t type = 0U;
@@ -1051,7 +1051,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
                     isAppend = true;
                 } else {
                     if (start != -1) {
-                        key = NnopbaseBeyond8BtyeCopy(start, static_cast<int32_t>(i - 1U), strKey, key);
+                        key = NnopbaseBeyond8ByteCopy(start, static_cast<int32_t>(i - 1U), strKey, key);
                         start = -1;
                         type = 0U;
                         bitNum = 0;
@@ -1078,7 +1078,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
         i += 1U;
     }
     if (start != -1) {
-        key = NnopbaseBeyond8BtyeCopy(start, static_cast<int32_t>(i - 1U), strKey, key); // 超出8字节
+        key = NnopbaseBeyond8ByteCopy(start, static_cast<int32_t>(i - 1U), strKey, key); // 超出8字节
         isAppend = false;
     }
     if (isAppend) {

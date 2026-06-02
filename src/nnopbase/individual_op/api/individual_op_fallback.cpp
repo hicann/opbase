@@ -32,7 +32,7 @@ aclTensor *NnopbaseConvertTensor(const gert::Tensor* tensor)
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
     const auto &storageShape = tensor->GetStorageShape();
     op::FVector<int64_t> shape;
-    for (size_t i = 0; i < storageShape.GetDimNum(); ++i) {
+    for (size_t i = 0U; i < storageShape.GetDimNum(); ++i) {
         shape.push_back(storageShape.GetDim(i));
     }
 
@@ -52,12 +52,12 @@ aclTensor *NnopbaseConvertTensor(const gert::Tensor* tensor)
         const_cast<void *>(tensor->GetAddr()));
 }
 
-aclTensorList *NnopbaseConvertTensorList(std::vector<const gert::Tensor*>& tenserList)
+aclTensorList *NnopbaseConvertTensorList(std::vector<const gert::Tensor*>& tensorList)
 {
-    OP_CHECK(tenserList.size() != 0UL, OP_LOGI("TenserList size is 0."), return nullptr);
+    OP_CHECK(tensorList.size() != 0UL, OP_LOGI("TensorList size is 0."), return nullptr);
     op::FVector<aclTensor*> tmp;
-    for (size_t i = 0; i < tenserList.size(); i++) {
-        tmp.push_back(NnopbaseConvertTensor(tenserList[i]));
+    for (size_t i = 0U; i < tensorList.size(); i++) {
+        tmp.push_back(NnopbaseConvertTensor(tensorList[i]));
     }
 
     return aclCreateTensorList(tmp.data(), tmp.size());

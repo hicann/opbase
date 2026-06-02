@@ -26,6 +26,9 @@ public:
     aclnnStatus CreateArgs(NnopbaseExecutor *executor);
     inline void ReleaseArgs(NnopbaseExecutorArgs *const args)
     {
+        if (args == nullptr) {
+            return;
+        }
         const std::lock_guard<std::mutex> lk(mutex);
         ReleaseFixedCache(args);
         args->isVist = false;

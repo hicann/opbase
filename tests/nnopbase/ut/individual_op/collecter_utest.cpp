@@ -441,14 +441,14 @@ TEST_F(NnopbaseCollecterUnitTest, test_read_config_file_empty) {
 }
 
 TEST_F(NnopbaseCollecterUnitTest, test_update_static_json_info_Fail_1) {
-    std::string path = "../satic_kernel/test_staic.json";
+    std::string path = "../static_kernel/test_static.json";
     nlohmann::json binInfo;
     NnopbaseJsonInfo jsonInfo;
     ASSERT_EQ(NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo), ACLNN_ERR_PARAM_INVALID);
 }
 
 TEST_F(NnopbaseCollecterUnitTest, test_update_static_json_info_Fail_2) {
-    std::string path = "../satic_kernel/test_staic.json";
+    std::string path = "../static_kernel/test_static.json";
     nlohmann::json binInfo;
     binInfo["binDesc"]["blockDim"] = 16;
     binInfo["binDesc"]["kernelName"] = "TestStatic_1e04ee05ab491cc5ae9c3d5c9ee8950b";
@@ -558,7 +558,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_add_reg_info) {
     delete reg2;
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_opp_lastest)
+TEST_F(NnopbaseCollecterUnitTest, test_opp_latest)
 {
     ASSERT_EQ(NnopbaseSetStubFiles("", true), 1);
     NnopbaseBinCollecter bin_collecter;

@@ -175,7 +175,7 @@ struct MemsetOpInfo {
     NnopbaseKernelRunContextExt contextExt;
     NnopbaseAsyncAnyValue *tilingParseContextValue = nullptr;
     NnopbaseKernelRunContext *tilingParseContext = nullptr;
-    uint8_t tilingData[NNOPBASE_TILIING_DATA_STRUCT_SIZE] = {};
+    uint8_t tilingData[NNOPBASE_TILING_DATA_STRUCT_SIZE] = {};
     uint8_t workspacesSizes[NNOPBASE_WORKSPACE_STRUCT_SIZE] = {};
     uint64_t *tilingKey = nullptr;
     uint32_t *numBlocks = nullptr;

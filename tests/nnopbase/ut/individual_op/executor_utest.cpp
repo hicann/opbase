@@ -298,7 +298,7 @@ void NnopbaseExecutorUnitTestCheckArgs(NnopbaseExecutor *executor) {
     rtHostInputInfo_t *hostInputInfo =
         (rtHostInputInfo_t *)((NnopbaseUChar *)ptr +
                               (executor->ownArgs.inputs.paramDescs.count + executor->ownArgs.outputs.paramDescs.count + 2) *
-                                  sizeof(uint64_t));  // 2 is workspace and automicIndex
+                                  sizeof(uint64_t));  // 2 is workspace and atomicIndex
 #if 0 // comment out for ge decoupling
     size_t k = 0U;
     uint16_t expAddrOffset[] = {8, 16, 24, 32};
@@ -543,7 +543,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput1)
     ASSERT_EQ(NnopbaseExecutorAddTensor(executor, tensor, 3, true, false), OK);
     ASSERT_EQ(NnopbaseExecutorUpdateTensorsIndex(&(executor->ownArgs.inputs), 4), OK);
     ASSERT_EQ(NnopbaseExecutorAddTensor(executor, tensor, 4, true, false), OK);
-    // for option input null
+    // for optional input null
     ASSERT_EQ(NnopbaseExecutorUpdateTensorsIndex(&(executor->ownArgs.inputs), 5), OK);
     ASSERT_EQ(NnopbaseExecutorAddTensor(executor, nullptr, 5, true, false), OK);
 
@@ -868,7 +868,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorCache)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
     void *executorSpace = nullptr;
-    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
 
     const char *opType = "bninference_d_kernel";
     char inputDesc[] = {1, 1, 1};
@@ -955,7 +955,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptypeFailed)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverFlowAddrNotNull1)
+TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverflowAddrNotNull1)
 {
     aclrtSetDeviceSatMode(ACL_RT_OVERFLOW_MODE_SATURATION);
     g_nnopbaseSysCfgParams.overflowAddr = nullptr;
@@ -963,7 +963,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverFlowAddrNotNull1)
     ASSERT_NE(g_nnopbaseSysCfgParams.overflowAddr, nullptr);
 }
 
-TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverFlowAddrNotNull2)
+TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverflowAddrNotNull2)
 {
     aclrtSetDeviceSatMode(ACL_RT_OVERFLOW_MODE_INFNAN);
     g_nnopbaseSysCfgParams.overflowAddr = nullptr;
@@ -972,7 +972,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverFlowAddrNotNull2)
     aclrtSetDeviceSatMode(ACL_RT_OVERFLOW_MODE_SATURATION);
 }
 
-TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverFlowAddrUndef)
+TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverflowAddrUndef)
 {
     aclrtSetDeviceSatMode(ACL_RT_OVERFLOW_MODE_UNDEF);
     g_nnopbaseSysCfgParams.overflowAddr = nullptr;
@@ -1187,7 +1187,7 @@ class UtDump : public Adx::DumpStub {
     int32_t AdumpDumpTensorV2(const std::string &opType, const std::string &opName,
                             const std::vector<Adx::TensorInfoV2> &tensors, aclrtStream stream)
     {
-        if (opType.find("L2DfxAbscent_") != string::npos) {
+        if (opType.find("L2DfxAbsent_") != string::npos) {
             for (auto &info : tensors) {
                 EXPECT_EQ(info.shape.size(), 5);
                 EXPECT_EQ(info.dataType, aclDataType::ACL_FLOAT);
@@ -1202,7 +1202,7 @@ class UtDump : public Adx::DumpStub {
     bool AdumpIsDumpEnable(Adx::DumpType type) override { return true; }
 };
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseDumpTensorWorkspaceCheck)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseDumpTensorWorkspaceCheck)
 {
     UtDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
@@ -1304,7 +1304,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSetShapeAndAddrSuccess)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseMultiThreadForMatchCache)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseMultiThreadForMatchCache)
 {
     NnopbaseExecutor *executor = nullptr;
     GetExecutor(executor);
@@ -1330,107 +1330,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseMultiThreadForMatchCache)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-NnopbaseUChar *GetNoAttrKey(NnopbaseExecutor *executor, NnopbaseUChar *&key) {
-    key = (uint8_t *) NnopbaseAppendBinary(key, strlen(executor->opType), executor->opType, strlen(executor->opType));
-    for (size_t i = 0; i < 3; ++i) {
-        key = NnopbaseAppend1Byte(key, aclDataType::ACL_FLOAT);
-        key = NnopbaseAppend1Byte(key, aclFormat::ACL_FORMAT_ND);
-        key = NnopbaseAppend4Byte(key, 5);
-        for (size_t j = 0; j < 5; ++j) {
-            key = NnopbaseAppend8Byte(key, 1);
-        }
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppend1Byte(key, aclDataType::ACL_FLOAT);
-    key = NnopbaseAppend1Byte(key, aclFormat::ACL_FORMAT_ND);
-    key = NnopbaseAppend4Byte(key, 5);
-    for (size_t j = 0; j < 5; ++j) {
-        key = NnopbaseAppend8Byte(key, 1);
-    }
-    key = NnopbaseAppend1Byte(key, '/');
-    return key;
-}
-
-NnopbaseUChar *AppendCoreNumForKey(NnopbaseUChar *&key) {
-    key = NnopbaseAppend1Byte(key, '/');
-    NnopbaseCoreNum coreNumInfo = {24, 24};
-    key = NnopbaseAppendBinary(key, 8, &coreNumInfo, 8);
-    return key;
-}
-
-TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheNoAttrkey)
-{
-    NnopbaseExecutor *executor = nullptr;
-    GetExecutor(executor);
-    ASSERT_NE(executor, nullptr);
-
-    // set core num
-    executor->coreNum.aicNum = 24;
-    executor->coreNum.aivNum = 24;
-    nnopbase::ArgsPool::GetInstance().MatchArgs(executor);
-    vector<NnopbaseUChar> exp(10240, '\0');
-    auto key = &exp[0U];
-    key = GetNoAttrKey(executor, key);
-    key = AppendCoreNumForKey(key);
-    key = NnopbaseAppend1Byte(key, '/');
-    uint32_t rankId = 0U;
-    key = NnopbaseAppendBinary(key, 4, &rankId, 4);
-    bool deterministic = false;
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppend1Byte(key, deterministic);
-    auto keyLen = key - &exp[0U];
-    ASSERT_EQ(keyLen, executor->ownArgs.keyLen);
-    for (size_t i = 0; i < executor->ownArgs.keyLen; ++i) {
-        ASSERT_EQ(executor->ownArgs.inputKey[i], exp[i]);
-    }
-
-    NnopbaseExecutorGcSpace((void *)executor->space);
-    NnopbaseExecutorDeInit(executor);
-    delete executor;
-    NnopbaseUnsetEnvAndClearFolder();
-}
-
-NnopbaseUChar *AppendAttrForKey(NnopbaseUChar *&key) {
-    int64_t bias1[1] = {1};
-    key = NnopbaseAppendBinary(key, 8, &(bias1[0]), 8);
-    return key;
-}
-
-TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheWithAttrkey)
-{
-    NnopbaseExecutor *executor = nullptr;
-    GetExecutorWithAttr(executor);
-    ASSERT_NE(executor, nullptr);
-    executor->space = new NnopbaseExecutorSpace();
-
-    // set core num
-    executor->coreNum.aicNum = 24;
-    executor->coreNum.aivNum = 24;
-    nnopbase::ArgsPool::GetInstance().MatchArgs(executor);
-    vector<NnopbaseUChar> exp(10240, '\0');
-    auto key = &exp[0U];
-    key = GetNoAttrKey(executor, key);
-    key = AppendAttrForKey(key);
-    key = AppendCoreNumForKey(key);
-    key = NnopbaseAppend1Byte(key, '/');
-    uint32_t rankId = 0U;
-    key = NnopbaseAppendBinary(key, 4, &rankId, 4);
-    bool deterministic = false;
-    key = NnopbaseAppend1Byte(key, '/');
-    key = NnopbaseAppend1Byte(key, deterministic);
-    auto keyLen = key - &exp[0U];
-    ASSERT_EQ(keyLen, executor->ownArgs.keyLen);
-    for (size_t i = 0; i < executor->ownArgs.keyLen; ++i) {
-        ASSERT_EQ(executor->ownArgs.inputKey[i], exp[i]);
-    }
-
-    NnopbaseExecutorGcSpace((void *)executor->space);
-    NnopbaseExecutorDeInit(executor);
-    delete executor;
-    NnopbaseUnsetEnvAndClearFolder();
-}
-
-TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheMatchArgs)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseCacheMatchArgs)
 {
     NnopbaseExecutor *executor = nullptr;
     GetExecutorWithAttr(executor);
@@ -1451,7 +1351,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheMatchArgs)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheNoMatchArgs)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseCacheNoMatchArgs)
 {
     NnopbaseExecutor *executor1 = nullptr;
     NnopbaseExecutor *executor2 = nullptr;
@@ -1478,7 +1378,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseCacheNoMatchArgs)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseExceededMaxNum)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseExceededMaxNum)
 {
     NnopbaseExecutor *executor = nullptr;
     GetExecutor(executor);
@@ -1512,7 +1412,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseExceededMaxNum)
     nnopbase::ArgsPool::maxCacheNum = 10000;
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseOneCacheNum)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseOneCacheNum)
 {
     NnopbaseExecutor *executor1 = nullptr;
     NnopbaseExecutor *executor2 = nullptr;
@@ -1543,7 +1443,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseOneCacheNum)
     nnopbase::ArgsPool::maxCacheNum = 10000;
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseZeroCacheNum)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseZeroCacheNum)
 {
     NnopbaseExecutor *executor = nullptr;
     GetExecutor(executor);
@@ -1563,7 +1463,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnobaseZeroCacheNum)
     nnopbase::ArgsPool::maxCacheNum = 10000;
 }
 
-TEST_F(NnopbaseExecutorUnitTest, ExecutorInitEmptyOuput)
+TEST_F(NnopbaseExecutorUnitTest, ExecutorInitEmptyOutput)
 {
     NnopbaseExecutor *executor = new NnopbaseExecutor;
     ASSERT_NE(executor, nullptr);
@@ -1627,7 +1527,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorProfilingWithEmptyTensorSuccess)
     EXPECT_EQ(RunBnProfiling(shape), OK);
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseDumpTensorWithEmptyTensorSuccess)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseDumpTensorWithEmptyTensorSuccess)
 {
     NnopbaseExecutor *executor = nullptr;
     std::vector<int64_t> shape = {0};
@@ -1673,7 +1573,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSupportScalarConvertDtype)
     (void) NnopbaseAddScalarInput(executor, scalar, 2, -1, ge::DT_FLOAT16);
     auto inputs = &(((NnopbaseExecutor *)executor)->ownArgs.inputs);
     auto tensors = &inputs->extTensors[2];
-    gert::Tensor *rt2Tensor = &tensors->rt2Tensor;
+    gert::TensorV2 *rt2Tensor = &tensors->rt2Tensor;
     ASSERT_EQ(rt2Tensor->GetDataType(), ge::DT_FLOAT16);
     inputs->expectIndex = 2;
     (void) NnopbaseAddScalarInput(executor, scalar, 2, -1, ge::DT_BF16);
@@ -1729,7 +1629,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSupportScalarConvertDtype)
 }
 
 void *addr[100];
-class UtNnopbaseExecptionDump : public Adx::DumpStub {
+class UtNnopbaseExceptionDump : public Adx::DumpStub {
   public:
     void *AdumpGetSizeInfoAddr(uint32_t space, uint32_t &atomicIndex) {
         auto mc2Env = std::getenv("MC2_TEST");
@@ -1748,7 +1648,7 @@ class UtNnopbaseExecptionDump : public Adx::DumpStub {
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseMC2ExceptionArgsUt)
 {
     setenv("MC2_TEST", "1", 1);
-    UtNnopbaseExecptionDump dumpStub;
+    UtNnopbaseExceptionDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
 
     NnopbaseExecutor *executor = nullptr;
@@ -1775,7 +1675,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseMC2ExceptionArgsUt)
 
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseExceptionArgsUt)
 {
-    UtNnopbaseExecptionDump dumpStub;
+    UtNnopbaseExceptionDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
 
     NnopbaseExecutor *executor = nullptr;
@@ -1796,7 +1696,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseExceptionArgsUt)
     Adx::DumpStub::GetInstance()->UnInstall();
 }
 
-class UtNnopbaseDynamicExecptionDump : public Adx::DumpStub {
+class UtNnopbaseDynamicExceptionDump : public Adx::DumpStub {
   public:
     void *AdumpGetSizeInfoAddr(uint32_t space, uint32_t &atomicIndex){
         EXPECT_EQ(space, 11U);
@@ -1807,7 +1707,7 @@ class UtNnopbaseDynamicExecptionDump : public Adx::DumpStub {
 
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseDynamicInputExceptionArgsUt)
 {
-    UtNnopbaseDynamicExecptionDump dumpStub;
+    UtNnopbaseDynamicExceptionDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
  
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
@@ -2059,7 +1959,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSupportScalarConvertDtypeWithInput)
             inputs->expectIndex = 0;
             (void) NnopbaseAddScalarInput(executor, scalar, 0, 1, static_cast<ge::DataType>(vec[i]));
             (void) NnopbaseAddInput(executor, tmpTensor, 1);
-            gert::Tensor *rt2Tensor = &tensors->rt2Tensor;
+            gert::TensorV2 *rt2Tensor = &tensors->rt2Tensor;
             ASSERT_EQ(rt2Tensor->GetDataType(), map.first);
         }
     }
@@ -2098,12 +1998,12 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForStream)
     EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.eventB, 0, ACL_EVENT_SYNC), ACL_SUCCESS);
     g_nnopbaseStreamMap[mainStream] = nnopbaseStream;
 
-    NnopbaseDestroyStreamCallBack(mainStream, false);
+    NnopbaseDestroyStreamCallback(mainStream, false);
     EXPECT_EQ(g_nnopbaseStreamMap.size(), 0U);
     rtStreamDestroy(mainStream);
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForContextWithDefalutStream)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForContextWithDefaultStream)
 {
     extern std::unordered_map<void *, NnopbaseStreamForCombineExecution> g_nnopbaseStreamMap;
     g_nnopbaseStreamMap.clear();
@@ -2114,7 +2014,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForContextWithDefalut
     EXPECT_EQ(aclrtCreateStreamWithConfig(&nnopbaseStream.eventB, 0, ACL_EVENT_SYNC), ACL_SUCCESS);
     g_nnopbaseStreamMap[nullptr] = nnopbaseStream;
 
-    NnopbaseDestroyStreamCallBack(nullptr, false);
+    NnopbaseDestroyStreamCallback(nullptr, false);
     EXPECT_EQ(g_nnopbaseStreamMap.size(), 0U);
 }
 
@@ -2142,7 +2042,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseInvalidAttr)
     EXPECT_EQ(nnopbase::ToStr(attrs), "[0x02 0x00 0x00 0x00 0x00 0x00 0x00 0x00 ]");
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnobaseNotCacheMatchArgs)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseNotCacheMatchArgs)
 {
     NnopbaseExecutor *executor = nullptr;
     GetExecutorWithAttr(executor);
@@ -2354,11 +2254,11 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
 
     NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
     NnopbasePrepareMC2Params(executor, &argsAddr);
-    std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBAE_AICPU_PARAM_LEN);
-    const std::string expected_soName = "libccl_kernel.so" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("libccl_kernel.so"), '\0');
+    std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBASE_AICPU_PARAM_LEN);
+    const std::string expected_soName = "libccl_kernel.so" + std::string(NNOPBASE_AICPU_PARAM_LEN - std::strlen("libccl_kernel.so"), '\0');
     ASSERT_EQ(soName, expected_soName);
-    std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBAE_AICPU_PARAM_LEN), NNOPBAE_AICPU_PARAM_LEN);
-    const std::string expected_kernelName = "RunAicpuKfcSrvLaunch" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("RunAicpuKfcSrvLaunch"), '\0');
+    std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBASE_AICPU_PARAM_LEN), NNOPBASE_AICPU_PARAM_LEN);
+    const std::string expected_kernelName = "RunAicpuKfcSrvLaunch" + std::string(NNOPBASE_AICPU_PARAM_LEN - std::strlen("RunAicpuKfcSrvLaunch"), '\0');
     ASSERT_EQ(kernelName, expected_kernelName);
 
     delete executor->args;
@@ -2401,11 +2301,11 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
     NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
     NnopbasePrepareMC2Params(executor, &argsAddr);
-    std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBAE_AICPU_PARAM_LEN);
-    const std::string expected_soName = "libmc2_server.so" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("libmc2_server.so"), '\0');
+    std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBASE_AICPU_PARAM_LEN);
+    const std::string expected_soName = "libmc2_server.so" + std::string(NNOPBASE_AICPU_PARAM_LEN - std::strlen("libmc2_server.so"), '\0');
     ASSERT_EQ(soName, expected_soName);
-    std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBAE_AICPU_PARAM_LEN), NNOPBAE_AICPU_PARAM_LEN);
-    const std::string expected_kernelName = "Mc2ServerKernel" + std::string(NNOPBAE_AICPU_PARAM_LEN - std::strlen("Mc2ServerKernel"), '\0');
+    std::string kernelName(reinterpret_cast<char*>(soNamePtr + NNOPBASE_AICPU_PARAM_LEN), NNOPBASE_AICPU_PARAM_LEN);
+    const std::string expected_kernelName = "Mc2ServerKernel" + std::string(NNOPBASE_AICPU_PARAM_LEN - std::strlen("Mc2ServerKernel"), '\0');
     ASSERT_EQ(kernelName, expected_kernelName);
     // SOC version will be restored by SocVersionGuard destructor
 

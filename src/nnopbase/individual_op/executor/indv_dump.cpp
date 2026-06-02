@@ -30,7 +30,7 @@ constexpr uint32_t NNOPBASE_EXCEPTION_DUMP_HEAD = 2U;
 constexpr uint16_t NNOPBASE_MODEL_ID = 61; // OP model
 
 namespace {
-void FillTensorInfo(Adx::TensorInfoV2 &info, gert::Tensor *rtTensor)
+void FillTensorInfo(Adx::TensorInfoV2 &info, gert::TensorV2 *rtTensor)
 {
     info.tensorSize = static_cast<size_t>(op::CalcShapeBytes(rtTensor->GetStorageShape().GetShapeSize(),
         rtTensor->GetDataType()));
@@ -39,11 +39,11 @@ void FillTensorInfo(Adx::TensorInfoV2 &info, gert::Tensor *rtTensor)
     info.tensorAddr = static_cast<int64_t *>(rtTensor->GetAddr());
     info.placement = rtTensor->GetPlacement();
     const auto &storageShape = rtTensor->GetStorageShape();
-    for (size_t i = 0; i < storageShape.GetDimNum(); ++i) {
+    for (size_t i = 0U; i < storageShape.GetDimNum(); ++i) {
         info.shape.push_back(storageShape.GetDim(i));
     }
     const auto &originShape = rtTensor->GetOriginShape();
-    for (size_t i = 0; i < originShape.GetDimNum(); ++i) {
+    for (size_t i = 0U; i < originShape.GetDimNum(); ++i) {
         info.originShape.push_back(originShape.GetDim(i));
     }
 }
@@ -113,7 +113,7 @@ void NnopbasePrepareDumpTensor(NnopbaseTensors &tensors, const Adx::TensorType i
 }
 
 inline void NnopbasePrepareOutputShapeDumpTensor(
-    NnopbaseExecutor *const executor, gert::Tensor *outputShapeTensor, std::vector<Adx::TensorInfoV2> &dumpTensors)
+    NnopbaseExecutor *const executor, gert::TensorV2 *outputShapeTensor, std::vector<Adx::TensorInfoV2> &dumpTensors)
 {
     Adx::TensorInfoV2 info;
     *outputShapeTensor = {{{9}, {9}},  // shape
@@ -136,7 +136,7 @@ inline void NnopbaseDumpTensors(NnopbaseExecutor *executor, Adx::TensorType ioTy
     OP_LOGI("Start to dump, op type %s.", opType);
     std::vector<Adx::TensorInfoV2> dumpTensors;
     NnopbasePrepareDumpTensor(tensors, ioType, opType, dumpTensors);
-    gert::Tensor outputShapeTensor;
+    gert::TensorV2 outputShapeTensor;
     if ((ioType == Adx::TensorType::OUTPUT) && (tensors.outPutShapeArgsOffset != 0U)) {
         NnopbasePrepareOutputShapeDumpTensor(executor, &outputShapeTensor, dumpTensors);
     }
@@ -250,7 +250,7 @@ void NnopbaseDumpData(NnopbaseExecutor *executor, Adx::TensorType ioType, aclrtS
 aclnnStatus NnopbasePrepareWorkspaceDumpTensor(NnopbaseExecutor *executor, std::vector<Adx::TensorInfoV2> &dumpTensors)
 {
     const auto workspacesSizes = NnopbaseGetWorkspacesSizesFromArgs(executor->args);
-    executor->workspaces.workspaceTensor = std::vector<gert::Tensor>(workspacesSizes->GetSize());
+    executor->workspaces.workspaceTensor = std::vector<gert::TensorV2>(workspacesSizes->GetSize());
     for (size_t i = 0U; i < workspacesSizes->GetSize(); i++) {
         executor->workspaces.workspaceTensor[i].MutableOriginShape() = {
             static_cast<int64_t>(workspacesSizes->GetData()[i])};
@@ -289,7 +289,7 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor *const executor, a
         std::vector<Adx::TensorInfoV2> dumpOutTensors;
         NnopbasePrepareDumpTensor(executor->args->inputs, Adx::TensorType::INPUT, executor->opType, dumpInTensors);
         NnopbasePrepareDumpTensor(executor->args->outputs, Adx::TensorType::OUTPUT, executor->opType, dumpOutTensors);
-        gert::Tensor outputShapeTensor;
+        gert::TensorV2 outputShapeTensor;
         if (executor->args->outputs.outPutShapeArgsOffset != 0U) {
             NnopbasePrepareOutputShapeDumpTensor(executor, &outputShapeTensor, dumpOutTensors);
         }

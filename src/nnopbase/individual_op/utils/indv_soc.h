@@ -55,6 +55,9 @@ public:
     bool NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType);
     uint32_t *GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const;
     uint32_t GetSocEnum();
+    bool IsSupportedSocName(const std::string &name) const;
+    uint32_t GetSocEnumByName(const std::string &name) const;
+    std::string GetSupportedSocNamesStr() const;
     void Reset(void);
     bool isInit = false;
     std::string socVersion;

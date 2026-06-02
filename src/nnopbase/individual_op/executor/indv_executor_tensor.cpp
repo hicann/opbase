@@ -20,7 +20,7 @@ static const std::set<ge::Format> FormatsLikeND {
     ge::FORMAT_NCL, ge::FORMAT_NCDHW, ge::FORMAT_DHWCN, ge::FORMAT_NHWC, ge::FORMAT_NCHW};
 
 template <typename T, typename S>
-void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataType, std::vector<uint8_t> &scalarValue)
+void NnopbaseExecutorConvertTensorType(GertTensor *tensor, ge::DataType dataType, std::vector<uint8_t> &scalarValue)
 {
     scalarValue.resize(tensor->GetShapeSize() * sizeof(T));
     if (dataType ==  ge::DataType::DT_FLOAT) {
@@ -98,7 +98,7 @@ void NnopbaseExecutorConvertTensorType(gert::Tensor *tensor, ge::DataType dataTy
 }
 
 static std::map<ge::DataType,
-    std::map<ge::DataType, std::function<void(gert::Tensor *, ge::DataType, std::vector<uint8_t> &)>>>
+    std::map<ge::DataType, std::function<void(GertTensor *, ge::DataType, std::vector<uint8_t> &)>>>
     g_nnopbaseConvertMap{
         {ge::DataType::DT_INT8,
             {{ge::DataType::DT_INT16, NnopbaseExecutorConvertTensorType<int8_t, int16_t>},
@@ -288,7 +288,7 @@ aclnnStatus NnopbaseSaveTensor(NnopbaseExecutor *executor, const aclTensor *in_t
     tensor->isNull = false;
 
     // 当前op::shape和gert::shape是同一个数据结构，后续这个仓全部使用op::shape
-    gert::Tensor *rt2Tensor = &tensor->rt2Tensor;
+    GertTensor *rt2Tensor = &tensor->rt2Tensor;
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
     rt2Tensor->MutableOriginShape() = in_tensor->GetViewShape();
     rt2Tensor->MutableStorageShape() = in_tensor->GetViewShape();
@@ -303,11 +303,17 @@ aclnnStatus NnopbaseSaveTensor(NnopbaseExecutor *executor, const aclTensor *in_t
         rt2Tensor->SetStorageFormat(format);
     }
     rt2Tensor->MutableTensorData().SetPlacement(in_tensor->GetPlacement());
-    // valueDepend 需要获取 tensorSize
     rt2Tensor->SetSize(
         op::CalcShapeBytes(in_tensor->Numel(), in_tensor->GetDataType()));
     NNOPBASE_ASSERT_TRUE_RETVAL(
         rt2Tensor->MutableTensorData().SetAddr(in_tensor->GetData(), nullptr) == ge::GRAPH_SUCCESS);
+    const auto &viewStrides = in_tensor->GetViewStrides();
+    auto &geStride = rt2Tensor->MutableStride();
+    geStride.SetDimNum(viewStrides.size());
+    for (size_t i = 0U; i < viewStrides.size(); ++i) {
+        geStride.SetStride(i, viewStrides[i]);
+    }
+    rt2Tensor->SetOffset(in_tensor->GetViewOffset());
     return OK;
 }
 aclnnStatus NnopbaseExecutorSaveTensor(
@@ -325,7 +331,7 @@ aclnnStatus NnopbaseExecutorConvertScalarTensorType(NnopbaseTensors *tensors, ge
                                                     const uint32_t index, const int32_t scalarIndex)
 {
     auto scalarTensor = &tensors->extTensors[tensors->paramDescs.instances[scalarIndex].startIndex];
-    gert::Tensor *scalarRt2Tensor = &scalarTensor->rt2Tensor;
+    GertTensor *scalarRt2Tensor = &scalarTensor->rt2Tensor;
     const ge::DataType scalarDataType = scalarRt2Tensor->GetDataType();
     if (dataType != scalarDataType) {
         const auto &funcMap = nnopbase::g_nnopbaseConvertMap.find(dataType);

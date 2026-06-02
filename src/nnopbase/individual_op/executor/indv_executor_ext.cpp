@@ -28,7 +28,7 @@ static constexpr size_t NNOPBASE_OP_VERB_HEAD_LEN = 2U;
 static constexpr uint32_t NNOPBASE_DTYPE_AND_FORMAT_SIZE = 16U;
 std::unordered_map<void *, NnopbaseStreamForCombineExecution> g_nnopbaseStreamMap;
 std::unordered_map<void *, std::shared_ptr<std::mutex>> g_nnopbaseStreamMtxMap;
-static bool g_isNnopbaseRegistedCallBack = false;
+static bool g_isNnopbaseRegisteredCallback = false;
 static std::mutex g_nnopbaseStreamMtx;
 
 void PrintTime(const NnopbaseExecutor *const executor, const char *const info, const unsigned short startIndex,
@@ -67,7 +67,7 @@ void NnopbaseExecutorClearAttrs(NnopbaseAttrs *attrs)
 {
     attrs->totalSize = 0;
     attrs->totalDataLen = 0;
-    for (size_t i = 0; i < attrs->num; i++) {
+    for (size_t i = 0U; i < attrs->num; i++) {
         attrs->attrs[i].addr.addr = nullptr;
         attrs->attrs[i].addr.size = 0;
     }
@@ -88,7 +88,7 @@ void NnopbaseExecutorReset(NnopbaseExecutor *executor)
     executor->inUncontWsSize = 0U;
     executor->aicpuStream.clear();
     executor->aicpuNotify.clear();
-    executor->repeateFlag = false;
+    executor->repeatFlag = false;
     executor->hasMemset = false;
     executor->formatCheckOption = kNnopbaseDefault;
     executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_END;
@@ -312,7 +312,7 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInf
     executor->memsetItemId = 0U;
     executor->aicpuStream.clear();
     executor->aicpuNotify.clear();
-    executor->repeateFlag = false;
+    executor->repeatFlag = false;
     executor->formatCheckOption = kNnopbaseDefault;
     executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_END;
     (void)NnopbaseTilingContextInit(executor);
@@ -322,13 +322,8 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInf
 aclnnStatus NnopbaseExecutorExtendIoCaches(NnopbaseTensors *tensors)
 {
     const uint32_t num = tensors->num * 2U;
-    std::vector<NnopbaseTensor> array(num);
-
-    /* gert::tensor is defined as POD, it's memory can be copied. */
-    NNOPBASE_ASSERT_TRUE_RETVAL(memcpy_s(&(array[0U]), num * sizeof(NnopbaseTensor), &(tensors->extTensors[0U]),
-        tensors->arrayLen * sizeof(NnopbaseTensor)) == EOK);
+    tensors->extTensors.resize(num);
     tensors->arrayLen = num;
-    tensors->extTensors = std::move(array);
     return OK;
 }
 
@@ -354,6 +349,12 @@ void NnopbaseExecutorDeInit(NnopbaseExecutor *executor)
 {
     NnopbaseExecutorDeInitAttrsCaches(executor);
     NnopbaseTilingContextDeInit(executor);
+    if (executor->socSupportListOwned) {
+        delete[] executor->socSupportList;
+    }
+    executor->socSupportList = nullptr;
+    executor->socSupportListLen = 0U;
+    executor->socSupportListOwned = false;
     FREE(executor->opType);
 }
 
@@ -377,11 +378,14 @@ void NnopbaseExecutorClear(NnopbaseExecutor *executor)
     PrintNnopbaseAllTimeStampInfo(executor);
     nnopbase::ArgsPool::GetInstance().ReleaseArgs(executor->args);
     const std::lock_guard<std::mutex> lock(executor->space->spaceMtx);
-    executor->isWork = false;  /* this isWork field MUST BE the tail of this funtion. */
+    executor->isWork = false;  /* this isWork field MUST BE the tail of this function. */
 }
 
 void NnopbaseExecutorFixCache(NnopbaseExecutor *executor)
 {
+    if (executor == nullptr || executor->args == nullptr) {
+        return;
+    }
     nnopbase::ArgsPool::GetInstance().FixCache(executor->args);
 }
 
@@ -449,14 +453,14 @@ aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor *executor)
             GertTensor *tensor = &executor->args->outputs.extTensors[startIndex].rt2Tensor;
             if (nnopbase::IndvSoc::GetInstance().NeedAlignInitValues()) {
                 executor->args->binInfo->initValues[i].tensorDataSize = op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE);
-                OP_LOGI("Size is %zu bytes, dypeSize is %d bytes, alignSize is %zu bytes.",
+                OP_LOGI("Size is %zu bytes, dtypeSize is %d bytes, alignSize is %zu bytes.",
                     tensor->GetSize(),
                     ge::GetSizeByDataType(tensor->GetDataType()),
                     op::internal::AlignSize(tensor->GetSize(), NNOPBASE_BLOCK_SIZE));                
             } else {
                 executor->args->binInfo->initValues[i].tensorDataSize = tensor->GetSize();
             }
-            OP_LOGI("InitValues[%zu] outputIrIndex:%zu size is %zu bytes, dypeSize is %d bytes, TensorDataSize is %zu bytes.",
+            OP_LOGI("InitValues[%zu] outputIrIndex:%zu size is %zu bytes, dtypeSize is %d bytes, TensorDataSize is %zu bytes.",
                 index, irIndex,
                 tensor->GetSize(),
                 ge::GetSizeByDataType(tensor->GetDataType()),
@@ -502,7 +506,7 @@ aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor *executor)
     executor->hasMemset = executor->args->binInfo->isStaticShape ? true : executor->args->tilingInfo.needAtomic;
     if (executor->hasMemset) {
         // 构造tilingContext
-        NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseBuildMemsetTilingContext(executor));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBuildMemsetTilingContext(executor));
         NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseMemsetTiling(executor));
     }
     return OK;
@@ -630,7 +634,7 @@ void NnopbaseExecutorReportProfiling(NnopbaseExecutor *const executor, uint32_t 
 {
     NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->itemId);
     NnopbaseReportAdditionInfo(executor, numBlocks, taskType, launchBeginTime + 1U);
-    NnopbasePreportAttrAndHostInfo(executor, launchBeginTime + 1U);
+    NnopbaseReportAttrAndHostInfo(executor, launchBeginTime + 1U);
     NnopbaseReportCacheOpInfo(executor, numBlocks, taskType, stream);
     return;
 }
@@ -658,7 +662,7 @@ void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor *const executor)
         thread_local static std::atomic<std::uint64_t> index = 0;
         const unsigned long long opIdx = index++;
         OP_EVENT("test case opType: %s, index: %llu", executor->opType, opIdx);
-        PrintTime(executor, "add io and attr", NnopbaseTimeIdx::kAferCreateExecutor, NnopbaseTimeIdx::kGetWsStart);
+        PrintTime(executor, "add io and attr", NnopbaseTimeIdx::kAfterCreateExecutor, NnopbaseTimeIdx::kGetWsStart);
         PrintTime(executor, "before match cache", NnopbaseTimeIdx::kGetWsStart, NnopbaseTimeIdx::kMatchCacheStart);
         PrintTime(executor, "match cache", NnopbaseTimeIdx::kMatchCacheStart, NnopbaseTimeIdx::kMatchCacheEnd);
         PrintTime(executor, "create cache", NnopbaseTimeIdx::kMatchCacheEnd, NnopbaseTimeIdx::kCreateCacheEnd);
@@ -710,7 +714,7 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
         executor->opTypeHash = hashKey;
     }
     executor->itemId = MsprofGetHashId(opType, len);
-    const std::string aicpuOpType = std::string(opType) + NNOPBAE_MC2_AICPU_SUFFIX ;
+    const std::string aicpuOpType = std::string(opType) + NNOPBASE_MC2_AICPU_SUFFIX ;
     executor->aicpuItemId = MsprofGetHashId(&aicpuOpType[0], aicpuOpType.length());
     executor->memsetItemId = MsprofGetHashId(&NNOPBASE_MEMSET_OP_NAME[0], NNOPBASE_MEMSET_OP_NAME.length());
     OP_LOGI("OpType is %s, hashKey is %lu, item id is %lu, aicpu item id is %lu, memset item id is %lu.",
@@ -729,16 +733,16 @@ NnopbaseUChar *NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar *verKey
 
     if ((totalSize % 8U) != 0U) { // 8 + 16 字节 false
         const size_t leftBit = totalSize % 8U;
-        uint64_t littleEndien = 0U;
+        uint64_t littleEndian = 0U;
         for (size_t i = 0U; i < leftBit; i++) {
-            littleEndien |= littleEndien | (static_cast<uint64_t>(*(addr + i)) << (sizeof(uint64_t) * i));
+            littleEndian |= littleEndian | (static_cast<uint64_t>(*(addr + i)) << (sizeof(uint64_t) * i));
         }
-        verKey = NnopbaseAppend8Byte(verKey, littleEndien);
+        verKey = NnopbaseAppend8Byte(verKey, littleEndian);
     }
     return verKey;
 }
 
-static inline void NnopbaseExecutorSetFormatAndShape(gert::Tensor *rt2Tensor, int64_t shapeSize)
+static inline void NnopbaseExecutorSetFormatAndShape(GertTensor *rt2Tensor, int64_t shapeSize)
 {
     if (shapeSize == 0) {
         rt2Tensor->MutableOriginShape() = {};
@@ -750,6 +754,8 @@ static inline void NnopbaseExecutorSetFormatAndShape(gert::Tensor *rt2Tensor, in
     rt2Tensor->SetOriginFormat(ge::FORMAT_ND);
     rt2Tensor->SetStorageFormat(ge::FORMAT_ND);
     rt2Tensor->MutableTensorData().SetPlacement(gert::kOnHost);
+    rt2Tensor->MutableStride().SetDimNum(0U);
+    rt2Tensor->SetOffset(0);
 }
 
 static void NnopbaseExecutorGetScalarDType(NnopbaseTensors *tensors, ge::DataType &dataType, const ge::DataType dtype,
@@ -777,7 +783,7 @@ aclnnStatus NnopbaseExecutorAddScalarInput(NnopbaseTensors *tensors, const aclSc
         NnopbaseExecutorGetScalarDType(tensors, dataType, dtype, srcIndex, index);
         auto tensor = &tensors->extTensors[tensors->paramDescs.instances[index].startIndex];
         tensor->isNull = false;
-        gert::Tensor *rt2Tensor = &tensor->rt2Tensor;
+        GertTensor *rt2Tensor = &tensor->rt2Tensor;
         NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
         NnopbaseExecutorSetFormatAndShape(rt2Tensor, 0);
         if (scalar->GetDataType() == ge::DataType::DT_DOUBLE) {
@@ -820,7 +826,7 @@ aclnnStatus NnopbaseExecutorAddScalarListInput(NnopbaseTensors *tensors, const a
     auto tensor = &tensors->extTensors[tensors->paramDescs.instances[index].startIndex];
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tensor);
     tensor->isNull = false;
-    gert::Tensor *rt2Tensor = &tensor->rt2Tensor;
+    GertTensor *rt2Tensor = &tensor->rt2Tensor;
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
     NnopbaseExecutorSetFormatAndShape(rt2Tensor, static_cast<int64_t>(scalarList->Size()));
 
@@ -866,7 +872,7 @@ aclnnStatus NnopbaseExecutorAddScalarListInput(NnopbaseTensors *tensors, const a
     return OK;
 }
 
-void NnopbaseDestroyStreamCallBack(aclrtStream stream, const bool isCreate)
+void NnopbaseDestroyStreamCallback(aclrtStream stream, const bool isCreate)
 {
     if (isCreate) {
         return;
@@ -907,12 +913,12 @@ aclnnStatus NnopbaseExecutorGetStreamAndEvent(
     }
     OP_LOGI("Main stream is %p, subStream %p, eventA %p, eventB %p.", mainStream, *subStream, *evtA, *evtB);
 
-    if (g_isNnopbaseRegistedCallBack) {
+    if (g_isNnopbaseRegisteredCallback) {
         return OK;
     }
-    NNOPBASE_ASSERT_RTOK_RETVAL(rtRegStreamStateCallback("NnopbaseDestroyStream", NnopbaseDestroyStreamCallBack));
+    NNOPBASE_ASSERT_RTOK_RETVAL(rtRegStreamStateCallback("NnopbaseDestroyStream", NnopbaseDestroyStreamCallback));
 
-    g_isNnopbaseRegistedCallBack = true;
+    g_isNnopbaseRegisteredCallback = true;
     return OK;
 }
 
@@ -1024,8 +1030,12 @@ NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTens
             OP_LOGI("Tensor[%zu] storageShape[%zu] is %ld", i, j, shape.GetDim(j));
         }
         if (usingStride) {
-            verKey = NnopbaseAppend8Byte(verKey, '_');
-            OP_LOGI("Stride is [], offset is '_'.");
+            const auto &stride = tensors->extTensors[i].rt2Tensor.GetStride();
+            const size_t strideNum = stride.GetDimNum();
+            for (size_t k = 0U; k < strideNum; k++) {
+                verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(stride.GetStride(k)));
+            }
+            verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(tensors->extTensors[i].rt2Tensor.GetOffset()));
         }
         if (tensors->extTensors[i].valueDepend) {
             addr = op::internal::PtrCastTo<NnopbaseUChar>(tensors->extTensors[i].rt2Tensor.GetAddr());
@@ -1087,7 +1097,7 @@ size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor,
         const GertShape &shape = inputs->extTensors[i].rt2Tensor.GetStorageShape();
         len += shape.GetDimNum() * sizeof(uint64_t);
         if (usingStride) {
-            len += sizeof(uint64_t); // 自动框架暂不支持stride，填充offset(uint64_t)占位符，默认为0
+            len += inputs->extTensors[i].rt2Tensor.GetStride().GetDimNum() * sizeof(uint64_t) + sizeof(uint64_t);
         }
         if (inputs->extTensors[i].valueDepend) {
             len += (inputs->extTensors[i].rt2Tensor.GetSize()
@@ -1102,12 +1112,12 @@ size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor,
             continue;
         }
         if (outputs->extTensors[i].isRequired || outputs->extTensors[i].isOptional) {
-            len += sizeof(uint64_t) * 2U; // 2 is type and format
+            len += sizeof(uint64_t) * 2U; // 2 = dtype&format
         }
         const GertShape &shape = outputs->extTensors[i].rt2Tensor.GetStorageShape();
         len += shape.GetDimNum() * sizeof(uint64_t);
         if (usingStride) {
-            len += sizeof(uint64_t); // 自动框架暂不支持stride，填充offset(uint64_t)占位符，默认为0
+            len += outputs->extTensors[i].rt2Tensor.GetStride().GetDimNum() * sizeof(uint64_t) + sizeof(uint64_t);
         }
     }
     OP_LOGD("Op %s after add output, length is %zu.", executor->opType, len);
