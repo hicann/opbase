@@ -11,7 +11,6 @@ add_library(aicpu_context_host STATIC
 add_dependencies(aicpu_context_host aicpu_proto_host)
 
 target_include_directories(aicpu_context_host PRIVATE
-  ${local_context_inc_path}
   ${aicpu_proto_include}
 )
 
@@ -35,7 +34,10 @@ target_compile_options(aicpu_context_host PRIVATE
 )
 
 target_link_libraries(aicpu_context_host PRIVATE
+  aicpu_context_headers
   $<BUILD_INTERFACE:intf_pub_aicpu>
+  runtime
+  metadef
   Eigen3::Eigen
   host_protobuf_static
   -Wl,-z,relro,-z,now
@@ -51,7 +53,6 @@ add_library(aicpu_nodedef_host STATIC
 add_dependencies(aicpu_nodedef_host aicpu_context_host)
 
 target_include_directories(aicpu_nodedef_host PRIVATE
-    ${local_context_inc_path}
     ${aicpu_proto_include}
 )
 
@@ -70,4 +71,10 @@ target_compile_options(aicpu_nodedef_host PRIVATE
   -Werror
   -DEIGEN_MPL2_ONLY
   -DEigen=ascend_Eigen
+)
+
+target_link_libraries(aicpu_nodedef_host PRIVATE
+  aicpu_context_headers
+  runtime
+  metadef
 )

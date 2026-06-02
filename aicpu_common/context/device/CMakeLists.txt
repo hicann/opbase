@@ -11,7 +11,6 @@ add_library(aicpu_context STATIC
 add_dependencies(aicpu_context aicpu_proto_device)
 
 target_include_directories(aicpu_context PRIVATE
-  ${local_context_inc_path}
   ${aicpu_proto_include}
 )
 
@@ -36,7 +35,10 @@ target_compile_options(aicpu_context PRIVATE
 )
 
 target_link_libraries(aicpu_context PRIVATE
+  aicpu_context_headers
   $<BUILD_INTERFACE:intf_pub_aicpu>
+  runtime
+  metadef
   Eigen3::Eigen
   ascend_protobuf_static
   -Wl,-z,relro,-z,now
@@ -52,7 +54,6 @@ add_library(aicpu_nodedef STATIC
 add_dependencies(aicpu_nodedef aicpu_context)
 
 target_include_directories(aicpu_nodedef PRIVATE
-    ${local_context_inc_path}
     ${aicpu_proto_include}
 )
 
@@ -70,6 +71,12 @@ target_compile_options(aicpu_nodedef PRIVATE
   -Werror
   -DEIGEN_MPL2_ONLY
   -DEigen=ascend_Eigen
+)
+
+target_link_libraries(aicpu_nodedef PRIVATE
+  aicpu_context_headers
+  runtime
+  metadef
 )
 
 set (aicpu_cust_src_files
@@ -103,12 +110,14 @@ add_library(aicpu_cust_log STATIC
 add_dependencies(aicpu_cust_log aicpu_proto_device)
 
 target_include_directories(aicpu_cust_log PRIVATE
-  ${local_context_inc_path}
   ${aicpu_proto_include}
 )
 
 target_link_libraries(aicpu_cust_log PRIVATE
+  aicpu_context_headers
   $<BUILD_INTERFACE:intf_pub_aicpu>
+  runtime
+  metadef
   Eigen3::Eigen
   ascend_protobuf_static
   -Wl,-z,relro,-z,now
