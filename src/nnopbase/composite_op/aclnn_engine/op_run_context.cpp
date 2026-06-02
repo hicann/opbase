@@ -14,8 +14,9 @@
 #include <mutex>
 #include <string>
 
-#include "base/registry/opp_package_utils.h"
 #include "base/registry/op_impl_space_registry_v2.h"
+
+#include "opp_resource_loader.h"
 #include "kernel_utils.h"
 #include "op_ctx_def.h"
 #include "platform/platform_info.h"
@@ -31,9 +32,10 @@ std::array<const gert::OpImplKernelRegistry::OpImplFunctions *, MAX_OP_TYPE_COUN
 aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
 {
     // This function may be called in phase 1 and phase 2 thread.
+    op::opploader::LoadAllOppPackage();
+
     static std::once_flag flag[MAX_OP_TYPE_COUNT];
     aclnnStatus ret = ACLNN_SUCCESS;
-
     auto f = [&ret, &opType]() {
         opInferShapeFuncs_[0] = nullptr;
         opTilingFuncs_[0] = nullptr;
@@ -41,15 +43,11 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
         const char *opTypeStr = opTypeAscendStr.GetString();
         gert::OppImplVersionTag oppVersionTag = GetOppImplVersion();
         auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(oppVersionTag);
-        // lazy load
-        if (spaceRegistry == nullptr) {
-            OP_LOGW("SpaceRegistry is nullptr, start to load all opp package and get spaceRegistry again.");
-            gert::OppPackageUtils::LoadAllOppPackage();
-            spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(oppVersionTag);
-            OP_CHECK(spaceRegistry != nullptr,
-                 OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "SpaceRegistry is nullptr, op type is %s", opTypeStr),
-                 ret = ACLNN_ERR_INNER_NULLPTR; return);
-        }
+        OP_CHECK(
+            spaceRegistry != nullptr,
+            OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "SpaceRegistry is nullptr, op type is %s", opTypeStr),
+            ret = ACLNN_ERR_INNER_NULLPTR;
+            return);
 
         auto funcs = spaceRegistry->GetOpImpl(opTypeStr);
         // ops infershape func

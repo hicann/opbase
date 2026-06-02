@@ -8,13 +8,19 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <dlfcn.h>
 #include "opp_resource_loader.h"
+
+#include <mutex>
+#include <dlfcn.h>
+
+#include "base/registry/opp_package_utils.h"
+#include "graph/ge_error_codes.h"
+#include "mmpa/mmpa_api.h"
+
 #include "op_proto_loader.h"
 #include "op_tiling_loader.h"
 #include "opdev/op_log.h"
 #include "file_utils.h"
-#include "mmpa/mmpa_api.h"
 
 using namespace std;
 namespace op {
@@ -84,6 +90,17 @@ void ReleaseOppResource()
     for (void *handler : ResourceHandlersManager::GetInstance().resourceHandlers_) {
         OP_CHECK(dlclose(handler) == 0, OP_LOGW("dlclose opp resource failed"), ;);
     }
+}
+
+void LoadAllOppPackage()
+{
+    static std::once_flag loadFlag;
+    std::call_once(loadFlag, [&]() {
+        OP_LOGI("Start to load all OPP package.");
+        OP_CHECK_NO_RETURN(
+            gert::OppPackageUtils::LoadAllOppPackage() == ge::GRAPH_SUCCESS, OP_LOGW("LoadAllOppPackage failed."));
+        OP_LOGI("Load OPP package completed.");
+    });
 }
 }  // namespace opploader
 }  // namespace op

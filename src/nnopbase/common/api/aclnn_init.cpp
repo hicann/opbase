@@ -11,7 +11,6 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
-#include "base/registry/opp_package_utils.h"
 #include "mmpa/mmpa_api.h"
 
 #include "opdev/op_log.h"
@@ -78,7 +77,7 @@ aclnnStatus InitSystemConfig(const char *configPath)
 aclnnStatus aclnnInit([[maybe_unused]]const char *configPath)
 {
     OP_LOGI("Entering func: aclnnInit");
-    gert::OppPackageUtils::LoadAllOppPackage();
+    op::opploader::LoadAllOppPackage();
     auto ret = InitSystemConfig(configPath);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
     OP_LOGI("Leaving func: aclnnInit");
