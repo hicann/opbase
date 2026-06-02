@@ -11,6 +11,9 @@
 #ifndef OP_API_OP_API_COMMON_INC_FORMAT_UTILS_H
 #define OP_API_OP_API_COMMON_INC_FORMAT_UTILS_H
 
+#include <vector>
+#include <algorithm>
+
 #include "acl/acl_base.h"
 #include "common_types.h"
 

@@ -99,7 +99,6 @@ private:
 
     static float Float6E2M3ToFloat(Float6E2M3 fp6);
     static Float6E2M3 FloatToFloat6E2M3(float f);
-
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Float6E2M3 &dt)

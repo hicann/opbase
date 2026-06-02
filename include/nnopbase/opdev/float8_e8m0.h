@@ -46,7 +46,6 @@ struct Float8E8M0 {
 
     uint8_t value;
 
-
     // ============= E8M0 format constants (unsigned, 8 exponent bits) =============
     static constexpr uint8_t NAN_VALUE = 0xFF;          // 255 (NaN only, no infinity encoding)
     static constexpr uint8_t ONE_VALUE = 0x7F;          // 127 (2^0 = 1.0)

@@ -100,7 +100,6 @@ private:
 
     static float Float4E2M1ToFloat(Float4E2M1 fp4);
     static Float4E2M1 FloatToFloat4E2M1(float f);
-
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Float4E2M1 &dt)

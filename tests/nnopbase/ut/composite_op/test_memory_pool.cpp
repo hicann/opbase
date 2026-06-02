@@ -11,7 +11,7 @@
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
-
+#include <thread>
 
 #include "acl/acl.h"
 #include "opdev/make_op_executor.h"

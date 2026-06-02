@@ -146,7 +146,6 @@ static uint8_t HiF8FromIeeeBits(uint32_t bits)
     int8_t exp = 0;
     uint32_t mantissa = 0;
     const auto type = UnpackIeeeFp<exp_bits, mantissa_bits>(bits, &sign_bit, &exp, &mantissa);
-
     if (type == IeeeType::ZERO || (type == IeeeType::ORDINARY && exp < HIF8_DML_EXP_MIN - 1)) {
         return 0;
     } else if (type == IeeeType::NOT_A_NUMBER) {

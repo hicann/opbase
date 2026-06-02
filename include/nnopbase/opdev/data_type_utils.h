@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <complex>
 #include <string>
+#include <vector>
+
 #include "acl/acl_base.h"
 #include "common_types.h"
 #include "graph/types.h"

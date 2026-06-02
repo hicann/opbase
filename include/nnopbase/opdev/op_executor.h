@@ -11,14 +11,22 @@
 #ifndef OP_API_WORKSPACE_UTILS_H
 #define OP_API_WORKSPACE_UTILS_H
 
+#include <memory>
+#include <vector>
+
+#include "acl/acl_base_rt.h"
+
+#include "aclnn/acl_meta.h"
 #include "common_types.h"
-#include "opdev/data_type_utils.h"
 #include "fast_vector.h"
-#include "opdev/object.h"
-#include "opdev/op_cache.h"
-#include "opdev/op_arg_def.h"
-#include "opdev/op_log.h"
-#include "opdev/op_config.h"
+#include "data_type_utils.h"
+#include "object.h"
+#include "op_cache.h"
+#include "op_dfx.h"
+#include "op_arg_def.h"
+#include "op_log.h"
+#include "op_config.h"
+#include "op_errno.h"
 
 constexpr size_t ALLOCATE_OBJ_DEFAULT_SIZE = 128;
 constexpr uint64_t K_EXECUTOR_MAGIC_NUMBER = 0x1F2E3D4C5B6A;

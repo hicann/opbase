@@ -11,16 +11,24 @@
 #ifndef OP_DFX_INTERNAL_UTIL_H_
 #define OP_DFX_INTERNAL_UTIL_H_
 
-#include "profiling/aprof_pub.h"
+
+#include <type_traits>
+#include <vector>
+#include <string>
+
+#include "securec.h"
+#include "acl/acl_rt.h"
+#include "mmpa/mmpa_api.h"
 #include "dump/adump_pub.h"
+#include "profiling/aprof_pub.h"
+
+#include "aclnn/acl_meta.h"
 #include "opdev/format_utils.h"
 #include "acl_tensor_traits.h"
 #include "thread_local_context.h"
 #include "opdev/op_arg_def.h"
 #include "opdev/op_log.h"
-#include "securec.h"
-#include "mmpa/mmpa_api.h"
-#include "acl/acl_rt.h"
+#include "opdev/op_errno.h"
 
 namespace op {
 namespace internal {
