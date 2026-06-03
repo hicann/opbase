@@ -55,10 +55,8 @@ target_include_directories(aicpu_context_headers INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cpu_proto
   ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/utils
   ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cust_op
+  ${C_SEC_INCLUDE}
 )
 
-if(PRODUCT_SIDE STREQUAL "device")
-  add_subdirectory(device)
-else()
-  add_subdirectory(host)
-endif()
+add_subdirectory(host)
+add_subdirectory(device)

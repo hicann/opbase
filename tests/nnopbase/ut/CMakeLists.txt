@@ -104,6 +104,7 @@ set(NNOPBASE_TEST_HEADER_FILES
 
     ${CMAKE_BINARY_DIR}/proto/aicpu/
     ${CMAKE_BINARY_DIR}/proto/aicpu_proto/
+    ${CMAKE_BINARY_DIR}/protobuf_static/include/
 )
 
 # 测试接口源文件
@@ -172,7 +173,6 @@ target_compile_options(nnopbase_utest PRIVATE
 
 target_link_libraries(nnopbase_utest PRIVATE
     intf_pub_cxx17
-    host_protobuf_static
     -Wl,--no-as-needed
     op_tiling_ut_so_stub_rt2.0
     op_proto_so_ut_stub_rt2.0
