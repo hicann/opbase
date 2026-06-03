@@ -67,11 +67,11 @@
     ```
 
     ```cpp
-    aclTensor *AllocHostTensor(const fp16_t *value, uint64_t size, op::DataType dataType)
+    aclTensor *AllocHostTensor(const op::fp16_t *value, uint64_t size, op::DataType dataType)
     ```
 
     ```cpp
-    aclTensor *AllocHostTensor(const bfloat16 *value, uint64_t size, op::DataType dataType)
+    aclTensor *AllocHostTensor(const op::bfloat16 *value, uint64_t size, op::DataType dataType)
     ```
 
 ## 参数说明

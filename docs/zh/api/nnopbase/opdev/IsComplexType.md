@@ -7,14 +7,14 @@
 ## 函数原型
 
 ```cpp
-bool IsComplexType(const DataType dtype)
+bool IsComplexType(const ge::DataType type)
 ```
 
 ## 参数说明
 
 | 参数 | 输入/输出 | 说明 |
 | --- | --- | --- |
-| dtype | 输入 | 输入的数据类型。 |
+| type | 输入 | 输入的数据类型。 |
 
 ## 返回值说明
 
