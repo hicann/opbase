@@ -37,6 +37,7 @@ target_compile_options(aicpu_context PRIVATE
 target_link_libraries(aicpu_context PRIVATE
   aicpu_context_headers
   $<BUILD_INTERFACE:intf_pub_aicpu>
+  $<BUILD_INTERFACE:slog_headers>
   runtime
   metadef
   Eigen3::Eigen
@@ -116,6 +117,8 @@ target_include_directories(aicpu_cust_log PRIVATE
 target_link_libraries(aicpu_cust_log PRIVATE
   aicpu_context_headers
   $<BUILD_INTERFACE:intf_pub_aicpu>
+  $<BUILD_INTERFACE:slog_headers>
+  $<BUILD_INTERFACE:runtime_headers>
   runtime
   metadef
   Eigen3::Eigen
@@ -145,6 +148,12 @@ target_compile_options(aicpu_cust_log PRIVATE
     -fPIC
 )
 
-message(STATUS "PRODUCT_SIDE is ${PRODUCT_SIDE}")
-set(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
-set(CMAKE_C_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
+install(TARGETS aicpu_context aicpu_nodedef
+    DESTINATION ${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/lib64
+    COMPONENT opbase
+)
+
+install(TARGETS aicpu_cust_log
+    DESTINATION ${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/lib64/device/lib64
+    COMPONENT opbase
+)
