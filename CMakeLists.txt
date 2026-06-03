@@ -11,6 +11,8 @@ else()
     option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build opbase need cann source code" FALSE)
 endif()
 
+option(ENABLE_BUILD_DEVICE "Build opbase with device" TRUE)
+
 if (NOT DEFINED CMAKE_MODULE_PATH)
     set(CMAKE_MODULE_PATH
         ${CANN_CMAKE_DIR}/modules

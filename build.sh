@@ -42,6 +42,30 @@ usage() {
     echo ""
 }
 
+parse_cmake_extra_args() {
+    local args_str="$1"
+    local arg permitted_args_str
+    if [[ -z "$args_str" ]]; then
+        echo "The parsed extra string is empty."
+        return 0
+    fi
+
+    permitted_args_str="$(echo "$args_str" | tr "," "\n" | grep -v "^$" | grep -E "^ENABLE_BUILD_DEVICE=")"
+
+    while read -r arg; do
+        name="$(echo $arg | cut -d= -f1)"
+        value="$(echo $arg | cut -d= -f2-)"
+        echo "Set $name to $value."
+    done <<< "$permitted_args_str"
+
+    while read -r arg; do
+        CMAKE_EXTRA_ARGS=(
+            "${CMAKE_EXTRA_ARGS[@]}"
+            "-D" "$arg"
+        )
+    done <<< "$permitted_args_str"
+}
+
 # parse and set options
 checkopts() {
     VERBOSE=""
@@ -54,6 +78,7 @@ checkopts() {
     BUILD_MODE=""
     ENABLE_COVERAGE="off"
     ENABLE_PKG_ASAN="off"
+    CMAKE_EXTRA_ARGS=()
     if [[ -n "${ASCEND_HOME_PATH}" ]]; then
         echo "env exists ASCEND_HOME_PATH : ${ASCEND_HOME_PATH}"
     elif [ $UID -eq 0 ]; then
@@ -64,7 +89,7 @@ checkopts() {
     CANN_3RD_LIB_PATH="${BASEPATH}/third_party"
 
     # Process the options
-    parsed_args=$(getopt -a -o j:hvusO: -l help,verbose,cov,make_clean,build-type:,noexec,pkg,asan,cann_3rd_lib_path: -- "$@") || {
+    parsed_args=$(getopt -a -o j:hvusO: -l help,verbose,cov,make_clean,build-type:,noexec,pkg,asan,cann_3rd_lib_path:,extra-cmake-args: -- "$@") || {
     usage
     exit 1
     }
@@ -113,6 +138,10 @@ checkopts() {
         ;;
         --cann_3rd_lib_path)
         CANN_3RD_LIB_PATH="$(realpath $2)"
+        shift 2
+        ;;
+        --extra-cmake-args)
+        parse_cmake_extra_args "$2"
         shift 2
         ;;
         --pkg)
@@ -174,13 +203,13 @@ cmake_generate_make() {
         need_reconfigure=1
     fi
     if [[ "${need_reconfigure}" -eq 1 ]]; then
-        echo "${cmake_args}"
-        cmake ${cmake_args} ${source_path}
+        echo "${cmake_args} ${CMAKE_EXTRA_ARGS[@]}"
+        cmake ${cmake_args} "${CMAKE_EXTRA_ARGS[@]}" ${source_path}
         if [ 0 -ne $? ]; then
-            echo "execute command: cmake ${cmake_args} .. failed."
+            echo "execute command: cmake ${cmake_args} ${CMAKE_EXTRA_ARGS[@]} .. failed."
             exit 1
         fi
-        echo "${cmake_args}" > "${cache_param_file}"
+        echo "${cmake_args} ${CMAKE_EXTRA_ARGS[@]}" > "${cache_param_file}"
     fi
 }
 
