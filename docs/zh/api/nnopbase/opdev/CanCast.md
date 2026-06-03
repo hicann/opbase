@@ -7,7 +7,7 @@
 ## 函数原型
 
 ```cpp
-bool CanCast(const DataType from, const DataType to)
+bool CanCast(const ge::DataType from, const ge::DataType to)
 ```
 
 ## 参数说明

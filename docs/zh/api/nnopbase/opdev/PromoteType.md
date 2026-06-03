@@ -7,7 +7,7 @@
 ## 函数原型
 
 ```cpp
-DataType PromoteType(const DataType type_a, const DataType type_b)
+ge::DataType PromoteType(ge::DataType type_a, ge::DataType type_b)
 ```
 
 ## 参数说明

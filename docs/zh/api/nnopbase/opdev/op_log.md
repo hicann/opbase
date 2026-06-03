@@ -7,7 +7,7 @@
 | 接口定义 | 功能说明 |
 | --- | --- |
 | GetTid() | 获取线程id。 |
-| CheckLogLevelInner(int32_t moduleId, int32_t logLevel) | 检查log等级。 |
+| CheckLogLevelInner(int32_t moduleId, int32_t level) | 检查log等级。 |
 | DlogRecordInner(int32_t moduleId, int32_t level, const char *fmt, ...) | 打印log。 |
 | ReportErrorMessageInner(const std::string &code, const char *fmt, ...) | 报告内部错误消息。 |
 | ReportErrorMessage(const char \*code, const char \*fmt, Arguments &&... args) | 报告错误消息。 |

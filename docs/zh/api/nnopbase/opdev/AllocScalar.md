@@ -19,11 +19,11 @@ aclScalar *AllocScalar(double value)
 ```
 
 ```cpp
-aclScalar *AllocScalar(fp16_t value)
+aclScalar *AllocScalar(op::fp16_t value)
 ```
 
 ```cpp
-aclScalar *AllocScalar(bfloat16 value)
+aclScalar *AllocScalar(op::bfloat16 value)
 ```
 
 ```cpp

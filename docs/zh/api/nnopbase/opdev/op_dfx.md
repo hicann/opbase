@@ -47,6 +47,21 @@
 | SplitStringAndPrint(std::string &res) | 将给定长字符串分为多个子字符串打印。 |
 | BuildParamString(const char *paramNames, const std::tuple<Args...> &t) | 用给定的算子入参生成参数字符串。 |
 | BuildParamStringWithBrackets(const char *paramNames, const std::tuple<Args...> &t) | 用给定的算子入参生成参数字符串。 |
+| MemSetTilingRegisterResource() | 获取MemSet算子的Tiling注册资源。 |
+| MemSetInferShapeRegisterResource() | 获取MemSet算子的InferShape注册资源。 |
+| MemSetTuningRegisterResource() | 获取MemSet算子的Tuning注册资源。 |
+| MemSetKernelResource() | 获取MemSet算子的Kernel二进制资源。 |
+| MemSetTuningResource() | 获取MemSet算子的Tuning二进制资源。 |
+| MemSetV2TilingRegisterResource() | 获取MemSetV2算子的Tiling注册资源。 |
+| MemSetV2InferShapeRegisterResource() | 获取MemSetV2算子的InferShape注册资源。 |
+| MemSetV2TuningRegisterResource() | 获取MemSetV2算子的Tuning注册资源。 |
+| MemSetV2KernelResource() | 获取MemSetV2算子的Kernel二进制资源。 |
+| MemSetV2TuningResource() | 获取MemSetV2算子的Tuning二进制资源。 |
+| NonFiniteCheckTilingRegisterResource() | 获取NonFiniteCheck算子的Tiling注册资源。 |
+| NonFiniteCheckInferShapeRegisterResource() | 获取NonFiniteCheck算子的InferShape注册资源。 |
+| NonFiniteCheckTuningRegisterResource() | 获取NonFiniteCheck算子的Tuning注册资源。 |
+| NonFiniteCheckKernelResource() | 获取NonFiniteCheck算子的Kernel二进制资源。 |
+| NonFiniteCheckTuningResource() | 获取NonFiniteCheck算子的Tuning二进制资源。 |
 | GenOpTypeId(const char *opName, const OP_RESOURCES &opResources) | 用给定的算子名和二进制资源生成唯一的算子id。 |
 | GenOpTypeId(const char *opName, const OP_SOC_RESOURCES &opResources) | 用给定的算子名和SOC二进制资源生成唯一的算子id。 |
 | GenInternalOpTypeId() | 生成内部算子id。 |

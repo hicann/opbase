@@ -53,6 +53,13 @@
 | aclTensor() | aclTensor用于描述一块张量，包括device侧tensor与host侧tensor两种。可以描述tensor的shape、dtype、format等属性，并记录数据所处位置。 |
 | aclTensor(const T *value, uint64_t size, op::DataType dataType) | aclTensor用于描述一块张量，包括device侧tensor与host侧tensor两种。可以描述tensor的shape、dtype、format等属性，并记录数据所处位置。 |
 | aclTensor(const aclScalar *value, op::DataType dataType) | aclTensor用于描述一块张量，包括device侧tensor与host侧tensor两种。可以描述tensor的shape、dtype、format等属性，并记录数据所处位置。 |
+| SetFloat8E5M2Data(const op::Float8E5M2 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float8_e5m2类型的数据。 |
+| SetFloat8E4M3FNData(const op::Float8E4M3FN \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float8_e4m3fn类型的数据。 |
+| SetFloat8E8M0Data(const op::Float8E8M0 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float8_e8m0类型的数据。 |
+| SetFloat4E2M1Data(const op::Float4E2M1 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float4_e2m1类型的数据。 |
+| SetFloat4E1M2Data(const op::Float4E1M2 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float4_e1m2类型的数据。 |
+| SetHiFloat4Data(const op::HiFloat4 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中hifloat4类型的数据。 |
+| SetHiFloat8Data(const op::HiFloat8 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中hifloat8类型的数据。 |
 | IsView() | 获取aclTensor是否为view类tensor。 |
 | SetView(bool is_view) | 设置aclTensor是否为view类tensor。 |
 | aclTensorList(const aclTensor \*const \*tensors, uint64_t size) | aclTensorList表示一个aclTensor数组，该函数为其构造函数。 |
@@ -72,6 +79,13 @@
 | ToUint64() | 将aclScalar中保存的标量，转为指定的数据类型uint64。 |
 | ToFp16() | 将aclScalar中保存的标量，转为指定的数据类型float16。 |
 | ToBf16() | 将aclScalar中保存的标量，转为指定的数据类型bfloat16。 |
+| ToFloat8E5M2() | 将aclScalar中保存的标量，转为指定的数据类型float8_e5m2。 |
+| ToFloat8E4M3FN() | 将aclScalar中保存的标量，转为指定的数据类型float8_e4m3fn。 |
+| ToFloat8E8M0() | 将aclScalar中保存的标量，转为指定的数据类型float8_e8m0。 |
+| ToFloat4E2M1() | 将aclScalar中保存的标量，转为指定的数据类型float4_e2m1。 |
+| ToFloat4E1M2() | 将aclScalar中保存的标量，转为指定的数据类型float4_e1m2。 |
+| ToHiFloat4() | 将aclScalar中保存的标量，转为指定的数据类型hifloat4。 |
+| ToHiFloat8() | 将aclScalar中保存的标量，转为指定的数据类型hifloat8。 |
 | ToComplex64() | 将aclScalar中保存的标量，转为指定的数据类型complex64。 |
 | ToComplex128() | 将aclScalar中保存的标量，转为指定的数据类型complex128。 |
 | aclScalar(int32_t value) | 初始化aclScalar对象，指定为int32类型。 |
@@ -87,9 +101,17 @@
 | aclScalar(op::fp16_t value) | 初始化aclScalar对象，指定为float16类型。 |
 | aclScalar(op::bfloat16 value) | 初始化aclScalar对象，指定为bfloat16类型。 |
 | aclScalar(bool value) | 初始化aclScalar对象，指定为bool类型。 |
+| aclScalar(op::Float8E5M2 value) | 初始化aclScalar对象，指定为float8_e5m2类型。 |
+| aclScalar(op::Float8E4M3FN value) | 初始化aclScalar对象，指定为float8_e4m3fn类型。 |
+| aclScalar(op::Float8E8M0 value) | 初始化aclScalar对象，指定为float8_e8m0类型。 |
+| aclScalar(op::Float4E2M1 value) | 初始化aclScalar对象，指定为float4_e2m1类型。 |
+| aclScalar(op::Float4E1M2 value) | 初始化aclScalar对象，指定为float4_e1m2类型。 |
+| aclScalar(op::HiFloat4 value) | 初始化aclScalar对象，指定为hifloat4类型。 |
+| aclScalar(op::HiFloat8 value) | 初始化aclScalar对象，指定为hifloat8类型。 |
 | To() | 将aclScalar中保存的标量，转为T数据类型。 |
 | ToStr() | 生成描述aclScalar的字符串。 |
 | BFloat16() | 将aclScalar中保存的标量，转为bfloat16。 |
+| v_t() | aclScalar内部联合体v_t的默认构造函数。 |
 | aclScalarList(const aclScalar \*const \*scalars, uint64_t size) | aclScalarList表示一个aclScalar数组，该函数为其构造函数。 |
 | aclScalarList() | aclScalarList表示一个aclScalar数组，该函数为其构造函数。 |
 | ToString(const aclTensor* t) | 打印函数，生成可以描述aclTensor对象的字符串。 |
