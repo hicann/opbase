@@ -110,8 +110,6 @@ install(TARGETS ops_base
     COMPONENT opbase
 )
 set(AICPU_LIBS
-    aicpu_context
-    aicpu_nodedef
     aicpu_context_host
     aicpu_nodedef_host
 )
@@ -121,16 +119,8 @@ install(TARGETS ${AICPU_LIBS}
     COMPONENT opbase
 )
 
-install(FILES ${PROTOBUF_STATIC_PKG_DIR}/lib/libbase_ascend_protobuf.a
-    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
-    COMPONENT opbase
-)
 install(FILES ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
-    COMPONENT opbase
-)
-install(TARGETS aicpu_cust_log
-    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/device/lib64
     COMPONENT opbase
 )
 
@@ -227,4 +217,4 @@ install(FILES ${CMAKE_BINARY_DIR}/version.opbase.info
     COMPONENT opbase
 )
 
-set_cann_cpack_config(opbase SHARE_INFO_NAME opbase)
+set_cann_cpack_config(opbase SHARE_INFO_NAME opbase ENABLE_DEVICE "${ENABLE_BUILD_DEVICE}")

@@ -236,7 +236,7 @@ build_ops_base() {
 
     cmake_generate_make "${BASEPATH}" "${BUILD_PATH}" "${CMAKE_ARGS}"
 
-    make ${VERBOSE} -j${THREAD_NUM} && make package
+    make ${VERBOSE} -j${THREAD_NUM} package
 
     # make package
     if [ 0 -ne $? ]; then

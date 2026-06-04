@@ -20,6 +20,8 @@ if (NOT DEFINED CMAKE_MODULE_PATH)
     )
 endif()
 
+set(OPS_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 include(cmake/config.cmake)
 include(cmake/intf_pub_linux.cmake)
 include(cmake/variables.cmake)
@@ -207,3 +209,5 @@ else()
         alog
         tiling_api)
 endif()
+
+add_cann_device_project(opbase)

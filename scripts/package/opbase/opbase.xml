@@ -43,15 +43,15 @@
         <file value="libops_base.so" file_type="shared"/>
     </file_info>
     <file_info value="ops_base_lib_aicpu" copy_type="delivery" src_path="" dst_path="$(TARGET_ENV)/lib64" install_path="$(TARGET_ENV)/lib64" install_mod="440">
-        <file value="libaicpu_context.a" file_type="shared"/>
-        <file value="libaicpu_nodedef.a" file_type="shared"/>
-        <file value="libbase_ascend_protobuf.a" file_type="shared"/>
+        <file value="libaicpu_context.a" file_type="shared" optional="true"/>
+        <file value="libaicpu_nodedef.a" file_type="shared" optional="true"/>
+        <file value="libbase_ascend_protobuf.a" file_type="shared" optional="true"/>
         <file value="libaicpu_context_host.a" file_type="shared"/>
         <file value="libaicpu_nodedef_host.a" file_type="shared"/>
         <file value="libhost_ascend_protobuf.a" file_type="shared"/>
     </file_info>
     <file_info value="ops_base_lib_aicpu_cust" copy_type="delivery" src_path="" dst_path="$(TARGET_ENV)/lib64/device/lib64" install_path="$(TARGET_ENV)/lib64/device/lib64" install_mod="440">
-        <file value="libaicpu_cust_log.a" file_type="shared"/>
+        <file value="libaicpu_cust_log.a" file_type="shared" optional="true"/>
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/include/aclnn" install_path="$(TARGET_ENV)/include/aclnn" install_type="all">
         <file value="acl_meta.h" install_mod="550" install_softlink="runtime/include/aclnn/acl_meta.h"/>

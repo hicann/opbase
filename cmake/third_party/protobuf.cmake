@@ -70,7 +70,7 @@ if (NOT EXISTS "${PROTOBUF_PATH}" OR NOT EXISTS "${ABSEIL_PATH}")
     DOWNLOAD_COMMAND ""
     COMMAND tar -zxf ${PROTOBUF_DL_DIR}/protobuf-25.1.tar.gz --strip-components 1 -C ${SOURCE_DIR}
     COMMAND tar -zxf ${PROTOBUF_DL_DIR}/abseil-cpp/abseil-cpp-20230802.1.tar.gz --strip-components 1 -C ${SOURCE_DIR}/third_party/abseil-cpp
-    PATCH_COMMAND cd ${SOURCE_DIR} && patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/protobuf_25.1_change_version.patch && cd ${SOURCE_DIR}/third_party/abseil-cpp && patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/protobuf-hide_absl_symbols.patch
+    PATCH_COMMAND cd ${SOURCE_DIR} && patch -p1 < ${OPS_BASE_DIR}/cmake/third_party/protobuf_25.1_change_version.patch && cd ${SOURCE_DIR}/third_party/abseil-cpp && patch -p1 < ${OPS_BASE_DIR}/cmake/third_party/protobuf-hide_absl_symbols.patch
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -83,7 +83,7 @@ else()
       DOWNLOAD_COMMAND ""
       COMMAND tar -zxf ${PROTOBUF_PATH} --strip-components 1 -C ${SOURCE_DIR}
       COMMAND tar -zxf ${ABSEIL_PATH} --strip-components 1 -C ${SOURCE_DIR}/third_party/abseil-cpp
-      PATCH_COMMAND cd ${SOURCE_DIR} && patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/protobuf_25.1_change_version.patch && cd ${SOURCE_DIR}/third_party/abseil-cpp && patch -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/protobuf-hide_absl_symbols.patch
+      PATCH_COMMAND cd ${SOURCE_DIR} && patch -p1 < ${OPS_BASE_DIR}/cmake/third_party/protobuf_25.1_change_version.patch && cd ${SOURCE_DIR}/third_party/abseil-cpp && patch -p1 < ${OPS_BASE_DIR}/cmake/third_party/protobuf-hide_absl_symbols.patch
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
