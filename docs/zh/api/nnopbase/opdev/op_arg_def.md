@@ -91,4 +91,4 @@
 | GetOpArgContext(const Ts &...ts) | 用给定的参数获取OpArgContext。 |
 | DestroyOpArgContext(OpArgContext *ctx) | 销毁指定的OpArgContext。 |
 | Allocated(size_t size) | 申请size大小的内存。 |
-| Deallocated(void *addr) | 释放地址addr的内存。 |
+| DeAllocated(void *addr) | 释放地址addr的内存。 |
