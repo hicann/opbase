@@ -48,6 +48,6 @@
 | max() | 返回bfloat16数据类型的最大值。 |
 | round_error() | 最大舍入误差的量。 |
 | infinity() | 返回bfloat16数据类型的无穷大值。 |
-| quiet_NaN() | 返回bfloat16数据类型的quite(non-signaling) NaN值。 |
+| quiet_NaN() | 返回bfloat16数据类型的quiet(non-signaling) NaN值。 |
 | signaling_NaN() | 返回bfloat16数据类型的signaling NaN值。 |
 | denorm_min() | 返回bfloat16数据类型最小正非规格化值。 |

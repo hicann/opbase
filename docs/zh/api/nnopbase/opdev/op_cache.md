@@ -8,7 +8,7 @@
 | --- | --- |
 | GetCacheBuf() | 获取aclnn cache保存需要的内存buf。 |
 | CheckCacheable() | 判断当前host侧aclnn API是否支持aclnn cache。 |
-| AddSeperator() | 在aclnn cache的hashkey计算依据中，添加一个分隔符。 |
+| AddSeparator() | 在aclnn cache的hashkey计算依据中，添加一个分隔符。 |
 | AddParamToBuf(const T *addr, uint64_t size) | 在aclnn cache的hashkey计算依据中，添加const T类型关键信息。 |
 | AddParamToBuf(const aclTensor *tensor) | 在aclnn cache的hashkey计算依据中，添加const aclTensor类型关键信息。 |
 | AddParamToBuf(aclTensor *tensor) | 在aclnn cache的hashkey计算依据中，添加aclTensor类型关键信息。 |
@@ -65,8 +65,8 @@
 | DoSummaryProfiling(int index) | 在使用aclnn cache时，进行profiling上报。 |
 | RestoreThreadLocal(int index) | 在使用aclnn cache时，重置当前的线程上下文。 |
 | Run(void *workspaceAddr, const aclrtStream stream, const std::vector<void*> &tensors) | 通过aclnn cache运行host侧API。 |
-| CanUse() | 设置aclnn cache的可用状态。 |
-| SetUse() | 获取aclnn cache的可用状态。 |
+| CanUse() | 获取aclnn cache的可用状态。 |
+| SetUse() | 设置aclnn cache的可用状态。 |
 | GetShrinkList() | 获取当前的aclnn cache淘汰列表。 |
 | GetStorageRelation() | 获取aclnn cache中记录的aclTensor内存等价关系表。 |
 | OpCacheValue() | OpCacheValue是aclnn cache在LRU（Least Recently Used）中的数据节点封装，该函数为其构造函数。 |

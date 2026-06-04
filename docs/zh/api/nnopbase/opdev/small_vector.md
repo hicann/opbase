@@ -60,5 +60,5 @@
 | ExpandCap(const size_type range_begin, const size_type range_len) | 先申请一块新的内存，大小为原容器容量加上range_len大小，新容量不足原容量2倍则按2倍扩容。在原SmallVector容器range_begin的位置拓展range_len大小的内存，并拷贝到新内存中，释放原容器内存。 |
 | ExpandSize(const size_type range_begin, const size_type range_len) | 在SmallVector容器中，range_begin的位置，拓展range_len大小的内存。 |
 | Expand(const size_type range_begin, const size_type range_len) | 拓展SmallVector容器内存，若拓展后大于容器最大容量，按ExpandCap方式拓展，否则按ExpandSize方式拓展。 |
-| Shrink(const size_type range_begin, const size_type range_end) | 在SmartVector容器中，删掉从range_begin到range_end之间的内存。 |
+| Shrink(const size_type range_begin, const size_type range_end) | 在SmallVector容器中，删掉从range_begin到range_end之间的内存。 |
 | swap(op::internal::SmallVector<T, N, Alloc> &sv1, op::internal::SmallVector<T, N, Alloc> &sv2) | 交换两个SmallVector容器sv1和sv2的元素。 |

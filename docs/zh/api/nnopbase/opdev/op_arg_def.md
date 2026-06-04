@@ -15,7 +15,7 @@
 | Size() | 获取OpArgBase的元素个数。 |
 | VisitBy(const F &func) | 遍历OpArgBase的所有元素，调用func。 |
 | VisitTupleElem(func, arg_) | 遍历OpArgBase的所有元素，调用func。 |
-| VisitByNoReturn(const F &func) | 对OpArgBase给定idx的元素，调用func。 |
+| VisitByNoReturn(const F &func) | 遍历OpArgBase的所有元素，调用func。 |
 | VisitAt(size_t idx, const F &func) | 对OpArgBase给定idx的元素，调用func。 |
 | OpArgTypeStr(int argType) | 将argType转换为字符串。 |
 | ExtractOpArgType(const T &t, const Ts &...ts) | 获取ts中类型为V的元素。 |
@@ -29,13 +29,13 @@
 | OpArgValue(const std::string *value) | 使用const string类型value构造OpArgValue并赋值。 |
 | OpArgValue(std::string &value) | 使用string&类型value构造OpArgValue并赋值。 |
 | OpArgValue(const std::string &value) | 使用const string&类型value构造OpArgValue并赋值。 |
-| OpArgValue(const char *value) | 使用const aclTensor类型value构造OpArgValue并赋值。 |
-| OpArgValue(char *value) | 使用const char类型value构造OpArgValue并赋值。 |
+| OpArgValue(const char *value) | 使用const char类型value构造OpArgValue并赋值。 |
+| OpArgValue(char *value) | 使用char类型value构造OpArgValue并赋值。 |
 | OpArgValue(std::vector<std::tuple<void *, const aclTensor*>> *value) | 使用vector类型value构造OpArgValue并赋值。 |
 | OpArgValue(const std::vector<std::tuple<void*, const aclTensor*>> *value) | 使用const vector类型value构造OpArgValue并赋值。 |
 | OpArgValue(double value) | 使用double类型value构造OpArgValue并赋值。 |
-| OpArgValue(uint32_t value) | 使用uint32类型value构造OpArgValue并赋值。 |
-| OpArgValue(int32_t value) | 使用int32类型value构造OpArgValue并赋值。 |
+| OpArgValue(uint32_t value) | 使用uint32_t类型value构造OpArgValue并赋值。 |
+| OpArgValue(int32_t value) | 使用int32_t类型value构造OpArgValue并赋值。 |
 | OpArgValue(float value) | 使用float类型value构造OpArgValue并赋值。 |
 | OpArgValue(const bool value) | 使用const bool类型value构造OpArgValue并赋值。 |
 | OpArgValue(const DataType value) | 使用const DataType类型value构造OpArgValue并赋值。 |
@@ -79,8 +79,8 @@
 | AppendOpArg([[maybe_unused]] size_t idx, char *value, OpArg*&currArg) | 将给定的char类型参数加入OpArgList中。 |
 | AppendOpArg([[maybe_unused]] size_t idx, double value, OpArg *&currArg) | 将给定的double类型参数加入OpArgList中。 |
 | AppendOpArg([[maybe_unused]] size_t idx, float value, OpArg *&currArg) | 将给定的float类型参数加入OpArgList中。 |
-| AppendOpArg([[maybe_unused]] size_t idx, int32_t value, OpArg *&currArg) | 将给定的int32类型参数加入OpArgList中。 |
-| AppendOpArg([[maybe_unused]] size_t idx, uint32_t value, OpArg *&currArg) | 将给定的uint32类型参数加入OpArgList中。 |
+| AppendOpArg([[maybe_unused]] size_t idx, int32_t value, OpArg *&currArg) | 将给定的int32_t类型参数加入OpArgList中。 |
+| AppendOpArg([[maybe_unused]] size_t idx, uint32_t value, OpArg *&currArg) | 将给定的uint32_t类型参数加入OpArgList中。 |
 | AppendOpArg([[maybe_unused]] size_t idx, op::OpImplMode value, OpArg *&currArg) | 将给定的op::OpImplMode类型参数加入OpArgList中。 |
 | AppendOpArg([[maybe_unused]] size_t idx, std::vector<std::tuple<void*, const aclTensor\*>> &value, OpArg*&currArg) | 将给定的vector类型参数加入OpArgList中。 |
 | AppendOpArg([[maybe_unused]] size_t idx, const std::vector<std::tuple<void*, const aclTensor\*>> &value, OpArg*&currArg) | 将给定的const vector类型参数加入OpArgList中。 |
@@ -91,4 +91,4 @@
 | GetOpArgContext(const Ts &...ts) | 用给定的参数获取OpArgContext。 |
 | DestroyOpArgContext(OpArgContext *ctx) | 销毁指定的OpArgContext。 |
 | Allocated(size_t size) | 申请size大小的内存。 |
-| DeAllocated(void *addr) | 释放地址addr的内存。 |
+| Deallocated(void *addr) | 释放地址addr的内存。 |

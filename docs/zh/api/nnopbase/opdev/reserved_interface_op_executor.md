@@ -20,7 +20,7 @@
 | GetInputTensors() | 获取host侧API接口中的输入aclTensor。 |
 | GetOutputTensors() | 获取host侧API接口中的输出aclTensor。 |
 | GetLogInfo() | 获取aclOpExecutor中存储的日志相关信息。 |
-| SetLogInfo(const op::internal::OpLogInfo &logInfo) | 获取aclOpExecutor中存储的日志相关信息。 |
+| SetLogInfo(const op::internal::OpLogInfo &logInfo) | 设置aclOpExecutor中存储的日志相关信息。 |
 | GetOpConfigInfo() | 获取算子运行时相关的配置信息。 |
 | SetOpConfigInfo(const op::OpConfigInfo &opConfigInfo) | 设置算子运行时相关的配置信息。 |
 | SetStream(aclrtStream stream) | 设置当前运行流。 |

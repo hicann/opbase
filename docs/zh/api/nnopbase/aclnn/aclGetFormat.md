@@ -37,10 +37,10 @@ aclnnStatus aclGetFormat(const aclTensor *tensor, aclFormat *format)
 
 ```cpp
 // 1.创建xTensor
-int64_t xViewDims = {2, 4};       
-int64_t xStridesValue = {4, 1};  // 第1维步长4，第2维步长1
-int64_t xStorageDims = {2, 4};    
-xTensor = aclCreateTensor(xViewDims, 2, ACL_FLOAT16, xStridesValue, 0, ACL_FORMAT_ND, xStorageDims, 2, nullptr);
+int64_t xViewDims[] = {2, 4};       
+int64_t xStridesValue[] = {4, 1};  // 第1维步长4，第2维步长1
+int64_t xStorageDims[] = {2, 4};    
+aclTensor *xTensor = aclCreateTensor(xViewDims, 2, ACL_FLOAT16, xStridesValue, 0, ACL_FORMAT_ND, xStorageDims, 2, nullptr);
 
 // 2. 获取xTensor的各种属性值
 // 获取xTensor的逻辑shape，viewDims为{2, 4}, viewDimsNum为2

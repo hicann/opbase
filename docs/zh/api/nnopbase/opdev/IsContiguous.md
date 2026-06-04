@@ -22,8 +22,8 @@ bool IsContiguous(const aclTensor *tensor)
 
 ## 约束说明
 
-- 传入tensor非空。
-- 对于空指针场景，将返回true，输出ERROR提示："check tensor != nullptr failed"。
+- 应传入非空tensor。
+- 对于空指针场景，将返回true，并输出ERROR提示："check tensor != nullptr failed"。
 
 ## 调用示例
 

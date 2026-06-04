@@ -8,7 +8,7 @@
 | --- | --- |
 | ToOpImplMode(const std::string &implModeStr) | 将implModeStr字符串转换为OpImplMode。 |
 | ToString(OpImplMode implMode) | 将OpImplMode转换为字符串。 |
-| ImplModeToString(OpImplMode implMode) | 将implModeStr字符串转换为OpImplMode。 |
+| ImplModeToString(OpImplMode implMode) | 将OpImplMode转换为implModeStr字符串。 |
 | Add(uint32_t &id, const char *opName) | 将opName注册到OpTypeDict中，返回算子的id。 |
 | ToOpType(const std::string &opName) | 用opName从OpTypeDict中查找算子的id。 |
 | ToString(uint32_t opType) | 用算子的id从OpTypeDict中查找算子名。 |

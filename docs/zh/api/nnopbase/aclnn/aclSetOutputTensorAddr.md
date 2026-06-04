@@ -40,15 +40,15 @@ aclnnStatus aclSetOutputTensorAddr(aclOpExecutor *executor, const size_t index, 
 ```cpp
 // 创建输入和输出的aclTensor和aclTensorList
 std::vector<int64_t> shape = {1, 2, 3};
-aclTensor tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+aclTensor *tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
 nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-aclTensor tensor2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+aclTensor *tensor2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
 nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-aclTensor tensor3 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+aclTensor *tensor3 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
 nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-aclTensor tensor4= aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+aclTensor *tensor4 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
 nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-aclTensor output= aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
+aclTensor *output = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
 nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 aclTensor *list[] = {tensor3, tensor4};
 auto tensorList = aclCreateTensorList(list, 2);
@@ -61,8 +61,8 @@ aclnnAddCustomGetWorkspaceSize(tensor1, tensor2, output, tensorList, &workspaceS
 aclSetAclOpExecutorRepeatable(executor); 
 void *addr;
 aclSetOutputTensorAddr(executor, 0, output, addr);  // 刷新输出aclTensor的device地址
-aclSetOutputTensorAddr(executor, 1, output, addr);  // 刷新输出tensorList中第一个aclTensor的device地址
-aclSetOutputTensorAddr(executor, 2, output, addr);  // 刷新输出tensorList中第二个aclTensor的device地址
+aclSetOutputTensorAddr(executor, 1, tensor3, addr);  // 刷新输出tensorList中第一个aclTensor的device地址
+aclSetOutputTensorAddr(executor, 2, tensor4, addr);  // 刷新输出tensorList中第二个aclTensor的device地址
 ...
 // 调用第2段接口
 aclnnAddCustom(workspace, workspaceSize, executor, stream);

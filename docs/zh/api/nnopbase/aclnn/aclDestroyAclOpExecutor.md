@@ -4,7 +4,7 @@
 
 aclOpExecutor是框架定义的算子执行器，用来执行算子计算的容器，开发者无需关注其内部实现，直接使用即可。
 
-- 对于非复用状态的aclOpExecutor，调用一阶段接口aclxxXxxGetworkspaceSize时框架会自动创建aclOpExecutor，调用二阶段接口aclxxXxx时框架会自动释放aclOpExecutor，无需手动调用本接口释放。
+- 对于非复用状态的aclOpExecutor，调用一阶段接口aclxxXxxGetWorkspaceSize时框架会自动创建aclOpExecutor，调用二阶段接口aclxxXxx时框架会自动释放aclOpExecutor，无需手动调用本接口释放。
 - 对于复用状态的aclOpExecutor（调用[aclSetAclOpExecutorRepeatable](aclSetAclOpExecutorRepeatable.md)接口开启复用），算子执行器的管理由用户自行处理，因此aclOpExecutor的销毁需显式调用本接口手动销毁。
 
 ## 函数原型

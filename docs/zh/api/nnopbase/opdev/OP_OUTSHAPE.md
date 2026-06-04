@@ -46,12 +46,12 @@ __aicore__ inline void CopyOutShape(uint64_t dimNums1, uint64_t *dimNums2, uint6
 {
     LocalTensor<uint64_t> shapeTensor = shapeBuf_.Get<uint64_t>();
     shapeTensor.SetValue(0, 1);                // 第一个输出tensor的维度信息
-    shapeTesnor.SetValue(1, dimNums1);         // 第一个输出tensor的第一维的shape值
+    shapeTensor.SetValue(1, dimNums1);         // 第一个输出tensor的第一维的shape值
     shapeTensor.SetValue(9, 1);                // 第二个输出tensor的维度信息
     shapeTensor.SetValue(10, *(dimNums2));     // 第二个输出tensor的第一维的shape值
     shapeTensor.SetValue(11, *(dimNums2+1));   // 第二个输出tensor的第二维的shape值
     shapeTensor.SetValue(18, 1);               // 第三个输出tensor的维度信息
-    shapeTesnor.SetValue(19, dimNums3);        // 第三个输出tensor的第一维的shape值
+    shapeTensor.SetValue(19, dimNums3);        // 第三个输出tensor的第一维的shape值
     ...
     DataCopyPad(...);
 }

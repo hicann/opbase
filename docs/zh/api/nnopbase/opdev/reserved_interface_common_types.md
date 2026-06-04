@@ -69,14 +69,14 @@
 | ToFloat() | 将aclScalar中保存的标量，转为指定的数据类型float。 |
 | ToDouble() | 将aclScalar中保存的标量，转为指定的数据类型double。 |
 | ToBool() | 将aclScalar中保存的标量，转为指定的数据类型bool。 |
-| ToInt8() | 将aclScalar中保存的标量，转为指定的数据类型int8。 |
-| ToInt16() | 将aclScalar中保存的标量，转为指定的数据类型int16。 |
-| ToInt32() | 将aclScalar中保存的标量，转为指定的数据类型int32。 |
-| ToInt64() | 将aclScalar中保存的标量，转为指定的数据类型int64。 |
-| ToUint8() | 将aclScalar中保存的标量，转为指定的数据类型uint8。 |
-| ToUint16() | 将aclScalar中保存的标量，转为指定的数据类型uint16。 |
-| ToUint32() | 将aclScalar中保存的标量，转为指定的数据类型uint32。 |
-| ToUint64() | 将aclScalar中保存的标量，转为指定的数据类型uint64。 |
+| ToInt8() | 将aclScalar中保存的标量，转为指定的数据类型int8_t。 |
+| ToInt16() | 将aclScalar中保存的标量，转为指定的数据类型int16_t。 |
+| ToInt32() | 将aclScalar中保存的标量，转为指定的数据类型int32_t。 |
+| ToInt64() | 将aclScalar中保存的标量，转为指定的数据类型int64_t。 |
+| ToUint8() | 将aclScalar中保存的标量，转为指定的数据类型uint8_t。 |
+| ToUint16() | 将aclScalar中保存的标量，转为指定的数据类型uint16_t。 |
+| ToUint32() | 将aclScalar中保存的标量，转为指定的数据类型uint32_t。 |
+| ToUint64() | 将aclScalar中保存的标量，转为指定的数据类型uint64_t。 |
 | ToFp16() | 将aclScalar中保存的标量，转为指定的数据类型float16。 |
 | ToBf16() | 将aclScalar中保存的标量，转为指定的数据类型bfloat16。 |
 | ToFloat8E5M2() | 将aclScalar中保存的标量，转为指定的数据类型float8_e5m2。 |
@@ -88,14 +88,14 @@
 | ToHiFloat8() | 将aclScalar中保存的标量，转为指定的数据类型hifloat8。 |
 | ToComplex64() | 将aclScalar中保存的标量，转为指定的数据类型complex64。 |
 | ToComplex128() | 将aclScalar中保存的标量，转为指定的数据类型complex128。 |
-| aclScalar(int32_t value) | 初始化aclScalar对象，指定为int32类型。 |
-| aclScalar(int64_t value) | 初始化aclScalar对象，指定为int64类型。 |
-| aclScalar(int16_t value) | 初始化aclScalar对象，指定为int16类型。 |
-| aclScalar(int8_t value) | 初始化aclScalar对象，指定为int8类型。 |
-| aclScalar(uint32_t value) | 初始化aclScalar对象，指定为uint32类型。 |
-| aclScalar(uint64_t value) | 初始化aclScalar对象，指定为uint64类型。 |
-| aclScalar(uint16_t value) | 初始化aclScalar对象，指定为uint16类型。 |
-| aclScalar(uint8_t value) | 初始化aclScalar对象，指定为uint8类型。 |
+| aclScalar(int32_t value) | 初始化aclScalar对象，指定为int32_t类型。 |
+| aclScalar(int64_t value) | 初始化aclScalar对象，指定为int64_t类型。 |
+| aclScalar(int16_t value) | 初始化aclScalar对象，指定为int16_t类型。 |
+| aclScalar(int8_t value) | 初始化aclScalar对象，指定为int8_t类型。 |
+| aclScalar(uint32_t value) | 初始化aclScalar对象，指定为uint32_t类型。 |
+| aclScalar(uint64_t value) | 初始化aclScalar对象，指定为uint64_t类型。 |
+| aclScalar(uint16_t value) | 初始化aclScalar对象，指定为uint16_t类型。 |
+| aclScalar(uint8_t value) | 初始化aclScalar对象，指定为uint8_t类型。 |
 | aclScalar(float value) | 初始化aclScalar对象，指定为float类型。 |
 | aclScalar(double value) | 初始化aclScalar对象，指定为double类型。 |
 | aclScalar(op::fp16_t value) | 初始化aclScalar对象，指定为float16类型。 |

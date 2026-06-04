@@ -77,15 +77,15 @@
 | class/struct名称 | 说明 | 所属头文件 |
 | --- | --- | --- |
 | aclOpExecutor | 用于表示算子执行器，记录整个host侧API运行信息的上下文结构，如L2接口执行过程中的计算图、L0算子launch子任务、workspace地址和大小等信息。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[op_executor](op_executor.md)。 | aclnn/opdev/op_executor.h |
-| aclTensor | 用于表示一个张量对象，包括描述张量的shape、dtype、format、address等信息，数据可以放在host侧或device侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclScalar | 用于表示一个标量对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclTensorList | 用于表示一组aclTensor类型组成的列表对象。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclScalarList | 用于表示一组aclScalar类型组成的列表对象。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclBoolArray | 用于表示一个布尔类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclIntArray | 用于表示一个int64_t类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclFloatArray | 用于表示一个fp32类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclFp16Array | 用于表示一个fp16类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
-| aclBf16Array | 用于表示一个bf16类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_type.h |
+| aclTensor | 用于表示一个张量对象，包括描述张量的shape、dtype、format、address等信息，数据可以放在host侧或device侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclScalar | 用于表示一个标量对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclTensorList | 用于表示一组aclTensor类型组成的列表对象。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclScalarList | 用于表示一组aclScalar类型组成的列表对象。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclBoolArray | 用于表示一个布尔类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclIntArray | 用于表示一个int64_t类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclFloatArray | 用于表示一个fp32类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclFp16Array | 用于表示一个fp16类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
+| aclBf16Array | 用于表示一个bf16类型的数组对象，数据一般放在host侧。<br>该类定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[common_types](common_types.md)。 | aclnn/opdev/common_types.h |
 | SmallVector | 该类使用内部内存池实现vector容器，基础功能与C++标准库中std::vector容器相同，无需每次扩容都申请内存，避免影响性能。其定义的成员变量为私有类型，开发者无需关注，定义的成员函数参见[small_vector](small_vector.md)。 | aclnn/opdev/small_vector.h |
 | OpExecMode | 用于表示算子运行模式的枚举类，定义参见[OpExecMode](OpExecMode.md)。 | aclnn/opdev/op_def.h |
 | OpImplMode | 用于表示算子精度模式的枚举类，定义参见[OpImplMode](OpImplMode.md)。 | aclnn/opdev/op_def.h |
@@ -101,7 +101,7 @@
 >   }
 >   ```
 >
-> - op:Strides：本质是存储容量长度为25的FVector，元素类型int64_t，存储stride信息。
+> - op::Strides：本质是存储容量长度为25的FVector，元素类型int64_t，存储stride信息。
 >
 >   ```cpp
 >   namespace op {
