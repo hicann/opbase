@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
@@ -24,8 +25,6 @@
 #include <unistd.h>
 #include "block_store.h"
 #include "opdev/op_log.h"
-
-#include <atomic>
 
 namespace op {
 namespace internal {
@@ -300,7 +299,15 @@ private:
 
 class BlockCache {
 public:
-    BlockCache() = default;
+    BlockCache()
+    {
+        size_t count = activeCacheCount_.fetch_add(1, std::memory_order_relaxed) + 1;
+        if (count > kMaxCacheInstances) {
+            cacheDisabled_ = true;
+            OP_LOGW("Thread count [%zu] is more than max cache limit [%zu], thread block cache is disabled.",
+                count, kMaxCacheInstances);
+        }
+    }
 
     ~BlockCache() = default;
 
@@ -358,6 +365,9 @@ private:
 
     inline void *CacheAllocImpl(size_t size)
     {
+        if (cacheDisabled_) {
+            return BlockPool::Malloc(size);
+        }
         int index = BlockPool::GetStoreIndex(size);
         if (index == BlockPool::INVALID_STORE) {
             return PoolAlloc(size, index);
@@ -391,6 +401,10 @@ private:
 
     void CacheFreeImpl(void *block)
     {
+        if (cacheDisabled_) {
+            BlockPool::Free(block);
+            return;
+        }
         BlockStore::BlockHeader *head = BlockStore::GetBlockHeader(block);
         if (head->cacheExt_ == BlockStore::NOT_IN_CACHE) {
             BlockPool::Free(block);
@@ -415,6 +429,10 @@ private:
         cacheHead_[idx] = head;
         cacheCount_[idx]++;
     }
+
+    static constexpr size_t kMaxCacheInstances = 100;
+    inline static std::atomic<size_t> activeCacheCount_{0};
+    bool cacheDisabled_{false};
 
     // cache size limit and cache block recycle in future
     const std::array<BlockPool::BlockDesc, BlockPool::MAX_STORE> CacheIndex = {
