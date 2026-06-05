@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "opdev/bfloat16.h"
+#include "opdev/fp16_t.h"
 #include "opdev/float4_e2m1.h"
 #include "opdev/float4_e1m2.h"
 #include "gtest/gtest.h"
@@ -21,14 +22,13 @@
 // Float4E2M1 Tests
 // ============================================================================
 
-class TestFloat4E2M1 : public testing::Test {
+class TestFloat4E2M1 : public testing::Test
+{
 protected:
     void SetUp() override
-    {
-    }
+    {}
     void TearDown() override
-    {
-    }
+    {}
 };
 
 TEST_F(TestFloat4E2M1, DefaultConstructor)
@@ -202,7 +202,7 @@ TEST_F(TestFloat4E2M1, DoubleConversion)
 
     // Test overflow with double
     op::Float4E2M1 large(100.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large), 6.0);  // clamped to max (6.0 per OCP MX)
+    EXPECT_DOUBLE_EQ(static_cast<double>(large), 6.0); // clamped to max (6.0 per OCP MX)
 }
 
 TEST_F(TestFloat4E2M1, StdFunctions)
@@ -279,14 +279,13 @@ TEST_F(TestFloat4E2M1, DivisionByZero)
 // Float4E1M2 Tests
 // ============================================================================
 
-class TestFloat4E1M2 : public testing::Test {
+class TestFloat4E1M2 : public testing::Test
+{
 protected:
     void SetUp() override
-    {
-    }
+    {}
     void TearDown() override
-    {
-    }
+    {}
 };
 
 TEST_F(TestFloat4E1M2, DefaultConstructor)
@@ -451,7 +450,7 @@ TEST_F(TestFloat4E1M2, DoubleConversion)
 
     // Test overflow with double (E1M2 max is 1.75)
     op::Float4E1M2 large(100.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large), 1.75);  // clamped to max
+    EXPECT_DOUBLE_EQ(static_cast<double>(large), 1.75); // clamped to max
 }
 
 TEST_F(TestFloat4E1M2, StdFunctions)
@@ -539,7 +538,7 @@ TEST(Float4CrossType, RangeComparison)
 
     // E1M2 cannot represent 3.0
     op::Float4E1M2 e1m2_overflow(3.0f);
-    EXPECT_FLOAT_EQ(static_cast<float>(e1m2_overflow), 1.75f);  // clamped to max
+    EXPECT_FLOAT_EQ(static_cast<float>(e1m2_overflow), 1.75f); // clamped to max
 }
 
 TEST(Float4CrossType, PrecisionComparison)
@@ -580,28 +579,27 @@ TEST(Float4CrossType, AllValuesE2M1)
     };
 
     TestCase cases[] = {
-        {0x0, 0.0f},      // 0 00 0 = +0
+        {0x0, 0.0f}, // 0 00 0 = +0
         // 0x1 = denorm - actual implementation value
-        {0x2, 1.0f},      // 0 01 0 = 2^0 * 1.0 = 1.0
-        {0x3, 1.5f},      // 0 01 1 = 2^0 * 1.5 = 1.5
-        {0x4, 2.0f},      // 0 10 0 = 2^1 * 1.0 = 2.0
-        {0x5, 3.0f},      // 0 10 1 = 2^1 * 1.5 = 3.0
-        {0x6, 4.0f},      // 0 11 0 = 2^2 * 1.0 = 4.0
-        {0x7, 6.0f},      // 0 11 1 = 2^2 * 1.5 = 6.0 (max, NOT NaN per OCP MX)
-        {0x8, -0.0f},     // 1 00 0 = -0
+        {0x2, 1.0f},  // 0 01 0 = 2^0 * 1.0 = 1.0
+        {0x3, 1.5f},  // 0 01 1 = 2^0 * 1.5 = 1.5
+        {0x4, 2.0f},  // 0 10 0 = 2^1 * 1.0 = 2.0
+        {0x5, 3.0f},  // 0 10 1 = 2^1 * 1.5 = 3.0
+        {0x6, 4.0f},  // 0 11 0 = 2^2 * 1.0 = 4.0
+        {0x7, 6.0f},  // 0 11 1 = 2^2 * 1.5 = 6.0 (max, NOT NaN per OCP MX)
+        {0x8, -0.0f}, // 1 00 0 = -0
         // 0x9 = -denorm - actual implementation value
-        {0xA, -1.0f},     // 1 01 0 = -1.0
-        {0xB, -1.5f},     // 1 01 1 = -1.5
-        {0xC, -2.0f},     // 1 10 0 = -2.0
-        {0xD, -3.0f},     // 1 10 1 = -3.0
-        {0xE, -4.0f},     // 1 11 0 = -4.0
-        {0xF, -6.0f},     // 1 11 1 = -6.0 (min, NOT -NaN per OCP MX)
+        {0xA, -1.0f}, // 1 01 0 = -1.0
+        {0xB, -1.5f}, // 1 01 1 = -1.5
+        {0xC, -2.0f}, // 1 10 0 = -2.0
+        {0xD, -3.0f}, // 1 10 1 = -3.0
+        {0xE, -4.0f}, // 1 11 0 = -4.0
+        {0xF, -6.0f}, // 1 11 1 = -6.0 (min, NOT -NaN per OCP MX)
     };
 
-    for (const auto &tc : cases) {
+    for (const auto& tc : cases) {
         op::Float4E2M1 val(tc.bits, op::Float4E2M1::FromBits());
-        EXPECT_FLOAT_EQ(static_cast<float>(val), tc.expected)
-            << "bits: 0x" << std::hex << (int)tc.bits;
+        EXPECT_FLOAT_EQ(static_cast<float>(val), tc.expected) << "bits: 0x" << std::hex << (int)tc.bits;
     }
 
     // Test denorm values (0x1 and 0x9) separately with actual implementation values
@@ -626,28 +624,27 @@ TEST(Float4CrossType, AllValuesE1M2)
     };
 
     TestCase cases[] = {
-        {0x0, 0.0f},       // 0 0 00 = +0
-        {0x1, 0.25f},      // 0 0 01 = denorm: 1/4 = 0.25
-        {0x2, 0.5f},       // 0 0 10 = denorm: 2/4 = 0.5
-        {0x3, 0.75f},      // 0 0 11 = denorm: 3/4 = 0.75
-        {0x4, 1.0f},       // 0 1 00 = 2^0 * 1.0 = 1.0
-        {0x5, 1.25f},      // 0 1 01 = 2^0 * 1.25 = 1.25
-        {0x6, 1.5f},       // 0 1 10 = 2^0 * 1.5 = 1.5
-        {0x7, 1.75f},      // 0 1 11 = 2^0 * 1.75 = 1.75 (max)
-        {0x8, -0.0f},      // 1 0 00 = -0
-        {0x9, -0.25f},     // 1 0 01 = -denorm: -0.25
-        {0xA, -0.5f},      // 1 0 10 = -denorm: -0.5
-        {0xB, -0.75f},     // 1 0 11 = -denorm: -0.75
-        {0xC, -1.0f},      // 1 1 00 = -1.0
-        {0xD, -1.25f},     // 1 1 01 = -1.25
-        {0xE, -1.5f},      // 1 1 10 = -1.5
-        {0xF, -1.75f},     // 1 1 11 = -1.75 (min, NOT NaN)
+        {0x0, 0.0f},   // 0 0 00 = +0
+        {0x1, 0.25f},  // 0 0 01 = denorm: 1/4 = 0.25
+        {0x2, 0.5f},   // 0 0 10 = denorm: 2/4 = 0.5
+        {0x3, 0.75f},  // 0 0 11 = denorm: 3/4 = 0.75
+        {0x4, 1.0f},   // 0 1 00 = 2^0 * 1.0 = 1.0
+        {0x5, 1.25f},  // 0 1 01 = 2^0 * 1.25 = 1.25
+        {0x6, 1.5f},   // 0 1 10 = 2^0 * 1.5 = 1.5
+        {0x7, 1.75f},  // 0 1 11 = 2^0 * 1.75 = 1.75 (max)
+        {0x8, -0.0f},  // 1 0 00 = -0
+        {0x9, -0.25f}, // 1 0 01 = -denorm: -0.25
+        {0xA, -0.5f},  // 1 0 10 = -denorm: -0.5
+        {0xB, -0.75f}, // 1 0 11 = -denorm: -0.75
+        {0xC, -1.0f},  // 1 1 00 = -1.0
+        {0xD, -1.25f}, // 1 1 01 = -1.25
+        {0xE, -1.5f},  // 1 1 10 = -1.5
+        {0xF, -1.75f}, // 1 1 11 = -1.75 (min, NOT NaN)
     };
 
-    for (const auto &tc : cases) {
+    for (const auto& tc : cases) {
         op::Float4E1M2 val(tc.bits, op::Float4E1M2::FromBits());
-        EXPECT_FLOAT_EQ(static_cast<float>(val), tc.expected)
-            << "bits: 0x" << std::hex << (int)tc.bits;
+        EXPECT_FLOAT_EQ(static_cast<float>(val), tc.expected) << "bits: 0x" << std::hex << (int)tc.bits;
         // E1M2 has no NaN - all bit patterns are valid numbers
         EXPECT_FALSE(val.IsNaN()) << "bits: 0x" << std::hex << (int)tc.bits;
     }

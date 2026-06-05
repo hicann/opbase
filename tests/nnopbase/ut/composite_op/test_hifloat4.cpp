@@ -14,20 +14,20 @@
 
 #include "opdev/hifloat4.h"
 #include "opdev/bfloat16.h"
+#include "opdev/fp16_t.h"
 #include "gtest/gtest.h"
 
 // ============================================================================
 // HiFloat4 Tests
 // ============================================================================
 
-class TestHiFloat4 : public testing::Test {
+class TestHiFloat4 : public testing::Test
+{
 protected:
     void SetUp() override
-    {
-    }
+    {}
     void TearDown() override
-    {
-    }
+    {}
 };
 
 TEST_F(TestHiFloat4, DefaultConstructor)
@@ -188,7 +188,7 @@ TEST_F(TestHiFloat4, DoubleConversion)
 
     // Test overflow with double (HiFloat4 max is 1.75)
     op::HiFloat4 large(100.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large), 1.75);  // clamped to max
+    EXPECT_DOUBLE_EQ(static_cast<double>(large), 1.75); // clamped to max
 }
 
 TEST_F(TestHiFloat4, StdFunctions)
@@ -235,28 +235,27 @@ TEST_F(TestHiFloat4, AllValues)
     };
 
     TestCase cases[] = {
-        {0x0, 0.0f},       // 0 0 00 = +0
-        {0x1, 0.25f},      // 0 0 01 = denorm: 1/4 = 0.25
-        {0x2, 0.5f},       // 0 0 10 = denorm: 2/4 = 0.5
-        {0x3, 0.75f},      // 0 0 11 = denorm: 3/4 = 0.75
-        {0x4, 1.0f},       // 0 1 00 = 2^0 * 1.0 = 1.0
-        {0x5, 1.25f},      // 0 1 01 = 2^0 * 1.25 = 1.25
-        {0x6, 1.5f},       // 0 1 10 = 2^0 * 1.5 = 1.5
-        {0x7, 1.75f},      // 0 1 11 = 2^0 * 1.75 = 1.75 (max)
-        {0x8, -0.0f},      // 1 0 00 = -0
-        {0x9, -0.25f},     // 1 0 01 = -denorm: -0.25
-        {0xA, -0.5f},      // 1 0 10 = -denorm: -0.5
-        {0xB, -0.75f},     // 1 0 11 = -denorm: -0.75
-        {0xC, -1.0f},      // 1 1 00 = -1.0
-        {0xD, -1.25f},     // 1 1 01 = -1.25
-        {0xE, -1.5f},      // 1 1 10 = -1.5
-        {0xF, -1.75f},     // 1 1 11 = -1.75 (min)
+        {0x0, 0.0f},   // 0 0 00 = +0
+        {0x1, 0.25f},  // 0 0 01 = denorm: 1/4 = 0.25
+        {0x2, 0.5f},   // 0 0 10 = denorm: 2/4 = 0.5
+        {0x3, 0.75f},  // 0 0 11 = denorm: 3/4 = 0.75
+        {0x4, 1.0f},   // 0 1 00 = 2^0 * 1.0 = 1.0
+        {0x5, 1.25f},  // 0 1 01 = 2^0 * 1.25 = 1.25
+        {0x6, 1.5f},   // 0 1 10 = 2^0 * 1.5 = 1.5
+        {0x7, 1.75f},  // 0 1 11 = 2^0 * 1.75 = 1.75 (max)
+        {0x8, -0.0f},  // 1 0 00 = -0
+        {0x9, -0.25f}, // 1 0 01 = -denorm: -0.25
+        {0xA, -0.5f},  // 1 0 10 = -denorm: -0.5
+        {0xB, -0.75f}, // 1 0 11 = -denorm: -0.75
+        {0xC, -1.0f},  // 1 1 00 = -1.0
+        {0xD, -1.25f}, // 1 1 01 = -1.25
+        {0xE, -1.5f},  // 1 1 10 = -1.5
+        {0xF, -1.75f}, // 1 1 11 = -1.75 (min)
     };
 
-    for (const auto &tc : cases) {
+    for (const auto& tc : cases) {
         op::HiFloat4 val(tc.bits, op::HiFloat4::FromBits());
-        EXPECT_FLOAT_EQ(static_cast<float>(val), tc.expected)
-            << "bits: 0x" << std::hex << (int)tc.bits;
+        EXPECT_FLOAT_EQ(static_cast<float>(val), tc.expected) << "bits: 0x" << std::hex << (int)tc.bits;
         // HiFloat4 has no NaN - all bit patterns are valid numbers
         EXPECT_FALSE(val.IsNaN()) << "bits: 0x" << std::hex << (int)tc.bits;
     }
