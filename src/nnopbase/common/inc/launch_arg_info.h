@@ -93,7 +93,6 @@ constexpr wchar_t COMMA = ',';
 
 constexpr size_t PTR_OFFSET_SIZE = 8;    // ptr_offset(8B)
 constexpr size_t PRT_DIM_SIZE = 8;           // dim(4B) + cnt(4B)
-constexpr size_t UINT64_BYTES = sizeof(uint64_t);
 constexpr size_t ARG_VECTOR_CAP_SIZE = 32;
 
 class LaunchArgInfo {
@@ -141,9 +140,9 @@ public:
         return tensorNum_;
     }
 
-    size_t GetDFXInfoDumpSize() const
+    uint32_t GetDFXInfoDumpElemCount() const
     {
-        return dfxInfoDumpSize_;
+        return dfxInfoDumpElemCount_;
     }
 
     void *GetDFXInfoDumpAddr() const
@@ -225,26 +224,29 @@ private:
     size_t devArgNum_{0};
     size_t hostArgNum_{0};
     size_t tensorNum_{0};
-    size_t dfxInfoDumpSize_{0};
+    uint32_t dfxInfoDumpElemCount_{0};
     void *dfxInfoDumpAddr_{nullptr};
     size_t dfxInfoOffsetInTilingData_{0};
     bool genPlaceholder_{false};
     bool hasDevPtrArg_{false};
     size_t firstWorkspaceIdx_{0}; // workspace cant be first param for any ops
 
-    inline size_t CalAdumpDFXInfoSize(const aclTensor *tensor) const
+    static constexpr uint32_t DFX_INFO_SCALAR_ELEM_COUNT = 3U;  // 标量tensor固定占用3个uint64_t
+    static constexpr uint32_t DFX_INFO_FIXED_ELEM_COUNT = 2U;   // 每个tensor固定占用2个uint64_t(size + dimNum)
+
+    inline uint32_t CalAdumpDFXInfoElemCount(const aclTensor *tensor) const
     {
         if (tensor == nullptr) {
             return 0;
         }
-        size_t dfxInfoDumpSize = 0;
+        uint32_t elemCount = 0;
         size_t dimNum = tensor->GetStorageShape().GetDimNum();
         if (dimNum == 0) {
-            dfxInfoDumpSize = UINT64_BYTES + UINT64_BYTES + UINT64_BYTES;
+            elemCount = DFX_INFO_SCALAR_ELEM_COUNT;
         } else {
-            dfxInfoDumpSize = UINT64_BYTES + UINT64_BYTES + dimNum * UINT64_BYTES;
+            elemCount = DFX_INFO_FIXED_ELEM_COUNT + static_cast<uint32_t>(dimNum);
         }
-        return dfxInfoDumpSize;
+        return elemCount;
     }
 
     void AddDeviceArg(const aclTensor *tensor, void *devAddr, bool isOutShapeTensor = false)
@@ -301,7 +303,7 @@ private:
                 AddDeviceArg(nullptr, nullptr);
                 devArgNum_++;
                 tensorNum_++;
-                dfxInfoDumpSize_ += UINT64_BYTES;
+                dfxInfoDumpElemCount_++;
                 OP_LOGW("Append Launch NULL aclTensor placeholder");
             }
             return;
@@ -340,7 +342,7 @@ private:
             }
 #endif
         }
-        dfxInfoDumpSize_ += CalAdumpDFXInfoSize(arg);
+        dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(arg);
     }
 
     void AppendInputLaunchArg(const aclTensorList *arg)
@@ -360,7 +362,7 @@ private:
             AddDevicePtrArg(arg, dataSize);
             devArgNum_++;
             tensorNum_ += arg->Size() + 1;
-            dfxInfoDumpSize_ += UINT64_BYTES;
+            dfxInfoDumpElemCount_++;
 #ifdef DEBUG
             OP_LOGD("Append input DEVICE ptr: size %lu, dataSize %zu", arg->Size(), dataSize);
 #endif
@@ -389,7 +391,7 @@ private:
         AddDeviceArg(arg, arg->GetData());
         devArgNum_++;
         tensorNum_++;
-        dfxInfoDumpSize_ += CalAdumpDFXInfoSize(arg);
+        dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(arg);
 #ifdef DEBUG
         OP_LOGD("Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu",
                 arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData(), arg->GetTensor()->GetSize());
@@ -416,7 +418,7 @@ private:
             AddDevicePtrArg(arg, dataSize);
             devArgNum_++;
             tensorNum_ += arg->Size() + 1;
-            dfxInfoDumpSize_ += UINT64_BYTES;
+            dfxInfoDumpElemCount_++;
 #ifdef DEBUG
             OP_LOGD("Append output DEVICE ptr: size %ld, dataSize %ld", arg->Size(), dataSize);
 #endif
@@ -441,7 +443,7 @@ private:
         AddDeviceArg(arg, arg->GetData(), true);
         devArgNum_++;
         tensorNum_++;
-        dfxInfoDumpSize_ += UINT64_BYTES;
+        dfxInfoDumpElemCount_++;
 #ifdef DEBUG
         OP_LOGD("Append Launch Outshape Tensor. dims: %zu, dtype: %d, data:%p",
                 arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData());
@@ -479,7 +481,7 @@ private:
             AddDeviceArg(std::get<1>(elem), std::get<0>(elem));
             devArgNum_++;
             tensorNum_++;
-            dfxInfoDumpSize_ += CalAdumpDFXInfoSize(std::get<1>(elem));
+            dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(std::get<1>(elem));
         }
     }
 

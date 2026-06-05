@@ -197,7 +197,7 @@ int PrintExceptionDumpInfo(void *dump, size_t num)
 int PrintAICErrorDFXInfo(const void *dfxInfoAddr, const size_t argNum, const size_t dataSize)
 {
     std::string tensorSizeInfo = "tensor size(uint64_t):";
-    size_t tensorSizeInfoSize = argNum * UINT64_BYTES;
+    size_t tensorSizeInfoSize = argNum * sizeof(uint64_t);
     const uint64_t *tensorSizeInfoPtr = PtrCastTo<uint64_t>(dfxInfoAddr);
     for (uint16_t i = 0; i < tensorSizeInfoSize; i += sizeof(uint64_t)) {
         tensorSizeInfo += (" " + std::to_string(*PtrCastTo<uint64_t>(PtrShift(tensorSizeInfoPtr, i))));
@@ -734,22 +734,22 @@ void RtsArg::AddDFXInfoDumpDataToCache(const LaunchArgInfo &argInfo, OpExecCache
         return;
     }
     const void *dfxInfoDumpAddr = argInfo.GetDFXInfoDumpAddr();
-    auto dfxInfoDumpSize = argInfo.GetDFXInfoDumpSize();
-    if (dfxInfoDumpAddr == nullptr || dfxInfoDumpSize == 0) {
-        OP_LOGI("DFX info dump addr: %p, dump size: %zu, skip cache.", dfxInfoDumpAddr, dfxInfoDumpSize);
+    uint32_t dfxInfoElemCount = argInfo.GetDFXInfoDumpElemCount();
+    if (dfxInfoDumpAddr == nullptr || dfxInfoElemCount == 0) {
+        OP_LOGI("DFX info dump addr: %p, dump elem count: %u, skip cache.", dfxInfoDumpAddr, dfxInfoElemCount);
         return;
     }
-    void *dfxInfoCacheAddr = cache->AddLaunchData(dfxInfoDumpSize);
+    void *dfxInfoCacheAddr = cache->AddLaunchData(dfxInfoElemCount * sizeof(uint64_t));
     OP_CHECK(dfxInfoCacheAddr != nullptr, OP_LOGW("Fail to add data in cache!"), return );
-    OP_CHECK(memcpy_s(dfxInfoCacheAddr, dfxInfoDumpSize, dfxInfoDumpAddr, dfxInfoDumpSize) == EOK,
+    OP_CHECK(memcpy_s(dfxInfoCacheAddr, dfxInfoElemCount * sizeof(uint64_t), dfxInfoDumpAddr, dfxInfoElemCount * sizeof(uint64_t)) == EOK,
         OP_LOGW("Failed to memcpy DFX info dump data to cache."), return );
-    launchCache->SetDFXInfoCacheSize(dfxInfoDumpSize);
+    launchCache->SetDFXInfoCacheElemCount(dfxInfoElemCount);
     launchCache->SetDFXInfoOffsetInTilingData(argInfo.GetDFXInfoOffsetInTilingData());
     launchCache->SetLaunchArgNum(argInfo.GetArgSize());
 
     OP_LOGI("cache addr: %p, DFX info offset in tiling data: %zu, print dfx info in cache: %d", dfxInfoCacheAddr,
         argInfo.GetDFXInfoOffsetInTilingData(),
-        PrintAICErrorDFXInfo(dfxInfoCacheAddr, argInfo.GetArgSize(), dfxInfoDumpSize));
+        PrintAICErrorDFXInfo(dfxInfoCacheAddr, argInfo.GetArgSize(), dfxInfoElemCount * sizeof(uint64_t)));
 }
 
 LaunchArgCache *RtsArg::DumpToCache()
@@ -777,7 +777,7 @@ LaunchArgCache *RtsArg::DumpToCache()
         return nullptr);
     launchCache->SetArgNum(argNum_);
     launchCache->SetExceptionArgNum(0);
-    launchCache->SetDFXInfoCacheSize(0);
+    launchCache->SetDFXInfoCacheElemCount(0);
     launchCache->SetRtsApiType(LaunchArgCache::RTS_OLD);
     launchCache->SetOpType(op::internal::GetThreadLocalContext().logInfo_.l0Name);
     LaunchArgCache::ArgInfo *argInfo = launchCache->GetArgInfo();
@@ -816,21 +816,21 @@ void ReportRTSException(const LaunchArgCache *launchCache, void *cacheException)
 
 static void UpdateDFXInfoDumpAndTilingData(rtArgs_t &rtArg, const LaunchArgCache *launchCache, void *dfxInfoCache)
 {
-    size_t dumpSize = launchCache->GetDFXInfoCacheSize();
-    OP_CHECK(dumpSize != 0, OP_LOGW("DFX info size is 0, no need to update"), return );
+    uint32_t dumpElemCount = launchCache->GetDFXInfoCacheElemCount();
+    OP_CHECK(dumpElemCount != 0, OP_LOGW("DFX info elem count is 0, no need to update"), return );
     uint64_t dfxInfoDumpIndex = 0;
-    void *newDFXInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpSize, dfxInfoDumpIndex);
+    void *newDFXInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
     OP_CHECK(newDFXInfoDumpAddr != nullptr,
-        OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %zu", dumpSize), return );
-    OP_CHECK(memcpy_s(newDFXInfoDumpAddr, dumpSize, dfxInfoCache, dumpSize) == EOK, OP_LOGW("Failed to memcpy."),
+        OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount), return );
+    OP_CHECK(memcpy_s(newDFXInfoDumpAddr, dumpElemCount * sizeof(uint64_t), dfxInfoCache, dumpElemCount * sizeof(uint64_t)) == EOK, OP_LOGW("Failed to memcpy."),
         return );
     size_t dfxInfoOffset = launchCache->GetDFXInfoOffsetInTilingData();
     *PtrCastTo<uint64_t>(PtrShift(rtArg.args, rtArg.tilingDataOffset + dfxInfoOffset)) = dfxInfoDumpIndex;
     uint32_t *atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
-    OP_LOGI("dump request space: %zu, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), "
+    OP_LOGI("dump request space: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), "
         "DFX info offset in tiling data: %zu, print dfx info dump: %d",
-        dumpSize, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1], dfxInfoOffset,
-        PrintAICErrorDFXInfo(newDFXInfoDumpAddr, launchCache->GetLaunchArgNum(), dumpSize));
+        dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1], dfxInfoOffset,
+        PrintAICErrorDFXInfo(newDFXInfoDumpAddr, launchCache->GetLaunchArgNum(), dumpElemCount * sizeof(uint64_t)));
 }
 
 aclnnStatus LaunchArgCache::UpdateFunctionHandle(KernelLaunchConfig& launchCfg)

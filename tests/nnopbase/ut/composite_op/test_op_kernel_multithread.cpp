@@ -128,7 +128,7 @@ public:
     void CheckDFXInfoDump(const std::vector<uint64_t> &tensorSizeInfo, const std::vector<uint64_t> &shapeInfo)
     {
         std::cout << std::endl;
-        EXPECT_EQ(dfxInfoSpace_, 368);
+        EXPECT_EQ(dfxInfoSpace_, 46);
         EXPECT_EQ(tensorSizeInfo.size() + shapeInfo.size(), 46);
         for (size_t i = 0; i < tensorSizeInfo.size(); i++) {
             EXPECT_EQ(tensorSizeInfo[i], dfxInfoMem_[i]);
@@ -502,7 +502,7 @@ public:
     void CheckDFXInfoDump(const std::vector<uint64_t> &tensorSizeInfo, const std::vector<uint64_t> &shapeInfo)
     {
         std::cout << std::endl;
-        EXPECT_EQ(dfxInfoSpace_, 208);
+        EXPECT_EQ(dfxInfoSpace_, 26);
         EXPECT_EQ(tensorSizeInfo.size() + shapeInfo.size(), 26);
         for (size_t i = 0; i < tensorSizeInfo.size(); i++) {
             EXPECT_EQ(tensorSizeInfo[i], dfxInfoMem_[i]);
@@ -903,7 +903,7 @@ public:
     void CheckDFXInfoDump(const std::vector<uint64_t> &tensorSizeInfo, const std::vector<uint64_t> &shapeInfo)
     {
         std::cout << std::endl;
-        EXPECT_EQ(dfxInfoSpace_, 216);
+        EXPECT_EQ(dfxInfoSpace_, 27);
         EXPECT_EQ(tensorSizeInfo.size() + shapeInfo.size(), 27);
         for (size_t i = 0; i < tensorSizeInfo.size(); i++) {
             EXPECT_EQ(tensorSizeInfo[i], dfxInfoMem_[i]);
@@ -1306,7 +1306,7 @@ public:
     void CheckDFXInfoDump(const std::vector<uint64_t> &tensorSizeInfo, const std::vector<uint64_t> &shapeInfo)
     {
         std::cout << std::endl;
-        EXPECT_EQ(dfxInfoSpace_, 376);
+        EXPECT_EQ(dfxInfoSpace_, 47);
         EXPECT_EQ(tensorSizeInfo.size() + shapeInfo.size(), 47);
         for (size_t i = 0; i < tensorSizeInfo.size(); i++) {
             EXPECT_EQ(tensorSizeInfo[i], dfxInfoMem_[i]);

@@ -142,14 +142,14 @@ public:
         return launchArgNum_;
     }
 
-    void SetDFXInfoCacheSize(size_t size)
+    void SetDFXInfoCacheElemCount(uint32_t count)
     {
-        dfxInfoCacheSize_ = size;
+        dfxInfoCacheElemCount_ = count;
     }
 
-    size_t GetDFXInfoCacheSize() const
+    uint32_t GetDFXInfoCacheElemCount() const
     {
-        return dfxInfoCacheSize_;
+        return dfxInfoCacheElemCount_;
     }
 
     void SetDFXInfoOffsetInTilingData(size_t offset)
@@ -300,7 +300,7 @@ private:
     size_t argNum_{0};
     size_t exceptionArgNum_{0};
     size_t launchArgNum_{0};
-    size_t dfxInfoCacheSize_{0};
+    uint32_t dfxInfoCacheElemCount_{0};
     size_t dfxInfoOffsetInTilingData_{0};
     uint8_t argData_[0];  // ArgInfo array + dev_addr + host data
 };

@@ -398,24 +398,24 @@ public:
             return ACLNN_SUCCESS;
         }
 
-        size_t dumpSize = argInfo.GetDFXInfoDumpSize();
+        uint32_t dumpElemCount = argInfo.GetDFXInfoDumpElemCount();
         uint64_t dfxInfoDumpIndex = 0;
-        void *dfxInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpSize, dfxInfoDumpIndex);
+        void *dfxInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
         OP_CHECK(dfxInfoDumpAddr != nullptr,
-            OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %zu", dumpSize),
+            OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount),
             return ACLNN_ERR_INNER_NULLPTR);
-        aclnnStatus ret = AppendAICErrorDFXInfoToDump(allArg, argNum, dfxInfoDumpAddr, dumpSize);
+        aclnnStatus ret = AppendAICErrorDFXInfoToDump(allArg, argNum, dfxInfoDumpAddr, dumpElemCount);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to dump failed!"), return ret);
         argInfo.SetDFXInfoDumpAddr(dfxInfoDumpAddr);
 
         ret = AppendAICErrorDFXInfoToTilingData(buffer, dfxInfoDumpIndex);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to tiling data failed!"), return ret);
-        argInfo.SetDFXInfoOffsetInTilingData(buffer->GetTilingDataPtr()->data_size_ - UINT64_BYTES);
+        argInfo.SetDFXInfoOffsetInTilingData(buffer->GetTilingDataPtr()->data_size_ - sizeof(uint64_t));
 
         uint32_t *atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
-        OP_LOGI("Dump addr: %p, space: %zu, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), print dfx info dump: %d",
-            dfxInfoDumpAddr, dumpSize, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1],
-            op::internal::PrintAICErrorDFXInfo(dfxInfoDumpAddr, argNum, dumpSize));
+        OP_LOGI("Dump addr: %p, space: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), print dfx info dump: %d",
+            dfxInfoDumpAddr, dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1],
+            op::internal::PrintAICErrorDFXInfo(dfxInfoDumpAddr, argNum, dumpElemCount * sizeof(uint64_t)));
         return ACLNN_SUCCESS;
     }
 
@@ -1156,14 +1156,14 @@ private:
     {
         if ((tensor == nullptr && genPlaceholder_)) {
             *PtrCastTo<uint64_t>(PtrShift(dfxInfoDumpAddr, sizeInfoOffset)) = 0;
-            sizeInfoOffset += UINT64_BYTES;
+            sizeInfoOffset += sizeof(uint64_t);
             return ACLNN_SUCCESS;
         }
         OP_CHECK(tensor != nullptr, OP_LOGW("tensor is nullptr"), return ACLNN_ERR_INNER_NULLPTR);
         // append tensor size info
         size_t tensorSize = AlignSize(tensor->GetTensor()->GetSize(), OP_KERNEL_BLOCK_SIZE);
         *PtrCastTo<uint64_t>(PtrShift(dfxInfoDumpAddr, sizeInfoOffset)) = tensorSize;
-        sizeInfoOffset += UINT64_BYTES;
+        sizeInfoOffset += sizeof(uint64_t);
         if (isOutShapeTensor) {
             return ACLNN_SUCCESS;
         }
@@ -1174,14 +1174,14 @@ private:
         if (dimNum == 0) {
             *shapeInfoPtr++ = DIM_NUM_ONE;
             *shapeInfoPtr = DIM_SIZE_ONE;
-            shapeInfoOffset += UINT64_BYTES + UINT64_BYTES;
+            shapeInfoOffset += sizeof(uint64_t) + sizeof(uint64_t);
         } else {
             *shapeInfoPtr++ = dimNum;
             const int64_t *dims = &shape[0];
             OP_CHECK(memcpy_s(shapeInfoPtr, dimNum * sizeof(int64_t), dims, dimNum * sizeof(int64_t)) == EOK,
                 OP_LOGW("fill dim info failed, tensor size: %zu, dim num: %zu", tensor->GetTensor()->GetSize(), dimNum),
                 return ACLNN_ERR_INNER);
-            shapeInfoOffset += (1 + dimNum) * UINT64_BYTES;
+            shapeInfoOffset += (1 + dimNum) * sizeof(uint64_t);
         }
         return ACLNN_SUCCESS;
     }
@@ -1189,15 +1189,15 @@ private:
     aclnnStatus AppendTensorDfxInfo(void *dfxInfoDumpAddr, size_t &sizeInfoOffset, size_t ptrListLen) const
     {
         *PtrCastTo<uint64_t>(PtrShift(dfxInfoDumpAddr, sizeInfoOffset)) = ptrListLen;
-        sizeInfoOffset += UINT64_BYTES;
+        sizeInfoOffset += sizeof(uint64_t);
         return ACLNN_SUCCESS;
     }
 
     aclnnStatus AppendAICErrorDFXInfoToDump(const std::vector<LaunchArgInfo::ArgAddr> &allArg,
-        const size_t argNum, void *const dfxInfoDumpAddr, const size_t dumpSize) const
+        size_t argNum, void *const dfxInfoDumpAddr, uint32_t dumpElemCount) const
     {
         size_t sizeInfoOffset = 0;
-        size_t shapeInfoOffset = argNum * UINT64_BYTES;
+        size_t shapeInfoOffset = argNum * sizeof(uint64_t);
         for (size_t i = 0; i < argNum; i++) {
             aclnnStatus ret = ACLNN_SUCCESS;
             if (allArg[i].tag_ == LaunchArgInfo::ArgAddr::ArgTag::DEVICE_ARG) {
@@ -1223,9 +1223,9 @@ private:
                     i, static_cast<uint32_t>(allArg[i].tag_)),
                 return ret);
         }
-        OP_CHECK(shapeInfoOffset == dumpSize,
-            OP_LOGW("The data size filled dump [%zu] is not equal to the requested size [%zu]",
-                shapeInfoOffset, dumpSize),
+        OP_CHECK(shapeInfoOffset == dumpElemCount * sizeof(uint64_t),
+            OP_LOGW("The data size [%zu] filled in dump is not equal to the expected size [%u * sizeof(uint64_t)]",
+                shapeInfoOffset, dumpElemCount),
             return ACLNN_ERR_INNER);
         return ACLNN_SUCCESS;
     }
