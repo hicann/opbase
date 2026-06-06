@@ -28,6 +28,10 @@ template <typename T>
 ge::graphStatus ReduceDimsWithKeepDims(
     const gert::Shape *xShape, const T *axesDims, int32_t axesSize, gert::Shape *outputShape)
 {
+    if (IsUnknownRank(*xShape)) {
+        SetUnknownRank(*outputShape);
+        return ge::GRAPH_SUCCESS;
+    }
     T dimNum = xShape->GetDimNum();
     const bool isScalar = xShape->GetDimNum() == 0;
     dimNum = isScalar ? 1 : dimNum;
@@ -51,6 +55,10 @@ template <typename T>
 ge::graphStatus ReduceDimsWithoutKeepDims(
     const gert::Shape *xShape, const T *axesDims, int32_t axesSize, gert::Shape *outputShape)
 {
+    if (IsUnknownRank(*xShape)) {
+        SetUnknownRank(*outputShape);
+        return ge::GRAPH_SUCCESS;
+    }
     T dimNum = xShape->GetDimNum();
     outputShape->SetDimNum(0);
     for (T j = 0; j < dimNum; j++) {

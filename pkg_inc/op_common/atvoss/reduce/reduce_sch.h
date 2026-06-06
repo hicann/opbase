@@ -47,6 +47,8 @@ public:
     using ReduceOp = typename ReduceOpBind::Fun;
     using DataType = typename ReduceOpBind::template FunInArgType<0>;
     using InDType = typename InputDType<OpDag, DataType, true, IsSameType<OpDag, void>::value>::T;
+    using OutDType =
+        typename OutputDType<OpDag, DataType, OpDag::FunList::Size - 1, IsSameType<OpDag, void>::value>::T;
     constexpr static int32_t ELEMENT_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(DataType);
     constexpr static uint64_t UB_BLOCK = Ops::Base::GetUbBlockSize();
     constexpr static int32_t CACHE_BUF_SIZE = 16 * 1024;
@@ -215,7 +217,7 @@ public:
     template <class... Args>
     __aicore__ inline void ProcessEmpty(Args... args)
     {
-        using OpEmpty = ReduceTensorEmpty<InDType>;
+        using OpEmpty = ReduceTensorEmpty<OutDType>;
         OpEmpty op(tiling_, output_, pipeIn_, args...);
         op.Process();
     }
