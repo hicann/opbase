@@ -48,7 +48,7 @@ void *getAddr2 = nullptr;
 // 获取inputTensor中记录的device内存地址，此处获取到的指针getAddr1指向的内存地址与addr1一致
 auto ret = aclGetRawTensorAddr(inputTensor, &getAddr1);
 // 获取outputTensor中记录的device内存地址，此处获取到的指针getAddr2指向的内存地址与addr2一致
-auto ret = aclGetRawTensorAddr(outputTensor, &getAddr2);
+ret = aclGetRawTensorAddr(outputTensor, &getAddr2);
 
 // 调用Xxx算子一、二阶段接口
 ret = aclxxXxxGetWorkspaceSize(inputTensor, outputTensor, &workspaceSize, &executor);

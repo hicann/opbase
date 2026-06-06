@@ -34,8 +34,8 @@ aclBoolArray *aclCreateBoolArray(const bool *value, uint64_t size)
 
 ```cpp
 // 创建aclBoolArray
-std::vector<bool> maskData = {true, false};
-aclBoolArray *mask = aclCreateBoolArray(maskData.data(), maskData.size());
+bool maskData[] = {true, false};
+aclBoolArray *mask = aclCreateBoolArray(maskData, sizeof(maskData) / sizeof(maskData[0]));
 ...
 // aclBoolArray作为单算子API执行接口的入参
 auto ret = aclxxXxxGetWorkspaceSize(srcTensor, mask, ..., outTensor, ..., &workspaceSize, &executor);

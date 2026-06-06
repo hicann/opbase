@@ -35,8 +35,8 @@ aclnnStatus aclGetBoolArraySize(const aclBoolArray *array, uint64_t *size)
 
 ```cpp
 // 创建aclBoolArray
-std::vector<bool> maskData = {true, false};
-aclBoolArray *mask = aclCreateBoolArray(maskData.data(), maskData.size());
+bool maskData[] = {true, false};
+aclBoolArray *mask = aclCreateBoolArray(maskData, sizeof(maskData) / sizeof(maskData[0]));
 ...
 // 使用aclGetBoolArraySize接口获取mask的大小
 uint64_t size = 0;
