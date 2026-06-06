@@ -20,7 +20,7 @@ include(${OPS_BASE_DIR}/cmake/config.cmake)
 include(${OPS_BASE_DIR}/cmake/intf_pub_linux.cmake)
 include(${OPS_BASE_DIR}/cmake/func.cmake)
 
-include(${OPS_BASE_DIR}/cmake/third_party/protobuf.cmake)
+add_cann_third_party(protobuf)
 add_cann_third_party(eigen)
 
 find_cann_package(runtime)
@@ -30,8 +30,9 @@ add_cann_subdirectories_relative(${OPS_BASE_DIR}
     ${OPS_BASE_DIR}/aicpu_common/context
 )
 
-install(FILES ${PROTOBUF_STATIC_PKG_DIR}/lib/libbase_ascend_protobuf.a
+install(FILES $<TARGET_FILE:ascend_protobuf_static>
     DESTINATION ${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/lib64
+    RENAME libbase_ascend_protobuf.a
     COMPONENT opbase
 )
 

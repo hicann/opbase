@@ -28,7 +28,7 @@
 |      类型  |      开源代码地址   |       文件名    |   公网IP地址/公网URL地址/域名/邮箱地址/压缩文件地址   |  用途说明   |
 | :------------: |:------------:|:----------------------------| :----------------------------------------------- |:-----------------------------------------|
 |  依赖  | 不涉及  | cann-cmake (makeself-fetch.cmake) | <https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz> | 从gitcode下载makeself源码，作用编译依赖 |
-|  依赖  | 不涉及  | cmake/third_party/protobuf.cmake | <https://gitcode.com/cann-src-third-party/protobuf/releases/download/v3.13.0/protobuf-3.13.0.tar.gz> | 从gitcode下载protobuf源码，作用编译依赖 |
+|  依赖  | 不涉及  | cann-cmake (protobuf.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz> | 从obs公共仓下载protobuf源码，作用编译依赖 |
 |  依赖  | 不涉及  | cann-cmake (gtest.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz> | 从obs公共仓下载googletest源码，作用编译依赖 |
 |  依赖  | 不涉及  | cann-cmake (eigen.cmake) | <https://gitcode.com/cann-src-third-party/eigen/releases/download/5.0.0-h0.trunk/eigen-5.0.0.tar.gz> | 从gitcode下载eigen源码，作用编译依赖 |
 |  依赖  | 不涉及  | cann-cmake (json.cmake) | <https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/json/json-3.11.3.tar.gz> | 从obs公共仓下载json源码，作用编译依赖 |

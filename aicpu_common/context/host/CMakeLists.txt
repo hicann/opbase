@@ -39,7 +39,7 @@ target_link_libraries(aicpu_context_host PRIVATE
   runtime
   metadef
   Eigen3::Eigen
-  host_protobuf_static
+  ascend_protobuf_static
   -Wl,-z,relro,-z,now
   $<$<NOT:$<STREQUAL:${RESERVED_SYMBOL},true>>:-s>
   -ldl

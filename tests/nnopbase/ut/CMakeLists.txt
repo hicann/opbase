@@ -172,7 +172,7 @@ target_compile_options(nnopbase_utest PRIVATE
 
 target_link_libraries(nnopbase_utest PRIVATE
     intf_pub_cxx17
-    host_protobuf_static
+    protobuf_static
     -Wl,--no-as-needed
     op_tiling_ut_so_stub_rt2.0
     op_proto_so_ut_stub_rt2.0
@@ -200,6 +200,7 @@ target_link_libraries(nnopbase_utest PRIVATE
     $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
     ${opInfoRecordLinkLibraries}
     mockcpp
+    ascend_protobuf_static
  PUBLIC
 )
 

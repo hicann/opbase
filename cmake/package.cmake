@@ -119,8 +119,9 @@ install(TARGETS ${AICPU_LIBS}
     COMPONENT opbase
 )
 
-install(FILES ${PROTOBUF_HOST_STATIC_PKG_DIR}/lib/libhost_ascend_protobuf.a
+install(FILES $<TARGET_FILE:ascend_protobuf_static>
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64
+    RENAME libhost_ascend_protobuf.a
     COMPONENT opbase
 )
 

@@ -168,6 +168,7 @@ target_link_libraries(nnopbase_stest PRIVATE
     $<$<BOOL:${ENABLE_COVERAGE}>:gcov>
     ${opInfoRecordLinkLibraries}
     mockcpp
+    ascend_protobuf_static
   PUBLIC
 )
 
