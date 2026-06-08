@@ -16,6 +16,15 @@
 | fast_vector | 详细介绍了FastVector数据类型，该类型为aclnn中实现的高效vector数据结构。<br>**说明：该头文件定义的接口均为预留接口，开发者无需关注。** | aclnn/opdev/fast_vector.h |
 | [format_utils](format_utils.md) | 提供了Format相关的基础接口。 | aclnn/opdev/format_utils.h |
 | [fp16_t](fp16_t.md) | 详细介绍了float16数据类型在CPU侧的实现类。 | aclnn/opdev/fp16_t.h |
+| [float4_e1m2](float4_e1m2.md) | 详细介绍了Float4E1M2数据类型在CPU侧的实现类。 | aclnn/opdev/float4_e1m2.h |
+| [float4_e2m1](float4_e2m1.md) | 详细介绍了Float4E2M1数据类型在CPU侧的实现类。 | aclnn/opdev/float4_e2m1.h |
+| [float6_e2m3](float6_e2m3.md) | 详细介绍了Float6E2M3数据类型在CPU侧的实现类。 | aclnn/opdev/float6_e2m3.h |
+| [float6_e3m2](float6_e3m2.md) | 详细介绍了Float6E3M2数据类型在CPU侧的实现类。 | aclnn/opdev/float6_e3m2.h |
+| [float8_e4m3fn](float8_e4m3fn.md) | 详细介绍了Float8E4M3FN数据类型在CPU侧的实现类。 | aclnn/opdev/float8_e4m3fn.h |
+| [float8_e5m2](float8_e5m2.md) | 详细介绍了Float8E5M2数据类型在CPU侧的实现类。 | aclnn/opdev/float8_e5m2.h |
+| [float8_e8m0](float8_e8m0.md) | 详细介绍了Float8E8M0数据类型在CPU侧的实现类。 | aclnn/opdev/float8_e8m0.h |
+| [hifloat4](hifloat4.md) | 详细介绍了HiFloat4数据类型在CPU侧的实现类。 | aclnn/opdev/hifloat4.h |
+| [hifloat8](hifloat8.md) | 详细介绍了HiFloat8数据类型在CPU侧的实现类。 | aclnn/opdev/hifloat8.h |
 | [framework_op](framework_op.md) | 详细介绍了框架对外提供的从host侧到device侧拷贝能力。 | aclnn/opdev/framework_op.h |
 | make_op_executor | 对外提供初始化aclOpExecutor的宏声明。<br>**说明：该头文件定义的接口均为预留接口，开发者无需关注。** | aclnn/opdev/make_op_executor.h |
 | [object](object.md) | 详细介绍了aclnn中aclTensor等基础数据结构的基类Object类，用于重载实现new、delete方法。 | aclnn/opdev/object.h |
