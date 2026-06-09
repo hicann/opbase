@@ -39,6 +39,8 @@ target_link_libraries(aicpu_context PRIVATE
   aicpu_context_headers
   $<BUILD_INTERFACE:intf_pub_aicpu>
   $<BUILD_INTERFACE:slog_headers>
+  $<BUILD_INTERFACE:runtime_headers>
+  $<BUILD_INTERFACE:c_sec_headers>
   runtime
   metadef
   Eigen3::Eigen
@@ -76,6 +78,7 @@ target_compile_options(aicpu_nodedef PRIVATE
 )
 
 target_link_libraries(aicpu_nodedef PRIVATE
+  $<BUILD_INTERFACE:runtime_headers>
   aicpu_context_headers
   runtime
   metadef
@@ -120,6 +123,7 @@ target_link_libraries(aicpu_cust_log PRIVATE
   $<BUILD_INTERFACE:intf_pub_aicpu>
   $<BUILD_INTERFACE:slog_headers>
   $<BUILD_INTERFACE:runtime_headers>
+  $<BUILD_INTERFACE:c_sec_headers>
   runtime
   metadef
   Eigen3::Eigen

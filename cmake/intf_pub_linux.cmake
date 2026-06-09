@@ -21,7 +21,7 @@ target_compile_options(intf_pub INTERFACE
   $<$<BOOL:${ENABLE_PKG_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all -fno-stack-protector -fno-omit-frame-pointer -g>
   $<$<BOOL:${ENABLE_COVERAGE}>:-fprofile-arcs -ftest-coverage>
   $<$<CONFIG:Debug>:-g>
-  $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+  $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
 )
 target_compile_definitions(intf_pub INTERFACE
   _GLIBCXX_USE_CXX11_ABI=0

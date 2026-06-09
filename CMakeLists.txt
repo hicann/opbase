@@ -77,6 +77,9 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     find_cann_package(error_manager MODULE REQUIRED)
     find_cann_package(ascend_dump MODULE REQUIRED)
     find_cann_package(acl_rt MODULE REQUIRED)
+    find_cann_package(cann_version)
+    find_cann_package(asc_devkit)
+    find_cann_package(hccl)
 
     if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         check_cann_pkg_build_deps("opbase")
@@ -112,6 +115,9 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         tiling_api
         -Wl,--no-whole-archive
         $<BUILD_INTERFACE:intf_pub_cxx17>
+        $<BUILD_INTERFACE:error_manager_headers>
+        $<BUILD_INTERFACE:c_sec_headers>
+        $<BUILD_INTERFACE:asc_host_headers>
         unified_dlog
     )
 
