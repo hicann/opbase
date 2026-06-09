@@ -54,7 +54,7 @@ public:
             OP_LOGE(
                 rc,
                 "AclOpKernelInit failed opType. Maybe caused by the following reasons:\n\t 1. Please check whether the "
-                "CANN enviroment variables are sourced.\n\t 2. Please check if the kernel package is installed.\n\t 3. "
+                "CANN environment variables are sourced.\n\t 2. Please check if the kernel package is installed.\n\t 3. "
                 "Please confirm whether the current chip or version already supports the faulty operator.");
             return rc;
         }

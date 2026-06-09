@@ -202,7 +202,7 @@ void OpKernelBin::ParseKernelDfxConfig(const nlohmann::json &objJson)
 
     auto debugOptionsBufSize = objJson.find(DEBUG_BUF_SIZE);
     if (debugOptionsBufSize == objJson.end() || !debugOptionsBufSize->is_number()) {
-        OP_LOGW("Have debugOptions, but dont have debugBufSize.");
+        OP_LOGW("Have debugOptions, but don't have debugBufSize.");
         kernelDfxType_ = static_cast<uint32_t>(KernelDfxType::NO_DFX);
         return;
     }

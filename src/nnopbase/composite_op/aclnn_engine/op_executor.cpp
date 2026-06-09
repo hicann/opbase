@@ -219,10 +219,10 @@ aclnnStatus OpExecutorImpl::RepeatRunWithCache(void *workspaceAddr, const aclrtS
         return ACLNN_ERR_INNER;
     }
     OP_CHECK((opExecCache_ != nullptr && opExecCache_->CanUse()),
-             OP_LOGW("dont have cache or cache cant use"),
+             OP_LOGW("don't have cache or cache can't use"),
              return ACLNN_ERR_INNER;);
     OP_CHECK(CheckCacheable(),
-             OP_LOGW("cache cant be used because enable some dfx options."),
+             OP_LOGW("cache can't be used because enable some dfx options."),
              return ACLNN_ERR_INNER;);
     OP_LOGI("Repeat run executor, device ptr after update: %s", ReportAddrForRepeat().c_str());
     cacheAddrLists_.clear();

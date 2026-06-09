@@ -122,7 +122,7 @@ static const std::string g_errorInfoJson = R"(
         "Arglist": "opName, reason",
         "suggestion": {
             "Possible Cause": "N/A",
-            "Solution": "1.If the tiling or infershape function does not exist, check whether the tiling or infershape function is registered successfully. 2.If the tiling or infershape function fails to be executed, check the implementation logic of the tiling or infershape function."
+            "Solution": "1.If the tiling or inferShape function does not exist, check whether the tiling or inferShape function is registered successfully. 2.If the tiling or inferShape function fails to be executed, check the implementation logic of the tiling or inferShape function."
         }
     },
     {

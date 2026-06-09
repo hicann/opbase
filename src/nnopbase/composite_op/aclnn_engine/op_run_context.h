@@ -119,13 +119,13 @@ public:
     {
         CHECK_COND(InitOpFunctions(opType) == ACLNN_SUCCESS, ACLNN_SUCCESS, "InitOpFunctions failed");
         if (opInferShapeFuncs_[opType] == nullptr || opInferShapeFuncs_[opType]->infer_shape == nullptr) {
-            OP_LOGE_FOR_EXECUTION_ERROR("The infershape function does not exist");
+            OP_LOGE_FOR_EXECUTION_ERROR("The inferShape function does not exist");
             return ACLNN_ERR_INNER;
         }
         gert::InferShapeContext *ctx = opRunCtx_.UpdateInferShapeCtx(opType, inputs, outputs, attrs);
         auto ret = opInferShapeFuncs_[opType]->infer_shape(ctx);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute infershape");
+            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute inferShape");
             return ACLNN_ERR_INNER;
         }
         return ACLNN_SUCCESS;

@@ -525,7 +525,7 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json &jsonObj)
 aclnnStatus OpKernelBin::JsonLoadImpl(nlohmann::json &jsonObj)
 {
     auto ret = GetBinJson(jsonObj);
-    CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "failed to get op kenrel bin json [%s]", jsonPath_.c_str());
+    CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Failed to get op kernel bin json [%s]", jsonPath_.c_str());
 
     if (jsonObj.contains("intercoreSync") && jsonObj["intercoreSync"] == 1) {
         interCoreSync_ = true;

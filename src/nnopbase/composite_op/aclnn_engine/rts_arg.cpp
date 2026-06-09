@@ -763,7 +763,7 @@ LaunchArgCache *RtsArg::DumpToCache()
     size_t tilingDataLen = rtsArgBuffer_->GetTilingDataPtr()->data_size_;
     if (!cache->IsOpCacheValid() || tilingDataLen == 0 ||
         tilingDataLen >= MAX_CACHE_TILING_SIZE) {
-        OP_LOGI("hash key is zero, or dont has tiling, or tiling size bigger than cache limit, skip cache.");
+        OP_LOGI("hash key is zero, or don't has tiling, or tiling size bigger than cache limit, skip cache.");
         cache->MarkOpCacheInvalid();
         return nullptr;
     }

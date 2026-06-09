@@ -853,7 +853,7 @@ public:
         size = res->workspaceSize_->GetData();
         // add debug buf size
         if (kernelDfxType_ != static_cast<uint32_t>(KernelDfxType::NO_DFX)) {
-            CHECK_COND(num > 0, ACLNN_ERR_INNER, "Enable kernel dfx, but dont have workspace.");
+            CHECK_COND(num > 0, ACLNN_ERR_INNER, "Enable kernel dfx, but don't have workspace.");
             size_t *sizeMutable = const_cast<size_t *>(size);
             sizeMutable[0] += kernelDfxBufSize_;
         }
@@ -1490,7 +1490,7 @@ public:
                  return nullptr);
         char *initAddr = integralKey;
         OP_CHECK((GenerateKey(integralKey, len, inputs, outputs, attrs) == ACLNN_SUCCESS),
-                 OP_LOGW("generateKey is not success when selecBin."),
+                 OP_LOGW("generateKey is not success when selectBin."),
                  ;);
         //  *integralKey = '\0'; // Add a '\0' at the end of integral key.
 

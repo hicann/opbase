@@ -460,7 +460,7 @@ void AddParamToBufV2(const T *addr, uint64_t size, char *hashBuf, uint64_t &hash
         return;
     }
     OP_CHECK(memcpy_s(hashBuf + hashOffset, K_HASH_BUF_SIZE - hashOffset, addr, size * sizeof(T)) == EOK,
-             OP_LOGW("Failed to memcpy in op cahce."),
+             OP_LOGW("Failed to memcpy in op cache."),
              ;);
     hashOffset += size * sizeof(T);
 };
@@ -909,7 +909,7 @@ void OpExecCache::InitOpCacheKey()
         key_.buf = new uint8_t[key_.len];
         OP_LOGI("key_.len is %zu", key_.len);
         OP_CHECK(memcpy_s(key_.buf, key_.len, tlsData->threadLocalContext.cacheHashKey_, key_.len) == EOK,
-                 OP_LOGW("Failed to memcpy in op cahce."),
+                 OP_LOGW("Failed to memcpy in op cache."),
                  ;);
     }
 }
@@ -1094,7 +1094,7 @@ void OpExecCache::Finalize()
     }
     auto newCacheBuf = new char[cacheSize];
     OP_CHECK(memcpy_s(static_cast<void *>(newCacheBuf), cacheSize, cacheBuf_, cacheSize) == EOK,
-             OP_LOGW("Failed to memcpy in op cahce."),
+             OP_LOGW("Failed to memcpy in op cache."),
              ;);
     cacheBuf_ = static_cast<void *>(newCacheBuf);
     hasExclusiveMem_ = true;
@@ -1212,7 +1212,7 @@ bool OpExecCache::CanUse()
         current = tlsData->threadLocalContext.logInfo_.l2ApiName;
     }
     if (current != l2Name_) {
-        OP_LOGW("can not hit cache, may be hash conflict, xcurrent: %s, cache: %s", current, l2Name_);
+        OP_LOGW("can not hit cache, may be hash conflict, current: %s, cache: %s", current, l2Name_);
         return false;
     }
     return canUse_.load();

@@ -376,7 +376,7 @@ aclnnStatus OpKernelBin::GetBinData()
 aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
 {
     auto ret = GetBinData();
-    CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "failed to get op kenrel bin data [%s]", binPath_.c_str());
+    CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Failed to get op kernel bin data [%s]", binPath_.c_str());
 
     static std::mutex rtsLock;
 
