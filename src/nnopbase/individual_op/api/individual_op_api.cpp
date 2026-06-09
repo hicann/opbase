@@ -80,7 +80,7 @@ static inline void NnopbaseLogTensorListInfo(const char *paramName, const aclTen
         OP_LOGI("[DFX] %s[%u] is nullptr.", paramName, index);
         return;
     }
-    OP_LOGI("[DFX] %s[%u] is TensorList, size=%llu.", paramName, index, tensorList->Size());
+    OP_LOGI("[DFX] %s[%u] is aclTensorList, size=%llu.", paramName, index, tensorList->Size());
     for (uint64_t i = 0; i < tensorList->Size(); i++) {
         if ((*tensorList)[i] != nullptr) {
             const auto &t = (*tensorList)[i];
@@ -224,7 +224,6 @@ void* NnopbaseGetExecutor(void *space, const NnopbaseChar *opType, NnopbaseChar 
     if (executorSpace == nullptr) {
         return nullptr;
     }
-
     const std::lock_guard<std::mutex> lock(executorSpace->spaceMtx);
     // 同一个opType可以对应多个executor
     for (auto executor : executorSpace->executors) {
@@ -240,7 +239,6 @@ void* NnopbaseGetExecutor(void *space, const NnopbaseChar *opType, NnopbaseChar 
             return executor;
         }
     }
-
     NnopbaseExecutor *executor = new(std::nothrow) NnopbaseExecutor;
     if (executor != nullptr) {
         aclnnStatus ret =
@@ -684,11 +682,11 @@ static aclnnStatus NnopbaseGetDynamicTensorAddrs(const NnopbaseTensors &tensors,
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(count, ACLNN_ERR_PARAM_NULLPTR);
     NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(irIndex, "irIndex", tensors.paramDescs.count);
     CHECK_COND(tensors.paramDescs.instances[irIndex].isDynamic, ACLNN_ERR_PARAM_INVALID,
-               "Get tensor addrs failed. tensor[%zu] must is dynamic. isDynamic = %d.",
+               "Get tensor addrs failed. tensors[%zu] must be dynamic. isDynamic = %d.",
                irIndex, tensors.paramDescs.instances[irIndex].isDynamic);
 
     uint32_t num = tensors.paramDescs.instances[irIndex].num;
-    OP_LOGI("NnopbaseGetDynamicTensorAddrs debug info, irIndex = %zu, "
+    OP_LOGI("NnopbaseGetDynamicTensorAddrs: irIndex = %zu, "
             "addrSize = %zu bytes, tensors num = %u.", irIndex, addrSize, num);
     if (addrSize < num) {
         num = static_cast<uint32_t>(addrSize);
@@ -859,8 +857,7 @@ uint32_t NnopbaseGetSocEnum()
 
 const char *NnopbaseGetSocName()
 {
-    thread_local std::string socName;
-    socName = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+    thread_local std::string socName = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     return socName.c_str();
 }
 
@@ -1146,10 +1143,7 @@ aclnnStatus NnopbaseSetHcclServerTypeBySocName(void *executor, NnopbaseHcclServe
     NNOPBASE_ASSERT_NOTNULL_RETVAL(socNameList);
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     const std::string &curSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-
-    const auto supportHcclSocMap = nnopbase::IndvSoc::GetInstance().GetSupportHcclSocMap();
-    const auto &iter = supportHcclSocMap.find(curSocVersion);
-    if (iter == supportHcclSocMap.cend()) {
+    if (!nnopbase::IndvSoc::GetInstance().SupportCurrentSoc()) {
         OP_LOGW("HcclServerType API does not support this SoC version %s.", curSocVersion.c_str());
         return OK;
     }
@@ -1159,8 +1153,8 @@ aclnnStatus NnopbaseSetHcclServerTypeBySocName(void *executor, NnopbaseHcclServe
             return OK;
         }
     }
-    std::string errMsg = "HcclServerType verification failed."
-        " Please check if the SoC configured in AddConfig matches the SoC configured in HcclServerType.";
+    std::string errMsg = "SoC version " + curSocVersion + \
+        " verification failed. This SoC is not configured through the HcclServerType API of the OpDef class";
     OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
     return ACLNN_ERR_PARAM_INVALID;
 }
@@ -1172,10 +1166,10 @@ void NnopbaseSetHcclServerTypeList(void *executor, NnopbaseHcclServerType *hcclS
     NNOPBASE_ASSERT_NOTNULL(hcclServerTypeList);
     NNOPBASE_ASSERT_NOTNULL(socSupportList);
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
-    const auto supportHcclSocMap = nnopbase::IndvSoc::GetInstance().GetSupportHcclSocMap();
+    const auto supportSocMap = nnopbase::IndvSoc::GetInstance().GetSocTypeMap();
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-    const auto &iter = supportHcclSocMap.find(socVersion);
-    if (iter == supportHcclSocMap.cend()) {
+    const auto &iter = supportSocMap.find(socVersion);
+    if (iter == supportSocMap.cend()) {
         return;
     }
     for (size_t i = 0U; i < socSupportListLen; i++) {
@@ -1190,6 +1184,18 @@ void NnopbaseSetZeroEleOutputLaunchFlag(void *executor)
 {
     NNOPBASE_ASSERT_NOTNULL(executor);
     ((NnopbaseExecutor *)executor)->isZeroEleOutputLaunch = true;
+}
+
+void NnopbaseSetParamCheckMode(void *executor, const uint32_t mode)
+{
+    NNOPBASE_ASSERT_NOTNULL(executor);
+    NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    if (static_cast<uint32_t>(NnopbaseParamCheckMode::kCheckEnd) > mode) {
+        nnopExecutor->paramCheckMode = static_cast<NnopbaseParamCheckMode>(mode);
+    } else {
+        OP_LOGW("Failed to set paramCheckMode. Value of mode is %u, which must be between [0, %u).",
+        mode, static_cast<uint32_t>(NnopbaseParamCheckMode::kCheckEnd));
+    }
 }
 
 void NnopbaseSetMatchArgsFlag(void *executor)

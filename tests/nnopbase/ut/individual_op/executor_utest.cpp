@@ -1114,13 +1114,13 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseParamCheck)
 
     size_t workspaceLen = 0U;
     (void)NnopbaseRunForWorkspace(executor, &workspaceLen);
-    NnopbaseExecutorCheckSocVersionAndParam((NnopbaseExecutor *)executor);
+    EXPECT_EQ(CheckSocVersionAndParam((NnopbaseExecutor *)executor, NnopbaseParamCheckMode::kCheckRequiredIo), OK);
 
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseExecutorUnitTest, NnopbaseParamCheckNoSupportInfo)
+TEST_F(NnopbaseExecutorUnitTest, NnopbaseParamCheckNoSupportSoc)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -1157,7 +1157,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseParamCheckNoSupportInfo)
 
     size_t workspaceLen = 0U;
     (void)NnopbaseRunForWorkspace(executor, &workspaceLen);
-    NnopbaseExecutorCheckSocVersionAndParam((NnopbaseExecutor *)executor);
+    EXPECT_EQ(CheckSocVersionAndParam((NnopbaseExecutor *)executor, NnopbaseParamCheckMode::kCheckRequiredIo), ACLNN_ERR_INNER_FIND_KERNEL_ERROR);
 
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();

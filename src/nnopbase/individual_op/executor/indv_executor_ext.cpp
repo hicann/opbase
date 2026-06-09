@@ -702,9 +702,10 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
         executor->regInfo = NnopbaseCollecterFindRegInfoInTbl(executor->collecter, opType, hashKey); // 再次查找
     }
     if (executor->regInfo == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
-            "Get regInfo failed, The binary_info_config.json of socVersion [%s] does not support opType [%s].",
-            nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str(), opType);
+        std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
+        std::string errMsg = "SoC version " + socVersion +\
+        " verification failed. This SoC is not configured through the AddConfig API of the OpDef class";
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (executor->opType == nullptr) {
@@ -992,15 +993,12 @@ void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor *executor)
                                     NNOPBASE_NORM_MAX_BIN_BUCKETS;
 }
 
-void NnopbaseExecutorUpdateBinInfo(NnopbaseExecutor *executor)
+bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor *executor)
 {
     NnopbaseExecutorGenDynamicKey(executor);
     executor->args->binInfo = NnopbaseCollecterFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
         &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len);
-    // 可以找到bin_info此处直接返回
-    if (executor->args->binInfo != nullptr) {
-        return;
-    }
+    return executor->args->binInfo != nullptr;
 }
 
 NnopbaseUChar *NnopbaseExecutorGenTensorsKey(NnopbaseUChar *verKey, NnopbaseTensors *tensors, size_t tensorNum,

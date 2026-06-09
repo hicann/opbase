@@ -92,15 +92,15 @@ public:
                 OP_LOGW("Load libopapi_math.so failed, trying alternative dynamic library.");
                 // libopapi.so在cann包的lib64路径下，正常配置一定在LD_LIBRARY_PATH下
                 if (openSo("libopapi.so") != OK) {
-                    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Open libopapi_math.so and libopapi.so failed! Please check if built-in opp "
-                            "package is installed, and libopapi_math.so or libopapi.so path is in LD_LIBRARY_PATH env!");
+                    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Open libopapi_math.so and libopapi.so failed! Please check if built-in operator "
+                            "package is installed and check if libopapi_math.so or libopapi.so is under LD_LIBRARY_PATH!");
                     return nullptr;
                 }
             }
             hasInit_ = true;
         }
         if (funcName == nullptr) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Get funcName is nullptr!");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "FuncName is nullptr!");
             return nullptr;
         }
         const auto &it = functions_.find(funcName);

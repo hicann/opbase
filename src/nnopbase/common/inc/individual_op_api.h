@@ -180,6 +180,7 @@ VISIBILITY_EXPORT
 aclnnStatus NnopbaseAddOutputShapeDependTensor(void *executor, aclTensor *tensor, const uint32_t index);
 
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetFormatMatchMode(void *executor, const uint32_t mode);
+VISIBILITY_EXPORT void NnopbaseSetParamCheckMode(void *executor, const uint32_t mode);
 
 // for fallback
 VISIBILITY_EXPORT void *NnopbaseGetOpApiFunc(const char *funcName);

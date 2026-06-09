@@ -142,6 +142,7 @@ typedef struct {
     bool isCachedArgs = false;
     NnopbaseCoreNum coreNum{0, 0};
     bool deterministic = false;
+    NnopbaseParamCheckMode paramCheckMode = NnopbaseParamCheckMode::kCheckEnd;
 } NnopbaseExecutor;
 
 typedef struct {
@@ -201,7 +202,8 @@ void NnopbaseDestroyStreamCallback(aclrtStream stream, const bool isCreate);
 aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor *executor, const NnopbaseOpInfo opInfo);
 void NnopbaseExecutorDeInit(NnopbaseExecutor *executor);
 void StreamMapClear(aclrtStream stream);
-aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor);
+aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor *executor,
+    NnopbaseParamCheckMode mode=NnopbaseParamCheckMode::kCheckRequiredIo);
 aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor *executor, bool usingStride = false);
 void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor *executor);
 size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor *const executor, bool usingStride = false);
@@ -226,7 +228,7 @@ aclnnStatus NnopbaseExecutorGcSpace(void *data);
 aclnnStatus NnopbaseExecutorClearSpace(NnopbaseExecutorSpace *space);
 aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const NnopbaseChar *opType);
 
-void NnopbaseExecutorUpdateBinInfo(NnopbaseExecutor *executor);
+bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor *executor);
 
 // add io
 struct NnopbaseTensorIoOptions {

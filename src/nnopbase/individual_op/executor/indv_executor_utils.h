@@ -173,6 +173,14 @@ enum NnopbaseFormatCheckOption {
     kNnopbaseMax
 };
 
+enum class NnopbaseParamCheckMode {
+    kCheckRequiredIo = 0,        // 默认只校验必选输入输出
+    kCheckOptionalInput = 1,     // 默认校验必选输入输出+可选输入
+    kCheckOptionalOutput = 2,    // 默认校验必选输入输出+可选输出
+    kCheckAllIo = 3,             // 默认校验所有输入输出
+    kCheckEnd,
+};
+
 static inline bool IsContiguous(const GertShape &shape, const op::Strides &strides)
 {
     OP_LOGI("Input tensor view shape is %s, view strides is %s",

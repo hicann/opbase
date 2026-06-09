@@ -892,7 +892,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithNclFormat)
 #endif
 }
 
-TEST_F(NnopbaseUnitTest, NnopbasePrarmCheckFailed)
+TEST_F(NnopbaseUnitTest, NnopbaseFindSupportInfoSuccess)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
@@ -939,7 +939,7 @@ TEST_F(NnopbaseUnitTest, NnopbasePrarmCheckFailed)
     size_t workspaceLen = 0U;
     (void)NnopbaseRunForWorkspace(executor, &workspaceLen);
 
-    NnopbaseExecutorCheckSocVersionAndParam((NnopbaseExecutor *)executor);
+    EXPECT_EQ(CheckSocVersionAndParam((NnopbaseExecutor *)executor, NnopbaseParamCheckMode::kCheckRequiredIo), OK);
     aclDestroyTensorList((const aclTensorList *)aclTensorTestList);
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();

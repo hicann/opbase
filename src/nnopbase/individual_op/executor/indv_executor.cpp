@@ -107,6 +107,31 @@ bool GenStaticKeyAndFindStaticBin(NnopbaseExecutor *executor, bool usingStride)
     }
     return false;
 }
+
+void UpdateStaticKernelTilingInfo(NnopbaseExecutor *executor)
+{
+    OP_LOGI("Start updating %s tilingInfo.", executor->opType);
+    ResizeExecutorArgsBuf(executor);
+    auto &tilingInfo = executor->args->tilingInfo;
+    auto staticBinInfo = executor->args->binInfo;
+    auto &staticKernelRunInfo = staticBinInfo->extraKernelDesc->runInfo;
+    tilingInfo.tilingKey = staticKernelRunInfo->tilingKey;
+    tilingInfo.numBlocks = staticKernelRunInfo->numBlocks;
+    tilingInfo.scheMode = static_cast<uint8_t>(staticKernelRunInfo->scheduleMode);
+    tilingInfo.aicpuNumBlocks = staticKernelRunInfo->aicpuNumBlocks;
+    tilingInfo.needAtomic = staticKernelRunInfo->clearAtomic;
+    tilingInfo.staticTilingData = staticKernelRunInfo->tilingData;
+    OP_LOGI("Updated static tilingInfo: opType : %s, aicpuNumBlocks %u, numBlocks %u,"
+        " scheduleMode %u,  tilingKey %llu clearAtomic %d staticJson TilingData Size %zu, staticTilingDataSize %zu",
+        executor->opType,
+        tilingInfo.aicpuNumBlocks,
+        tilingInfo.numBlocks,
+        tilingInfo.scheMode,
+        tilingInfo.tilingKey,
+        tilingInfo.needAtomic,
+        staticKernelRunInfo->tilingData.size(),
+        tilingInfo.staticTilingData.size());
+}
 }
 
 void NnopbaseExecutorClearSet(NnopbaseExecutorSpaceSet *set)
@@ -146,10 +171,10 @@ aclnnStatus NnopbaseExecutorSetRef(NnopbaseExecutor *executor, const size_t inpu
 }
 
 static aclnnStatus NnopbaseExecutorPrintErrMsg(
-    const NnopbaseExecutor *const executor, const std::vector<size_t> &inIdxs, const size_t workspaceOffsetSize)
+    const NnopbaseExecutor *const executor, const std::vector<size_t> &inIdxs)
 {
-    std::string ioInfo = std::string("Op ") + std::string(executor->opType) + std::string(" has ") +
-                         std::to_string(inIdxs.size()) + std::string(" uncontiguous input: ");
+    std::string reason = "Parameter ";
+    std::vector<std::string> paramNames;
     // inIdxs存的是实际的index，需要转换成irIndex，打印对应的name
     auto &inInstances = executor->args->inputs.paramDescs.instances;
     uint32_t repeatIndex = 0U;
@@ -158,19 +183,30 @@ static aclnnStatus NnopbaseExecutorPrintErrMsg(
         for (size_t idx : inIdxs) {
             if (executor->args->inputs.paramDescs.instances[irIndex].isDynamic) {
                 if ((idx >= startIndex) && (idx < startIndex + inInstances[irIndex].num) && (repeatIndex != irIndex)) {
-                    ioInfo += std::string(inInstances[irIndex].name) + std::string(", ");
+                    paramNames.push_back(std::string(inInstances[irIndex].name));
                     repeatIndex = irIndex;
                 }
             } else {
                 if (idx == startIndex) {
-                    ioInfo += std::string(inInstances[irIndex].name) + std::string(", ");
+                    paramNames.push_back(std::string(inInstances[irIndex].name));
                 }
             }
         }
     }
-    ioInfo += std::string("but set ") + std::to_string(workspaceOffsetSize) +
-              std::string(" auto conversion, may not set AutoContiguous() in OpDef.");
-    OP_LOGE(ACLNN_ERR_INNER, "%s", ioInfo.c_str());
+    for (size_t i = 0U; i < paramNames.size(); ++i) {
+        reason += paramNames[i];
+        if (i != paramNames.size() - 1U) {
+            reason += ", ";
+        }
+    }
+    if (paramNames.size() > 1U) {
+        reason += " of the operator are non-contiguous tensors.";
+    } else {
+        reason += " of the operator is a non-contiguous tensor.";
+    }
+    reason += " A processing policy must be configured through "\
+        "the AutoContiguous() or IgnoreContiguous() API of the OpDef class";
+    OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(reason.c_str());
     return ACLNN_ERR_INNER;
 }
 
@@ -229,10 +265,11 @@ static inline aclnnStatus NnopbaseGetSupportInfo(const NnopbaseExecutor *const e
 }
 
 // 异常场景，返回错误码
-static inline aclnnStatus NnopbasePrintSupportInfo(const NnopbaseExecutor *const executor, OpSocSupportInfo &supportList)
+static inline aclnnStatus PrintExceptionIoParamInfo(const NnopbaseExecutor *const executor, OpSocSupportInfo &supportList)
 {
     // print input info
-    std::string ioInfo = std::string("Io input dtype or format is not supported, get io input info is ");
+    std::string ioInfo = std::string("The dtype or format of the actual input or output parameter is not supported,"\
+        " details of parameter are ");
     NnopbaseAddTensorsInfo(executor->args->inputs, ioInfo);
     NnopbaseAddTensorsInfo(executor->args->outputs, ioInfo);
     ioInfo += std::string("but supported list is:");
@@ -266,53 +303,72 @@ static inline bool Compare(const TensorDesc &paramDesc, const GertTensor &tensor
     return paramDesc.dtype == tensor.GetDataType() && paramDesc.format == tensor.GetStorageFormat();
 }
 
-static inline void DynamicIoCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc, const size_t index, bool *match)
+static inline bool DynamicIoCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc, const size_t index)
 {
     // dynamic输入只匹配第一个tensor的dtype和format
     const size_t startIndex = tensors->paramDescs.instances[index].startIndex;
     if (!Compare(ioDesc[index], tensors->extTensors[startIndex].rt2Tensor)) {
-        *match = false;
-        return;
+        return false;
     }
+    return true;
 }
 
-static inline void RequiredIoCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc, const size_t index, bool *match)
+static inline bool RequiredIoCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc, const size_t index)
 {
     const size_t startIndex = static_cast<size_t>(tensors->paramDescs.instances[index].startIndex);
     if (tensors->extTensors[startIndex].isRequired) {
         if (!Compare(ioDesc[index], tensors->extTensors[startIndex].rt2Tensor)) {
-            *match = false;
-            return;
+            return false;
         }
     }
+    return true;
 }
 
-static inline void IoParamCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc,
-                                 const size_t num, bool *match)
+static inline bool OptionalIoCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc, const size_t index)
 {
-    for (size_t j = 0U; j < num; j++) {
-        if (tensors->paramDescs.instances[j].isDynamic) {
-            DynamicIoCheck(tensors, ioDesc, j, match);
-        } else {
-            RequiredIoCheck(tensors, ioDesc, j, match);
+    const size_t startIndex = static_cast<size_t>(tensors->paramDescs.instances[index].startIndex);
+    if (tensors->extTensors[startIndex].isNull) {
+        return true;
+    }
+    if (tensors->extTensors[startIndex].isOptional) {
+        if (!Compare(ioDesc[index], tensors->extTensors[startIndex].rt2Tensor)) {
+            return false;
         }
     }
+    return true;
 }
 
-static inline bool ParamCheck(NnopbaseExecutor *executor, OpSocSupportInfo &supportList)
+static inline bool IoParamCheck(NnopbaseTensors *tensors, TensorDesc *ioDesc,
+                                 const size_t num, NnopbaseParamCheckMode mode, bool isInput)
+{
+    bool optionalCheckInputFlag = (mode == NnopbaseParamCheckMode::kCheckOptionalInput) ||
+        (mode == NnopbaseParamCheckMode::kCheckAllIo);
+    bool optionalCheckOutputFlag = (mode == NnopbaseParamCheckMode::kCheckOptionalOutput) ||
+        (mode == NnopbaseParamCheckMode::kCheckAllIo);
+    for (size_t j = 0U; j < num; j++) {
+        if (tensors->paramDescs.instances[j].isDynamic && !DynamicIoCheck(tensors, ioDesc, j)) {
+            return false;
+        } else if (optionalCheckInputFlag && isInput &&
+            (!(RequiredIoCheck(tensors, ioDesc, j)) || !(OptionalIoCheck(tensors, ioDesc, j)))) {
+            return false;
+        } else if (optionalCheckOutputFlag && !isInput &&
+            (!(RequiredIoCheck(tensors, ioDesc, j)) || !(OptionalIoCheck(tensors, ioDesc, j)))) {
+            return false;
+        } else if (!RequiredIoCheck(tensors, ioDesc, j)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static inline bool IsParamMatchSupportInfo(NnopbaseExecutor *executor, OpSocSupportInfo &supportList,
+    NnopbaseParamCheckMode mode)
 {
     const size_t num = supportList.num;
     for (size_t i = 0U; i < num; i++) {
-        bool match = true;
-        IoParamCheck(
-            &executor->args->inputs, supportList.supportInfo[i].inputsDesc, supportList.supportInfo[i].inputsNum, &match);
-        if (match) {
-            IoParamCheck(&executor->args->outputs,
-                supportList.supportInfo[i].outputsDesc,
-                supportList.supportInfo[i].outputsNum,
-                &match);
-        }
-        if (match) {
+        if (IoParamCheck(&executor->args->inputs, supportList.supportInfo[i].inputsDesc,
+            supportList.supportInfo[i].inputsNum, mode, true) && IoParamCheck(&executor->args->outputs,
+            supportList.supportInfo[i].outputsDesc, supportList.supportInfo[i].outputsNum, mode, false)) {
             return true;
         }
     }
@@ -444,7 +500,7 @@ static aclnnStatus NnopbaseExecutorUpdateAddr(
     OP_LOGI("Executor addr is %p, inIdxs.size() is %zu, offsets.size() is %zu", executor, inIdxs.size(), offsets.size());
     if (!inIdxs.empty()) {
         if (offsets.size() != inIdxs.size()) {
-            return NnopbaseExecutorPrintErrMsg(executor, inIdxs, offsets.size());
+            return NnopbaseExecutorPrintErrMsg(executor, inIdxs);
         }
         const auto inWorkspace = op::internal::PtrCastTo<NnopbaseChar>(workspace) + workspaceLen;
         for (size_t i = 0U; i < inIdxs.size(); ++i) {
@@ -580,10 +636,9 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, aclrtSt
 
     if (nnopbase::IndvSoc::GetInstance().UseCoreTypeMagic() &&
         (executor->args->binInfo->coreType == kMix)) {
-        uint64_t ctrlAddr = 0U;
-        uint32_t addrLen = 0U;
-        NNOPBASE_ASSERT_RTOK_RETVAL(rtGetC2cCtrlAddr(&ctrlAddr, &addrLen)); // 获取核间同步地址配合AscendC核间同步接口完成多核任务协调
-        addr[0] = reinterpret_cast<void *>(ctrlAddr);
+        void *ctrlAddr = nullptr;
+        NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetHardwareSyncAddr(&ctrlAddr)); // 获取核间同步地址配合AscendC核间同步接口完成多核任务协调
+        addr[0] = ctrlAddr;
         addr++;
         argsAddr.hcclDesc->hasFfts = 1U;
     }
@@ -860,6 +915,10 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
 {
     // create args
     NNOPBASE_ASSERT_OK_RETVAL(nnopbase::ArgsPool::GetInstance().CreateArgs(executor));
+    if ((executor->paramCheckMode != NnopbaseParamCheckMode::kCheckEnd) &&
+        (CheckSocVersionAndParam(executor, executor->paramCheckMode) != OK)) {
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     if (executor->attrs.num > 0) {
         // 不能判断level2ProfilingFlag为true的时候再拷贝，可能存在第一次没开profiling，第二次打开profiling又匹配到缓存的场景
         // 二阶段才上报profiling，attr可能会失效，需要拷贝保存
@@ -870,28 +929,7 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
     if (executor->regInfo->hasStaticShapeBin && NnopbaseExecutorGetStaticBinInfo(executor)) {
         OP_LOGI("Op[%s] have find static bin.", executor->opType);
         if (executor->mc2OpCfg.isMc2) {
-            OP_LOGI("Start updating %s tilingInfo.", executor->opType);
-            ResizeExecutorArgsBuf(executor);
-            auto &tilingInfo = executor->args->tilingInfo;
-            auto staticBinInfo = executor->args->binInfo;
-            auto &staticKernelRunInfo = staticBinInfo->extraKernelDesc->runInfo;
-            tilingInfo.tilingKey = staticKernelRunInfo->tilingKey;
-            tilingInfo.numBlocks = staticKernelRunInfo->numBlocks;
-            tilingInfo.scheMode = static_cast<uint8_t>(staticKernelRunInfo->scheduleMode);
-            tilingInfo.aicpuNumBlocks = staticKernelRunInfo->aicpuNumBlocks;
-            tilingInfo.needAtomic = staticKernelRunInfo->clearAtomic;
-            tilingInfo.staticTilingData = staticKernelRunInfo->tilingData;
-            OP_LOGI("Updated static tilingInfo: opType : %s, aicpuNumBlocks %u, numBlocks %u,"
-                " scheduleMode %u,  tilingKey %llu clearAtomic %d staticJson TilingData Size %zu, staticTilingDataSize %zu",
-                executor->opType,
-                tilingInfo.aicpuNumBlocks,
-                tilingInfo.numBlocks,
-                tilingInfo.scheMode,
-                tilingInfo.tilingKey,
-                tilingInfo.needAtomic,
-                staticKernelRunInfo->tilingData.size(),
-                tilingInfo.staticTilingData.size()
-                );
+            UpdateStaticKernelTilingInfo(executor);
         }
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindBinEnd);
         return OK;
@@ -899,9 +937,16 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindStaticEnd);
 
     // find dynamic bin info.
-    NnopbaseExecutorUpdateBinInfo(executor);
-    if (executor->args->binInfo == nullptr) {
-        return NnopbaseExecutorCheckSocVersionAndParam(executor);
+    if (!NnopbaseExecutorGetDynamicBinInfo(executor)) {
+        aclnnStatus ret = CheckSocVersionAndParam(executor, NnopbaseParamCheckMode::kCheckRequiredIo);
+        if (ret != ACLNN_ERR_PARAM_INVALID) {
+            std::string errMsg = "Cannot find kernel file for operator " + std::string(executor->opType) + \
+                ". The corresponding simplifiedKey"+ \
+                " in binary_info_config.json is missing, please reinstall operator package";
+            OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+            return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
+        }
+        return ACLNN_ERR_PARAM_INVALID;
     }
 
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseKernelRegister(executor, executor->args->binInfo));
@@ -917,7 +962,8 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor)
+aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor *executor, 
+    NnopbaseParamCheckMode mode)
 {
     OpSocSupportInfo supportList{};
     if (NnopbaseGetSupportInfo(executor, supportList) != OK) {
@@ -926,12 +972,12 @@ aclnnStatus NnopbaseExecutorCheckSocVersionAndParam(NnopbaseExecutor *executor)
         OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
         return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
     }
-    if (ParamCheck(executor, supportList)) {
+    if (IsParamMatchSupportInfo(executor, supportList, mode)) {
+        return OK;
+    } else {
         OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION("The dtype or format of the actual input or output"
             " parameter of the operator is inconsistent with that defined in the operator prototype OpDef");
-        return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
-    } else {
-        return NnopbasePrintSupportInfo(executor, supportList);
+        return PrintExceptionIoParamInfo(executor, supportList);
     }
 }
 
@@ -1048,6 +1094,7 @@ static void NnopbaseExecutorSaveArgs(NnopbaseExecutor *executor)
 aclnnStatus NnopbaseExecutorRunForWorkspace(NnopbaseExecutor *executor, uint64_t *workspaceLen)
 {
     OP_LOGI("Run op %s for workspace, executor addr %p.", executor->opType, executor);
+    op::internal::GetThreadLocalContext().logInfo_.l2ApiName = executor->opType;
     executor->poolIndex = op::internal::GetThreadLocalContext().poolIndex_;
     PrintAttr(executor);
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorMatchCache(executor));

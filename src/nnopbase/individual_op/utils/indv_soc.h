@@ -26,6 +26,7 @@ constexpr const char* OPS_SUBPATH_ASCEND310P = "ascend310p";
 constexpr const char* OPS_SUBPATH_ASCEND310B = "ascend310b";
 constexpr const char* OPS_SUBPATH_ASCEND610LITE = "ascend610lite";
 constexpr const char* OPS_SUBPATH_ASCEND910_96 = "ascend910_96";
+constexpr const char* OPS_SUBPATH_ASCEND350 = "ascend350";
 
 constexpr uint32_t SOC_VERSION_ASCEND910A = 1U;
 constexpr uint32_t SOC_VERSION_ASCEND910B = 2U;
@@ -35,13 +36,13 @@ constexpr uint32_t SOC_VERSION_ASCEND310P = 5U;
 constexpr uint32_t SOC_VERSION_ASCEND310B = 6U;
 constexpr uint32_t SOC_VERSION_ASCEND610Lite = 8U;
 constexpr uint32_t SOC_VERSION_ASCEND910_96 = 13U;
+constexpr uint32_t SOC_VERSION_ASCEND350 = 16U;
 constexpr uint32_t SOC_VERSION_INVALID = 99U;
 class IndvSoc {
 public:
     static IndvSoc& GetInstance(void);
     
     const std::map<std::string, uint32_t>& GetSocTypeMap(void) const;
-    const std::map<std::string, uint32_t>& GetSupportHcclSocMap(void) const;
 
     const std::string &GetCurSocVersion(void);
     bool SupportCurrentSoc(void) const;
@@ -73,23 +74,9 @@ private:
         {OPS_SUBPATH_ASCEND310B, SOC_VERSION_ASCEND310B},
         {OPS_SUBPATH_ASCEND950, SOC_VERSION_ASCEND950},
         {OPS_SUBPATH_ASCEND610LITE, SOC_VERSION_ASCEND610Lite},
-        {OPS_SUBPATH_ASCEND910_96, SOC_VERSION_ASCEND910_96}
-    };
-    const std::map<std::string, uint32_t> supportHcclSocMap = {
-        {OPS_SUBPATH_ASCEND910, SOC_VERSION_ASCEND910A},
-        {OPS_SUBPATH_ASCEND910B, SOC_VERSION_ASCEND910B},
-        {OPS_SUBPATH_ASCEND910_93, SOC_VERSION_ASCEND910_93},
-        {OPS_SUBPATH_ASCEND950, SOC_VERSION_ASCEND950},
         {OPS_SUBPATH_ASCEND910_96, SOC_VERSION_ASCEND910_96},
-        {OPS_SUBPATH_ASCEND310B, SOC_VERSION_ASCEND310B},
-        {OPS_SUBPATH_ASCEND310P, SOC_VERSION_ASCEND310P},
-        {OPS_SUBPATH_ASCEND610LITE, SOC_VERSION_ASCEND610Lite}
+        {OPS_SUBPATH_ASCEND350, SOC_VERSION_ASCEND350},
     };
-    const std::vector<std::string> socOpsSubpathList = {
-        OPS_SUBPATH_ASCEND910, OPS_SUBPATH_ASCEND910B, OPS_SUBPATH_ASCEND910_93, OPS_SUBPATH_ASCEND950, OPS_SUBPATH_ASCEND310P,
-        OPS_SUBPATH_ASCEND310B, OPS_SUBPATH_ASCEND610LITE, OPS_SUBPATH_ASCEND910_96
-    };
-    std::string GetCurrentSocVersionInternal(void) const;
 };
 } // namespace
 #endif

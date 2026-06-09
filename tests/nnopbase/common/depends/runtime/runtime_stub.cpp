@@ -245,12 +245,6 @@ rtError_t rtGeneralCtrl(uintptr_t *ctrl, uint32_t num, uint32_t type)
 }
 
 EXTERN_C
-rtError_t rtGetC2cCtrlAddr(uint64_t *addr, uint32_t *len)
-{
-    return RT_ERROR_NONE;
-}
-
-EXTERN_C
 rtError_t rtCalcLaunchArgsSize(size_t argsSize, size_t hostInfoTotalSize, size_t hostInfoNum, size_t *launchArgsSize)
 {
     *launchArgsSize = argsSize + hostInfoTotalSize;
