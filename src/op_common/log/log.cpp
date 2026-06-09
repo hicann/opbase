@@ -648,6 +648,28 @@ const static std::string g_msg = R"(
         "Possible Cause": "N/A",
         "Solution": "1. Refer to the official document for details about the dump graph. 2. Confirm and modify the input graph structure."
       }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument",
+      "ErrCode": "EZ0037",
+      "ErrMessage": "Parameter %s of %s is invalid. Reason: %s.",
+      "Arglist": "arg_name, op_name, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the input/output tensor meets the condition."
+      }
+    },
+    {
+      "errClass": "Operator Errors",
+      "errTitle": "Invalid_Argument",
+      "ErrCode": "EZ0038",
+      "ErrMessage": "Parameter %s of %s has incorrect element nums %s. Reason: %s.",
+      "Arglist": "param_name, op_name, incorrect_size, reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Check whether the list size is correct."
+      }
     }
   ]
 }

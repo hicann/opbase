@@ -1015,6 +1015,54 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         REPORT_PREDEFINED_ERR_MSG("EZ0036", msgKey, msgvalue);                                          \
     } while (0)
 
+/**
+ * EZ0037: Parameter argument error
+ * entityName:string - 算子名称或aclnn接口名称
+ * paramName:string - Parameter name
+ * errMessage: Parameter [paramName] of [entityName] is invalid. Reason:
+ * [reason].
+ */
+#define OP_LOGE_FOR_INVALID_ARGUMENT_WITH_REASON(entityName, paramName, reason)                         \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramName_(paramName);                                                        \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameter %s of %s is invalid. Reason: %s.",                    \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str());                \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "reason"};                    \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str(),}                \
+        REPORT_PREDEFINED_ERR_MSG("EZ0037", msgKey, msgvalue);                                          \
+    } while (0)
+
+/**
+  * 此接口仅供算子或aclnn实现使用
+ * EZ0038: Parameter list size error (single parameter, with reason)
+ * entityName:string - 算子名称或aclnn接口名称
+ * paramName:string - Parameter name
+ * incorrectSize:string - Actual incorrect list size
+ * reason:string - Reason for the error
+ * errMessage: Parameter [paramName] of [entityName] has invalid list size [incorrectSize]. Reason:
+ * [reason].
+ */
+#define OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)          \
+    do {                                                                                                \
+        std::string _safe_entityName_(entityName);                                                      \
+        std::string _safe_paramNames_(paramNames);                                                      \
+        std::string _safe_incorrectSize_(incorrectSize);                                                \
+        std::string _safe_reason_(reason);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect element nums %s. Reason: %s.", \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),         \
+            _safe_reason_.c_str());                                                                     \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_size", "reason"}; \
+        const std::vector<const char*> msgvalue = {                                                     \
+            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),         \
+            _safe_reason_.c_str()};                                                                     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0038", msgKey, msgvalue);                                          \
+    } while (0)
+
 #ifndef OP_LOG_LIBOPAPI_ONLY
 #define OpLogSub(moduleId, level, opInfo, fmt, ...)                                                                   \
     do {                                                                                                              \
