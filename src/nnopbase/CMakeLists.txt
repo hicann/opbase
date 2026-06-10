@@ -49,10 +49,10 @@ target_include_directories(nnopbase BEFORE  PRIVATE
 
 target_link_libraries(nnopbase
     PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:hccl_headers>
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:cann_version_headers>
-        intf_pub_cxx17
         nnopbase_internal_headers
         -Wl,--no-as-needed
         runtime

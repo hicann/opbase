@@ -29,7 +29,7 @@ if(ENABLE_UT)
 
     target_link_libraries(op_common_utest
         PRIVATE
-        intf_pub_cxx17
+        intf_pub
         gtest
         gtest_main
         ${ASCEND_HOME_PATH}/lib64/libunified_dlog.so

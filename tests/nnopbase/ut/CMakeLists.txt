@@ -171,7 +171,7 @@ target_compile_options(nnopbase_utest PRIVATE
 )
 
 target_link_libraries(nnopbase_utest PRIVATE
-    intf_pub_cxx17
+    intf_pub
     protobuf_static
     -Wl,--no-as-needed
     op_tiling_ut_so_stub_rt2.0

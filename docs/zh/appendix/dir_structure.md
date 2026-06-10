@@ -9,7 +9,6 @@
 │   ├── aarch64-hcc-toolchain.cmake                     # 项目工程编译工具链配置文件
 │   ├── config.cmake                                    # 项目工程编译选项配置文件    
 │   ├── func.cmake                                      # 项目工程编译protobuf文件
-│   ├── intf_pub_linux.cmake                            # 项目工程编译宏、链接库等相关配置文件
 │   ├── makeself.cmake                                  # 项目工程自定义makeself打包文件
 │   ├── package.cmake                                   # 项目工程编译打包安装相关配置文件
 │   ├── Third_Party_Open_Source_Software_List.yaml      # 项目依赖的第三方软件库清单

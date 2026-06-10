@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 include(cmake/fetch_cann_cmake.cmake)
 project(opbase VERSION 1.0.0)
 init_cann_project()
+add_cann_target_options()
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     message(STATUS "Build opbase with dependency cann pkgs installed")
@@ -23,7 +24,6 @@ endif()
 set(OPS_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(cmake/config.cmake)
-include(cmake/intf_pub_linux.cmake)
 include(cmake/variables.cmake)
 message(STATUS "Variables in ${CMAKE_PROJECT_NAME} project:")
 cmake_print_variables(BUILD_WITH_DEPENDENCY_SOURCE)
@@ -114,7 +114,7 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         -Wl,--whole-archive
         tiling_api
         -Wl,--no-whole-archive
-        $<BUILD_INTERFACE:intf_pub_cxx17>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:error_manager_headers>
         $<BUILD_INTERFACE:c_sec_headers>
         $<BUILD_INTERFACE:asc_host_headers>

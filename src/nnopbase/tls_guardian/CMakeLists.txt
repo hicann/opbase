@@ -14,5 +14,5 @@ target_compile_definitions(dummy_tls PRIVATE TLS_GUARDIAN_)
 target_compile_options(dummy_tls PRIVATE -O0)
 target_link_libraries(dummy_tls
     PRIVATE
-    intf_pub_cxx17
+    intf_pub
 )

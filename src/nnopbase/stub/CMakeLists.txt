@@ -83,8 +83,8 @@ target_compile_options(stub_nnopbase PRIVATE -O2 -fno-common -Wno-extra -Wfloat-
 
 target_link_libraries(stub_nnopbase
     PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:error_manager_headers>
-        intf_pub_cxx17
         metadef_headers
         runtime_headers
         nnopbase_internal_headers

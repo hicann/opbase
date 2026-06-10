@@ -34,7 +34,6 @@ if(NOT OPS_BASE_INCLUDE)
     set(OPS_BASE_INCLUDE ${OPS_BASE_PATH}/pkg_inc)
 endif()
 
-include("${OPS_BASE_PATH}/cmake/intf_pub_linux.cmake")
 add_cann_third_party(json)
 
 add_subdirectory(op_common)

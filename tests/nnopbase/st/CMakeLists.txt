@@ -142,7 +142,7 @@ target_compile_options(nnopbase_stest PRIVATE
 )
 
 target_link_libraries(nnopbase_stest PRIVATE
-    intf_pub_cxx17
+    intf_pub
     -Wl,--no-as-needed
     ${ASCEND_HOME_PATH}/lib64/libruntime.so
     ${ASCEND_HOME_PATH}/lib64/libunified_dlog.so

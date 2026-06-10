@@ -35,7 +35,7 @@ target_compile_options(aicpu_context_host PRIVATE
 
 target_link_libraries(aicpu_context_host PRIVATE
   aicpu_context_headers
-  $<BUILD_INTERFACE:intf_pub_aicpu>
+  $<BUILD_INTERFACE:intf_pub>
   $<BUILD_INTERFACE:c_sec_headers>
   $<BUILD_INTERFACE:slog_headers>
   $<BUILD_INTERFACE:runtime_headers>
