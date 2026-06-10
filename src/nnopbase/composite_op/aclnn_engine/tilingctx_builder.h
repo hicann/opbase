@@ -30,14 +30,15 @@
 namespace op {
 namespace internal {
 
-class TilingResCache {
+class TilingResCache
+{
 public:
     bool IsValid() const
     {
         return valid_;
     }
 
-    explicit TilingResCache(const TilingCtxOutput *res)
+    explicit TilingResCache(const TilingCtxOutput* res)
     {
         if (res == nullptr || res->tilingData_ == nullptr) {
             return;
@@ -46,7 +47,7 @@ public:
         // copy tiling data
         size_t wsNum = res->workspaceSize_->GetSize();
         size_t sz = wsNum * sizeof(size_t) + res->tilingData_->data_size_;
-        void *p = BlockPool::Malloc(sz);
+        void* p = BlockPool::Malloc(sz);
         if (p == nullptr) {
             return;
         }
@@ -90,9 +91,9 @@ public:
     uint64_t tilingKey_;
     int64_t numBlocks_;
     bool atomicCleanFlag_;
-    void *rawTilingData_{nullptr};
+    void* rawTilingData_{nullptr};
     size_t rawTilingDataLen_;
-    size_t *workspaceSize_{nullptr};
+    size_t* workspaceSize_{nullptr};
     size_t workspaceNum_;
     int64_t tilingCond_;
     uint8_t scheduleMode_;
@@ -102,7 +103,8 @@ public:
     size_t outputNum_;
 };
 
-class TilingCtxHolder {
+class TilingCtxHolder
+{
 public:
     TilingCtxHolder()
     {
@@ -112,15 +114,16 @@ public:
     ~TilingCtxHolder();
 
     /*
-   * outputs, tiling的outputs以如下顺序排列：
-   * outputs[0]: tiling-key
-   * outputs[1]: block-dim
-   * outputs[2]: atomic-clean-flag
-   * outputs[3]: tiling-data
-   * outputs[4]: workspace sizes
-   * outputs[5]: tiling condition
-   */
-    enum TilingOutputIndex {
+     * outputs, tiling的outputs以如下顺序排列：
+     * outputs[0]: tiling-key
+     * outputs[1]: block-dim
+     * outputs[2]: atomic-clean-flag
+     * outputs[3]: tiling-data
+     * outputs[4]: workspace sizes
+     * outputs[5]: tiling condition
+     */
+    enum TilingOutputIndex
+    {
         kOutputTilingKey,
         kOutputBlockDim,
         kOutputAtomicCleanFlag,
@@ -133,34 +136,35 @@ public:
         kOutputNum
     };
 
-    aclnnStatus UpdateTilingCtx(const KernelContextHolder *kernelCtx, const TilingParseCtxHolder *tilingParseCtx);
-    aclnnStatus UpdateTilingCtx(const KernelContextHolder *kernelCtx);
-    aclnnStatus UpdateTilingCtx(const KernelContextHolder *kernelCtx, const nlohmann::json &opJson);
-    gert::TilingContext *GetTilingCtx(const TilingParseCtxHolder *tilingParseCtx) const
+    aclnnStatus UpdateTilingCtx(const KernelContextHolder* kernelCtx, const TilingParseCtxHolder* tilingParseCtx);
+    aclnnStatus UpdateTilingCtx(const KernelContextHolder* kernelCtx);
+    aclnnStatus UpdateTilingCtx(const KernelContextHolder* kernelCtx, const nlohmann::json& opJson);
+    gert::TilingContext* GetTilingCtx(const TilingParseCtxHolder* tilingParseCtx) const
     {
-        gert::TilingContext *ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);
+        gert::TilingContext* ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);
         if (op::internal::GetOpProfilingRecordArgFlag()) {
-            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s.",
-                    tilingParseCtx->GetCompileOptions().deterministic,
-                    tilingParseCtx->GetCompileOptions().impl_mode.c_str(), tilingParseCtx->GetOpKernelInfo()->bin_type,
-                    tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
+            OP_LOGI(
+                "Call ExeOptInfoStat, option %d %s. kernel info %d %s.",
+                tilingParseCtx->GetCompileOptions().deterministic,
+                tilingParseCtx->GetCompileOptions().impl_mode.c_str(), tilingParseCtx->GetOpKernelInfo()->bin_type,
+                tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
             aclnnOpInfoRecord::OpInfoSerialize(
                 ctx, tilingParseCtx->GetCompileOptions(), tilingParseCtx->GetOpKernelInfo());
         }
         return ctx;
     };
 
-    gert::TilingContext *GetTilingCtx() const
+    gert::TilingContext* GetTilingCtx() const
     {
         return PtrCastTo<gert::TilingContext>(tilingCtx_);
     };
 
-    const TilingCtxOutput *GetTilingResult() const
+    const TilingCtxOutput* GetTilingResult() const
     {
         return &tilingOutput_;
     };
 
-    const TilingCtxOutput *GetTilingResFromCache(const TilingResCache &res)
+    const TilingCtxOutput* GetTilingResFromCache(const TilingResCache& res)
     {
         if (!res.IsValid()) {
             return nullptr;
@@ -172,12 +176,11 @@ public:
         *tilingOutput_.scheduleMode_ = res.scheduleMode_;
         *tilingOutput_.dynUBufSize_ = res.dynUBufSize_;
         OP_LOGD("Call GetTilingResFromCache, scheduleMode_ %u.", *tilingOutput_.scheduleMode_);
-        OP_CHECK((memcpy_s(tilingOutput_.tilingData_->data_,
-                     tilingOutput_.tilingData_->capacity_,
-                     res.rawTilingData_,
-                     res.rawTilingDataLen_) == EOK),
-                 OP_LOGW("Failed to memcpy in tiling data use."),
-                 return nullptr);
+        OP_CHECK(
+            (memcpy_s(
+                 tilingOutput_.tilingData_->data_, tilingOutput_.tilingData_->capacity_, res.rawTilingData_,
+                 res.rawTilingDataLen_) == EOK),
+            OP_LOGW("Failed to memcpy in tiling data use."), return nullptr);
         tilingOutput_.tilingData_->data_size_ = res.rawTilingDataLen_;
         if (res.workspaceNum_ > 0) {
             tilingOutput_.workspaceSize_->SetSize(res.workspaceNum_);
@@ -192,17 +195,21 @@ public:
 
 private:
     TilingCtxOutput tilingOutput_{};
-    TilingData *tilingData_{nullptr};
-    ExpandableRtsArgBuffer *rtsArgBuffer_{nullptr};
+    TilingData* tilingData_{nullptr};
+    ExpandableRtsArgBuffer* rtsArgBuffer_{nullptr};
 
     void BuildTilingCtx();
 
     aclnnStatus EnsureTilingCtxCapacity(size_t requiredCapacity);
 
+    size_t ResetTilingCtx(const KernelContextHolder* kernelCtx);
+
+    void FinalizeTilingCtx(size_t tilingInputNum);
+
 private:
     constexpr static size_t tilingOutputNum_ = kOutputNum;
-    KernelRunContext *tilingCtx_{nullptr};
-    AsyncAnyValue *tilingCtxValue_{nullptr};
+    KernelRunContext* tilingCtx_{nullptr};
+    AsyncAnyValue* tilingCtxValue_{nullptr};
     AsyncAnyValue platformInfoValue_;
     std::unique_ptr<uint8_t[]> workspaceSizeVec_;
 
@@ -211,7 +218,7 @@ private:
     size_t tilingCtxCapacity_{MAX_OP_ARG_NUM};
 };
 
-} //namespace internal
-} //namespace op
+} // namespace internal
+} // namespace op
 
 #endif
