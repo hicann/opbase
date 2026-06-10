@@ -307,7 +307,7 @@ private:
 
     void SplitStringAndPrint(std::string& res)
     {
-        int splitLogLen = 768;
+        int splitLogLen = 700;
         int n = res.length() / splitLogLen; // 子串个数
         for (int i = 0; i < n; i++) {
             std::string sub = res.substr(i * splitLogLen, splitLogLen);

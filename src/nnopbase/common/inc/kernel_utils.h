@@ -69,7 +69,7 @@ inline T *PtrShift(T *ptr, int64_t offset)
         }                       \
     } while (false)
 
-constexpr size_t SPLIT_DATA_LEN = 768;
+constexpr size_t SPLIT_DATA_LEN = 700;
 
 inline void SplitDataAndPrint(const std::string dataHeader, const std::string &data)
 {
