@@ -56,6 +56,8 @@
 | SetFloat8E5M2Data(const op::Float8E5M2 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float8_e5m2类型的数据。 |
 | SetFloat8E4M3FNData(const op::Float8E4M3FN \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float8_e4m3fn类型的数据。 |
 | SetFloat8E8M0Data(const op::Float8E8M0 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float8_e8m0类型的数据。 |
+| SetFloat6E3M2Data(const op::Float6E3M2 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float6_e3m2类型的数据。 |
+| SetFloat6E2M3Data(const op::Float6E2M3 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float6_e2m3类型的数据。 |
 | SetFloat4E2M1Data(const op::Float4E2M1 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float4_e2m1类型的数据。 |
 | SetFloat4E1M2Data(const op::Float4E1M2 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中float4_e1m2类型的数据。 |
 | SetHiFloat4Data(const op::HiFloat4 \*value, uint64_t size, op::DataType dataType) | 设置aclTensor中hifloat4类型的数据。 |
@@ -82,6 +84,8 @@
 | ToFloat8E5M2() | 将aclScalar中保存的标量，转为指定的数据类型float8_e5m2。 |
 | ToFloat8E4M3FN() | 将aclScalar中保存的标量，转为指定的数据类型float8_e4m3fn。 |
 | ToFloat8E8M0() | 将aclScalar中保存的标量，转为指定的数据类型float8_e8m0。 |
+| ToFloat6E3M2() | 将aclScalar中保存的标量，转为指定的数据类型float6_e3m2。 |
+| ToFloat6E2M3() | 将aclScalar中保存的标量，转为指定的数据类型float6_e2m3。 |
 | ToFloat4E2M1() | 将aclScalar中保存的标量，转为指定的数据类型float4_e2m1。 |
 | ToFloat4E1M2() | 将aclScalar中保存的标量，转为指定的数据类型float4_e1m2。 |
 | ToHiFloat4() | 将aclScalar中保存的标量，转为指定的数据类型hifloat4。 |
@@ -104,6 +108,8 @@
 | aclScalar(op::Float8E5M2 value) | 初始化aclScalar对象，指定为float8_e5m2类型。 |
 | aclScalar(op::Float8E4M3FN value) | 初始化aclScalar对象，指定为float8_e4m3fn类型。 |
 | aclScalar(op::Float8E8M0 value) | 初始化aclScalar对象，指定为float8_e8m0类型。 |
+| aclScalar(op::Float6E3M2 value) | 初始化aclScalar对象，指定为float6_e3m2类型。 |
+| aclScalar(op::Float6E2M3 value) | 初始化aclScalar对象，指定为float6_e2m3类型。 |
 | aclScalar(op::Float4E2M1 value) | 初始化aclScalar对象，指定为float4_e2m1类型。 |
 | aclScalar(op::Float4E1M2 value) | 初始化aclScalar对象，指定为float4_e1m2类型。 |
 | aclScalar(op::HiFloat4 value) | 初始化aclScalar对象，指定为hifloat4类型。 |
