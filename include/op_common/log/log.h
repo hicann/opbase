@@ -1032,7 +1032,7 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str());                \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "reason"};                    \
         const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str(),}                \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str()};                \
         REPORT_PREDEFINED_ERR_MSG("EZ0037", msgKey, msgvalue);                                          \
     } while (0)
 
