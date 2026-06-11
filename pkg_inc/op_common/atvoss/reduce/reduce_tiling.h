@@ -99,7 +99,9 @@ ge::graphStatus GetConstInputData(gert::TilingContext* context, int32_t idx, std
     auto size = axesInput->GetShapeSize();
     OP_CHECK_IF(
         (size >= static_cast<int64_t>(MAX_DIM)),
-        OP_LOGE(context->GetNodeName(), "dim size:%ld is over max dim, cannot support.", size),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context->GetNodeName(), "axes", std::to_string(size).c_str(),
+            "axes dim size is over max dim, cannot support"),
         return ge::GRAPH_FAILED);
 
     if (size == 0) {
@@ -107,7 +109,7 @@ ge::graphStatus GetConstInputData(gert::TilingContext* context, int32_t idx, std
     }
     axes.resize(size);
     auto axesData = axesInput->GetData<T>();
-    OP_CHECK_IF((axesData == nullptr), OP_LOGE(context->GetNodeName(), "GetData failed"), return ge::GRAPH_FAILED;);
+    OP_CHECK_NULL_WITH_CONTEXT(context, axesData);
     for (int64_t i = 0; i < size; i++) {
         axes[i] = static_cast<int64_t>(axesData[i]);
     }

@@ -79,13 +79,18 @@ ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t idx, std::ve
     size_t shapeSize = xInputShape.GetDimNum();
     OP_CHECK_IF(
         (shapeSize >= static_cast<size_t>(MAX_DIM)),
-        OP_LOGE(context, "shape dim size:%zu is over max dim, cannot support.", shapeSize), return ge::GRAPH_FAILED);
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+            context->GetNodeName(), "x", std::to_string(shapeSize).c_str(),
+            "shape dim size is over max dim, cannot support"),
+        return ge::GRAPH_FAILED);
 
     shape.resize(shapeSize);
     for (size_t i = 0; i < shapeSize; i++) {
         shape[i] = xInputShape.GetDim(i);
         if (shape[i] < 0) {
-            OP_LOGE(context, "shape dim:%zu size:%ld cannot support dynamic.", i, shape[i]);
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                context->GetNodeName(), "x", std::to_string(shape[i]).c_str(),
+                "shape dim cannot support dynamic");
             return ge::GRAPH_FAILED;
         }
     }
@@ -100,7 +105,9 @@ ge::graphStatus GetInputStride(gert::TilingContext* context, int32_t idx, std::v
         shapeSize = xStride->GetDimNum();
         OP_CHECK_IF(
             (shapeSize >= static_cast<size_t>(MAX_DIM)),
-            OP_LOGE(context, "slice dim size:%zu is over max slice dim:%d, cannot support.", shapeSize, MAX_DIM),
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                context->GetNodeName(), "x", std::to_string(shapeSize).c_str(),
+                "slice dim size is over max slice dim, cannot support"),
             return ge::GRAPH_FAILED);
     }
     if (shapeSize == 0UL || !context->InputIsView(idx)) {
@@ -113,7 +120,9 @@ ge::graphStatus GetInputStride(gert::TilingContext* context, int32_t idx, std::v
         for (int32_t i = xInputShape.GetDimNum() - 1; i >= 0; i--) {
             dimStrides[i] = stride;
             if (dimStrides[i] < 0) {
-                OP_LOGE(context, "dimStrides dim:%d size:%ld cannot support dynamic.", i, dimStrides[i]);
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                    context->GetNodeName(), "x", std::to_string(dimStrides[i]).c_str(),
+                    "dimStrides dim size cannot support dynamic");
                 return ge::GRAPH_FAILED;
             }
             stride = stride * xInputShape.GetDim(i);
@@ -123,7 +132,9 @@ ge::graphStatus GetInputStride(gert::TilingContext* context, int32_t idx, std::v
         for (size_t i = 0; i < shapeSize; i++) {
             dimStrides[i] = xStride->GetStride(i);
             if (dimStrides[i] < 0) {
-                OP_LOGE(context, "dimStrides dim:%zu size:%ld cannot support dynamic.", i, dimStrides[i]);
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                    context->GetNodeName(), "x", std::to_string(dimStrides[i]).c_str(),
+                    "dimStrides dim size cannot support dynamic");
                 return ge::GRAPH_FAILED;
             }
         }
@@ -183,7 +194,9 @@ ge::graphStatus GetInputParam(
         } else if (axesDtype == ge::DT_INT64) {
             status = GetConstInputData<int64_t>(context, axesIdx, opInput.axes);
         } else {
-            OP_LOGE(context, "only support const input dtype in [int32, int64]");
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                context->GetNodeName(), "axes", Ops::Base::ToString(axesDtype).c_str(),
+                "only support const input dtype in [int32, int64]");
             status = ge::GRAPH_FAILED;
         }
         OP_CHECK_IF(
@@ -262,14 +275,20 @@ ge::graphStatus ReduceOpTiling::AxesCheck(const std::vector<int64_t>& shape, con
     int64_t shapeSize = static_cast<int64_t>(shape.size());
     int64_t axesSize = static_cast<int64_t>(axes.size());
     OP_CHECK_IF(
-        (axesSize > shapeSize), OP_LOGE(context_, "illegal axes size:%ld over shape size:%ld", axesSize, shapeSize),
+        (axesSize > shapeSize),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "axes",
+            std::to_string(axesSize).c_str(),
+            "axes size over x shape size is illegal"),
         return ge::GRAPH_FAILED);
 
     for (int64_t i = 0; i < axesSize; i++) {
-        OP_CHECK_IF(
-            (axes[i] >= shapeSize || axes[i] < 0),
-            OP_LOGE(context_, "illegal axis:%ld dim:%ld out of shape range:[0, %ld)", i, axes[i], shapeSize),
-            return ge::GRAPH_FAILED);
+        if (axes[i] >= shapeSize || axes[i] < 0) {
+            std::string reasonMsg = "illegal axis: " + std::to_string(i) + " dim: " + std::to_string(axes[i]) +
+                                    " out of shape range:[0, " + std::to_string(shapeSize) + ")";
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "axes",
+                std::to_string(axes[i]).c_str(), reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -277,7 +296,11 @@ ge::graphStatus ReduceOpTiling::AxesCheck(const std::vector<int64_t>& shape, con
 ge::graphStatus ReduceOpTiling::ParamCheck(ReduceOpInputParam& opInput)
 {
     int32_t dtypeSize = ge::GetSizeByDataType(opInput.inputDtype);
-    OP_CHECK_IF(dtypeSize <= 0, OP_LOGE(context_, "illegal dtype"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        dtypeSize <= 0,
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
+            std::to_string(dtypeSize).c_str(), "dtype of input x is illegal"),
+        return ge::GRAPH_FAILED);
     OP_LOGD(
         context_, "view shape is:%s, strides:%s, axes:%s", ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
         ReduceOpTmpl::VectorToString(opInput.dimStrides).c_str(), ReduceOpTmpl::VectorToString(opInput.axes).c_str());
@@ -292,7 +315,7 @@ ge::graphStatus ReduceOpTiling::PreProcessOptionalParam()
 {
     if (tilingData_ == nullptr) {
         tilingData_ = context_->GetTilingData<ReduceOpTilingData>();
-        OP_CHECK_IF(tilingData_ == nullptr, OP_LOGE(context_, "get tilingdata ptr failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, tilingData_);
     }
     OP_CHECK_IF(
         (memset_s(tilingData_, sizeof(ReduceOpTilingData), 0, sizeof(ReduceOpTilingData)) != EOK),
@@ -310,20 +333,39 @@ ge::graphStatus ReduceOpTiling::PreProcessOptionalParam()
 
     if (compileInfo_ == nullptr) {
         compileInfoPtr_ = std::make_unique<ReduceOpCompileInfo>();
-        OP_CHECK_IF(
-            compileInfoPtr_ == nullptr, OP_LOGE(context_, "New compile info ptr failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr_);
         compileInfo_ = compileInfoPtr_.get();
     }
     compileInfo_->vectorCoreNum = GetAivCoreNum(context_);
-    OP_CHECK_IF(compileInfo_->vectorCoreNum == 0, OP_LOGE(context_, "aiv core num is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo_->vectorCoreNum == 0, 
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorCoreNum",
+            std::to_string(compileInfo_->vectorCoreNum).c_str(),
+            "The value of vector core num must be greater than 0"),
+        return ge::GRAPH_FAILED);
     compileInfo_->ubSize = GetUbSize(context_);
-    OP_CHECK_IF(compileInfo_->ubSize == 0, OP_LOGE(context_, "ub size is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo_->ubSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
+            std::to_string(compileInfo_->ubSize).c_str(),
+            "The value of ub size must be greater than 0"),
+        return ge::GRAPH_FAILED);
     compileInfo_->cacheLineSize = GetCacheLineSize(context_);
-    OP_CHECK_IF(compileInfo_->cacheLineSize == 0, OP_LOGE(context_, "cacheline is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo_->cacheLineSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
+            std::to_string(compileInfo_->cacheLineSize).c_str(),
+            "The value of cacheline size must be greater than 0"),
+        return ge::GRAPH_FAILED);
     compileInfo_->ubBlockSize = GetUbBlockSize(context_);
-    OP_CHECK_IF(compileInfo_->ubBlockSize == 0, OP_LOGE(context_, "ub block size is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo_->ubBlockSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubBlockSize",
+            std::to_string(compileInfo_->ubBlockSize).c_str(),
+            "The value of ub block size must be greater than 0"),
+        return ge::GRAPH_FAILED);
     compileInfo_->vRegSize = GetVRegSize(context_);
-    OP_CHECK_IF(compileInfo_->vRegSize == 0, OP_LOGE(context_, "vreg is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo_->vRegSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vRegSize",
+            std::to_string(compileInfo_->vRegSize).c_str(),
+            "The value of vReg size must be greater than 0"),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -855,12 +897,14 @@ uint64_t ReduceOpTiling::TryGetReduceBlock(
 template <class Pattern>
 ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
 {
-    OP_CHECK_IF(
-        compileInfo_->ubSize <= CACHE_BUF_SIZE + opInput_.reservedSize,
-        OP_LOGE(
-            context_, "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_->ubSize,
-            CACHE_BUF_SIZE + opInput_.reservedSize),
-        return ge::GRAPH_FAILED);
+    if (compileInfo_->ubSize <= CACHE_BUF_SIZE + opInput_.reservedSize) {
+        std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) + " is smaller than size: " +
+                                std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize) + ", not support";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
+            std::to_string(compileInfo_->ubSize).c_str(),
+            reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
 
     // reduce前的计算图是开启DB的，对于输入输出需要乘以2,
     // 且对于内存策略3而言，reduce算子的输入和计算内存是按照cast前后比例计算
@@ -889,20 +933,26 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
             // 输出大小不能超过cache缓存大小, 否则计算额外A轴搬入时会越界
             resultBlock_ = CACHE_BUF_SIZE;
         }
-        OP_CHECK_IF(
-            ubAvilSize <= resultBlock_ * postBufferNum,
-            OP_LOGE(
-                context_, "ubSize:%lu is smaller than size:%lu, not support.", compileInfo_->ubSize,
-                CACHE_BUF_SIZE + opInput_.reservedSize + resultBlock_ * postBufferNum),
-            return ge::GRAPH_FAILED);
+        if (ubAvilSize <= resultBlock_ * postBufferNum) {
+            std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) + " is smaller than size: " +
+                std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize + resultBlock_ * postBufferNum) + " not support";
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
+                std::to_string(compileInfo_->ubSize).c_str(),
+                reasonMsg.c_str());
+            return ge::GRAPH_FAILED;
+        }
         uint64_t preBufSize = ubAvilSize - resultBlock_ * postBufferNum;
         // 按输入和计算大小的比例折算成输入大小
         basicBlock_ = preBufSize / (preInputBufferNum + preRestBufferNum * ratio);
         basicBlock_ = FloorAlign(basicBlock_, compileInfo_->vRegSize);
     }
-    OP_CHECK_IF(
-        basicBlock_ < compileInfo_->vRegSize,
-        OP_LOGE(context_, "basic block:%lu is too small, not support.", basicBlock_), return ge::GRAPH_FAILED);
+    if (basicBlock_ < compileInfo_->vRegSize) {
+        std::string reasonMsg = "basic block: " + std::to_string(basicBlock_) + " is too small, not support";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "basicBlock",
+            std::to_string(basicBlock_).c_str(),
+            reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
     OP_LOGI(
         context_, "preInputBufferNum:%lu, preRestBufferNum:%lu, postBufferNum:%lu, basicBlock:%ld, resBlock:%ld",
         preInputBufferNum, preRestBufferNum, postBufferNum, basicBlock_, resultBlock_);
