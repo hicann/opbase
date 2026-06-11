@@ -124,8 +124,6 @@ target_link_libraries(aicpu_cust_log PRIVATE
   $<BUILD_INTERFACE:slog_headers>
   $<BUILD_INTERFACE:runtime_headers>
   $<BUILD_INTERFACE:c_sec_headers>
-  runtime
-  metadef
   Eigen3::Eigen
   ascend_protobuf_static
   -Wl,-z,relro,-z,now

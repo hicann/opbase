@@ -92,6 +92,7 @@ target_link_libraries(stub_nnopbase
         c_sec
         json
     PUBLIC
+        $<BUILD_INTERFACE:nnopbase_headers>
 )
 
 set_target_properties(stub_nnopbase PROPERTIES

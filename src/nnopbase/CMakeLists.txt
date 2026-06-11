@@ -17,13 +17,15 @@ set(NNOPBASE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(OPS_BASE_PATH ${NNOPBASE_PATH}/../..)
 get_filename_component(OPS_BASE_PATH "${OPS_BASE_PATH}" ABSOLUTE)
 
+add_library(nnopbase_headers INTERFACE)
+target_include_directories(nnopbase_headers INTERFACE
+    ${OPS_BASE_PATH}/include/nnopbase/
+    ${OPS_BASE_PATH}/include/nnopbase/opdev
+)
 
 # local headers target
 add_library(nnopbase_internal_headers INTERFACE)
 target_include_directories(nnopbase_internal_headers INTERFACE
-    ${OPS_BASE_PATH}/include/
-    ${OPS_BASE_PATH}/include/nnopbase/
-    ${OPS_BASE_PATH}/include/nnopbase/opdev
     ${NNOPBASE_PATH}/individual_op/
     ${NNOPBASE_PATH}/composite_op/
     ${NNOPBASE_PATH}/common/inc
@@ -74,6 +76,7 @@ target_link_libraries(nnopbase
         ${opInfoRecordLinkLibraries}
         ascend_protobuf_shared_headers
     PUBLIC
+        $<BUILD_INTERFACE:nnopbase_headers>
 )
 
 target_compile_definitions(nnopbase PRIVATE google=ascend_private ACLNN_LOG_FMT_CHECK LOG_CPP)
