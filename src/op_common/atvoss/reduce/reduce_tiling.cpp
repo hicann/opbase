@@ -724,9 +724,10 @@ void ReduceOpTiling::ComputeUnitR(const uint64_t* shape)
     int32_t iR;
     for (iR = basicSplitA ? axisInCacheLine - 1 : axisInCacheLine; iR > -1; iR -= AXES_STEP) {
         uint64_t axisLen = shape[iR];
-        if (innerA * innerR * cBlock_.aSize * cBlock_.rSize * axisLen <= bBlockNum) {
+        uint64_t effectiveLen = (iR == Pattern::Dim - 1) ? CeilAlign(axisLen, ubBlockSize) : axisLen;
+        if (innerA * innerR * cBlock_.aSize * cBlock_.rSize * effectiveLen <= bBlockNum) {
             outerR = outerR / axisLen;
-            innerR *= (iR == Pattern::Dim - 1 ? CeilAlign(axisLen, ubBlockSize) : axisLen);
+            innerR *= effectiveLen;
             continue;
         }
 
