@@ -70,7 +70,6 @@ public:
     const ReduceOpTilingData* tiling_;
     ReduceSch* sch_;
     ReduceOp* op_;
-    Derived* derived_;
 
 public:
     __aicore__ constexpr static int32_t GetPreBufferNum()
@@ -90,7 +89,6 @@ public:
     __aicore__ inline ReduceSchAuxBase(ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output,
                                        GlobalTensor<uint8_t>* workspace, const ReduceOpTilingData* tiling)
     {
-        derived_ = static_cast<Derived*>(this);
         sch_ = sch;
         input_ = input;
         output_ = output;
@@ -117,12 +115,12 @@ public:
     template <class... Args>
     __aicore__ inline void Process(Args... args)
     {
-        derived_->SetLoopRange();
+        static_cast<Derived*>(this)->SetLoopRange();
         SetIterRRange();
 
         if constexpr (LoopInfo->loopRCount == 0) {
             for (uint64_t i = loopAStartIndex_; i < loopAEndIndex_; i++) {
-                derived_->template CalculateIterA<LoopInfo->loopACount>(i);
+                static_cast<Derived*>(this)->template CalculateIterA<LoopInfo->loopACount>(i);
                 IterateInnerA<0, LoopInfo->loopInnerACount>(i - loopAStartIndex_, args...);
             }
         } else {
@@ -156,21 +154,22 @@ public:
             if constexpr (start + 1 == end) {  // 为最内轴
                 uint64_t loopSize = shape / ubFactorA_;
                 uint64_t tail = shape - loopSize * ubFactorA_;
-                derived_->iterAddr_[axis].start = 0;
-                derived_->iterAddr_[axis].stride = ubFactorA_;
+                static_cast<Derived*>(this)->iterAddr_[axis].start = 0;
+                static_cast<Derived*>(this)->iterAddr_[axis].stride = ubFactorA_;
 
                 for (uint64_t i = 0; i < loopSize; i++) {  // 整块
                     IterateInnerA<start + 1, end>(aIndex, args...);
-                    derived_->iterAddr_[axis].start += ubFactorA_;
+                    static_cast<Derived*>(this)->iterAddr_[axis].start += ubFactorA_;
                 }
 
                 if (tail) {
-                    derived_->iterAddr_[axis].stride = shape - derived_->iterAddr_[axis].start;
+                    static_cast<Derived*>(this)->iterAddr_[axis].stride = shape -
+                        static_cast<Derived*>(this)->iterAddr_[axis].start;
                     IterateInnerA<start + 1, end>(aIndex, args...);
                 }
             } else {
                 for (uint64_t i = 0; i < shape; i++) {
-                    derived_->iterAddr_[axis].start = i;
+                    static_cast<Derived*>(this)->iterAddr_[axis].start = i;
                     IterateInnerA<start + 1, end>(aIndex, args...);
                 }
             }
@@ -215,11 +214,11 @@ public:
     __aicore__ inline void PreReduce(V& view, S& shape, P& padding, uint64_t rIndex, uint64_t idx, int32_t pingPong)
     {
         if constexpr (LoopInfo->loopRCount > 0) {
-            derived_->template CalculateIterR<LoopInfo->loopRCount>(rIndex + loopRStartIndex_);
+            static_cast<Derived*>(this)->template CalculateIterR<LoopInfo->loopRCount>(rIndex + loopRStartIndex_);
         } else {
-            derived_->template CalculateInnerIterR<LoopInfo->loopInnerRCount>(rIndex);
+            static_cast<Derived*>(this)->template CalculateInnerIterR<LoopInfo->loopInnerRCount>(rIndex);
         }
-        derived_->InitView(view);
+        static_cast<Derived*>(this)->InitView(view);
         if constexpr (IsSameType<OpDag, void>::value || !IsStageOne) {
             RUN_LOG("no preop defined or group reduce stage two.\n");
             CopyInNoPreOp(view, shape, pingPong, idx);
@@ -295,9 +294,9 @@ public:
     __aicore__ inline void CalculatePadding(V& view, S& shape, P& padding)
     {
         if constexpr (!InnerPattern::TailA) {
-            derived_->CalculatePatternARPadding(view, shape, padding);
+            static_cast<Derived*>(this)->CalculatePatternARPadding(view, shape, padding);
         } else {
-            derived_->CalculatePatternRAPadding(view, shape, padding);
+            static_cast<Derived*>(this)->CalculatePatternRAPadding(view, shape, padding);
         }
         RUN_LOG(
             "burstPaddingStart:%ld, burstPaddingLen:%ld, burstPaddingRepeat:%ld, rPaddingStart:%ld, "
@@ -335,7 +334,7 @@ public:
         if constexpr (!InnerPattern::TailA) {
             CalculateInnerShapeARMode(view, shape);
         } else {
-            derived_->CalculateInnerShapeRAMode(view, shape);
+            static_cast<Derived*>(this)->CalculateInnerShapeRAMode(view, shape);
         }
     }
 
@@ -403,7 +402,7 @@ public:
 
         GlobalTensor<InputType> globalTensor;
         globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ InputType*>(input_[Input::Pos].GetPhyAddr(0)));
-        derived_->template CalculateInView<InputType>(view);
+        static_cast<Derived*>(this)->template CalculateInView<InputType>(view);
         // Run copyIn
         GetTensor<TPosition::VECIN>(bufId);
         sch_->ReduceSch::template CopyInAux<pos, InnerPattern>(inTensor, globalTensor, view);
@@ -575,7 +574,7 @@ public:
 #ifndef __CCE_KT_TEST__
         inTensor.SetBufferLen(eleNum_);
 #endif
-        derived_->template CalculateInView<InDType>(view);
+        static_cast<Derived*>(this)->template CalculateInView<InDType>(view);
         GlobalTensor<InDType> globalTensor;
         globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ InDType*>(workspace_[0].GetPhyAddr(0)));
         // Run copyIn
@@ -590,9 +589,9 @@ public:
     __aicore__ inline void CalculateView(V& view)
     {
         if constexpr (!Pattern::TailA) {
-            derived_->template CalculateViewARMode<T>(view);
+            static_cast<Derived*>(this)->template CalculateViewARMode<T>(view);
         } else {
-            derived_->template CalculateViewRAMode<T>(view);
+            static_cast<Derived*>(this)->template CalculateViewRAMode<T>(view);
         }
     }
 
@@ -623,7 +622,7 @@ public:
         constexpr int32_t axis = Pattern::FirstA ? 0 : 1;
         uint64_t addrOffset = 0;
         for (int32_t i = axis; i < Dim; i += CONST2) {
-            addrOffset += derived_->iterAddr_[i].start * tiling_->dstStride[i];
+            addrOffset += static_cast<Derived*>(this)->iterAddr_[i].start * tiling_->dstStride[i];
         }
 
         SliceView<CONST2> newView;
@@ -684,7 +683,7 @@ public:
         // CopyOut As RA Pattern
         SliceView<CONST2> newView;
         int32_t blockId = GetBlockIdx();
-        int32_t innerA = CaculateInnerA<LoopInfo, Pattern::TailA, Pattern::Dim>(derived_->iterAddr_);
+        int32_t innerA = CaculateInnerA<LoopInfo, Pattern::TailA, Pattern::Dim>(static_cast<Derived*>(this)->iterAddr_);
         uint64_t outLen = 1;
         uint64_t outRepeat = 1;
         CalculateOutView(view, shape, outLen, outRepeat);
@@ -703,7 +702,7 @@ public:
         uint64_t addrOffset = 0;
         if constexpr (LoopInfo->loopInnerACount > 0) {
             for (int32_t i = axis; i < Dim; i += CONST2) {
-                addrOffset += derived_->iterAddr_[i].start * tiling_->dstStride[i];
+                addrOffset += static_cast<Derived*>(this)->iterAddr_[i].start * tiling_->dstStride[i];
             }
         }
 
