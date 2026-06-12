@@ -39,6 +39,7 @@ using namespace op::internal::test;
 
 extern inline uint32_t SortOpTypeId();
 extern inline uint32_t AxpyOpTypeId();
+extern inline uint32_t AddNOpTypeId();
 
 class KernelLaunchNewRtsUT : public testing::Test {
 protected:
@@ -48,6 +49,9 @@ protected:
         setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1); // does overwrite
         op::internal::RtsApiFlag::GetRtsApiFlag().UseNewApi(true);
         op::internal::GetThreadLocalContext().cacheHasFull_ = true;
+        AxpyOpTypeId();
+        SortOpTypeId();
+        AddNOpTypeId();
     }
     static void TearDownTestCase() {}
 };
@@ -64,7 +68,6 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase0)
     float alpha = 13.37;
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
 
-    AxpyOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     auto input = OP_INPUT(self.get(), other.get());
     auto output = OP_OUTPUT(out.get());
@@ -99,7 +102,6 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase1)
     float alpha = 13.37;
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
 
-    AxpyOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     auto input = OP_INPUT(self.get(), other.get());
     auto output = OP_OUTPUT(out.get());
@@ -128,7 +130,6 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase2)
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto idx = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    SortOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
     auto output = OP_OUTPUT(out.get(), idx.get());
@@ -240,7 +241,6 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUT_Outshape)
     auto attr_arg = OP_ATTR(123);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg, attr_arg);
 
-    AxpyOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     int dummyStream = 0;
     void *stream = &dummyStream;
@@ -268,7 +268,7 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
     int dummyStream = 0;
     void *stream = &dummyStream;
 
-    uint32_t opType = 513;
+    uint32_t opType = static_cast<uint32_t>(op::internal::MAX_OP_TYPE_COUNT) + 1;
     auto rc2 = op::internal::gKernelMgr.Run(opType, stream, ctx);
     EXPECT_NE(rc2, ACL_SUCCESS);
     const size_t *workspaceSize = nullptr;

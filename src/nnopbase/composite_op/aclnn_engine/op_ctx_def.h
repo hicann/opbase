@@ -178,7 +178,7 @@ constexpr size_t ATTR_CAPACITY = 32 * 1024;   // Initial attr capacity: max tota
 // MAX_OP_ARG_NUM is used as the initial capacity for op args (inputs/outputs).
 // When arg count exceeds this value, it will automatically expand (2x growth factor).
 constexpr size_t MAX_OP_ARG_NUM = 1024;       // Initial arg capacity: max op input/output arg count
-constexpr size_t MAX_OP_TYPE_COUNT = 512;     // max registed op type
+constexpr size_t MAX_OP_TYPE_COUNT = 1024;     // max registed op type
 } // namespace op::internal
 
 #endif

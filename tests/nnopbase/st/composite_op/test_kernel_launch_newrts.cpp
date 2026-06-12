@@ -24,11 +24,11 @@
 #include "opdev/op_def.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_arg_def.h"
-
 #include "opdev/op_errno.h"
 #include "register/op_impl_registry.h"
 #include "thread_local_context.h"
 #include "tiling_parse_ctx_holder.h"
+#include "op_ctx_def.h"
 
 using Json = nlohmann::json;
 
@@ -226,7 +226,7 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
     int dummyStream = 0;
     void *stream = &dummyStream;
 
-    uint32_t opType = 513;
+    uint32_t opType = static_cast<uint32_t>(op::internal::MAX_OP_TYPE_COUNT) + 1;
     auto rc2 = op::internal::gKernelMgr.Run(opType, stream, ctx);
     EXPECT_NE(rc2, ACL_SUCCESS);
     const size_t *pws = nullptr;
