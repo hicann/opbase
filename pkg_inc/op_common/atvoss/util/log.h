@@ -14,6 +14,14 @@
  */
 #ifndef UTIL_LOG_H_
 #define UTIL_LOG_H_
+
+#if defined __CCE_KT_TEST__ || defined __ATP_UT__
+#include <cxxabi.h>
+#include <securec.h>
+#include <memory>
+#include <string>
+#endif
+
 namespace Ops {
 namespace Base {
 #define DO_JOIN_SYMBOL(symbol1, symbol2) symbol1##symbol2
@@ -39,11 +47,6 @@ namespace Base {
         printf(__VA_ARGS__); \
     } while (0)
 #endif
-
-#include <cxxabi.h>
-#include <securec.h>
-#include <memory>
-#include <string>
 
 template <typename T>
 const std::string GetTypeName()
