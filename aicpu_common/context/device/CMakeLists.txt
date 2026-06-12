@@ -41,8 +41,6 @@ target_link_libraries(aicpu_context PRIVATE
   $<BUILD_INTERFACE:slog_headers>
   $<BUILD_INTERFACE:runtime_headers>
   $<BUILD_INTERFACE:c_sec_headers>
-  runtime
-  metadef
   Eigen3::Eigen
   ascend_protobuf_static
   -Wl,-z,relro,-z,now
@@ -80,8 +78,6 @@ target_compile_options(aicpu_nodedef PRIVATE
 target_link_libraries(aicpu_nodedef PRIVATE
   $<BUILD_INTERFACE:runtime_headers>
   aicpu_context_headers
-  runtime
-  metadef
 )
 
 set (aicpu_cust_src_files
