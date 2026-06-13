@@ -634,7 +634,7 @@ public:
         newView.axis[0].repeat = outLen;
         newView.axis[1].repeat = outRepeat;
         // 混合精度场景，MTE3搬出需要跳搬(lp_norm_v2存在此场景)
-        uint64_t inDtypeBlockAlign = Ops::Base::CeilAlign(outLen, UB_BLOCK / sizeof(InDType));
+        uint64_t inDtypeBlockAlign = Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
         if (sizeof(InDType) != sizeof(OutDType)) {
             newView.axis[1].srcStride = inDtypeBlockAlign;
         } else {
