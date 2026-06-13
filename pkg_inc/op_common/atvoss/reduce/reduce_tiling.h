@@ -179,7 +179,8 @@ OPBASE_API ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t i
  * @param dimStrides
  *  return value, operator input dimStrides
  */
-OPBASE_API ge::graphStatus GetInputStride(gert::TilingContext* context, int32_t idx, std::vector<int64_t>& dimStrides);
+OPBASE_API ge::graphStatus GetInputStride(const gert::TilingContext* context, int32_t idx,
+                                          std::vector<int64_t>& dimStrides);
 
 /*
  * \brief get input dtype with input idx

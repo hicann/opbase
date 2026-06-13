@@ -97,7 +97,7 @@ ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t idx, std::ve
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus GetInputStride(gert::TilingContext* context, int32_t idx, std::vector<int64_t>& dimStrides)
+ge::graphStatus GetInputStride(const gert::TilingContext* context, int32_t idx, std::vector<int64_t>& dimStrides)
 {
     auto xStride = context->GetInputStride(idx);
     size_t shapeSize = 0UL;
