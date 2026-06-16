@@ -91,6 +91,7 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     target_include_directories(ops_base_internal_headers INTERFACE
         ${OPS_BASE_DIR}/include
         ${OPS_BASE_DIR}/include/op_common
+        ${OPS_BASE_DIR}/include/op_common/op_graph
         ${OPS_BASE_INCLUDE}
         ${OPS_BASE_INCLUDE}/op_common
     )
