@@ -45,14 +45,7 @@ typedef AsyncAnyValue NnopbaseAsyncAnyValue;
 typedef KernelRunContext NnopbaseKernelRunContext;
 typedef gert::OpImplKernelRegistry::CompileInfoDeleterFunc NnopbaseCompileInfoDeleterFunc;
 
-enum CoreType {
-    kMix = 0,
-    kAicore,
-    kVectorcore,
-    kMixAiCore,
-    kMixAiv,
-    kCoreTypeEnd
-};
+enum CoreType { kMix = 0, kAicore, kVectorcore, kMixAiCore, kMixAiv, kCoreTypeEnd };
 
 enum InputsAppend {
     kInputsCompileInfo,
@@ -66,14 +59,14 @@ enum InputsAppend {
 using NnopbaseCompileTimeTensorDesc = gert::CompileTimeTensorDesc;
 
 typedef struct {
-    const NnopbaseChar *nodeType;
-    const NnopbaseChar *nodeName;
+    const NnopbaseChar* nodeType;
+    const NnopbaseChar* nodeName;
     size_t irInputsNum;
     size_t inputsNum;
     size_t outputsNum;
     size_t irOutputsNum;
     size_t attrSize;
-    uint8_t reserved[24];  // Reserved field, 8-byte aligned
+    uint8_t reserved[24]; // Reserved field, 8-byte aligned
     // following by AnchorInstanceInfo, inputs-outputs-CompileTimeTensorDesc, RuntimeAttrs
     uint64_t place_holder;
 } NnopbaseComputeNodeInfo;
@@ -82,8 +75,8 @@ typedef struct {
 using NnopbaseTilingData = gert::TilingData;
 static constexpr int32_t NNOPBASE_TILING_DATA_STRUCT_SIZE = sizeof(NnopbaseTilingData);
 
-typedef unsigned int (*TilingFun)(gert::TilingContext *);
-typedef unsigned int (TilingFunPrototype)(gert::TilingContext *);
+typedef unsigned int (*TilingFun)(gert::TilingContext*);
+typedef unsigned int(TilingFunPrototype)(gert::TilingContext*);
 
 #ifdef __cplusplus
 }

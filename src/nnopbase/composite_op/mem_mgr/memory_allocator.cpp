@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "../../common/inc/memory_allocator.h"
 
 namespace op {
@@ -19,16 +19,16 @@ inline uint64_t Align(const uint64_t n)
     return (n + EXTRA_SIZE_IN_BYTE + ALIGN_SIZE_IN_BYTE - 1) & (~(ALIGN_SIZE_IN_BYTE - 1));
 }
 
-bool TensorBucket::IsReusable(const KernelTensor *tensor)
+bool TensorBucket::IsReusable(const KernelTensor* tensor)
 {
     if (refs_.empty()) {
         return true;
     }
-    auto &back = refs_.back();
+    auto& back = refs_.back();
     return back->IsLifeTimeNotOverLap(tensor) && !back->IsInputOf(tensor);
 }
 
-void TensorBucket::AddRef(KernelTensor *tensor)
+void TensorBucket::AddRef(KernelTensor* tensor)
 {
     const auto tensorSize = Align(static_cast<uint64_t>(tensor->GetSize()));
     size_ = std::max(tensorSize, size_);
@@ -42,16 +42,12 @@ void TensorBucket::UpdateOffset(const uint64_t offset)
         ref->SetOffset(offset_);
         OP_LOGI(
             "MaxAllocator tensor index: %zu, offset: %lu, lifetime: [%ld, %ld], original size: %ld, align size: %lu.",
-            ref->GetIndex(),
-            offset_,
-            ref->GetLifeTimeStart(),
-            ref->GetLifeTimeEnd(),
-            ref->GetSize(),
+            ref->GetIndex(), offset_, ref->GetLifeTimeStart(), ref->GetLifeTimeEnd(), ref->GetSize(),
             Align(ref->GetSize()));
     }
 }
 
-uint64_t LinearAllocator::Allocate(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors)
+uint64_t LinearAllocator::Allocate(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors)
 {
     for (const auto tensor : tensors) {
         tensor->SetOffset(size_);
@@ -61,27 +57,27 @@ uint64_t LinearAllocator::Allocate(const op::FVector<KernelTensor *, DEFAULT_TEN
     return size_;
 }
 
-uint64_t MaxAllocator::Allocate(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors)
+uint64_t MaxAllocator::Allocate(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors)
 {
-    for (auto &tensor : tensors) {
+    for (auto& tensor : tensors) {
         if (tensor->GetAclTensor() != nullptr && tensor->GetAclTensor()->GetWorkspaceOffset() == OFFSET_PLACEHOLDER) {
             continue;
         }
-        TensorBucket &bucket = GetBestFitBucket(tensor);
+        TensorBucket& bucket = GetBestFitBucket(tensor);
         bucket.AddRef(tensor);
         if (tensor->GetAclTensor() != nullptr) {
             tensor->GetAclTensor()->SetWorkspaceOffset(OFFSET_PLACEHOLDER);
         }
     }
 
-    for (auto &bucket : buckets_) {
+    for (auto& bucket : buckets_) {
         bucket.UpdateOffset(size_);
         size_ += bucket.GetSize();
     }
     return size_;
 }
 
-TensorBucket &MaxAllocator::GetBestFitBucket(const KernelTensor *tensor)
+TensorBucket& MaxAllocator::GetBestFitBucket(const KernelTensor* tensor)
 {
     int64_t firstFitIndex = INVALID_INDEX;
     for (int64_t index = 0; index != static_cast<int64_t>(buckets_.size()); ++index) {
@@ -96,5 +92,5 @@ TensorBucket &MaxAllocator::GetBestFitBucket(const KernelTensor *tensor)
     }
     return buckets_[static_cast<size_t>(firstFitIndex)];
 }
-}
-}
+} // namespace mem
+} // namespace op

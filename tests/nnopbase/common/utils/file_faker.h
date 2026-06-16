@@ -10,7 +10,7 @@
 
 #include <string>
 
-int32_t NnopbaseSetStubFiles(const std::string &opp_path = "", const bool isOppLastest = false);
+int32_t NnopbaseSetStubFiles(const std::string& opp_path = "", const bool isOppLastest = false);
 int32_t NnopbaseSetStubNoTilingSoFiles();
 int32_t NnopbaseSetStubNoConfigFiles();
 int32_t NnopbaseSetStaticBinOp();

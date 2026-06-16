@@ -12,13 +12,14 @@
 #include "notification.h"
 
 namespace aicpu {
-uint32_t AsyncCpuKernel::Compute(CpuKernelContext &ctx) {
-  Notification n;
-  uint32_t ret = ComputeAsync(ctx, [&n](uint32_t status) {
-    (void)status;
-    n.Notify();
-  });
-  n.WaitForNotification();
-  return ret;
+uint32_t AsyncCpuKernel::Compute(CpuKernelContext& ctx)
+{
+    Notification n;
+    uint32_t ret = ComputeAsync(ctx, [&n](uint32_t status) {
+        (void)status;
+        n.Notify();
+    });
+    n.WaitForNotification();
+    return ret;
 }
-}  // namespace aicpu
+} // namespace aicpu

@@ -17,20 +17,20 @@
 namespace op {
 namespace internal {
 struct OpFullInfo {
-  std::string opKernelLib;   // which opsKernelStore
-  std::string kernelSo;      // kernel so
-  std::string functionName;  // function name
-  bool userDefined;          // user defined
+    std::string opKernelLib;  // which opsKernelStore
+    std::string kernelSo;     // kernel so
+    std::string functionName; // function name
+    bool userDefined;         // user defined
 };
 
 struct OpInfoDesc {
-  std::string opType;  // op Type
-  OpFullInfo opInfo;   // config information that the op
+    std::string opType; // op Type
+    OpFullInfo opInfo;  // config information that the op
 };
 
 struct OpInfoDescs {
-  std::vector<OpInfoDesc> opInfos;  // op info
+    std::vector<OpInfoDesc> opInfos; // op info
 };
-}
-}
+} // namespace internal
+} // namespace op
 #endif

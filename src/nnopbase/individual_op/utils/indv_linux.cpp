@@ -9,12 +9,9 @@
  */
 #include "indv_linux.h"
 
-int32_t IndvScandir(const char *path, IndvDirent ***entryList, IndvFilter filter, IndvSort sort)
+int32_t IndvScandir(const char* path, IndvDirent*** entryList, IndvFilter filter, IndvSort sort)
 {
     return mmScandir(path, entryList, filter, sort);
 }
 
-void IndvScandirFree(IndvDirent **entryList, int32_t fileCount)
-{
-    return mmScandirFree(entryList, fileCount);
-}
+void IndvScandirFree(IndvDirent** entryList, int32_t fileCount) { return mmScandirFree(entryList, fileCount); }

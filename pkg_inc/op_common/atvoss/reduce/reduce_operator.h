@@ -29,14 +29,11 @@ namespace Base {
 namespace Vec {
 #ifdef __CCE_AICORE__
 using namespace ReduceOpTmpl;
-inline constexpr MicroAPI::CastTrait INT_TO_FP_CAST_TRAIT = {MicroAPI::RegLayout::UNKNOWN,
-                                                             MicroAPI::SatMode::UNKNOWN,
-                                                             MicroAPI::MaskMergeMode::ZEROING,
-                                                             AscendC::RoundMode::CAST_RINT};
-inline constexpr MicroAPI::CastTrait FP_TO_INT_CAST_TRAIT = {MicroAPI::RegLayout::UNKNOWN,
-                                                             MicroAPI::SatMode::SAT,
-                                                             MicroAPI::MaskMergeMode::ZEROING,
-                                                             RoundMode::CAST_FLOOR};
+inline constexpr MicroAPI::CastTrait INT_TO_FP_CAST_TRAIT = {
+    MicroAPI::RegLayout::UNKNOWN, MicroAPI::SatMode::UNKNOWN, MicroAPI::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::CAST_RINT};
+inline constexpr MicroAPI::CastTrait FP_TO_INT_CAST_TRAIT = {
+    MicroAPI::RegLayout::UNKNOWN, MicroAPI::SatMode::SAT, MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_FLOOR};
 constexpr uint16_t VL_LEN = Ops::Base::GetVRegSize();
 constexpr uint16_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
 constexpr uint16_t BASE_FOLD = 4;
@@ -151,7 +148,8 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
     // 如果存在非对齐，第一次非对齐处理VLength长度
     const uint64_t rPaddingStartUpVL = rPaddingStartAlign + vLElems;
     // r轴补pad后的长度
-    const uint64_t rPaddingLenAlign = Ops::Base::CeilAlign(static_cast<uint64_t>(rPaddingStart + rPaddingLen), blkElems);
+    const uint64_t rPaddingLenAlign =
+        Ops::Base::CeilAlign(static_cast<uint64_t>(rPaddingStart + rPaddingLen), blkElems);
     // 是否需要对r轴做block对齐的补pad
     const uint16_t isRPaddingBlock = (rPaddingStart % blkElems == 0 ? 0 : 1);
     // 如果存在非对齐，r轴余下对齐部分的起始位置
@@ -202,18 +200,18 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                 for (uint16_t i = 0; i < rPaddingRepeat; i++) {
                     for (uint16_t j = 0; j < burstPaddingRepeat; j++) {
                         // 32B Align + Copy In
-                        AscendC::MicroAPI::DataCopy(vregPad, dstAddr + burstPaddingStartAlign + i * dimR +
-                                                    j * mainBurstLenAlign);
+                        AscendC::MicroAPI::DataCopy(
+                            vregPad, dstAddr + burstPaddingStartAlign + i * dimR + j * mainBurstLenAlign);
                         // Dump
                         vregTmp = vregPad;
-                        AscendC::MicroAPI::Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vregTmp, padValue,
-                                                                                                      maskDump);
+                        AscendC::MicroAPI::Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(
+                            vregTmp, padValue, maskDump);
                         AscendC::MicroAPI::Copy(vregPad, vregTmp, maskDump);
                         // Copy Out
                         uint32_t outLen = mainBurstLenAlign - burstPaddingStartAlign;
                         mask = AscendC::MicroAPI::UpdateMask<T, Trait>(outLen);
-                        AscendC::MicroAPI::DataCopy(dstAddr + burstPaddingStartAlign + i * dimR +
-                                                    j * mainBurstLenAlign, vregPad, mask);
+                        AscendC::MicroAPI::DataCopy(
+                            dstAddr + burstPaddingStartAlign + i * dimR + j * mainBurstLenAlign, vregPad, mask);
                     }
                 }
             }
@@ -246,8 +244,8 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                 AscendC::MicroAPI::DataCopy(vregPad, dstAddr + rPaddingStartAlign + i * dimR);
                 // Dump
                 vregTmp = vregPad;
-                AscendC::MicroAPI::Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vregTmp, padValue,
-                                                                                              maskDump);
+                AscendC::MicroAPI::Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(
+                    vregTmp, padValue, maskDump);
                 AscendC::MicroAPI::Copy(vregPad, vregTmp, maskDump);
                 // Copy Out
                 uint32_t outLen = rPaddingLenAlign - rPaddingStartAlign;
@@ -302,7 +300,8 @@ __aicore__ inline void PaddingRAMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
     // 如果存在非对齐，第一次非对齐处理VLength长度
     const uint64_t aPaddingStartUpVL = aPaddingStartAlign + vLElems;
     // a轴补pad后的长度
-    const uint64_t aPaddingLenAlign = Ops::Base::CeilAlign(static_cast<uint64_t>(aPaddingStart + aPaddingLen), blkElems);
+    const uint64_t aPaddingLenAlign =
+        Ops::Base::CeilAlign(static_cast<uint64_t>(aPaddingStart + aPaddingLen), blkElems);
     // 是否需要对a轴做block对齐的补pad
     const uint16_t isAPaddingBlock = (aPaddingStart % blkElems == 0 ? 0 : 1);
     // 如果存在非对齐，a轴余下对齐部分的起始位置
@@ -341,8 +340,9 @@ __aicore__ inline void PaddingRAMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
     }
 }
 
-template <const AscendC::MicroAPI::RegTrait& Trait, bool IsBlockPad, class Pattern, typename InputT, typename T,
-          class S, class P>
+template <
+    const AscendC::MicroAPI::RegTrait& Trait, bool IsBlockPad, class Pattern, typename InputT, typename T, class S,
+    class P>
 __aicore__ inline void DoPadding(__ubuf__ T* dstAddr, T padValue, S& shape, P& padding)
 {
     if constexpr (Pattern::TailA) {
@@ -362,7 +362,7 @@ __aicore__ inline void DoCaching(const LocalTensor<T>& ubDst, const LocalTensor<
     // count A轴的大小 * vLElems
     const uint16_t outerLoopTimes = Ops::Base::CeilDiv(static_cast<int64_t>(dimA), static_cast<int64_t>(vLElems));
     const uint16_t innerLoopTimes = static_cast<uint16_t>(cacheID);
-    const uint32_t innerLoopStride = static_cast<uint32_t>(stride);  // cacahe的每一个idex的块的大小， A轴的大小
+    const uint32_t innerLoopStride = static_cast<uint32_t>(stride); // cacahe的每一个idex的块的大小， A轴的大小
     LocalTensor<T> dstTensor = ubDst;
     LocalTensor<T> srcTensor = ubSrc;
 
@@ -374,7 +374,7 @@ __aicore__ inline void DoCaching(const LocalTensor<T>& ubDst, const LocalTensor<
         uint32_t sreg = static_cast<uint32_t>(dimA);
         AscendC::MicroAPI::RegTensor<T> aReg, bReg;
         AscendC::MicroAPI::MaskReg pMask;
-        for (uint16_t i = 0; i < outerLoopTimes; ++i) {  // outerLoopTimes是dimA的大小
+        for (uint16_t i = 0; i < outerLoopTimes; ++i) { // outerLoopTimes是dimA的大小
             pMask = AscendC::MicroAPI::UpdateMask<T>(sreg);
             AscendC::MicroAPI::DataCopy(aReg, (__local_mem__ T*)src + i * vLElems);
             for (uint16_t j = 0; j < innerLoopTimes; ++j) {
@@ -396,38 +396,36 @@ __aicore__ inline void DoCaching(const LocalTensor<T>& ubDst, const LocalTensor<
 #endif
 
 template <typename PromteT>
-class ReduceMaxOp : public ReduceOp<PromteT>
-{
+class ReduceMaxOp : public ReduceOp<PromteT> {
 public:
-    __aicore__ inline ReduceMaxOp()
-    {
-    }
-    #ifdef __CCE_AICORE__
+    __aicore__ inline ReduceMaxOp() {}
+#ifdef __CCE_AICORE__
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
         ReduceMax<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
     }
 
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
         ReduceMax<PromteT, AscendC::Pattern::Reduce::RA, true>(dst, src, srcShape, false);
     }
 
     template <class Pattern, class S>
-    __aicore__ inline void UpdateCache(const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc,
-                                       int64_t index, S& shape)
+    __aicore__ inline void UpdateCache(
+        const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc, int64_t index, S& shape)
     {
         DoCaching<Pattern, PromteT, S, REDUCE_OP_MAX>(ubDst, ubSrc, index, shape);
     }
 
-    __aicore__ inline void BisectionPreHandle(const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0,
-                                              const LocalTensor<PromteT>& src1, const int32_t& calCount)
+    __aicore__ inline void BisectionPreHandle(
+        const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0, const LocalTensor<PromteT>& src1,
+        const int32_t& calCount)
     {
         AscendC::Max(dst, src0, src1, calCount);
     }
@@ -466,42 +464,40 @@ public:
         }
         return paddingValue;
     }
-    #endif
+#endif
 };
 
 template <typename PromteT>
-class ReduceMinOp : public ReduceOp<PromteT>
-{
+class ReduceMinOp : public ReduceOp<PromteT> {
 public:
-    __aicore__ inline ReduceMinOp()
-    {
-    }
-    #ifdef __CCE_AICORE__
+    __aicore__ inline ReduceMinOp() {}
+#ifdef __CCE_AICORE__
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
         ReduceMin<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
     }
 
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
         ReduceMin<PromteT, AscendC::Pattern::Reduce::RA, true>(dst, src, srcShape, false);
     }
 
     template <class Pattern, class S>
-    __aicore__ inline void UpdateCache(const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc,
-                                       int64_t index, S& shape)
+    __aicore__ inline void UpdateCache(
+        const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc, int64_t index, S& shape)
     {
         DoCaching<Pattern, PromteT, S, REDUCE_OP_MIN>(ubDst, ubSrc, index, shape);
     }
 
-    __aicore__ inline void BisectionPreHandle(const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0,
-                                              const LocalTensor<PromteT>& src1, const int32_t& calCount)
+    __aicore__ inline void BisectionPreHandle(
+        const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0, const LocalTensor<PromteT>& src1,
+        const int32_t& calCount)
     {
         AscendC::Min(dst, src0, src1, calCount);
     }
@@ -542,59 +538,57 @@ public:
         }
         return paddingValue;
     }
-    #endif
+#endif
 };
 
 template <typename PromteT>
-class ReduceProdOp : public ReduceOp<PromteT>
-{
+class ReduceProdOp : public ReduceOp<PromteT> {
 public:
-    __aicore__ inline ReduceProdOp()
-    {
-    }
-    #ifdef __CCE_AICORE__
+    __aicore__ inline ReduceProdOp() {}
+#ifdef __CCE_AICORE__
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
         int32_t mainR = MainR(shape.value[1], true, blkElems);
         if constexpr (IsB64<PromteT>()) {
-            ReduceARI64<int64_t, AscendC::MicroAPI::RegTraitNumTwo>((__ubuf__ PromteT*)dst.GetPhyAddr(),
-                                                                    (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[0],
-                                                                    shape.value[1], mainR, shape.outerR, shape.innerR);
-        } else if constexpr (IsSameType<PromteT, int32_t>::value || IsSameType<PromteT, uint32_t>::value ||
-                             IsSameType<PromteT, float>::value) {
-            ReduceAR<int32_t, AscendC::MicroAPI::RegTraitNumOne>((__ubuf__ PromteT*)dst.GetPhyAddr(),
-                                                                 (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[0],
-                                                                 shape.value[1], mainR, shape.outerR, shape.innerR);                    
+            ReduceARI64<int64_t, AscendC::MicroAPI::RegTraitNumTwo>(
+                (__ubuf__ PromteT*)dst.GetPhyAddr(), (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[0],
+                shape.value[1], mainR, shape.outerR, shape.innerR);
+        } else if constexpr (
+            IsSameType<PromteT, int32_t>::value || IsSameType<PromteT, uint32_t>::value ||
+            IsSameType<PromteT, float>::value) {
+            ReduceAR<int32_t, AscendC::MicroAPI::RegTraitNumOne>(
+                (__ubuf__ PromteT*)dst.GetPhyAddr(), (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[0],
+                shape.value[1], mainR, shape.outerR, shape.innerR);
         } else {
-            ReduceAR<int16_t, AscendC::MicroAPI::RegTraitNumOne>((__ubuf__ PromteT*)dst.GetPhyAddr(),
-                                                                 (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[0],
-                                                                 shape.value[1], mainR, shape.outerR, shape.innerR);
+            ReduceAR<int16_t, AscendC::MicroAPI::RegTraitNumOne>(
+                (__ubuf__ PromteT*)dst.GetPhyAddr(), (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[0],
+                shape.value[1], mainR, shape.outerR, shape.innerR);
         }
     }
 
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
         int32_t mainR = MainR(shape.value[0], false, blkElems);
         if constexpr (IsB64<PromteT>()) {
-            ReduceRAI64<AscendC::MicroAPI::RegTraitNumTwo>((__ubuf__ PromteT*)dst.GetPhyAddr(),
-                                                           (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[1],
-                                                           shape.value[0], mainR);
+            ReduceRAI64<AscendC::MicroAPI::RegTraitNumTwo>(
+                (__ubuf__ PromteT*)dst.GetPhyAddr(), (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[1],
+                shape.value[0], mainR);
         } else {
-            ReduceRA<AscendC::MicroAPI::RegTraitNumOne>((__ubuf__ PromteT*)dst.GetPhyAddr(),
-                                                        (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[1],
-                                                        shape.value[0], mainR);
+            ReduceRA<AscendC::MicroAPI::RegTraitNumOne>(
+                (__ubuf__ PromteT*)dst.GetPhyAddr(), (__ubuf__ PromteT*)src.GetPhyAddr(), shape.value[1],
+                shape.value[0], mainR);
         }
     }
 
     template <typename DIndex, typename DCast, const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void ReduceARLessBlock(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA,
-                                             int32_t dimR, int32_t realR)
+    __aicore__ inline void ReduceARLessBlock(
+        __ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR, int32_t realR)
     {
         constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
         const uint16_t loopA = Ops::Base::CeilDiv(dimA, static_cast<int32_t>(vLElems));
@@ -616,11 +610,11 @@ public:
         {
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg0;
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg1;
-            AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimR;    // 1 / dimR
-            AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimA;    // 1 / dimA
+            AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimR; // 1 / dimR
+            AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimA; // 1 / dimA
             AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp0;
-            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp1;       // idx0 % dimA * dimR
-            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp2;       // idx0 % dimA
+            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp1; // idx0 % dimA * dimR
+            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp2; // idx0 % dimA
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregCastFloat;
             AscendC::MicroAPI::RegTensor<DIndex, Trait> idx0;
             AscendC::MicroAPI::RegTensor<DIndex, Trait> idx1;
@@ -647,11 +641,11 @@ public:
                 auto srcPaddingAddr = srcAddr + i * dimR + dimRFloorAlign;
                 DataCopy(srcPaddingAddr, vregAllOne, paddingMask1);
             }
-            
+
             // idx caculate = (idx // dimA) * (dimA * dimR) + (idx % dimA) * dimR + (k + idx % dimA) % dimR
             AscendC::MicroAPI::Duplicate(vregReciDimR, reciDimR);
             AscendC::MicroAPI::Duplicate(vregReciDimA, reciDimA);
-            AscendC::MicroAPI::Arange(idx0, 0);   // [0,1,2,3,4,5,6...]
+            AscendC::MicroAPI::Arange(idx0, 0); // [0,1,2,3,4,5,6...]
 
             // idx0 % dimA
             AscendC::MicroAPI::Cast<DCast, DIndex, INT_TO_FP_CAST_TRAIT>(idxCastFloat, idx0, mask);
@@ -698,8 +692,8 @@ public:
     }
 
     template <typename DIndex, typename DCast, const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void ReduceARLessBlockI64(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA,
-                                                int32_t dimR, int32_t realR)
+    __aicore__ inline void ReduceARLessBlockI64(
+        __ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR, int32_t realR)
     {
         constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
         const uint16_t loopA = Ops::Base::CeilDiv(dimA, static_cast<int32_t>(vLElems));
@@ -808,21 +802,23 @@ public:
                 }
                 AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR, vreg0, mask);
             }
-            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+            AscendC::MicroAPI::LocalMemBar<
+                AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
         }
     }
 
     template <typename DIndex, const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void ReduceAR(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR,
-                                    int32_t mainR, int32_t outerR, int32_t innerR)
+    __aicore__ inline void ReduceAR(
+        __ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR, int32_t mainR, int32_t outerR,
+        int32_t innerR)
     {
         constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
         constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
         if (outerR == 1 && innerR <= static_cast<int32_t>(blkElems * CONST2) &&
             dimA >= static_cast<int32_t>(vLElems / CONST2)) {
-            if constexpr (IsSameType<PromteT, int32_t>::value || IsSameType<PromteT, uint32_t>::value ||
-                          IsSameType<PromteT, float>::value) {
+            if constexpr (
+                IsSameType<PromteT, int32_t>::value || IsSameType<PromteT, uint32_t>::value ||
+                IsSameType<PromteT, float>::value) {
                 return ReduceARLessBlock<DIndex, float, Trait>(dstAddr, srcAddr, dimA, dimR, innerR);
             } else {
                 return ReduceARLessBlock<DIndex, half, Trait>(dstAddr, srcAddr, dimA, dimR, innerR);
@@ -837,7 +833,7 @@ public:
         const uint16_t folds = CalcFolds(base);
 
         // Calc main/tail folds
-        const uint16_t avgFolds = BASE_FOLD;  // Set main folds do 4 times
+        const uint16_t avgFolds = BASE_FOLD; // Set main folds do 4 times
         const uint16_t mainTimes = folds / BASE_FOLD;
         const uint16_t tailFolds = folds % BASE_FOLD;
         const uint16_t fold1 = tailFolds == FOLD1 ? 1 : 0;
@@ -865,8 +861,8 @@ public:
                         AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vregMain, mask);
                     }
                 }
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                               AscendC::MicroAPI::MemType::VEC_LOAD>();
+                AscendC::MicroAPI::LocalMemBar<
+                    AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
             // MainFolds need 16 register
@@ -894,7 +890,7 @@ public:
             uint16_t loopRNum = base;
             fullMask = AscendC::MicroAPI::CreateMask<PromteT, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             for (uint16_t loopMain = 0; loopMain < mainTimes; loopMain++) {
-                loopRNum = loopRNum >> avgFolds;  // Calc the count of mainFolds
+                loopRNum = loopRNum >> avgFolds; // Calc the count of mainFolds
                 uint16_t offsetR = loopRNum * vLElems;
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                     for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
@@ -937,13 +933,13 @@ public:
                         AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vreg0, fullMask);
                     }
                 }
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                               AscendC::MicroAPI::MemType::VEC_LOAD>();
+                AscendC::MicroAPI::LocalMemBar<
+                    AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
-            ReduceARFoldBase<PromteT, Trait>(dstAddr, srcAddr, dimR, blkElems, blkElems, vLElems, loopANum, fold1,
-                                             fold2, fold3, isBlkRepeat, blkRepeats, mask, vreg0, vreg1, vreg2, vreg3,
-                                             vreg4, vreg5, vreg6, vreg7);
+            ReduceARFoldBase<PromteT, Trait>(
+                dstAddr, srcAddr, dimR, blkElems, blkElems, vLElems, loopANum, fold1, fold2, fold3, isBlkRepeat,
+                blkRepeats, mask, vreg0, vreg1, vreg2, vreg3, vreg4, vreg5, vreg6, vreg7);
 
             // Reduce to 1
             uint32_t sreg1 = 1U;
@@ -952,11 +948,11 @@ public:
                 AscendC::MicroAPI::Duplicate(vreg0, 1);
                 for (uint16_t loopR = 0; loopR < reservedR; loopR++) {
                     if constexpr (sizeof(PromteT) == CONST2) {
-                        AscendC::MicroAPI::DataCopy<PromteT, AscendC::MicroAPI::LoadDist::DIST_BRC_B16>(vreg1,
-                            srcAddr + loopA * dimR + loopR);
+                        AscendC::MicroAPI::DataCopy<PromteT, AscendC::MicroAPI::LoadDist::DIST_BRC_B16>(
+                            vreg1, srcAddr + loopA * dimR + loopR);
                     } else {
-                        AscendC::MicroAPI::DataCopy<PromteT, AscendC::MicroAPI::LoadDist::DIST_BRC_B32>(vreg1,
-                            srcAddr + loopA * dimR + loopR);
+                        AscendC::MicroAPI::DataCopy<PromteT, AscendC::MicroAPI::LoadDist::DIST_BRC_B32>(
+                            vreg1, srcAddr + loopA * dimR + loopR);
                     }
                     AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
                 }
@@ -967,8 +963,9 @@ public:
     }
 
     template <typename DIndex, const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void ReduceARI64(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR,
-                                       int32_t mainR, int32_t outerR, int32_t innerR)
+    __aicore__ inline void ReduceARI64(
+        __ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR, int32_t mainR, int32_t outerR,
+        int32_t innerR)
     {
         constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
         constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
@@ -985,7 +982,7 @@ public:
         const uint16_t folds = CalcFolds(base);
 
         // Calc main/tail folds
-        const uint16_t avgFolds = BASE_FOLD_I64;  // Set main folds do 4 times
+        const uint16_t avgFolds = BASE_FOLD_I64; // Set main folds do 4 times
         const uint16_t mainTimes = folds / BASE_FOLD_I64;
         const uint16_t tailFolds = folds % BASE_FOLD_I64;
         const uint16_t fold1 = tailFolds == FOLD1 ? 1 : 0;
@@ -1012,8 +1009,8 @@ public:
                         AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vregMain, mask);
                     }
                 }
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                               AscendC::MicroAPI::MemType::VEC_LOAD>();
+                AscendC::MicroAPI::LocalMemBar<
+                    AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
             // MainFolds need 16 register
@@ -1033,7 +1030,7 @@ public:
             uint16_t loopRNum = base;
             fullMask = AscendC::MicroAPI::CreateMask<PromteT, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             for (uint16_t loopMain = 0; loopMain < mainTimes; loopMain++) {
-                loopRNum = loopRNum >> avgFolds;  // Calc the count of mainFolds
+                loopRNum = loopRNum >> avgFolds; // Calc the count of mainFolds
                 uint16_t offsetR = loopRNum * vLElems;
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                     for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
@@ -1059,13 +1056,13 @@ public:
                         AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vreg0, fullMask);
                     }
                 }
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                               AscendC::MicroAPI::MemType::VEC_LOAD>();
+                AscendC::MicroAPI::LocalMemBar<
+                    AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
-            ReduceARFoldBase<PromteT, Trait>(dstAddr, srcAddr, dimR, blkElems, blkElems, vLElems, loopANum, fold1,
-                                             fold2, 0, isBlkRepeat, blkRepeats, mask, vreg0, vreg1, vreg2, vreg3, vreg4,
-                                             vreg5, vreg6, vreg7);
+            ReduceARFoldBase<PromteT, Trait>(
+                dstAddr, srcAddr, dimR, blkElems, blkElems, vLElems, loopANum, fold1, fold2, 0, isBlkRepeat, blkRepeats,
+                mask, vreg0, vreg1, vreg2, vreg3, vreg4, vreg5, vreg6, vreg7);
 
             // Reduce to 1
             uint32_t sreg1 = 1U;
@@ -1158,8 +1155,8 @@ public:
     }
 
     template <const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void ReduceRA(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR,
-                                    int32_t mainR)
+    __aicore__ inline void ReduceRA(
+        __ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR, int32_t mainR)
     {
         constexpr uint16_t vLElems = VL_LEN / sizeof(PromteT);
         constexpr uint32_t dtypeSize = sizeof(PromteT);
@@ -1170,7 +1167,7 @@ public:
         const uint16_t folds = CalcFolds(mainR);
 
         // Calc main/tail folds
-        const uint16_t avgFolds = BASE_FOLD;  // Set main folds do 4 times
+        const uint16_t avgFolds = BASE_FOLD; // Set main folds do 4 times
         const uint16_t mainTimes = folds / BASE_FOLD;
         const uint16_t tailFolds = folds % BASE_FOLD;
         const uint16_t fold0 = (tailFolds == 0) ? 1 : 0;
@@ -1199,8 +1196,8 @@ public:
                     }
                 }
             }
-            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+            AscendC::MicroAPI::LocalMemBar<
+                AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
 
             // MainFolds need 16 register
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg0;
@@ -1223,7 +1220,7 @@ public:
             // Procsee main folds
             uint16_t loopRNum = mainR;
             for (uint16_t loopMain = 0; loopMain < mainTimes; loopMain++) {
-                loopRNum = loopRNum >> avgFolds;  // Calc the count of mainFolds
+                loopRNum = loopRNum >> avgFolds; // Calc the count of mainFolds
                 uint16_t offsetR = loopRNum * dimA;
                 uint32_t mainA = dimA;
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
@@ -1268,19 +1265,20 @@ public:
                         AscendC::MicroAPI::DataCopy(srcAddr + loopA * vLElems + loopR * dimA, vreg0, mask);
                     }
                 }
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                               AscendC::MicroAPI::MemType::VEC_LOAD>();
+                AscendC::MicroAPI::LocalMemBar<
+                    AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
             // Procsee tail folds
-            ReduceRAFoldBase<PromteT, Trait>(dstAddr, srcAddr, dimA, dimA, vLElems, loopANum, fold0, fold1, fold2,
-                                             fold3, mask, vreg0, vreg1, vreg2, vreg3, vreg4, vreg5, vreg6, vreg7);
+            ReduceRAFoldBase<PromteT, Trait>(
+                dstAddr, srcAddr, dimA, dimA, vLElems, loopANum, fold0, fold1, fold2, fold3, mask, vreg0, vreg1, vreg2,
+                vreg3, vreg4, vreg5, vreg6, vreg7);
         }
     }
 
     template <const AscendC::MicroAPI::RegTrait& Trait>
-    __aicore__ inline void ReduceRAI64(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR,
-                                       int32_t mainR)
+    __aicore__ inline void ReduceRAI64(
+        __ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR, int32_t mainR)
     {
         constexpr uint16_t vLElems = VL_LEN / sizeof(float);
         const uint16_t tailR = dimR - mainR;
@@ -1290,7 +1288,7 @@ public:
         const uint16_t folds = CalcFolds(mainR);
 
         // Calc main/tail folds
-        const uint16_t avgFolds = BASE_FOLD_I64;  // Set main folds do 4 times
+        const uint16_t avgFolds = BASE_FOLD_I64; // Set main folds do 4 times
         const uint16_t mainTimes = folds / avgFolds;
         const uint16_t tailFolds = folds % avgFolds;
         const uint16_t fold0 = (tailFolds == 0) ? 1 : 0;
@@ -1318,8 +1316,8 @@ public:
                     }
                 }
             }
-            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+            AscendC::MicroAPI::LocalMemBar<
+                AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
 
             // MainFolds need 16 register
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg0;
@@ -1334,7 +1332,7 @@ public:
             // Procsee main folds
             uint16_t loopRNum = mainR;
             for (uint16_t loopMain = 0; loopMain < mainTimes; loopMain++) {
-                loopRNum = loopRNum >> avgFolds;  // Calc the count of mainFolds
+                loopRNum = loopRNum >> avgFolds; // Calc the count of mainFolds
                 uint16_t offsetR = loopRNum * dimA;
                 uint32_t mainA = dimA;
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
@@ -1362,25 +1360,27 @@ public:
                         AscendC::MicroAPI::DataCopy(srcAddr + loopA * vLElems + loopR * dimA, vreg0, mask);
                     }
                 }
-                AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                               AscendC::MicroAPI::MemType::VEC_LOAD>();
+                AscendC::MicroAPI::LocalMemBar<
+                    AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
             // Procsee tail folds
-            ReduceRAFoldBase<PromteT, Trait>(dstAddr, srcAddr, dimA, dimA, vLElems, loopANum, fold0, fold1, fold2, 0,
-                                             mask, vreg0, vreg1, vreg2, vreg3, vreg4, vreg5, vreg6, vreg7);
+            ReduceRAFoldBase<PromteT, Trait>(
+                dstAddr, srcAddr, dimA, dimA, vLElems, loopANum, fold0, fold1, fold2, 0, mask, vreg0, vreg1, vreg2,
+                vreg3, vreg4, vreg5, vreg6, vreg7);
         }
     }
 
     template <class Pattern, class S>
-    __aicore__ inline void UpdateCache(const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc,
-                                       int64_t index, S& shape)
+    __aicore__ inline void UpdateCache(
+        const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc, int64_t index, S& shape)
     {
         DoCaching<Pattern, PromteT, S, REDUCE_OP_PROD>(ubDst, ubSrc, index, shape);
     }
 
-    __aicore__ inline void BisectionPreHandle(const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0,
-                                              const LocalTensor<PromteT>& src1, const int32_t& calCount)
+    __aicore__ inline void BisectionPreHandle(
+        const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0, const LocalTensor<PromteT>& src1,
+        const int32_t& calCount)
     {
         AscendC::Mul(dst, src0, src1, calCount);
     }
@@ -1412,42 +1412,40 @@ public:
         U paddingValue = 1;
         return paddingValue;
     }
-    #endif
+#endif
 };
 
 template <typename PromteT>
-class ReduceSumOp : public ReduceOp<PromteT>
-{
+class ReduceSumOp : public ReduceOp<PromteT> {
 public:
-    __aicore__ inline ReduceSumOp()
-    {
-    }
-    #ifdef __CCE_AICORE__
+    __aicore__ inline ReduceSumOp() {}
+#ifdef __CCE_AICORE__
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
         AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
     }
 
     template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
-    __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                   const LocalTensor<PromteT>& src)
+    __aicore__ inline void Compute(
+        ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src)
     {
         uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
         AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::RA, true>(dst, src, srcShape, false);
     }
 
     template <class Pattern, class S>
-    __aicore__ inline void UpdateCache(const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc,
-                                       int64_t index, S& shape)
+    __aicore__ inline void UpdateCache(
+        const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc, int64_t index, S& shape)
     {
         DoCaching<Pattern, PromteT, S, REDUCE_OP_SUM>(ubDst, ubSrc, index, shape);
     }
 
-    __aicore__ inline void BisectionPreHandle(const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0,
-                                              const LocalTensor<PromteT>& src1, const int32_t& calCount)
+    __aicore__ inline void BisectionPreHandle(
+        const LocalTensor<PromteT>& dst, const LocalTensor<PromteT>& src0, const LocalTensor<PromteT>& src1,
+        const int32_t& calCount)
     {
         AscendC::Add(dst, src0, src1, calCount);
     }
@@ -1471,39 +1469,33 @@ public:
         U paddingValue = 0;
         return paddingValue;
     }
-    #endif
+#endif
 };
 
 template <typename PromteT>
-class ReduceAnyOp : public ReduceMaxOp<PromteT>
-{
+class ReduceAnyOp : public ReduceMaxOp<PromteT> {
 public:
-    __aicore__ inline ReduceAnyOp()
-    {
-    }
-    #ifdef __CCE_AICORE__
+    __aicore__ inline ReduceAnyOp() {}
+#ifdef __CCE_AICORE__
     template <typename U>
     __aicore__ inline U GetPaddingValue()
     {
         return 0;
     }
-    #endif
+#endif
 };
 
 template <typename PromteT>
-class ReduceAllOp : public ReduceMinOp<PromteT>
-{
+class ReduceAllOp : public ReduceMinOp<PromteT> {
 public:
-    __aicore__ inline ReduceAllOp()
-    {
-    }
-    #ifdef __CCE_AICORE__
+    __aicore__ inline ReduceAllOp() {}
+#ifdef __CCE_AICORE__
     template <typename U>
     __aicore__ inline U GetPaddingValue()
     {
         return 1;
     }
-    #endif
+#endif
 };
 } // namespace Vec
 } // namespace Base

@@ -7,14 +7,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "opdev/shape_utils.h"
 #include "gtest/gtest.h"
 #include "shape_inference.h"
 #include "op_ctx_def.h"
 
-class TestShapeUtils : public testing::Test {
-};
+class TestShapeUtils : public testing::Test {};
 
 TEST_F(TestShapeUtils, TestCheckBroadcastShape)
 {
@@ -35,7 +34,7 @@ TEST_F(TestShapeUtils, TestCheckBroadcastShape)
     EXPECT_FALSE(op::CheckBroadcastShape(shape1, shape6));
 }
 
-inline void ClearShape(op::Shape &shape)
+inline void ClearShape(op::Shape& shape)
 {
     for (size_t i = 0; i < shape.GetDimNum(); i++) {
         shape[i] = -3;

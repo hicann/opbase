@@ -15,37 +15,39 @@
 
 namespace aclnnOpInfoRecord {
 struct OpCompilerOption {
-    explicit OpCompilerOption(const std::string &impl_mode_v, bool deterministic_v = true) :
-        impl_mode(impl_mode_v), deterministic(deterministic_v) {}
-    explicit OpCompilerOption(const char *impl_mode_v, bool deterministic_v = true) :
-        impl_mode(impl_mode_v), deterministic(deterministic_v) {}
+    explicit OpCompilerOption(const std::string& impl_mode_v, bool deterministic_v = true)
+        : impl_mode(impl_mode_v), deterministic(deterministic_v)
+    {}
+    explicit OpCompilerOption(const char* impl_mode_v, bool deterministic_v = true)
+        : impl_mode(impl_mode_v), deterministic(deterministic_v)
+    {}
     std::string impl_mode;
     bool deterministic;
 };
- 
+
 struct OpKernelInfo {
-    explicit OpKernelInfo(const std::string &bin_info_v, int8_t bin_type_v) :
-        bin_info(bin_info_v), bin_type(bin_type_v), isMc2(false) {}
-    explicit OpKernelInfo(const char *bin_info_v, int8_t bin_type_v) :
-        bin_info(bin_info_v), bin_type(bin_type_v), isMc2(false) {}
+    explicit OpKernelInfo(const std::string& bin_info_v, int8_t bin_type_v)
+        : bin_info(bin_info_v), bin_type(bin_type_v), isMc2(false)
+    {}
+    explicit OpKernelInfo(const char* bin_info_v, int8_t bin_type_v)
+        : bin_info(bin_info_v), bin_type(bin_type_v), isMc2(false)
+    {}
     std::string bin_info;
     int8_t bin_type;
     bool isMc2;
 };
- 
+
 /*
  * @brief: Extract Op Info from TilingContext and complete serialization.
  * @param [in] ctx: TilingContext
  * @return int32_t: 0 == SUCCESS, others is FAILED
  */
 int32_t OpInfoSerialize(
-    const gert::TilingContext *ctx,
-    const aclnnOpInfoRecord::OpCompilerOption &opt,
-    const aclnnOpInfoRecord::OpKernelInfo *kernelInfo = nullptr);
- 
+    const gert::TilingContext* ctx, const aclnnOpInfoRecord::OpCompilerOption& opt,
+    const aclnnOpInfoRecord::OpKernelInfo* kernelInfo = nullptr);
+
 int32_t OpInfoDump(void);
- 
- 
+
 } // namespace aclnnOpInfoRecord
- 
+
 #endif

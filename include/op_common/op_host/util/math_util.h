@@ -100,7 +100,7 @@ auto IsFloatEqual(T a, T b) -> typename std::enable_if<std::is_floating_point<T>
 
 OPBASE_API uint64_t LastPow2(uint64_t n);
 
-OPBASE_API uint32_t MurmurHash(const void *src, uint32_t srcLen, uint32_t seed = 271828);
+OPBASE_API uint32_t MurmurHash(const void* src, uint32_t srcLen, uint32_t seed = 271828);
 
 struct OPBASE_API SplitResult {
     int32_t splitCount = 0;
@@ -111,7 +111,7 @@ struct OPBASE_API SplitResult {
 OPBASE_API bool SplitIntoEqualByParts(int64_t splitLen, int32_t parts, SplitResult& splitResult);
 
 OPBASE_API bool SplitIntoEqualByFactor(int64_t splitLen, int32_t factor, SplitResult& splitResult);
-}  // namespace Base
+} // namespace Base
 } // namespace Ops
 
-#endif  // OP_COMMON_OP_HOST_UTIL_MATH_UTIL_H
+#endif // OP_COMMON_OP_HOST_UTIL_MATH_UTIL_H

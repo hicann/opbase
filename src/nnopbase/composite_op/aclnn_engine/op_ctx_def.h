@@ -21,10 +21,10 @@
 
 // Structs blow are from GE RT2.0. Must keep sync with GE.
 namespace op::internal {
-using AttrPtr = void *;
+using AttrPtr = void*;
 struct ComputeNodeInfo {
-    const ge::char_t *node_type_;
-    const ge::char_t *node_name_;
+    const ge::char_t* node_type_;
+    const ge::char_t* node_name_;
     size_t ir_inputs_num_;
     size_t inputs_num_;
     size_t outputs_num_;
@@ -61,8 +61,8 @@ struct RuntimeAttrsDef {
 };
 
 struct KernelExtendInfo {
-    const ge::char_t *kernel_name_;
-    const ge::char_t *kernel_type_;
+    const ge::char_t* kernel_name_;
+    const ge::char_t* kernel_type_;
 };
 
 struct TilingData;
@@ -83,7 +83,7 @@ public:
     size_t GetGeneration() const { return generation_; }
 
     // --- TilingData 头部 ---
-    TilingData *GetTilingDataPtr() const { return static_cast<TilingData *>(baseAddr_); }
+    TilingData* GetTilingDataPtr() const { return static_cast<TilingData*>(baseAddr_); }
 
     // --- launch_arg 区域 ---
     size_t GetLaunchArgCapacity() const { return launchArgCapacity_; }
@@ -93,33 +93,30 @@ public:
 
     // --- tiling_host_data 区域 ---
     // 返回 tiling data 地址（也是 tiling_host_data 起始地址和 launch_arg 区域的结束位置）
-    void *GetTilingDataAddr() const
+    void* GetTilingDataAddr() const { return static_cast<uint8_t*>(baseAddr_) + tilingHostDataStart_; }
+    void* GetTilingHostDataCurEndAddr() const
     {
-        return static_cast<uint8_t *>(baseAddr_) + tilingHostDataStart_;
-    }
-    void *GetTilingHostDataCurEndAddr() const
-    {
-        return static_cast<uint8_t *>(baseAddr_) + tilingHostDataStart_ + tilingHostDataSize_;
+        return static_cast<uint8_t*>(baseAddr_) + tilingHostDataStart_ + tilingHostDataSize_;
     }
     size_t GetTilingHostDataCapacity() const { return tilingHostDataCapacity_; }
     size_t GetTilingHostDataSize() const { return tilingHostDataSize_; }
     size_t GetAlignedTilingDataSize() const { return alignedTilingDataSize_; }
     size_t GetHostDataSize() const;
     aclnnStatus UpdateTilingDataSize(size_t tilingDataSize);
-    aclnnStatus AppendTilingHostData(const void *data, size_t len);
+    aclnnStatus AppendTilingHostData(const void* data, size_t len);
     aclnnStatus SeekTilingHostData(size_t len);
     void ResetTilingHostDataCursor();
 
     // --- 注册需要刷新的指针 ---
-    void RegisterHolderTilingDataPtr(TilingData **ptr) { holderTilingDataPtr_ = ptr; }
-    void RegisterOutputTilingDataPtr(TilingData **ptr) { outputTilingDataPtr_ = ptr; }
+    void RegisterHolderTilingDataPtr(TilingData** ptr) { holderTilingDataPtr_ = ptr; }
+    void RegisterOutputTilingDataPtr(TilingData** ptr) { outputTilingDataPtr_ = ptr; }
 
 private:
     aclnnStatus ExpandLaunchArg(size_t requiredCapacity);
     aclnnStatus ExpandTilingHostData(size_t requiredCapacity);
     void UpdateRegisteredPtrs();
 
-    void *baseAddr_{nullptr};
+    void* baseAddr_{nullptr};
     size_t totalSize_{0};
 
     // launch_arg 区域管理
@@ -130,11 +127,11 @@ private:
     size_t tilingHostDataStart_{0};
     size_t tilingHostDataCapacity_{0};
     size_t tilingHostDataSize_{0};
-    size_t alignedTilingDataSize_{0};  // tiling 数据长度（对齐后）
+    size_t alignedTilingDataSize_{0}; // tiling 数据长度（对齐后）
 
     // 需要刷新的TilingData指针
-    TilingData **holderTilingDataPtr_{nullptr};
-    TilingData **outputTilingDataPtr_{nullptr};
+    TilingData** holderTilingDataPtr_{nullptr};
+    TilingData** outputTilingDataPtr_{nullptr};
 
     // 扩容版本计数器
     size_t generation_{0};
@@ -143,27 +140,27 @@ private:
 struct TilingData {
     size_t capacity_;
     size_t data_size_;
-    void *data_;
+    void* data_;
     uint8_t reserved_[40];
 };
 
 // Tiling output
 struct TilingCtxOutput {
-    uint64_t *tilingKey_;
-    int64_t *numBlocks_;
-    bool *atomicCleanFlag_;
-    TilingData *tilingData_;
-    gert::TypedContinuousVector<size_t> *workspaceSize_;
-    int64_t *tilingCond_;
-    uint8_t *scheduleMode_;
-    uint32_t *dynUBufSize_;
-    ExpandableRtsArgBuffer *rtsArgBuffer_;
+    uint64_t* tilingKey_;
+    int64_t* numBlocks_;
+    bool* atomicCleanFlag_;
+    TilingData* tilingData_;
+    gert::TypedContinuousVector<size_t>* workspaceSize_;
+    int64_t* tilingCond_;
+    uint8_t* scheduleMode_;
+    uint32_t* dynUBufSize_;
+    ExpandableRtsArgBuffer* rtsArgBuffer_;
 
     size_t inputNum_;
     size_t outputNum_;
 };
 
-constexpr size_t MAX_WORKSPACE_NUM = 64;            // max number of op workspace
+constexpr size_t MAX_WORKSPACE_NUM = 64; // max number of op workspace
 // launch_arg 初始容量
 constexpr size_t LAUNCH_ARG_INIT_SIZE = 128 * 1024;
 // tiling_host_data 初始容量
@@ -174,11 +171,11 @@ constexpr size_t TILING_HOST_DATA_INIT_SIZE = 800 * 1024;
 constexpr size_t MAX_ATTR_STRING_SIZE = 1024; // Reference: max op attr string length (limit removed)
 // ATTR_CAPACITY is used as the initial capacity for attr storage.
 // When attr data exceeds this size, it will automatically expand (2x growth factor).
-constexpr size_t ATTR_CAPACITY = 32 * 1024;   // Initial attr capacity: max total op attr data size in Bytes
+constexpr size_t ATTR_CAPACITY = 32 * 1024; // Initial attr capacity: max total op attr data size in Bytes
 // MAX_OP_ARG_NUM is used as the initial capacity for op args (inputs/outputs).
 // When arg count exceeds this value, it will automatically expand (2x growth factor).
-constexpr size_t MAX_OP_ARG_NUM = 1024;       // Initial arg capacity: max op input/output arg count
-constexpr size_t MAX_OP_TYPE_COUNT = 1024;     // max registed op type
+constexpr size_t MAX_OP_ARG_NUM = 1024;    // Initial arg capacity: max op input/output arg count
+constexpr size_t MAX_OP_TYPE_COUNT = 1024; // max registed op type
 } // namespace op::internal
 
 #endif

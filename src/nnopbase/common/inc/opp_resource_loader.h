@@ -19,6 +19,6 @@ namespace opploader {
 aclnnStatus LoadOppResource();
 void ReleaseOppResource();
 void LoadAllOppPackage();
-}
-}
+} // namespace opploader
+} // namespace op
 #endif // OP_API_OP_API_COMMON_SRC_LIB_LOADER_OPP_RESOURCE_LOADER_H

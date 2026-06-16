@@ -142,14 +142,14 @@
         }                                                                                                     \
     } while (false)
 
-#define OP_LOGE_FOR_CONFIG_FILE_NOT_EXIST_IN_DYNAMIC_SHAPE()                                        \
-    do {                                                                                            \
-        std::string opName = op::internal::GetLogApiInfo();                                         \
-        std::string msg = "In the dynamic shape scenario, the JSON configuration file of operator " \
-            + opName + " cannot be found.";                                                         \
-        const std::vector<const char*> msgKey = {"opName"};                                         \
-        const std::vector<const char*> msgValue = {opName.c_str()};                                 \
-        OP_LOGE_WITHOUT_REPORT("EZ1013", "%s", msg.c_str());                                        \
-        REPORT_PREDEFINED_ERR_MSG("EZ1013", msgKey, msgValue);                                      \
+#define OP_LOGE_FOR_CONFIG_FILE_NOT_EXIST_IN_DYNAMIC_SHAPE()                                                          \
+    do {                                                                                                              \
+        std::string opName = op::internal::GetLogApiInfo();                                                           \
+        std::string msg =                                                                                             \
+            "In the dynamic shape scenario, the JSON configuration file of operator " + opName + " cannot be found."; \
+        const std::vector<const char*> msgKey = {"opName"};                                                           \
+        const std::vector<const char*> msgValue = {opName.c_str()};                                                   \
+        OP_LOGE_WITHOUT_REPORT("EZ1013", "%s", msg.c_str());                                                          \
+        REPORT_PREDEFINED_ERR_MSG("EZ1013", msgKey, msgValue);                                                        \
     } while (false)
 #endif // OP_API_OP_API_COMMON_INC_NNOPBASE_ERROR_MSG_H

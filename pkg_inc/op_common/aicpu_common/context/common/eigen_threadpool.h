@@ -20,36 +20,34 @@ namespace aicpu {
 using SharderWork = std::function<void(int64_t, int64_t)>;
 
 class EigenThreadPool {
- public:
-  static EigenThreadPool *GetInstance();
+public:
+    static EigenThreadPool* GetInstance();
 
-  /*
-   * ParallelFor shards the "total" units of work.
-   */
-  void ParallelFor(int64_t total, int64_t per_unit_size,
-                  const SharderWork &work) const;
+    /*
+     * ParallelFor shards the "total" units of work.
+     */
+    void ParallelFor(int64_t total, int64_t per_unit_size, const SharderWork& work) const;
 
-  /*
-   * Get CPU number
-   * @return CPU number
-   */
-  uint32_t GetCPUNum() const;
+    /*
+     * Get CPU number
+     * @return CPU number
+     */
+    uint32_t GetCPUNum() const;
 
- private:
-  EigenThreadPool() = default;
-  ~EigenThreadPool() = default;
+private:
+    EigenThreadPool() = default;
+    ~EigenThreadPool() = default;
 
-  EigenThreadPool(const EigenThreadPool &) = delete;
-  EigenThreadPool(EigenThreadPool &&) = delete;
-  EigenThreadPool &operator=(const EigenThreadPool &) = delete;
-  EigenThreadPool &operator=(EigenThreadPool &&) = delete;
+    EigenThreadPool(const EigenThreadPool&) = delete;
+    EigenThreadPool(EigenThreadPool&&) = delete;
+    EigenThreadPool& operator=(const EigenThreadPool&) = delete;
+    EigenThreadPool& operator=(EigenThreadPool&&) = delete;
 
-  static std::mutex mutex_;  // protect init_flag_
-  static bool init_flag_;    // true means initialized
-  static int32_t
-      core_num_;  // the number of CPU cores that can be used by users
-  static std::unique_ptr<Eigen::ThreadPool> eigen_threadpool_;
-  static std::unique_ptr<Eigen::ThreadPoolDevice> threadpool_device_;
+    static std::mutex mutex_; // protect init_flag_
+    static bool init_flag_;   // true means initialized
+    static int32_t core_num_; // the number of CPU cores that can be used by users
+    static std::unique_ptr<Eigen::ThreadPool> eigen_threadpool_;
+    static std::unique_ptr<Eigen::ThreadPoolDevice> threadpool_device_;
 };
-};      // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_EIGEN_THREAD_POOL_H
+}; // namespace aicpu
+#endif // AICPU_CONTEXT_COMMON_EIGEN_THREAD_POOL_H

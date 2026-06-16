@@ -43,7 +43,7 @@
             0
         ]
     },
-    "supportInfo":{
-        "implMode":"high_precision"
+    "supportInfo": {
+        "implMode": "high_precision"
     }
 }

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
@@ -26,8 +26,8 @@ using namespace op::internal;
 static bool profiling_called = false;
 
 class ProfilingCacheUtProfiler : public ProfilerStub {
-  public:
-    int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi *api)
+public:
+    int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi* api)
     {
         profiling_called = true;
         return 0;
@@ -37,12 +37,12 @@ static ProfilingCacheUtProfiler prof;
 
 namespace op {
 namespace internal {
-    void CacheTensorInfo(const FVector<const aclTensor*> &inTensors, const FVector<const aclTensor*> &outTensors);
-    void CacheDfxInfo(uint32_t blockDim, const ProfilingInfoId &id, const TaskInfo &taskInfo, bool isMemSet);
-    aclnnStatus DoReportAdditionInfo(
-        void *infoLists, const TaskInfo &taskInfo, const op::internal::ProfilingInfoId &profilingInfoId);
-}
-}
+void CacheTensorInfo(const FVector<const aclTensor*>& inTensors, const FVector<const aclTensor*>& outTensors);
+void CacheDfxInfo(uint32_t blockDim, const ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet);
+aclnnStatus DoReportAdditionInfo(
+    void* infoLists, const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId);
+} // namespace internal
+} // namespace op
 
 class ProfilingCacheUt : public testing::Test {
 protected:
@@ -63,26 +63,26 @@ protected:
     }
 };
 
-
 TEST_F(ProfilingCacheUt, test_storeage)
 {
     vector<int64_t> shapeA = {2, 1, 32, 16};
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
     int64_t multiStride1 = 2;
     auto storageShapeA = shapeA;
-    void *deviceDataA = nullptr;
+    void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor
-        *tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
-    int64_t *storageDims = nullptr;
+    const aclTensor* tensor = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
+    int64_t* storageDims = nullptr;
     uint64_t storageDimsNum = 0;
     EXPECT_EQ(aclGetStorageShape(tensor, &storageDims, &storageDimsNum), OK);
     EXPECT_EQ(aclGetStorageShape(nullptr, &storageDims, &storageDimsNum), ACLNN_ERR_PARAM_NULLPTR);
 
     // free resource
-    delete [] storageDims;
+    delete[] storageDims;
     aclDestroyTensor(tensor);
 }
 
@@ -92,15 +92,17 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_has_op_cache)
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
     int64_t multiStride1 = 2;
     auto storageShapeA = shapeA;
-    void *deviceDataA = nullptr;
+    void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor
-        *tensorIn = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
-    const aclTensor
-        *tensorOut = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
+    const aclTensor* tensorIn = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
+    const aclTensor* tensorOut = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
     FVector<const aclTensor*> in;
     FVector<const aclTensor*> out;
 
@@ -108,7 +110,7 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_has_op_cache)
     out.push_back(tensorOut);
     op::internal::ProfilingInfoId id;
 
-    //test cache exist
+    // test cache exist
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
     GetOpCacheContext().SetOpCache(opExecCache);
@@ -118,8 +120,7 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_has_op_cache)
     info.ration = 0;
     CacheDfxInfo(32, id, info, false);
 
-
-    //release resource
+    // release resource
     aclDestroyTensor(tensorIn);
     aclDestroyTensor(tensorOut);
     delete opExecCache;
@@ -131,15 +132,17 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
     int64_t multiStride1 = 2;
     auto storageShapeA = shapeA;
-    void *deviceDataA = nullptr;
+    void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor
-        *tensorIn = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
-    const aclTensor
-        *tensorOut = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
+    const aclTensor* tensorIn = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
+    const aclTensor* tensorOut = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
     FVector<const aclTensor*> in;
     FVector<const aclTensor*> out;
 
@@ -147,7 +150,7 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     out.push_back(tensorOut);
     op::internal::ProfilingInfoId id;
 
-    //test cache exist
+    // test cache exist
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
     GetOpCacheContext().SetOpCache(opExecCache);
@@ -157,10 +160,10 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     info.ration = 0;
     CacheDfxInfo(32, id, info, false);
 
-    //test restore/report
+    // test restore/report
     EXPECT_EQ(DoReportAdditionInfo(opExecCache->GetCacheTensorInfo(0), info, id), OK);
 
-    //release resource
+    // release resource
     aclDestroyTensor(tensorIn);
     aclDestroyTensor(tensorOut);
     delete opExecCache;

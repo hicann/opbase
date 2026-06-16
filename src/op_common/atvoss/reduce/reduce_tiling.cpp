@@ -54,7 +54,7 @@ static bool CheckAllReduce(gert::TilingContext* context, int32_t outIdx)
 }
 
 static bool CheckIsContiguous(ReduceOpInputParam& opInput)
-{   
+{
     bool isContiguous{false};
     for (size_t i = 0; i < opInput.shape.size(); i++) {
         if (i != opInput.shape.size() - 1) {
@@ -89,8 +89,7 @@ ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t idx, std::ve
         shape[i] = xInputShape.GetDim(i);
         if (shape[i] < 0) {
             OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-                context->GetNodeName(), "x", std::to_string(shape[i]).c_str(),
-                "shape dim cannot support dynamic");
+                context->GetNodeName(), "x", std::to_string(shape[i]).c_str(), "shape dim cannot support dynamic");
             return ge::GRAPH_FAILED;
         }
     }
@@ -276,8 +275,8 @@ ge::graphStatus ReduceOpTiling::AxesCheck(const std::vector<int64_t>& shape, con
     int64_t axesSize = static_cast<int64_t>(axes.size());
     OP_CHECK_IF(
         (axesSize > shapeSize),
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "axes",
-            std::to_string(axesSize).c_str(),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            context_->GetNodeName(), "axes", std::to_string(axesSize).c_str(),
             "axes size over x shape size is illegal"),
         return ge::GRAPH_FAILED);
 
@@ -285,8 +284,8 @@ ge::graphStatus ReduceOpTiling::AxesCheck(const std::vector<int64_t>& shape, con
         if (axes[i] >= shapeSize || axes[i] < 0) {
             std::string reasonMsg = "illegal axis: " + std::to_string(i) + " dim: " + std::to_string(axes[i]) +
                                     " out of shape range:[0, " + std::to_string(shapeSize) + ")";
-            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "axes",
-                std::to_string(axes[i]).c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                context_->GetNodeName(), "axes", std::to_string(axes[i]).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
@@ -298,8 +297,8 @@ ge::graphStatus ReduceOpTiling::ParamCheck(ReduceOpInputParam& opInput)
     int32_t dtypeSize = ge::GetSizeByDataType(opInput.inputDtype);
     OP_CHECK_IF(
         dtypeSize <= 0,
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-            std::to_string(dtypeSize).c_str(), "dtype of input x is illegal"),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context_->GetNodeName(), "x", std::to_string(dtypeSize).c_str(), "dtype of input x is illegal"),
         return ge::GRAPH_FAILED);
     OP_LOGD(
         context_, "view shape is:%s, strides:%s, axes:%s", ReduceOpTmpl::VectorToString(opInput.shape).c_str(),
@@ -337,33 +336,38 @@ ge::graphStatus ReduceOpTiling::PreProcessOptionalParam()
         compileInfo_ = compileInfoPtr_.get();
     }
     compileInfo_->vectorCoreNum = GetAivCoreNum(context_);
-    OP_CHECK_IF(compileInfo_->vectorCoreNum == 0, 
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vectorCoreNum",
-            std::to_string(compileInfo_->vectorCoreNum).c_str(),
+    OP_CHECK_IF(
+        compileInfo_->vectorCoreNum == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "vectorCoreNum", std::to_string(compileInfo_->vectorCoreNum).c_str(),
             "The value of vector core num must be greater than 0"),
         return ge::GRAPH_FAILED);
     compileInfo_->ubSize = GetUbSize(context_);
-    OP_CHECK_IF(compileInfo_->ubSize == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
-            std::to_string(compileInfo_->ubSize).c_str(),
+    OP_CHECK_IF(
+        compileInfo_->ubSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ubSize", std::to_string(compileInfo_->ubSize).c_str(),
             "The value of ub size must be greater than 0"),
         return ge::GRAPH_FAILED);
     compileInfo_->cacheLineSize = GetCacheLineSize(context_);
-    OP_CHECK_IF(compileInfo_->cacheLineSize == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize",
-            std::to_string(compileInfo_->cacheLineSize).c_str(),
+    OP_CHECK_IF(
+        compileInfo_->cacheLineSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "cacheLineSize", std::to_string(compileInfo_->cacheLineSize).c_str(),
             "The value of cacheline size must be greater than 0"),
         return ge::GRAPH_FAILED);
     compileInfo_->ubBlockSize = GetUbBlockSize(context_);
-    OP_CHECK_IF(compileInfo_->ubBlockSize == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubBlockSize",
-            std::to_string(compileInfo_->ubBlockSize).c_str(),
+    OP_CHECK_IF(
+        compileInfo_->ubBlockSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ubBlockSize", std::to_string(compileInfo_->ubBlockSize).c_str(),
             "The value of ub block size must be greater than 0"),
         return ge::GRAPH_FAILED);
     compileInfo_->vRegSize = GetVRegSize(context_);
-    OP_CHECK_IF(compileInfo_->vRegSize == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "vRegSize",
-            std::to_string(compileInfo_->vRegSize).c_str(),
+    OP_CHECK_IF(
+        compileInfo_->vRegSize == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "vRegSize", std::to_string(compileInfo_->vRegSize).c_str(),
             "The value of vReg size must be greater than 0"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
@@ -828,8 +832,8 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
     }
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
     uint64_t maxInnerA = resultBlock_ / opDag_.maxInputBytes;
-   uint64_t ubBlockSize = compileInfo_->ubBlockSize / opDag_.minInputBytes;
-   uint64_t cacheSize = compileInfo_->cacheLineSize / opDag_.minInputBytes;
+    uint64_t ubBlockSize = compileInfo_->ubBlockSize / opDag_.minInputBytes;
+    uint64_t cacheSize = compileInfo_->cacheLineSize / opDag_.minInputBytes;
     uint64_t innerR = unitR_.inner;
     uint64_t step = 1;
     int32_t iA;
@@ -898,11 +902,11 @@ template <class Pattern>
 ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
 {
     if (compileInfo_->ubSize <= CACHE_BUF_SIZE + opInput_.reservedSize) {
-        std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) + " is smaller than size: " +
-                                std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize) + ", not support";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
-            std::to_string(compileInfo_->ubSize).c_str(),
-            reasonMsg.c_str());
+        std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) +
+                                " is smaller than size: " + std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize) +
+                                ", not support";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "ubSize", std::to_string(compileInfo_->ubSize).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -934,11 +938,11 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
             resultBlock_ = CACHE_BUF_SIZE;
         }
         if (ubAvilSize <= resultBlock_ * postBufferNum) {
-            std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) + " is smaller than size: " +
+            std::string reasonMsg =
+                "ubSize: " + std::to_string(compileInfo_->ubSize) + " is smaller than size: " +
                 std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize + resultBlock_ * postBufferNum) + " not support";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
-                std::to_string(compileInfo_->ubSize).c_str(),
-                reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                context_->GetNodeName(), "ubSize", std::to_string(compileInfo_->ubSize).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         uint64_t preBufSize = ubAvilSize - resultBlock_ * postBufferNum;
@@ -948,9 +952,8 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
     }
     if (basicBlock_ < compileInfo_->vRegSize) {
         std::string reasonMsg = "basic block: " + std::to_string(basicBlock_) + " is too small, not support";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "basicBlock",
-            std::to_string(basicBlock_).c_str(),
-            reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "basicBlock", std::to_string(basicBlock_).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     OP_LOGI(
@@ -1049,9 +1052,9 @@ void ReduceOpTiling::SetTilingData(const uint64_t* shape)
     tilingData_->factorRTotalCnt = unitR_.outer;
     tilingData_->groupR = CeilDiv(unitR_.outer, factorRCntPerCore);
     if (tilingData_->groupR > 1) {
-        OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
-                    return );
+        OP_CHECK_IF(
+            context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+            OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return);
     }
     for (int32_t i = 0; i < MAX_DIM; i++) {
         tilingData_->shape[i] = shape[i];
@@ -1152,14 +1155,11 @@ void ReduceOpTiling::SetTilingKey()
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * CONST10 + innerRCount);
     tilingKey_.isContiguous = CheckIsContiguous(opInput_);
     OP_LOGI(
-        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d",
-        tilingKey_.patternID, tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0);
+        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d", tilingKey_.patternID,
+        tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0);
 }
 
-void ReduceOpTiling::GetTilingKey(ReduceTilingKey& key)
-{
-    key = tilingKey_;
-}
+void ReduceOpTiling::GetTilingKey(ReduceTilingKey& key) { key = tilingKey_; }
 
 void ReduceOpTiling::CalcUserWorkSpace()
 {

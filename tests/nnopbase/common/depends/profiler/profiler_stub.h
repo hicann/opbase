@@ -15,9 +15,10 @@
 #include "profiling/aprof_pub.h"
 
 class ProfilerStub {
-  public:
+public:
     virtual ~ProfilerStub() = default;
-    static ProfilerStub* GetInstance() {
+    static ProfilerStub* GetInstance()
+    {
         if (fake_instance_ != nullptr) {
             return fake_instance_;
         }
@@ -27,35 +28,19 @@ class ProfilerStub {
         return instance_.get();
     }
 
-    virtual int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi *api)
-    {
-        return 0;
-    }
+    virtual int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi* api) { return 0; }
 
-    virtual int32_t MsprofReportAdditionalInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length)
-    {
-        return 0;
-    }
+    virtual int32_t MsprofReportAdditionalInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length) { return 0; }
 
-    virtual int32_t MsprofReportCompactInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length)
-    {
-        return 0;
-    }
+    virtual int32_t MsprofReportCompactInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length) { return 0; }
 
-    virtual int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char *typeName)
-    {
-        return 0;
-    }
+    virtual int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char* typeName) { return 0; }
 
-    void Install(ProfilerStub* instance) {
-        fake_instance_ = instance;
-    }
+    void Install(ProfilerStub* instance) { fake_instance_ = instance; }
 
-    void UnInstall() {
-        fake_instance_ = nullptr;
-    }
+    void UnInstall() { fake_instance_ = nullptr; }
 
-  private:
+private:
     static std::shared_ptr<ProfilerStub> instance_;
     static ProfilerStub* fake_instance_;
 };

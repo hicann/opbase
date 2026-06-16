@@ -24,68 +24,62 @@ namespace internal {
 
 class JsonLoadManger {
 public:
-  static aclnnStatus LoadAicpuBinaryFromJson();
-  static aclrtBinHandle GetAicpuBinaryHandle()
-  {
-    return aicpuBinHandle_;
-  }
-  static aclnnStatus LoadTfBinaryFromJson();
-  static aclrtBinHandle GetTfBinaryHandle()
-  {
-    return tfBinHandle_;
-  }
-  static bool IsSupportedNewLaunch()
-  {
-    return isSupportNewLaunch_;
-  }
-  static aclnnStatus SetSupportedNewLaunchFlag();
-  typedef struct {
-    bool hasLoad;
-    aclrtBinHandle binHandle;
-  } CustomBinManager;
+    static aclnnStatus LoadAicpuBinaryFromJson();
+    static aclrtBinHandle GetAicpuBinaryHandle() { return aicpuBinHandle_; }
+    static aclnnStatus LoadTfBinaryFromJson();
+    static aclrtBinHandle GetTfBinaryHandle() { return tfBinHandle_; }
+    static bool IsSupportedNewLaunch() { return isSupportNewLaunch_; }
+    static aclnnStatus SetSupportedNewLaunchFlag();
+    typedef struct {
+        bool hasLoad;
+        aclrtBinHandle binHandle;
+    } CustomBinManager;
 
-  static aclrtBinHandle GetAicpuCustBinaryHandle(const std::string &kernelSoPath)
-  {
-    return customBinhandleInfos_[kernelSoPath].binHandle;
-  }
-  static aclnnStatus LoadAicpuCustBinaryFromJson(const std::string &opType, const std::string &kernelSoName, std::string &kernelSoPath);
-  static aclnnStatus CustJsonLoadAndParse();
-  static bool FindAndGetInCustomRegistry(const std::string &opType, std::string &kernelSo, std::string &functionName);
+    static aclrtBinHandle GetAicpuCustBinaryHandle(const std::string& kernelSoPath)
+    {
+        return customBinhandleInfos_[kernelSoPath].binHandle;
+    }
+    static aclnnStatus LoadAicpuCustBinaryFromJson(
+        const std::string& opType, const std::string& kernelSoName, std::string& kernelSoPath);
+    static aclnnStatus CustJsonLoadAndParse();
+    static bool FindAndGetInCustomRegistry(const std::string& opType, std::string& kernelSo, std::string& functionName);
+
 private:
-  JsonLoadManger() = default;
-  ~JsonLoadManger();
-  JsonLoadManger(const JsonLoadManger &) = delete;
-  JsonLoadManger(JsonLoadManger &&) = delete;
-  JsonLoadManger &operator=(const JsonLoadManger &) = delete;
-  JsonLoadManger &operator=(JsonLoadManger &&) = delete;
-  static aclnnStatus LoadBinaryFromJson(const std::string &opsPath, aclrtBinHandle &binHandle, const bool isCust = false);
-  static bool ReadCustJsonFile(const std::string &opsRegisterName, const std::string &customJsonPath);
-  static bool ReadCustOpInfoFromJsonFile(const std::string &path);
-  static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs &infoDesc);
-  static aclnnStatus ParseCustOpInfo();
-  static bool ReadBytesFromBinaryFile(const std::string &fileName, std::vector<char> &buffer);
-  static std::shared_ptr<std::vector<char>> GetOrCreateBuffer(const std::string& filePath);
-  static bool hasAicpuLoadBin_;
-  static aclrtBinHandle aicpuBinHandle_;
-  static bool hasTfLoadBin_;
-  static aclrtBinHandle tfBinHandle_;
-  static std::mutex tfBinLoadMutex_;
-  static std::mutex aicpuBinLoadMutex_;
-  static bool isSupportNewLaunch_;
-  static std::string socVersion_;
-  static std::mutex getSocVersionMutex_;
-  static bool aicpuCustLoadFlag_;
-  static std::mutex custMutex_;
-  static std::mutex aicpuCustBinLoadMutex_;
-  static std::mutex bufferCacheMutex_;
-  // Custom operator package repository
-  static std::vector<std::pair<std::string, nlohmann::json>> custOpJsonInfo_;
-  // store operator's name and detailed information
-  static std::map<std::string, OpFullInfo> customOpsInfos_;
-  // store operator's name and operator's register
-  static std::map<std::string, std::string> custRegisterInfos_;
-  static std::map<std::string, CustomBinManager> customBinhandleInfos_;
-  static std::map<std::string, std::shared_ptr<std::vector<char>>> bufferCache_; // 文件路径到buffer的映射
+    JsonLoadManger() = default;
+    ~JsonLoadManger();
+    JsonLoadManger(const JsonLoadManger&) = delete;
+    JsonLoadManger(JsonLoadManger&&) = delete;
+    JsonLoadManger& operator=(const JsonLoadManger&) = delete;
+    JsonLoadManger& operator=(JsonLoadManger&&) = delete;
+    static aclnnStatus LoadBinaryFromJson(
+        const std::string& opsPath, aclrtBinHandle& binHandle, const bool isCust = false);
+    static bool ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath);
+    static bool ReadCustOpInfoFromJsonFile(const std::string& path);
+    static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc);
+    static aclnnStatus ParseCustOpInfo();
+    static bool ReadBytesFromBinaryFile(const std::string& fileName, std::vector<char>& buffer);
+    static std::shared_ptr<std::vector<char>> GetOrCreateBuffer(const std::string& filePath);
+    static bool hasAicpuLoadBin_;
+    static aclrtBinHandle aicpuBinHandle_;
+    static bool hasTfLoadBin_;
+    static aclrtBinHandle tfBinHandle_;
+    static std::mutex tfBinLoadMutex_;
+    static std::mutex aicpuBinLoadMutex_;
+    static bool isSupportNewLaunch_;
+    static std::string socVersion_;
+    static std::mutex getSocVersionMutex_;
+    static bool aicpuCustLoadFlag_;
+    static std::mutex custMutex_;
+    static std::mutex aicpuCustBinLoadMutex_;
+    static std::mutex bufferCacheMutex_;
+    // Custom operator package repository
+    static std::vector<std::pair<std::string, nlohmann::json>> custOpJsonInfo_;
+    // store operator's name and detailed information
+    static std::map<std::string, OpFullInfo> customOpsInfos_;
+    // store operator's name and operator's register
+    static std::map<std::string, std::string> custRegisterInfos_;
+    static std::map<std::string, CustomBinManager> customBinhandleInfos_;
+    static std::map<std::string, std::shared_ptr<std::vector<char>>> bufferCache_; // 文件路径到buffer的映射
 };
 
 } // namespace internal

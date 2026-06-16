@@ -19,11 +19,11 @@ using namespace std;
 namespace op {
 namespace opploader {
 
-constexpr char const *OP_TILING_SO_SUFFIX = ".so";
-constexpr char const *OP_TILING_PATH_FROM_NEW_OPP_PKG = "built-in/op_impl/ai_core/tbe/op_tiling/";
-constexpr char const *OP_TILING_PATH_FROM_OLD_OPP_PKG = "op_impl/built-in/ai_core/tbe/op_tiling/";
+constexpr char const* OP_TILING_SO_SUFFIX = ".so";
+constexpr char const* OP_TILING_PATH_FROM_NEW_OPP_PKG = "built-in/op_impl/ai_core/tbe/op_tiling/";
+constexpr char const* OP_TILING_PATH_FROM_OLD_OPP_PKG = "op_impl/built-in/ai_core/tbe/op_tiling/";
 
-inline void GetBuiltinOpTilingLibPath(const string &oppPath, string &opTilingPath)
+inline void GetBuiltinOpTilingLibPath(const string& oppPath, string& opTilingPath)
 {
     // new version opp path is ASCEND_OPP_PATH/built-in
     if (IsDir(oppPath + "built-in")) {
@@ -33,7 +33,7 @@ inline void GetBuiltinOpTilingLibPath(const string &oppPath, string &opTilingPat
     }
 }
 
-static aclnnStatus LoadBuiltinOpTiling(const std::string &oppPath, std::vector<void *>& handlers)
+static aclnnStatus LoadBuiltinOpTiling(const std::string& oppPath, std::vector<void*>& handlers)
 {
     string opTilingPath;
     GetBuiltinOpTilingLibPath(oppPath, opTilingPath);
@@ -49,8 +49,8 @@ static aclnnStatus LoadBuiltinOpTiling(const std::string &oppPath, std::vector<v
     string opTilingOsPath = opTilingPath + "lib/" + osType + "/" + cpuType + "/";
     vector<string> opTilingSoList;
     GetFilesWithSuffix(opTilingOsPath, OP_TILING_SO_SUFFIX, opTilingSoList);
-    for (const auto &soRealPath : opTilingSoList) {
-        void *handle = dlopen(soRealPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    for (const auto& soRealPath : opTilingSoList) {
+        void* handle = dlopen(soRealPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
         if (handle != nullptr) {
             handlers.push_back(handle);
             OP_LOGI("Load op tiling so successfully, so path: %s", soRealPath.c_str());
@@ -61,10 +61,10 @@ static aclnnStatus LoadBuiltinOpTiling(const std::string &oppPath, std::vector<v
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus LoadOpTiling(const std::string &oppPath, std::vector<void *>& handlers)
+aclnnStatus LoadOpTiling(const std::string& oppPath, std::vector<void*>& handlers)
 {
     return LoadBuiltinOpTiling(oppPath, handlers);
 }
 
-}
-}
+} // namespace opploader
+} // namespace op

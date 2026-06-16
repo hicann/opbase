@@ -66,7 +66,7 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase1)
     auto ws = OP_WORKSPACE(out.get());
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     op::DestroyOpArgContext(ctx);
     EXPECT_EQ(rc, ACL_SUCCESS);
@@ -96,13 +96,13 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase2)
     auto ws2 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws3 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
-    aclTensorList *wsList = aclCreateTensorList(wsArr, 3);
+    const aclTensor* wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
+    aclTensorList* wsList = aclCreateTensorList(wsArr, 3);
 
     auto wsArg = OP_WORKSPACE(wsList);
     auto ctx = op::MakeOpArgContext(input, output, attr, wsArg);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
 
     EXPECT_EQ(rc, ACL_SUCCESS);
@@ -122,8 +122,8 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase3)
     auto other = std::make_unique<aclTensor>(outShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *inputTensor[2] = {self.get(), other.get()};
-    aclTensorList *inputList = aclCreateTensorList(inputTensor, 2);
+    const aclTensor* inputTensor[2] = {self.get(), other.get()};
+    aclTensorList* inputList = aclCreateTensorList(inputTensor, 2);
 
     uint32_t opType = op::OpTypeDict::ToOpType("AddN");
     auto input = OP_INPUT(inputList);
@@ -132,7 +132,7 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase3)
     auto ws = OP_WORKSPACE(out.get());
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     delete inputList;
     op::DestroyOpArgContext(ctx);
@@ -149,8 +149,8 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase4)
     auto other = std::make_unique<aclTensor>(outShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *inputTensor[2] = {self.get(), other.get()};
-    aclTensorList *inputList = aclCreateTensorList(inputTensor, 2);
+    const aclTensor* inputTensor[2] = {self.get(), other.get()};
+    aclTensorList* inputList = aclCreateTensorList(inputTensor, 2);
 
     auto input = OP_INPUT(inputList);
     auto output = OP_OUTPUT(out.get());
@@ -168,7 +168,8 @@ TEST_F(KernelLaunchNewRtsUT, MemSetTiling1)
 {
     op::internal::MemSetKernelContextHolder ctx;
 
-    op::internal::MemSetTensorInfo tensor{0, ge::DT_FLOAT, 0.0f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, nullptr};
+    op::internal::MemSetTensorInfo tensor{0,       ge::DT_FLOAT, 0.0f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR,
+                                          nullptr, nullptr};
     std::vector<op::internal::MemSetTensorInfo> tensorInfo{tensor};
     ctx.UpdateComputeNodeInfo(tensorInfo);
 
@@ -201,7 +202,7 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUT_Outshape)
     AxpyOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     DestroyOpArgContext(ctx);
     EXPECT_EQ(rc, ACL_SUCCESS);
@@ -224,29 +225,23 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
     auto ws = OP_WORKSPACE(out.get());
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
 
     uint32_t opType = static_cast<uint32_t>(op::internal::MAX_OP_TYPE_COUNT) + 1;
     auto rc2 = op::internal::gKernelMgr.Run(opType, stream, ctx);
     EXPECT_NE(rc2, ACL_SUCCESS);
-    const size_t *pws = nullptr;
+    const size_t* pws = nullptr;
     size_t num;
-    auto rc3 = op::internal::gKernelMgr.GetWorkspace(opType,
-        pws,
-        num,
-        *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+    auto rc3 = op::internal::gKernelMgr.GetWorkspace(
+        opType, pws, num, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_NE(rc3, ACL_SUCCESS);
 
     uint32_t opType1 = op::OpTypeDict::ToOpType("Axpy1");
     auto rc = op::internal::gKernelMgr.Run(opType1, stream, ctx);
     EXPECT_NE(rc, ACL_SUCCESS);
-    auto rc1 = op::internal::gKernelMgr.GetWorkspace(opType1,
-        pws,
-        num,
-        *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+    auto rc1 = op::internal::gKernelMgr.GetWorkspace(
+        opType1, pws, num, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_NE(rc1, ACL_SUCCESS);
     op::DestroyOpArgContext(ctx);
@@ -254,8 +249,8 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
 
 TEST_F(KernelLaunchNewRtsUT, GetAclTensorCountTerst1)
 {
-    aclTensor *nullTensor = nullptr;
-    aclTensorList *nullTensorList = nullptr;
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
     auto input_arg = OP_INPUT(nullTensor, nullTensorList);
     auto ctx = op::MakeOpArgContext(input_arg);
     size_t num = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG));
@@ -265,7 +260,7 @@ TEST_F(KernelLaunchNewRtsUT, GetAclTensorCountTerst1)
 
 TEST_F(KernelLaunchNewRtsUT, SetMemSetFlagFromJsonTest)
 {
-    const char *p = std::getenv("ASCEND_OPP_PATH");
+    const char* p = std::getenv("ASCEND_OPP_PATH");
     EXPECT_NE(p, nullptr);
 
     op::internal::KeyAndDetail key;
@@ -275,11 +270,14 @@ TEST_F(KernelLaunchNewRtsUT, SetMemSetFlagFromJsonTest)
     for (int i = 1; i <= 4; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-                "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
-        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
-                "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
-        op::internal::OpKernelBin kernel(9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
+        snprintf_s(
+            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
+        snprintf_s(
+            binPath, sizeof(binPath), sizeof(binPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
+        op::internal::OpKernelBin kernel(
+            9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = kernel.JsonLoad();
         EXPECT_EQ(rc, ACLNN_SUCCESS);
     }
@@ -287,14 +285,14 @@ TEST_F(KernelLaunchNewRtsUT, SetMemSetFlagFromJsonTest)
 
 TEST_F(KernelLaunchNewRtsUT, CalcMixCoreNumTest)
 {
-    Json mix1 = { {"taskRation", "0:1"}};
-    Json mix2 = { {"taskRation", "1:0"}};
-    Json mix3 = { {"taskRation", "0:0"}};
-    Json mix4 = { {"taskRation", "1:1"}};
-    Json mix5 = { {"taskRation", "0:2"}};
-    Json mix6 = { {"taskRation", "1:2"}};
-    Json mix7 = { {"taskRation", "1:3"}};
-    Json mix8 = { {"taskRation", "100:1"}};
+    Json mix1 = {{"taskRation", "0:1"}};
+    Json mix2 = {{"taskRation", "1:0"}};
+    Json mix3 = {{"taskRation", "0:0"}};
+    Json mix4 = {{"taskRation", "1:1"}};
+    Json mix5 = {{"taskRation", "0:2"}};
+    Json mix6 = {{"taskRation", "1:2"}};
+    Json mix7 = {{"taskRation", "1:3"}};
+    Json mix8 = {{"taskRation", "100:1"}};
 
     EXPECT_EQ(op::internal::CalcMixCoreNum(24, 48, mix1), 48u);
     EXPECT_EQ(op::internal::CalcMixCoreNum(24, 48, mix2), 24u);
@@ -308,10 +306,10 @@ TEST_F(KernelLaunchNewRtsUT, CalcMixCoreNumTest)
 
 TEST_F(KernelLaunchNewRtsUT, SetCoreNumTest)
 {
-    Json mix1 = { {"coreType", "AiCore"}};
-    Json mix2 = { {"coreType", "MIX"}};
-    Json mix3 = { {"coreType", "VectorCore"}};
-    Json mix4 = { {"coreType", "MIX_AIV"}};
+    Json mix1 = {{"coreType", "AiCore"}};
+    Json mix2 = {{"coreType", "MIX"}};
+    Json mix3 = {{"coreType", "VectorCore"}};
+    Json mix4 = {{"coreType", "MIX_AIV"}};
     fe::PlatFormInfos plat;
     uint32_t coreNum = 0;
 

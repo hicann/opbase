@@ -20,58 +20,62 @@ namespace Ops {
 namespace Base {
 using namespace AscendC;
 /**
-  * 调用get_buf函数
-  * @tparam p TPosition的类型
-  * @param bufID 当前处理的buf的真是ID
-  */
+ * 调用get_buf函数
+ * @tparam p TPosition的类型
+ * @param bufID 当前处理的buf的真是ID
+ */
 template <TPosition p>
-__aicore__ inline void GetBuf(uint8_t bufID) {
-  if constexpr (p == TPosition::VECIN) {
-    Mutex::Lock<PIPE_MTE2>(bufID);
-  } else if constexpr (p == TPosition::VECCALC) {
-    Mutex::Lock<PIPE_V>(bufID);
-  } else if constexpr (p == TPosition::VECOUT) {
-    Mutex::Lock<PIPE_MTE3>(bufID);
-  }
+__aicore__ inline void GetBuf(uint8_t bufID)
+{
+    if constexpr (p == TPosition::VECIN) {
+        Mutex::Lock<PIPE_MTE2>(bufID);
+    } else if constexpr (p == TPosition::VECCALC) {
+        Mutex::Lock<PIPE_V>(bufID);
+    } else if constexpr (p == TPosition::VECOUT) {
+        Mutex::Lock<PIPE_MTE3>(bufID);
+    }
 }
 
 /**
-  * 调用rls_buf函数
-  * @tparam p TPosition的类型
-  * @param bufID 当前处理的buf的真实ID
-  */
+ * 调用rls_buf函数
+ * @tparam p TPosition的类型
+ * @param bufID 当前处理的buf的真实ID
+ */
 template <TPosition p>
-__aicore__ inline void RlsBuf(uint8_t bufID) {
-  if constexpr (p == TPosition::VECIN) {
-    Mutex::Unlock<PIPE_MTE2>(bufID);
-  } else if constexpr (p == TPosition::VECCALC) {
-    Mutex::Unlock<PIPE_V>(bufID);
-  } else if constexpr (p == TPosition::VECOUT) {
-    Mutex::Unlock<PIPE_MTE3>(bufID);
-  }
+__aicore__ inline void RlsBuf(uint8_t bufID)
+{
+    if constexpr (p == TPosition::VECIN) {
+        Mutex::Unlock<PIPE_MTE2>(bufID);
+    } else if constexpr (p == TPosition::VECCALC) {
+        Mutex::Unlock<PIPE_V>(bufID);
+    } else if constexpr (p == TPosition::VECOUT) {
+        Mutex::Unlock<PIPE_MTE3>(bufID);
+    }
 }
 
 /**
-  * 插入GetBuf同步函数
-  * @tparam p TPosition的类型
-  * @param bufID 当前处理的buf的真实ID
-  */
+ * 插入GetBuf同步函数
+ * @tparam p TPosition的类型
+ * @param bufID 当前处理的buf的真实ID
+ */
 template <TPosition p>
-__aicore__ void inline GetTensor(uint8_t bufID) {
-  RUN_LOG("GetTensor: ID: %d, Position = %d", bufID, p);
-  GetBuf<p>(bufID);
+__aicore__ void inline GetTensor(uint8_t bufID)
+{
+    RUN_LOG("GetTensor: ID: %d, Position = %d", bufID, p);
+    GetBuf<p>(bufID);
 }
 
 /**
-  * 插入RlsBuf同步函数
-  * @tparam p TPosition的类型
-  * @param bufID 当前处理的buf的真实ID
-  */
+ * 插入RlsBuf同步函数
+ * @tparam p TPosition的类型
+ * @param bufID 当前处理的buf的真实ID
+ */
 template <TPosition p>
-__aicore__ void inline ReleaseTensor(uint8_t bufID) {
-  RUN_LOG("ReleaseTensor: ID: %d, Position = %d", bufID, p);
-  RlsBuf<p>(bufID);
+__aicore__ void inline ReleaseTensor(uint8_t bufID)
+{
+    RUN_LOG("ReleaseTensor: ID: %d, Position = %d", bufID, p);
+    RlsBuf<p>(bufID);
 }
 } // namespace Base
 } // namespace Ops
-#endif  // UTIL_SYNC_H_
+#endif // UTIL_SYNC_H_

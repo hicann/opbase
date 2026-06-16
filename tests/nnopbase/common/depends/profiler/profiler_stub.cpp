@@ -12,7 +12,7 @@
 std::shared_ptr<ProfilerStub> ProfilerStub::instance_;
 ProfilerStub* ProfilerStub::fake_instance_;
 
-int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi *api)
+int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi* api)
 {
     return ProfilerStub::GetInstance()->MsprofReportApi(agingFlag, api);
 }
@@ -27,7 +27,7 @@ int32_t MsprofReportCompactInfo(uint32_t agingFlag, const VOID_PTR data, uint32_
     return ProfilerStub::GetInstance()->MsprofReportCompactInfo(agingFlag, data, length);
 }
 
-int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char *typeName)
+int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char* typeName)
 {
     return ProfilerStub::GetInstance()->MsprofRegTypeInfo(level, typeId, typeName);
 }

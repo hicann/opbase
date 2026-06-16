@@ -13,16 +13,16 @@
 #include "mmpa_stub.h"
 
 std::shared_ptr<Adx::MmpaStub> Adx::MmpaStub::instance_;
-Adx::MmpaStub *Adx::MmpaStub::fake_instance_;
+Adx::MmpaStub* Adx::MmpaStub::fake_instance_;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
+INT32 mmGetEnv(const CHAR* name, CHAR* value, UINT32 len)
 {
     printf("Get stub mmpa.\n");
-    const char *env = getenv(name);
+    const char* env = getenv(name);
     if (env == nullptr) {
         return EN_ERROR;
     }
@@ -31,14 +31,15 @@ INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
     return EN_OK;
 }
 
-INT32 mmRealPath(const CHAR *path, CHAR *realPath, INT32 realPathLen)
+INT32 mmRealPath(const CHAR* path, CHAR* realPath, INT32 realPathLen)
 {
     if (path == nullptr || realPath == nullptr || realPathLen < MMPA_MAX_PATH) {
         return EN_INVALID_PARAM;
     }
 
     std::string str_path = path;
-    if (str_path.find("binary_info_config.json") != std::string::npos || str_path.find("kernel_bninference_d") != std::string::npos) {
+    if (str_path.find("binary_info_config.json") != std::string::npos ||
+        str_path.find("kernel_bninference_d") != std::string::npos) {
         strncpy(realPath, path, realPathLen);
         return EN_OK;
     }
@@ -49,37 +50,22 @@ INT32 mmRealPath(const CHAR *path, CHAR *realPath, INT32 realPathLen)
     return EN_OK;
 }
 
-VOID *mmDlopen(const CHAR *fileName, INT32 mode)
-{
-    return Adx::MmpaStub::GetInstance()->mmDlopen(fileName, mode);
-}
+VOID* mmDlopen(const CHAR* fileName, INT32 mode) { return Adx::MmpaStub::GetInstance()->mmDlopen(fileName, mode); }
 
-INT32 mmDlclose(VOID *handle)
-{
-  return EN_OK;
-}
+INT32 mmDlclose(VOID* handle) { return EN_OK; }
 
-VOID *mmDlsym(VOID *handle, const CHAR *funcName)
-{
-  return Adx::MmpaStub::GetInstance()->mmDlsym(handle, funcName);
-}
+VOID* mmDlsym(VOID* handle, const CHAR* funcName) { return Adx::MmpaStub::GetInstance()->mmDlsym(handle, funcName); }
 
-CHAR *mmDlerror()
-{
-  return "";
-}
+CHAR* mmDlerror() { return ""; }
 
-INT32 mmGetErrorCode()
-{
-  return 0;
-}
+INT32 mmGetErrorCode() { return 0; }
 
-CHAR *mmGetErrorFormatMessage(int errnum, CHAR *buf, size_t size)
+CHAR* mmGetErrorFormatMessage(int errnum, CHAR* buf, size_t size)
 {
-  if (buf == NULL || size <= 0) {
-    return NULL;
-  }
-  return strerror_r(errnum, buf, size);
+    if (buf == NULL || size <= 0) {
+        return NULL;
+    }
+    return strerror_r(errnum, buf, size);
 }
 #ifdef __cplusplus
 }

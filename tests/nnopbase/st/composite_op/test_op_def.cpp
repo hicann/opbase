@@ -7,18 +7,16 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "opdev/op_def.h"
 #include "gtest/gtest.h"
 
 using namespace op;
 
-class TestOpDef : public testing::Test {
-};
+class TestOpDef : public testing::Test {};
 
 TEST_F(TestOpDef, OpImplModeToStr)
 {
-
     EXPECT_EQ(op::ToString(OpImplMode::IMPL_MODE_RESERVED), "unknown");
     EXPECT_EQ(op::ToString(OpImplMode::IMPL_MODE_HIGH_PRECISION), "high_precision");
     EXPECT_EQ(op::ToString(OpImplMode::IMPL_MODE_HIGH_PERFORMANCE), "high_performance");
@@ -40,4 +38,3 @@ TEST_F(TestOpDef, StrToOpImplMode)
     EXPECT_EQ(op::ToOpImplMode("enable_hi_float32_execution"), OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION);
     EXPECT_EQ(op::ToOpImplMode("default"), OpImplMode::IMPL_MODE_DEFAULT);
 }
-

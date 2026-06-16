@@ -10,7 +10,7 @@
 
 /*!
  * \file broadcast_tiling_base.h
- * \brief atvoss broadcast template tiling 
+ * \brief atvoss broadcast template tiling
  */
 #ifndef BROADCAST_TILING_BASE_H_
 #define BROADCAST_TILING_BASE_H_
@@ -65,12 +65,12 @@ enum class BROADCAST_KERNEL_TYPE : uint32_t {
 };
 /**
  * @brief 计算图中用于做tiling计算的信息
- *  
+ *
  * - maxDtypeBits  单位bit 计算图中的最大Dtype bit数，用于计算切分块大小
  * - minDtypeBits  单位bit 计算图中的最小Dtype bit数，用于计算对齐点
  * - extraSize     单位byte 计算图需要的额外空间大小
  * - bufferDivisor 存活节点大小
-*/
+ */
 struct BroadcastComputeParams {
     int64_t maxDtypeBits;
     int64_t minDtypeBits;
@@ -85,7 +85,7 @@ struct BroadcastComputeParams {
  * - outShape 输出shape大小
  * - ubSize ub空间大小
  * - computeMap 不同数据类型对应的compute参数
-*/
+ */
 struct BroadcastTilingParams {
     int64_t coreNum;
     std::vector<gert::Shape> inShape;
@@ -103,7 +103,7 @@ struct BroadcastTilingParams {
  * - isAscendC 是否走Acendc分支标记
  * - coreNum 核数大小
  * - ubSize ub空间大小
-*/
+ */
 struct BroadcastCompileInfo {
     // std::shared_ptr<AutoTilingCompileInfo> dslCompileInfo;
     bool isAscendC{false};
@@ -127,7 +127,7 @@ struct BroadcastCompileInfo {
  * - blockTail 多核切分尾块大小
  * - dimProductBeforeUbInner ub切分外所有轴乘积，计算偏移用
  * - elemNum 存活空间大小
-*/
+ */
 struct BroadcastTilingData {
     std::vector<std::vector<int64_t>> dims;
     std::vector<std::vector<int64_t>> strides;
@@ -174,8 +174,8 @@ OPBASE_API void BrcPrintVectors(const std::vector<std::vector<int64_t>>& allDims
 
 uint64_t BroadcastGetComputeKey();
 uint64_t BroadcastGetScheduleKey(uint32_t axisInsideUB);
-int64_t BroadcastGetMaxElemNum(int64_t ubSize, const BroadcastComputeParams &computeParams);
+int64_t BroadcastGetMaxElemNum(int64_t ubSize, const BroadcastComputeParams& computeParams);
 
-}  // namespace Base
+} // namespace Base
 } // namespace Ops
-#endif  // BROADCAST_TILING_BASE_H_
+#endif // BROADCAST_TILING_BASE_H_

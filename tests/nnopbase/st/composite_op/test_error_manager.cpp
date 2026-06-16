@@ -7,15 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <iostream>
 #include "gtest/gtest.h"
 #include "opdev/op_errno.h"
 #include "opdev/op_log.h"
 #include "base/err_mgr.h"
 
-#define REPORT_ERROR_MESSAGE(code, ...)         \
-    do {                                        \
+#define REPORT_ERROR_MESSAGE(code, ...)                                \
+    do {                                                               \
         ReportErrorMessage(std::to_string(code).c_str(), __VA_ARGS__); \
     } while (0)
 #define REPORT_ERROR_MESSAGE_UT(code, ...) REPORT_ERROR_MESSAGE(code, __VA_ARGS__)

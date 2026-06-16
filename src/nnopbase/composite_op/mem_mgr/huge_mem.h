@@ -18,24 +18,23 @@ namespace internal {
 
 int32_t GetPoolCurrentArrayIndex(const int32_t id);
 
-const void *GetPoolLinkHead(const int32_t id);
+const void* GetPoolLinkHead(const int32_t id);
 
-const void *GetPoolLinkCurrent(const int32_t id);
+const void* GetPoolLinkCurrent(const int32_t id);
 } // namespace internal
 } // namespace op
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-int InitHugeMemThreadLocal([[maybe_unused]] void *arg, [[maybe_unused]] bool sync);
+int InitHugeMemThreadLocal([[maybe_unused]] void* arg, [[maybe_unused]] bool sync);
 
-void UnInitHugeMemThreadLocal([[maybe_unused]] void *arg, [[maybe_unused]] bool sync);
+void UnInitHugeMemThreadLocal([[maybe_unused]] void* arg, [[maybe_unused]] bool sync);
 
-void ReleaseHugeMem([[maybe_unused]] void *arg, [[maybe_unused]] bool sync);
+void ReleaseHugeMem([[maybe_unused]] void* arg, [[maybe_unused]] bool sync);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //OP_API_OP_API_COMMON_HUGE_MEM_H_
+#endif // OP_API_OP_API_COMMON_HUGE_MEM_H_

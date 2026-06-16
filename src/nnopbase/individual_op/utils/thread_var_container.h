@@ -19,7 +19,7 @@ public:
     static aclnnStatus SetCurMc2RankIdInThread(HcclComm commHandle);
     static uint32_t GetCurMc2RankIdInThread();
 };
-}
-}
+} // namespace utils
+} // namespace nnopbase
 
 #endif

@@ -16,7 +16,7 @@
 
 namespace op::internal {
 
-void MemSetKernelContextHolder::UpdateInputArg(const std::vector<MemSetTensorInfo> &memsetTensorInfo)
+void MemSetKernelContextHolder::UpdateInputArg(const std::vector<MemSetTensorInfo>& memsetTensorInfo)
 {
     for (size_t i = 0; i < memsetTensorInfo.size(); i++) {
         *PtrCastTo<uint64_t>(opInArg_[i + 1].data.inplace) = memsetTensorInfo[i].tensorDataSize_;
@@ -25,7 +25,7 @@ void MemSetKernelContextHolder::UpdateInputArg(const std::vector<MemSetTensorInf
     inputNum_ += memsetTensorInfo.size() + 1; // input[0] is not used for workspace checking
 }
 
-void MemSetKernelContextHolder::UpdateAttrArg(const std::vector<MemSetTensorInfo> &memsetTensorInfo)
+void MemSetKernelContextHolder::UpdateAttrArg(const std::vector<MemSetTensorInfo>& memsetTensorInfo)
 {
     size_t inputNum = memsetTensorInfo.size();
     size_t attrSize = sizeof(gert::TypedContinuousVector<size_t>) + sizeof(size_t) * inputNum;
@@ -47,11 +47,11 @@ void MemSetKernelContextHolder::UpdateAttrArg(const std::vector<MemSetTensorInfo
     }
 
     for (size_t i = 0; i < inputNum; i++) {
-        const auto &elem = memsetTensorInfo[i];
-        size_t *pTensorSize = static_cast<size_t*>(attrTensorSize->MutableData()) + i;
-        size_t *pDtype = static_cast<size_t*>(attrDtype->MutableData()) + i;
-        size_t *pValueInt = static_cast<size_t*>(attrValueInt->MutableData()) + i;
-        size_t *pValueFloat = static_cast<size_t*>(attrValueFloat->MutableData()) + i;
+        const auto& elem = memsetTensorInfo[i];
+        size_t* pTensorSize = static_cast<size_t*>(attrTensorSize->MutableData()) + i;
+        size_t* pDtype = static_cast<size_t*>(attrDtype->MutableData()) + i;
+        size_t* pValueInt = static_cast<size_t*>(attrValueInt->MutableData()) + i;
+        size_t* pValueFloat = static_cast<size_t*>(attrValueFloat->MutableData()) + i;
 
         *pTensorSize = elem.tensorDataSize_;
         *PtrCastTo<op::DataType>(pDtype) = elem.dtype_;

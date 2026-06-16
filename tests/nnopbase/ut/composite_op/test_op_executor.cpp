@@ -24,8 +24,7 @@ using namespace op;
 using namespace std;
 using namespace op::internal;
 
-class OpExecutorTest : public testing::Test {
-};
+class OpExecutorTest : public testing::Test {};
 
 TEST_F(OpExecutorTest, TestOpExecutor)
 {
@@ -73,19 +72,19 @@ TEST_F(OpExecutorTest, TestOpExecutor)
 
     uint64_t size = 1;
     const int64_t int64Value = 3;
-    aclTensor *tensor21 = executor.AllocHostTensor(&int64Value, size, op::DataType::DT_INT64);
+    aclTensor* tensor21 = executor.AllocHostTensor(&int64Value, size, op::DataType::DT_INT64);
     EXPECT_NE(tensor21, nullptr);
     int32_t intValue1 = 3;
-    aclTensor *tensor22 = executor.AllocHostTensor(&intValue1, size, op::DataType::DT_INT32);
+    aclTensor* tensor22 = executor.AllocHostTensor(&intValue1, size, op::DataType::DT_INT32);
     EXPECT_NE(tensor22, nullptr);
     double doubleValue = 3.2;
-    aclTensor *tensor23 = executor.AllocHostTensor(&doubleValue, size, op::DataType::DT_DOUBLE);
+    aclTensor* tensor23 = executor.AllocHostTensor(&doubleValue, size, op::DataType::DT_DOUBLE);
     EXPECT_NE(tensor23, nullptr);
-    const char *Value = "qqq";
-    aclTensor *tensor24 = executor.AllocHostTensor(Value, size, op::DataType::DT_STRING);
+    const char* Value = "qqq";
+    aclTensor* tensor24 = executor.AllocHostTensor(Value, size, op::DataType::DT_STRING);
     EXPECT_EQ(tensor24, nullptr);
     const uint64_t uint64Value = 3;
-    aclTensor *tensor25 = executor.AllocHostTensor(&uint64Value, size, op::DataType::DT_UINT64);
+    aclTensor* tensor25 = executor.AllocHostTensor(&uint64Value, size, op::DataType::DT_UINT64);
     EXPECT_NE(tensor25, nullptr);
 
     int64_t data[100] = {1};
@@ -98,10 +97,10 @@ TEST_F(OpExecutorTest, TestOpExecutor)
     tensor10->SetIntData(data, 100, DataType::DT_INT8);
     tensor10->SetIntData(data, 100, DataType::DT_UINT8);
     tensor10->SetIntData(data, 100, DataType::DT_DOUBLE);
-    tensor10->SetBoolData((bool *)data, 100, DataType::DT_BOOL);
-    tensor10->SetFloatData((float *)data, 100, DataType::DT_FLOAT);
-    tensor10->SetFp16Data((fp16_t *)data, 100, DataType::DT_FLOAT16);
-    tensor10->SetBf16Data((bfloat16 *)data, 100, DataType::DT_BF16);
+    tensor10->SetBoolData((bool*)data, 100, DataType::DT_BOOL);
+    tensor10->SetFloatData((float*)data, 100, DataType::DT_FLOAT);
+    tensor10->SetFp16Data((fp16_t*)data, 100, DataType::DT_FLOAT16);
+    tensor10->SetBf16Data((bfloat16*)data, 100, DataType::DT_BF16);
     auto tensor11 = executor.AllocHostTensor({100}, {100}, DataType::DT_FLOAT, Format::FORMAT_ND, Format::FORMAT_ND);
     EXPECT_NE(tensor11, nullptr);
     vector<int64_t> vec12(100, 1);
@@ -119,7 +118,7 @@ TEST_F(OpExecutorTest, TestOpExecutor)
     vector<bfloat16> vec16(100, 1);
     auto tensor16 = executor.AllocHostTensor(vec16.data(), vec16.size(), DataType::DT_BF16);
     EXPECT_NE(tensor16, nullptr);
-    executor.UpdateTensorAddr(nullptr,512);
+    executor.UpdateTensorAddr(nullptr, 512);
     tensor2->SetFromWorkspace(false);
     tensor10->SetDataType(DataType::DT_UINT64);
     EXPECT_EQ(tensor10->GetDataType(), DataType::DT_UINT64);
@@ -149,7 +148,7 @@ TEST_F(OpExecutorTest, NnopContiguousExecutorCheckOffsetSuccess)
 
 TEST_F(OpExecutorTest, CommonOpExecutorRunNullptr)
 {
-    EXPECT_EQ(CommonOpExecutorRun(nullptr, 0, nullptr, nullptr), ACLNN_ERR_PARAM_NULLPTR);   
+    EXPECT_EQ(CommonOpExecutorRun(nullptr, 0, nullptr, nullptr), ACLNN_ERR_PARAM_NULLPTR);
 }
 TEST_F(OpExecutorTest, AddToKernelLauncherListDvpp)
 {
@@ -160,28 +159,28 @@ TEST_F(OpExecutorTest, AddToKernelLauncherListDvpp)
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto idx = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {out.get(), idx.get()};
+    const aclTensor* wsArr[] = {out.get(), idx.get()};
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
 
     int64_t dim = 0;
     bool descending = true;
-    
+
     std::string apiName = "aclnnArgsort";
     auto input = OP_INPUT(self.get());
     auto output = OP_OUTPUT(out.get(), idx.get());
     auto attr = OP_ATTR(dim, descending);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Sort");
     op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
     op::internal::GetLauncherCtx().ClearTilingCache();
 
-    aclTensorList *workspace = nullptr;
+    aclTensorList* workspace = nullptr;
     auto ctx = op::MakeOpArgContext(input, output, attr);
-    auto *launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
+    auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
     launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
     auto ret = executor->AddToKernelLauncherListDvpp(opType, launcher, ctx);
     EXPECT_EQ(ret, ACL_SUCCESS);
@@ -195,28 +194,28 @@ TEST_F(OpExecutorTest, AddToKernelLauncherListAiCpu)
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto idx = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {out.get(), idx.get()};
+    const aclTensor* wsArr[] = {out.get(), idx.get()};
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
 
     int64_t dim = 0;
     bool descending = true;
-    
+
     std::string apiName = "aclnnArgsort";
     auto input = OP_INPUT(self.get());
     auto output = OP_OUTPUT(out.get(), idx.get());
     auto attr = OP_ATTR(dim, descending);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Sort");
     op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
     op::internal::GetLauncherCtx().ClearTilingCache();
 
-    aclTensorList *workspace = nullptr;
+    aclTensorList* workspace = nullptr;
     auto ctx = op::MakeOpArgContext(input, output, attr);
-    auto *launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
+    auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
     launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
     auto ret = executor->AddToKernelLauncherListAiCpu(opType, launcher, ctx);
     EXPECT_EQ(ret, ACL_SUCCESS);
@@ -230,32 +229,31 @@ TEST_F(OpExecutorTest, AddToKernelLauncherListCopyTask)
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto idx = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {out.get(), idx.get()};
+    const aclTensor* wsArr[] = {out.get(), idx.get()};
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
 
     int64_t dim = 0;
     bool descending = true;
-    
+
     std::string apiName = "aclnnArgsort";
     auto input = OP_INPUT(self.get());
     auto output = OP_OUTPUT(out.get(), idx.get());
     auto attr = OP_ATTR(dim, descending);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Sort");
     op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
     op::internal::GetLauncherCtx().ClearTilingCache();
 
-    aclTensorList *workspace = nullptr;
+    aclTensorList* workspace = nullptr;
     auto ctx = op::MakeOpArgContext(input, output, attr);
-    auto *launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
+    auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
     launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
-    auto ret1 = executor->AddToKernelLauncherListCopyTask(opType, launcher, 
-        *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+    auto ret1 = executor->AddToKernelLauncherListCopyTask(
+        opType, launcher, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret1, ACL_SUCCESS);
 }
@@ -269,7 +267,7 @@ TEST_F(OpExecutorTest, apiTest)
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto idx = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {out.get(), idx.get()};
+    const aclTensor* wsArr[] = {out.get(), idx.get()};
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
 
@@ -282,43 +280,43 @@ TEST_F(OpExecutorTest, apiTest)
     auto attr = OP_ATTR(dim, descending);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
 
     executor->AddTensorRelation(self.get(), out.get());
 
     op::fp16_t fp16Value = 3.2;
-    aclScalar  * scalar1 = executor->AllocScalar(fp16Value);
+    aclScalar* scalar1 = executor->AllocScalar(fp16Value);
     EXPECT_NE(scalar1, nullptr);
     op::bfloat16 bfp16Value = 3.2;
-    aclScalar  * scalar2 = executor->AllocScalar(bfp16Value);
+    aclScalar* scalar2 = executor->AllocScalar(bfp16Value);
     EXPECT_NE(scalar2, nullptr);
     double doubleValue = 3.2;
-    aclScalar  * scalar3 = executor->AllocScalar(doubleValue);
+    aclScalar* scalar3 = executor->AllocScalar(doubleValue);
     EXPECT_NE(scalar3, nullptr);
     int32_t intValue = 3;
-    aclScalar  *intScalar = executor->AllocScalar(intValue);
+    aclScalar* intScalar = executor->AllocScalar(intValue);
     int64_t int64Value = 3;
-    aclScalar  *int64Scalar = executor->AllocScalar(int64Value);
+    aclScalar* int64Scalar = executor->AllocScalar(int64Value);
     int16_t int16Value = 3;
-    aclScalar  *int16Scalar = executor->AllocScalar(int16Value);
+    aclScalar* int16Scalar = executor->AllocScalar(int16Value);
     int8_t int8Value = 3;
-    aclScalar  *int8Scalar = executor->AllocScalar(int8Value);
+    aclScalar* int8Scalar = executor->AllocScalar(int8Value);
     uint32_t uint32Value = 3;
-    aclScalar  *uint32Scalar = executor->AllocScalar(uint32Value);
+    aclScalar* uint32Scalar = executor->AllocScalar(uint32Value);
     uint64_t uint64Value = 3;
-    aclScalar  *uint64Scalar = executor->AllocScalar(uint64Value);
+    aclScalar* uint64Scalar = executor->AllocScalar(uint64Value);
     uint16_t uint16Value = 3;
-    aclScalar  *uint16Scalar = executor->AllocScalar(uint16Value);
+    aclScalar* uint16Scalar = executor->AllocScalar(uint16Value);
     uint8_t uint8Value = 3;
-    aclScalar  *uint8Scalar = executor->AllocScalar(uint8Value);
+    aclScalar* uint8Scalar = executor->AllocScalar(uint8Value);
     bool boolValue = true;
-    aclScalar  *boolScalar = executor->AllocScalar(boolValue);
+    aclScalar* boolScalar = executor->AllocScalar(boolValue);
 }
 TEST_F(OpExecutorTest, apiOtherTest)
-{    
-    char * apiName = "aclnnArgsort";
+{
+    char* apiName = "aclnnArgsort";
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     InitL2Phase1Context(apiName, &executor);
     InitL2Phase2Context(apiName, executor);
 
@@ -340,26 +338,25 @@ TEST_F(OpExecutorTest, apiOtherTest)
     auto ret = CreatAiCoreKernelLauncher("Axpy", opType, executor, ctx);
     EXPECT_EQ(ret, ACL_SUCCESS);
 
-    op::OpArgContext *ctx2 = nullptr;
+    op::OpArgContext* ctx2 = nullptr;
     CreatDSAKernelLauncher("Axpy", opType, DSARandomNormalTaskType, executor, ctx2);
 
     auto ctx1 = op::MakeOpArgContext(input, output, attr);
     ret = CreatAiCoreKernelLauncher("Axpy", opType, executor, ctx1);
     EXPECT_EQ(ret, ACL_SUCCESS);
 
-    ret = InferShape(opType,
-        *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+    ret = InferShape(
+        opType, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret, ACLNN_SUCCESS);
     // op::DestroyOpArgContext(ctx);
 }
 
 TEST_F(OpExecutorTest, DSAKernelLauncherUnNormalTaskType)
-{    
-    char * apiName = "aclnnArgsort";
+{
+    char* apiName = "aclnnArgsort";
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     InitL2Phase1Context(apiName, &executor);
     InitL2Phase2Context(apiName, executor);
 
@@ -382,9 +379,8 @@ TEST_F(OpExecutorTest, DSAKernelLauncherUnNormalTaskType)
     DSA_TASK_TYPE unNormalDsaTaskType = static_cast<DSA_TASK_TYPE>(100); // > enum DSA_TASK_TYPE
     CreatDSAKernelLauncher("Axpy", opType, unNormalDsaTaskType, executor, ctx);
 
-    aclnnStatus ret = InferShape(opType,
-        *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+    aclnnStatus ret = InferShape(
+        opType, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret, ACLNN_SUCCESS);
     // op::DestroyOpArgContext(ctx);
@@ -392,21 +388,21 @@ TEST_F(OpExecutorTest, DSAKernelLauncherUnNormalTaskType)
 
 TEST_F(OpExecutorTest, phase2ParamCheckTest)
 {
-    char * apiName = "aclnnArgsort";
+    char* apiName = "aclnnArgsort";
     aclrtStream stream = nullptr;
     InitL2Phase2Context(apiName, nullptr);
-    int *ptr = new int;
+    int* ptr = new int;
     auto ret = CommonOpExecutorRun(ptr, 500, nullptr, stream);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     uniqueExecutor.ReleaseTo(&executor);
     ret = CommonOpExecutorRun(nullptr, 500, executor, stream);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
 
     auto opExecCache = new OpExecCache();
-    OpExecCacheWrap *cacheWrap = CreateCacheWrap(opExecCache);
+    OpExecCacheWrap* cacheWrap = CreateCacheWrap(opExecCache);
     executor = reinterpret_cast<aclOpExecutor*>(cacheWrap);
     ret = CommonOpExecutorRun(nullptr, 500, executor, stream);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
@@ -419,7 +415,7 @@ TEST_F(OpExecutorTest, phase2ParamCheckSuccessTest)
 {
     aclrtStream stream = nullptr;
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     uniqueExecutor.ReleaseTo(&executor);
     auto ret = CommonOpExecutorRun(nullptr, 0, executor, stream);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
@@ -428,12 +424,12 @@ TEST_F(OpExecutorTest, phase2ParamCheckSuccessTest)
 TEST_F(OpExecutorTest, phase1ParamCheckTest)
 {
     uint64_t workspaceSize;
-    aclOpExecutor **executor = nullptr;
+    aclOpExecutor** executor = nullptr;
     auto ret = CheckPhase1Params(executor, &workspaceSize);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
 
-    int *ptr = new int;
-    executor = reinterpret_cast<aclOpExecutor **>(ptr);
+    int* ptr = new int;
+    executor = reinterpret_cast<aclOpExecutor**>(ptr);
     ret = CheckPhase1Params(executor, nullptr);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
 
@@ -443,7 +439,7 @@ TEST_F(OpExecutorTest, phase1ParamCheckTest)
     delete ptr;
 }
 
-static void L2Phase2Func(const char *apiName, aclOpExecutor *executor, const int64_t configVal)
+static void L2Phase2Func(const char* apiName, aclOpExecutor* executor, const int64_t configVal)
 {
     std::cout << "phase2 thread id: " << std::this_thread::get_id() << std::endl;
     InitL2Phase2Context(apiName, executor);
@@ -454,12 +450,12 @@ static void L2Phase2Func(const char *apiName, aclOpExecutor *executor, const int
 TEST_F(OpExecutorTest, DeterministicTest)
 {
     std::cout << "phase1 thread id: " << std::this_thread::get_id() << std::endl;
-    const char *apiName = "aclnnArgsort";
+    const char* apiName = "aclnnArgsort";
     int64_t deterministicValue = 0;
     aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicValue);
     std::cout << "deterministic value: " << deterministicValue << std::endl;
 
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     InitL2Phase1Context(apiName, &executor);
     EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (deterministicValue == 1));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -506,7 +502,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat8E4M3FN)
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E4M3FN);
 
     // 验证: 1.0 → OCP E4M3FN 编码 0x38 (sign=0, exp=0111, man=000)
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E4M3FN result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -527,7 +523,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat8E5M2)
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E5M2);
 
     // 验证: 1.0 → OCP E5M2 编码 0x30 (sign=0, exp=01111, man=00)
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E5M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -548,7 +544,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat8E8M0)
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E8M0);
 
     // 验证: 1.0 = 2^(127-127) = 2^0 → 编码 0x7F (OCP E8M0)
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E8M0 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -568,7 +564,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat6E3M2)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E3M2);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float6E3M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -588,7 +584,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat6E2M3)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E2M3);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float6E2M3 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -608,7 +604,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat4E2M1)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E2M1);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float4E2M1 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -628,7 +624,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarToFloat4E1M2)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E1M2);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float4E1M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -648,7 +644,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat8E4M3FN)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E4M3FN);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E4M3FN result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -668,7 +664,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat8E5M2)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E5M2);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E5M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -688,7 +684,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat8E8M0)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT8_E8M0);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E8M0 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -708,7 +704,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat6E3M2)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E3M2);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float6E3M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -728,7 +724,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat6E2M3)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT6_E2M3);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float6E2M3 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -748,7 +744,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat4E2M1)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E2M1);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float4E2M1 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -768,7 +764,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarToFloat4E1M2)
     EXPECT_NE(tensor, nullptr);
     EXPECT_EQ(tensor->GetDataType(), op::DataType::DT_FLOAT4_E1M2);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float4E1M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 1.0f);
@@ -787,7 +783,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarNegativeToFloat8E4M3FN)
     auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E4M3FN);
     EXPECT_NE(tensor, nullptr);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E4M3FN result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), -1.0f);
@@ -806,7 +802,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarZeroToFloat8E5M2)
     auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT8_E5M2);
     EXPECT_NE(tensor, nullptr);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float8E5M2 result;
     result.value = *data;
     EXPECT_FLOAT_EQ(static_cast<float>(result), 0.0f);
@@ -825,7 +821,7 @@ TEST_F(OpExecutorTest, ConvertFloatScalarOverflowToFloat4E1M2)
     auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E1M2);
     EXPECT_NE(tensor, nullptr);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float4E1M2 result;
     result.value = *data;
     // Float4E1M2无Infinity, 溢出应钳制到最大值1.75
@@ -845,7 +841,7 @@ TEST_F(OpExecutorTest, ConvertDoubleScalarOverflowToFloat4E2M1)
     auto tensor = executor.ConvertToTensor(scalar, op::DataType::DT_FLOAT4_E2M1);
     EXPECT_NE(tensor, nullptr);
 
-    auto *data = static_cast<uint8_t *>(tensor->GetStorageAddr());
+    auto* data = static_cast<uint8_t*>(tensor->GetStorageAddr());
     op::Float4E2M1 result;
     result.value = *data;
     // OCP规范: FP4无Infinity, 溢出应钳制到最大值6.0

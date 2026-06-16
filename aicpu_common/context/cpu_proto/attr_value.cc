@@ -11,7 +11,7 @@
 #include "cpu_attr_value.h"
 
 namespace aicpu {
-AttrValue::AttrValue(AttrValueImpl *impl) : impl_(impl) {}
+AttrValue::AttrValue(AttrValueImpl* impl) : impl_(impl) {}
 
 /*
  * get string value of attr.
@@ -26,28 +26,22 @@ int32_t AttrValue::ListStringSize() const { return impl_->ListStringSize(); }
 /*
  * get string list value of attr.
  */
-std::vector<std::string> AttrValue::GetListString() const {
-  return impl_->GetListString();
-}
+std::vector<std::string> AttrValue::GetListString() const { return impl_->GetListString(); }
 
 /*
  * set string list value to attr.
  */
-void AttrValue::SetListString(const std::vector<std::string> &bytes) {
-  impl_->SetListString(bytes);
-}
+void AttrValue::SetListString(const std::vector<std::string>& bytes) { impl_->SetListString(bytes); }
 
 /*
  * set string value to attr.
  */
-void AttrValue::SetString(const std::string &string) { impl_->SetString(string); }
+void AttrValue::SetString(const std::string& string) { impl_->SetString(string); }
 
 /*
  * attr add string value to list.
  */
-void AttrValue::AddListString(const std::string &string) {
-  impl_->AddListString(string);
-}
+void AttrValue::AddListString(const std::string& string) { impl_->AddListString(string); }
 
 /*
  * get int value of attr.
@@ -57,16 +51,12 @@ int64_t AttrValue::GetInt() const { return impl_->GetInt(); }
 /*
  * get int list value of attr.
  */
-std::vector<int64_t> AttrValue::GetListInt() const {
-  return impl_->GetListInt();
-}
+std::vector<int64_t> AttrValue::GetListInt() const { return impl_->GetListInt(); }
 
 /*
  * get int list list value of attr.
  */
-std::vector<std::vector<int64_t>> AttrValue::GetListListInt() const {
-  return impl_->GetListListInt();
-}
+std::vector<std::vector<int64_t>> AttrValue::GetListListInt() const { return impl_->GetListListInt(); }
 
 /*
  * attr add int value to list.
@@ -86,16 +76,12 @@ void AttrValue::SetInt(int64_t i) { impl_->SetInt(i); }
 /*
  * set int list value to attr.
  */
-void AttrValue::SetListInt(const std::vector<int64_t> &i) {
-  impl_->SetListInt(i);
-}
+void AttrValue::SetListInt(const std::vector<int64_t>& i) { impl_->SetListInt(i); }
 
 /*
  * set int list list value to attr.
  */
-void AttrValue::SetListListInt(const std::vector<std::vector<int64_t>> &i) {
-  impl_->SetListListInt(i);
-}
+void AttrValue::SetListListInt(const std::vector<std::vector<int64_t>>& i) { impl_->SetListListInt(i); }
 
 /*
  * get float value of attr.
@@ -105,9 +91,7 @@ float AttrValue::GetFloat() const { return impl_->GetFloat(); }
 /*
  * get float list value of attr.
  */
-std::vector<float> AttrValue::GetListFloat() const {
-  return impl_->GetListFloat();
-}
+std::vector<float> AttrValue::GetListFloat() const { return impl_->GetListFloat(); }
 
 /*
  * attr add float value to list.
@@ -127,9 +111,7 @@ int32_t AttrValue::ListFloatSize() const { return impl_->ListFloatSize(); }
 /*
  * set float list value to attr.
  */
-void AttrValue::SetListFloat(const std::vector<float> &f) {
-  impl_->SetListFloat(f);
-}
+void AttrValue::SetListFloat(const std::vector<float>& f) { impl_->SetListFloat(f); }
 
 /*
  * get bool value of attr.
@@ -139,9 +121,7 @@ bool AttrValue::GetBool() const { return impl_->GetBool(); }
 /*
  * get bool list value of attr.
  */
-std::vector<bool> AttrValue::GetListBool() const {
-  return impl_->GetListBool();
-}
+std::vector<bool> AttrValue::GetListBool() const { return impl_->GetListBool(); }
 
 /*
  * attr add bool value to list.
@@ -161,9 +141,7 @@ void AttrValue::SetBool(bool b) { impl_->SetBool(b); }
 /*
  * set bool list value to attr.
  */
-void AttrValue::SetListBool(const std::vector<bool> &b) {
-  return impl_->SetListBool(b);
-}
+void AttrValue::SetListBool(const std::vector<bool>& b) { return impl_->SetListBool(b); }
 
 /*
  * get data type value of attr.
@@ -173,9 +151,7 @@ DataType AttrValue::GetDataType() const { return impl_->GetDataType(); }
 /*
  * get data type list value of attr.
  */
-std::vector<DataType> AttrValue::GetListDataType() const {
-  return impl_->GetListDataType();
-}
+std::vector<DataType> AttrValue::GetListDataType() const { return impl_->GetListDataType(); }
 
 /*
  * attr add data type value to list.
@@ -185,9 +161,7 @@ void AttrValue::AddListDataType(DataType type) { impl_->AddListDataType(type); }
 /*
  * get data type list size of attr.
  */
-int32_t AttrValue::ListDataTypeSize() const {
-  return impl_->ListDataTypeSize();
-}
+int32_t AttrValue::ListDataTypeSize() const { return impl_->ListDataTypeSize(); }
 
 /*
  * set data type value to attr.
@@ -197,89 +171,68 @@ void AttrValue::SetDataType(DataType type) { impl_->SetDataType(type); }
 /*
  * set data type list value to attr.
  */
-void AttrValue::SetListDataType(const std::vector<DataType> &type) {
-  impl_->SetListDataType(type);
-}
+void AttrValue::SetListDataType(const std::vector<DataType>& type) { impl_->SetListDataType(type); }
 
 /*
  * set tensor shape value to attr.
  */
-bool AttrValue::SetTensorShape(const TensorShape *shape) {
-  return impl_->SetTensorShape(shape);
-}
+bool AttrValue::SetTensorShape(const TensorShape* shape) { return impl_->SetTensorShape(shape); }
 
 /*
  * set tensor shape list value to attr.
  */
-uint32_t AttrValue::SetListTensorShape(const std::vector<TensorShape *> &shape) {
-  return impl_->SetListTensorShape(shape);
+uint32_t AttrValue::SetListTensorShape(const std::vector<TensorShape*>& shape)
+{
+    return impl_->SetListTensorShape(shape);
 }
 
 /*
  * attr add tensor shape value to list.
  */
-std::shared_ptr<TensorShape> AttrValue::AddListTensorShape() {
-  return impl_->AddListTensorShape();
-}
+std::shared_ptr<TensorShape> AttrValue::AddListTensorShape() { return impl_->AddListTensorShape(); }
 
 /*
  * get tensor shape value of attr.
  */
-std::shared_ptr<TensorShape> AttrValue::GetTensorShape() const {
-  return impl_->GetTensorShape();
-}
+std::shared_ptr<TensorShape> AttrValue::GetTensorShape() const { return impl_->GetTensorShape(); }
 
 /*
  * get tensor shape list value of attr.
  */
-std::vector<TensorShape> AttrValue::GetListTensorShape() const {
-  return impl_->GetListTensorShape();
-}
+std::vector<TensorShape> AttrValue::GetListTensorShape() const { return impl_->GetListTensorShape(); }
 
 /*
  * get tensor shape list size of attr.
  */
-int32_t AttrValue::ListTensorShapeSize() const {
-  return impl_->ListTensorShapeSize();
-}
+int32_t AttrValue::ListTensorShapeSize() const { return impl_->ListTensorShapeSize(); }
 
 /*
  * set tensor value to attr.
  */
-bool AttrValue::SetTensor(const Tensor *tensor) {
-  return impl_->SetTensor(tensor);
-}
+bool AttrValue::SetTensor(const Tensor* tensor) { return impl_->SetTensor(tensor); }
 
 /*
  * set tensor list value to attr.
  */
-uint32_t AttrValue::SetListTensor(const std::vector<Tensor *> &tensor) {
-  return impl_->SetListTensor(tensor);
-}
+uint32_t AttrValue::SetListTensor(const std::vector<Tensor*>& tensor) { return impl_->SetListTensor(tensor); }
 
 /*
  * attr add tensor value to list.
  */
-std::shared_ptr<Tensor> AttrValue::AddListTensor() {
-  return impl_->AddListTensor();
-}
+std::shared_ptr<Tensor> AttrValue::AddListTensor() { return impl_->AddListTensor(); }
 
 /*
  * get tensor value of attr.
  */
-std::shared_ptr<Tensor> AttrValue::GetTensor() const {
-  return impl_->GetTensor();
-}
+std::shared_ptr<Tensor> AttrValue::GetTensor() const { return impl_->GetTensor(); }
 
 /*
  * get tensor list value of attr.
  */
-std::vector<Tensor> AttrValue::GetListTensor() const {
-  return impl_->GetListTensor();
-}
+std::vector<Tensor> AttrValue::GetListTensor() const { return impl_->GetListTensor(); }
 
 /*
  * get tensor list size of attr.
  */
 int32_t AttrValue::ListTensorSize() const { return impl_->ListTensorSize(); }
-}  // namespace aicpu
+} // namespace aicpu

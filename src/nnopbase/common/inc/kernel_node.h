@@ -24,65 +24,50 @@ public:
     KernelNode(uint32_t opType, uint32_t originalId);
     ~KernelNode();
 
-    int64_t GetTopoId() const
-    {
-        return topoId_;
-    }
+    int64_t GetTopoId() const { return topoId_; }
 
     void SetTopoId(int64_t topoId) { topoId_ = topoId; }
 
-    int64_t GetOriginalId() const
-    {
-        return originalId_;
-    }
+    int64_t GetOriginalId() const { return originalId_; }
 
-    uint32_t GetOpType() const
-    {
-        return opType_;
-    }
+    uint32_t GetOpType() const { return opType_; }
 
     void SetOriginalId(int64_t originalId);
 
-    void AddInput(KernelTensor *input);
+    void AddInput(KernelTensor* input);
 
-    void AddOutput(KernelTensor *output);
+    void AddOutput(KernelTensor* output);
 
-    void AddWorkspace(KernelTensor *workspace);
+    void AddWorkspace(KernelTensor* workspace);
 
-    void SetInputs(op::FVector<KernelTensor *, BASIC_NUM> &inputs);
+    void SetInputs(op::FVector<KernelTensor*, BASIC_NUM>& inputs);
 
-    void SetOutputs(op::FVector<KernelTensor *, BASIC_NUM> &outputs);
+    void SetOutputs(op::FVector<KernelTensor*, BASIC_NUM>& outputs);
 
-    void SetWorkspace(op::FVector<KernelTensor *, BASIC_NUM> &workspace);
+    void SetWorkspace(op::FVector<KernelTensor*, BASIC_NUM>& workspace);
 
-    const op::FVector<KernelTensor *, BASIC_NUM> &GetInputs() const;
+    const op::FVector<KernelTensor*, BASIC_NUM>& GetInputs() const;
 
-    const op::FVector<KernelTensor *, BASIC_NUM> &GetOutputs() const
-    {
-        return outputs_;
-    }
+    const op::FVector<KernelTensor*, BASIC_NUM>& GetOutputs() const { return outputs_; }
 
-    const op::FVector<KernelTensor *, BASIC_NUM> &GetWorkspace() const
-    {
-        return workspace_;
-    }
+    const op::FVector<KernelTensor*, BASIC_NUM>& GetWorkspace() const { return workspace_; }
 
-    KernelTensor *GetInput(uint32_t index) const;
+    KernelTensor* GetInput(uint32_t index) const;
 
-    KernelTensor *GetOutput(uint32_t index) const;
+    KernelTensor* GetOutput(uint32_t index) const;
 
-    KernelTensor *GetWorkspace(uint32_t index) const;
+    KernelTensor* GetWorkspace(uint32_t index) const;
 
-    KernelGraph *GetOwnerGraph() const;
+    KernelGraph* GetOwnerGraph() const;
 
 private:
     uint32_t opType_;
     int64_t topoId_;
     int64_t originalId_;
-    KernelGraph *ownerGraph_ = nullptr;
-    op::FVector<KernelTensor *, BASIC_NUM> inputs_;
-    op::FVector<KernelTensor *, BASIC_NUM> outputs_;
-    op::FVector<KernelTensor *, BASIC_NUM> workspace_;
+    KernelGraph* ownerGraph_ = nullptr;
+    op::FVector<KernelTensor*, BASIC_NUM> inputs_;
+    op::FVector<KernelTensor*, BASIC_NUM> outputs_;
+    op::FVector<KernelTensor*, BASIC_NUM> workspace_;
 };
 } // namespace op::mem
-#endif //OP_API_OP_API_COMMON_SRC_MEM_MGR_KERNEL_NODE_H
+#endif // OP_API_OP_API_COMMON_SRC_MEM_MGR_KERNEL_NODE_H

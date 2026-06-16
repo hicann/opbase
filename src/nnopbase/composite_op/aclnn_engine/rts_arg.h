@@ -30,17 +30,13 @@ namespace op::internal {
 constexpr size_t KERNEL_NAME_MAX_SIZE = 160;
 constexpr int32_t LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE = 2;
 
-enum class LaunchKernelEngineType : uint8_t {
-    NO_VECTOR_CORE = 0,
-    VECTOR_CORE_ENGINE_AIC,
-    VECTOR_CORE_ENGINE_AIV
-};
+enum class LaunchKernelEngineType : uint8_t { NO_VECTOR_CORE = 0, VECTOR_CORE_ENGINE_AIC, VECTOR_CORE_ENGINE_AIV };
 
 struct KernelLaunchConfig {
     aclrtBinHandle binHandle;
     aclrtFuncHandle funcHandle;
     uint64_t tilingKey;
-    const char *kernelNameOfNoFatBin;
+    const char* kernelNameOfNoFatBin;
     uint32_t numBlocks;
     bool isFatBin;
     uint8_t schemMode;
@@ -51,20 +47,20 @@ struct KernelLaunchConfig {
 
 // rts args struct
 using rtArgs_t = struct tagRtArgs {
-    void *args;                     // args host mem addr
-    aclrtPlaceHolderInfo *placeHolderInfoPtr;    // nullptr means no host mem input
-    uint32_t argsSize{0};              // input + output + tiling addr size + tiling data size + host mem
-    uint32_t tilingAddrOffset{0};      // tiling addr offset
-    uint32_t tilingDataOffset{0};      // tiling data offset
-    uint32_t placeHolderInfoNum{0};    // placeHolderInfo num
-    uint8_t hasTiling{0};              // if has tiling: 0 means no tiling
+    void* args;                               // args host mem addr
+    aclrtPlaceHolderInfo* placeHolderInfoPtr; // nullptr means no host mem input
+    uint32_t argsSize{0};                     // input + output + tiling addr size + tiling data size + host mem
+    uint32_t tilingAddrOffset{0};             // tiling addr offset
+    uint32_t tilingDataOffset{0};             // tiling data offset
+    uint32_t placeHolderInfoNum{0};           // placeHolderInfo num
+    uint8_t hasTiling{0};                     // if has tiling: 0 means no tiling
 };
 
 bool IsNeedOverflowStatusAddr();
 
 class RtsApiFlag {
 public:
-    static RtsApiFlag &GetRtsApiFlag()
+    static RtsApiFlag& GetRtsApiFlag()
     {
         static RtsApiFlag flag;
         return flag;
@@ -72,15 +68,9 @@ public:
 
     RtsApiFlag() = default;
 
-    void UseNewApi(bool flag)
-    {
-        useNewFlag_ = flag;
-    }
+    void UseNewApi(bool flag) { useNewFlag_ = flag; }
 
-    bool IfNewApi() const
-    {
-        return useNewFlag_;
-    }
+    bool IfNewApi() const { return useNewFlag_; }
 
 private:
     bool useNewFlag_{false};
@@ -97,94 +87,47 @@ public:
         DEV_PTR_ADDR = 6
     };
 
-    enum RtsApiType : uint16_t {
-        RTS_OLD = 1,
-        RTS_NEW = 2
-    };
+    enum RtsApiType : uint16_t { RTS_OLD = 1, RTS_NEW = 2 };
 
     struct ArgInfo {
-        ArgType type;      // ffts/device addr/host data/overflow/device ptr addr
-        uint32_t dataLen;  // only data on host has a length. dataLen of device data is zero
+        ArgType type;     // ffts/device addr/host data/overflow/device ptr addr
+        uint32_t dataLen; // only data on host has a length. dataLen of device data is zero
     };
 
-    ArgInfo *GetArgInfo()
-    {
-        return PtrCastTo<ArgInfo>(argData_);
-    }
+    ArgInfo* GetArgInfo() { return PtrCastTo<ArgInfo>(argData_); }
 
-    void SetArgNum(size_t num)
-    {
-        argNum_ = num;
-    }
+    void SetArgNum(size_t num) { argNum_ = num; }
 
-    size_t GetArgInfoNum() const
-    {
-        return argNum_;
-    }
+    size_t GetArgInfoNum() const { return argNum_; }
 
-    void SetExceptionArgNum(size_t num)
-    {
-        exceptionArgNum_ = num;
-    }
+    void SetExceptionArgNum(size_t num) { exceptionArgNum_ = num; }
 
-    size_t GetExceptionArgNum() const
-    {
-        return exceptionArgNum_;
-    }
+    size_t GetExceptionArgNum() const { return exceptionArgNum_; }
 
-    void SetLaunchArgNum(size_t num)
-    {
-        launchArgNum_ = num;
-    }
+    void SetLaunchArgNum(size_t num) { launchArgNum_ = num; }
 
-    size_t GetLaunchArgNum() const
-    {
-        return launchArgNum_;
-    }
+    size_t GetLaunchArgNum() const { return launchArgNum_; }
 
-    void SetDFXInfoCacheElemCount(uint32_t count)
-    {
-        dfxInfoCacheElemCount_ = count;
-    }
+    void SetDFXInfoCacheElemCount(uint32_t count) { dfxInfoCacheElemCount_ = count; }
 
-    uint32_t GetDFXInfoCacheElemCount() const
-    {
-        return dfxInfoCacheElemCount_;
-    }
+    uint32_t GetDFXInfoCacheElemCount() const { return dfxInfoCacheElemCount_; }
 
-    void SetDFXInfoOffsetInTilingData(size_t offset)
-    {
-        dfxInfoOffsetInTilingData_ = offset;
-    }
+    void SetDFXInfoOffsetInTilingData(size_t offset) { dfxInfoOffsetInTilingData_ = offset; }
 
-    size_t GetDFXInfoOffsetInTilingData() const
-    {
-        return dfxInfoOffsetInTilingData_;
-    }
+    size_t GetDFXInfoOffsetInTilingData() const { return dfxInfoOffsetInTilingData_; }
 
-    void SetRtsApiType(RtsApiType type)
-    {
-        rtsType_ = type;
-    }
+    void SetRtsApiType(RtsApiType type) { rtsType_ = type; }
 
-    RtsApiType GetRtsApiType() const
-    {
-        return rtsType_;
-    }
+    RtsApiType GetRtsApiType() const { return rtsType_; }
 
-    bool SetRunParam(KernelLaunchConfig &launchCfg, std::string &kernelName)
+    bool SetRunParam(KernelLaunchConfig& launchCfg, std::string& kernelName)
     {
         launchCfg_ = launchCfg;
-        OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, numBlocks: %u, "
-                "scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, funcHandle: %p, binHandle: %p",
-            static_cast<int>(launchCfg_.engineType),
-            launchCfg_.isFatBin,
-            launchCfg_.tilingKey,
-            launchCfg_.numBlocks,
-            launchCfg_.schemMode,
-            launchCfg_.blockDimOffset,
-            launchCfg_.dynUBufSize,
-            launchCfg_.funcHandle,
+        OP_LOGD(
+            "Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, numBlocks: %u, "
+            "scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, funcHandle: %p, binHandle: %p",
+            static_cast<int>(launchCfg_.engineType), launchCfg_.isFatBin, launchCfg_.tilingKey, launchCfg_.numBlocks,
+            launchCfg_.schemMode, launchCfg_.blockDimOffset, launchCfg_.dynUBufSize, launchCfg_.funcHandle,
             launchCfg_.binHandle);
         if (!launchCfg_.isFatBin) {
             OP_CHECK(
@@ -199,42 +142,21 @@ public:
         return true;
     }
 
-    const char *GetKernelNameOfNoFatBin() const
-    {
-        return kernelNameOfNoFatBin_;
-    }
+    const char* GetKernelNameOfNoFatBin() const { return kernelNameOfNoFatBin_; }
 
-    void *GetRawRtsArg()
-    {
-        return PtrShift(argData_, argNum_ * sizeof(ArgInfo));
-    }
+    void* GetRawRtsArg() { return PtrShift(argData_, argNum_ * sizeof(ArgInfo)); }
 
-    void *GetRawHostData()
-    {
-        return PtrShift(argData_, argNum_ * sizeof(ArgInfo) + argNum_ * sizeof(void *));
-    }
+    void* GetRawHostData() { return PtrShift(argData_, argNum_ * sizeof(ArgInfo) + argNum_ * sizeof(void*)); }
 
-    void *GetLaunchHandle() const
-    {
-        return handle_;
-    }
+    void* GetLaunchHandle() const { return handle_; }
 
-    uint32_t GetNumBlocks() const
-    {
-        return numBlocks_;
-    }
+    uint32_t GetNumBlocks() const { return numBlocks_; }
 
-    uint32_t GetDynUBufSize() const
-    {
-        return dynUBufSize_;
-    }
+    uint32_t GetDynUBufSize() const { return dynUBufSize_; }
 
-    uint64_t GetTilingKey() const
-    {
-        return tilingKey_;
-    }
+    uint64_t GetTilingKey() const { return tilingKey_; }
 
-    KernelLaunchConfig &GetKernelLaunchConfig()
+    KernelLaunchConfig& GetKernelLaunchConfig()
     {
         launchCfg_.kernelNameOfNoFatBin = kernelNameOfNoFatBin_;
         return launchCfg_;
@@ -243,25 +165,19 @@ public:
     size_t GetRawArgSize()
     {
         size_t hostLen = 0;
-        ArgInfo *argInfo = GetArgInfo();
+        ArgInfo* argInfo = GetArgInfo();
 
         for (size_t i = 0; i < argNum_; i++) {
             if (argInfo[i].type == HOST_DATA || argInfo[i].type == TILING_DATA || argInfo[i].type == DEV_PTR_ADDR) {
                 hostLen += argInfo[i].dataLen;
             }
         }
-        return sizeof(void *) * argNum_ + hostLen;
+        return sizeof(void*) * argNum_ + hostLen;
     }
 
-    void SetOpType(const char *opType)
-    {
-        strcpy_s(opType_, sizeof(opType_), opType);
-    }
+    void SetOpType(const char* opType) { strcpy_s(opType_, sizeof(opType_), opType); }
 
-    const char *GetOpType()
-    {
-        return opType_;
-    }
+    const char* GetOpType() { return opType_; }
 
     void SetHostArgInfo(size_t size, size_t num)
     {
@@ -269,24 +185,18 @@ public:
         hostArgNum_ = num;
     }
 
-    size_t GetHostArgSize() const
-    {
-        return hostArgSize_;
-    }
+    size_t GetHostArgSize() const { return hostArgSize_; }
 
-    size_t GetHostArgNum() const
-    {
-        return hostArgNum_;
-    }
+    size_t GetHostArgNum() const { return hostArgNum_; }
 
-    static aclnnStatus UpdateFunctionHandle(KernelLaunchConfig &launchCfg);
+    static aclnnStatus UpdateFunctionHandle(KernelLaunchConfig& launchCfg);
     static aclnnStatus LaunchKernelFromCache(aclrtStream stream, rtArgs_t& rtArg, KernelLaunchConfig& launchCfg);
-    static aclnnStatus RunFromCache(aclrtStream stream, void *cache);
+    static aclnnStatus RunFromCache(aclrtStream stream, void* cache);
 
 private:
     char opType_[16] = {0};
     char kernelNameOfNoFatBin_[KERNEL_NAME_MAX_SIZE] = {0};
-    void *handle_{nullptr};
+    void* handle_{nullptr};
     KernelLaunchConfig launchCfg_;
 
     RtsApiType rtsType_{0};
@@ -302,7 +212,7 @@ private:
     size_t launchArgNum_{0};
     uint32_t dfxInfoCacheElemCount_{0};
     size_t dfxInfoOffsetInTilingData_{0};
-    uint8_t argData_[0];  // ArgInfo array + dev_addr + host data
+    uint8_t argData_[0]; // ArgInfo array + dev_addr + host data
 };
 
 // There's how launch args are composed:
@@ -310,23 +220,17 @@ private:
 // Note: constructor may throw std::bad_alloc if buffer expansion fails
 class RtsArg {
 public:
-    explicit RtsArg(bool hasFftsAddr, const LaunchArgInfo &argInfo, ExpandableRtsArgBuffer *rtsArgBuffer);
+    explicit RtsArg(bool hasFftsAddr, const LaunchArgInfo& argInfo, ExpandableRtsArgBuffer* rtsArgBuffer);
     ~RtsArg();
     aclnnStatus FillArgs(bool assertFlag = false);
-    LaunchArgCache *DumpToCache();
+    LaunchArgCache* DumpToCache();
 
     void ReportExceptionDumpInfo() const;
-    aclnnStatus LaunchKernel(aclrtStream stream, const KernelLaunchConfig &launchCfg);
+    aclnnStatus LaunchKernel(aclrtStream stream, const KernelLaunchConfig& launchCfg);
 
-    const rtArgs_t &GetRtsArg() const
-    {
-        return rtArg_;
-    }
+    const rtArgs_t& GetRtsArg() const { return rtArg_; }
 
-    std::vector<int32_t> GetTensorOffset() const
-    {
-        return tensorOffset_;
-    }
+    std::vector<int32_t> GetTensorOffset() const { return tensorOffset_; }
     static constexpr size_t HOST_VALUE_ALIGNMENT = 32;
     static constexpr uint32_t DEV_PTR_DIM_SHIFT_BIT = 32;
 
@@ -334,7 +238,7 @@ private:
     aclnnStatus AppendFftsAddr();
     aclnnStatus FinalizeArg();
     void AppendExceptionDumpAddr(bool assertFlag = false);
-    void AppendArg(void *arg)
+    void AppendArg(void* arg)
     {
         *hostAddr_ = arg;
         tensorOffset_.push_back(hostAddrOffset_ / PTR_SIZE);
@@ -342,17 +246,15 @@ private:
         hostAddrOffset_ += PTR_SIZE;
     }
 
-    aclnnStatus AppendHostArg(void *hostData, size_t hostDataSize);
-    aclnnStatus AppendDevicePtrArg(const aclTensorList *tensors, size_t dataSize);
+    aclnnStatus AppendHostArg(void* hostData, size_t hostDataSize);
+    aclnnStatus AppendDevicePtrArg(const aclTensorList* tensors, size_t dataSize);
     void AppendOverflowStatusAddr()
     {
-        void *overflowAddr = nullptr;
+        void* overflowAddr = nullptr;
         static bool needOverflowAddr = IsNeedOverflowStatusAddr();
         if (needOverflowAddr) {
             aclError rc = aclrtCtxGetFloatOverflowAddr(&overflowAddr);
-            OP_CHECK(rc == ACL_RT_NO_ERROR,
-                    OP_LOGW("aclrtCtxGetFloatOverflowAddr failed. %d", rc),
-                    return);
+            OP_CHECK(rc == ACL_RT_NO_ERROR, OP_LOGW("aclrtCtxGetFloatOverflowAddr failed. %d", rc), return);
         }
         *hostAddr_ = overflowAddr;
         hostAddr_++;
@@ -363,22 +265,22 @@ private:
     void RefreshRtArgsAddr();
 
     void AddExceptionDumpDataToCache(
-        const LaunchArgInfo &argInfo, OpExecCache *cache, LaunchArgCache *launchCache) const;
-    void AddDFXInfoDumpDataToCache(const LaunchArgInfo &argInfo, OpExecCache *cache, LaunchArgCache *launchCache) const;
+        const LaunchArgInfo& argInfo, OpExecCache* cache, LaunchArgCache* launchCache) const;
+    void AddDFXInfoDumpDataToCache(const LaunchArgInfo& argInfo, OpExecCache* cache, LaunchArgCache* launchCache) const;
 
     bool hasFftsAddr_{false};
-    const LaunchArgInfo &argInfo_;
+    const LaunchArgInfo& argInfo_;
     rtArgs_t rtArg_;
     size_t argNum_;
 
-    void **hostAddr_{nullptr};
+    void** hostAddr_{nullptr};
     std::vector<int32_t> tensorOffset_;
 
-    size_t hostAddrOffset_{0};  // hostAddr_ 相对于 rtArg_.args 的偏移量（字节）
-    void *exceptionDumpAddr_{nullptr};
+    size_t hostAddrOffset_{0}; // hostAddr_ 相对于 rtArg_.args 的偏移量（字节）
+    void* exceptionDumpAddr_{nullptr};
     uint32_t exceptionDumpIndex_{0};
 
-    ExpandableRtsArgBuffer *rtsArgBuffer_{nullptr};
+    ExpandableRtsArgBuffer* rtsArgBuffer_{nullptr};
 
     static constexpr size_t MAX_HOST_INFO_NUM = 16;
     static constexpr size_t PTR_SIZE = 8;
@@ -387,15 +289,15 @@ public:
     thread_local static std::vector<aclrtPlaceHolderInfo> placeHolderInfo_;
 };
 
-int PrintRtArg(const rtArgs_t &rtArg);
-int PrintExceptionDumpInfo(void *dump, size_t num);
-int PrintAICErrorDFXInfo(const void *dfxInfoAddr, const size_t argNum, const size_t dataSize);
-void PrintHostDataSize(const rtArgs_t &rtArg);
-void PrintTilingData(const rtArgs_t &rtArg);
+int PrintRtArg(const rtArgs_t& rtArg);
+int PrintExceptionDumpInfo(void* dump, size_t num);
+int PrintAICErrorDFXInfo(const void* dfxInfoAddr, const size_t argNum, const size_t dataSize);
+void PrintHostDataSize(const rtArgs_t& rtArg);
+void PrintTilingData(const rtArgs_t& rtArg);
 void AddArgInfoToCache(
     OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, const LaunchArgInfo& launchArgInfo, bool hasFftsAddr,
     const ExpandableRtsArgBuffer* rtsArgBuffer);
-void ReportRTSException(const LaunchArgCache *launchCache, void *cacheException);
-}  // namespace op::internal
+void ReportRTSException(const LaunchArgCache* launchCache, void* cacheException);
+} // namespace op::internal
 
 #endif

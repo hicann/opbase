@@ -19,17 +19,17 @@ namespace utils {
 aclnnStatus ThreadVarContainer::SetCurMc2RankIdInThread(HcclComm commHandle)
 {
     uint32_t rankId;
-    CHECK_COND(nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankId(commHandle, &rankId) == OK,
-        ACLNN_ERR_INNER, "Failed to invode the HcclGetRankId function of the hccl module. HcclCom = %p", commHandle);
+    CHECK_COND(
+        nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankId(commHandle, &rankId) == OK, ACLNN_ERR_INNER,
+        "Failed to invode the HcclGetRankId function of the hccl module. HcclCom = %p", commHandle);
     mc2RankId = rankId;
     return OK;
 }
-
 
 uint32_t ThreadVarContainer::GetCurMc2RankIdInThread()
 {
     OP_LOGD("Current mc2RankId is %u.", mc2RankId);
     return mc2RankId;
 }
-}
-}
+} // namespace utils
+} // namespace nnopbase

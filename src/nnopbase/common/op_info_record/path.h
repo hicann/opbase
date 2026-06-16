@@ -17,16 +17,16 @@ namespace aclnnOpInfoRecord {
 class Path {
 public:
     Path() noexcept : path_() {}
-    explicit Path(const std::string &path) : path_(path) {}
+    explicit Path(const std::string& path) : path_(path) {}
     ~Path() = default;
 
-    Path &operator = (const std::string &path);
-    Path &operator += (const std::string &path);
-    bool operator == (const Path &path) const;
-    Path &Assign(const std::string &path);
-    Path &Append(const std::string &path);
-    Path &Concat(const std::string &path);
-    Path &AddExtension(const std::string &extension);
+    Path& operator=(const std::string& path);
+    Path& operator+=(const std::string& path);
+    bool operator==(const Path& path) const;
+    Path& Assign(const std::string& path);
+    Path& Append(const std::string& path);
+    Path& Concat(const std::string& path);
+    Path& AddExtension(const std::string& extension);
     std::string GetExtension() const;
     std::string GetFileName() const;
     bool Empty() const;
@@ -37,10 +37,10 @@ public:
     Path ParentPath() const;
     bool CreateDirectory(bool recursion = false) const;
     std::string GetString() const;
-    const char *GetCString() const;
+    const char* GetCString() const;
 
 private:
-    void AppendPath(const std::string &path);
+    void AppendPath(const std::string& path);
     void AddSeperator();
     std::string path_;
 };

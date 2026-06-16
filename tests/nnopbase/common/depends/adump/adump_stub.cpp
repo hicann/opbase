@@ -7,17 +7,12 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "dump/adump_pub.h"
 
 namespace Adx {
-enum class SaveType {
-    OVERWRITE
-};
+enum class SaveType { OVERWRITE };
 
-int32_t AdumpSaveToFile(const char *data, size_t dataLen, const char *filename, SaveType type) 
-{
-    return 0;
-}
+int32_t AdumpSaveToFile(const char* data, size_t dataLen, const char* filename, SaveType type) { return 0; }
 
-}  // namespace Adx
+} // namespace Adx

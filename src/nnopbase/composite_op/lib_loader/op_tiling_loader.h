@@ -17,8 +17,8 @@
 
 namespace op {
 namespace opploader {
-aclnnStatus LoadOpTiling(const std::string &oppPath, std::vector<void *>& handlers);
+aclnnStatus LoadOpTiling(const std::string& oppPath, std::vector<void*>& handlers);
 }
-}
+} // namespace op
 
 #endif // OP_API_OP_API_COMMON_SRC_LIB_LOADER_OP_TILING_LOADER_H

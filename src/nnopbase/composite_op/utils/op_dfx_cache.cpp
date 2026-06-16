@@ -54,25 +54,13 @@ struct TensorsCached {
         *format = tensor->GetStorageFormat();
     }
 
-    Format GetProfilingFormat() const
-    {
-        return format_;
-    }
+    Format GetProfilingFormat() const { return format_; }
 
-    DataType GetProfilingDataType() const
-    {
-        return op::ToOpDataType(dateType_);
-    }
+    DataType GetProfilingDataType() const { return op::ToOpDataType(dateType_); }
 
-    int64_t* GetProfilingShape() const
-    {
-        return storageShape_;
-    }
+    int64_t* GetProfilingShape() const { return storageShape_; }
 
-    uint64_t GetProfilingDimNum() const
-    {
-        return storageShapeNum_;
-    }
+    uint64_t GetProfilingDimNum() const { return storageShapeNum_; }
 
     int64_t* storageShape_{nullptr};
     uint64_t storageShapeNum_{0};

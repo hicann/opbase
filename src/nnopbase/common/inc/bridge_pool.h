@@ -16,12 +16,12 @@
 
 namespace op {
 namespace internal {
-    void *Allocate(size_t size);
-    void DeAllocate(void *addr);
-    int32_t GetPoolIndex();
-    void UpdateHugeMemIndex(int32_t id);
-    void FreeHugeMem();
-    void *GetAddr(const int32_t id, size_t size);
+void* Allocate(size_t size);
+void DeAllocate(void* addr);
+int32_t GetPoolIndex();
+void UpdateHugeMemIndex(int32_t id);
+void FreeHugeMem();
+void* GetAddr(const int32_t id, size_t size);
 } // namespace internal
 } // namespace op
 #endif

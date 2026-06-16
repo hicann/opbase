@@ -25,38 +25,41 @@
 
 class NnopbaseOpPathTest : public testing::Test {
 protected:
-    void SetUp() {setenv("ASCEND_C", "1", 1);}
-    void TearDown() {unsetenv("ASCEND_C");}
+    void SetUp() { setenv("ASCEND_C", "1", 1); }
+    void TearDown() { unsetenv("ASCEND_C"); }
 };
 
-string GetModelPath() {
-  mmDlInfo dl_info;
-  if ((mmDladdr(reinterpret_cast<void *>(&GetModelPath), &dl_info) != EN_OK) || (dl_info.dli_fname == nullptr)) {
-    return std::string();
-  }
+string GetModelPath()
+{
+    mmDlInfo dl_info;
+    if ((mmDladdr(reinterpret_cast<void*>(&GetModelPath), &dl_info) != EN_OK) || (dl_info.dli_fname == nullptr)) {
+        return std::string();
+    }
 
-  if (strlen(dl_info.dli_fname) >= MMPA_MAX_PATH) {
-    return std::string();
-  }
+    if (strlen(dl_info.dli_fname) >= MMPA_MAX_PATH) {
+        return std::string();
+    }
 
-  char_t path[MMPA_MAX_PATH] = {};
-  if (mmRealPath(dl_info.dli_fname, &path[0], MMPA_MAX_PATH) != EN_OK) {
-    return std::string();
-  }
+    char_t path[MMPA_MAX_PATH] = {};
+    if (mmRealPath(dl_info.dli_fname, &path[0], MMPA_MAX_PATH) != EN_OK) {
+        return std::string();
+    }
 
-  string so_path = path;
-  so_path = so_path.substr(0U, so_path.rfind('/') + 1U);
-  return so_path;
+    string so_path = path;
+    so_path = so_path.substr(0U, so_path.rfind('/') + 1U);
+    return so_path;
 }
 
-TEST_F(NnopbaseOpPathTest, test_custom_opp_path_no_specified) {
+TEST_F(NnopbaseOpPathTest, test_custom_opp_path_no_specified)
+{
     unsetenv("ASCEND_CUSTOM_OPP_PATH");
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
     NnopbaseGetCustomOppPath(base_path);
     EXPECT_EQ(base_path.size(), 0);
 }
 
-TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified_with_empty) {
+TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified_with_empty)
+{
     setenv("ASCEND_CUSTOM_OPP_PATH", "", 1);
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
     NnopbaseGetCustomOppPath(base_path);
@@ -64,7 +67,8 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified_with_empty) {
     EXPECT_EQ(base_path.size(), 0);
 }
 
-TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified) {
+TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified)
+{
     string custom_path = GetModelPath();
     custom_path = custom_path.substr(0, custom_path.rfind('/'));
     custom_path = custom_path.substr(0, custom_path.rfind('/'));
@@ -84,7 +88,8 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_specified) {
     EXPECT_EQ(base_path.size(), 1);
 }
 
-TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default) {
+TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default)
+{
     std::string opp_path = GetModelPath();
     opp_path = opp_path.substr(0, opp_path.rfind('/'));
     opp_path = opp_path.substr(0, opp_path.rfind('/'));
@@ -98,7 +103,7 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default) {
     system(("mkdir -p " + path_vendors).c_str());
     system(("echo 'load_priority=mdc' > " + path_config).c_str());
 
-    NnopbaseBinCollecter *bin_collecter = new NnopbaseBinCollecter;
+    NnopbaseBinCollecter* bin_collecter = new NnopbaseBinCollecter;
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
     int32_t builtInStartIndex = -1;
     NnopbaseGetOppPath(bin_collecter, base_path, builtInStartIndex);
@@ -108,7 +113,8 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default) {
     delete bin_collecter;
 }
 
-TEST_F(NnopbaseOpPathTest, test_read_config_file_format_error) {
+TEST_F(NnopbaseOpPathTest, test_read_config_file_format_error)
+{
     std::string opp_path = GetModelPath();
     opp_path = opp_path.substr(0, opp_path.rfind('/'));
     opp_path = opp_path.substr(0, opp_path.rfind('/'));
@@ -128,7 +134,8 @@ TEST_F(NnopbaseOpPathTest, test_read_config_file_format_error) {
     EXPECT_EQ(ret, false);
 }
 
-TEST_F(NnopbaseOpPathTest, test_model_path_no_exist) {
+TEST_F(NnopbaseOpPathTest, test_model_path_no_exist)
+{
     std::string opp_path = "/usr/local/latest/opp";
     setenv("ASCEND_OPP_PATH", opp_path.c_str(), 1);
     std::cout << "opp path is:" << opp_path << std::endl;

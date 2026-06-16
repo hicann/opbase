@@ -27,41 +27,33 @@
 
 namespace op::internal {
 
-uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const nlohmann::json &opJson);
-void UpdateThradLocalPlatformInfo(fe::PlatFormInfos *platformInfo, const uint32_t &coreNum, const uint32_t &cubeCoreNum,
-    const uint32_t &vectorCoreNum);
-void SetCoreNum(const nlohmann::json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum);
+uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const nlohmann::json& opJson);
+void UpdateThradLocalPlatformInfo(
+    fe::PlatFormInfos* platformInfo, const uint32_t& coreNum, const uint32_t& cubeCoreNum,
+    const uint32_t& vectorCoreNum);
+void SetCoreNum(const nlohmann::json& opJson, fe::PlatFormInfos* platformInfo, uint32_t& coreNum);
 
 class TilingParseCtxHolder {
 public:
-    AsyncAnyValue *GetCompiledInfoStruct() const
-    {
-        return &tilingParseCtxValue_[kCompileInfoStruct];
-    }
+    AsyncAnyValue* GetCompiledInfoStruct() const { return &tilingParseCtxValue_[kCompileInfoStruct]; }
 
-    AsyncAnyValue *GetDeterministic() const
+    AsyncAnyValue* GetDeterministic() const
     {
         *PtrCastTo<int32_t>(Deterministic_.data.inplace) =
             GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ? 1 : 0;
-        return const_cast<AsyncAnyValue *>(&Deterministic_);
+        return const_cast<AsyncAnyValue*>(&Deterministic_);
     }
 
-    AsyncAnyValue *GetDeterministicLevel() const
-    {
-        return const_cast<AsyncAnyValue *>(&DeterministicLevel_);
-    }
+    AsyncAnyValue* GetDeterministicLevel() const { return const_cast<AsyncAnyValue*>(&DeterministicLevel_); }
 
-    uint32_t GetCoreNum() const
-    {
-        return coreNum_;
-    }
+    uint32_t GetCoreNum() const { return coreNum_; }
 
     ~TilingParseCtxHolder();
 
-    aclnnStatus BuildTilingParseCtx(uint32_t opType, const gert::OpImplKernelRegistry::OpImplFunctions *tilingFuncs,
-                                    const nlohmann::json &opJson, fe::PlatFormInfos *platformInfo,
-                                    const aclnnOpInfoRecord::OpCompilerOption &compileOptions,
-                                    const aclnnOpInfoRecord::OpKernelInfo &opKernelInfo);
+    aclnnStatus BuildTilingParseCtx(
+        uint32_t opType, const gert::OpImplKernelRegistry::OpImplFunctions* tilingFuncs, const nlohmann::json& opJson,
+        fe::PlatFormInfos* platformInfo, const aclnnOpInfoRecord::OpCompilerOption& compileOptions,
+        const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo);
 
     const aclnnOpInfoRecord::OpCompilerOption& GetCompileOptions() const;
 
@@ -74,6 +66,7 @@ public:
         }
         tilingParseInfo_.compileInfoStruct_ = nullptr;
     }
+
 private:
     enum TilingParserIndex {
         // inputs
@@ -87,17 +80,17 @@ private:
     };
 
     struct TilingParseInfo {
-        const char *compileInfo_;
-        fe::PlatFormInfos *platformInfo_;
-        const char *opType_;
-        void *compileInfoStruct_;
+        const char* compileInfo_;
+        fe::PlatFormInfos* platformInfo_;
+        const char* opType_;
+        void* compileInfoStruct_;
         std::string compileInfoStr_;
     };
     TilingParseInfo tilingParseInfo_{};
     gert::OpImplRegisterV2::CompileInfoDeleterFunc tilingParseInfoDeleter{nullptr};
 
-    KernelRunContext *tilingParseCtx_{nullptr};
-    AsyncAnyValue *tilingParseCtxValue_{nullptr};
+    KernelRunContext* tilingParseCtx_{nullptr};
+    AsyncAnyValue* tilingParseCtxValue_{nullptr};
 
     std::string kernelName_;
     std::string opTypeStr_;

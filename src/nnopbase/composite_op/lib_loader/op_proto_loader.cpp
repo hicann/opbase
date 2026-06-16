@@ -23,11 +23,11 @@ using namespace std;
 namespace op {
 namespace opploader {
 
-constexpr char const *OP_PROTO_PATH_FROM_NEW_OPP_PKG = "built-in/op_proto/";
-constexpr char const *OP_PROTO_PATH_FROM_OLD_OPP_PKG = "op_proto/built-in/";
-constexpr char const *OP_PROTO_SO_SUFFIX = "rt2.0.so";
+constexpr char const* OP_PROTO_PATH_FROM_NEW_OPP_PKG = "built-in/op_proto/";
+constexpr char const* OP_PROTO_PATH_FROM_OLD_OPP_PKG = "op_proto/built-in/";
+constexpr char const* OP_PROTO_SO_SUFFIX = "rt2.0.so";
 
-static void GetBuiltinOpProtoPath(const std::string &oppPath, std::string &opProtoPath)
+static void GetBuiltinOpProtoPath(const std::string& oppPath, std::string& opProtoPath)
 {
     std::string newVersionPath = oppPath + OP_PROTO_PATH_FROM_NEW_OPP_PKG;
     if (IsDir(newVersionPath)) {
@@ -37,7 +37,7 @@ static void GetBuiltinOpProtoPath(const std::string &oppPath, std::string &opPro
     }
 }
 
-static void LoadProtoSo(const string &so)
+static void LoadProtoSo(const string& so)
 {
     gert::OppImplVersionTag oppVersionTag = op::internal::GetOppImplVersion();
     auto spaceRegistryV2 = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(oppVersionTag);
@@ -52,13 +52,13 @@ static void LoadProtoSo(const string &so)
     std::vector<ge::AscendString> soPathVec;
     soPathVec.emplace_back(soPath);
     gert::OppSoDesc soDesc(soPathVec, desc);
-    OP_CHECK(spaceRegistryV2->AddSoToRegistry(soDesc) == ge::GRAPH_SUCCESS, 
-        OP_LOGW("AddSoToRegistry failed, so path: %s", so.c_str()), 
-        return);
+    OP_CHECK(
+        spaceRegistryV2->AddSoToRegistry(soDesc) == ge::GRAPH_SUCCESS,
+        OP_LOGW("AddSoToRegistry failed, so path: %s", so.c_str()), return);
     OP_LOGI("AddSoToRegistry successfully, so path: %s", so.c_str());
 }
 
-aclnnStatus LoadBuiltinOpProto(const string &oppPath)
+aclnnStatus LoadBuiltinOpProto(const string& oppPath)
 {
     string opProtoPath;
     GetBuiltinOpProtoPath(oppPath, opProtoPath);
@@ -74,16 +74,13 @@ aclnnStatus LoadBuiltinOpProto(const string &oppPath)
     string opProtoSoPath = opProtoPath + "lib/" + osType + "/" + cpuType + "/";
     vector<string> soList;
     GetFilesWithSuffix(opProtoSoPath, OP_PROTO_SO_SUFFIX, soList);
-    for (const auto &soRealPath : soList) {
+    for (const auto& soRealPath : soList) {
         LoadProtoSo(soRealPath);
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus LoadOpProto(const string &oppPath)
-{
-    return LoadBuiltinOpProto(oppPath);
-}
+aclnnStatus LoadOpProto(const string& oppPath) { return LoadBuiltinOpProto(oppPath); }
 
-}
-}
+} // namespace opploader
+} // namespace op

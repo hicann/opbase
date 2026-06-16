@@ -19,17 +19,17 @@
 using namespace std;
 namespace op {
 
-bool IsDir(const std::string &path)
+bool IsDir(const std::string& path)
 {
-    DIR *p = opendir(path.c_str());
+    DIR* p = opendir(path.c_str());
     if (p != nullptr) {
-        (void) closedir(p);
+        (void)closedir(p);
         return true;
     }
     return false;
 }
 
-std::unique_ptr<char[]> GetBinFromFile(const std::string &path, uint32_t &dataLen)
+std::unique_ptr<char[]> GetBinFromFile(const std::string& path, uint32_t& dataLen)
 {
     ifstream ifs(path, ios::in | ios::binary);
     if (!ifs.is_open()) {
@@ -40,7 +40,7 @@ std::unique_ptr<char[]> GetBinFromFile(const std::string &path, uint32_t &dataLe
     streampos fileSize = ifs.tellg();
     ifs.seekg(0, ios_base::beg);
 
-    auto p = unique_ptr<char[]>(new(nothrow) char[fileSize]);
+    auto p = unique_ptr<char[]>(new (nothrow) char[fileSize]);
     if (p == nullptr) {
         ifs.close();
         return nullptr;
@@ -56,7 +56,7 @@ std::unique_ptr<char[]> GetBinFromFile(const std::string &path, uint32_t &dataLe
     return p;
 }
 
-void GetFilesWithSuffix(const std::string &path, const std::string &suffix, std::vector<std::string> &files)
+void GetFilesWithSuffix(const std::string& path, const std::string& suffix, std::vector<std::string>& files)
 {
     if (path.empty()) {
         return;
@@ -71,7 +71,7 @@ void GetFilesWithSuffix(const std::string &path, const std::string &suffix, std:
         return;
     }
 
-    struct dirent **entries = nullptr;
+    struct dirent** entries = nullptr;
     const auto fileNum = scandir(realPath.c_str(), &entries, nullptr, nullptr);
     if (entries == nullptr) {
         return;
@@ -83,7 +83,7 @@ void GetFilesWithSuffix(const std::string &path, const std::string &suffix, std:
     }
 
     for (int i = 0; i < fileNum; ++i) {
-        const dirent *const dirEnt = entries[i];
+        const dirent* const dirEnt = entries[i];
         const string name = string(dirEnt->d_name);
         if ((strcmp(name.c_str(), ".") == 0) || (strcmp(name.c_str(), "..") == 0)) {
             continue;
@@ -93,8 +93,7 @@ void GetFilesWithSuffix(const std::string &path, const std::string &suffix, std:
             continue;
         }
 
-        if (name.size() < suffix.size() ||
-            name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) {
+        if (name.size() < suffix.size() || name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) {
             continue;
         }
 
@@ -108,7 +107,7 @@ void GetFilesWithSuffix(const std::string &path, const std::string &suffix, std:
     free(entries);
 }
 
-std::string RealPath(const std::string &path)
+std::string RealPath(const std::string& path)
 {
     string res;
     char realPath[MMPA_MAX_PATH] = {0};
@@ -121,4 +120,4 @@ std::string RealPath(const std::string &path)
     return res;
 }
 
-}
+} // namespace op

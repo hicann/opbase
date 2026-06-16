@@ -3,6 +3,8 @@
     "binFileSuffix": ".o",
     "blockDim": 8,
     "workspace": {
-        "size": [1024]
+        "size": [
+            1024
+        ]
     }
 }

@@ -33,26 +33,21 @@ namespace op {
  */
 struct Float8E4M3FN {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
 
     // ============= E4M3FN format constants =============
-    static constexpr uint8_t NAN_VALUE = 0x7F;          // 0 1111 111
-    static constexpr uint8_t HIGHEST_VALUE = 0x7E;      // 0 1111 110 (max finite: 448)
-    static constexpr uint8_t LOWEST_VALUE = 0xFE;       // 1 1111 110 (min finite: -448)
-    static constexpr uint8_t EPSILON_VALUE = 0x20;      // 0 0100 000 (epsilon at 1.0)
+    static constexpr uint8_t NAN_VALUE = 0x7F;            // 0 1111 111
+    static constexpr uint8_t HIGHEST_VALUE = 0x7E;        // 0 1111 110 (max finite: 448)
+    static constexpr uint8_t LOWEST_VALUE = 0xFE;         // 1 1111 110 (min finite: -448)
+    static constexpr uint8_t EPSILON_VALUE = 0x20;        // 0 0100 000 (epsilon at 1.0)
     static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x08; // 0 0001 000 (min positive normal)
 
     // Default constructor - initialize to zero
-    constexpr Float8E4M3FN() : value(0)
-    {}
+    constexpr Float8E4M3FN() : value(0) {}
 
-    constexpr Float8E4M3FN(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits)
-    {}
+    constexpr Float8E4M3FN(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits) {}
 
     Float8E4M3FN(float v);
 
@@ -62,7 +57,7 @@ struct Float8E4M3FN {
     static constexpr Float8E4M3FN Epsilon()
     {
         // 2^-3 = 0.125
-        return Float8E4M3FN(EPSILON_VALUE, FromBits());  // 0 0100 000 = 1.0, so epsilon is one mantissa step at 1.0
+        return Float8E4M3FN(EPSILON_VALUE, FromBits()); // 0 0100 000 = 1.0, so epsilon is one mantissa step at 1.0
     }
 
     static constexpr Float8E4M3FN Highest()
@@ -97,7 +92,7 @@ private:
     static Float8E4M3FN FloatToFloat8E4M3FN(float f);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Float8E4M3FN &dt)
+inline std::ostream& operator<<(std::ostream& os, const Float8E4M3FN& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -107,22 +102,16 @@ inline std::ostream &operator<<(std::ostream &os, const Float8E4M3FN &dt)
 
 namespace std {
 
-inline bool isinf(const op::Float8E4M3FN &a [[maybe_unused]])
+inline bool isinf(const op::Float8E4M3FN& a [[maybe_unused]])
 {
-    return false;  // E4M3FN has no infinity
+    return false; // E4M3FN has no infinity
 }
 
-inline bool isnan(const op::Float8E4M3FN &a)
-{
-    return a.IsNaN();
-}
+inline bool isnan(const op::Float8E4M3FN& a) { return a.IsNaN(); }
 
-inline bool isfinite(const op::Float8E4M3FN &a)
-{
-    return !a.IsNaN();
-}
+inline bool isfinite(const op::Float8E4M3FN& a) { return !a.IsNaN(); }
 
-template<>
+template <>
 class numeric_limits<op::Float8E4M3FN> {
 public:
     static constexpr bool has_infinity = false;
@@ -143,43 +132,25 @@ public:
     static constexpr int max_exponent = 9;
     static constexpr int max_exponent10 = 2;
     static constexpr int radix = 2;
-    static constexpr float round_error()
-    {
-        return 0.5f;
-    }
+    static constexpr float round_error() { return 0.5f; }
     static constexpr float denorm_min()
     {
-        return 0.001953125f;  // 2^-9
+        return 0.001953125f; // 2^-9
     }
 
-    static constexpr op::Float8E4M3FN min()
-    {
-        return op::Float8E4M3FN::MinPositiveNormal();
-    }
-    static constexpr op::Float8E4M3FN lowest()
-    {
-        return op::Float8E4M3FN::Lowest();
-    }
-    static constexpr op::Float8E4M3FN max()
-    {
-        return op::Float8E4M3FN::Highest();
-    }
-    static constexpr op::Float8E4M3FN epsilon()
-    {
-        return op::Float8E4M3FN::Epsilon();
-    }
+    static constexpr op::Float8E4M3FN min() { return op::Float8E4M3FN::MinPositiveNormal(); }
+    static constexpr op::Float8E4M3FN lowest() { return op::Float8E4M3FN::Lowest(); }
+    static constexpr op::Float8E4M3FN max() { return op::Float8E4M3FN::Highest(); }
+    static constexpr op::Float8E4M3FN epsilon() { return op::Float8E4M3FN::Epsilon(); }
     static constexpr op::Float8E4M3FN infinity()
     {
-        return op::Float8E4M3FN::Highest();  // No infinity, return max
+        return op::Float8E4M3FN::Highest(); // No infinity, return max
     }
     static constexpr op::Float8E4M3FN quiet_NaN()
     {
         return op::Float8E4M3FN(op::Float8E4M3FN::NAN_VALUE, op::Float8E4M3FN::FromBits());
     }
-    static constexpr op::Float8E4M3FN signaling_NaN()
-    {
-        return quiet_NaN();
-    }
+    static constexpr op::Float8E4M3FN signaling_NaN() { return quiet_NaN(); }
 };
 
 } // namespace std

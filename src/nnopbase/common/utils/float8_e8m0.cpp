@@ -14,43 +14,33 @@
 #include <cstdint>
 
 namespace {
-    // ============= FP32 format constants =============
-    constexpr int FP32_MAN_LEN_VAL = 23;
-    constexpr int FP32_SIGN_SHIFT_VAL = 31;
-    constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-    constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-    constexpr uint32_t FP32_ROUND_THRESHOLD = 0x400000;  // 0.5 in mantissa representation
+// ============= FP32 format constants =============
+constexpr int FP32_MAN_LEN_VAL = 23;
+constexpr int FP32_SIGN_SHIFT_VAL = 31;
+constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+constexpr uint32_t FP32_ROUND_THRESHOLD = 0x400000; // 0.5 in mantissa representation
 
-    // ============= E8M0 format constants (unsigned, 8 exponent bits) =============
-    constexpr int MAN_BITS = 0;
-    constexpr int EXP_BIAS = 127;
-    constexpr uint8_t EXP_MASK = 0xFF;           // 11111111 (all 8 bits for exponent)
-    constexpr uint8_t MAX_EXP_VAL = 0xFE;        // 254 (max normal exponent)
-    constexpr uint8_t NAN_EXP_VAL = 0xFF;        // 255 (NaN)
-    constexpr uint8_t ZERO_EXP_VAL = 0x00;       // 0 (zero)
-    constexpr uint8_t ZERO_VALUE = 0x00;         // 0 (zero)
-    constexpr uint8_t EXP_OVERFLOW_THRESHOLD = 254;  // max allowed exponent before overflow
+// ============= E8M0 format constants (unsigned, 8 exponent bits) =============
+constexpr int MAN_BITS = 0;
+constexpr int EXP_BIAS = 127;
+constexpr uint8_t EXP_MASK = 0xFF;              // 11111111 (all 8 bits for exponent)
+constexpr uint8_t MAX_EXP_VAL = 0xFE;           // 254 (max normal exponent)
+constexpr uint8_t NAN_EXP_VAL = 0xFF;           // 255 (NaN)
+constexpr uint8_t ZERO_EXP_VAL = 0x00;          // 0 (zero)
+constexpr uint8_t ZERO_VALUE = 0x00;            // 0 (zero)
+constexpr uint8_t EXP_OVERFLOW_THRESHOLD = 254; // max allowed exponent before overflow
 } // anonymous namespace
 
 namespace op {
 
-Float8E8M0::Float8E8M0(float v) : value(FloatToFloat8E8M0(v).value)
-{}
+Float8E8M0::Float8E8M0(float v) : value(FloatToFloat8E8M0(v).value) {}
 
-Float8E8M0::operator float() const
-{
-    return Float8E8M0ToFloat(*this);
-}
+Float8E8M0::operator float() const { return Float8E8M0ToFloat(*this); }
 
-Float8E8M0::operator double() const
-{
-    return static_cast<double>(Float8E8M0ToFloat(*this));
-}
+Float8E8M0::operator double() const { return static_cast<double>(Float8E8M0ToFloat(*this)); }
 
-bool Float8E8M0::IsZero() const
-{
-    return value == ZERO_VALUE;
-}
+bool Float8E8M0::IsZero() const { return value == ZERO_VALUE; }
 
 bool Float8E8M0::IsNaN() const
 {

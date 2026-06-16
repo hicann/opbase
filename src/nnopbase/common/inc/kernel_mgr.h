@@ -37,55 +37,51 @@ namespace op {
 namespace internal {
 class KernelMgr {
 public:
-    static KernelMgr &getInstance()
+    static KernelMgr& getInstance()
     {
         // Warning: not thread-safe, use muxtex in multitheading environment
         static KernelMgr instance;
         return instance;
     }
 
-    OpKernel *GetKernel(uint32_t opType);
+    OpKernel* GetKernel(uint32_t opType);
 
-    aclnnStatus Run(uint32_t opType, aclrtStream stream,
-                    OpArgContext *opArgCtx)
+    aclnnStatus Run(uint32_t opType, aclrtStream stream, OpArgContext* opArgCtx)
     {
         aclnnStatus rc = AclOpKernelInit(opType);
         if (rc != ACLNN_SUCCESS) {
             OP_LOGE(
                 rc,
                 "AclOpKernelInit failed opType. Maybe caused by the following reasons:\n\t 1. Please check whether the "
-                "CANN environment variables are sourced.\n\t 2. Please check if the kernel package is installed.\n\t 3. "
+                "CANN environment variables are sourced.\n\t 2. Please check if the kernel package is installed.\n\t "
+                "3. "
                 "Please confirm whether the current chip or version already supports the faulty operator.");
             return rc;
         }
 
-        OpKernel *kernel = GetKernel(opType);
+        OpKernel* kernel = GetKernel(opType);
         if (kernel == nullptr) {
-            OP_LOGE(
-                rc, "Kernel Not Found. opType: %u, %s", opType, op::OpTypeDict::ToString(opType).GetString());
+            OP_LOGE(rc, "Kernel Not Found. opType: %u, %s", opType, op::OpTypeDict::ToString(opType).GetString());
             return ACLNN_ERR_INNER;
         }
         rc = kernel->Run(stream, opArgCtx);
         if (rc != ACLNN_SUCCESS) {
-            OP_LOGE(
-                rc, "Kernel Run failed. opType: %u, %s", opType, op::OpTypeDict::ToString(opType).GetString());
+            OP_LOGE(rc, "Kernel Run failed. opType: %u, %s", opType, op::OpTypeDict::ToString(opType).GetString());
             return rc;
         }
 
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus InferShape(uint32_t opType, OpArgList &inputs, OpArgList &outputs, OpArgList &attrs)
+    aclnnStatus InferShape(uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         auto rc = OpRunContextMgr::InferShape(opType, inputs, outputs, attrs);
         CHECK_RET_CODE(rc, "Infer Shape failed.");
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus GetWorkspace(uint32_t opType, size_t const *&size, size_t &num,
-                             OpArgList &inputs,
-                             OpArgList &outputs,
-                             OpArgList &attrs)
+    aclnnStatus GetWorkspace(
+        uint32_t opType, size_t const*& size, size_t& num, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         OP_LOGI("Begin GetWorkspace, opType: %u", opType);
         aclnnStatus ret = AclOpKernelInit(opType);
@@ -98,7 +94,7 @@ public:
             return ret;
         }
 
-        OpKernel *kernel = GetKernel(opType);
+        OpKernel* kernel = GetKernel(opType);
         if (kernel == nullptr) {
             OP_LOGE(ret, "Kernel Not Found. opType: %u", opType);
             return ACLNN_ERR_INNER;
@@ -113,7 +109,7 @@ public:
 
     aclnnStatus AclOpKernelInit(uint32_t opType);
 
-    aclnnStatus SelectMemsetOpBin(size_t inputNum, OpKernelBin *&opBin);
+    aclnnStatus SelectMemsetOpBin(size_t inputNum, OpKernelBin*& opBin);
 
     void ReleaseTilingParse()
     {
@@ -131,17 +127,18 @@ public:
     }
 
 private:
-    KernelMgr(){};
+    KernelMgr() {};
 
     aclnnStatus ParseStaticKernelConfig(uint32_t opType);
 
-    aclnnStatus ParseDynamicKernelInStaticLib(const string &configFileName);
-    aclnnStatus ParseDynamicKernelConfig(const std::vector<std::string> &configFileNames);
-    aclnnStatus ParseDynamicKernelConfig(const std::string &configDir, const std::string &binJsonDir,
-                                         const std::string &configFileName, const std::string &opsRepoName, bool debug);
-    aclnnStatus ParseDynamicKernelConfig(const std::vector<std::string> &configDir,
-                                         const std::vector<std::string> &binJsonDir,
-                                         const std::vector<std::string> &configFileNames);
+    aclnnStatus ParseDynamicKernelInStaticLib(const string& configFileName);
+    aclnnStatus ParseDynamicKernelConfig(const std::vector<std::string>& configFileNames);
+    aclnnStatus ParseDynamicKernelConfig(
+        const std::string& configDir, const std::string& binJsonDir, const std::string& configFileName,
+        const std::string& opsRepoName, bool debug);
+    aclnnStatus ParseDynamicKernelConfig(
+        const std::vector<std::string>& configDir, const std::vector<std::string>& binJsonDir,
+        const std::vector<std::string>& configFileNames);
 
     aclnnStatus ParseDynamicKernels(uint32_t opType);
     aclnnStatus ParseStaticKernels(uint32_t opType);
@@ -170,11 +167,11 @@ private:
     nlohmann::json debugStaticConfigJson_;
 
 public:
-    KernelMgr(KernelMgr const &) = delete;
-    void operator=(KernelMgr const &) = delete;
+    KernelMgr(KernelMgr const&) = delete;
+    void operator=(KernelMgr const&) = delete;
 };
 
-extern internal::KernelMgr &gKernelMgr;
+extern internal::KernelMgr& gKernelMgr;
 } // namespace internal
 } // namespace op
 #endif

@@ -22,7 +22,7 @@ using namespace std;
 
 class CommonTypesTest : public testing::Test {
 public:
-    bool ShapeEq(const op::Shape &shape, const vector<int64_t> &value)
+    bool ShapeEq(const op::Shape& shape, const vector<int64_t>& value)
     {
         if (shape.GetDimNum() != value.size()) {
             return false;
@@ -45,7 +45,7 @@ TEST_F(CommonTypesTest, TestAclStorage)
     EXPECT_EQ(storage.GetAddr(), nullptr);
     char data[] = {1, 2, 3};
     storage.SetAddr(data);
-    EXPECT_EQ(storage.GetAddr(), static_cast<void *>(data));
+    EXPECT_EQ(storage.GetAddr(), static_cast<void*>(data));
 }
 
 #define CHECK_SCALAR(scalarName, value, valueType, dataType)                               \
@@ -130,7 +130,8 @@ TEST_F(CommonTypesTest, TestAclScalar_ToTypes)
         std::string scalarString = "zyx";
         aclScalar scalar(&scalarString, DataType::DT_STRING);
         EXPECT_EQ(static_cast<int32_t>(0), scalar.ToInt32());
-    } catch (...) {}
+    } catch (...) {
+    }
 }
 
 // ============================================================================
@@ -144,24 +145,24 @@ TEST_F(CommonTypesTest, TestAclScalar_ToTypes)
 TEST_F(CommonTypesTest, TestAclScalar_ConvertCustomFloatTo)
 {
 // Helper macro: 验证自定义浮点源类型 → 各目标类型的转换
-#define CHECK_CUSTOM_FLOAT_SCALAR_TO(customType, floatVal)                                               \
-    do {                                                                                                 \
-        customType customFloatVal(floatVal);                                                             \
-        aclScalar scalar(customFloatVal);                                                                \
-        float expectedFloat = static_cast<float>(customFloatVal);                                        \
-        /* Branch 3: general conversion */                                                               \
-        EXPECT_FLOAT_EQ(expectedFloat, scalar.ToFloat());                                               \
-        EXPECT_DOUBLE_EQ(static_cast<double>(expectedFloat), scalar.ToDouble());                         \
-        EXPECT_EQ(static_cast<int32_t>(expectedFloat), scalar.ToInt32());                                \
-        EXPECT_EQ(static_cast<int64_t>(expectedFloat), scalar.ToInt64());                                \
-        EXPECT_EQ(static_cast<uint8_t>(expectedFloat), scalar.ToUint8());                                \
-        /* Branch 2: bool conversion */                                                                  \
-        bool expectedBool = (expectedFloat >= std::numeric_limits<float>::epsilon()) ||                  \
-                            (expectedFloat <= -std::numeric_limits<float>::epsilon());                   \
-        EXPECT_EQ(expectedBool, scalar.ToBool());                                                        \
-        /* Branch 1: identity conversion */                                                              \
-        auto identityResult = scalar.To<customType>();                                                   \
-        EXPECT_EQ(customFloatVal.value, identityResult.value);                                           \
+#define CHECK_CUSTOM_FLOAT_SCALAR_TO(customType, floatVal)                              \
+    do {                                                                                \
+        customType customFloatVal(floatVal);                                            \
+        aclScalar scalar(customFloatVal);                                               \
+        float expectedFloat = static_cast<float>(customFloatVal);                       \
+        /* Branch 3: general conversion */                                              \
+        EXPECT_FLOAT_EQ(expectedFloat, scalar.ToFloat());                               \
+        EXPECT_DOUBLE_EQ(static_cast<double>(expectedFloat), scalar.ToDouble());        \
+        EXPECT_EQ(static_cast<int32_t>(expectedFloat), scalar.ToInt32());               \
+        EXPECT_EQ(static_cast<int64_t>(expectedFloat), scalar.ToInt64());               \
+        EXPECT_EQ(static_cast<uint8_t>(expectedFloat), scalar.ToUint8());               \
+        /* Branch 2: bool conversion */                                                 \
+        bool expectedBool = (expectedFloat >= std::numeric_limits<float>::epsilon()) || \
+                            (expectedFloat <= -std::numeric_limits<float>::epsilon());  \
+        EXPECT_EQ(expectedBool, scalar.ToBool());                                       \
+        /* Branch 1: identity conversion */                                             \
+        auto identityResult = scalar.To<customType>();                                  \
+        EXPECT_EQ(customFloatVal.value, identityResult.value);                          \
     } while (0)
 
     // --- Float8E5M2 (OCP FP8, bias=15, 支持 NaN/Infinity) ---
@@ -676,44 +677,38 @@ TEST_F(CommonTypesTest, TestAclScalarCheckOverflowsQint32ToOther)
         int32_t intValueMinInt32 = std::numeric_limits<int32_t>::lowest();
         aclScalar qintScalarMinInt32(&intValueMinInt32, op::DataType::DT_QINT32);
         EXPECT_TRUE(qintScalarMinInt32.CheckOverflows<int32_t>());
-    } catch (...) {}
+    } catch (...) {
+    }
 }
 
-
-
-#define CHECK_UNWS_TENSOR(tensorName, viewShape, storageShape, dataType, strides, viewOffset, format, tensorData)             \
-    vector<int64_t> _viewShape = viewShape;                                                                                   \
-    vector<int64_t> _storageShape = storageShape;                                                                             \
-    aclTensor tensorName(_viewShape.data(),                                                                                   \
-                         _viewShape.size(),                                                                                   \
-                         dataType,                                                                                            \
-                         strides,                                                                                             \
-                         viewOffset,                                                                                          \
-                         format,                                                                                              \
-                         _storageShape.data(),                                                                                \
-                         _storageShape.size(),                                                                                \
-                         tensorData);                                                                                         \
-    EXPECT_TRUE(ShapeEq(tensorName.GetViewShape(), viewShape));                                                               \
-    EXPECT_TRUE(ShapeEq(tensorName.GetOriginalShape(), storageShape));                                                        \
-    op::Shape expectStorageShape({1});                                                                                        \
-    EXPECT_TRUE(ShapeEq(tensorName.GetStorageShape(), storageShape));                                                         \
-    EXPECT_EQ(tensorName.GetDataType(), op::ToOpDataType(dataType));                                                          \
-    EXPECT_EQ(tensorName.GetViewFormat(), op::ToOpFormat(format));                                                            \
-    EXPECT_EQ(tensorName.GetOriginalFormat(), op::Format::FORMAT_ND);                                                         \
-    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                                       \
-    EXPECT_EQ(tensorName.GetData(), static_cast<char *>(tensorData) + viewOffset * op::TypeSize(op::ToOpDataType(dataType))); \
-    EXPECT_EQ(tensorName.IsFromWorkspace(), false);                                                                           \
-    EXPECT_EQ(tensorName.GetViewOffset(), viewOffset);                                                                        \
-    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                                       \
-    EXPECT_EQ(tensorName.GetStorageFormat(), op::Format::FORMAT_ND);                                                          \
-    EXPECT_EQ(tensorName.GetPlacement(), TensorPlacement::kOnDeviceHbm);                                                      \
-    EXPECT_NE(tensorName.GetTensor(), nullptr);                                                                               \
+#define CHECK_UNWS_TENSOR(tensorName, viewShape, storageShape, dataType, strides, viewOffset, format, tensorData)      \
+    vector<int64_t> _viewShape = viewShape;                                                                            \
+    vector<int64_t> _storageShape = storageShape;                                                                      \
+    aclTensor tensorName(                                                                                              \
+        _viewShape.data(), _viewShape.size(), dataType, strides, viewOffset, format, _storageShape.data(),             \
+        _storageShape.size(), tensorData);                                                                             \
+    EXPECT_TRUE(ShapeEq(tensorName.GetViewShape(), viewShape));                                                        \
+    EXPECT_TRUE(ShapeEq(tensorName.GetOriginalShape(), storageShape));                                                 \
+    op::Shape expectStorageShape({1});                                                                                 \
+    EXPECT_TRUE(ShapeEq(tensorName.GetStorageShape(), storageShape));                                                  \
+    EXPECT_EQ(tensorName.GetDataType(), op::ToOpDataType(dataType));                                                   \
+    EXPECT_EQ(tensorName.GetViewFormat(), op::ToOpFormat(format));                                                     \
+    EXPECT_EQ(tensorName.GetOriginalFormat(), op::Format::FORMAT_ND);                                                  \
+    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                                \
+    EXPECT_EQ(                                                                                                         \
+        tensorName.GetData(), static_cast<char*>(tensorData) + viewOffset * op::TypeSize(op::ToOpDataType(dataType))); \
+    EXPECT_EQ(tensorName.IsFromWorkspace(), false);                                                                    \
+    EXPECT_EQ(tensorName.GetViewOffset(), viewOffset);                                                                 \
+    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                                \
+    EXPECT_EQ(tensorName.GetStorageFormat(), op::Format::FORMAT_ND);                                                   \
+    EXPECT_EQ(tensorName.GetPlacement(), TensorPlacement::kOnDeviceHbm);                                               \
+    EXPECT_NE(tensorName.GetTensor(), nullptr);                                                                        \
     EXPECT_EQ(tensorName.IsView(), false);
 
 TEST_F(CommonTypesTest, CreateEmptyViewUNWSTensor)
 {
     std::vector<int64_t> strides = {1};
-    CHECK_UNWS_TENSOR(a, { 0 }, { 1 }, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_UNWS_TENSOR(a, {0}, {1}, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a.GetStorageFormat(), op::Format::FORMAT_ND);
     EXPECT_EQ(a.GetViewStrides(), op::Strides({1}));
 }
@@ -721,7 +716,7 @@ TEST_F(CommonTypesTest, CreateEmptyViewUNWSTensor)
 TEST_F(CommonTypesTest, CreateEmptyStorageUNWSTensor)
 {
     std::vector<int64_t> strides = {1};
-    CHECK_UNWS_TENSOR(a, {0}, { 0 }, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_UNWS_TENSOR(a, {0}, {0}, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a.GetViewStrides(), op::Strides({1}));
     EXPECT_TRUE(a.IsEmpty());
 }
@@ -729,15 +724,17 @@ TEST_F(CommonTypesTest, CreateEmptyStorageUNWSTensor)
 TEST_F(CommonTypesTest, CreateContiguousUNWSTensor001)
 {
     std::vector<int64_t> strides = {2, 1};
-    CHECK_UNWS_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT,
-                      strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_UNWS_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a.GetViewStrides(), op::Strides({2, 1}));
 }
 
 TEST_F(CommonTypesTest, CreateContiguousUNWSTensor002)
 {
-    CHECK_UNWS_TENSOR(a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT,
-                      nullptr, 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_UNWS_TENSOR(
+        a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT, nullptr, 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a.GetTensor()->GetSize(), 32);
     EXPECT_EQ(a.GetViewStrides(), op::Strides({8, 2, 1}));
     a.SetViewOffset(3);
@@ -774,45 +771,48 @@ TEST_F(CommonTypesTest, CreateContiguousUNWSTensor002)
 TEST_F(CommonTypesTest, CreateContiguousUNWSTensor003)
 {
     vector<float> values(8, 3.0);
-    CHECK_UNWS_TENSOR(a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({16}), aclDataType::ACL_FLOAT,
-                      nullptr, 3, aclFormat::ACL_FORMAT_ND, static_cast<void *>(values.data()));
+    CHECK_UNWS_TENSOR(
+        a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({16}), aclDataType::ACL_FLOAT, nullptr, 3,
+        aclFormat::ACL_FORMAT_ND, static_cast<void*>(values.data()));
     EXPECT_EQ(a.GetViewStrides(), op::Strides({8, 2, 1}));
 }
 
 TEST_F(CommonTypesTest, CreateUnContiguousUNWSTensor001)
 {
     std::vector<int64_t> strides = {8, 1};
-    CHECK_UNWS_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                      strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_UNWS_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a.GetViewStrides(), op::Strides({8, 1}));
 }
 
-#define CHECK_WS_TENSOR_DIFF_FORMAT(tensorName, storageShape, originShape, dataType, storageFormat, originFormat, \
-                                    tensorData)                                                                   \
-    aclTensor tensorName(storageShape, originShape, dataType, storageFormat, originFormat, tensorData);           \
-    EXPECT_EQ(tensorName.GetViewShape(), originShape);                                                            \
-    EXPECT_EQ(tensorName.GetOriginalShape(), originShape);                                                        \
-    EXPECT_EQ(tensorName.GetStorageShape(), storageShape);                                                        \
-    EXPECT_EQ(tensorName.GetDataType(), dataType);                                                                \
-    EXPECT_EQ(tensorName.GetViewFormat(), originFormat);                                                          \
-    EXPECT_EQ(tensorName.GetOriginalFormat(), originFormat);                                                      \
-    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                           \
-    EXPECT_EQ(tensorName.GetData(), static_cast<char *>(tensorData));                                             \
-    EXPECT_EQ(tensorName.IsFromWorkspace(), true);                                                                \
-    EXPECT_EQ(tensorName.GetViewOffset(), 0);                                                                     \
-    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                           \
-    EXPECT_EQ(tensorName.GetStorageFormat(), storageFormat);                                                      \
-    EXPECT_EQ(tensorName.GetPlacement(), TensorPlacement::kOnDeviceHbm);                                          \
+#define CHECK_WS_TENSOR_DIFF_FORMAT(                                                                    \
+    tensorName, storageShape, originShape, dataType, storageFormat, originFormat, tensorData)           \
+    aclTensor tensorName(storageShape, originShape, dataType, storageFormat, originFormat, tensorData); \
+    EXPECT_EQ(tensorName.GetViewShape(), originShape);                                                  \
+    EXPECT_EQ(tensorName.GetOriginalShape(), originShape);                                              \
+    EXPECT_EQ(tensorName.GetStorageShape(), storageShape);                                              \
+    EXPECT_EQ(tensorName.GetDataType(), dataType);                                                      \
+    EXPECT_EQ(tensorName.GetViewFormat(), originFormat);                                                \
+    EXPECT_EQ(tensorName.GetOriginalFormat(), originFormat);                                            \
+    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                 \
+    EXPECT_EQ(tensorName.GetData(), static_cast<char*>(tensorData));                                    \
+    EXPECT_EQ(tensorName.IsFromWorkspace(), true);                                                      \
+    EXPECT_EQ(tensorName.GetViewOffset(), 0);                                                           \
+    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                 \
+    EXPECT_EQ(tensorName.GetStorageFormat(), storageFormat);                                            \
+    EXPECT_EQ(tensorName.GetPlacement(), TensorPlacement::kOnDeviceHbm);                                \
     EXPECT_EQ(tensorName.IsView(), false);
 
 TEST_F(CommonTypesTest, CreateWorkspaceTensorDiffFormat)
 {
-    CHECK_WS_TENSOR_DIFF_FORMAT(a, Shape({0}), Shape({0}), DataType::DT_FLOAT,
-                                Format::FORMAT_ND, Format::FORMAT_ND, nullptr);
-    CHECK_WS_TENSOR_DIFF_FORMAT(b, Shape({}), Shape({}), DataType::DT_FLOAT,
-                                Format::FORMAT_ND, Format::FORMAT_ND, nullptr);
-    CHECK_WS_TENSOR_DIFF_FORMAT(c, Shape({16, 16}), Shape({16 * 16}), DataType::DT_FLOAT,
-                                Format::FORMAT_FRACTAL_NZ, Format::FORMAT_ND, nullptr);
+    CHECK_WS_TENSOR_DIFF_FORMAT(
+        a, Shape({0}), Shape({0}), DataType::DT_FLOAT, Format::FORMAT_ND, Format::FORMAT_ND, nullptr);
+    CHECK_WS_TENSOR_DIFF_FORMAT(
+        b, Shape({}), Shape({}), DataType::DT_FLOAT, Format::FORMAT_ND, Format::FORMAT_ND, nullptr);
+    CHECK_WS_TENSOR_DIFF_FORMAT(
+        c, Shape({16, 16}), Shape({16 * 16}), DataType::DT_FLOAT, Format::FORMAT_FRACTAL_NZ, Format::FORMAT_ND,
+        nullptr);
 }
 
 #define CHECK_WS_TENSOR_SAME_FORMAT(tensorName, shape, dataType, format, tensorData) \
@@ -824,7 +824,7 @@ TEST_F(CommonTypesTest, CreateWorkspaceTensorDiffFormat)
     EXPECT_EQ(tensorName.GetViewFormat(), format);                                   \
     EXPECT_EQ(tensorName.GetOriginalFormat(), format);                               \
     EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                              \
-    EXPECT_EQ(tensorName.GetData(), static_cast<char *>(tensorData));                \
+    EXPECT_EQ(tensorName.GetData(), static_cast<char*>(tensorData));                 \
     EXPECT_EQ(tensorName.IsFromWorkspace(), true);                                   \
     EXPECT_EQ(tensorName.GetViewOffset(), 0);                                        \
     EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                              \
@@ -839,23 +839,23 @@ TEST_F(CommonTypesTest, CreateWorkspaceTensorSameFormat)
     CHECK_WS_TENSOR_SAME_FORMAT(c, Shape({16, 16}), DataType::DT_FLOAT, Format::FORMAT_FRACTAL_NZ, nullptr);
 }
 
-#define CHECK_VIEW_TENSOR(tensorName, shape, dataType, format, viewShape, viewOffset, tensorData)           \
-    aclTensor tensorName##ToView(shape, dataType, format, tensorData);                                      \
-    aclTensor tensorName(tensorName##ToView, viewShape, viewOffset);                                        \
-    EXPECT_EQ(tensorName.GetViewShape(), viewShape);                                                        \
-    EXPECT_EQ(tensorName.GetOriginalShape(), viewShape);                                                    \
-    EXPECT_EQ(tensorName.GetStorageShape(), viewShape);                                                     \
-    EXPECT_EQ(tensorName.GetDataType(), dataType);                                                          \
-    EXPECT_EQ(tensorName.GetViewFormat(), format);                                                          \
-    EXPECT_EQ(tensorName.GetOriginalFormat(), format);                                                      \
-    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                     \
-    EXPECT_EQ(tensorName.GetData(), static_cast<char *>(tensorData) + viewOffset * op::TypeSize(dataType)); \
-    EXPECT_EQ(tensorName.IsFromWorkspace(), true);                                                          \
-    EXPECT_EQ(tensorName.GetViewOffset(), viewOffset);                                                      \
-    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                     \
-    EXPECT_EQ(tensorName.GetStorageFormat(), format);                                                       \
-    EXPECT_EQ(tensorName.GetPlacement(), TensorPlacement::kOnDeviceHbm);                                    \
-    EXPECT_EQ(tensorName.Numel(), viewShape.GetShapeSize());                                                \
+#define CHECK_VIEW_TENSOR(tensorName, shape, dataType, format, viewShape, viewOffset, tensorData)          \
+    aclTensor tensorName##ToView(shape, dataType, format, tensorData);                                     \
+    aclTensor tensorName(tensorName##ToView, viewShape, viewOffset);                                       \
+    EXPECT_EQ(tensorName.GetViewShape(), viewShape);                                                       \
+    EXPECT_EQ(tensorName.GetOriginalShape(), viewShape);                                                   \
+    EXPECT_EQ(tensorName.GetStorageShape(), viewShape);                                                    \
+    EXPECT_EQ(tensorName.GetDataType(), dataType);                                                         \
+    EXPECT_EQ(tensorName.GetViewFormat(), format);                                                         \
+    EXPECT_EQ(tensorName.GetOriginalFormat(), format);                                                     \
+    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                    \
+    EXPECT_EQ(tensorName.GetData(), static_cast<char*>(tensorData) + viewOffset * op::TypeSize(dataType)); \
+    EXPECT_EQ(tensorName.IsFromWorkspace(), true);                                                         \
+    EXPECT_EQ(tensorName.GetViewOffset(), viewOffset);                                                     \
+    EXPECT_EQ(tensorName.GetStorageAddr(), tensorData);                                                    \
+    EXPECT_EQ(tensorName.GetStorageFormat(), format);                                                      \
+    EXPECT_EQ(tensorName.GetPlacement(), TensorPlacement::kOnDeviceHbm);                                   \
+    EXPECT_EQ(tensorName.Numel(), viewShape.GetShapeSize());                                               \
     EXPECT_EQ(tensorName.IsView(), true);
 
 TEST_F(CommonTypesTest, CreateViewTensor)
@@ -869,7 +869,7 @@ TEST_F(CommonTypesTest, CreateViewTensor2)
 {
     aclTensor src(Shape({16, 16}), DataType::DT_FLOAT16, Format::FORMAT_FRACTAL_NZ, nullptr);
     aclOpExecutor exe;
-    aclTensor *dst = exe.CreateView(&src, Shape({16, 16, 16}), Shape({17, 17, 17}), src.GetViewStrides(), 0);
+    aclTensor* dst = exe.CreateView(&src, Shape({16, 16, 16}), Shape({17, 17, 17}), src.GetViewStrides(), 0);
     EXPECT_EQ(dst->GetOriginalShape(), Shape({16, 16, 16}));
     EXPECT_EQ(dst->GetStorageShape(), Shape({4913}));
     EXPECT_EQ(dst->GetViewStrides(), src.GetViewStrides());
@@ -889,7 +889,7 @@ TEST_F(CommonTypesTest, CreateViewTensor2)
 TEST_F(CommonTypesTest, CreateArray)
 {
     int64_t intValue[] = {1, 2, 3};
-    int64_t *nullInt = nullptr;
+    int64_t* nullInt = nullptr;
     CHECK_ARRAY(intArray1, intValue, 3UL, int64_t, Int);
     for (size_t i = 0; i < intArray1.Size(); i++) {
         EXPECT_EQ(intArray1[i], intValue[i]);
@@ -899,7 +899,7 @@ TEST_F(CommonTypesTest, CreateArray)
     CHECK_ARRAY(intArray3, intValue, 0UL, int64_t, Int);
 
     float fpValue[] = {1, 2, 3};
-    float *nullFloat = nullptr;
+    float* nullFloat = nullptr;
     CHECK_ARRAY(floatArray1, fpValue, 3UL, float, Float);
     for (size_t i = 0; i < floatArray1.Size(); i++) {
         EXPECT_FLOAT_EQ(floatArray1[i], fpValue[i]);
@@ -912,14 +912,14 @@ TEST_F(CommonTypesTest, CreateArray)
     for (size_t i = 0; i < intArray1.Size(); i++) {
         EXPECT_EQ(boolArray1[i], boolValue[i]);
     }
-    bool *nullBool = nullptr;
+    bool* nullBool = nullptr;
     CHECK_ARRAY(boolArray2, nullBool, 0UL, bool, Bool);
     CHECK_ARRAY(boolArray3, boolValue, 0UL, bool, Bool);
 }
 
 TEST_F(CommonTypesTest, CreateTensorList)
 {
-    aclTensor *list1[] = {nullptr, nullptr, nullptr};
+    aclTensor* list1[] = {nullptr, nullptr, nullptr};
     aclTensorList aclTensorList1(list1, 0);
     ASSERT_EQ(aclTensorList1.GetData(), nullptr);
     EXPECT_EQ(aclTensorList1.Size(), 0);
@@ -928,7 +928,7 @@ TEST_F(CommonTypesTest, CreateTensorList)
     aclTensor tensor1({1, 2, 3}, DataType::DT_FLOAT, Format::FORMAT_ND, nullptr);
     aclTensor tensor2({1, 2, 3}, DataType::DT_FLOAT, Format::FORMAT_ND, nullptr);
     aclTensor tensor3({1, 2, 3}, DataType::DT_FLOAT, Format::FORMAT_ND, nullptr);
-    aclTensor *list2[] = {&tensor1, &tensor2, &tensor3};
+    aclTensor* list2[] = {&tensor1, &tensor2, &tensor3};
     aclTensorList aclTensorList2(list2, 3);
     ASSERT_NE(aclTensorList2.GetData(), nullptr);
     EXPECT_EQ(aclTensorList2.Size(), 3);
@@ -949,7 +949,6 @@ TEST_F(CommonTypesTest, CreateTensorList)
     ASSERT_EQ(scalarName##Tensor.Size(), 1);                                                       \
     EXPECT_EQ(memcmp(scalarName##Tensor.GetData(), &scalarName##valueType, sizeof(valueType)), 0); \
     EXPECT_EQ(scalarName##Tensor.GetDataType(), dataType)
-
 
 TEST_F(CommonTypesTest, TestAclScalarToAclTensor)
 {
@@ -976,7 +975,8 @@ TEST_F(CommonTypesTest, TestAclScalarToAclTensor)
         aclScalar unsupportedDataTypeScalar(&fp16Value, DataType::DT_QINT16);
         aclTensor unsupportedDataTypeScalarTensor(&unsupportedDataTypeScalar, DataType::DT_QINT16);
         EXPECT_NE(memcmp(unsupportedDataTypeScalarTensor.GetData(), &fp16Value, sizeof(fp16Value)), 0);
-    } catch (...) {}
+    } catch (...) {
+    }
 }
 
 TEST_F(CommonTypesTest, TestAclIntArrayToAclTensor)
@@ -989,15 +989,15 @@ TEST_F(CommonTypesTest, TestAclIntArrayToAclTensor)
     aclIntArray* array1 = nullptr;
     EXPECT_NE(ToString(array1).GetString(), nullptr);
     EXPECT_EQ(intTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<int32_t *>(intTensor.GetData()), value);
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 1), value);
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 2), value);
+    EXPECT_EQ(*static_cast<int32_t*>(intTensor.GetData()), value);
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 1), value);
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 2), value);
 
     aclTensor fTensor(&array, op::DataType::DT_FLOAT);
     EXPECT_EQ(fTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<float *>(fTensor.GetData()), static_cast<float>(value));
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 1), static_cast<float>(value));
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 2), static_cast<float>(value));
+    EXPECT_EQ(*static_cast<float*>(fTensor.GetData()), static_cast<float>(value));
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 1), static_cast<float>(value));
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 2), static_cast<float>(value));
 }
 
 TEST_F(CommonTypesTest, TestAclFp16ArrayToAclTensor)
@@ -1010,21 +1010,21 @@ TEST_F(CommonTypesTest, TestAclFp16ArrayToAclTensor)
     EXPECT_NE(ToString(array1).GetString(), nullptr);
     aclTensor intTensor(&array, op::DataType::DT_INT32);
     EXPECT_EQ(intTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<int32_t *>(intTensor.GetData()), static_cast<int32_t>(value));
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 1), static_cast<int32_t>(value));
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 2), static_cast<int32_t>(value));
+    EXPECT_EQ(*static_cast<int32_t*>(intTensor.GetData()), static_cast<int32_t>(value));
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 1), static_cast<int32_t>(value));
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 2), static_cast<int32_t>(value));
 
     aclTensor fTensor(&array, op::DataType::DT_FLOAT);
     EXPECT_EQ(fTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<float *>(fTensor.GetData()), op::fp16_t(value).toFloat());
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 1), op::fp16_t(value).toFloat());
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 2), op::fp16_t(value).toFloat());
+    EXPECT_EQ(*static_cast<float*>(fTensor.GetData()), op::fp16_t(value).toFloat());
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 1), op::fp16_t(value).toFloat());
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 2), op::fp16_t(value).toFloat());
 
     aclTensor fp16Tensor(&array, op::DataType::DT_FLOAT16);
     EXPECT_EQ(fp16Tensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(static_cast<fp16_t *>(fp16Tensor.GetData())->val, op::fp16_t(value).val);
-    EXPECT_EQ((static_cast<fp16_t *>(fp16Tensor.GetData()) + 1)->val, op::fp16_t(value).val);
-    EXPECT_EQ((static_cast<fp16_t *>(fp16Tensor.GetData()) + 2)->val, op::fp16_t(value).val);
+    EXPECT_EQ(static_cast<fp16_t*>(fp16Tensor.GetData())->val, op::fp16_t(value).val);
+    EXPECT_EQ((static_cast<fp16_t*>(fp16Tensor.GetData()) + 1)->val, op::fp16_t(value).val);
+    EXPECT_EQ((static_cast<fp16_t*>(fp16Tensor.GetData()) + 2)->val, op::fp16_t(value).val);
 }
 
 TEST_F(CommonTypesTest, TestAclBf16ArrayToAclTensor)
@@ -1037,21 +1037,21 @@ TEST_F(CommonTypesTest, TestAclBf16ArrayToAclTensor)
     EXPECT_NE(ToString(array1).GetString(), nullptr);
     aclTensor intTensor(&array, op::DataType::DT_INT32);
     EXPECT_EQ(intTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<int32_t *>(intTensor.GetData()), static_cast<int32_t>(value));
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 1), static_cast<int32_t>(value));
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 2), static_cast<int32_t>(value));
+    EXPECT_EQ(*static_cast<int32_t*>(intTensor.GetData()), static_cast<int32_t>(value));
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 1), static_cast<int32_t>(value));
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 2), static_cast<int32_t>(value));
 
     aclTensor fTensor(&array, op::DataType::DT_FLOAT);
     EXPECT_EQ(fTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<float *>(fTensor.GetData()), static_cast<float>(op::bfloat16(value)));
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 1), static_cast<float>(op::bfloat16(value)));
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 2), static_cast<float>(op::bfloat16(value)));
+    EXPECT_EQ(*static_cast<float*>(fTensor.GetData()), static_cast<float>(op::bfloat16(value)));
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 1), static_cast<float>(op::bfloat16(value)));
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 2), static_cast<float>(op::bfloat16(value)));
 
     aclTensor fp16Tensor(&array, op::DataType::DT_BF16);
     EXPECT_EQ(fp16Tensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<bfloat16 *>(fp16Tensor.GetData()), op::bfloat16(value));
-    EXPECT_EQ(*(static_cast<bfloat16 *>(fp16Tensor.GetData()) + 1), op::bfloat16(value));
-    EXPECT_EQ(*(static_cast<bfloat16 *>(fp16Tensor.GetData()) + 2), op::bfloat16(value));
+    EXPECT_EQ(*static_cast<bfloat16*>(fp16Tensor.GetData()), op::bfloat16(value));
+    EXPECT_EQ(*(static_cast<bfloat16*>(fp16Tensor.GetData()) + 1), op::bfloat16(value));
+    EXPECT_EQ(*(static_cast<bfloat16*>(fp16Tensor.GetData()) + 2), op::bfloat16(value));
 }
 
 TEST_F(CommonTypesTest, TestAclFloatArrayToAclTensor)
@@ -1064,15 +1064,15 @@ TEST_F(CommonTypesTest, TestAclFloatArrayToAclTensor)
     EXPECT_NE(ToString(array1).GetString(), nullptr);
     aclTensor intTensor(&array, op::DataType::DT_INT32);
     EXPECT_EQ(intTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<int32_t *>(intTensor.GetData()), static_cast<int32_t>(value));
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 1), static_cast<int32_t>(value));
-    EXPECT_EQ(*(static_cast<int32_t *>(intTensor.GetData()) + 2), static_cast<int32_t>(value));
+    EXPECT_EQ(*static_cast<int32_t*>(intTensor.GetData()), static_cast<int32_t>(value));
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 1), static_cast<int32_t>(value));
+    EXPECT_EQ(*(static_cast<int32_t*>(intTensor.GetData()) + 2), static_cast<int32_t>(value));
 
     aclTensor fTensor(&array, op::DataType::DT_FLOAT);
     EXPECT_EQ(fTensor.Size(), static_cast<int64_t>(values.size()));
-    EXPECT_EQ(*static_cast<float *>(fTensor.GetData()), value);
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 1), value);
-    EXPECT_EQ(*(static_cast<float *>(fTensor.GetData()) + 2), value);
+    EXPECT_EQ(*static_cast<float*>(fTensor.GetData()), value);
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 1), value);
+    EXPECT_EQ(*(static_cast<float*>(fTensor.GetData()) + 2), value);
 }
 
 TEST_F(CommonTypesTest, TestAclBoolArrayToAclTensor)
@@ -1084,16 +1084,17 @@ TEST_F(CommonTypesTest, TestAclBoolArrayToAclTensor)
     EXPECT_NE(ToString(array1).GetString(), nullptr);
     aclTensor intTensor(&array, op::DataType::DT_BOOL);
     EXPECT_EQ(intTensor.Size(), 3);
-    EXPECT_EQ(*static_cast<bool *>(intTensor.GetData()), values[0]);
-    EXPECT_EQ(*(static_cast<bool *>(intTensor.GetData()) + 1), values[1]);
-    EXPECT_EQ(*(static_cast<bool *>(intTensor.GetData()) + 2), values[2]);
+    EXPECT_EQ(*static_cast<bool*>(intTensor.GetData()), values[0]);
+    EXPECT_EQ(*(static_cast<bool*>(intTensor.GetData()) + 1), values[1]);
+    EXPECT_EQ(*(static_cast<bool*>(intTensor.GetData()) + 2), values[2]);
 }
 
 TEST_F(CommonTypesTest, TestAclTensorStorageOffset)
 {
     std::vector<int64_t> strides = {2, 1};
-    CHECK_UNWS_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT,
-                      strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_UNWS_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a.GetStorageOffset(), 0);
     a.SetStorageOffset(10);
     EXPECT_EQ(a.GetStorageOffset(), 10);
@@ -1118,13 +1119,13 @@ TEST_F(CommonTypesTest, aclTensorListToString)
     auto ws2 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws3 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
-    aclTensorList *wsList = aclCreateTensorList(wsArr, 3);
+    const aclTensor* wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
+    aclTensorList* wsList = aclCreateTensorList(wsArr, 3);
     EXPECT_NE(wsList->ToString().GetString(), nullptr);
     EXPECT_NE(ToString(*wsList).GetString(), nullptr);
     EXPECT_NE(ToString(wsList).GetString(), nullptr);
     delete wsList;
-    aclTensorList *wsList1 = nullptr;
+    aclTensorList* wsList1 = nullptr;
     EXPECT_NE(ToString(wsList1).GetString(), nullptr);
 }
 TEST_F(CommonTypesTest, aclScalarToString)
@@ -1136,14 +1137,14 @@ TEST_F(CommonTypesTest, aclScalarToString)
 TEST_F(CommonTypesTest, aclScalarListToString)
 {
     double scalar_value = 5;
-    auto *scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
+    auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
     auto scalarList = aclCreateScalarList(&scalar, 1);
     EXPECT_NE(scalarList->ToString().GetString(), nullptr);
     EXPECT_NE(ToString(*scalarList).GetString(), nullptr);
     EXPECT_NE(ToString(scalarList).GetString(), nullptr);
     delete scalarList;
     delete scalar;
-    aclScalarList *scalarList1 = nullptr;
+    aclScalarList* scalarList1 = nullptr;
     EXPECT_NE(ToString(scalarList1).GetString(), nullptr);
 }
 TEST_F(CommonTypesTest, aclArrayCreate)
@@ -1178,39 +1179,39 @@ TEST_F(CommonTypesTest, aclArrayCreate)
     EXPECT_NE(bfp16Array.ToString().GetString(), nullptr);
     auto aclbf16Array = aclBf16Array(&bfp16Value, 1);
     EXPECT_NE(ToString(&aclbf16Array).GetString(), nullptr);
-    std::string str= "oi";
+    std::string str = "oi";
     EXPECT_NE(ToString(str).GetString(), nullptr);
 }
 TEST_F(CommonTypesTest, aclScalarCreate)
 {
     float fpValue = 3.2;
-    aclScalar *floatScalar =  new aclScalar(fpValue);
+    aclScalar* floatScalar = new aclScalar(fpValue);
     int32_t intValue = 3;
-    aclScalar *intScalar =  new aclScalar(intValue);
+    aclScalar* intScalar = new aclScalar(intValue);
     int64_t int64Value = 3;
-    aclScalar *int64Scalar =  new aclScalar(int64Value);
+    aclScalar* int64Scalar = new aclScalar(int64Value);
     int16_t int16Value = 3;
-    aclScalar *int16Scalar =  new aclScalar(int16Value);
+    aclScalar* int16Scalar = new aclScalar(int16Value);
     int8_t int8Value = 3;
-    aclScalar *int8Scalar =  new aclScalar(int8Value);
+    aclScalar* int8Scalar = new aclScalar(int8Value);
     uint32_t uint32Value = 3;
-    aclScalar *uint32Scalar =  new aclScalar(uint32Value);
+    aclScalar* uint32Scalar = new aclScalar(uint32Value);
     uint64_t uint64Value = 3;
-    aclScalar *uint64Scalar =  new aclScalar(uint64Value);
+    aclScalar* uint64Scalar = new aclScalar(uint64Value);
     uint16_t uint16Value = 3;
-    aclScalar *uint16Scalar =  new aclScalar(uint16Value);
+    aclScalar* uint16Scalar = new aclScalar(uint16Value);
     uint8_t uint8Value = 3;
-    aclScalar *uint8Scalar =  new aclScalar(uint8Value);
+    aclScalar* uint8Scalar = new aclScalar(uint8Value);
     double doubleValue = 3.2;
-    aclScalar *doubleScalar =  new aclScalar(doubleValue);
+    aclScalar* doubleScalar = new aclScalar(doubleValue);
     bool boolValue = true;
-    aclScalar *boolScalar =  new aclScalar(boolValue);
+    aclScalar* boolScalar = new aclScalar(boolValue);
     op::bfloat16 bfp16Value = 3.2;
-    aclScalar *bfp16Scalar =  new aclScalar(bfp16Value);
+    aclScalar* bfp16Scalar = new aclScalar(bfp16Value);
 
     EXPECT_NE(ToString(*bfp16Scalar).GetString(), nullptr);
     EXPECT_NE(ToString(bfp16Scalar).GetString(), nullptr);
-    aclScalar *scalar = nullptr;
+    aclScalar* scalar = nullptr;
     EXPECT_NE(ToString(scalar).GetString(), nullptr);
     delete floatScalar;
     delete intScalar;
@@ -1229,31 +1230,31 @@ TEST_F(CommonTypesTest, aclTensorCreate)
 {
     float fpValue = 3.2;
     uint64_t size = 1;
-    aclTensor * floatTensor =  new aclTensor(&fpValue, size, op::DataType::DT_FLOAT);
+    aclTensor* floatTensor = new aclTensor(&fpValue, size, op::DataType::DT_FLOAT);
     int32_t intValue = 3;
-    aclTensor *intTensor =  new aclTensor(&intValue, size, op::DataType::DT_INT32);
+    aclTensor* intTensor = new aclTensor(&intValue, size, op::DataType::DT_INT32);
     int64_t int64Value = 3;
-    aclTensor *int64Tensor =  new aclTensor(&int64Value, size, op::DataType::DT_INT64);
+    aclTensor* int64Tensor = new aclTensor(&int64Value, size, op::DataType::DT_INT64);
     int16_t int16Value = 3;
-    aclTensor *int16Tensor =  new aclTensor(&int16Value, size, op::DataType::DT_INT16);
+    aclTensor* int16Tensor = new aclTensor(&int16Value, size, op::DataType::DT_INT16);
     int8_t int8Value = 3;
-    aclTensor *int8Tensor =  new aclTensor(&int8Value, size, op::DataType::DT_INT8);
+    aclTensor* int8Tensor = new aclTensor(&int8Value, size, op::DataType::DT_INT8);
     uint32_t uint32Value = 3;
-    aclTensor *uint32Tensor =  new aclTensor(&uint32Value, size, op::DataType::DT_UINT32);
+    aclTensor* uint32Tensor = new aclTensor(&uint32Value, size, op::DataType::DT_UINT32);
     uint64_t uint64Value = 3;
-    aclTensor *uint64Tensor =  new aclTensor(&uint64Value, size, op::DataType::DT_UINT64);
+    aclTensor* uint64Tensor = new aclTensor(&uint64Value, size, op::DataType::DT_UINT64);
     uint16_t uint16Value = 3;
-    aclTensor *uint16Tensor =  new aclTensor(&uint16Value, size, op::DataType::DT_UINT16);
+    aclTensor* uint16Tensor = new aclTensor(&uint16Value, size, op::DataType::DT_UINT16);
     uint8_t uint8Value = 3;
-    aclTensor *uint8Tensor =  new aclTensor(&uint8Value, size, op::DataType::DT_UINT8);
+    aclTensor* uint8Tensor = new aclTensor(&uint8Value, size, op::DataType::DT_UINT8);
     double doubleValue = 3.2;
-    aclTensor *doubleTensor =  new aclTensor(&doubleValue, size, op::DataType::DT_DOUBLE);
+    aclTensor* doubleTensor = new aclTensor(&doubleValue, size, op::DataType::DT_DOUBLE);
     bool boolValue = true;
-    aclTensor *boolTensor =  new aclTensor(&boolValue, size, op::DataType::DT_BOOL);
+    aclTensor* boolTensor = new aclTensor(&boolValue, size, op::DataType::DT_BOOL);
     op::fp16_t fp16Value = 3.2;
     op::bfloat16 bfp16Value = 3.2;
-    aclTensor *fp16Tensor =  new aclTensor(&fp16Value, size, op::DataType::DT_FLOAT16);
-    aclTensor *Bfp16Tensor =  new aclTensor(&bfp16Value, size, op::DataType::DT_BF16);
+    aclTensor* fp16Tensor = new aclTensor(&fp16Value, size, op::DataType::DT_FLOAT16);
+    aclTensor* Bfp16Tensor = new aclTensor(&bfp16Value, size, op::DataType::DT_BF16);
     delete floatTensor;
     delete intTensor;
     delete int64Tensor;
@@ -1267,7 +1268,6 @@ TEST_F(CommonTypesTest, aclTensorCreate)
     delete boolTensor;
     delete fp16Tensor;
     delete Bfp16Tensor;
-
 }
 TEST_F(CommonTypesTest, InitTensor)
 {
@@ -1276,10 +1276,11 @@ TEST_F(CommonTypesTest, InitTensor)
     const int64_t stride[] = {6, 3, 1};
     tensor.InitTensor(arr, 3, ACL_FLOAT, stride, 0, ACL_FORMAT_NC1HWC0, arr, 3, nullptr);
 }
-TEST_F(CommonTypesTest, aclTensorSetData){
+TEST_F(CommonTypesTest, aclTensorSetData)
+{
     float fpValue = 3.2;
     uint64_t size = 1;
-    aclTensor *floatTensor =  new aclTensor(&fpValue, size, op::DataType::DT_FLOAT);
+    aclTensor* floatTensor = new aclTensor(&fpValue, size, op::DataType::DT_FLOAT);
     float intArr[5] = {1., 2., 3., 4., 5.};
     floatTensor->SetData(intArr, 5, op::DataType::DT_QINT16);
 }

@@ -20,50 +20,23 @@ class OpKernelBin;
 
 class LauncherContext {
 public:
-    const TilingResCache *GetTilingResCache()
-    {
-        return tilingRes_.get();
-    }
+    const TilingResCache* GetTilingResCache() { return tilingRes_.get(); }
 
-    void SaveTilingResCache(const TilingCtxOutput *res)
-    {
-        tilingRes_ = std::make_unique<TilingResCache>(res);
-    }
+    void SaveTilingResCache(const TilingCtxOutput* res) { tilingRes_ = std::make_unique<TilingResCache>(res); }
 
-    void ClearTilingCache()
-    {
-        tilingRes_ = nullptr;
-    }
+    void ClearTilingCache() { tilingRes_ = nullptr; }
 
-    void SetImplMode(OpImplMode mode)
-    {
-        implMode_ = mode;
-    }
+    void SetImplMode(OpImplMode mode) { implMode_ = mode; }
 
-    OpImplMode GetImplMode() const
-    {
-        return implMode_;
-    }
+    OpImplMode GetImplMode() const { return implMode_; }
 
-    void SetLauncherRepeatable(bool val)
-    {
-        isLauncherRepeatable_ = val;
-    }
+    void SetLauncherRepeatable(bool val) { isLauncherRepeatable_ = val; }
 
-    bool GetLauncherRepeatable() const
-    {
-        return isLauncherRepeatable_;
-    }
+    bool GetLauncherRepeatable() const { return isLauncherRepeatable_; }
 
-    void SetOpKernelBin(op::internal::OpKernelBin *bin)
-    {
-        opKernelBin_ = bin;
-    }
+    void SetOpKernelBin(op::internal::OpKernelBin* bin) { opKernelBin_ = bin; }
 
-    op::internal::OpKernelBin *GetOpKernelBin() const
-    {
-        return opKernelBin_;
-    }
+    op::internal::OpKernelBin* GetOpKernelBin() const { return opKernelBin_; }
 
     void Reset()
     {
@@ -75,16 +48,16 @@ public:
 private:
     OpImplMode implMode_{OpImplMode::IMPL_MODE_DEFAULT};
     std::unique_ptr<TilingResCache> tilingRes_;
-    op::internal::OpKernelBin *opKernelBin_{nullptr};
+    op::internal::OpKernelBin* opKernelBin_{nullptr};
     bool isLauncherRepeatable_{false};
 };
 
-LauncherContext &GetLauncherCtx();
+LauncherContext& GetLauncherCtx();
 
-inline void SetOpImplModeCtx(OpArgList &optionArg)
+inline void SetOpImplModeCtx(OpArgList& optionArg)
 {
     internal::GetLauncherCtx().SetImplMode(OpImplMode::IMPL_MODE_DEFAULT);
-    optionArg.VisitByNoReturn([]([[maybe_unused]] size_t idx, OpArg &arg) {
+    optionArg.VisitByNoReturn([]([[maybe_unused]] size_t idx, OpArg& arg) {
         if (arg.type == OpArgType::OPARG_IMPLMODE) {
             internal::GetLauncherCtx().SetImplMode(static_cast<OpImplMode>(arg->value));
         }

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <vector>
 #include "opdev/common_types.h"
@@ -18,9 +18,7 @@
 using namespace std;
 using namespace op;
 class OpPlatformTest : public testing::Test {
-    void SetUp()
-    {
-    }
+    void SetUp() {}
 };
 
 TEST_F(OpPlatformTest, TestGetSocVersion)
@@ -32,7 +30,7 @@ TEST_F(OpPlatformTest, TestGetSocVersion)
     // ASSERT_TRUE(ret == ACL_SUCCESS);
     // ret = aclrtSetCurrentContext(context);
     // ASSERT_TRUE(ret == ACL_SUCCESS);
-    auto &platformInfo = op::GetCurrentPlatformInfo();
+    auto& platformInfo = op::GetCurrentPlatformInfo();
     auto socVersion = platformInfo.GetSocVersion();
     EXPECT_EQ(socVersion, op::SocVersion::ASCEND910);
     EXPECT_EQ(ToString(static_cast<SocVersion>(100)), ge::AscendString("UnknownSocVersion"));
@@ -48,7 +46,7 @@ TEST_F(OpPlatformTest, TestMMadInstAbility)
     // ret = aclrtSetCurrentContext(context);
     // ASSERT_TRUE(ret == ACL_SUCCESS);
 
-    auto &platformInfo = op::GetCurrentPlatformInfo();
+    auto& platformInfo = op::GetCurrentPlatformInfo();
     auto checkRet = platformInfo.CheckSupport(op::SocSpec::INST_MMAD, op::SocSpecAbility::INST_MMAD_F322F32);
     EXPECT_EQ(checkRet, false);
     checkRet = platformInfo.CheckSupport(op::SocSpec::INST_MMAD, op::SocSpecAbility::INST_MMAD_F162F16);
@@ -65,7 +63,7 @@ TEST_F(OpPlatformTest, TestBlockSize)
     // ret = aclrtSetCurrentContext(context);
     // ASSERT_TRUE(ret == ACL_SUCCESS);
 
-    auto &platformInfo = op::GetCurrentPlatformInfo();
+    auto& platformInfo = op::GetCurrentPlatformInfo();
     auto blockSize = platformInfo.GetBlockSize();
     EXPECT_EQ(blockSize, 32);
 }
@@ -78,20 +76,20 @@ TEST_F(OpPlatformTest, TestToString)
 
 TEST_F(OpPlatformTest, TestGetDeviceId)
 {
-    auto &platformInfo = op::GetCurrentPlatformInfo();
+    auto& platformInfo = op::GetCurrentPlatformInfo();
     EXPECT_EQ(platformInfo.GetDeviceId(), 0);
 }
 
 TEST_F(OpPlatformTest, TestGetCubeCoreNum)
 {
-    auto &platformInfo = op::GetCurrentPlatformInfo();
+    auto& platformInfo = op::GetCurrentPlatformInfo();
     auto currentCubeCoreNum = platformInfo.GetCubeCoreNum();
     EXPECT_EQ(currentCubeCoreNum, 64);
 }
- 
+
 TEST_F(OpPlatformTest, TestGetVectorCoreNum)
 {
-    auto &platformInfo = op::GetCurrentPlatformInfo();
+    auto& platformInfo = op::GetCurrentPlatformInfo();
     auto currentVectorCoreNum = platformInfo.GetVectorCoreNum();
     EXPECT_EQ(currentVectorCoreNum, 32);
 }

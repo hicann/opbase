@@ -18,20 +18,20 @@
 namespace op {
 namespace internal {
 
-template<typename T>
-[[maybe_unused]] static void AddToList([[maybe_unused]] std::vector<const aclTensor *> &v, [[maybe_unused]] T &t)
-{
-}
+template <typename T>
+[[maybe_unused]] static void AddToList([[maybe_unused]] std::vector<const aclTensor*>& v, [[maybe_unused]] T& t)
+{}
 
-[[maybe_unused]] static void AddToList(std::vector<const aclTensor *> &v, aclTensor *t)
+[[maybe_unused]] static void AddToList(std::vector<const aclTensor*>& v, aclTensor* t)
 {
     if (t == nullptr)
         return;
     v.push_back(t);
 }
 
-[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor *> &v, std::vector<uint32_t> &idxs,
-    bool genPlaceholder, aclTensor *t, int32_t &currentIdx)
+[[maybe_unused]] static void AddToListAndIdx(
+    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensor* t,
+    int32_t& currentIdx)
 {
     if (t == nullptr && !(genPlaceholder)) {
         return;
@@ -44,8 +44,9 @@ template<typename T>
     }
 }
 
-[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor *> &v, std::vector<uint32_t> &idxs,
-    bool genPlaceholder, aclTensor *t, int32_t &currentIdx, std::vector<int32_t> &tensorOffset)
+[[maybe_unused]] static void AddToListAndIdx(
+    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensor* t,
+    int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
 {
     if (t == nullptr && !(genPlaceholder)) {
         return;
@@ -60,128 +61,132 @@ template<typename T>
     }
 }
 
-[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor *> &v, std::vector<uint32_t> &idxs,
-    bool genPlaceholder, aclTensorList *t, int32_t &currentIdx)
+[[maybe_unused]] static void AddToListAndIdx(
+    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensorList* t,
+    int32_t& currentIdx)
 {
     if (t == nullptr) {
         return;
     }
     for (uint64_t i = 0; i < t->Size(); i++) {
-        AddToListAndIdx(v, idxs, genPlaceholder, const_cast<aclTensor *>((*t)[i]), currentIdx);
+        AddToListAndIdx(v, idxs, genPlaceholder, const_cast<aclTensor*>((*t)[i]), currentIdx);
     }
 }
 
-[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor *> &v, std::vector<uint32_t> &idxs,
-    bool genPlaceholder, aclTensorList *t, int32_t &currentIdx, std::vector<int32_t> &tensorOffset)
+[[maybe_unused]] static void AddToListAndIdx(
+    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensorList* t,
+    int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
 {
     if (t == nullptr) {
         return;
     }
     for (uint64_t i = 0; i < t->Size(); i++) {
-        AddToListAndIdx(v, idxs, genPlaceholder, const_cast<aclTensor *>((*t)[i]), currentIdx, tensorOffset);
+        AddToListAndIdx(v, idxs, genPlaceholder, const_cast<aclTensor*>((*t)[i]), currentIdx, tensorOffset);
     }
 }
 
-[[maybe_unused]] static void AddToList(std::vector<const aclTensor *> &v, const aclTensor *const t)
+[[maybe_unused]] static void AddToList(std::vector<const aclTensor*>& v, const aclTensor* const t)
 {
     if (t == nullptr)
         return;
-    aclTensor *p = const_cast<aclTensor *>(t);
+    aclTensor* p = const_cast<aclTensor*>(t);
     v.push_back(p);
 }
 
-[[maybe_unused]] static void AddToList(std::vector<const aclTensor *> &v, aclTensorList *t)
+[[maybe_unused]] static void AddToList(std::vector<const aclTensor*>& v, aclTensorList* t)
 {
     if (t == nullptr)
         return;
     for (uint64_t i = 0; i < t->Size(); i++) {
-        aclTensor *p = const_cast<aclTensor *>((*t)[i]);
+        aclTensor* p = const_cast<aclTensor*>((*t)[i]);
         v.push_back(p);
     }
 }
 
-[[maybe_unused]] static void AddToList(std::vector<const aclTensor *> &v, const aclTensorList *const t)
+[[maybe_unused]] static void AddToList(std::vector<const aclTensor*>& v, const aclTensorList* const t)
 {
     if (t == nullptr)
         return;
     for (uint64_t i = 0; i < t->Size(); i++) {
-        aclTensor *p = const_cast<aclTensor *>((*t)[i]);
+        aclTensor* p = const_cast<aclTensor*>((*t)[i]);
         v.push_back(p);
     }
 }
 
-template<typename T>
-[[maybe_unused]] static void AddToList([[maybe_unused]] FVector<aclTensor *> &v, [[maybe_unused]] T &t)
-{
-}
+template <typename T>
+[[maybe_unused]] static void AddToList([[maybe_unused]] FVector<aclTensor*>& v, [[maybe_unused]] T& t)
+{}
 
-[[maybe_unused]] static void AddToList(FVector<aclTensor *> &v, aclTensor *t)
+[[maybe_unused]] static void AddToList(FVector<aclTensor*>& v, aclTensor* t)
 {
     if (t == nullptr)
         return;
     v.push_back(t);
 }
 
-[[maybe_unused]] static void AddToList(FVector<aclTensor *> &v, const aclTensor *const t)
+[[maybe_unused]] static void AddToList(FVector<aclTensor*>& v, const aclTensor* const t)
 {
     if (t == nullptr)
         return;
-    aclTensor *p = const_cast<aclTensor *>(t);
+    aclTensor* p = const_cast<aclTensor*>(t);
     v.push_back(p);
 }
 
-[[maybe_unused]] static void AddToList(FVector<aclTensor *> &v, aclTensorList *t)
+[[maybe_unused]] static void AddToList(FVector<aclTensor*>& v, aclTensorList* t)
 {
     if (t == nullptr)
         return;
     for (uint64_t i = 0; i < t->Size(); i++) {
-        aclTensor *p = const_cast<aclTensor *>((*t)[i]);
+        aclTensor* p = const_cast<aclTensor*>((*t)[i]);
         v.push_back(p);
     }
 }
 
-[[maybe_unused]] static void AddToList(FVector<aclTensor *> &v, const aclTensorList *const t)
+[[maybe_unused]] static void AddToList(FVector<aclTensor*>& v, const aclTensorList* const t)
 {
     if (t == nullptr)
         return;
     for (uint64_t i = 0; i < t->Size(); i++) {
-        aclTensor *p = const_cast<aclTensor *>((*t)[i]);
+        aclTensor* p = const_cast<aclTensor*>((*t)[i]);
         v.push_back(p);
     }
 }
 
-template<typename T>
+template <typename T>
 [[maybe_unused]] static void AddToList([[maybe_unused]] FVector<const aclTensor*>& v, [[maybe_unused]] T& t)
-{
-}
+{}
 
 [[maybe_unused]] static void AddToList(FVector<const aclTensor*>& v, aclTensor* t)
 {
-    if (t == nullptr) return;
+    if (t == nullptr)
+        return;
     v.push_back(t);
 }
 
 [[maybe_unused]] static void AddToList(FVector<const aclTensor*>& v, const aclTensor* const t)
 {
-    if (t == nullptr) return;
-    aclTensor * p = const_cast<aclTensor*>(t);
+    if (t == nullptr)
+        return;
+    aclTensor* p = const_cast<aclTensor*>(t);
     v.push_back(p);
 }
 
 [[maybe_unused]] static void AddToList(FVector<const aclTensor*>& v, aclTensorList* t)
 {
-    if (t == nullptr) return;
+    if (t == nullptr)
+        return;
     for (uint64_t i = 0; i < t->Size(); i++) {
-        aclTensor * p = const_cast<aclTensor*>((*t)[i]);
+        aclTensor* p = const_cast<aclTensor*>((*t)[i]);
         v.push_back(p);
     }
 }
 
 [[maybe_unused]] static void AddToList(FVector<const aclTensor*>& v, const aclTensorList* const t)
 {
-    if (t == nullptr) return;
+    if (t == nullptr)
+        return;
     for (uint64_t i = 0; i < t->Size(); i++) {
-        aclTensor * p = const_cast<aclTensor*>((*t)[i]);
+        aclTensor* p = const_cast<aclTensor*>((*t)[i]);
         v.push_back(p);
     }
 }

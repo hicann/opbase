@@ -22,7 +22,7 @@ using namespace optiling;
 extern "C" {
 #endif
 
-void NnopbaseGetDimsFromGertTensor(GertTensor *tensor, int64_t *dims, size_t * num)
+void NnopbaseGetDimsFromGertTensor(GertTensor* tensor, int64_t* dims, size_t* num)
 {
     size_t dimNum;
     GertShape shape = tensor->GetOriginShape();
@@ -40,19 +40,19 @@ struct BNInferenceDParam {
     u_int32_t factorDataLen{61440}, factorParamLen{2048};
 };
 
-#define min(a,b) ((a) > (b) ? (b) : (a))
+#define min(a, b) ((a) > (b) ? (b) : (a))
 void TilingParamBn(BNInferenceDParam& param, size_t dimNum, int64_t* dims, int blockDim)
 {
     int n, c1, h, w, c0;
-    n= (int)dims[0];
-    c1= (int)dims[1];
-    h= (int)dims[2];
-    w= (int)dims[3];
-    c0= (int)dims[4];
+    n = (int)dims[0];
+    c1 = (int)dims[1];
+    h = (int)dims[2];
+    w = (int)dims[3];
+    c0 = (int)dims[4];
 
     OP_LOGI("TilingParamBn %d %d %d %d %d\n", n, c1, h, w, c0);
     const int64_t totalSize = n * c1 * h * w * c0;
-    int64_t blockFactor = (totalSize + blockDim - 1) /blockDim;
+    int64_t blockFactor = (totalSize + blockDim - 1) / blockDim;
     int dim0[5] = {n, c1, h, w, c0};
     int dim1[5] = {1, c1, 1, 1, c0};
     for (int i = 0; i < 5; i++) {
@@ -73,27 +73,27 @@ void TilingParamBn(BNInferenceDParam& param, size_t dimNum, int64_t* dims, int b
         hwCount *= 2;
     }
     param.ubFactor = ((unsigned int)hwc0 <= computeCount) ?
-        min(((unsigned int)param.blockFactor), computeCount / hwc0 * hwc0) :
-        hwc0 / hwCount;
+                         min(((unsigned int)param.blockFactor), computeCount / hwc0 * hwc0) :
+                         hwc0 / hwCount;
 }
 
-int TilingBnStub(unsigned char* buf, int len, GertTensor *tensor,
-                 int64_t *batchsz, uint64_t *tilingKey, uint32_t *blockDim)
+int TilingBnStub(
+    unsigned char* buf, int len, GertTensor* tensor, int64_t* batchsz, uint64_t* tilingKey, uint32_t* blockDim)
 {
-    BNInferenceDParam *param;
+    BNInferenceDParam* param;
     int64_t dims[20];
     size_t num = 0;
 
     if ((unsigned int)len < sizeof(BNInferenceDParam)) {
         return 0;
     }
-    param = (BNInferenceDParam *) buf;
+    param = (BNInferenceDParam*)buf;
     param->factorDataLen = 61440;
     param->factorParamLen = 2048;
 
     NnopbaseGetDimsFromGertTensor(tensor, dims, &num);
     TilingParamBn(*param, num, dims, 8);
-    
+
     *batchsz = 0;
     *tilingKey = 1;
     *blockDim = 8;
@@ -104,18 +104,18 @@ unsigned int TilingForBn(gert::TilingContext* context_)
 {
     KernelRunContext* context = reinterpret_cast<KernelRunContext*>(context_);
     int64_t batchsz = 0;
-    uint64_t *tilingKey = (uint64_t*)(context->output_start[0]->data.inplace);
-    uint32_t *blockDim = (uint32_t*)(context->output_start[1]->data.inplace);
-    bool *atomicClean = (bool*)(context->output_start[2]->data.inplace); // 2 for output;
+    uint64_t* tilingKey = (uint64_t*)(context->output_start[0]->data.inplace);
+    uint32_t* blockDim = (uint32_t*)(context->output_start[1]->data.inplace);
+    bool* atomicClean = (bool*)(context->output_start[2]->data.inplace);                            // 2 for output;
     NnopbaseTilingData* tilingData = (NnopbaseTilingData*)(context->output_start[3]->data.pointer); // 3 for tiling data
     NnopbaseWorkspaceSizes* ws = (NnopbaseWorkspaceSizes*)(context->output_start[4]->data.pointer); // 4 for workspace
-    GertTensor *tensor = nullptr;
+    GertTensor* tensor = nullptr;
     if (context->input_size > 0) {
-        tensor = (GertTensor *)context->values[0]->data.pointer;
+        tensor = (GertTensor*)context->values[0]->data.pointer;
     }
-    tilingData->SetDataSize(TilingBnStub((unsigned char*)tilingData->GetData(), tilingData->GetCapacity(),
-        tensor, &batchsz, tilingKey, blockDim));
-    uint32_t *aicpuBlockDim = (uint32_t*)(context->output_start[8]->data.inplace);
+    tilingData->SetDataSize(TilingBnStub(
+        (unsigned char*)tilingData->GetData(), tilingData->GetCapacity(), tensor, &batchsz, tilingKey, blockDim));
+    uint32_t* aicpuBlockDim = (uint32_t*)(context->output_start[8]->data.inplace);
     *aicpuBlockDim = 2U;
     *atomicClean = false;
     return 0;

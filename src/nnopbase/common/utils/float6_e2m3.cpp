@@ -14,41 +14,34 @@
 #include <cstdint>
 
 namespace {
-    // FP32 format constants
-    constexpr int FP32_EXP_BIAS_VAL = 127;
-    constexpr int FP32_MAN_LEN_VAL = 23;
-    constexpr int FP32_SIGN_SHIFT_VAL = 31;
-    constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-    constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-    constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
+// FP32 format constants
+constexpr int FP32_EXP_BIAS_VAL = 127;
+constexpr int FP32_MAN_LEN_VAL = 23;
+constexpr int FP32_SIGN_SHIFT_VAL = 31;
+constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
 
-    // E2M3 format constants
-    // Bit layout: bit5=sign, bits4-3=exp, bits2-0=man
-    constexpr int EXP_BITS = 2;
-    constexpr int MAN_BITS = 3;
-    constexpr int EXP_BIAS = 1;
-    constexpr int SIGN_SHIFT = 5;
-    constexpr uint8_t SIGN_MASK = 0x20;            // 1 00 000 (bit 5)
-    constexpr uint8_t EXP_MASK = 0x18;             // 0 11 000 (bits 4-3)
-    constexpr uint8_t MAN_MASK = 0x07;             // 0 00 111 (bits 2-0)
-    constexpr uint8_t MAX_EXP = 0x03;              // 11
-    constexpr uint8_t ABS_VALUE_MASK = 0x1F;       // 0 11111 (exclude sign bit)
+// E2M3 format constants
+// Bit layout: bit5=sign, bits4-3=exp, bits2-0=man
+constexpr int EXP_BITS = 2;
+constexpr int MAN_BITS = 3;
+constexpr int EXP_BIAS = 1;
+constexpr int SIGN_SHIFT = 5;
+constexpr uint8_t SIGN_MASK = 0x20;      // 1 00 000 (bit 5)
+constexpr uint8_t EXP_MASK = 0x18;       // 0 11 000 (bits 4-3)
+constexpr uint8_t MAN_MASK = 0x07;       // 0 00 111 (bits 2-0)
+constexpr uint8_t MAX_EXP = 0x03;        // 11
+constexpr uint8_t ABS_VALUE_MASK = 0x1F; // 0 11111 (exclude sign bit)
 } // anonymous namespace
 
 namespace op {
 
-Float6E2M3::Float6E2M3(float v) : value(FloatToFloat6E2M3(v).value)
-{}
+Float6E2M3::Float6E2M3(float v) : value(FloatToFloat6E2M3(v).value) {}
 
-Float6E2M3::operator float() const
-{
-    return Float6E2M3ToFloat(*this);
-}
+Float6E2M3::operator float() const { return Float6E2M3ToFloat(*this); }
 
-Float6E2M3::operator double() const
-{
-    return static_cast<double>(Float6E2M3ToFloat(*this));
-}
+Float6E2M3::operator double() const { return static_cast<double>(Float6E2M3ToFloat(*this)); }
 
 bool Float6E2M3::IsZero() const
 {

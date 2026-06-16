@@ -32,47 +32,47 @@ using std::ifstream;
 using std::string;
 using json = nlohmann::json;
 namespace {
-constexpr const char *NULL_STR = "null";
-constexpr const char *BIN_SUFFIX = ".o";
-constexpr const char *JSON_SUFFIX = ".json";
-constexpr const char *BIN_LIST = "binList";
-constexpr const char *BIN_INFO = "binInfo";
-constexpr const char *JSON_FILE_PATH = "jsonFilePath";
-constexpr const char *BIN_PATH = "binPath";
-constexpr const char *INPUTS = "inputs";
-constexpr const char *OUTPUTS = "outputs";
-constexpr const char *ATTRS = "attrs";
-constexpr const char *PARAM_TYPE = "paramType";
-constexpr const char *TYPE = "type";
-constexpr const char *DATA_TYPE = "dtype";
-constexpr const char *SHAPE = "shape";
-constexpr const char *DTYPE_MATCH_MODE = "dtype_match_mode";
-constexpr const char *DTYPE_BYTE = "DtypeByte";
-constexpr const char *FORMAT = "format";
-constexpr const char *DETERMINISTIC = "deterministic";
-constexpr const char *IMPL_MODE = "implMode";
-constexpr const char *SIMPLIFIED_KEY_MODE = "simplifiedKeyMode";
-constexpr const char *SIMPLIFIED_KEY = "simplifiedKey";
-constexpr const char *NAME = "name";
-constexpr const char *VALUE = "value";
-constexpr const char *ALL = "ALL";
-constexpr const char *OP_KERNEL_TRUE = "true";
-constexpr const char *OP_KERNEL_FALSE = "false";
-constexpr const char *IGNORE = "ignore";
+constexpr const char* NULL_STR = "null";
+constexpr const char* BIN_SUFFIX = ".o";
+constexpr const char* JSON_SUFFIX = ".json";
+constexpr const char* BIN_LIST = "binList";
+constexpr const char* BIN_INFO = "binInfo";
+constexpr const char* JSON_FILE_PATH = "jsonFilePath";
+constexpr const char* BIN_PATH = "binPath";
+constexpr const char* INPUTS = "inputs";
+constexpr const char* OUTPUTS = "outputs";
+constexpr const char* ATTRS = "attrs";
+constexpr const char* PARAM_TYPE = "paramType";
+constexpr const char* TYPE = "type";
+constexpr const char* DATA_TYPE = "dtype";
+constexpr const char* SHAPE = "shape";
+constexpr const char* DTYPE_MATCH_MODE = "dtype_match_mode";
+constexpr const char* DTYPE_BYTE = "DtypeByte";
+constexpr const char* FORMAT = "format";
+constexpr const char* DETERMINISTIC = "deterministic";
+constexpr const char* IMPL_MODE = "implMode";
+constexpr const char* SIMPLIFIED_KEY_MODE = "simplifiedKeyMode";
+constexpr const char* SIMPLIFIED_KEY = "simplifiedKey";
+constexpr const char* NAME = "name";
+constexpr const char* VALUE = "value";
+constexpr const char* ALL = "ALL";
+constexpr const char* OP_KERNEL_TRUE = "true";
+constexpr const char* OP_KERNEL_FALSE = "false";
+constexpr const char* IGNORE = "ignore";
 constexpr const char* STATIC_LIST = "staticList";
 constexpr const char* VALUE_DEPEND_INDEX = "valueDependIndex";
 constexpr const char* OPTIONAL_INPUT_MODE = "optionalInputMode";
 constexpr const char* GEN_PLACEHOLDER = "gen_placeholder";
 constexpr const char* DYNAMIC_PARAM_MODE = "dynamicParamMode";
 constexpr const char* FOLDED_WITH_DESC = "folded_with_desc";
-constexpr const char *OPERATOR = "/";
+constexpr const char* OPERATOR = "/";
 
-constexpr const char *INT = "int";
-constexpr const char *FLOAT = "float";
-constexpr const char *BOOL = "bool";
-constexpr const char *STRING = "string";
-constexpr const char *LIST_INT = "list_int";
-constexpr const char *LIST_FLOAT = "list_float";
+constexpr const char* INT = "int";
+constexpr const char* FLOAT = "float";
+constexpr const char* BOOL = "bool";
+constexpr const char* STRING = "string";
+constexpr const char* LIST_INT = "list_int";
+constexpr const char* LIST_FLOAT = "list_float";
 
 constexpr size_t MAX_BIN_MATCH_ARG_KEY_COUNT = 2; // datatype, formats
 constexpr uint32_t PRINT_ARGS_STEP = 4;
@@ -80,7 +80,7 @@ constexpr int64_t UNKNOWN_DIM_NUM = -2;
 constexpr int64_t CUSTOMIZED_SIMPLIFIED_KEY = 2;
 constexpr int64_t IGNORE_ATTR_SIMPLIFIED_KEY = 0;
 constexpr size_t MAX_CUSTOMIZED_SIMPLIFIED_KEY_LEN = 256;
-constexpr char const *ALL_PRECISION_MODE =
+constexpr char const* ALL_PRECISION_MODE =
     "high_performance,high_precision,enable_float_32_execution,enable_hi_float_32_execution";
 
 constexpr uint64_t OP_API_HASH_SEED = 0x9e3779b9U;
@@ -92,8 +92,7 @@ const std::map<std::string, TensorType> STR_2_TENSOR_TYPE{
     {"required", TensorType::REQUIRED},
     {"optional", TensorType::OPTIONAL},
     {"dynamic", TensorType::DYNAMIC},
-    {"folded_with_desc", TensorType::DYNAMIC_FOLDED}
-};
+    {"folded_with_desc", TensorType::DYNAMIC_FOLDED}};
 
 const std::map<std::string, ge::DataType> STR_2_DATA_TYPE{
     {"float", ge::DT_FLOAT},
@@ -182,30 +181,31 @@ const std::map<std::string, ge::Format> STR_2_FORMAT{
     {"FRACTAL_NZ_C0_4", ge::FORMAT_FRACTAL_NZ_C0_4},
     {"FRACTAL_NZ_C0_8", ge::FORMAT_FRACTAL_NZ_C0_8}};
 
-const std::map<ge::Format, std::string> FORMAT_2_STR{{ge::FORMAT_ND, "ND"},
-                                                     {ge::FORMAT_NCHW, "NCHW"},
-                                                     {ge::FORMAT_NHWC, "NHWC"},
-                                                     {ge::FORMAT_HWCN, "HWCN"},
-                                                     {ge::FORMAT_NCDHW, "NCDHW"},
-                                                     {ge::FORMAT_NDHWC, "NDHWC"},
-                                                     {ge::FORMAT_DHWCN, "DHWCN"},
-                                                     {ge::FORMAT_NDC1HWC0, "NDC1HWC0"},
-                                                     {ge::FORMAT_FRACTAL_NZ, "FRACTAL_NZ"},
-                                                     {ge::FORMAT_NC1HWC0, "NC1HWC0"},
-                                                     {ge::FORMAT_FRACTAL_Z, "FRACTAL_Z"},
-                                                     {ge::FORMAT_C1HWNCoC0, "C1HWNCoC0"},
-                                                     {ge::FORMAT_FRACTAL_Z_C04, "FRACTAL_Z_C04"},
-                                                     {ge::FORMAT_FRACTAL_Z_3D, "FRACTAL_Z_3D"},
-                                                     {ge::FORMAT_FRACTAL_NZ_C0_16, "FRACTAL_NZ_C0_16"},
-                                                     {ge::FORMAT_FRACTAL_NZ_C0_32, "FRACTAL_NZ_C0_32"},
-                                                     {ge::FORMAT_FRACTAL_NZ_C0_2, "FRACTAL_NZ_C0_2"},
-                                                     {ge::FORMAT_FRACTAL_NZ_C0_4, "FRACTAL_NZ_C0_4"},
-                                                     {ge::FORMAT_FRACTAL_NZ_C0_8, "FRACTAL_NZ_C0_8"}};
+const std::map<ge::Format, std::string> FORMAT_2_STR{
+    {ge::FORMAT_ND, "ND"},
+    {ge::FORMAT_NCHW, "NCHW"},
+    {ge::FORMAT_NHWC, "NHWC"},
+    {ge::FORMAT_HWCN, "HWCN"},
+    {ge::FORMAT_NCDHW, "NCDHW"},
+    {ge::FORMAT_NDHWC, "NDHWC"},
+    {ge::FORMAT_DHWCN, "DHWCN"},
+    {ge::FORMAT_NDC1HWC0, "NDC1HWC0"},
+    {ge::FORMAT_FRACTAL_NZ, "FRACTAL_NZ"},
+    {ge::FORMAT_NC1HWC0, "NC1HWC0"},
+    {ge::FORMAT_FRACTAL_Z, "FRACTAL_Z"},
+    {ge::FORMAT_C1HWNCoC0, "C1HWNCoC0"},
+    {ge::FORMAT_FRACTAL_Z_C04, "FRACTAL_Z_C04"},
+    {ge::FORMAT_FRACTAL_Z_3D, "FRACTAL_Z_3D"},
+    {ge::FORMAT_FRACTAL_NZ_C0_16, "FRACTAL_NZ_C0_16"},
+    {ge::FORMAT_FRACTAL_NZ_C0_32, "FRACTAL_NZ_C0_32"},
+    {ge::FORMAT_FRACTAL_NZ_C0_2, "FRACTAL_NZ_C0_2"},
+    {ge::FORMAT_FRACTAL_NZ_C0_4, "FRACTAL_NZ_C0_4"},
+    {ge::FORMAT_FRACTAL_NZ_C0_8, "FRACTAL_NZ_C0_8"}};
 
 thread_local int OpKernelBin::currDevId_;
 thread_local std::vector<MemSetTensorInfo> OpKernelBin::memSetValueCtx_;
 
-ge::DataType GetDataType(const string &dataType)
+ge::DataType GetDataType(const string& dataType)
 {
     auto iter = STR_2_DATA_TYPE.find(dataType);
     if (iter != STR_2_DATA_TYPE.end()) {
@@ -215,7 +215,7 @@ ge::DataType GetDataType(const string &dataType)
     return ge::DT_UNDEFINED;
 }
 
-ge::Format GetFormat(const string &format)
+ge::Format GetFormat(const string& format)
 {
     auto iter = STR_2_FORMAT.find(format);
     if (iter != STR_2_FORMAT.end()) {
@@ -225,7 +225,7 @@ ge::Format GetFormat(const string &format)
     return ge::FORMAT_RESERVED;
 }
 
-TensorType GetTensorType(const string &tensorType)
+TensorType GetTensorType(const string& tensorType)
 {
     auto iter = STR_2_TENSOR_TYPE.find(tensorType);
     if (iter != STR_2_TENSOR_TYPE.end()) {
@@ -240,7 +240,7 @@ TensorType GetTensorType(const string &tensorType)
  * C0 value and it currently uses last dimension of shape to differentiate two binary.
  * We need to get the last dimension of shape and use it as a key for
  * binary matching. */
-static void ParseC0(const nlohmann::json &tensor, std::string &key)
+static void ParseC0(const nlohmann::json& tensor, std::string& key)
 {
     auto shape = tensor.find(SHAPE);
     if (shape != tensor.end() && shape->is_array() && shape->size() == FRACTAL_Z_SIZE) {
@@ -250,7 +250,7 @@ static void ParseC0(const nlohmann::json &tensor, std::string &key)
     }
 }
 
-static void ParseShapeDimNum(const TensorInfo &tensorInfo, const nlohmann::json &tensor, std::string &key)
+static void ParseShapeDimNum(const TensorInfo& tensorInfo, const nlohmann::json& tensor, std::string& key)
 {
     if (tensorInfo.shapeSupportType == ShapeSupportType::NOT_SUPPORT_ALL) {
         auto shape = tensor.find(SHAPE);
@@ -264,8 +264,7 @@ static void ParseShapeDimNum(const TensorInfo &tensorInfo, const nlohmann::json 
     }
 }
 
-aclnnStatus OpKernel::AssembleKeyForSingleTensor(const nlohmann::json &tensor, std::string &key,
-                                                 TensorInfo &tensorInfo)
+aclnnStatus OpKernel::AssembleKeyForSingleTensor(const nlohmann::json& tensor, std::string& key, TensorInfo& tensorInfo)
 {
     if (tensorInfo.dtMatchMode == DtMatchMode::NORMAL) {
         auto dtypeMatchMode = tensor.find(DTYPE_MATCH_MODE);
@@ -325,27 +324,24 @@ aclnnStatus OpKernelBin::BinLoad()
         return ACLNN_ERR_INNER;
     }
 
-    auto f = [this](aclrtBinHandle &hdl) -> aclnnStatus {
-        return BinLoadImpl(hdl);
-    };
+    auto f = [this](aclrtBinHandle& hdl) -> aclnnStatus { return BinLoadImpl(hdl); };
     return binHandle_[currDevId_].InitVar(f);
 }
 
 aclnnStatus OpKernelBin::GetBinData()
 {
     std::tuple<nlohmann::json, nnopbase::Binary> binInfo;
-    auto ret = nnopbase::OpBinaryResourceManager::GetInstance().
-        GetOpBinaryDescByPath(relativeJsonPath_.c_str(), binInfo);
+    auto ret =
+        nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDescByPath(relativeJsonPath_.c_str(), binInfo);
     if (ret == ACLNN_SUCCESS) {
-        auto f = [&binInfo](std::string &binData) -> aclnnStatus {
-            auto &binary = std::get<1>(binInfo);
+        auto f = [&binInfo](std::string& binData) -> aclnnStatus {
+            auto& binary = std::get<1>(binInfo);
             if (binary.content == nullptr || binary.len <= 0) {
                 return ACLNN_ERR_INNER;
             }
             try {
-                binData = std::string(reinterpret_cast<const char *>(binary.content),
-                                        static_cast<size_t>(binary.len));
-            } catch (const std::bad_alloc &) {
+                binData = std::string(reinterpret_cast<const char*>(binary.content), static_cast<size_t>(binary.len));
+            } catch (const std::bad_alloc&) {
                 return ACLNN_ERR_INNER;
             }
             return ACLNN_SUCCESS;
@@ -361,9 +357,7 @@ aclnnStatus OpKernelBin::GetBinData()
     }
     OP_LOGW("No builtin op kernel bin obj [%s]", relativeJsonPath_.c_str());
 
-    auto f = [this](std::string &binData) -> aclnnStatus {
-        return ReadFile2String(binPath_.c_str(), binData);
-    };
+    auto f = [this](std::string& binData) -> aclnnStatus { return ReadFile2String(binPath_.c_str(), binData); };
     ret = binData_.InitVar(f);
     if (ret != ACLNN_SUCCESS) {
         std::string retStr = std::to_string(ret);
@@ -373,7 +367,7 @@ aclnnStatus OpKernelBin::GetBinData()
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
+aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle& binHandle)
 {
     auto ret = GetBinData();
     CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Failed to get op kernel bin data [%s]", binPath_.c_str());
@@ -384,13 +378,14 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
     const std::lock_guard<std::mutex> lock(rtsLock);
 
     uint32_t magic = ACL_RT_BINARY_MAGIC_ELF_AICORE;
-    auto &opJson = binJson_.GetVar();
+    auto& opJson = binJson_.GetVar();
     if (opJson.contains("magic")) {
-        const auto &str = opJson["magic"].get<std::string>();
+        const auto& str = opJson["magic"].get<std::string>();
         if (str == "RT_DEV_BINARY_MAGIC_ELF_AICUBE") {
             magic = ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE;
-        } else if (str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC"
-            || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
+        } else if (
+            str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
+            str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
             magic = ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE;
         }
     }
@@ -400,11 +395,10 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle &binHandle)
     magicLoadOption.value.magic = magic;
     aclrtBinaryLoadOptions loadOptions = {&magicLoadOption, 1};
 
-    CHECK_COND(aclrtBinaryLoadFromData(binData_.GetVar().c_str(), binData_.GetVar().size(), &loadOptions, &binHandle) ==
-                   ACL_SUCCESS,
-        ACLNN_ERR_RUNTIME_ERROR,
-        "aclrtBinaryLoadFromData failed, bin path: %s",
-        binPath_.c_str());
+    CHECK_COND(
+        aclrtBinaryLoadFromData(binData_.GetVar().c_str(), binData_.GetVar().size(), &loadOptions, &binHandle) ==
+            ACL_SUCCESS,
+        ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryLoadFromData failed, bin path: %s", binPath_.c_str());
 
     OP_LOGD("Register Kernel succ on dev[%d], binHandle: %p, bin path: %s", currDevId_, binHandle, binPath_.c_str());
     return OK;
@@ -414,49 +408,46 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
 {
     const std::lock_guard<std::mutex> getFuncHandleLock(funcHandleMutex_);
     if (isLaunchWithTilingKey) {
-        auto f = [this, tilingKey](aclrtFuncHandle &hdl) -> aclnnStatus {
+        auto f = [this, tilingKey](aclrtFuncHandle& hdl) -> aclnnStatus {
             aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
-            CHECK_COND(aclrtBinaryGetFunctionByEntry(binHandle, tilingKey, &hdl) == ACL_SUCCESS,
-                ACLNN_ERR_RUNTIME_ERROR,
+            CHECK_COND(
+                aclrtBinaryGetFunctionByEntry(binHandle, tilingKey, &hdl) == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR,
                 "aclrtBinaryGetFunctionByEntry failed, kernel name: %s, tiling key: %lu",
-                op::OpTypeDict::ToString(opType_).GetString(),
-                tilingKey);
+                op::OpTypeDict::ToString(opType_).GetString(), tilingKey);
             OP_LOGI("Get function handle by tiling key [%lu] successfully, function handle: %p", tilingKey, hdl);
             return ACLNN_SUCCESS;
         };
         return funcHandleWithTilingKey_[currDevId_][tilingKey].InitVar(f);
     }
-    auto f = [this](aclrtFuncHandle &hdl) -> aclnnStatus {
+    auto f = [this](aclrtFuncHandle& hdl) -> aclnnStatus {
         aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
-        auto &opJson = binJson_.GetVar();
+        auto& opJson = binJson_.GetVar();
         if (!opJson.contains("kernelName")) {
             std::string reason = "The operator JSON file does not contain the kernel name";
             OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(jsonPath_.c_str(), reason.c_str());
             return ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND;
         }
         kernelNameOfNoFatBin_ = opJson["kernelName"].get<std::string>();
-        CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
-            ACLNN_ERR_RUNTIME_ERROR,
-            "aclrtBinaryGetFunction failed, kernel name: %s",
-            kernelNameOfNoFatBin_.c_str());
+        CHECK_COND(
+            aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
+            ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryGetFunction failed, kernel name: %s", kernelNameOfNoFatBin_.c_str());
         OP_LOGI(
-            "Get function handle by kernel name [%s] successfully, function handle: %p",
-            kernelNameOfNoFatBin_.c_str(), hdl);
+            "Get function handle by kernel name [%s] successfully, function handle: %p", kernelNameOfNoFatBin_.c_str(),
+            hdl);
         return ACLNN_SUCCESS;
     };
     return funcHandleWithKernelName_[currDevId_].InitVar(f);
 }
 
-void GetTaskInfoMultiKernelInfo(TaskInfo &info, const nlohmann::json &elem)
+void GetTaskInfoMultiKernelInfo(TaskInfo& info, const nlohmann::json& elem)
 {
     const string kernelType = elem["kernelType"].get<std::string>();
     const string taskRation = elem["taskRation"].get<std::string>();
     const uint32_t crossCoreSync =
         (elem["crossCoreSync"].is_number_integer()) ? (elem["crossCoreSync"].get<uint32_t>()) : 0;
-    OP_LOGI("get info from json, kernelType is: %s, taskRation is: %s, crossCoreSync is: %u",
-        kernelType.c_str(),
-        taskRation.c_str(),
-        crossCoreSync);
+    OP_LOGI(
+        "get info from json, kernelType is: %s, taskRation is: %s, crossCoreSync is: %u", kernelType.c_str(),
+        taskRation.c_str(), crossCoreSync);
     if (taskRation == "1:0" || taskRation == "0:1") {
         if (crossCoreSync == 1) {
             info.type = (taskRation == "0:1") ? MSPROF_GE_TASK_TYPE_MIX_AIV : MSPROF_GE_TASK_TYPE_MIX_AIC;
@@ -474,7 +465,7 @@ void GetTaskInfoMultiKernelInfo(TaskInfo &info, const nlohmann::json &elem)
     }
 }
 
-void GetOpExecModeForTaskInfo(TaskInfo &info, OpArgContext *args)
+void GetOpExecModeForTaskInfo(TaskInfo& info, OpArgContext* args)
 {
     if (args == nullptr || !args->ContainsOpArgType(op::OP_EXEC_MODE_ARG)) {
         return;
@@ -487,20 +478,21 @@ void GetOpExecModeForTaskInfo(TaskInfo &info, OpArgContext *args)
     OP_LOGI("Get task op exec mode %u", static_cast<uint32_t>(info.execMode));
 }
 
-MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json &opJson)
+MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json& opJson)
 {
     MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
     if (opJson.contains("magic")) {
-        const auto &str = opJson["magic"].get<std::string>();
+        const auto& str = opJson["magic"].get<std::string>();
         OP_LOGI("get task type, kernel magic: %s", str.c_str());
         if (str == "RT_DEV_BINARY_MAGIC_ELF_AICUBE") {
             taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
-        } else if (str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC"
-            || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
+        } else if (
+            str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
+            str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
             taskType = MSPROF_GE_TASK_TYPE_AIV;
         }
         if (opJson.contains("taskRation")) {
-            const auto &taskRation = opJson["taskRation"].get<std::string>();
+            const auto& taskRation = opJson["taskRation"].get<std::string>();
             OP_LOGI("get task type, task ration: %s", taskRation.c_str());
             if (!taskRation.empty() && (taskRation[0] == '0')) {
                 taskType = MSPROF_GE_TASK_TYPE_MIX_AIV;
@@ -513,7 +505,7 @@ MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json &opJson)
 }
 
 void OpKernelBin::GetTaskRationForSingleBinMutilKernel(
-    TaskInfo &info, const nlohmann::json &opJson, uint64_t tilingkey, MsprofGeTaskType taskType)
+    TaskInfo& info, const nlohmann::json& opJson, uint64_t tilingkey, MsprofGeTaskType taskType)
 {
     OP_LOGI("single-bin multi-kernel");
     if (!opJson.contains("kernelList")) {
@@ -522,7 +514,7 @@ void OpKernelBin::GetTaskRationForSingleBinMutilKernel(
         info.ration = 0;
         return;
     }
-    for (const auto &elem : opJson["kernelList"]) {
+    for (const auto& elem : opJson["kernelList"]) {
         if (!elem.contains("tilingKey")) {
             OP_LOGW("json parse error. does not contain tilingKey.");
             continue;
@@ -531,7 +523,7 @@ void OpKernelBin::GetTaskRationForSingleBinMutilKernel(
             continue;
         }
         if (elem.contains("kernelType") && (elem["kernelType"].get<std::string>() == "MIX_AIC" ||
-                                               elem["kernelType"].get<std::string>() == "MIX_AIV")) {
+                                            elem["kernelType"].get<std::string>() == "MIX_AIV")) {
             if (!elem.contains("taskRation")) {
                 OP_LOGW("json parse error. json file: %s does not contain taskRation.", jsonPath_.c_str());
                 info.type = taskType;
@@ -548,9 +540,9 @@ void OpKernelBin::GetTaskRationForSingleBinMutilKernel(
     }
 }
 
-TaskInfo OpKernelBin::GetTaskInfo(uint64_t tilingkey, OpArgContext *args)
+TaskInfo OpKernelBin::GetTaskInfo(uint64_t tilingkey, OpArgContext* args)
 {
-    auto &opJson = binJson_.GetVar();
+    auto& opJson = binJson_.GetVar();
     MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
     TaskInfo info;
     GetOpExecModeForTaskInfo(info, args);
@@ -559,7 +551,7 @@ TaskInfo OpKernelBin::GetTaskInfo(uint64_t tilingkey, OpArgContext *args)
         OP_LOGI("Non-single-bin multi-kernel");
         taskType = GetTaskTypeSingleKernelType(opJson);
         if (mixKernel.find(tilingkey) != mixKernel.end()) {
-            taskType = MSPROF_GE_TASK_TYPE_MIX_AIC;  // Currently only matmul has AIC mix kernel in fatbin
+            taskType = MSPROF_GE_TASK_TYPE_MIX_AIC; // Currently only matmul has AIC mix kernel in fatbin
         }
         info.type = taskType;
         info.ration = (taskType == MSPROF_GE_TASK_TYPE_MIX_AIC) ? KERNEL_RATION_TWO : 0;
@@ -578,10 +570,8 @@ aclnnStatus OpKernelBin::InitTilingParseCtx()
     ThreadCoreNum key(GetThreadLocalContext().opConfigInfo_.aicNum_, GetThreadLocalContext().opConfigInfo_.aivNum_);
     auto f = [&ret, &key, this]() {
         auto p = std::make_unique<TilingParseCtxHolder>();
-        if (p->BuildTilingParseCtx(opType_,
-                OpRunContextMgr::GetOpTilingFuncs(opType_),
-                binJson_.GetVar(),
-                SocContext::GetPlatformInfo(),
+        if (p->BuildTilingParseCtx(
+                opType_, OpRunContextMgr::GetOpTilingFuncs(opType_), binJson_.GetVar(), SocContext::GetPlatformInfo(),
                 aclnnOpInfoRecord::OpCompilerOption(keyAndDetail_.implMode, keyAndDetail_.deterministicFlag),
                 aclnnOpInfoRecord::OpKernelInfo(binPath_, static_cast<int8_t>(binType_))) != OK) {
             ret = ACLNN_ERR_RUNTIME_ERROR;
@@ -595,7 +585,7 @@ aclnnStatus OpKernelBin::InitTilingParseCtx()
     return ret;
 }
 
-static void GetParamtersValue(const nlohmann::json &elem, op::DataType &dtype, int64_t &valuei, float32_t &valuef)
+static void GetParamtersValue(const nlohmann::json& elem, op::DataType& dtype, int64_t& valuei, float32_t& valuef)
 {
     if (elem["dtype"] == "float16") {
         dtype = op::DataType::DT_FLOAT16;
@@ -634,72 +624,67 @@ static void GetParamtersValue(const nlohmann::json &elem, op::DataType &dtype, i
 
 void OpKernelBin::SetMemSetFlagFromJson()
 {
-    auto &opJson = binJson_.GetVar();
+    auto& opJson = binJson_.GetVar();
     if (!opJson.contains("parameters") || !opJson["parameters"].is_array()) {
         return;
     }
 
     for (size_t i = 0; i < opJson["parameters"].size(); i++) {
-        const auto &elem = opJson["parameters"][i];
+        const auto& elem = opJson["parameters"][i];
         if (!elem.is_null()) {
             OP_LOGD("Need atomic clean in op json");
             op::DataType dtype = op::DataType::DT_FLOAT;
             int64_t valuei = 0;
             float32_t valuef = 0;
             if (!elem.contains("dtype") || !elem.contains("init_value")) {
-                memSetValue_.emplace_back(MemSetTensorInfo{
-                    i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
+                memSetValue_.emplace_back(
+                    MemSetTensorInfo{
+                        i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
                 OP_LOGW("not contain dtype, index: %zu", i);
                 continue;
             }
             GetParamtersValue(elem, dtype, valuei, valuef);
 
-            memSetValue_.emplace_back(MemSetTensorInfo{
-                i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
-            OP_LOGD("memSetValue_ emplace: [index: %zu, dtype: %s, valuef: %f, valuei: %ld]",
-                i,
-                op::ToString(dtype).GetString(),
-                valuef,
-                valuei);
+            memSetValue_.emplace_back(
+                MemSetTensorInfo{
+                    i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
+            OP_LOGD(
+                "memSetValue_ emplace: [index: %zu, dtype: %s, valuef: %f, valuei: %ld]", i,
+                op::ToString(dtype).GetString(), valuef, valuei);
         }
     }
 }
 
-uint64_t OpKernelBin::GetAttrId(OpArgContext *args)
+uint64_t OpKernelBin::GetAttrId(OpArgContext* args)
 {
     uint64_t aclGraphAttrId = 0;
     if (GetThreadLocalContext().cacheOpInfoSwitch_ && opKernel_ != nullptr) {
         std::string attrStrId;
         if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
             op::internal::ReportAttrInfo(
-                *args->GetOpArg(op::OP_ATTR_ARG), attrStrId, static_cast<OpKernel *>(opKernel_)->attrInfos_);
+                *args->GetOpArg(op::OP_ATTR_ARG), attrStrId, static_cast<OpKernel*>(opKernel_)->attrInfos_);
             OP_LOGI("attrStrId is %s after add attr value", attrStrId.c_str());
         }
         OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
-        input.VisitByNoReturn(
-            [&attrStrId](size_t idx, OpArg &elem) { SummaryAttrArg(idx, elem, attrStrId); });
+        input.VisitByNoReturn([&attrStrId](size_t idx, OpArg& elem) { SummaryAttrArg(idx, elem, attrStrId); });
         OP_LOGI("attrStrId is %s after add input tensor", attrStrId.c_str());
-        attrStrId +=
-            std::string("IsStaticKernel:") + (binType_ == BinType::STATIC_BIN ? std::string("true")
-                                                                              : std::string("false"));
+        attrStrId += std::string("IsStaticKernel:") +
+                     (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));
         aclGraphAttrId = MsprofGetHashId(attrStrId.c_str(), attrStrId.size());
     }
     return aclGraphAttrId;
 }
 
-void ParseImplModeByJson(const nlohmann::json &singleBinJson, const std::string &jsonPath,
-                         FVector<OpImplMode> &implModes)
+void ParseImplModeByJson(
+    const nlohmann::json& singleBinJson, const std::string& jsonPath, FVector<OpImplMode>& implModes)
 {
     auto iter = singleBinJson.find(IMPL_MODE);
     if (iter != singleBinJson.end()) {
         if (*iter == ALL_PRECISION_MODE) {
             OP_LOGD("jsonPath %s support all op impl mode.", jsonPath.c_str());
             implModes = {
-                OpImplMode::IMPL_MODE_HIGH_PERFORMANCE,
-                OpImplMode::IMPL_MODE_HIGH_PRECISION,
-                OpImplMode::IMPL_MODE_ENABLE_FLOAT32_EXECUTION,
-                OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION
-            };
+                OpImplMode::IMPL_MODE_HIGH_PERFORMANCE, OpImplMode::IMPL_MODE_HIGH_PRECISION,
+                OpImplMode::IMPL_MODE_ENABLE_FLOAT32_EXECUTION, OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION};
         } else {
             OpImplMode mode = ToOpImplMode(*iter);
             if (mode != OpImplMode::IMPL_MODE_RESERVED) {
@@ -707,8 +692,7 @@ void ParseImplModeByJson(const nlohmann::json &singleBinJson, const std::string 
                 implModes.emplace_back(mode);
             } else {
                 implModes.emplace_back(OpImplMode::IMPL_MODE_HIGH_PRECISION);
-                OP_LOGW("Invalid op impl mode %s in json %s.",
-                        static_cast<string>(*iter).c_str(), jsonPath.c_str());
+                OP_LOGW("Invalid op impl mode %s in json %s.", static_cast<string>(*iter).c_str(), jsonPath.c_str());
             }
         }
     } else {
@@ -717,8 +701,8 @@ void ParseImplModeByJson(const nlohmann::json &singleBinJson, const std::string 
     }
 }
 
-aclnnStatus OpKernel::ParseContext(const nlohmann::json &singleBinJson, const std::string &jsonPath,
-                                   KeyParams &keyParams)
+aclnnStatus OpKernel::ParseContext(
+    const nlohmann::json& singleBinJson, const std::string& jsonPath, KeyParams& keyParams)
 {
     // simp_key: "deterministic/overflow/precision_mode + inputs + outputs"
     /* 1. Generate context. */
@@ -734,7 +718,7 @@ aclnnStatus OpKernel::ParseContext(const nlohmann::json &singleBinJson, const st
     auto dtm = singleBinJson.find(DETERMINISTIC);
     FVector<char> determinFlags;
     if (dtm != singleBinJson.end()) {
-        const auto &dtmStr = dtm->get<std::string>();
+        const auto& dtmStr = dtm->get<std::string>();
         if (dtmStr == OP_KERNEL_TRUE) {
             determinFlags.emplace_back(DETERMINISTIC_VALUE);
         } else if (dtmStr == OP_KERNEL_FALSE) {
@@ -759,10 +743,10 @@ aclnnStatus OpKernel::ParseContext(const nlohmann::json &singleBinJson, const st
         ParseImplModeByJson(singleBinJson, jsonPath, implModes);
     }
 
-    for (const auto &dtmFlag : determinFlags) {
-        for (const auto &implMode : implModes) {
+    for (const auto& dtmFlag : determinFlags) {
+        for (const auto& implMode : implModes) {
             keyParams.keys.emplace_back();
-            auto &back = keyParams.keys.back();
+            auto& back = keyParams.keys.back();
             back.key += dtmFlag;
             back.key += "/";
             back.key += ToIndexChar(implMode);
@@ -779,12 +763,12 @@ aclnnStatus OpKernel::ParseContext(const nlohmann::json &singleBinJson, const st
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AssembleKeyByTensor(const nlohmann::json &inOrOuts,
-                                          std::array<TensorInfo, MAX_TENSOR_SIZE> &tensorInfos,
-                                          std::string &key, KeyParams &keyParams)
+aclnnStatus OpKernel::AssembleKeyByTensor(
+    const nlohmann::json& inOrOuts, std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, std::string& key,
+    KeyParams& keyParams)
 {
     size_t cnt = 0;
-    for (auto &tensor : inOrOuts) {
+    for (auto& tensor : inOrOuts) {
         if (keyParams.genPlaceholder) {
             auto paramType = tensor.find(PARAM_TYPE);
             if (paramType != tensor.end() && GetTensorType(*paramType) == TensorType::OPTIONAL) {
@@ -839,11 +823,10 @@ aclnnStatus OpKernel::AssembleKeyByTensor(const nlohmann::json &inOrOuts,
     return ACLNN_SUCCESS;
 }
 
-void OpKernel::UpdateFormatType(std::array<TensorInfo, MAX_TENSOR_SIZE> &tensorInfos,
-                                size_t validTensorNum) const
+void OpKernel::UpdateFormatType(std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, size_t validTensorNum) const
 {
     for (size_t i = 0; i < validTensorNum; i++) {
-        auto &formatInfo = tensorInfos[i].fmtInfo;
+        auto& formatInfo = tensorInfos[i].fmtInfo;
         if (formatInfo.supportFormats.count(ge::FORMAT_ND) == 0) {
             formatInfo.fmtType = FormatType::NOT_SUPPORT_ND;
         } else {
@@ -853,13 +836,13 @@ void OpKernel::UpdateFormatType(std::array<TensorInfo, MAX_TENSOR_SIZE> &tensorI
                 formatInfo.fmtType = FormatType::SUPPORT_ND;
             }
         }
-        OP_LOGD("Format Type of node %s is %d.", OpTypeDict::ToString(opType_).GetString(),
-                static_cast<int32_t>(formatInfo.fmtType));
+        OP_LOGD(
+            "Format Type of node %s is %d.", OpTypeDict::ToString(opType_).GetString(),
+            static_cast<int32_t>(formatInfo.fmtType));
     }
 }
 
-aclnnStatus OpKernel::ParseAttributes(const nlohmann::json &singleBinJson,
-                                      string &key)
+aclnnStatus OpKernel::ParseAttributes(const nlohmann::json& singleBinJson, string& key)
 {
     if (ingnoreAttrSimplifiedKeyMode_) {
         return ACLNN_SUCCESS;
@@ -871,13 +854,13 @@ aclnnStatus OpKernel::ParseAttributes(const nlohmann::json &singleBinJson,
     }
 
     size_t attrCnt = 0;
-    for (auto &attr : *attrsIter) {
+    for (auto& attr : *attrsIter) {
         if (attrCnt >= attrInfos_.size()) {
             OP_LOGE(ACLNN_ERR_INNER, "Attr cnt %zu is larger than attrInfos_ size %zu!", attrCnt, attrInfos_.size());
             return ACLNN_ERR_INNER_ATTR_NUM_OUT_OF_BOUND;
         }
 
-        auto &attrInfo = attrInfos_.at(attrCnt);
+        auto& attrInfo = attrInfos_.at(attrCnt);
         ++attrCnt;
         if (attrInfo.supportAll) {
             continue;
@@ -896,12 +879,12 @@ aclnnStatus OpKernel::ParseAttributes(const nlohmann::json &singleBinJson,
         } else if (value->is_number_float()) {
             float valueFloat = value->get<float>();
             for (size_t i = 0; i < attrInfo.realSize; i++) {
-                key += static_cast<char>(*(reinterpret_cast<uint8_t *>(&valueFloat) + i));
+                key += static_cast<char>(*(reinterpret_cast<uint8_t*>(&valueFloat) + i));
             }
         } else if (value->is_number()) {
             int64_t valueInt64 = value->get<int64_t>();
             for (size_t i = 0; i < attrInfo.realSize; i++) {
-                key += static_cast<char>(*(reinterpret_cast<uint8_t *>(&valueInt64) + i));
+                key += static_cast<char>(*(reinterpret_cast<uint8_t*>(&valueInt64) + i));
             }
         } else if (value->is_array()) {
             key += '[';
@@ -914,33 +897,33 @@ aclnnStatus OpKernel::ParseAttributes(const nlohmann::json &singleBinJson,
     return ACLNN_SUCCESS;
 }
 
-bool OpKernel::IsGenInputPlaceholder(const nlohmann::json &singleBinJson)
+bool OpKernel::IsGenInputPlaceholder(const nlohmann::json& singleBinJson)
 {
     auto optionalInputMode = singleBinJson.find(OPTIONAL_INPUT_MODE);
     if (optionalInputMode == singleBinJson.end()) {
         return false;
     }
-    const auto &value = optionalInputMode->get<std::string>();
+    const auto& value = optionalInputMode->get<std::string>();
     if (value == GEN_PLACEHOLDER) {
         return true;
     }
     return false;
 }
 
-bool OpKernel::HasDevPtrArg(const nlohmann::json &singleBinJson) const
+bool OpKernel::HasDevPtrArg(const nlohmann::json& singleBinJson) const
 {
     auto dynamicParamMode = singleBinJson.find(DYNAMIC_PARAM_MODE);
     if (dynamicParamMode == singleBinJson.end()) {
         return false;
     }
-    const auto &value = dynamicParamMode->get<std::string>();
+    const auto& value = dynamicParamMode->get<std::string>();
     if (value == FOLDED_WITH_DESC) {
         return true;
     }
     return false;
 }
 
-aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json &singleBinJson, KeyParams &keyParams)
+aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json& singleBinJson, KeyParams& keyParams)
 {
     auto simplifiedKey = singleBinJson.find(SIMPLIFIED_KEY);
     if (simplifiedKey == singleBinJson.end()) {
@@ -953,7 +936,7 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json &singleBin
         return ACLNN_ERR_INNER_OP_FILE_INVALID;
     }
 
-    for (auto &key : *simplifiedKey) {
+    for (auto& key : *simplifiedKey) {
         // exclude op type str in simplified key
         // "ZerosLike/d=0,p=0/12,2/12,2" -> "d=0,p=0/12,2/12,2"
         std::string keyStr = key.get<std::string>().substr(opTypeStr_.size() + 1);
@@ -971,13 +954,14 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json &singleBin
             continue;
         }
         keyParams.keys.emplace_back();
-        auto &back = keyParams.keys.back();
+        auto& back = keyParams.keys.back();
         back.key = keyStr;
         back.deterministicFlag = (deterministicFlag != 0);
         back.implMode = ToString(implMode).GetString();
         AppendImplModeBm(implMode);
-        OP_LOGD("%s append simplified key %s deterministic(%u) implMode(%u)",
-            opTypeStr_.c_str(), back.key.c_str(), back.deterministicFlag, static_cast<uint32_t>(implMode));
+        OP_LOGD(
+            "%s append simplified key %s deterministic(%u) implMode(%u)", opTypeStr_.c_str(), back.key.c_str(),
+            back.deterministicFlag, static_cast<uint32_t>(implMode));
     }
     keyParams.genPlaceholder = IsGenInputPlaceholder(singleBinJson);
     keyParams.hasDevPtrArg = HasDevPtrArg(singleBinJson);
@@ -985,8 +969,8 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json &singleBin
 }
 
 /* Generate mapping of {simplified_key -> the path of json and bin} */
-aclnnStatus OpKernel::GenerateKeyByJson(const nlohmann::json &singleBinJson, const std::string &jsonPath,
-                                        KeyParams &keyParams)
+aclnnStatus OpKernel::GenerateKeyByJson(
+    const nlohmann::json& singleBinJson, const std::string& jsonPath, KeyParams& keyParams)
 {
     /* 1. Generate key by context. */
     ParseContext(singleBinJson, jsonPath, keyParams);
@@ -1020,7 +1004,7 @@ aclnnStatus OpKernel::GenerateKeyByJson(const nlohmann::json &singleBinJson, con
 
     keyParams.len.tensorLen = tensorKey.length();
     keyParams.len.ctxAndtensorLen = keyParams.len.ctxLen + keyParams.len.tensorLen;
-    for (auto &ele : keyParams.keysWithoutAttr) {
+    for (auto& ele : keyParams.keysWithoutAttr) {
         ele += tensorKey;
     }
 
@@ -1030,13 +1014,13 @@ aclnnStatus OpKernel::GenerateKeyByJson(const nlohmann::json &singleBinJson, con
         maxAttrLen_ = attrLenOfThisBin;
     }
 
-    for (auto &key : keyParams.keys) {
+    for (auto& key : keyParams.keys) {
         key.key += tensorKey;
     }
     return ret;
 }
 
-void OpKernel::GetReadableFmtDtypeKey(wchar_t ele, int32_t &cnt, string &debug_str) const
+void OpKernel::GetReadableFmtDtypeKey(wchar_t ele, int32_t& cnt, string& debug_str) const
 {
     if (cnt % MAX_BIN_MATCH_ARG_KEY_COUNT == 0) {
         if (ele <= ge::DT_MAX) {
@@ -1066,8 +1050,7 @@ void OpKernel::GetReadableFmtDtypeKey(wchar_t ele, int32_t &cnt, string &debug_s
     }
 }
 
-string OpKernel::GetReadableKey(const string &key,
-                                KeyLength &len) const
+string OpKernel::GetReadableKey(const string& key, KeyLength& len) const
 {
     if (customizedSimplifiedKeyMode_) {
         return key;
@@ -1118,14 +1101,14 @@ string OpKernel::GetReadableKey(const string &key,
     return debugStr;
 }
 
-size_t OpKernel::HashBinary(const char *addr, uint32_t len) const
+size_t OpKernel::HashBinary(const char* addr, uint32_t len) const
 {
     const std::hash<uint64_t> hasher;
     uint32_t size = len >> 3;
     uint32_t rem = len % sizeof(uint64_t);
     uint32_t i = 0;
     size_t seed = 0;
-    auto *ptr = reinterpret_cast<const uint64_t *>(addr);
+    auto* ptr = reinterpret_cast<const uint64_t*>(addr);
 
     while (i < size) {
         seed ^= hasher(*ptr) + OP_API_HASH_SEED + (seed << 6U) + (seed >> 2U);
@@ -1134,21 +1117,18 @@ size_t OpKernel::HashBinary(const char *addr, uint32_t len) const
     }
     if (rem != 0) {
         uint64_t val = 0U;
-        OP_CHECK(
-            memcpy_s(&val, sizeof(uint64_t), ptr, rem) == EOK, OP_LOGW("Failed to memcpy."),
-            ;);
+        OP_CHECK(memcpy_s(&val, sizeof(uint64_t), ptr, rem) == EOK, OP_LOGW("Failed to memcpy."), ;);
         seed ^= hasher(val) + OP_API_HASH_SEED + (seed << 6U) + (seed >> 2U);
     }
     return seed;
 }
 
-aclnnStatus OpKernel::HashAndInsert(const string &binAndJsonDir,
-                                    const string &binOrJsonPath,
-                                    const size_t &pos, KeyParams &keyParams)
+aclnnStatus OpKernel::HashAndInsert(
+    const string& binAndJsonDir, const string& binOrJsonPath, const size_t& pos, KeyParams& keyParams)
 {
     bool enableDebug = false;
     op::internal::systemConfig.GetEnableDebugKernelFlag(enableDebug);
-    for (const auto &key : keyParams.keys) {
+    for (const auto& key : keyParams.keys) {
         string binPath = binAndJsonDir;
         string binOrJsonPathPrefix = binOrJsonPath.substr(0, pos);
         binPath.append(binOrJsonPathPrefix);
@@ -1163,67 +1143,68 @@ aclnnStatus OpKernel::HashAndInsert(const string &binAndJsonDir,
                 OP_LOGD("This static bin has been added, key: %s", binPath.c_str());
                 continue;
             }
-            staticBins_.emplace(hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath,
-                                                                    key, hash, keyParams.binType,
-                                                                    keyParams.genPlaceholder, false, this));
+            staticBins_.emplace(
+                hash, std::make_unique<OpKernelBin>(
+                          opType_, jsonPath, binOrJsonPath, binPath, key, hash, keyParams.binType,
+                          keyParams.genPlaceholder, false, this));
             OP_LOGD("Static bin: key: %s, json: %s, bin: %s", key.key.c_str(), jsonPath.c_str(), binPath.c_str());
             continue;
         }
 
-        OP_LOGD("Add key %s into bins_.",
-                GetReadableKey(key.key, keyParams.len).c_str());
+        OP_LOGD("Add key %s into bins_.", GetReadableKey(key.key, keyParams.len).c_str());
         OP_LOGD("result json path [%s]; bin file path[%s]", jsonPath.c_str(), binPath.c_str());
         auto hash = HashBinary(key.key.c_str(), key.key.size());
         OP_LOGD("Hash key %zu origin size %zu into bins_;", hash, key.key.size());
         auto binsIter = bins_.find(hash);
         if (binsIter != bins_.end()) {
             if (key.key != binsIter->second->GetKeyAndDetail().key) {
-                OP_LOGE(ACLNN_ERR_INNER,
-                        "Two bin [%s & %s] has same hash but their integral key is diff[%s, %s].",
-                        binOrJsonPath.c_str(), binsIter->second->jsonPath_.c_str(),
-                        GetReadableKey(key.key, keyParams.len).c_str(),
-                        GetReadableKey(binsIter->second->GetKeyAndDetail().key, keyParams.len).c_str());
+                OP_LOGE(
+                    ACLNN_ERR_INNER, "Two bin [%s & %s] has same hash but their integral key is diff[%s, %s].",
+                    binOrJsonPath.c_str(), binsIter->second->jsonPath_.c_str(),
+                    GetReadableKey(key.key, keyParams.len).c_str(),
+                    GetReadableKey(binsIter->second->GetKeyAndDetail().key, keyParams.len).c_str());
                 return ACLNN_ERR_INNER;
             } else {
                 if (enableDebug) {
                     binsIter->second->SetJsonPath(jsonPath);
                     binsIter->second->SetBinPath(binPath);
                 } else {
-                    OP_LOGW("Two different bin [%s & %s] has same integral key %s.", binOrJsonPath.c_str(),
-                            binsIter->second->jsonPath_.c_str(), GetReadableKey(key.key, keyParams.len).c_str());
+                    OP_LOGW(
+                        "Two different bin [%s & %s] has same integral key %s.", binOrJsonPath.c_str(),
+                        binsIter->second->jsonPath_.c_str(), GetReadableKey(key.key, keyParams.len).c_str());
                     continue;
                 }
             }
         } else {
-            bins_.emplace(hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath,
-                                                              key, hash, keyParams.binType,
-                                                              keyParams.genPlaceholder, keyParams.hasDevPtrArg, this));
+            bins_.emplace(
+                hash, std::make_unique<OpKernelBin>(
+                          opType_, jsonPath, binOrJsonPath, binPath, key, hash, keyParams.binType,
+                          keyParams.genPlaceholder, keyParams.hasDevPtrArg, this));
         }
     }
     return ACLNN_SUCCESS;
 }
 
-void HandleAttrValue(const nlohmann::json &value, AttrInfo &attrInfo)
+void HandleAttrValue(const nlohmann::json& value, AttrInfo& attrInfo)
 {
     OP_LOGD("Check attr [%s].", attrInfo.attrName.c_str());
     if (attrInfo.values == nullptr) {
         if (value.is_number_float()) {
-            OP_LOGD("Float attr [%s], value: [%f, %u].", attrInfo.attrName.c_str(),
-                    value.get<float>(), value.get<uint32_t>());
+            OP_LOGD(
+                "Float attr [%s], value: [%f, %u].", attrInfo.attrName.c_str(), value.get<float>(),
+                value.get<uint32_t>());
             attrInfo.values = std::make_unique<uint8_t[]>(sizeof(float));
             attrInfo.realSize = sizeof(float);
 
             float valueFloat = value.get<float>();
             for (size_t i = 0; i < attrInfo.realSize; ++i) {
-                OP_LOGD("Attr value compare %zu [%x: %x].",
-                        i, attrInfo.values[i], *((uint8_t *) (&valueFloat) + i));
+                OP_LOGD("Attr value compare %zu [%x: %x].", i, attrInfo.values[i], *((uint8_t*)(&valueFloat) + i));
             }
             OP_CHECK(memcpy_s(attrInfo.values.get(), sizeof(float), &valueFloat, sizeof(float)) == EOK,
                      OP_LOGW("Failed to memcpy."),
                      ;);
         } else if (value.is_number()) {
-            OP_LOGD("Int attr [%s], value: [%ld].", attrInfo.attrName.c_str(),
-                    value.get<int64_t>());
+            OP_LOGD("Int attr [%s], value: [%ld].", attrInfo.attrName.c_str(), value.get<int64_t>());
             int64_t valueInt64 = value.get<int64_t>();
             attrInfo.values = std::make_unique<uint8_t[]>(sizeof(int64_t));
             OP_CHECK(memcpy_s(attrInfo.values.get(), sizeof(int64_t), &valueInt64, sizeof(int64_t)) == EOK,
@@ -1231,16 +1212,16 @@ void HandleAttrValue(const nlohmann::json &value, AttrInfo &attrInfo)
                      ;);
             attrInfo.realSize = sizeof(int64_t);
             for (size_t i = 0; i < attrInfo.realSize; ++i) {
-                OP_LOGD("Attr value compare %zu [%u: %u].",
-                        i, attrInfo.values[i], *((uint8_t *) (&valueInt64) + i));
+                OP_LOGD("Attr value compare %zu [%u: %u].", i, attrInfo.values[i], *((uint8_t*)(&valueInt64) + i));
             }
         } else if (value.is_array()) {
             if (value.at(0).is_array()) {
                 OP_LOGD("Do not support list list int attr [%s].", attrInfo.attrName.c_str());
                 return;
             }
-            OP_LOGD("List Int attr [%s], value: [%s].", attrInfo.attrName.c_str(),
-                    op::ToString(value.get<FVector<int64_t, MAX_DIM_NUM>>()).GetString());
+            OP_LOGD(
+                "List Int attr [%s], value: [%s].", attrInfo.attrName.c_str(),
+                op::ToString(value.get<FVector<int64_t, MAX_DIM_NUM>>()).GetString());
             attrInfo.values = std::make_unique<uint8_t[]>(1);
             attrInfo.realSize = 1;
             attrInfo.values[0] = value.size();
@@ -1253,8 +1234,7 @@ void HandleAttrValue(const nlohmann::json &value, AttrInfo &attrInfo)
     if (value.is_number_float()) {
         float valueFloat = value.get<float>();
         for (size_t i = 0; i < attrInfo.realSize; ++i) {
-            OP_LOGD("Attr value compare %zu [%x: %x].",
-                    i, attrInfo.values[i], *((uint8_t *) (&valueFloat) + i));
+            OP_LOGD("Attr value compare %zu [%x: %x].", i, attrInfo.values[i], *((uint8_t*)(&valueFloat) + i));
         }
         if (memcmp(attrInfo.values.get(), &valueFloat, attrInfo.realSize) != 0) {
             OP_LOGD("Float attr [%s] need to be compared.", attrInfo.attrName.c_str());
@@ -1265,8 +1245,7 @@ void HandleAttrValue(const nlohmann::json &value, AttrInfo &attrInfo)
     } else if (value.is_number()) {
         int64_t valueInt64 = value.get<int64_t>();
         for (size_t i = 0; i < attrInfo.realSize; ++i) {
-            OP_LOGD("Attr value compare %zu [%u: %u].",
-                    i, attrInfo.values[i], *((uint8_t *) (&valueInt64) + i));
+            OP_LOGD("Attr value compare %zu [%u: %u].", i, attrInfo.values[i], *((uint8_t*)(&valueInt64) + i));
         }
         if (memcmp(attrInfo.values.get(), &valueInt64, attrInfo.realSize) != 0) {
             OP_LOGD("Int64 attr [%s] need to be compared.", attrInfo.attrName.c_str());
@@ -1285,7 +1264,7 @@ void HandleAttrValue(const nlohmann::json &value, AttrInfo &attrInfo)
     return;
 }
 
-static void RecordDimNumAndCheck(TensorInfo &inputInfo, size_t dimNum, int64_t inputsCnt)
+static void RecordDimNumAndCheck(TensorInfo& inputInfo, size_t dimNum, int64_t inputsCnt)
 {
     if (inputInfo.shapeDimension == INVALID_MAX_DIM_NUM) {
         inputInfo.shapeDimension = dimNum;
@@ -1295,22 +1274,22 @@ static void RecordDimNumAndCheck(TensorInfo &inputInfo, size_t dimNum, int64_t i
     }
 }
 
-aclnnStatus OpKernel::JudgeInputSupportAll(const nlohmann::json &binListJson)
+aclnnStatus OpKernel::JudgeInputSupportAll(const nlohmann::json& binListJson)
 {
-    for (auto &binJson : binListJson) {
+    for (auto& binJson : binListJson) {
         auto inputsIter = binJson.find(INPUTS);
         if (inputsIter == binJson.end()) {
             return ACLNN_SUCCESS;
         }
 
         int64_t inputsCnt = -1;
-        for (const auto &input : *inputsIter) {
+        for (const auto& input : *inputsIter) {
             ++inputsCnt;
             if (inputsCnt >= static_cast<int64_t>(inputInfos_.size())) {
                 OP_LOGE(ACLNN_ERR_INNER_INPUT_NUM_IN_JSON_TOO_LARGE, "%ld is too large", inputsCnt);
                 return ACLNN_ERR_INNER_INPUT_NUM_IN_JSON_TOO_LARGE;
             }
-            auto &inputInfo = inputInfos_[inputsCnt];
+            auto& inputInfo = inputInfos_[inputsCnt];
             if (inputInfo.shapeSupportType == ShapeSupportType::SUPPORT_ALL ||
                 inputInfo.shapeSupportType == ShapeSupportType::NOT_SUPPORT_ALL) {
                 continue;
@@ -1341,15 +1320,15 @@ aclnnStatus OpKernel::JudgeInputSupportAll(const nlohmann::json &binListJson)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json &binListJson)
+aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json& binListJson)
 {
-    for (auto &binJson : binListJson) {
+    for (auto& binJson : binListJson) {
         auto attrsIter = binJson.find(ATTRS);
         if (attrsIter == binJson.end()) {
             return ACLNN_SUCCESS;
         }
         size_t attrCnt = 0;
-        for (const auto &attr : *attrsIter) {
+        for (const auto& attr : *attrsIter) {
             if (attr.is_null()) {
                 OP_LOGE(ACLNN_ERR_INNER, "Attr is null!");
                 return ACLNN_ERR_INNER;
@@ -1366,7 +1345,7 @@ aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json &binListJson)
                 attrInfos_.back().attrName = *name;
                 attrInfos_.back().supportAll = true;
             }
-            auto &attrInfo = attrInfos_.at(attrCnt);
+            auto& attrInfo = attrInfos_.at(attrCnt);
             ++attrCnt;
             if (!attrInfo.supportAll) {
                 /* If this attribute is marked as not support all, we know that the value is differed
@@ -1400,32 +1379,30 @@ aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json &binListJson)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::InitTensorInfo(const nlohmann::json &binListJson)
+aclnnStatus OpKernel::InitTensorInfo(const nlohmann::json& binListJson)
 {
-    for (auto &input : inputInfos_) {
+    for (auto& input : inputInfos_) {
         input.opType = opType_;
     }
 
-    for (auto &output : outputInfos_) {
+    for (auto& output : outputInfos_) {
         output.opType = opType_;
     }
     return JudgeInputSupportAll(binListJson);
 }
 
-void OpKernel::JudgeCustomizedSimpliedKeyMode(const nlohmann::json &binListJson)
+void OpKernel::JudgeCustomizedSimpliedKeyMode(const nlohmann::json& binListJson)
 {
-    for (auto &binJson : binListJson) {
+    for (auto& binJson : binListJson) {
         auto simplifiedKeyMode = binJson.find(SIMPLIFIED_KEY_MODE);
-        if (simplifiedKeyMode != binJson.end() &&
-            simplifiedKeyMode->is_number() &&
+        if (simplifiedKeyMode != binJson.end() && simplifiedKeyMode->is_number() &&
             simplifiedKeyMode->get<int64_t>() == CUSTOMIZED_SIMPLIFIED_KEY) {
             OP_LOGI("op type %s has customized simplified key.", opTypeStr_.c_str());
             customizedSimplifiedKeyMode_ = true;
             break;
         }
         // if one bin dont has simplifiedKeyMode or simplifiedKeyMode is not 0, dont use ingnoreAttrSimplifiedKeyMode_
-        if (simplifiedKeyMode != binJson.end() &&
-            simplifiedKeyMode->is_number() &&
+        if (simplifiedKeyMode != binJson.end() && simplifiedKeyMode->is_number() &&
             simplifiedKeyMode->get<int64_t>() == IGNORE_ATTR_SIMPLIFIED_KEY) {
             OP_LOGI("op type %s has ignore attr simplified key.", opTypeStr_.c_str());
             ingnoreAttrSimplifiedKeyMode_ = true;
@@ -1440,29 +1417,28 @@ void OpKernel::JudgeCustomizedSimpliedKeyMode(const nlohmann::json &binListJson)
 aclnnStatus OpKernel::GetOpDescJson(bool debug)
 {
     if (!debug) {
-        auto ret = nnopbase::OpBinaryResourceManager::GetInstance().
-            GetOpBinaryDesc(opTypeStr_.c_str(), configJson_);
-        OP_CHECK(ret != ACLNN_SUCCESS,
-            OP_LOGI("Get builtin op desc info [%s]", opTypeStr_.c_str()), return ACLNN_SUCCESS);
+        auto ret = nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDesc(opTypeStr_.c_str(), configJson_);
+        OP_CHECK(
+            ret != ACLNN_SUCCESS, OP_LOGI("Get builtin op desc info [%s]", opTypeStr_.c_str()), return ACLNN_SUCCESS);
         OP_LOGW("No builtin op desc info [%s]", opTypeStr_.c_str());
     }
 
     ifstream f(configJsonPath_);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
-    OP_CHECK(f.is_open(),
-        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), strerror(errno)),
+    OP_CHECK(
+        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), strerror(errno)),
         return ACLNN_ERR_INNER);
 #endif
     try {
         configJson_ = nlohmann::json::parse(f);
-    } catch (nlohmann::json::exception &e) {
+    } catch (nlohmann::json::exception& e) {
         OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(configJsonPath_.c_str(), e.what());
         return ACLNN_ERR_INNER;
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendDynBin(const string &jsonPath, const string &binAndJsonDir, bool debug)
+aclnnStatus OpKernel::AppendDynBin(const string& jsonPath, const string& binAndJsonDir, bool debug)
 {
     configJsonPath_ = jsonPath;
     auto ret = GetOpDescJson(debug);
@@ -1486,7 +1462,7 @@ aclnnStatus OpKernel::AppendDynBin(const string &jsonPath, const string &binAndJ
         return ret;
     }
 
-    for (auto &binJson : *binListIter) {
+    for (auto& binJson : *binListIter) {
         auto binInfoIter = binJson.find(BIN_INFO);
         if (binInfoIter == binJson.end()) {
             continue;
@@ -1529,12 +1505,13 @@ aclnnStatus OpKernel::AppendDynBin(const string &jsonPath, const string &binAndJ
         attrInfos_.back().supportAll = false;
     }
     maxKeyLength_ = customizedSimplifiedKeyMode_ ? MAX_CUSTOMIZED_SIMPLIFIED_KEY_LEN + sizeof("d=1,p=1/") :
-        (inputNum_ + outputNum_) * MAX_BIN_MATCH_ARG_KEY_COUNT + maxAttrLen_ + DEFAULT_CONTEXT_LEN + REDUNDANT_LEN;
+                                                   (inputNum_ + outputNum_) * MAX_BIN_MATCH_ARG_KEY_COUNT +
+                                                       maxAttrLen_ + DEFAULT_CONTEXT_LEN + REDUNDANT_LEN;
     OP_LOGD("End for parsing config file %s. Max key length = %zu.", jsonPath.c_str(), maxKeyLength_);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string &binAndJsonDir)
+aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json& opJson, const string& binAndJsonDir)
 {
     auto valueDependIter = opJson.find(VALUE_DEPEND_INDEX);
     if (valueDependIter != opJson.end() && !valueDependIter->is_null() && valueDependIter->is_array()) {
@@ -1546,7 +1523,7 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string
         return ACLNN_SUCCESS;
     }
 
-    for (const auto &singleJson : *staticListIter) {
+    for (const auto& singleJson : *staticListIter) {
         auto binPathIter = singleJson.find(BIN_PATH);
         if (binPathIter == singleJson.end()) {
             OP_LOGW("binPath does not exist.");
@@ -1559,14 +1536,14 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string
             continue;
         }
 
-        const std::string &binPath = binPathIter->get<std::string>();
+        const std::string& binPath = binPathIter->get<std::string>();
         auto pos = binPath.find(BIN_SUFFIX);
         if (pos == string::npos) {
             OP_LOGW("binPath %s is not valid.", binPath.c_str());
             continue;
         }
 
-        const std::string &simplifiedKey = simplifiedKeyIter->get<std::string>();
+        const std::string& simplifiedKey = simplifiedKeyIter->get<std::string>();
 
         KeyParams keyParams;
         keyParams.binType = BinType::STATIC_BIN;
@@ -1580,16 +1557,17 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json &opJson, const string
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendTensor(const aclTensor *tensor, FVector<const aclTensor*> &tensors,
-                                   [[maybe_unused]]FVector<int64_t> &dynamicIndex,
-                                   [[maybe_unused]]FVector<int64_t> &dynamicCount) const
+aclnnStatus OpKernel::AppendTensor(
+    const aclTensor* tensor, FVector<const aclTensor*>& tensors, [[maybe_unused]] FVector<int64_t>& dynamicIndex,
+    [[maybe_unused]] FVector<int64_t>& dynamicCount) const
 {
     tensors.emplace_back(tensor);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendTensor(const aclTensorList *tensorList, FVector<const aclTensor*> &tensors,
-                                   FVector<int64_t> &dynamicIndex, FVector<int64_t> &dynamicCount) const
+aclnnStatus OpKernel::AppendTensor(
+    const aclTensorList* tensorList, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
+    FVector<int64_t>& dynamicCount) const
 {
     dynamicIndex.emplace_back(static_cast<int64_t>(tensors.size()));
     dynamicCount.emplace_back(tensorList->Size());
@@ -1601,53 +1579,33 @@ aclnnStatus OpKernel::AppendTensor(const aclTensorList *tensorList, FVector<cons
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendTensor(OpArg &opArg, FVector<const aclTensor *> &tensors, FVector<int64_t> &dynamicIndex,
-                                   FVector<int64_t> &dynamicCount) const
+aclnnStatus OpKernel::AppendTensor(
+    OpArg& opArg, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
+    FVector<int64_t>& dynamicCount) const
 {
     if (opArg.type == OpArgType::OPARG_ACLTENSOR) {
-        return AppendTensor(reinterpret_cast<aclTensor *>(opArg->pointer), tensors, dynamicIndex, dynamicCount);
+        return AppendTensor(reinterpret_cast<aclTensor*>(opArg->pointer), tensors, dynamicIndex, dynamicCount);
     } else if (opArg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-        return AppendTensor(reinterpret_cast<aclTensorList *>(opArg->pointer), tensors, dynamicIndex, dynamicCount);
+        return AppendTensor(reinterpret_cast<aclTensorList*>(opArg->pointer), tensors, dynamicIndex, dynamicCount);
     }
     return ACLNN_SUCCESS;
 }
 
-uint32_t OpKernel::GetOpType() const
-{
-    return opType_;
-}
+uint32_t OpKernel::GetOpType() const { return opType_; }
 
-const string &OpKernel::GetOpTypeStr() const
-{
-    return opTypeStr_;
-}
+const string& OpKernel::GetOpTypeStr() const { return opTypeStr_; }
 
-void OpKernel::SetOpType(uint32_t opType)
-{
-    opType_ = opType;
-}
+void OpKernel::SetOpType(uint32_t opType) { opType_ = opType; }
 
-void OpKernel::SetOpType(const string &opTypeStr)
-{
-    opTypeStr_ = opTypeStr;
-}
+void OpKernel::SetOpType(const string& opTypeStr) { opTypeStr_ = opTypeStr; }
 
-void OpKernel::SetOpsRepoName(const string &opsRepoName)
-{
-    opsRepoName_ = opsRepoName;
-}
+void OpKernel::SetOpsRepoName(const string& opsRepoName) { opsRepoName_ = opsRepoName; }
 
-void OpKernelBin::SetJsonPath(const string &jsonPath)
-{
-    jsonPath_ = jsonPath;
-}
+void OpKernelBin::SetJsonPath(const string& jsonPath) { jsonPath_ = jsonPath; }
 
-void OpKernelBin::SetBinPath(const string &binPath)
-{
-    binPath_ = binPath;
-}
+void OpKernelBin::SetBinPath(const string& binPath) { binPath_ = binPath; }
 
-void OpKernelBin::ReportOpAttrInfo(OpArgContext *args, uint64_t summaryId)
+void OpKernelBin::ReportOpAttrInfo(OpArgContext* args, uint64_t summaryId)
 {
     // only level2 profiling need to report attr info
     if (!op::internal::opProfilingSwitch.level2ProfilingFlag) {
@@ -1656,16 +1614,15 @@ void OpKernelBin::ReportOpAttrInfo(OpArgContext *args, uint64_t summaryId)
     if (opKernel_ == nullptr) {
         return;
     }
-    
+
     std::string attrStr;
     if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
         op::internal::ReportAttrInfo(
-            *args->GetOpArg(op::OP_ATTR_ARG), attrStr, static_cast<OpKernel *>(opKernel_)->attrInfos_);
+            *args->GetOpArg(op::OP_ATTR_ARG), attrStr, static_cast<OpKernel*>(opKernel_)->attrInfos_);
         OP_LOGI("attrStr is %s after add attr value", attrStr.c_str());
     }
     OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
-    input.VisitByNoReturn(
-        [&attrStr](size_t idx, OpArg &elem) { SummaryAttrArg(idx, elem, attrStr); });
+    input.VisitByNoReturn([&attrStr](size_t idx, OpArg& elem) { SummaryAttrArg(idx, elem, attrStr); });
     OP_LOGI("attrStr is %s after add input tensor", attrStr.c_str());
     attrStr +=
         std::string("IsStaticKernel:") + (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));

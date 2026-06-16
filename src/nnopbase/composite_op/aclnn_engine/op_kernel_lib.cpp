@@ -19,11 +19,11 @@
 namespace op {
 namespace internal {
 namespace {
-constexpr char const *OP_FILE = "opFile";
-constexpr char const *VALUE = "value";
-constexpr char const *AICORE_IMPL_PATH_SUFFIX = "/built-in/op_impl/ai_core/tbe/";
-constexpr char const *CUSTOM_IMPL_PATH_SUFFIX = "/op_impl/ai_core/tbe/";
-constexpr char const *KERNEL_CONFIG_SUFFIX = "config/";
+constexpr char const* OP_FILE = "opFile";
+constexpr char const* VALUE = "value";
+constexpr char const* AICORE_IMPL_PATH_SUFFIX = "/built-in/op_impl/ai_core/tbe/";
+constexpr char const* CUSTOM_IMPL_PATH_SUFFIX = "/op_impl/ai_core/tbe/";
+constexpr char const* KERNEL_CONFIG_SUFFIX = "config/";
 } // namespace
 
 using namespace std;
@@ -32,9 +32,8 @@ OpKernelLib::OpKernelLib() : initFlag_(false) {}
 
 OpKernelLib::~OpKernelLib() {}
 
-template<typename T>
-aclnnStatus GetJsonValue(const nlohmann::json &json, const std::string &key1,
-                         const std::string &key2, T &value)
+template <typename T>
+aclnnStatus GetJsonValue(const nlohmann::json& json, const std::string& key1, const std::string& key2, T& value)
 {
     auto iter1 = json.find(key1);
     if (iter1 == json.end()) {
@@ -43,9 +42,10 @@ aclnnStatus GetJsonValue(const nlohmann::json &json, const std::string &key1,
     if (key2.empty()) {
         try {
             value = iter1->get<T>();
-        } catch (nlohmann::json::exception &e) {
-            OP_LOGE(ACLNN_ERR_INNER_OP_FILE_INVALID, "Exception:%s occurs when getting json value for key1 %s.",
-                    e.what(), key1.c_str());
+        } catch (nlohmann::json::exception& e) {
+            OP_LOGE(
+                ACLNN_ERR_INNER_OP_FILE_INVALID, "Exception:%s occurs when getting json value for key1 %s.", e.what(),
+                key1.c_str());
         }
     } else {
         auto iter2 = iter1->find(key2);
@@ -54,24 +54,21 @@ aclnnStatus GetJsonValue(const nlohmann::json &json, const std::string &key1,
         }
         try {
             value = iter2->get<T>();
-        } catch (nlohmann::json::exception &e) {
-            OP_LOGE(ACLNN_ERR_INNER_OP_FILE_INVALID,
-                    "Exception:%s occurs when getting json value for key1 %s and key2 %s.",
-                    e.what(), key1.c_str(), key2.c_str());
+        } catch (nlohmann::json::exception& e) {
+            OP_LOGE(
+                ACLNN_ERR_INNER_OP_FILE_INVALID, "Exception:%s occurs when getting json value for key1 %s and key2 %s.",
+                e.what(), key1.c_str(), key2.c_str());
         }
     }
 
     return ACLNN_SUCCESS;
 }
 // ============================= KernelLibInfo ==================================
-KernelLibInfo::KernelLibInfo(uint32_t opTypeId, const std::string &opType)
-    : opTypeId_(opTypeId), opType_(opType)
-{
-}
+KernelLibInfo::KernelLibInfo(uint32_t opTypeId, const std::string& opType) : opTypeId_(opTypeId), opType_(opType) {}
 
-aclnnStatus KernelLibInfo::Initialize(nlohmann::json &singleKernelJson)
+aclnnStatus KernelLibInfo::Initialize(nlohmann::json& singleKernelJson)
 {
-    (void) GetJsonValue(singleKernelJson, OP_FILE, VALUE, opFile_);
+    (void)GetJsonValue(singleKernelJson, OP_FILE, VALUE, opFile_);
     if (!opFile_.empty()) {
         opFile_ += JSON_SUFFIX;
         BinConfigJsonDict::UpdateConfigJsonPath(opTypeId_, opFile_);
@@ -80,24 +77,18 @@ aclnnStatus KernelLibInfo::Initialize(nlohmann::json &singleKernelJson)
     return ACLNN_SUCCESS;
 }
 
-const string &KernelLibInfo::GetOpFile() const
-{
-    return opFile_;
-}
+const string& KernelLibInfo::GetOpFile() const { return opFile_; }
 
 // ============================== OpKernelLib ====================================
 static std::unordered_map<std::string, std::string> socOpMapV2 = {
-    {"Ascend910_95", "ascend910_95/"},
-    {"Ascend950", "ascend950/"},
-    {"Ascend350", "ascend350/"}
-};
+    {"Ascend910_95", "ascend910_95/"}, {"Ascend950", "ascend950/"}, {"Ascend350", "ascend350/"}};
 
 static std::string emptyString = "";
 
-static const std::string &GetSocPathV2(const std::string &soc)
+static const std::string& GetSocPathV2(const std::string& soc)
 {
-    for (auto &socPair : socOpMapV2) {
-        const std::string &socPrefix = socPair.first;
+    for (auto& socPair : socOpMapV2) {
+        const std::string& socPrefix = socPair.first;
         if (soc.compare(0, socPrefix.length(), socPrefix) == 0) {
             return socPair.second;
         }
@@ -106,35 +97,17 @@ static const std::string &GetSocPathV2(const std::string &soc)
 }
 
 static map<string, string> socOpMap = {
-    {"Ascend910A", "ascend910/"},
-    {"Ascend910B", "ascend910/"},
-    {"Ascend910ProA", "ascend910/"},
-    {"Ascend910PremiumA", "ascend910/"},
-    {"Ascend910ProB", "ascend910/"},
-    {"Ascend910B1", "ascend910b/"},
-    {"Ascend910B2", "ascend910b/"},
-    {"Ascend910B3", "ascend910b/"},
-    {"Ascend910B4", "ascend910b/"},
-    {"Ascend910B4-1", "ascend910b/"},
-    {"Ascend910B2C", "ascend910b/"},
-    {"Ascend910_9391", "ascend910_93/"},
-    {"Ascend910_9381", "ascend910_93/"},
-    {"Ascend910_9372", "ascend910_93/"},
-    {"Ascend910_9392", "ascend910_93/"},
-    {"Ascend910_9382", "ascend910_93/"},
-    {"Ascend910_9362", "ascend910_93/"},
-    {"Ascend310P1", "ascend310p/"},
-    {"Ascend310P3", "ascend310p/"},
-    {"Ascend310P5", "ascend310p/"},
-    {"Ascend310P7", "ascend310p/"},
-    {"Ascend310B1", "ascend310b/"},
-    {"Ascend310B4", "ascend310b/"},
-    {"Ascend610Lite", "ascend610lite/"},
-    {"KirinX90", "kirinx90/"},
-    {"Kirin9030", "kirin9030/"}
-};
+    {"Ascend910A", "ascend910/"},        {"Ascend910B", "ascend910/"},        {"Ascend910ProA", "ascend910/"},
+    {"Ascend910PremiumA", "ascend910/"}, {"Ascend910ProB", "ascend910/"},     {"Ascend910B1", "ascend910b/"},
+    {"Ascend910B2", "ascend910b/"},      {"Ascend910B3", "ascend910b/"},      {"Ascend910B4", "ascend910b/"},
+    {"Ascend910B4-1", "ascend910b/"},    {"Ascend910B2C", "ascend910b/"},     {"Ascend910_9391", "ascend910_93/"},
+    {"Ascend910_9381", "ascend910_93/"}, {"Ascend910_9372", "ascend910_93/"}, {"Ascend910_9392", "ascend910_93/"},
+    {"Ascend910_9382", "ascend910_93/"}, {"Ascend910_9362", "ascend910_93/"}, {"Ascend310P1", "ascend310p/"},
+    {"Ascend310P3", "ascend310p/"},      {"Ascend310P5", "ascend310p/"},      {"Ascend310P7", "ascend310p/"},
+    {"Ascend310B1", "ascend310b/"},      {"Ascend310B4", "ascend310b/"},      {"Ascend610Lite", "ascend610lite/"},
+    {"KirinX90", "kirinx90/"},           {"Kirin9030", "kirin9030/"}};
 
-const std::string &OpKernelLib::GetSocPath()
+const std::string& OpKernelLib::GetSocPath()
 {
     if (initFlag_ && !socPath_.empty()) {
         return socPath_;
@@ -142,8 +115,8 @@ const std::string &OpKernelLib::GetSocPath()
 
     auto soc = aclrtGetSocName();
     OP_CHECK(soc != nullptr, OP_LOGW("aclrtGetSocName return nullptr."), return socPath_);
-    const string &devtype = string(soc);
-    const auto &iter = socOpMap.find(devtype);
+    const string& devtype = string(soc);
+    const auto& iter = socOpMap.find(devtype);
     if (iter != socOpMap.end()) {
         socPath_ = socOpMap[devtype];
     } else {
@@ -154,7 +127,7 @@ const std::string &OpKernelLib::GetSocPath()
     return socPath_;
 }
 
-const std::string &OpKernelLib::GetAiCoreImplPath()
+const std::string& OpKernelLib::GetAiCoreImplPath()
 {
     if (!aiCoreImplPath_.empty()) {
         return aiCoreImplPath_;
@@ -162,22 +135,22 @@ const std::string &OpKernelLib::GetAiCoreImplPath()
 
     std::string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGW("opp kernel real path can not be found. ret %d", ret),
-             return aiCoreImplPath_);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS && !oppRealPath.empty(), OP_LOGW("opp kernel real path can not be found. ret %d", ret),
+        return aiCoreImplPath_);
 
     aiCoreImplPath_.append(oppRealPath);
     aiCoreImplPath_.append(AICORE_IMPL_PATH_SUFFIX);
     return aiCoreImplPath_;
 }
 
-const std::vector<std::string> &OpKernelLib::GetCustomImplPath()
+const std::vector<std::string>& OpKernelLib::GetCustomImplPath()
 {
     if (!customImplPath_.empty()) {
         return customImplPath_;
     }
 
-    const char *customOppPath = nullptr;
+    const char* customOppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_CUSTOM_OPP_PATH, customOppPath);
     if (customOppPath == nullptr) {
         OP_LOGI("ASCEND_CUSTOM_OPP_PATH is null.");
@@ -185,12 +158,11 @@ const std::vector<std::string> &OpKernelLib::GetCustomImplPath()
     }
 
     std::vector<std::string> strs = SplitWith(customOppPath, ':');
-    for (const auto &str : strs) {
+    for (const auto& str : strs) {
         const std::string implPath = str + CUSTOM_IMPL_PATH_SUFFIX;
         const std::string realImplPath = RealPath(implPath);
         OP_LOGD("custom impl path: %s, real path: %s", implPath.c_str(), realImplPath.c_str());
-        if (realImplPath != "")
-        {
+        if (realImplPath != "") {
             customImplPath_.emplace_back(realImplPath);
         }
     }
@@ -198,19 +170,19 @@ const std::vector<std::string> &OpKernelLib::GetCustomImplPath()
     return customImplPath_;
 }
 
-const std::vector<std::string> &OpKernelLib::GetConfigImplPath()
+const std::vector<std::string>& OpKernelLib::GetConfigImplPath()
 {
     if (!configImplPath_.empty()) {
         return configImplPath_;
     }
 
-    const char *oppPath = nullptr;
+    const char* oppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPath);
     OP_CHECK(oppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH is null."), return configImplPath_);
 
     const std::string oppPathStr = oppPath;
     const vector<std::string> vendorNames = GetVendorNames();
-    for (const auto &vendorName : vendorNames) {
+    for (const auto& vendorName : vendorNames) {
         const std::string implPath = oppPathStr + "/vendors/" + vendorName + CUSTOM_IMPL_PATH_SUFFIX;
         const std::string realImplPath = RealPath(implPath);
         OP_LOGD("config impl path: %s, real path: %s", implPath.c_str(), realImplPath.c_str());
@@ -225,8 +197,8 @@ aclnnStatus OpKernelLib::ParseKernelLibInfos(uint32_t opType)
     kernelLibInfos_[opType] = KernelLibInfo(opType, OpTypeDict::ToString(opType).GetString());
     uint32_t allOpTypeSize = OpTypeDict::GetAllOpTypeSize();
 
-    for (auto &elem : allKernelsJson_.items()) {
-        auto &opTypeStr = elem.key();
+    for (auto& elem : allKernelsJson_.items()) {
+        auto& opTypeStr = elem.key();
         uint32_t opTypeId = OpTypeDict::ToOpType(opTypeStr);
         if (opTypeId >= allOpTypeSize || opTypeId == 0) {
             continue;
@@ -245,10 +217,10 @@ aclnnStatus OpKernelLib::ParseKernelLibInfos(uint32_t opType)
 const std::vector<std::string> OpKernelLib::GetVendorNames() const
 {
     std::vector<std::string> vendorNames;
-    const char *oppPath = nullptr;
+    const char* oppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPath);
     OP_CHECK(oppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH is null."), return vendorNames);
- 
+
     const std::string oppPathStr = oppPath;
     const std::string configPath = oppPathStr + "/vendors/config.ini";
     const std::string realConfigPath = RealPath(configPath);
@@ -257,7 +229,7 @@ const std::vector<std::string> OpKernelLib::GetVendorNames() const
         OP_LOGI("config.ini file path [%s] is invalid or does not exist.", configPath.c_str());
         return vendorNames;
     }
- 
+
     std::ifstream ifs(realConfigPath);
     std::string line;
     while (std::getline(ifs, line)) {
@@ -279,7 +251,7 @@ const std::vector<std::string> OpKernelLib::GetVendorNames() const
     ifs.close();
     return vendorNames;
 }
- 
+
 const std::vector<std::string> OpKernelLib::GetConfigFilePaths()
 {
     std::vector<std::string> configFilePaths;
@@ -288,15 +260,15 @@ const std::vector<std::string> OpKernelLib::GetConfigFilePaths()
     std::string configFileDir = GetAiCoreImplPath();
     configFileDir.append(KERNEL_CONFIG_SUFFIX);
     configFileDir.append(GetSocPath());
-    OP_CHECK(ReadDirBySuffix(configFileDir, ".json", configFileNames) == ACLNN_SUCCESS,
-        OP_LOGW("Failed to read dir: %s", configFileDir.c_str()),
-        return configFilePaths);
-    OP_CHECK(!configFileNames.empty(),
-        OP_LOGW("configFileNames is emtpy in %s", configFileDir.c_str()),
+    OP_CHECK(
+        ReadDirBySuffix(configFileDir, ".json", configFileNames) == ACLNN_SUCCESS,
+        OP_LOGW("Failed to read dir: %s", configFileDir.c_str()), return configFilePaths);
+    OP_CHECK(
+        !configFileNames.empty(), OP_LOGW("configFileNames is emtpy in %s", configFileDir.c_str()),
         return configFilePaths);
     bool hasLegacyFile = false;
     std::string lebacyFileName;
-    for (auto &fileName : configFileNames) {
+    for (auto& fileName : configFileNames) {
         if (fileName.find("ops-info-legacy") != std::string::npos) {
             hasLegacyFile = true;
             lebacyFileName = fileName;
@@ -307,26 +279,26 @@ const std::vector<std::string> OpKernelLib::GetConfigFilePaths()
     if (hasLegacyFile) {
         orderedConfigFileNames.emplace_back(lebacyFileName);
     }
- 
-    for (const std::string &fileName : orderedConfigFileNames) {
+
+    for (const std::string& fileName : orderedConfigFileNames) {
         const std::string configFilePath = configFileDir + fileName;
         const std::string realConfigFilePath = RealPath(configFilePath);
         OP_CHECK_NO_RETURN(realConfigFilePath == "", configFilePaths.emplace_back(realConfigFilePath));
     }
- 
+
     return configFilePaths;
 }
- 
+
 const std::vector<std::string> OpKernelLib::GetCustomFilePaths()
 {
     std::vector<std::string> customFilePaths;
-    const char *oppPath = nullptr;
+    const char* oppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPath);
     OP_CHECK(oppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH is null."), return customFilePaths);
- 
+
     const std::string oppPathStr = oppPath;
     const std::vector<std::string> vendorNames = GetVendorNames();
-    for (const auto &vendorName : vendorNames) {
+    for (const auto& vendorName : vendorNames) {
         const std::string customFileDir =
             oppPathStr + "/vendors/" + vendorName + CUSTOM_IMPL_PATH_SUFFIX + KERNEL_CONFIG_SUFFIX + GetSocPath();
         std::vector<std::string> customFileNames;
@@ -335,9 +307,10 @@ const std::vector<std::string> OpKernelLib::GetCustomFilePaths()
             OP_LOGW("custom file dir is null.");
             continue;
         }
-        OP_CHECK_NO_RETURN(ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
+        OP_CHECK_NO_RETURN(
+            ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
             OP_LOGW("Failed to read dir: %s", customFileDir.c_str()));
-        for (const auto &fileName : customFileNames) {
+        for (const auto& fileName : customFileNames) {
             const std::string customFilePath = customFileDir + fileName;
             const std::string realCustomFilePath = RealPath(customFilePath);
             OP_CHECK_NO_RETURN(realCustomFilePath == "", customFilePaths.emplace_back(realCustomFilePath));
@@ -356,16 +329,17 @@ aclnnStatus OpKernelLib::Initialize()
     std::vector<std::string> opKernelLibFilePaths = GetCustomFilePaths();
     std::vector<std::string> configFilePaths = GetConfigFilePaths();
     opKernelLibFilePaths.insert(opKernelLibFilePaths.end(), configFilePaths.begin(), configFilePaths.end());
-    for (const auto &filePath : opKernelLibFilePaths) {
+    for (const auto& filePath : opKernelLibFilePaths) {
         OP_LOGD("OpKernelLib start parse json file: %s.", filePath.c_str());
         try {
             std::ifstream f(filePath);
             allKernelsJson_.merge_patch(Json::parse(f));
-            OP_CHECK(allKernelsJson_.is_object(),
-                OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(filePath.c_str(),
-                    "The operator JSON file is not in the standard key-value structure"),
+            OP_CHECK(
+                allKernelsJson_.is_object(),
+                OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(
+                    filePath.c_str(), "The operator JSON file is not in the standard key-value structure"),
                 return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
-        } catch (std::exception &e) {
+        } catch (std::exception& e) {
             OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(filePath.c_str(), e.what());
             return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
         }
@@ -376,9 +350,6 @@ aclnnStatus OpKernelLib::Initialize()
     return ACLNN_SUCCESS;
 }
 
-const KernelLibInfo &OpKernelLib::GetKernelLibInfo(uint32_t opTypeId) const
-{
-    return kernelLibInfos_[opTypeId];
-}
+const KernelLibInfo& OpKernelLib::GetKernelLibInfo(uint32_t opTypeId) const { return kernelLibInfos_[opTypeId]; }
 } // namespace internal
 } // namespace op

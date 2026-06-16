@@ -23,11 +23,11 @@
 
 #include "mmpa/mmpa_api.h"
 
-#define ADD_TRY_CATCH(expr0, expr1)       \
-    try {                                 \
-        expr0;                            \
-    } catch (...) {                       \
-        expr1;                            \
+#define ADD_TRY_CATCH(expr0, expr1) \
+    try {                           \
+        expr0;                      \
+    } catch (...) {                 \
+        expr1;                      \
     }
 
 namespace op {
@@ -43,35 +43,35 @@ inline size_t AlignSize(size_t sizeToAlign, size_t powerOfTwo)
     return (sizeToAlign + powerOfTwo - 1) & ~(powerOfTwo - 1);
 }
 
-template<typename T, typename V>
-inline size_t PtrOffset(const T *left, const V *right)
+template <typename T, typename V>
+inline size_t PtrOffset(const T* left, const V* right)
 {
     return PtrCastTo<const uint8_t>(right) - PtrCastTo<const uint8_t>(left);
 }
 
-template<typename T>
-inline const T *PtrShift(const T *ptr, int64_t offset)
+template <typename T>
+inline const T* PtrShift(const T* ptr, int64_t offset)
 {
     return PtrCastTo<const T>(PtrCastTo<const uint8_t>(ptr) + offset);
 }
 
-template<typename T>
-inline T *PtrShift(T *ptr, int64_t offset)
+template <typename T>
+inline T* PtrShift(T* ptr, int64_t offset)
 {
     return PtrCastTo<T>(PtrCastTo<uint8_t>(ptr) + offset);
 }
 
-#define FREE(ptr)               \
-    do {                        \
-        if ((ptr)) {            \
-            std::free((ptr));   \
-            (ptr) = nullptr;    \
-        }                       \
+#define FREE(ptr)             \
+    do {                      \
+        if ((ptr)) {          \
+            std::free((ptr)); \
+            (ptr) = nullptr;  \
+        }                     \
     } while (false)
 
 constexpr size_t SPLIT_DATA_LEN = 700;
 
-inline void SplitDataAndPrint(const std::string dataHeader, const std::string &data)
+inline void SplitDataAndPrint(const std::string dataHeader, const std::string& data)
 {
     OP_CHECK(!data.empty(), OP_LOGW("%s data is empty!", dataHeader.c_str()), return);
     size_t n = data.length() / SPLIT_DATA_LEN; // 子串个数
@@ -86,23 +86,18 @@ inline void SplitDataAndPrint(const std::string dataHeader, const std::string &d
     }
 }
 
-template<typename T>
+template <typename T>
 class InitOnceVar {
 public:
-    template<typename F>
-    aclnnStatus InitVar(const F &initFunc)
+    template <typename F>
+    aclnnStatus InitVar(const F& initFunc)
     {
-        auto f = [&initFunc](aclnnStatus &res, T &var) {
-            res = initFunc(var);
-        };
+        auto f = [&initFunc](aclnnStatus& res, T& var) { res = initFunc(var); };
         std::call_once(onceFlag_, f, initRes_, var_);
         return initRes_;
     }
 
-    const T& GetVar() const
-    {
-        return var_;
-    }
+    const T& GetVar() const { return var_; }
 
 private:
     T var_;
@@ -110,28 +105,20 @@ private:
     std::once_flag onceFlag_;
 };
 
-template<typename T>
+template <typename T>
 class InitOnceVarV2 {
 public:
-    template<typename F>
-    aclnnStatus InitVar(const F &initFunc)
+    template <typename F>
+    aclnnStatus InitVar(const F& initFunc)
     {
-        auto f = [&initFunc](aclnnStatus &res, T &var) {
-            res = initFunc(var);
-        };
+        auto f = [&initFunc](aclnnStatus& res, T& var) { res = initFunc(var); };
         resettableOnceFlag_.CallOnce(f, initRes_, var_);
         return initRes_;
     }
 
-    const T& GetVar() const
-    {
-        return var_;
-    }
+    const T& GetVar() const { return var_; }
 
-    void ResetOnceFlag()
-    {
-        resettableOnceFlag_.Reset();
-    }
+    void ResetOnceFlag() { resettableOnceFlag_.Reset(); }
 
 private:
     T var_;
@@ -140,18 +127,18 @@ private:
 };
 
 gert::OppImplVersionTag GetOppImplVersion();
-aclnnStatus GetOppKernelPath(std::string &oppKernelPath);
+aclnnStatus GetOppKernelPath(std::string& oppKernelPath);
 
-struct ThreadCoreNum{
+struct ThreadCoreNum {
     ThreadCoreNum() = default;
     ThreadCoreNum(uint32_t aicNum, uint32_t aivNum) : aicNum_(aicNum), aivNum_(aivNum) {}
-    ThreadCoreNum(const ThreadCoreNum &rhs)
+    ThreadCoreNum(const ThreadCoreNum& rhs)
     {
         aicNum_ = rhs.aicNum_;
         aivNum_ = rhs.aivNum_;
     }
 
-    ThreadCoreNum &operator=(const ThreadCoreNum &rhs)
+    ThreadCoreNum& operator=(const ThreadCoreNum& rhs)
     {
         if (this != &rhs) {
             aicNum_ = rhs.aicNum_;
@@ -160,12 +147,11 @@ struct ThreadCoreNum{
         return *this;
     }
 
-    bool operator==(const ThreadCoreNum &rhs) const {
-        return aicNum_ == rhs.aicNum_ && aivNum_ == rhs.aivNum_;
-    }
+    bool operator==(const ThreadCoreNum& rhs) const { return aicNum_ == rhs.aicNum_ && aivNum_ == rhs.aivNum_; }
 
     struct Hash {
-        uint64_t operator()(const ThreadCoreNum &t) const {
+        uint64_t operator()(const ThreadCoreNum& t) const
+        {
             uint32_t a = t.aicNum_;
             uint32_t b = t.aivNum_;
             return ((static_cast<uint64_t>(a) << KERNEL_UTILS_THIRTY_TWO_BIT) | b);

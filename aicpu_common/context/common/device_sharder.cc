@@ -16,37 +16,34 @@ namespace {
 const char* const kSharderPath = "libaicpu_sharder.so";
 const char* const kParallelForFunc = "ParallelFor";
 const char* const kGetCPUNumFunc = "GetCPUNum";
-}  // namespace
+} // namespace
 
 namespace aicpu {
-DeviceSharder::DeviceSharder(DeviceType device) : Sharder(device) {
-  sharder_ = dlopen(kSharderPath, RTLD_LAZY | RTLD_GLOBAL);
-  if (sharder_ == nullptr) {
-    KERNEL_LOG_WARN("Device sharder dlopen so[%s] failed, error[%s]",
-                    kSharderPath, dlerror());
-    parallel_for_ = nullptr;
-    get_cpu_num_ = nullptr;
-  } else {
-    parallel_for_ =
-        reinterpret_cast<ParallelForFunc>(dlsym(sharder_, kParallelForFunc));
-    if (parallel_for_ == nullptr) {
-      KERNEL_LOG_WARN("Get function[%s] address failed, error[%s]",
-                      kParallelForFunc, dlerror());
-    }
+DeviceSharder::DeviceSharder(DeviceType device) : Sharder(device)
+{
+    sharder_ = dlopen(kSharderPath, RTLD_LAZY | RTLD_GLOBAL);
+    if (sharder_ == nullptr) {
+        KERNEL_LOG_WARN("Device sharder dlopen so[%s] failed, error[%s]", kSharderPath, dlerror());
+        parallel_for_ = nullptr;
+        get_cpu_num_ = nullptr;
+    } else {
+        parallel_for_ = reinterpret_cast<ParallelForFunc>(dlsym(sharder_, kParallelForFunc));
+        if (parallel_for_ == nullptr) {
+            KERNEL_LOG_WARN("Get function[%s] address failed, error[%s]", kParallelForFunc, dlerror());
+        }
 
-    get_cpu_num_ =
-        reinterpret_cast<GetCPUNumFunc>(dlsym(sharder_, kGetCPUNumFunc));
-    if (get_cpu_num_ == nullptr) {
-      KERNEL_LOG_WARN("Get function[%s] address failed, error[%s]",
-                      kGetCPUNumFunc, dlerror());
+        get_cpu_num_ = reinterpret_cast<GetCPUNumFunc>(dlsym(sharder_, kGetCPUNumFunc));
+        if (get_cpu_num_ == nullptr) {
+            KERNEL_LOG_WARN("Get function[%s] address failed, error[%s]", kGetCPUNumFunc, dlerror());
+        }
+        KERNEL_LOG_INFO("Device sharder dlopen so[%s] success", kSharderPath);
     }
-    KERNEL_LOG_INFO("Device sharder dlopen so[%s] success", kSharderPath);
-  }
 }
 
-DeviceSharder::~DeviceSharder() {
+DeviceSharder::~DeviceSharder()
+{
     if (sharder_ != nullptr) {
-        (void) dlclose(sharder_);
+        (void)dlclose(sharder_);
         sharder_ = nullptr;
     }
     parallel_for_ = nullptr;
@@ -56,26 +53,27 @@ DeviceSharder::~DeviceSharder() {
  * ParallelFor shards the "total" units of work.
  */
 void DeviceSharder::ParallelFor(
-    int64_t total, int64_t per_unit_size,
-    const std::function<void(int64_t, int64_t)> &work) const {
-  if (parallel_for_ != nullptr) {
-    parallel_for_(total, per_unit_size, work);
-    return;
-  }
+    int64_t total, int64_t per_unit_size, const std::function<void(int64_t, int64_t)>& work) const
+{
+    if (parallel_for_ != nullptr) {
+        parallel_for_(total, per_unit_size, work);
+        return;
+    }
 
-  KERNEL_LOG_WARN("Function[%s] is null", kParallelForFunc);
-  work(0, total);
+    KERNEL_LOG_WARN("Function[%s] is null", kParallelForFunc);
+    work(0, total);
 }
 
 /*
  * Get CPU number
  */
-uint32_t DeviceSharder::GetCPUNum() const {
-  if (get_cpu_num_ != nullptr) {
-    return get_cpu_num_();
-  }
+uint32_t DeviceSharder::GetCPUNum() const
+{
+    if (get_cpu_num_ != nullptr) {
+        return get_cpu_num_();
+    }
 
-  KERNEL_LOG_WARN("Function[%s] is null", kGetCPUNumFunc);
-  return 1;
+    KERNEL_LOG_WARN("Function[%s] is null", kGetCPUNumFunc);
+    return 1;
 }
-}  // namespace aicpu
+} // namespace aicpu

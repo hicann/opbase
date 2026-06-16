@@ -23,12 +23,8 @@
 
 class TestFloat6E3M2 : public testing::Test {
 protected:
-    void SetUp() override
-    {
-    }
-    void TearDown() override
-    {
-    }
+    void SetUp() override {}
+    void TearDown() override {}
 };
 
 TEST_F(TestFloat6E3M2, DefaultConstructor)
@@ -216,7 +212,7 @@ TEST_F(TestFloat6E3M2, DoubleConversion)
     // Test overflow with double
     // OCP MX E3M2: max = 0 111 11 = 2^4 * 1.75 = 28.0
     op::Float6E3M2 large(100.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large), 28.0);  // clamped to max (28.0 per OCP MX)
+    EXPECT_DOUBLE_EQ(static_cast<double>(large), 28.0); // clamped to max (28.0 per OCP MX)
 }
 
 TEST_F(TestFloat6E3M2, StdFunctions)
@@ -295,12 +291,8 @@ TEST_F(TestFloat6E3M2, DivisionByZero)
 
 class TestFloat6E2M3 : public testing::Test {
 protected:
-    void SetUp() override
-    {
-    }
-    void TearDown() override
-    {
-    }
+    void SetUp() override {}
+    void TearDown() override {}
 };
 
 TEST_F(TestFloat6E2M3, DefaultConstructor)
@@ -490,7 +482,7 @@ TEST_F(TestFloat6E2M3, DoubleConversion)
     // Test overflow with double
     // OCP MX E2M3: max = 0 11 111 = 2^2 * 1.875 = 7.5
     op::Float6E2M3 large(100.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large), 7.5);  // clamped to max (7.5 per OCP MX)
+    EXPECT_DOUBLE_EQ(static_cast<double>(large), 7.5); // clamped to max (7.5 per OCP MX)
 }
 
 TEST_F(TestFloat6E2M3, StdFunctions)
@@ -581,12 +573,12 @@ TEST(Float6CrossType, RangeComparison)
     // E2M3 cannot represent 20
     // OCP MX E2M3: max = 7.5
     op::Float6E2M3 e2m3_overflow(20.0f);
-    EXPECT_FLOAT_EQ(static_cast<float>(e2m3_overflow), 7.5f);  // clamped to max (7.5)
+    EXPECT_FLOAT_EQ(static_cast<float>(e2m3_overflow), 7.5f); // clamped to max (7.5)
 }
 
 TEST(Float6CrossType, PrecisionComparison)
 {
-    float test_val = 1.125f;  // 1 + 1/8
+    float test_val = 1.125f; // 1 + 1/8
 
     op::Float6E3M2 e3m2(test_val);
     op::Float6E2M3 e2m3(test_val);
@@ -686,4 +678,3 @@ TEST(Float6BFloat16Conversion, E2M3ToBFloat16)
 // Note: Direct conversion tests (e.g., op::fp16_t fp16_result(e3m2)) cannot be
 // used because fp16_t's template constructor causes ambiguous overload errors.
 // The ToFp16/ToBFloat16 tests above already verify the conversion via float.
-

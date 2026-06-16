@@ -28,23 +28,18 @@ namespace op {
 
 struct HiFloat8 {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
-    
-    static constexpr uint8_t HIF8_ZERO_VALUE = 0;          // Zero representation
-    static constexpr uint8_t HIF8_NAN_VALUE = 0b10000000;  // NaN representation
-    static constexpr uint8_t HIF8_INF_VALUE = 0b01101111;  // INF representation
+
+    static constexpr uint8_t HIF8_ZERO_VALUE = 0;         // Zero representation
+    static constexpr uint8_t HIF8_NAN_VALUE = 0b10000000; // NaN representation
+    static constexpr uint8_t HIF8_INF_VALUE = 0b01101111; // INF representation
 
     // Default constructor yields zero value
-    constexpr HiFloat8() : value(HIF8_ZERO_VALUE)
-    {}
+    constexpr HiFloat8() : value(HIF8_ZERO_VALUE) {}
 
-    constexpr HiFloat8(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits)
-    {}
+    constexpr HiFloat8(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits) {}
 
     HiFloat8(float f32);
 
@@ -65,9 +60,8 @@ private:
     static float Hifp8ToFloat(HiFloat8 hif8);
 };
 
-
 // Stream output operator
-inline std::ostream &operator<<(std::ostream &os, const HiFloat8 &dt)
+inline std::ostream& operator<<(std::ostream& os, const HiFloat8& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -79,22 +73,13 @@ static_assert(sizeof(HiFloat8) == sizeof(uint8_t), "sizeof HiFloat8 must be 1");
 
 namespace std {
 
-inline bool isinf(const op::HiFloat8 &a)
-{
-    return a.IsInf();
-}
+inline bool isinf(const op::HiFloat8& a) { return a.IsInf(); }
 
-inline bool isnan(const op::HiFloat8 &a)
-{
-    return a.IsNaN();
-}
+inline bool isnan(const op::HiFloat8& a) { return a.IsNaN(); }
 
-inline bool isfinite(const op::HiFloat8 &a)
-{
-    return !a.IsInf() && !a.IsNaN();
-}
+inline bool isfinite(const op::HiFloat8& a) { return !a.IsInf() && !a.IsNaN(); }
 
-template<>
+template <>
 class numeric_limits<op::HiFloat8> {
 public:
     static constexpr bool has_infinity = true;
@@ -107,38 +92,38 @@ public:
     static constexpr bool is_modulo = false;
     static constexpr bool is_signed = true;
     static constexpr bool is_specialized = true;
-    static constexpr int digits = 3;           // Maximum mantissa bits
+    static constexpr int digits = 3; // Maximum mantissa bits
     static constexpr int digits10 = 0;
     static constexpr int max_digits10 = 2;
-    static constexpr int min_exponent = -22;   // Minimum exponent
+    static constexpr int min_exponent = -22; // Minimum exponent
     static constexpr int min_exponent10 = -6;
-    static constexpr int max_exponent = 15;    // Maximum exponent
+    static constexpr int max_exponent = 15; // Maximum exponent
     static constexpr int max_exponent10 = 4;
     static constexpr int radix = 2;
 
     static constexpr op::HiFloat8 min()
     {
-        return op::HiFloat8(0b00001000, op::HiFloat8::FromBits());  // Smallest positive normal
+        return op::HiFloat8(0b00001000, op::HiFloat8::FromBits()); // Smallest positive normal
     }
 
     static constexpr op::HiFloat8 lowest()
     {
-        return op::HiFloat8(0b11111111, op::HiFloat8::FromBits());  // Most negative value
+        return op::HiFloat8(0b11111111, op::HiFloat8::FromBits()); // Most negative value
     }
 
     static constexpr op::HiFloat8 max()
     {
-        return op::HiFloat8(0b01101111, op::HiFloat8::FromBits());  // Largest positive value (infinity)
+        return op::HiFloat8(0b01101111, op::HiFloat8::FromBits()); // Largest positive value (infinity)
     }
 
     static constexpr op::HiFloat8 epsilon()
     {
-        return op::HiFloat8(0b00000001, op::HiFloat8::FromBits());  // Machine epsilon
+        return op::HiFloat8(0b00000001, op::HiFloat8::FromBits()); // Machine epsilon
     }
 
     static constexpr op::HiFloat8 round_error()
     {
-        return op::HiFloat8(0b00011000, op::HiFloat8::FromBits());  // 0.5f in HiF8 format
+        return op::HiFloat8(0b00011000, op::HiFloat8::FromBits()); // 0.5f in HiF8 format
     }
 
     static constexpr op::HiFloat8 infinity()
@@ -158,7 +143,7 @@ public:
 
     static constexpr op::HiFloat8 denorm_min()
     {
-        return op::HiFloat8(0b00000001, op::HiFloat8::FromBits());  // Smallest positive denormal
+        return op::HiFloat8(0b00000001, op::HiFloat8::FromBits()); // Smallest positive denormal
     }
 };
 

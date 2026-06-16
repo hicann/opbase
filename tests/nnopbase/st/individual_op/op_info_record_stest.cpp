@@ -22,20 +22,19 @@
 #include "base/registry/op_impl_space_registry_v2.h"
 #include "lib_path.h"
 #include "nlohmann/json.hpp"
-class OpInfoRecordStest: public testing::Test {
+class OpInfoRecordStest : public testing::Test {
 protected:
     virtual void SetUp() {}
-    virtual void TearDown()
-    {
-        GlobalMockObject::verify();
-    }
+    virtual void TearDown() { GlobalMockObject::verify(); }
 };
 
 TEST_F(OpInfoRecordStest, Stest_OpInfoEmptyBinInfo)
 {
     std::string path = "../../../../tests/nnopbase/common/depends/";
     MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
-    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath).stubs().will(returnValue(aclnnOpInfoRecord::Path(path)));
+    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath)
+        .stubs()
+        .will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo("", 0);
     gert::TilingContext ctx;
@@ -47,9 +46,12 @@ TEST_F(OpInfoRecordStest, Stest_OpInfoSerializeFailed)
 {
     std::string path = "../../../../tests/nnopbase/common/depends/";
     MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
-    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath).stubs().will(returnValue(aclnnOpInfoRecord::Path(path)));
+    MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath)
+        .stubs()
+        .will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
-    aclnnOpInfoRecord::OpKernelInfo kernelInfo("../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
+    aclnnOpInfoRecord::OpKernelInfo kernelInfo(
+        "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
     gert::TilingContext ctx;
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(&ctx, opt, &kernelInfo), -1);
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), 0);

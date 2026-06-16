@@ -20,13 +20,9 @@ OP_TYPE_REGISTER(CopyToNpu);
 
 class FrameworkOpUt : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        op::internal::GetThreadLocalContext().cacheHasFull_ = true;
-    }
+    static void SetUpTestCase() { op::internal::GetThreadLocalContext().cacheHasFull_ = true; }
 
-    static void TearDownTestCase()
-    {}
+    static void TearDownTestCase() {}
 };
 
 TEST_F(FrameworkOpUt, CopyToNpuUtTest)
@@ -37,7 +33,7 @@ TEST_F(FrameworkOpUt, CopyToNpuUtTest)
     auto srcTensor = executor.get()->ConvertToTensor(srcArray, op::DataType::DT_FLOAT);
     auto dstTensor = op::CopyToNpu(srcTensor, executor.get());
     EXPECT_NE(dstTensor, nullptr);
-    aclOpExecutor *executorPtr = nullptr;
+    aclOpExecutor* executorPtr = nullptr;
     executor.ReleaseTo(&executorPtr);
     EXPECT_EQ(executorPtr->CheckLauncherRepeatable(), false);
     auto ret = executorPtr->Run();
@@ -53,7 +49,7 @@ TEST_F(FrameworkOpUt, CopyNpuToNpuUtTest)
     auto dstTensor = executor.get()->AllocTensor(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND);
     auto ret = op::CopyNpuToNpu(srcTensor, dstTensor, executor.get());
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    aclOpExecutor *executorPtr = nullptr;
+    aclOpExecutor* executorPtr = nullptr;
     executor.ReleaseTo(&executorPtr);
     EXPECT_EQ(executorPtr->CheckLauncherRepeatable(), false);
     ret = executorPtr->Run();
@@ -73,8 +69,8 @@ TEST_F(FrameworkOpUt, CopyToNpuSyncTest)
     auto dstTensor = op::CopyToNpuSync(srcTensor, executor.get());
     EXPECT_NE(dstTensor, nullptr);
     EXPECT_EQ(memcmp(srcTensor->GetData(), dstTensor->GetData(), 75 * 1024 * 1024), 0);
-    aclOpExecutor *executorPtr = nullptr;
+    aclOpExecutor* executorPtr = nullptr;
     executor.ReleaseTo(&executorPtr);
-    delete[] static_cast<char *>(dstTensor->GetData());
+    delete[] static_cast<char*>(dstTensor->GetData());
     delete executorPtr;
 }

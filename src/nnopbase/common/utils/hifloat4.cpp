@@ -14,40 +14,33 @@
 #include <cstdint>
 
 namespace {
-    // ============= FP32 format constants =============
-    constexpr int FP32_EXP_BIAS_VAL = 127;
-    constexpr int FP32_MAN_LEN_VAL = 23;
-    constexpr int FP32_SIGN_SHIFT_VAL = 31;
-    constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-    constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-    constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
+// ============= FP32 format constants =============
+constexpr int FP32_EXP_BIAS_VAL = 127;
+constexpr int FP32_MAN_LEN_VAL = 23;
+constexpr int FP32_SIGN_SHIFT_VAL = 31;
+constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
 
-    // Constants for HiFloat4 format
-    // Bit layout: bit3=sign, bit2=exp, bits1-0=man
-    constexpr int MAN_BITS = 2;
-    constexpr int EXP_BIAS = 1;
-    constexpr uint8_t SIGN_MASK = 0x08;      // 1 0 00 (bit 3)
-    constexpr uint8_t EXP_MASK = 0x04;       // 0 1 00 (bit 2)
-    constexpr uint8_t MAN_MASK = 0x03;       // 0 0 11 (bits 1-0)
-    constexpr uint8_t MAX_EXP = 0x01;        // 1
-    constexpr int SIGN_SHIFT = 3;                    // Sign bit position
-    constexpr uint8_t ABS_VALUE_MASK = 0x07;         // Mask excluding sign bit
+// Constants for HiFloat4 format
+// Bit layout: bit3=sign, bit2=exp, bits1-0=man
+constexpr int MAN_BITS = 2;
+constexpr int EXP_BIAS = 1;
+constexpr uint8_t SIGN_MASK = 0x08;      // 1 0 00 (bit 3)
+constexpr uint8_t EXP_MASK = 0x04;       // 0 1 00 (bit 2)
+constexpr uint8_t MAN_MASK = 0x03;       // 0 0 11 (bits 1-0)
+constexpr uint8_t MAX_EXP = 0x01;        // 1
+constexpr int SIGN_SHIFT = 3;            // Sign bit position
+constexpr uint8_t ABS_VALUE_MASK = 0x07; // Mask excluding sign bit
 } // anonymous namespace
 
 namespace op {
 
-HiFloat4::HiFloat4(float v) : value(FloatToHiFloat4(v).value)
-{}
+HiFloat4::HiFloat4(float v) : value(FloatToHiFloat4(v).value) {}
 
-HiFloat4::operator float() const
-{
-    return HiFloat4ToFloat(*this);
-}
+HiFloat4::operator float() const { return HiFloat4ToFloat(*this); }
 
-HiFloat4::operator double() const
-{
-    return static_cast<double>(HiFloat4ToFloat(*this));
-}
+HiFloat4::operator double() const { return static_cast<double>(HiFloat4ToFloat(*this)); }
 
 bool HiFloat4::IsZero() const
 {

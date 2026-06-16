@@ -12,12 +12,12 @@
 #include <cstdint>
 
 struct BlkDimInfo {
-  uint32_t block_num;   // blockdim_num
-  uint32_t block_id;    // blockid
+    uint32_t block_num; // blockdim_num
+    uint32_t block_id;  // blockid
 };
 
 extern "C" {
-uint32_t RunCpuKernel(void *param);
-uint32_t RunCpuKernelWithBlock(void *param, struct BlkDimInfo *blkdim_info);
+uint32_t RunCpuKernel(void* param);
+uint32_t RunCpuKernelWithBlock(void* param, struct BlkDimInfo* blkdim_info);
 }
 #endif // AICPU_CONTEXT_COMMON_DEVICE_CPU_KERNEL_H

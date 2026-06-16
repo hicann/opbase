@@ -14,13 +14,12 @@
 namespace op::mem {
 class KernelNode;
 
-KernelTensor::KernelTensor(aclTensor *tensor, uint64_t index)
-    : aclTensor_(tensor), index_(index) {}
+KernelTensor::KernelTensor(aclTensor* tensor, uint64_t index) : aclTensor_(tensor), index_(index) {}
 
 KernelTensor::~KernelTensor()
 {
     if (aclTensor_ != nullptr) {
-        aclTensorExtend *extendTensor = (aclTensorExtend *)aclTensor_->GetExtend();
+        aclTensorExtend* extendTensor = (aclTensorExtend*)aclTensor_->GetExtend();
         if (extendTensor != nullptr && extendTensor->GetKernelTensor() == this) {
             OP_LOGD("~KernelTensor set extendTensor %p to null", extendTensor);
             extendTensor->SetKernelTensor(nullptr);
@@ -29,17 +28,11 @@ KernelTensor::~KernelTensor()
     }
 }
 
-int64_t KernelTensor::GetLifeTimeStart() const
-{
-    return lifeTimeStart_;
-}
+int64_t KernelTensor::GetLifeTimeStart() const { return lifeTimeStart_; }
 
-int64_t KernelTensor::GetLifeTimeEnd() const
-{
-    return lifeTimeEnd_;
-}
+int64_t KernelTensor::GetLifeTimeEnd() const { return lifeTimeEnd_; }
 
-bool KernelTensor::IsLifeTimeNotOverLap(const KernelTensor *anotherTensor) const
+bool KernelTensor::IsLifeTimeNotOverLap(const KernelTensor* anotherTensor) const
 {
     if (anotherTensor->lifeTimeStart_ == lifeTimeStart_) {
         /* Twp tensors have same lifetime start means they are
@@ -56,12 +49,9 @@ bool KernelTensor::IsLifeTimeNotOverLap(const KernelTensor *anotherTensor) const
 
 size_t KernelTensor::GetIndex() const { return index_; }
 
-void KernelTensor::SetOwnerNode(KernelNode *ownerNode)
-{
-    ownerNode_ = ownerNode;
-}
+void KernelTensor::SetOwnerNode(KernelNode* ownerNode) { ownerNode_ = ownerNode; }
 
-void KernelTensor::AddPeerTensor(KernelTensor *peerTensor, bool updateAclTensor)
+void KernelTensor::AddPeerTensor(KernelTensor* peerTensor, bool updateAclTensor)
 {
     peerKernelTensors_.emplace_back(peerTensor);
     if (updateAclTensor) {
@@ -69,21 +59,15 @@ void KernelTensor::AddPeerTensor(KernelTensor *peerTensor, bool updateAclTensor)
     }
 }
 
-TensorType KernelTensor::GetType() const
-{
-    return type_;
-}
+TensorType KernelTensor::GetType() const { return type_; }
 
-void KernelTensor::SetType(TensorType type)
-{
-    type_ = type;
-}
+void KernelTensor::SetType(TensorType type) { type_ = type; }
 
-bool KernelTensor::IsInputOf(const KernelTensor *output)
+bool KernelTensor::IsInputOf(const KernelTensor* output)
 {
-    KernelNode *owner = output->GetOwnerNode();
+    KernelNode* owner = output->GetOwnerNode();
     if (owner) {
-        auto &inputs = owner->GetInputs();
+        auto& inputs = owner->GetInputs();
         for (auto input : inputs) {
             if (input->GetAclTensor() == GetAclTensor()) {
                 return true;

@@ -17,12 +17,13 @@ class IniParse {
 public:
     IniParse() {}
     ~IniParse() {}
-    int32_t GetIniParams(std::map<std::string, std::string> &params);
+    int32_t GetIniParams(std::map<std::string, std::string>& params);
+
 private:
-    bool CheckInputFile(const std::string &file) const;
-    bool LoadIniFile(const std::string &iniFileRealPath);
-    void ParseLine(const std::string &line, std::string &mapKey, std::map<std::string, std::string> &contentMap);
+    bool CheckInputFile(const std::string& file) const;
+    bool LoadIniFile(const std::string& iniFileRealPath);
+    void ParseLine(const std::string& line, std::string& mapKey, std::map<std::string, std::string>& contentMap);
     std::map<std::string, std::map<std::string, std::string>> contentInfoMap_;
 };
-}
+} // namespace aclnnOpInfoRecord
 #endif

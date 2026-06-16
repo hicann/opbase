@@ -33,7 +33,7 @@ constexpr size_t kStressIterCount = 1000;
 
 size_t GetProcessRssKB()
 {
-    FILE *f = fopen("/proc/self/status", "r");
+    FILE* f = fopen("/proc/self/status", "r");
     if (f == nullptr) {
         return 0;
     }
@@ -48,7 +48,7 @@ size_t GetProcessRssKB()
     fclose(f);
     return rssKB;
 }
-}
+} // namespace
 
 class BlockCacheLimitTest : public testing::Test {
 protected:
@@ -71,9 +71,9 @@ TEST_F(BlockCacheLimitTest, CacheDisabledAfter100Threads)
     std::atomic<size_t> enabledCount{0};
 
     auto worker = [&]() {
-        void *p = BlockCache::CacheAlloc(kBlockSize);
+        void* p = BlockCache::CacheAlloc(kBlockSize);
         if (p != nullptr) {
-            BlockStore::BlockHeader *head = BlockStore::GetBlockHeader(p);
+            BlockStore::BlockHeader* head = BlockStore::GetBlockHeader(p);
             if (head->cacheExt_ == BlockStore::NOT_IN_CACHE) {
                 disabledCount++;
             } else {
@@ -88,12 +88,11 @@ TEST_F(BlockCacheLimitTest, CacheDisabledAfter100Threads)
     for (size_t i = 0; i < totalThreads; i++) {
         threads.emplace_back(worker);
     }
-    for (auto &t : threads) {
+    for (auto& t : threads) {
         t.join();
     }
 
-    printf("[Test1] enabled=%zu, disabled=%zu, total=%zu\n",
-        enabledCount.load(), disabledCount.load(), totalThreads);
+    printf("[Test1] enabled=%zu, disabled=%zu, total=%zu\n", enabledCount.load(), disabledCount.load(), totalThreads);
     EXPECT_GT(disabledCount.load(), 0U);
     EXPECT_EQ(enabledCount.load() + disabledCount.load(), totalThreads);
 }
@@ -110,16 +109,17 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
     // Step 1: Exhaust BlockStore[1] (256B, 16384 blocks)
     // Hold these blocks so BlockStore free list is empty.
     // After this, all 256B allocations through CacheAlloc go through std::malloc (SYS_TAG).
-    std::vector<void *> exhaustBlocks;
+    std::vector<void*> exhaustBlocks;
     for (size_t i = 0; i < kBlockStore256Capacity + 512; i++) {
-        void *p = BlockPool::Malloc(kBlockSize);
+        void* p = BlockPool::Malloc(kBlockSize);
         if (p == nullptr) {
             break;
         }
         exhaustBlocks.push_back(p);
     }
-    printf("[Test2] Exhausted BlockStore: %zu blocks held (%zu KB)\n",
-        exhaustBlocks.size(), exhaustBlocks.size() * (kBlockSize + sizeof(BlockStore::BlockHeader)) / 1024);
+    printf(
+        "[Test2] Exhausted BlockStore: %zu blocks held (%zu KB)\n", exhaustBlocks.size(),
+        exhaustBlocks.size() * (kBlockSize + sizeof(BlockStore::BlockHeader)) / 1024);
 
     size_t rssBefore = GetProcessRssKB();
     printf("[Test2] RSS before phases: %zu KB\n", rssBefore);
@@ -131,15 +131,15 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
     for (size_t i = 0; i < kTotalThreadsPhase1; i++) {
         std::thread t([&]() {
             // Hold all blocks first, then free to cache
-            std::vector<void *> blocks;
+            std::vector<void*> blocks;
             for (size_t j = 0; j < kAllocCount; j++) {
-                void *p = BlockCache::CacheAlloc(kBlockSize);
+                void* p = BlockCache::CacheAlloc(kBlockSize);
                 if (p != nullptr) {
                     blocks.push_back(p);
                 }
             }
             // Free all → goes to cacheHead_ (not BlockPool)
-            for (void *p : blocks) {
+            for (void* p : blocks) {
                 BlockCache::CacheFree(p);
             }
             // Thread exits → ~BlockCache()=default → cacheHead_ blocks orphaned → LEAK
@@ -149,8 +149,9 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
 
     size_t rssAfterPhase1 = GetProcessRssKB();
     size_t phase1Growth = (rssAfterPhase1 > rssBefore) ? (rssAfterPhase1 - rssBefore) : 0;
-    printf("[Test2] Phase1 (%zu threads, cache enabled): RSS %zu -> %zu KB, growth=%zu KB\n",
-        kTotalThreadsPhase1, rssBefore, rssAfterPhase1, phase1Growth);
+    printf(
+        "[Test2] Phase1 (%zu threads, cache enabled): RSS %zu -> %zu KB, growth=%zu KB\n", kTotalThreadsPhase1,
+        rssBefore, rssAfterPhase1, phase1Growth);
 
     // Step 3: Phase 2 - threads with cache disabled (thread 101+)
     // cacheDisabled_=true → CacheAlloc → BlockPool::Malloc (SYS_TAG from std::malloc)
@@ -158,14 +159,14 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
     std::vector<size_t> rssSnapshots;
     for (size_t i = 0; i < kTotalThreadsPhase2; i++) {
         std::thread t([&]() {
-            std::vector<void *> blocks;
+            std::vector<void*> blocks;
             for (size_t j = 0; j < kAllocCount; j++) {
-                void *p = BlockCache::CacheAlloc(kBlockSize);
+                void* p = BlockCache::CacheAlloc(kBlockSize);
                 if (p != nullptr) {
                     blocks.push_back(p);
                 }
             }
-            for (void *p : blocks) {
+            for (void* p : blocks) {
                 BlockCache::CacheFree(p);
             }
         });
@@ -180,11 +181,12 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
 
     size_t rssAfterPhase2 = GetProcessRssKB();
     size_t phase2Growth = (rssAfterPhase2 > rssAfterPhase1) ? (rssAfterPhase2 - rssAfterPhase1) : 0;
-    printf("[Test2] Phase2 (%zu threads, cache disabled): RSS %zu -> %zu KB, growth=%zu KB\n",
-        kTotalThreadsPhase2, rssAfterPhase1, rssAfterPhase2, phase2Growth);
+    printf(
+        "[Test2] Phase2 (%zu threads, cache disabled): RSS %zu -> %zu KB, growth=%zu KB\n", kTotalThreadsPhase2,
+        rssAfterPhase1, rssAfterPhase2, phase2Growth);
 
     // Step 4: Clean up exhaust blocks
-    for (void *p : exhaustBlocks) {
+    for (void* p : exhaustBlocks) {
         BlockPool::Free(p);
     }
 
@@ -201,7 +203,7 @@ TEST_F(BlockCacheLimitTest, CrossThreadFreeWithMixedCacheState)
     // Fill up 100 thread slots to ensure subsequent threads are disabled
     for (size_t i = 0; i < kMaxCacheInstances; i++) {
         std::thread t([&]() {
-            void *p = BlockCache::CacheAlloc(kBlockSize);
+            void* p = BlockCache::CacheAlloc(kBlockSize);
             if (p != nullptr) {
                 BlockCache::CacheFree(p);
             }
@@ -210,11 +212,11 @@ TEST_F(BlockCacheLimitTest, CrossThreadFreeWithMixedCacheState)
     }
 
     // Producer allocates blocks and stores them
-    std::vector<void *> blocks;
+    std::vector<void*> blocks;
     std::mutex mtx;
     std::thread producer([&]() {
         for (size_t i = 0; i < 200; i++) {
-            void *p = BlockCache::CacheAlloc(kBlockSize);
+            void* p = BlockCache::CacheAlloc(kBlockSize);
             if (p != nullptr) {
                 std::lock_guard<std::mutex> lock(mtx);
                 blocks.push_back(p);
@@ -225,12 +227,12 @@ TEST_F(BlockCacheLimitTest, CrossThreadFreeWithMixedCacheState)
 
     // Consumer (cacheDisabled thread) frees all blocks
     std::thread consumer([&]() {
-        std::vector<void *> localBlocks;
+        std::vector<void*> localBlocks;
         {
             std::lock_guard<std::mutex> lock(mtx);
             localBlocks = std::move(blocks);
         }
-        for (void *p : localBlocks) {
+        for (void* p : localBlocks) {
             BlockCache::CacheFree(p);
         }
     });
@@ -248,7 +250,7 @@ TEST_F(BlockCacheLimitTest, StressHighConcurrency)
 
     auto worker = [&]() {
         for (size_t i = 0; i < kStressIterCount; i++) {
-            void *p = BlockCache::CacheAlloc(kBlockSize);
+            void* p = BlockCache::CacheAlloc(kBlockSize);
             if (p != nullptr) {
                 BlockCache::CacheFree(p);
                 successCount++;
@@ -262,12 +264,11 @@ TEST_F(BlockCacheLimitTest, StressHighConcurrency)
     for (size_t i = 0; i < kStressThreadCount; i++) {
         threads.emplace_back(worker);
     }
-    for (auto &t : threads) {
+    for (auto& t : threads) {
         t.join();
     }
 
-    printf("[Test4] stress test: success=%zu, fail=%zu\n",
-        successCount.load(), failCount.load());
+    printf("[Test4] stress test: success=%zu, fail=%zu\n", successCount.load(), failCount.load());
     EXPECT_EQ(successCount.load(), kStressThreadCount * kStressIterCount);
     EXPECT_EQ(failCount.load(), 0U);
 }

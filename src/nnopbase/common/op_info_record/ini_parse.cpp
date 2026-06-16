@@ -20,7 +20,7 @@ namespace aclnnOpInfoRecord {
 const std::string DEFAULT_CONF_PATH = "conf/dump_tool_config.ini";
 constexpr size_t MAX_LINE_SIZE = 10000UL;
 
-bool IniParse::CheckInputFile(const std::string &file) const
+bool IniParse::CheckInputFile(const std::string& file) const
 {
     if (file.empty()) {
         OP_LOGE(ACLNN_ERR_INNER, "Invalid file empty");
@@ -38,7 +38,7 @@ bool IniParse::CheckInputFile(const std::string &file) const
     return true;
 }
 
-void IniParse::ParseLine(const std::string &line, std::string &mapKey, std::map<std::string, std::string> &contentMap)
+void IniParse::ParseLine(const std::string& line, std::string& mapKey, std::map<std::string, std::string>& contentMap)
 {
     if (line.find('[') == 0) {
         if (!mapKey.empty() && !contentMap.empty()) {
@@ -71,7 +71,7 @@ void IniParse::ParseLine(const std::string &line, std::string &mapKey, std::map<
     }
 }
 
-bool IniParse::LoadIniFile(const std::string &iniFileRealPath)
+bool IniParse::LoadIniFile(const std::string& iniFileRealPath)
 {
     if (!CheckInputFile(iniFileRealPath)) {
         return false;
@@ -102,7 +102,7 @@ bool IniParse::LoadIniFile(const std::string &iniFileRealPath)
     return true;
 }
 
-int32_t IniParse::GetIniParams(std::map<std::string, std::string> &params)
+int32_t IniParse::GetIniParams(std::map<std::string, std::string>& params)
 {
     aclnnOpInfoRecord::Path installBasePath = aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath();
     if (installBasePath.Empty()) {
@@ -121,4 +121,4 @@ int32_t IniParse::GetIniParams(std::map<std::string, std::string> &params)
     }
     return 0;
 }
-}
+} // namespace aclnnOpInfoRecord

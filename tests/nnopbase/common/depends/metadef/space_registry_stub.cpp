@@ -31,13 +31,13 @@ struct CompileInfoStructStub {
     int dummy;
 };
 
-ge::graphStatus TilingFuncStub(gert::TilingContext *context)
+ge::graphStatus TilingFuncStub(gert::TilingContext* context)
 {
     context->SetBlockDim(16);
     context->SetTilingKey(1234);
     context->SetNeedAtomic(true);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
-    size_t *ws = context->GetWorkspaceSizes(3);
+    gert::TilingData* tiling_data = context->GetRawTilingData();
+    size_t* ws = context->GetWorkspaceSizes(3);
     ws[0] = 32;
     ws[1] = 32;
     ws[2] = 32;
@@ -45,58 +45,55 @@ ge::graphStatus TilingFuncStub(gert::TilingContext *context)
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus Rt2TilingFuncStub(gert::TilingContext *context)
+ge::graphStatus Rt2TilingFuncStub(gert::TilingContext* context)
 {
-    size_t *ws = context->GetWorkspaceSizes(2);
+    size_t* ws = context->GetWorkspaceSizes(2);
     ws[0] = 100;
     ws[1] = 100;
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus EmptyTilingFuncStub(gert::TilingContext *context)
-{
-    return TilingForBn(context);
-}
+ge::graphStatus EmptyTilingFuncStub(gert::TilingContext* context) { return TilingForBn(context); }
 
-ge::graphStatus MemSetTilingFuncStub(gert::TilingContext *context)
+ge::graphStatus MemSetTilingFuncStub(gert::TilingContext* context)
 {
     context->SetBlockDim(16);
     context->SetTilingKey(1234);
     context->SetNeedAtomic(false);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
+    gert::TilingData* tiling_data = context->GetRawTilingData();
     tiling_data->Append(9876);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus AtomicTilingFuncStub(gert::TilingContext *context)
+ge::graphStatus AtomicTilingFuncStub(gert::TilingContext* context)
 {
     context->SetNeedAtomic(true);
-    size_t *workspace_size = context->GetWorkspaceSizes(1);
+    size_t* workspace_size = context->GetWorkspaceSizes(1);
     workspace_size[0] = 100;
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus MulTilingFuncStub(gert::TilingContext *context)
+ge::graphStatus MulTilingFuncStub(gert::TilingContext* context)
 {
     context->SetBlockDim(17);
     context->SetTilingKey(1234567);
     context->SetNeedAtomic(false);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
+    gert::TilingData* tiling_data = context->GetRawTilingData();
     tiling_data->Append(8910);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TilingParseFuncStub(gert::KernelContext *context)
+ge::graphStatus TilingParseFuncStub(gert::KernelContext* context)
 {
-    gert::TilingParseContext *tilingParseCtx = reinterpret_cast<gert::TilingParseContext *>(context);
+    gert::TilingParseContext* tilingParseCtx = reinterpret_cast<gert::TilingParseContext*>(context);
     auto ci = tilingParseCtx->GetCompiledInfo<CompileInfoStructStub>();
     ci->dummy = 100;
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus GenSimplifiedKeyFuncStub(gert::TilingContext *context, ge::char_t *simplilfiedKey)
+ge::graphStatus GenSimplifiedKeyFuncStub(gert::TilingContext* context, ge::char_t* simplilfiedKey)
 {
-    const char *source = "diy,99";
+    const char* source = "diy,99";
     strcpy_s(simplilfiedKey, 100, source);
     return ge::GRAPH_SUCCESS;
 }
@@ -105,20 +102,11 @@ struct StubCompileInfo {
     int64_t stub_ = 2;
 };
 
-void *CreateCompileInfoFuncStub()
-{
-    return new StubCompileInfo();
-}
+void* CreateCompileInfoFuncStub() { return new StubCompileInfo(); }
 
-void DeleteCompileInfoFuncStub(void *compile_info)
-{
-    delete reinterpret_cast<StubCompileInfo *>(compile_info);
-}
+void DeleteCompileInfoFuncStub(void* compile_info) { delete reinterpret_cast<StubCompileInfo*>(compile_info); }
 
-ge::graphStatus InferShapeFuncStub(gert::InferShapeContext *context)
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus InferShapeFuncStub(gert::InferShapeContext* context) { return ge::GRAPH_SUCCESS; }
 
 namespace gert {
 
@@ -153,7 +141,7 @@ void InitKernelRegistryImplFunc()
 
     // nnopbase
     InitOpImplFunc("MemSet", MemSetTilingFuncStub);
-    
+
     std::cout << "Start injecting tiling func " << std::endl;
     InitOpImplFunc("AddTik2", Rt2TilingFuncStub);
     InitOpImplFunc("custom_op", Rt2TilingFuncStub);
@@ -170,7 +158,7 @@ void InitKernelRegistryImplFunc()
     InitOpImplFunc("test_profiling_mix_aiv", TilingFuncStub);
     InitOpImplFunc("test_profiling_mix_aic", TilingFuncStub);
     InitOpImplFunc("1971_for_mix_unnormal", TilingFuncStub);
-    InitOpImplFunc("AutomicClean",AtomicTilingFuncStub);
+    InitOpImplFunc("AutomicClean", AtomicTilingFuncStub);
     InitOpImplFunc("MemSetV2", AtomicTilingFuncStub);
     InitGenSimplifiedKeyFunc("MemSetV2", GenSimplifiedKeyFuncStub);
     InitOpImplFunc("TestDavidCustom", AtomicTilingFuncStub);
@@ -180,12 +168,10 @@ void InitKernelRegistryImplFunc()
 void InitSpaceRegistryOpImpl()
 {
     static std::once_flag flag;
-    std::call_once(flag, [&]() -> void {
-        InitKernelRegistryImplFunc();
-    });
+    std::call_once(flag, [&]() -> void { InitKernelRegistryImplFunc(); });
 }
 
-const OpImplKernelRegistry::OpImplFunctionsV2 *OpImplSpaceRegistryV2::GetOpImpl(const char *op_type) const
+const OpImplKernelRegistry::OpImplFunctionsV2* OpImplSpaceRegistryV2::GetOpImpl(const char* op_type) const
 {
     OP_LOGI("[space_registry_stub] OpImplSpaceRegistryV2::GetOpImpl: %s", op_type);
     InitSpaceRegistryOpImpl();
@@ -193,14 +179,12 @@ const OpImplKernelRegistry::OpImplFunctionsV2 *OpImplSpaceRegistryV2::GetOpImpl(
     return &g_opTypesToImplFunc[opTypeStr];
 }
 
-}
+} // namespace gert
 
 namespace ge {
-    class AnyValue {
-        public:
-            AnyValue() = default;
-            enum ValueType {
-                VT_NONE = 0
-            };
-    };
-}
+class AnyValue {
+public:
+    AnyValue() = default;
+    enum ValueType { VT_NONE = 0 };
+};
+} // namespace ge

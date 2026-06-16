@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 typedef struct tagDoubleListNode {
-    struct tagDoubleListNode *next;
-    struct tagDoubleListNode *pre;
+    struct tagDoubleListNode* next;
+    struct tagDoubleListNode* pre;
 } DoubleListNode;
 
 typedef struct {
@@ -26,59 +26,53 @@ typedef struct {
     unsigned int count;
 } DList;
 
-static inline void DoubleListInit(DList *head)
+static inline void DoubleListInit(DList* head)
 {
     head->node.pre = &(head->node);
     head->node.next = head->node.pre;
     head->count = 0;
 }
 
-static inline void DoubleListNodeInit(DoubleListNode *node)
+static inline void DoubleListNodeInit(DoubleListNode* node)
 {
     node->pre = nullptr;
     node->next = node->pre;
 }
 
-static inline void DoubleListInsertAfter(DoubleListNode *newNode, DoubleListNode *target)
+static inline void DoubleListInsertAfter(DoubleListNode* newNode, DoubleListNode* target)
 {
     newNode->pre = target;
     newNode->next = target->next;
     target->next = newNode;
     newNode->next->pre = newNode;
 }
-static inline void DoubleListInsertBefore(DoubleListNode *newNode, DoubleListNode *target)
+static inline void DoubleListInsertBefore(DoubleListNode* newNode, DoubleListNode* target)
 {
     DoubleListInsertAfter(newNode, target->pre);
 }
 
-static inline void DoubleListAddFront(DoubleListNode *newNode, DList *list)
+static inline void DoubleListAddFront(DoubleListNode* newNode, DList* list)
 {
     DoubleListInsertAfter(newNode, &(list->node));
     list->count++;
 }
 
-static inline void DoubleListAppend(DoubleListNode *newNode, DList *list)
+static inline void DoubleListAppend(DoubleListNode* newNode, DList* list)
 {
     DoubleListInsertBefore(newNode, &(list->node));
     list->count++;
 }
 
-static inline void DoubleListRemove(DoubleListNode *node, DList *list)
+static inline void DoubleListRemove(DoubleListNode* node, DList* list)
 {
     node->pre->next = node->next;
     node->next->pre = node->pre;
     list->count--;
 }
 
-static inline int DoubleListIsEmpty(DList *list)
-{
-    return list->node.next == &(list->node);
-}
+static inline int DoubleListIsEmpty(DList* list) { return list->node.next == &(list->node); }
 
-static inline unsigned int DoubleListCount(DList *list)
-{
-    return list->count;
-}
+static inline unsigned int DoubleListCount(DList* list) { return list->count; }
 
 #ifdef __cplusplus
 }

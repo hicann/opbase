@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <sstream>
 #include <iomanip>
 #include <string>
@@ -18,23 +18,23 @@
 #include "utils/string_utils.h"
 namespace op {
 namespace internal {
-constexpr const char *SIZE = "size";
-constexpr const char *BLOCK_DIM = "blockDim";
-constexpr const char *SUPPORT_INFO = "supportInfo";
-constexpr const char *IMPL_MODE = "implMode";
-constexpr const char *OP_DEBUG_CONFIG = "op_debug_config";
-constexpr const char *ORI_OP_PARA_SIZE = "oriOpParaSize";
-constexpr const char *DEBUG_OPTIONS = "debugOptions";
-constexpr const char *DEBUG_BUF_SIZE = "debugBufSize";
-constexpr const char *DEBUG_OPTIONS_ASSERT = "assert";
-constexpr const char *DEBUG_OPTIONS_PRINTF = "printf";
-constexpr const char *DYNAMIC_PARAM_MODE = "dynamicParamMode";
-constexpr const char *FOLDED_WITH_DESC = "folded_with_desc";
-constexpr const char *DYN_UBUF_SIZE = "localMemorySize";
+constexpr const char* SIZE = "size";
+constexpr const char* BLOCK_DIM = "blockDim";
+constexpr const char* SUPPORT_INFO = "supportInfo";
+constexpr const char* IMPL_MODE = "implMode";
+constexpr const char* OP_DEBUG_CONFIG = "op_debug_config";
+constexpr const char* ORI_OP_PARA_SIZE = "oriOpParaSize";
+constexpr const char* DEBUG_OPTIONS = "debugOptions";
+constexpr const char* DEBUG_BUF_SIZE = "debugBufSize";
+constexpr const char* DEBUG_OPTIONS_ASSERT = "assert";
+constexpr const char* DEBUG_OPTIONS_PRINTF = "printf";
+constexpr const char* DYNAMIC_PARAM_MODE = "dynamicParamMode";
+constexpr const char* FOLDED_WITH_DESC = "folded_with_desc";
+constexpr const char* DYN_UBUF_SIZE = "localMemorySize";
 constexpr int32_t MAX_BLOCK_DIM = 65535;
 constexpr int32_t ONE_BYTE_FOR_HEX = 2;
 
-aclnnStatus OpKernelBin::ParseStaticWorkSpace(const nlohmann::json &workspaceJson)
+aclnnStatus OpKernelBin::ParseStaticWorkSpace(const nlohmann::json& workspaceJson)
 {
     try {
         auto sizeIter = workspaceJson.find(SIZE);
@@ -44,14 +44,14 @@ aclnnStatus OpKernelBin::ParseStaticWorkSpace(const nlohmann::json &workspaceJso
             OP_LOGE(ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID, "workspace does not contain [size].");
             return ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID;
         }
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGE(ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID, "Parse [size] failed, exception:%s.", e.what());
         return ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID;
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernelBin::ParseStaticBlockdim(const nlohmann::json &objJson)
+aclnnStatus OpKernelBin::ParseStaticBlockdim(const nlohmann::json& objJson)
 {
     try {
         auto blockDimIter = objJson.find(BLOCK_DIM);
@@ -61,20 +61,19 @@ aclnnStatus OpKernelBin::ParseStaticBlockdim(const nlohmann::json &objJson)
             OP_LOGE(ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID, "Static json does not contain [blockDim].");
             return ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID;
         }
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGE(ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID, "Parse [blockDim] failed, exception:%s.", e.what());
         return ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID;
     }
     if ((staticBlockDim_ < 0) || (staticBlockDim_ > MAX_BLOCK_DIM)) {
-        OP_LOGE(ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID, "blockDim[%ld] is out of range[0, 65535].",
-                staticBlockDim_);
+        OP_LOGE(ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID, "blockDim[%ld] is out of range[0, 65535].", staticBlockDim_);
         return ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID;
     }
     OP_LOGD("Static block dim is %ld", staticBlockDim_);
     return ACLNN_SUCCESS;
 }
 
-void OpKernelBin::ParseStaticImplMode(const nlohmann::json &objJson)
+void OpKernelBin::ParseStaticImplMode(const nlohmann::json& objJson)
 {
     auto supportInfoIter = objJson.find(SUPPORT_INFO);
     if (supportInfoIter == objJson.end()) {
@@ -89,26 +88,26 @@ void OpKernelBin::ParseStaticImplMode(const nlohmann::json &objJson)
             OP_LOGW("Static json can not implMode in %s", jsonPath_.c_str());
             return;
         }
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGW("Static json parse implMode fail in %s", jsonPath_.c_str());
         return;
     }
 }
 
-void OpKernelBin::ParseStaticDevPtrMode(const nlohmann::json &objJson)
+void OpKernelBin::ParseStaticDevPtrMode(const nlohmann::json& objJson)
 {
     auto dynamicParamMode = objJson.find(DYNAMIC_PARAM_MODE);
     if (dynamicParamMode == objJson.end()) {
         return;
     }
-    const auto &value = dynamicParamMode->get<std::string>();
+    const auto& value = dynamicParamMode->get<std::string>();
     if (value == FOLDED_WITH_DESC) {
         hasDevPtrArg_ = true;
     }
     OP_LOGI("parse static kernel dev ptr mode : %d", hasDevPtrArg_);
 }
 
-void OpKernelBin::ParseStaticDynUBufSize(const nlohmann::json &objJson)
+void OpKernelBin::ParseStaticDynUBufSize(const nlohmann::json& objJson)
 {
     if (!objJson.contains(DYN_UBUF_SIZE)) {
         OP_LOGW("Static kernel json [%s] does not have localMemorySize", jsonPath_.c_str());
@@ -122,7 +121,7 @@ void OpKernelBin::ParseStaticDynUBufSize(const nlohmann::json &objJson)
     }
     try {
         staticKernelDynUBufSize_ = objJson[DYN_UBUF_SIZE].get<uint32_t>();
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGW("parse localMemorySize failed in %s, reason: %s", jsonPath_.c_str(), e.what());
         staticKernelDynUBufSize_ = 0;
         return;
@@ -130,16 +129,12 @@ void OpKernelBin::ParseStaticDynUBufSize(const nlohmann::json &objJson)
     OP_LOGI("Parse static kernel dynUBufSize(localMemorySize): %u", staticKernelDynUBufSize_);
 }
 
-void OpKernelBin::ParseOpDebugConfig(const nlohmann::json &objJson)
+void OpKernelBin::ParseOpDebugConfig(const nlohmann::json& objJson)
 {
     static std::map<std::string, OpDebugConfig> opDebugConfigMap = {
-        {"oom",      OpDebugConfig::OOM},
-        {"dump_bin", OpDebugConfig::DUMP_BIN},
-        {"dump_cce", OpDebugConfig::DUMP_CCE},
-        {"dump_loc", OpDebugConfig::DUMP_LOC},
-        {"ccec_O0",  OpDebugConfig::CCEC_O0},
-        {"ccec_g",   OpDebugConfig::CCEC_G}
-    };
+        {"oom", OpDebugConfig::OOM},           {"dump_bin", OpDebugConfig::DUMP_BIN},
+        {"dump_cce", OpDebugConfig::DUMP_CCE}, {"dump_loc", OpDebugConfig::DUMP_LOC},
+        {"ccec_O0", OpDebugConfig::CCEC_O0},   {"ccec_g", OpDebugConfig::CCEC_G}};
 
     auto supportInfoIter = objJson.find(SUPPORT_INFO);
     if (supportInfoIter == objJson.end()) {
@@ -162,13 +157,13 @@ void OpKernelBin::ParseOpDebugConfig(const nlohmann::json &objJson)
             }
         }
         OP_LOGI("%s debug config is %u", jsonPath_.c_str(), debugConfig_);
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGW("json can not parse op_debug_config in %s", jsonPath_.c_str());
         return;
     }
 }
 
-void OpKernelBin::ParseOriOpParaSize(const nlohmann::json &objJson)
+void OpKernelBin::ParseOriOpParaSize(const nlohmann::json& objJson)
 {
     try {
         auto paraSize = objJson.find(ORI_OP_PARA_SIZE);
@@ -179,13 +174,13 @@ void OpKernelBin::ParseOriOpParaSize(const nlohmann::json &objJson)
             OP_LOGW("json can not parse oriOpParaSize in %s", jsonPath_.c_str());
             return;
         }
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGW("json can not parse oriOpParaSize in %s", jsonPath_.c_str());
         return;
     }
 }
 
-void OpKernelBin::ParseKernelDfxConfig(const nlohmann::json &objJson)
+void OpKernelBin::ParseKernelDfxConfig(const nlohmann::json& objJson)
 {
     auto debugOptionsConfig = objJson.find(DEBUG_OPTIONS);
     if (debugOptionsConfig == objJson.end() || !debugOptionsConfig->is_string()) {
@@ -210,43 +205,33 @@ void OpKernelBin::ParseKernelDfxConfig(const nlohmann::json &objJson)
     OP_LOGI("kernel dfx config is %u, buf size is %lu", kernelDfxType_, kernelDfxBufSize_);
 }
 
-bool OpKernelBin::IsAssertEnable() const
-{
-    return kernelDfxType_ & static_cast<uint32_t>(KernelDfxType::ASSERT);
-}
+bool OpKernelBin::IsAssertEnable() const { return kernelDfxType_ & static_cast<uint32_t>(KernelDfxType::ASSERT); }
 
-bool OpKernelBin::IsPrintFEnable() const
-{
-    return kernelDfxType_ & static_cast<uint32_t>(KernelDfxType::PRINTF);
-}
+bool OpKernelBin::IsPrintFEnable() const { return kernelDfxType_ & static_cast<uint32_t>(KernelDfxType::PRINTF); }
 
-uint64_t OpKernelBin::GetKernelDfxBufSize() const
-{
-    return kernelDfxBufSize_;
-}
+uint64_t OpKernelBin::GetKernelDfxBufSize() const { return kernelDfxBufSize_; }
 
-void OpKernelBin::DumpWorkspaceData(aclrtStream stream, OpArgContext *args) const
+void OpKernelBin::DumpWorkspaceData(aclrtStream stream, OpArgContext* args) const
 {
     OP_CHECK(args != nullptr && args->ContainsOpArgType(op::OP_WORKSPACE_ARG), OP_LOGW("Dont has workspace"), return);
-    auto &argList = *args->GetOpArg(op::OP_WORKSPACE_ARG);
+    auto& argList = *args->GetOpArg(op::OP_WORKSPACE_ARG);
     OP_CHECK((argList.count == 1), OP_LOGW("workspace must has only one value."), return);
-    auto &arg = argList[0];
+    auto& arg = argList[0];
 
     OP_CHECK((arg.type == OpArgType::OPARG_ACLTENSOR_LIST), OP_LOGW("workspace should be tensor list."), return);
-    aclTensorList *tensors = PtrCastTo<aclTensorList>(arg->pointer);
+    aclTensorList* tensors = PtrCastTo<aclTensorList>(arg->pointer);
 
     OP_CHECK(tensors != nullptr && tensors->Size() > 0, OP_LOGW("workspace at least has one."), return);
-    const aclTensor *firstWorkspace = (*tensors)[0];
+    const aclTensor* firstWorkspace = (*tensors)[0];
 
     Adx::AdumpPrintWorkSpace(
         firstWorkspace->GetData(), kernelDfxBufSize_, stream, op::OpTypeDict::ToString(opType_).GetString());
-    OP_LOGI("AdumpPrintWorkspace for %p, %lu, %s",
-        firstWorkspace->GetData(),
-        kernelDfxBufSize_,
+    OP_LOGI(
+        "AdumpPrintWorkspace for %p, %lu, %s", firstWorkspace->GetData(), kernelDfxBufSize_,
         op::OpTypeDict::ToString(opType_).GetString());
 }
 
-static void PrintHex(const uint8_t *p, size_t num, std::stringstream &ss)
+static void PrintHex(const uint8_t* p, size_t num, std::stringstream& ss)
 {
     for (size_t i = 0; i < num; ++i) {
         // 通过std::setw设置输出位宽为2倍的sizeof(T)
@@ -254,7 +239,7 @@ static void PrintHex(const uint8_t *p, size_t num, std::stringstream &ss)
     }
 }
 
-void OpKernelBin::SetExceptionDumpInfo(uint32_t numBlocks, uint64_t tilingKey, void *tilingData, size_t tilingSize)
+void OpKernelBin::SetExceptionDumpInfo(uint32_t numBlocks, uint64_t tilingKey, void* tilingData, size_t tilingSize)
 {
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
 #else
@@ -271,7 +256,7 @@ void OpKernelBin::SetExceptionDumpInfo(uint32_t numBlocks, uint64_t tilingKey, v
         GetThreadLocalContext().exceptionDumpInfo_.tilingData_ = tilingDataStr.str();
     }
     GetThreadLocalContext().exceptionDumpInfo_.magic_ = "";
-    auto &opJson = binJson_.GetVar();
+    auto& opJson = binJson_.GetVar();
     if (opJson.contains("magic")) {
         GetThreadLocalContext().exceptionDumpInfo_.magic_ = opJson["magic"].get<std::string>();
     }
@@ -287,5 +272,5 @@ void OpKernelBin::SetExceptionDumpInfo(uint32_t numBlocks, uint64_t tilingKey, v
     }
     GetThreadLocalContext().exceptionDumpInfo_.devFunc_ = kernelFile.substr(0, pos);
 }
-}
-}
+} // namespace internal
+} // namespace op

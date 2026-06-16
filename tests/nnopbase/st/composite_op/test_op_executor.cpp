@@ -18,8 +18,7 @@
 using namespace op;
 using namespace std;
 
-class OpExecutorTest : public testing::Test {
-};
+class OpExecutorTest : public testing::Test {};
 
 TEST_F(OpExecutorTest, TestOpExecutor)
 {
@@ -72,10 +71,10 @@ TEST_F(OpExecutorTest, TestOpExecutor)
     tensor10->SetIntData(data, 100, DataType::DT_INT8);
     tensor10->SetIntData(data, 100, DataType::DT_UINT8);
     tensor10->SetIntData(data, 100, DataType::DT_DOUBLE);
-    tensor10->SetBoolData((bool *)data, 100, DataType::DT_BOOL);
-    tensor10->SetFloatData((float *)data, 100, DataType::DT_FLOAT);
-    tensor10->SetFp16Data((fp16_t *)data, 100, DataType::DT_FLOAT16);
-    tensor10->SetBf16Data((bfloat16 *)data, 100, DataType::DT_BF16);
+    tensor10->SetBoolData((bool*)data, 100, DataType::DT_BOOL);
+    tensor10->SetFloatData((float*)data, 100, DataType::DT_FLOAT);
+    tensor10->SetFp16Data((fp16_t*)data, 100, DataType::DT_FLOAT16);
+    tensor10->SetBf16Data((bfloat16*)data, 100, DataType::DT_BF16);
     auto tensor11 = executor.AllocHostTensor({100}, {100}, DataType::DT_FLOAT, Format::FORMAT_ND, Format::FORMAT_ND);
     EXPECT_NE(tensor11, nullptr);
     vector<int64_t> vec12(100, 1);
@@ -93,7 +92,7 @@ TEST_F(OpExecutorTest, TestOpExecutor)
     vector<bfloat16> vec16(100, 1);
     auto tensor16 = executor.AllocHostTensor(vec16.data(), vec16.size(), DataType::DT_BF16);
     EXPECT_NE(tensor16, nullptr);
-    executor.UpdateTensorAddr(nullptr,512);
+    executor.UpdateTensorAddr(nullptr, 512);
     tensor2->SetFromWorkspace(false);
     tensor10->SetDataType(DataType::DT_UINT64);
     EXPECT_EQ(tensor10->GetDataType(), DataType::DT_UINT64);
@@ -133,4 +132,3 @@ TEST_F(OpExecutorTest, OpExecutorImplTest)
     EXPECT_EQ(executor.GetWorkspaceOffsets()[1], 2);
     EXPECT_EQ(executor.GetWorkspaceOffsets()[2], 3);
 }
-

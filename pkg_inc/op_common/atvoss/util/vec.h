@@ -45,18 +45,15 @@ struct bfloat16_t {
     uint16_t value;
 };
 template <class T>
-struct LocalTensor {
-};
+struct LocalTensor {};
 
 template <class T>
 struct GlobalTensor {
-    void SetGlobalBuffer(T* y)
-    {}
+    void SetGlobalBuffer(T* y) {}
 };
 #endif
 // 只是一个数据类型定义
-struct uint1_t {
-};
+struct uint1_t {};
 namespace Vec {
 
 template <int outSize, int inSize, int tempSize = 0, int fixedBuf = 0, bool isAdvanced = false, class... DataType_>
@@ -94,18 +91,15 @@ const static int INPUT_SIZE11 = 11;
 
 // 单输入
 template <class R, class In1, int tempBufSize = 0, int fixedBuf = 0, bool isAdvanced = false>
-struct ElemwiseUnaryOP : public FunBase<1, INPUT_SIZE1, tempBufSize, fixedBuf, isAdvanced, R, In1> {
-};
+struct ElemwiseUnaryOP : public FunBase<1, INPUT_SIZE1, tempBufSize, fixedBuf, isAdvanced, R, In1> {};
 
 // 双输入
 template <class R, class In1, class In2, int tempBufSize = 0, int fixedBuf = 0, bool isAdvanced = false>
-struct ElemwiseBinaryOP : public FunBase<1, INPUT_SIZE2, tempBufSize, fixedBuf, isAdvanced, R, In1, In2> {
-};
+struct ElemwiseBinaryOP : public FunBase<1, INPUT_SIZE2, tempBufSize, fixedBuf, isAdvanced, R, In1, In2> {};
 
 // 三输入
 template <class R, class In1, class In2, class In3, int tempBufSize = 0, int fixedBuf = 0, bool isAdvanced = false>
-struct ElemwiseTernaryOP : public FunBase<1, INPUT_SIZE3, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3> {
-};
+struct ElemwiseTernaryOP : public FunBase<1, INPUT_SIZE3, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3> {};
 
 // 四输入
 template <
@@ -118,54 +112,47 @@ template <
     class R, class In1, class In2, class In3, class In4, class In5, int tempBufSize = 0, int fixedBuf = 0,
     bool isAdvanced = false>
 struct ElemwiseQuinaryOP
-    : public FunBase<1, INPUT_SIZE5, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5> {
-};
+    : public FunBase<1, INPUT_SIZE5, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5> {};
 
 // 六输入
 template <
     class R, class In1, class In2, class In3, class In4, class In5, class In6, int tempBufSize = 0, int fixedBuf = 0,
     bool isAdvanced = false>
 struct Elemwise6OP
-    : public FunBase<1, INPUT_SIZE6, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6> {
-};
+    : public FunBase<1, INPUT_SIZE6, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6> {};
 
 template <
     class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, int32_t tempBufSize = 0,
     int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise7OP
-    : public FunBase<1, INPUT_SIZE7, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7> {
-};
+    : public FunBase<1, INPUT_SIZE7, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7> {};
 
 template <
     class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8,
     int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise8OP
-    : public FunBase<1, INPUT_SIZE8, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8> {
-};
+    : public FunBase<1, INPUT_SIZE8, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8> {};
 
 template <
     class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
     int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise9OP
     : public FunBase<
-          1, INPUT_SIZE9, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8, In9> {
-};
+          1, INPUT_SIZE9, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8, In9> {};
 
 template <
     class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
     class In10, int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise10OP
     : public FunBase<
-          1, INPUT_SIZE10, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8, In9, In10> {
-};
+          1, INPUT_SIZE10, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8, In9, In10> {};
 
 template <
     class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
     class In10, class In11, int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise11OP : public FunBase<
                           1, INPUT_SIZE11, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8,
-                          In9, In10, In11> {
-};
+                          In9, In10, In11> {};
 
 template <class T>
 struct Duplicate : public ElemwiseUnaryOP<T, T> {
@@ -225,10 +212,7 @@ struct Cast : public ElemwiseUnaryOP<R, T> {
         AscendC::Cast(dst, src, static_cast<AscendC::RoundMode>(roundMode), count);
 #endif
     }
-    __aicore__ inline Cast(R& dst, T& scalar, int count)
-    {
-        dst = static_cast<R>(scalar);
-    }
+    __aicore__ inline Cast(R& dst, T& scalar, int count) { dst = static_cast<R>(scalar); }
 };
 
 template <class T>
@@ -313,8 +297,7 @@ struct Sqrt0ULP : public ElemwiseUnaryOP<T, T> {
 template <class T>
 struct ReduceOp : public ElemwiseUnaryOP<T, T> {
     constexpr static int FuncType = 1;
-    __aicore__ inline ReduceOp()
-    {}
+    __aicore__ inline ReduceOp() {}
 
     __aicore__ inline ReduceOp(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
     {

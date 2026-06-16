@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 // #include "mockcpp/mockcpp.hpp"
 #include <array>
@@ -41,121 +41,103 @@ using namespace op::internal::test;
 
 extern inline uint32_t SortOpTypeId();
 extern inline uint32_t GeluOpTypeId();
-extern op::internal::OpExecCacheWrap *GetOpExecCacheFromExecutor(aclOpExecutor *executor);
-extern "C" aclOpExecutor *PTAFindExecCache(uint8_t *buf, size_t len, uint64_t *workspaceSize);
-extern "C" aclOpExecutor *PTAGetExecCache(uint64_t hash, uint64_t *workspaceSize);
+extern op::internal::OpExecCacheWrap* GetOpExecCacheFromExecutor(aclOpExecutor* executor);
+extern "C" aclOpExecutor* PTAFindExecCache(uint8_t* buf, size_t len, uint64_t* workspaceSize);
+extern "C" aclOpExecutor* PTAGetExecCache(uint64_t hash, uint64_t* workspaceSize);
 extern "C" void InitPTACacheThreadLocal();
 extern "C" void UnInitPTACacheThreadLocal();
 extern "C" void ResetCacheThreadLocal();
-extern "C" bool CanUsePTACache(const char *api);
-extern "C" void AddTensorAddrToCachedList(void *addr);
+extern "C" bool CanUsePTACache(const char* api);
+extern "C" void AddTensorAddrToCachedList(void* addr);
 extern "C" void SetPTAHashKey(uint64_t hash);
-extern "C" void SetPTACacheHashKey(uint8_t *key, size_t len);
+extern "C" void SetPTACacheHashKey(uint8_t* key, size_t len);
 
 class OpCacheUt : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() {
-    }
+    static void TearDownTestCase() {}
 };
 
-aclError aclrtBinaryLoadFromFileInvoked(const char_t * const binPath, const rtLoadBinaryConfig_t * const optionalCfg,
-                                        rtBinHandle *handle)
+aclError aclrtBinaryLoadFromFileInvoked(
+    const char_t* const binPath, const rtLoadBinaryConfig_t* const optionalCfg, rtBinHandle* handle)
 {
-  rtBinHandle handle_tmp = nullptr;
-  *handle = &handle_tmp;
-  return RT_ERROR_NONE;
+    rtBinHandle handle_tmp = nullptr;
+    *handle = &handle_tmp;
+    return RT_ERROR_NONE;
 }
- 
-aclError aclrtFuncGetByNameInvoked(const rtBinHandle binHandle, const char_t *kernelName, rtFuncHandle *funcHandle)
+
+aclError aclrtFuncGetByNameInvoked(const rtBinHandle binHandle, const char_t* kernelName, rtFuncHandle* funcHandle)
 {
-  rtFuncHandle funcHandle_tmp = nullptr;
-  *funcHandle = &funcHandle_tmp;
-  return RT_ERROR_NONE;
+    rtFuncHandle funcHandle_tmp = nullptr;
+    *funcHandle = &funcHandle_tmp;
+    return RT_ERROR_NONE;
 }
- 
-TEST_F(OpCacheUt, CreateHashTest) {
+
+TEST_F(OpCacheUt, CreateHashTest)
+{
     op::Shape tShape{1, 2, 3};
     aclTensor t1(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     aclTensor t2(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     aclTensor t3(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     // aclTensor
-    const aclTensor *tensorPtr1 = &t1;
-    aclTensor *tensorPtr2 = &t2;
+    const aclTensor* tensorPtr1 = &t1;
+    aclTensor* tensorPtr2 = &t2;
     // aclTensorList
-    aclTensor *list2[] = {&t1, &t2, &t3, nullptr};
+    aclTensor* list2[] = {&t1, &t2, &t3, nullptr};
     aclTensorList tensorList(list2, 4);
-    const aclTensorList *tensorListPtr = &tensorList;
-    aclTensorList *tensorList2Ptr = &tensorList;
+    const aclTensorList* tensorListPtr = &tensorList;
+    aclTensorList* tensorList2Ptr = &tensorList;
     // bool array
     bool boolValue[] = {true, false, true};
     aclBoolArray array1(boolValue, 3);
-    const aclBoolArray *array1Ptr = &array1;
+    const aclBoolArray* array1Ptr = &array1;
     // float array
     float floatValue[] = {1.1, 2.2, 3.3};
     aclFloatArray array2(floatValue, 3);
-    const aclFloatArray *array2Ptr = &array2;
+    const aclFloatArray* array2Ptr = &array2;
     // int64_t array
     int64_t intValue[] = {1, 2, 3};
     aclIntArray array3(intValue, 3);
-    const aclIntArray *array3Ptr = &array3;
+    const aclIntArray* array3Ptr = &array3;
     // fp16 array
     float value = 3.1;
     std::vector<op::fp16_t> values(3, value);
     aclFp16Array array4(values.data(), 3);
-    const aclFp16Array *array4Ptr = &array4;
+    const aclFp16Array* array4Ptr = &array4;
     // scalar
     float fpValue = 3.2;
     float fpValue2 = 3.3;
     aclScalar scalar1(&fpValue, op::DataType::DT_FLOAT);
     aclScalar scalar2(&fpValue2, op::DataType::DT_FLOAT);
     aclScalar scalar3(&fpValue2, op::DataType::DT_FLOAT);
-    const aclScalar *scalarPtr = &scalar1;
+    const aclScalar* scalarPtr = &scalar1;
     // aclScalarList
-    aclScalar *list3[] = {&scalar1, &scalar2, &scalar3, nullptr};
+    aclScalar* list3[] = {&scalar1, &scalar2, &scalar3, nullptr};
     aclScalarList scalarList(list3, 4);
-    aclScalarList *scalarListPtr1 = &scalarList;
-    const aclScalarList *scalarListPtr2 = &scalarList;
+    aclScalarList* scalarListPtr1 = &scalarList;
+    const aclScalarList* scalarListPtr2 = &scalarList;
     // string
     std::string apiName = "aclnnClamp";
     const aclDataType dataType = aclDataType::ACL_FLOAT;
     // nullptr param
-    const aclBoolArray *arrayNull1 = nullptr;
-    const aclFloatArray *arrayNull2 = nullptr;
-    const aclIntArray *arrayNull3 = nullptr;
-    const aclFp16Array *arrayNull4 = nullptr;
-    const aclTensorList *tensorListNull1 = nullptr;
-    aclTensorList *tensorListNull2 = nullptr;
-    const aclScalarList *scalarListNull1 = nullptr;
-    aclScalarList *scalarListNull2 = nullptr;
-    const aclScalar *scalarNull1 = nullptr;
+    const aclBoolArray* arrayNull1 = nullptr;
+    const aclFloatArray* arrayNull2 = nullptr;
+    const aclIntArray* arrayNull3 = nullptr;
+    const aclFp16Array* arrayNull4 = nullptr;
+    const aclTensorList* tensorListNull1 = nullptr;
+    aclTensorList* tensorListNull2 = nullptr;
+    const aclScalarList* scalarListNull1 = nullptr;
+    aclScalarList* scalarListNull2 = nullptr;
+    const aclScalar* scalarNull1 = nullptr;
     int dim = 0;
     bool keepdim = true;
-    auto in0 = std::make_tuple(tensorPtr1,
-        tensorListPtr,
-        scalarPtr,
-        scalarListPtr1,
-        array1Ptr,
-        array2Ptr,
-        tensorList2Ptr,
-        arrayNull1,
-        arrayNull2,
-        arrayNull3,
-        dim);
-    auto out0 = std::make_tuple(array3Ptr,
-        array4Ptr,
-        tensorPtr2,
-        scalarListPtr2,
-        dataType,
-        arrayNull4,
-        tensorListNull1,
-        tensorListNull2,
-        scalarListNull1,
-        scalarListNull2,
-        scalarNull1,
-        keepdim);
+    auto in0 = std::make_tuple(
+        tensorPtr1, tensorListPtr, scalarPtr, scalarListPtr1, array1Ptr, array2Ptr, tensorList2Ptr, arrayNull1,
+        arrayNull2, arrayNull3, dim);
+    auto out0 = std::make_tuple(
+        array3Ptr, array4Ptr, tensorPtr2, scalarListPtr2, dataType, arrayNull4, tensorListNull1, tensorListNull2,
+        scalarListNull1, scalarListNull2, scalarNull1, keepdim);
     OpCacheKey key;
     // OpExecCache::GenerateOpCacheKey(key, apiName, in0, out0);
     UnInitPTACacheThreadLocal();
@@ -166,7 +148,7 @@ TEST_F(OpCacheUt, CreateHashTest) {
     CalculateHashKey(out0);
     AddSeperator();
     SetOpCacheKey(key);
-    char *hashBuf =
+    char* hashBuf =
         "0x61636c6e6e436c616d700000000000000000000100000000000000020000000000000003000000000000002c06000000000000000300"
         "00000000000001000000000000002c0100000000000000020000000000000003000000000000002c030000002c00000000000000002c02"
         "0000000100000000000000020000000000000003000000000000002c0600000000000000030000000000000001000000000000002c0100"
@@ -199,7 +181,8 @@ TEST_F(OpCacheUt, CreateHashTest) {
     InitPTACacheThreadLocal();
 }
 
-TEST_F(OpCacheUt, RtsArgCacheTest) {
+TEST_F(OpCacheUt, RtsArgCacheTest)
+{
     op::Shape outShape{100};
     int64_t inputData[8];
     aclIntArray self(inputData, 8);
@@ -212,7 +195,7 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     constexpr size_t TEST_TILING_DATA_LEN = 32;
     tilingData->data_ = buffer.GetTilingDataAddr();
     memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
@@ -225,7 +208,7 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
     op::internal::PrintRtArg(arg.GetRtsArg());
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -236,7 +219,7 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
     aclrtStream stream = 0;
     op::internal::LaunchArgCache::RunFromCache(stream, GetCacheBuf());
     auto opExecCacheWrap = CreateCacheWrap(opExecCache);
-    auto wrap = GetOpExecCacheFromExecutor(reinterpret_cast<aclOpExecutor *>(opExecCacheWrap));
+    auto wrap = GetOpExecCacheFromExecutor(reinterpret_cast<aclOpExecutor*>(opExecCacheWrap));
     EXPECT_NE(wrap, nullptr);
     bool succ = AddOpExecCache(opExecCache);
     EXPECT_EQ(succ, true);
@@ -245,7 +228,8 @@ TEST_F(OpCacheUt, RtsArgCacheTest) {
     InitPTACacheThreadLocal();
 }
 
-TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
+TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest)
+{
     op::Shape outShape{100};
     int64_t inputData[8];
     aclIntArray self(inputData, 8);
@@ -258,7 +242,7 @@ TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     constexpr size_t TEST_TILING_DATA_LEN = 60;
     tilingData->data_ = buffer.GetTilingDataAddr();
     memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
@@ -271,7 +255,7 @@ TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
     op::internal::PrintRtArg(arg.GetRtsArg());
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     EXPECT_EQ(opExecCache->IsOpCacheValid(), true);
@@ -287,20 +271,21 @@ TEST_F(OpCacheUt, RtsArgCacheRepeatSetTest) {
     delete opExecCache;
 }
 
-TEST_F(OpCacheUt, ExecutorCacheRepeatSetTest) {
+TEST_F(OpCacheUt, ExecutorCacheRepeatSetTest)
+{
     bool oriOption = GetThreadLocalContext().cacheHasFull_;
     GetThreadLocalContext().cacheHasFull_ = false;
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"ExecutorCacheRepeatSetTest";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"ExecutorCacheRepeatSetTest";
     GetThreadLocalContext().cacheHashKeyLen_ = 27;
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     executor->SetRepeatable();
     EXPECT_EQ(executor->IsRepeatable(), true);
     auto opExecCache = executor->GetOpExecCache();
 
-    int *intPtr = new int;
-    void *ptr = reinterpret_cast<void *>(intPtr);
+    int* intPtr = new int;
+    void* ptr = reinterpret_cast<void*>(intPtr);
     opExecCache->SetCacheBuf(ptr);
     EXPECT_EQ(opExecCache->cacheBuf_, ptr);
     opExecCache->SetUse();
@@ -316,7 +301,8 @@ TEST_F(OpCacheUt, ExecutorCacheRepeatSetTest) {
     GetThreadLocalContext().cacheHasFull_ = oriOption;
 }
 
-TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
+TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr)
+{
     op::Shape outShape{0};
     int64_t inputData[8];
     aclIntArray self(inputData, 0);
@@ -329,7 +315,7 @@ TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     constexpr size_t TEST_TILING_DATA_LEN = 60;
     tilingData->data_ = buffer.GetTilingDataAddr();
     memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
@@ -342,7 +328,7 @@ TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
     op::internal::PrintRtArg(arg.GetRtsArg());
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -355,7 +341,8 @@ TEST_F(OpCacheUt, RtsArgCacheTestHostDataNullptr) {
     delete opExecCache;
 }
 
-TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
+TEST_F(OpCacheUt, AbnormalRtsArgCacheTest)
+{
     op::Shape outShape{100};
     int64_t inputData[8];
     aclIntArray self(inputData, 8);
@@ -368,7 +355,7 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     constexpr size_t TEST_TILING_DATA_LEN = 60;
     tilingData->data_ = buffer.GetTilingDataAddr();
     memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
@@ -380,7 +367,7 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -389,8 +376,8 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     EXPECT_NE(cacheCtx, nullptr);
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.binHandle = (void *)0x12341234;
-    launchCfg.funcHandle = (void *)0x12345678;
+    launchCfg.binHandle = (void*)0x12341234;
+    launchCfg.funcHandle = (void*)0x12345678;
     launchCfg.tilingKey = 1234;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
@@ -423,10 +410,11 @@ TEST_F(OpCacheUt, AbnormalRtsArgCacheTest) {
     delete opExecCache;
 }
 
-TEST_F(OpCacheUt, CacheShrink) {
+TEST_F(OpCacheUt, CacheShrink)
+{
     setenv("ACLNN_CACHE_LIMIT", "1", 1);
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello1";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello1";
     GetThreadLocalContext().cacheHashKeyLen_ = 6;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -435,7 +423,7 @@ TEST_F(OpCacheUt, CacheShrink) {
     aclrtStream stream = 0;
     op::internal::LaunchArgCache::RunFromCache(stream, GetCacheBuf());
     auto opExecCacheWrap = CreateCacheWrap(opExecCache);
-    auto wrap = GetOpExecCacheFromExecutor(reinterpret_cast<aclOpExecutor *>(opExecCacheWrap));
+    auto wrap = GetOpExecCacheFromExecutor(reinterpret_cast<aclOpExecutor*>(opExecCacheWrap));
     EXPECT_NE(wrap, nullptr);
     bool succ = AddOpExecCache(opExecCache);
     EXPECT_EQ(succ, true);
@@ -445,7 +433,7 @@ TEST_F(OpCacheUt, CacheShrink) {
     InitPTACacheThreadLocal();
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello2";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello2";
     GetThreadLocalContext().cacheHashKeyLen_ = 6;
     auto opExecCache2 = new OpExecCache();
     opExecCache2->SetCacheBuf(GetCacheBuf());
@@ -454,7 +442,7 @@ TEST_F(OpCacheUt, CacheShrink) {
     aclrtStream stream2 = 0;
     op::internal::LaunchArgCache::RunFromCache(stream2, GetCacheBuf());
     auto opExecCacheWrap2 = CreateCacheWrap(opExecCache2);
-    auto wrap2 = GetOpExecCacheFromExecutor(reinterpret_cast<aclOpExecutor *>(opExecCacheWrap2));
+    auto wrap2 = GetOpExecCacheFromExecutor(reinterpret_cast<aclOpExecutor*>(opExecCacheWrap2));
     EXPECT_NE(wrap2, nullptr);
     succ = AddOpExecCache(opExecCache2);
     EXPECT_EQ(succ, true);
@@ -466,21 +454,24 @@ TEST_F(OpCacheUt, CacheShrink) {
     unsetenv("ACLNN_CACHE_LIMIT");
 }
 
-TEST_F(OpCacheUt, CacheUseTest) {
+TEST_F(OpCacheUt, CacheUseTest)
+{
     OpExecCache opExecCache;
     auto opExecCacheWrap = CreateCacheWrap(&opExecCache);
-    auto wrap = reinterpret_cast<aclOpExecutor *>(opExecCacheWrap);
+    auto wrap = reinterpret_cast<aclOpExecutor*>(opExecCacheWrap);
     aclrtStream stream = 0;
     CommonOpExecutorRun(nullptr, 0, wrap, stream);
 }
 
-TEST_F(OpCacheUt, UsePTACache) {
+TEST_F(OpCacheUt, UsePTACache)
+{
     std::string api = "aclnnAdd";
     bool use = CanUsePTACache(api.c_str());
     // EXPECT_EQ(use, true);
 }
 
-TEST_F(OpCacheUt, SetPTACache) {
+TEST_F(OpCacheUt, SetPTACache)
+{
     InitPTACacheThreadLocal();
     op::internal::GetThreadLocalContext().cachedTensorList_.clear();
     constexpr size_t ARR_SIZE = 6;
@@ -502,20 +493,21 @@ TEST_F(OpCacheUt, SetPTACache) {
     SetPTAHashKey(hash);
     EXPECT_EQ(op::internal::GetThreadLocalContext().hashKey_, hash);
 
-    char *hashKey = "aclnnMatmul12345678";
-    SetPTACacheHashKey(reinterpret_cast<uint8_t *>(hashKey), strlen(hashKey));
-    EXPECT_STREQ(reinterpret_cast<const char *>(op::internal::GetThreadLocalContext().cacheHashKey_), hashKey);
+    char* hashKey = "aclnnMatmul12345678";
+    SetPTACacheHashKey(reinterpret_cast<uint8_t*>(hashKey), strlen(hashKey));
+    EXPECT_STREQ(reinterpret_cast<const char*>(op::internal::GetThreadLocalContext().cacheHashKey_), hashKey);
     EXPECT_EQ(op::internal::GetThreadLocalContext().cacheHashKeyLen_, strlen(hashKey));
 
     OpCacheKey key;
     SetOpCacheKey(key);
-    EXPECT_STREQ(reinterpret_cast<char *>(key.buf), hashKey);
+    EXPECT_STREQ(reinterpret_cast<char*>(key.buf), hashKey);
     EXPECT_EQ(key.len, strlen(hashKey));
 
     UnInitPTACacheThreadLocal();
 }
 
-TEST_F(OpCacheUt, PtrListCacheTest) {
+TEST_F(OpCacheUt, PtrListCacheTest)
+{
     op::Shape outShape{100};
     int64_t inputData[8];
     aclIntArray self(inputData, 8);
@@ -524,8 +516,8 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
     aclTensor inputTensor(&self, op::DataType::DT_INT32);
     aclTensor inputTensor2(&self2, op::DataType::DT_INT32);
 
-    const aclTensor *inputArr[] = {&inputTensor, &inputTensor2};
-    aclTensorList *inputTensors = aclCreateTensorList(inputArr, 2);
+    const aclTensor* inputArr[] = {&inputTensor, &inputTensor2};
+    aclTensorList* inputTensors = aclCreateTensorList(inputArr, 2);
 
     auto input_arg = OP_INPUT(inputTensors);
     auto output_arg = OP_OUTPUT(&out);
@@ -533,7 +525,7 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     constexpr size_t TEST_TILING_DATA_LEN = 60;
     tilingData->data_ = buffer.GetTilingDataAddr();
     memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
@@ -545,7 +537,7 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -555,13 +547,14 @@ TEST_F(OpCacheUt, PtrListCacheTest) {
 
     aclrtStream stream = 0;
     op::internal::LaunchArgCache::RunFromCache(stream, GetCacheBuf());
-    
+
     delete inputTensors;
     delete opExecCache;
     op::DestroyOpArgContext(ctx);
 }
 
-TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
+TEST_F(OpCacheUt, StaticRtsArgCacheTest)
+{
     op::Shape outShape{100};
     int64_t inputData[8];
     aclIntArray self(inputData, 8);
@@ -574,7 +567,7 @@ TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 0;
     tilingData->capacity_ = TEST_TILING_HOST_DATA_INIT_CAP;
 
@@ -583,7 +576,7 @@ TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
     arg.FillArgs();
     op::internal::PrintRtArg(arg.GetRtsArg());
 
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -600,22 +593,24 @@ TEST_F(OpCacheUt, StaticRtsArgCacheTest) {
     op::DestroyOpArgContext(ctx);
 }
 
-TEST_F(OpCacheUt, CacheExceptionDumpTest) {
+TEST_F(OpCacheUt, CacheExceptionDumpTest)
+{
     op::Shape outShape{100};
     int64_t inputData[8];
     aclIntArray self(inputData, 8);
     aclTensor out(outShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     aclTensor inputTensor(&self, op::DataType::DT_INT32);
 
-    op::Tensor *inputOpTensor = inputTensor.GetTensor();
-    op::Tensor *outputOpTensor = out.GetTensor();
+    op::Tensor* inputOpTensor = inputTensor.GetTensor();
+    op::Tensor* outputOpTensor = out.GetTensor();
     OpLogInfo opLogInfo;
     ExceptionDumpInfo exceptionDumpInfo;
     aclrtStream stream = (aclrtStream)0x1;
     PrepareExceptionDumpInfo({inputOpTensor}, {outputOpTensor}, opLogInfo, exceptionDumpInfo, stream);
 }
 
-TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1) {
+TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1)
+{
     GetThreadLocalContext().cacheHasFull_ = false;
     bool usePTAHash = GetThreadLocalContext().usePTAHash_;
     GetThreadLocalContext().usePTAHash_ = false;
@@ -626,20 +621,19 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1) {
     op::Shape outShape{33, 15, 14, 48};
     op::Shape idxShape{33, 15, 14, 48};
 
-
     auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
     auto out = std::make_unique<aclTensor>(outShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto idx = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {out.get(), idx.get()};
+    const aclTensor* wsArr[] = {out.get(), idx.get()};
 
     SortOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
 
     int64_t dim = 0;
     bool descending = true;
-    
+
     std::string apiName = "aclnnArgsort";
     auto input = OP_INPUT(self.get());
     auto output = OP_OUTPUT(out.get(), idx.get());
@@ -660,7 +654,7 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1) {
     CalculateHashKey(in0);
     CalculateHashKey(out0);
     SetOpCacheKey(key);
-    char *hashBuf =
+    char* hashBuf =
         "0x61636c6e6e417267736f727421000000000000000f000000000000000e0000000000000030000000000000002c6027000000000000a0"
         "02000000000000300000000000000001000000000000002c21000000000000000f000000000000000e0000000000000030000000000000"
         "002c010000002c00000000000000002c0200000000000000000000000121000000000000000f000000000000000e000000000000003000"
@@ -675,33 +669,30 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1) {
     EXPECT_EQ(cache, nullptr);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     EXPECT_NE(executor->GetOpExecCache(), nullptr);
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = GenKernelLauncherId("Sort");
     ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
     op::internal::GetLauncherCtx().ClearTilingCache();
 
-    aclTensorList *workspace = nullptr;
+    aclTensorList* workspace = nullptr;
     auto ctx2 = op::MakeOpArgContext(input, output, attr);
-    GetWorkspace(opType, &workspace, executor,
-        *ctx2->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx2->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    GetWorkspace(
+        opType, &workspace, executor, *ctx2->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx2->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     op::DestroyOpArgContext(ctx2);
 
-    auto ctx = op::MakeOpArgContext(OP_WORKSPACE(workspace),
-                                    OP_INPUT(self.get()),
-                                    OP_OUTPUT(out.get(), idx.get()),
-                                    OP_ATTR(dim, descending));
-    auto *launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
+    auto ctx = op::MakeOpArgContext(
+        OP_WORKSPACE(workspace), OP_INPUT(self.get()), OP_OUTPUT(out.get(), idx.get()), OP_ATTR(dim, descending));
+    auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
     launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
     executor->AddToKernelLauncherList(launcher);
 
     uint64_t workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(&executor);
 
-    auto *cachePtr = executor->GetOpExecCache();
+    auto* cachePtr = executor->GetOpExecCache();
     EXPECT_NE(cachePtr, nullptr);
     GetOpCacheContext().SetOpCache(cachePtr);
 
@@ -716,14 +707,14 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1) {
     auto cache1 = GetOpExecCache(opCacheKey);
     EXPECT_EQ(cache1, cachePtr);
 
-    std::vector<void *> tensors;
-    tensors.push_back(const_cast<void*>(reinterpret_cast<const void *>(self.get()->GetStorage())));
+    std::vector<void*> tensors;
+    tensors.push_back(const_cast<void*>(reinterpret_cast<const void*>(self.get()->GetStorage())));
     op::internal::opProfilingSwitch.kernelLaunchFlag = true;
     op::internal::opProfilingSwitch.additionInfoFlag = true;
     cache1->Run(nullptr, stream, tensors);
 
-    //Inplace
-    // 第一次获取cache,失败
+    // Inplace
+    //  第一次获取cache,失败
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "aclnnArgsortInplace";
 
     auto uniqueExecutorInplace = CREATE_EXECUTOR();
@@ -737,65 +728,64 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1) {
     EXPECT_NE(keyInplace.len, 0);
     auto cacheInplace = GetOpExecCache(keyInplace);
     EXPECT_EQ(cacheInplace, nullptr);
- 
+
     // 开始执行
-    aclOpExecutor *executorInplace = uniqueExecutorInplace.get();
+    aclOpExecutor* executorInplace = uniqueExecutorInplace.get();
     EXPECT_NE(executorInplace->GetOpExecCache(), nullptr);
     ProfilingInfoId profilingInfoIdInplace(0, kernelLaunchIdDefinedInL0Dfx, 0);
- 
+
     op::internal::GetLauncherCtx().ClearTilingCache();
- 
-    aclTensorList *workspaceInplace = nullptr;
+
+    aclTensorList* workspaceInplace = nullptr;
     auto ctx3 = op::MakeOpArgContext(input, output, attr);
-    GetWorkspace(opType, &workspaceInplace, executorInplace,
-        *ctx3->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx3->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    GetWorkspace(
+        opType, &workspaceInplace, executorInplace, *ctx3->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx3->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     op::DestroyOpArgContext(ctx3);
 
-    auto ctx4 = op::MakeOpArgContext(OP_WORKSPACE(workspaceInplace),
-                                    OP_INPUT(self.get()),
-                                    OP_OUTPUT(out.get(), idx.get()),
-                                    OP_ATTR(dim, descending));
- 
-    auto *launcherInplace = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoIdInplace, executorInplace,
-        ctx4};
+    auto ctx4 = op::MakeOpArgContext(
+        OP_WORKSPACE(workspaceInplace), OP_INPUT(self.get()), OP_OUTPUT(out.get(), idx.get()),
+        OP_ATTR(dim, descending));
+
+    auto* launcherInplace =
+        new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoIdInplace, executorInplace, ctx4};
     launcherInplace->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
     executorInplace->AddToKernelLauncherList(launcherInplace);
- 
+
     aclrtStream streamInplace = 0;
     uint64_t workspaceSizeInplace = uniqueExecutorInplace->GetWorkspaceSize();
     uniqueExecutorInplace.ReleaseTo(&executorInplace);
- 
+
     EXPECT_NE(executorInplace->GetOpExecCache(), nullptr);
-    
+
     OpCacheKey opCacheKeyInplace = executorInplace->GetOpExecCache()->GetOpCacheKey();
- 
+
     GetOpCacheContext().SetOpCache(executorInplace->GetOpExecCache());
- 
+
     executorInplace->SetStream(streamInplace);
     executorInplace->UpdateTensorAddr(workspaceInplace, workspaceSizeInplace);
- 
+
     auto rcInplace = launcherInplace->Launch();
     EXPECT_EQ(rcInplace, ACL_SUCCESS);
- 
+
     delete executorInplace;
- 
+
     // 第二次获取到cache
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "aclnnArgsortInplace";
     auto cacheInplace1 = GetOpExecCache(opCacheKeyInplace);
     EXPECT_NE(cacheInplace1, nullptr);
- 
+
     // 非Inplace和Inplace命中不同的cache
     EXPECT_NE(cacheInplace1, cache1);
- 
+
     GetThreadLocalContext().usePTAHash_ = usePTAHash;
 
     GetOpCacheContext().SetOpCache(nullptr);
     setenv("ACLNN_CACHE_LIMIT", "1", 1);
 }
 
-TEST_F(OpCacheUt, CreateHashAbnormalBufferOverflow) {
+TEST_F(OpCacheUt, CreateHashAbnormalBufferOverflow)
+{
     bool usePTAHash = GetThreadLocalContext().usePTAHash_;
     GetThreadLocalContext().usePTAHash_ = false;
     op::Shape tShape{1, 2, 3};
@@ -818,34 +808,33 @@ TEST_F(OpCacheUt, CreateHashAbnormalBufferOverflow) {
     aclTensor t17(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     aclTensor t18(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     aclTensor t19(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
-    aclTensor *listTensor[] = {&t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9, &t10, &t11,
-                          &t12, &t13, &t14, &t15, &t16, &t17, &t18, &t19, nullptr};
+    aclTensor* listTensor[] = {&t1,  &t2,  &t3,  &t4,  &t5,  &t6,  &t7,  &t8,  &t9,  &t10,
+                               &t11, &t12, &t13, &t14, &t15, &t16, &t17, &t18, &t19, nullptr};
     aclTensorList tensorList(listTensor, 20);
-    const aclTensorList *tensorListPtr = &tensorList;
-    aclTensorList *tensorList2Ptr = &tensorList;
-    aclTensorList *tensorList3Ptr = &tensorList;
-    aclTensorList *tensorList4Ptr = &tensorList;
-    aclTensorList *tensorList5Ptr = &tensorList;
+    const aclTensorList* tensorListPtr = &tensorList;
+    aclTensorList* tensorList2Ptr = &tensorList;
+    aclTensorList* tensorList3Ptr = &tensorList;
+    aclTensorList* tensorList4Ptr = &tensorList;
+    aclTensorList* tensorList5Ptr = &tensorList;
     // float array
     int64_t intValue[] = {1, 2, 3};
     aclIntArray array3(intValue, 3);
-    const aclIntArray *array3Ptr = &array3;
+    const aclIntArray* array3Ptr = &array3;
     // scalar
     float fpValue = 3.2;
     aclScalar scalar(&fpValue, op::DataType::DT_FLOAT);
-    const aclScalar *scalarPtr = &scalar;
+    const aclScalar* scalarPtr = &scalar;
     std::string apiName = "aclnnClamp";
     const aclDataType dataType = aclDataType::ACL_FLOAT;
     // nullptr param
-    const aclFp16Array *arrayNull4 = nullptr;
-    const aclTensorList *tensorListNull1 = nullptr;
-    aclTensorList *tensorListNull2 = nullptr;
+    const aclFp16Array* arrayNull4 = nullptr;
+    const aclTensorList* tensorListNull1 = nullptr;
+    aclTensorList* tensorListNull2 = nullptr;
     int dim = 0;
     bool keepdim = true;
     auto in0 =
         std::make_tuple(tensorListPtr, tensorList2Ptr, tensorList3Ptr, tensorList4Ptr, tensorList5Ptr, dim, keepdim);
-    auto out0 =
-        std::make_tuple(array3Ptr, scalarPtr, dataType, arrayNull4, tensorListNull1, tensorListNull2);
+    auto out0 = std::make_tuple(array3Ptr, scalarPtr, dataType, arrayNull4, tensorListNull1, tensorListNull2);
     OpCacheKey key;
     // OpExecCache::GenerateOpCacheKey(key, apiName, in0, out0);
     AddParamToBuf(apiName);
@@ -867,7 +856,8 @@ TEST_F(OpCacheUt, CreateHashAbnormalBufferOverflow) {
     GetThreadLocalContext().usePTAHash_ = usePTAHash;
 }
 
-TEST_F(OpCacheUt, AbnormalIncludeOpOutShape) {
+TEST_F(OpCacheUt, AbnormalIncludeOpOutShape)
+{
     bool usePTAHash = GetThreadLocalContext().usePTAHash_;
     GetThreadLocalContext().usePTAHash_ = false;
     op::Shape tShape{1, 2, 3};
@@ -901,14 +891,13 @@ TEST_F(OpCacheUt, AbnormalIncludeOpOutShape) {
     auto cache = GetOpExecCache(key);
     EXPECT_EQ(cache, nullptr);
 
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     OpCacheKey opCacheKey = executor->GetOpExecCache()->GetOpCacheKey();
     EXPECT_NE(executor->GetOpExecCache(), nullptr);
     op::internal::GetLauncherCtx().ClearTilingCache();
 
     // 包含OP_OUTSHAPE_ARG参数，禁止cache
-    ADD_TO_LAUNCHER_LIST_AICORE(
-        Gelu, OP_INPUT(self.get()), OP_OUTPUT(out.get()), OP_OUTSHAPE(outShape.get(), 0));
+    ADD_TO_LAUNCHER_LIST_AICORE(Gelu, OP_INPUT(self.get()), OP_OUTPUT(out.get()), OP_OUTSHAPE(outShape.get(), 0));
     EXPECT_NE(executor->GetOpExecCache(), nullptr);
     EXPECT_EQ(opCacheKey.buf, nullptr);
     EXPECT_EQ(opCacheKey.len, 0);
@@ -931,16 +920,16 @@ TEST_F(OpCacheUt, AbnormalIncludeOpOutShape) {
 //     op::Shape tShape{1, 2, 3};
 //     auto self = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
 //     auto out = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
- 
+
 //     auto in0 = std::make_tuple(self.get());
 //     auto out0 = std::make_tuple(out.get());
 //     std::string apiName = "aclnnGelu";
 //     uint32_t OpTypeId = op::OpTypeDict::ToOpType("Gelu");
- 
+
 //     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "aclnnGelu";
 //     op::internal::GetThreadLocalContext().logInfo_.l2SequenceCounter = OpGetLogSequence();
 //     auto uniqueExecutor = CREATE_EXECUTOR();
- 
+
 //     OpCacheKey key;
 //     // OpExecCache::GenerateOpCacheKey(key, apiName, in0, out0);
 //     AddParamToBuf(apiName);
@@ -951,14 +940,14 @@ TEST_F(OpCacheUt, AbnormalIncludeOpOutShape) {
 //     EXPECT_NE(key.len, 0);
 //     auto cache = GetOpExecCache(key);
 //     EXPECT_EQ(cache, nullptr);
- 
+
 //     aclOpExecutor *executor = uniqueExecutor.get();
 //     OpCacheKey opCacheKey = executor->GetOpExecCache()->GetOpCacheKey();
 //     EXPECT_NE(opCacheKey.buf, nullptr);
 //     EXPECT_NE(opCacheKey.len, 0);
- 
+
 //     op::internal::GetLauncherCtx().ClearTilingCache();
- 
+
 //     // AICPU 禁止cache
 //     static op::internal::AicpuTaskSpace space("Gelu", ge::DEPEND_IN_SHAPE, false);
 
@@ -967,7 +956,7 @@ TEST_F(OpCacheUt, AbnormalIncludeOpOutShape) {
 //     EXPECT_EQ(executor->GetOpExecCache()->GetHash(), 0);
 
 //     EXPECT_EQ(executor->SetRepeatable(), 0);
- 
+
 //     EXPECT_EQ(executor->GetOpExecCache()->GetOpCacheKey().buf, nullptr);
 //     EXPECT_EQ(executor->GetOpExecCache()->GetOpCacheKey().len, 0);
 //     uniqueExecutor.ReleaseTo(&executor);
@@ -976,43 +965,46 @@ TEST_F(OpCacheUt, AbnormalIncludeOpOutShape) {
 //     delete executor;
 // }
 
-TEST_F(OpCacheUt, GetFromCache) {
+TEST_F(OpCacheUt, GetFromCache)
+{
     bool usePTAHash = GetThreadLocalContext().usePTAHash_;
     GetThreadLocalContext().usePTAHash_ = false;
     op::Shape tShape{1, 2, 3};
     auto self = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
- 
+
     auto in0 = std::make_tuple(self.get());
     auto out0 = std::make_tuple(out.get());
     std::string apiName = "aclnnGelu";
     uint32_t OpTypeId = op::OpTypeDict::ToOpType("Gelu");
- 
+
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "aclnnGelu";
     op::internal::GetThreadLocalContext().logInfo_.l2SequenceCounter = OpGetLogSequence();
     auto uniqueExecutor = CREATE_EXECUTOR();
 
-    aclOpExecutor *executor = uniqueExecutor.get();
-    uint64_t *workspaceSize;
+    aclOpExecutor* executor = uniqueExecutor.get();
+    uint64_t* workspaceSize;
     auto ret = op::internal::GetFromCache(&executor, workspaceSize, "aclnnGelu", in0, out0);
     EXPECT_EQ(ret, false);
     GetThreadLocalContext().usePTAHash_ = usePTAHash;
     uniqueExecutor.ReleaseTo(&executor);
     delete executor;
 }
-TEST_F(OpCacheUt, AddLaunchTensor) {
+TEST_F(OpCacheUt, AddLaunchTensor)
+{
     float fpValue = 3.2;
     uint64_t size = 1;
     auto self = std::make_unique<aclTensor>(&fpValue, size, op::DataType::DT_FLOAT);
-    const aclStorage *storage = self.get()->GetStorage();
+    const aclStorage* storage = self.get()->GetStorage();
     EXPECT_EQ(storage->IsFromWorkspace(), false);
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
-    opExecCache->AddLaunchTensor(self.get(), sizeof(void *));
+    opExecCache->AddLaunchTensor(self.get(), sizeof(void*));
     EXPECT_EQ(opExecCache->AddLaunchData(65537), nullptr);
     delete opExecCache;
 }
-TEST_F(OpCacheUt, AddTensorRelation) {
+TEST_F(OpCacheUt, AddTensorRelation)
+{
     op::Shape tShape{1, 2, 3};
     auto self = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
@@ -1023,7 +1015,8 @@ TEST_F(OpCacheUt, AddTensorRelation) {
     opExecCache1->Finalize();
     delete opExecCache1;
 }
-TEST_F(OpCacheUt, apiTest) {
+TEST_F(OpCacheUt, apiTest)
+{
     auto opExecCache = new OpExecCache();
     auto workspaceSize = opExecCache->GetWorkspaceSize();
     EXPECT_EQ(workspaceSize, 0);
@@ -1033,11 +1026,12 @@ TEST_F(OpCacheUt, apiTest) {
 
     delete opExecCache;
 }
-TEST_F(OpCacheUt, AddParamToBufaclScalarList) {
+TEST_F(OpCacheUt, AddParamToBufaclScalarList)
+{
     bool usePTAHash = GetThreadLocalContext().usePTAHash_;
     GetThreadLocalContext().usePTAHash_ = false;
     double scalar_value = 5;
-    auto *scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
+    auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
     auto scalarList = aclCreateScalarList(&scalar, 1);
     AddParamToBuf(scalarList);
     OpCacheKey key;
@@ -1047,14 +1041,15 @@ TEST_F(OpCacheUt, AddParamToBufaclScalarList) {
     aclDestroyScalarList(scalarList);
     GetThreadLocalContext().usePTAHash_ = usePTAHash;
 }
-TEST_F(OpCacheUt, AddParamToBufChar) {
+TEST_F(OpCacheUt, AddParamToBufChar)
+{
     bool usePTAHash = GetThreadLocalContext().usePTAHash_;
     GetThreadLocalContext().usePTAHash_ = false;
-    char *apiName = "aclnnGelu";
+    char* apiName = "aclnnGelu";
     AddParamToBuf(apiName);
-    const char *nullptrCharPtr = nullptr;
+    const char* nullptrCharPtr = nullptr;
     AddParamToBuf(nullptrCharPtr);
-    char *nullptrCharPtrWithoutConst = nullptr;
+    char* nullptrCharPtrWithoutConst = nullptr;
     AddParamToBuf(nullptrCharPtrWithoutConst);
     OpCacheKey key;
     SetOpCacheKey(key);
@@ -1063,11 +1058,12 @@ TEST_F(OpCacheUt, AddParamToBufChar) {
     GetThreadLocalContext().usePTAHash_ = usePTAHash;
 }
 
-TEST_F(OpCacheUt, OpExecCacheRemove) {
-    const char_t *const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
+TEST_F(OpCacheUt, OpExecCacheRemove)
+{
+    const char_t* const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
     setenv("ACLNN_CACHE_LIMIT", "100000", 1);
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello1";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello1";
     GetThreadLocalContext().cacheHashKeyLen_ = 6;
     auto opExecCache = new OpExecCache();
     bool succ = AddOpExecCache(opExecCache);
@@ -1090,14 +1086,16 @@ TEST_F(OpCacheUt, OpExecCacheRemove) {
     setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
 }
 
-TEST_F(OpCacheUt, OpExecCacheDeleteTest) {
+TEST_F(OpCacheUt, OpExecCacheDeleteTest)
+{
     auto old = GetThreadLocalContext().cacheHasFull_;
     GetThreadLocalContext().cacheHasFull_ = false;
     auto uniqueExecutor = CREATE_EXECUTOR();
     GetThreadLocalContext().cacheHasFull_ = old;
 }
 
-TEST_F(OpCacheUt, CacheLaunch1982Test2) {
+TEST_F(OpCacheUt, CacheLaunch1982Test2)
+{
     setenv("ENABLE_1982", "1", 1);
     PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend910_93", "Ascend910_9391");
     op::Shape outShape{100};
@@ -1112,7 +1110,7 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     constexpr size_t TEST_TILING_DATA_LEN = 100;
     tilingData->data_ = buffer.GetTilingDataAddr();
     memset_s(tilingData->data_, TEST_TILING_HOST_DATA_INIT_CAP, 0, TEST_TILING_DATA_LEN);
@@ -1124,7 +1122,7 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     arg.FillArgs();
 
     GetThreadLocalContext().hashKey_ = 0;
-    GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello";
+    GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello";
     GetThreadLocalContext().cacheHashKeyLen_ = 5;
     auto opExecCache = new OpExecCache();
     opExecCache->SetCacheBuf(GetCacheBuf());
@@ -1133,7 +1131,7 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     EXPECT_NE(cacheCtx, nullptr);
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
+    launchCfg.funcHandle = (void*)0x12345678;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 0;
@@ -1154,8 +1152,9 @@ TEST_F(OpCacheUt, CacheLaunch1982Test2) {
     unsetenv("ENABLE_1982");
 }
 
-TEST_F(OpCacheUt, OpCacheManagerCount) {
-    void *manager = op::internal::GetOpExecCacheManager();
+TEST_F(OpCacheUt, OpCacheManagerCount)
+{
+    void* manager = op::internal::GetOpExecCacheManager();
     EXPECT_NE(manager, nullptr);
     op::internal::ReleaseOpExecCacheManager(manager);
     op::internal::ReleaseOpExecCacheManager(nullptr);
@@ -1177,16 +1176,18 @@ namespace op {
 namespace internal {
 extern std::atomic<bool> g_enableOpCacheCount;
 }
-}  // namespace op
+} // namespace op
 
-static void OpCacheUseCountTestFunc() {
+static void OpCacheUseCountTestFunc()
+{
     auto uniqueExecutor = CREATE_EXECUTOR();
     EXPECT_EQ(g_enableOpCacheCount.load(), true);
     DisableOpCacheCount();
     EXPECT_EQ(g_enableOpCacheCount.load(), false);
 }
 
-TEST_F(OpCacheUt, DisableOpCacheUseCountTest) {
+TEST_F(OpCacheUt, DisableOpCacheUseCountTest)
+{
     std::thread t(OpCacheUseCountTestFunc);
     t.join();
 }

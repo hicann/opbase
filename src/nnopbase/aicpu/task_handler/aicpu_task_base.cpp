@@ -19,7 +19,7 @@
 namespace op {
 namespace internal {
 namespace {
-    constexpr size_t kMaxTotalHostLen = 1024U;
+constexpr size_t kMaxTotalHostLen = 1024U;
 }
 AicpuTimeStamp gAicpuTimeStamp = {};
 std::set<AicpuTaskSpace*> gAicpuTaskSpaceSet;
@@ -30,8 +30,9 @@ void aclnnAicpuFinalize()
     OP_LOGD("Entering func: aclnnAicpuFinalize, size=%zu.", gAicpuTaskSpaceSet.size());
     const std::lock_guard<std::mutex> lk(gAicpuTaskSpaceMutex_);
     /*
-    * space中clear()勿加锁，否则可能导致finalize及task init接口同时调用的错误场景下，space成员锁与gAicpuTaskSpaceMutex_互锁.
-    */
+     * space中clear()勿加锁，否则可能导致finalize及task
+     * init接口同时调用的错误场景下，space成员锁与gAicpuTaskSpaceMutex_互锁.
+     */
     for (auto space : gAicpuTaskSpaceSet) {
         if (space != nullptr) {
             space->Clear();
@@ -41,7 +42,8 @@ void aclnnAicpuFinalize()
     OP_LOGD("Leaving func: aclnnAicpuFinalize");
 }
 
-void SaveAicpuTaskSpace(void *aicpuTaskSpace) {
+void SaveAicpuTaskSpace(void* aicpuTaskSpace)
+{
     const std::lock_guard<std::mutex> lk(gAicpuTaskSpaceMutex_);
     gAicpuTaskSpaceSet.insert((AicpuTaskSpace*)aicpuTaskSpace);
 }
@@ -54,7 +56,7 @@ bool EnableAicpuTimeStamp()
     return ((ret == EN_OK) && (profilingToStdOut[0U] == '1'));
 }
 
-void AicpuPrintTimeInfo(const char *info, unsigned short startIndex, unsigned short endIndex)
+void AicpuPrintTimeInfo(const char* info, unsigned short startIndex, unsigned short endIndex)
 {
     unsigned long time = 0U;
     if (startIndex < kAicpuTimeStampNum && endIndex < kAicpuTimeStampNum) {
@@ -68,7 +70,7 @@ void AicpuPrintTimeInfo(const char *info, unsigned short startIndex, unsigned sh
     }
 }
 
-void PrintAicpuAllTimeStampInfo(const char *opType)
+void PrintAicpuAllTimeStampInfo(const char* opType)
 {
     if (gAicpuTimeStamp.isEnable) {
         static std::atomic<std::uint64_t> index = 0;
@@ -85,17 +87,17 @@ void PrintAicpuAllTimeStampInfo(const char *opType)
     }
 }
 
-static void GenKeyByAttrsImpl(OpArg &attr, uint8_t *&key, size_t &keyLen)
+static void GenKeyByAttrsImpl(OpArg& attr, uint8_t*& key, size_t& keyLen)
 {
     switch (attr.type) {
         case OpArgType::OPARG_INT_LIST:
-            AppendAttrForKey(reinterpret_cast<aclIntArray *>(attr->pointer), key, keyLen);
+            AppendAttrForKey(reinterpret_cast<aclIntArray*>(attr->pointer), key, keyLen);
             break;
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            AppendAttrForKey(reinterpret_cast<aclTensorList *>(attr->pointer), key, keyLen);
+            AppendAttrForKey(reinterpret_cast<aclTensorList*>(attr->pointer), key, keyLen);
             break;
         case OpArgType::OPARG_FLOAT_LIST:
-            AppendAttrForKey(reinterpret_cast<aclFloatArray *>(attr->pointer), key, keyLen);
+            AppendAttrForKey(reinterpret_cast<aclFloatArray*>(attr->pointer), key, keyLen);
             break;
         case OpArgType::OPARG_BOOL:
             AppendAttrForKey(static_cast<bool>(attr->value), key, keyLen);
@@ -116,7 +118,7 @@ static void GenKeyByAttrsImpl(OpArg &attr, uint8_t *&key, size_t &keyLen)
             AppendAttrForKey(static_cast<op::DataType>(attr->value), key, keyLen);
             break;
         case OpArgType::OPARG_STRING: {
-            std::string keyStr(reinterpret_cast<char_t *>(attr->pointer));
+            std::string keyStr(reinterpret_cast<char_t*>(attr->pointer));
             AppendAttrForKey(keyStr, key, keyLen);
             break;
         }
@@ -126,18 +128,17 @@ static void GenKeyByAttrsImpl(OpArg &attr, uint8_t *&key, size_t &keyLen)
     }
 }
 
-static void CreateAicpuAttrsImpl(OpArg &attr, size_t idx, const FVector<std::string> &attrNames,
-                                 AicpuAttrs &attrs)
+static void CreateAicpuAttrsImpl(OpArg& attr, size_t idx, const FVector<std::string>& attrNames, AicpuAttrs& attrs)
 {
     switch (attr.type) {
         case OpArgType::OPARG_INT_LIST:
-            AddAicpuAttr(reinterpret_cast<aclIntArray *>(attr->pointer), attrNames[idx], attrs);
+            AddAicpuAttr(reinterpret_cast<aclIntArray*>(attr->pointer), attrNames[idx], attrs);
             break;
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            AddAicpuAttr(reinterpret_cast<aclTensorList *>(attr->pointer), attrNames[idx], attrs);
+            AddAicpuAttr(reinterpret_cast<aclTensorList*>(attr->pointer), attrNames[idx], attrs);
             break;
         case OpArgType::OPARG_FLOAT_LIST:
-            AddAicpuAttr(reinterpret_cast<aclFloatArray *>(attr->pointer), attrNames[idx], attrs);
+            AddAicpuAttr(reinterpret_cast<aclFloatArray*>(attr->pointer), attrNames[idx], attrs);
             break;
         case OpArgType::OPARG_BOOL:
             AddAicpuAttr(static_cast<bool>(attr->value), attrNames[idx], attrs);
@@ -158,7 +159,7 @@ static void CreateAicpuAttrsImpl(OpArg &attr, size_t idx, const FVector<std::str
             AddAicpuAttr(static_cast<op::DataType>(attr->value), attrNames[idx], attrs);
             break;
         case OpArgType::OPARG_STRING: {
-            std::string keyStr(reinterpret_cast<char_t *>(attr->pointer));
+            std::string keyStr(reinterpret_cast<char_t*>(attr->pointer));
             AddAicpuAttr(keyStr, attrNames[idx], attrs);
             break;
         }
@@ -168,30 +169,27 @@ static void CreateAicpuAttrsImpl(OpArg &attr, size_t idx, const FVector<std::str
     }
 }
 
-static aclnnStatus CreateAicpuAttrs(OpArgList &attrsArg, const FVector<std::string> &attrNames, AicpuAttrs &attrs)
+static aclnnStatus CreateAicpuAttrs(OpArgList& attrsArg, const FVector<std::string>& attrNames, AicpuAttrs& attrs)
 {
     AICPU_ASSERT_TRUE_RETVAL(attrsArg.count == attrNames.size());
-    attrsArg.VisitByNoReturn([&]([[maybe_unused]] size_t idx, OpArg &arg) {
-        CreateAicpuAttrsImpl(arg, idx, attrNames, attrs);
-    });
+    attrsArg.VisitByNoReturn(
+        [&]([[maybe_unused]] size_t idx, OpArg& arg) { CreateAicpuAttrsImpl(arg, idx, attrNames, attrs); });
     return OK;
 }
 
-static void GenKeyByAttrs(OpArgList &attr, uint8_t *&key, size_t &keyLen)
+static void GenKeyByAttrs(OpArgList& attr, uint8_t*& key, size_t& keyLen)
 {
-    attr.VisitByNoReturn([&]([[maybe_unused]] size_t idx, OpArg &arg) {
-        GenKeyByAttrsImpl(arg, key, keyLen);
-    });
+    attr.VisitByNoReturn([&]([[maybe_unused]] size_t idx, OpArg& arg) { GenKeyByAttrsImpl(arg, key, keyLen); });
 }
 
-size_t AicpuTaskSpace::GenHashBinary(const uint8_t *addr, uint32_t len)
+size_t AicpuTaskSpace::GenHashBinary(const uint8_t* addr, uint32_t len)
 {
     const std::hash<uint64_t> hasher;
     uint32_t size = len / sizeof(uint64_t);
     uint8_t rem = len % sizeof(uint64_t);
     uint32_t i = 0;
     size_t seed = 0;
-    uint64_t *ptr = (uint64_t *) addr;
+    uint64_t* ptr = (uint64_t*)addr;
 
     while (i < size) {
         seed ^= hasher(*ptr) + kHashSeed + (seed << 6U) + (seed >> 2U);
@@ -199,7 +197,7 @@ size_t AicpuTaskSpace::GenHashBinary(const uint8_t *addr, uint32_t len)
         i++;
     }
     if (rem != 0) {
-        uint8_t *p = (uint8_t *) ptr;
+        uint8_t* p = (uint8_t*)ptr;
         uint64_t val = 0U;
         while (rem > 0) {
             val |= (*p);
@@ -234,10 +232,7 @@ bool AicpuTaskSpace::IsRef(const size_t index, const bool isInput) const
     }
 }
 
-void AicpuTask::SetVisit(bool visit)
-{
-    isVisit_ = visit;
-}
+void AicpuTask::SetVisit(bool visit) { isVisit_ = visit; }
 
 uint64_t RoundUp(const uint64_t originValue, const uint64_t multipleOf)
 {
@@ -247,7 +242,7 @@ uint64_t RoundUp(const uint64_t originValue, const uint64_t multipleOf)
     return (originValue + multipleOf - 1) / multipleOf * multipleOf;
 }
 
-uint64_t AicpuTaskSpace::CalcHostInputDataSize(const FVector<const aclTensor *> &inputs, size_t alignBytes) const
+uint64_t AicpuTaskSpace::CalcHostInputDataSize(const FVector<const aclTensor*>& inputs, size_t alignBytes) const
 {
     uint64_t totalSize = 0;
     for (size_t i = 0; i < inputs.size(); i++) {
@@ -261,8 +256,8 @@ uint64_t AicpuTaskSpace::CalcHostInputDataSize(const FVector<const aclTensor *> 
     return totalSize;
 }
 
-uint64_t AicpuTaskSpace::CalcDeviceCacheSize(const FVector<const aclTensor *> &inputs,
-                                             std::unique_ptr<AicpuTask> &aicpuTask) const
+uint64_t AicpuTaskSpace::CalcDeviceCacheSize(
+    const FVector<const aclTensor*>& inputs, std::unique_ptr<AicpuTask>& aicpuTask) const
 {
     uint64_t cacheSize = 0;
     if (unknownType_ == ge::DEPEND_SHAPE_RANGE) {
@@ -276,11 +271,11 @@ uint64_t AicpuTaskSpace::CalcDeviceCacheSize(const FVector<const aclTensor *> &i
     return cacheSize;
 }
 
-size_t AicpuTaskSpace::GenTaskKey(uint8_t inputKey[], size_t &keyLen,
-                                  op::OpArgContext *args, const FVector<const aclTensor *> &inputs) const
+size_t AicpuTaskSpace::GenTaskKey(
+    uint8_t inputKey[], size_t& keyLen, op::OpArgContext* args, const FVector<const aclTensor*>& inputs) const
 {
     keyLen = 0U;
-    uint8_t *key = &inputKey[0];
+    uint8_t* key = &inputKey[0];
     AppendAttrForKey(GetTid(), key, keyLen);
     for (size_t i = 0U; i < inputs.size(); ++i) {
         if (inputs[i] == nullptr) {
@@ -298,17 +293,17 @@ size_t AicpuTaskSpace::GenTaskKey(uint8_t inputKey[], size_t &keyLen,
     return seed;
 }
 
-AicpuTask* AicpuTaskSpace::FindTask(aclOpExecutor *executor, op::OpArgContext *args,
-                                    const FVector<const aclTensor *> &inputs)
+AicpuTask* AicpuTaskSpace::FindTask(
+    aclOpExecutor* executor, op::OpArgContext* args, const FVector<const aclTensor*>& inputs)
 {
     const std::lock_guard<std::mutex> lk(mutex_);
     RecordAicpuTime(kFindTaskStart);
     uint8_t inputKey[kAicpuKeyBufLen];
     size_t keyLen = 0;
     auto seed = GenTaskKey(inputKey, keyLen, args, inputs);
-    const auto &iter = hashMap_.find(seed);
+    const auto& iter = hashMap_.find(seed);
     if (iter != hashMap_.end()) {
-        for (auto &task : iter->second) {
+        for (auto& task : iter->second) {
             if (task->isVisit_) {
                 continue;
             }
@@ -328,8 +323,9 @@ AicpuTask* AicpuTaskSpace::FindTask(aclOpExecutor *executor, op::OpArgContext *a
                 }
                 RecordAicpuTime(kFindTaskEnd);
                 task->isVisit_ = true;
-                OP_LOGI("Find %s task success, no need create, cache_size=%lu.",
-                    opType_.c_str(), executor->workspaceDeviceAicpuMem_);
+                OP_LOGI(
+                    "Find %s task success, no need create, cache_size=%lu.", opType_.c_str(),
+                    executor->workspaceDeviceAicpuMem_);
                 return task.get();
             }
         }
@@ -339,12 +335,12 @@ AicpuTask* AicpuTaskSpace::FindTask(aclOpExecutor *executor, op::OpArgContext *a
     return nullptr;
 }
 
-AicpuTask* AicpuTaskSpace::GetOrCreateTask(aclOpExecutor *executor, const FVector<std::string> &attrNames,
-                                           op::OpArgContext *args)
+AicpuTask* AicpuTaskSpace::GetOrCreateTask(
+    aclOpExecutor* executor, const FVector<std::string>& attrNames, op::OpArgContext* args)
 {
     gAicpuTimeStamp.isEnable = EnableAicpuTimeStamp();
-    FVector<const aclTensor *> inputs;
-    FVector<aclTensor *> outputs;
+    FVector<const aclTensor*> inputs;
+    FVector<aclTensor*> outputs;
     CreateTensorList(executor, *args->GetOpArg(op::OP_INPUT_ARG), inputs);
     auto task = FindTask(executor, args, inputs);
     if (task != nullptr) {
@@ -388,20 +384,19 @@ AicpuTask* AicpuTaskSpace::GetOrCreateTask(aclOpExecutor *executor, const FVecto
     hashMap_[seed].emplace_back(std::move(uniqueTask));
     task = hashMap_[seed].back().get();
     hasInit_ = true;
-    OP_LOGI("Create %s task success, cache_size=%lu.",
-        opType_.c_str(), executor->workspaceDeviceAicpuMem_);
+    OP_LOGI("Create %s task success, cache_size=%lu.", opType_.c_str(), executor->workspaceDeviceAicpuMem_);
     return task;
 }
 
-aclnnStatus AicpuTask::SetIoTensors(aclOpExecutor *executor, op::OpArgContext *args)
+aclnnStatus AicpuTask::SetIoTensors(aclOpExecutor* executor, op::OpArgContext* args)
 {
     RecordAicpuTime(kUpdateShapeStart);
     inputs_.clear();
     outputs_.clear();
     CreateTensorList(executor, *args->GetOpArg(op::OP_INPUT_ARG), inputs_);
     CreateTensorList(executor, *args->GetOpArg(op::OP_OUTPUT_ARG), outputs_);
-    return extInfoHandle_->UpdateInputAndOutputShape(inputs_, outputs_, executor->GetStream(),
-                                                     executor, deviceExtMemSize_, deviceCacheOffset_);
+    return extInfoHandle_->UpdateInputAndOutputShape(
+        inputs_, outputs_, executor->GetStream(), executor, deviceExtMemSize_, deviceCacheOffset_);
 }
 } // namespace internal
 } // namespace op

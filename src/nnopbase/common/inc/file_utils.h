@@ -17,11 +17,11 @@
 
 namespace op {
 
-bool IsDir(const std::string &path);
-std::unique_ptr<char[]> GetBinFromFile(const std::string &path, uint32_t &dataLen);
-void GetFilesWithSuffix(const std::string &path, const std::string &suffix, std::vector<std::string> &files);
-std::string RealPath(const std::string &path);
+bool IsDir(const std::string& path);
+std::unique_ptr<char[]> GetBinFromFile(const std::string& path, uint32_t& dataLen);
+void GetFilesWithSuffix(const std::string& path, const std::string& suffix, std::vector<std::string>& files);
+std::string RealPath(const std::string& path);
 
-}
+} // namespace op
 
 #endif // OP_API_OP_API_COMMON_SRC_UTILS_FILE_UTILS_H

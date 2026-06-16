@@ -18,24 +18,27 @@ class CacheKeyBuilder {
 public:
     static void AppendTensor(NnopbaseExecutorArgs* args, const aclTensor* tensor);
     static void AppendTensorList(NnopbaseExecutorArgs* args, const aclTensorList* tensorList);
-    static NnopbaseUChar* AppendPlaceHolder(NnopbaseExecutorArgs* args, NnopbaseUChar *key);
+    static NnopbaseUChar* AppendPlaceHolder(NnopbaseExecutorArgs* args, NnopbaseUChar* key);
     static NnopbaseUChar* AppendCoreNum(NnopbaseExecutorArgs* args, const NnopbaseCoreNum* coreNum);
     static NnopbaseUChar* AppendMc2RankId(NnopbaseExecutorArgs* args, const uint32_t* rankId);
     static NnopbaseUChar* AppendDeterministic(NnopbaseExecutorArgs* args, const bool* deterministic);
-    static void AppendValueDependTensor(NnopbaseExecutorArgs* args, const void* addr,
-                                        const uint64_t dim, const uint64_t dataLen, ge::DataType dType);
-    static void AppendScalar(NnopbaseExecutorArgs* args, const aclScalar* scalar,
-                            const uint32_t index, const int32_t srcIndex, const ge::DataType dtype);
-    static void AppendScalarList(NnopbaseExecutorArgs* args, const aclScalarList* scalarList,
-                                const uint32_t index, const int32_t srcIndex, const ge::DataType dtype);
-    static void GenerateCacheArgsKeyV1(NnopbaseExecutor *executor);
+    static void AppendValueDependTensor(
+        NnopbaseExecutorArgs* args, const void* addr, const uint64_t dim, const uint64_t dataLen, ge::DataType dType);
+    static void AppendScalar(
+        NnopbaseExecutorArgs* args, const aclScalar* scalar, const uint32_t index, const int32_t srcIndex,
+        const ge::DataType dtype);
+    static void AppendScalarList(
+        NnopbaseExecutorArgs* args, const aclScalarList* scalarList, const uint32_t index, const int32_t srcIndex,
+        const ge::DataType dtype);
+    static void GenerateCacheArgsKeyV1(NnopbaseExecutor* executor);
 
 private:
     static NnopbaseUChar* AppendShapeInfo(NnopbaseExecutorArgs* args, const aclTensor* tensor);
     static NnopbaseUChar* AppendScalarInfo(NnopbaseExecutorArgs* args, const ge::DataType dtype);
-    static NnopbaseUChar* AppendScalarListInfo(NnopbaseExecutorArgs* args, const ge::DataType dtype, const uint64_t size);
+    static NnopbaseUChar* AppendScalarListInfo(
+        NnopbaseExecutorArgs* args, const ge::DataType dtype, const uint64_t size);
     static void EnsureCapacity(NnopbaseExecutorArgs* args, size_t len);
-    static size_t CalculateCacheKeyLenV1(NnopbaseExecutor *executor);
+    static size_t CalculateCacheKeyLenV1(NnopbaseExecutor* executor);
 
     static constexpr size_t BASE_BYTES = 3U;
     static constexpr size_t SHAPE_BYTES = 8U;

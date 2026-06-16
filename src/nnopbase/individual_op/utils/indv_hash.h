@@ -11,7 +11,6 @@
 #ifndef INDV_HASH_H_
 #define INDV_HASH_H_
 
-
 #include <string>
 #include "indv_base.h"
 
@@ -21,7 +20,7 @@ extern "C" {
 static constexpr uint64_t NNOPBASE_HASH_SEED = 0x9e3779b9U;
 size_t NnopbaseHashBinary(const NnopbaseUChar* const addr, const size_t len);
 
-static inline size_t NnopbaseHashInt(size_t &seed, int32_t v)
+static inline size_t NnopbaseHashInt(size_t& seed, int32_t v)
 {
     const std::hash<int32_t> hasher;
     seed ^= hasher(v) + NNOPBASE_HASH_SEED + (seed << 6U) + (seed >> 2U);

@@ -21,7 +21,7 @@ size_t NnopbaseHashBinary(const NnopbaseUChar* const addr, const size_t len)
     size_t rem = len % sizeof(uint64_t);
     size_t i = 0U;
     size_t seed = 0U;
-    const uint64_t *ptr =  op::internal::PtrCastTo<const uint64_t>(addr);
+    const uint64_t* ptr = op::internal::PtrCastTo<const uint64_t>(addr);
 
     while (i < size) {
         seed ^= hasher(*ptr) + NNOPBASE_HASH_SEED + (seed << 6U) + (seed >> 2U);
@@ -29,7 +29,7 @@ size_t NnopbaseHashBinary(const NnopbaseUChar* const addr, const size_t len)
         i++;
     }
     if (rem != 0) {
-        const NnopbaseUChar *p =  op::internal::PtrCastTo<const NnopbaseUChar>(ptr);
+        const NnopbaseUChar* p = op::internal::PtrCastTo<const NnopbaseUChar>(ptr);
         uint64_t val = 0U;
         for (size_t j = 0U; j < rem; ++j) {
             val |= (*p);

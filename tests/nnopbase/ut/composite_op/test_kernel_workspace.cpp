@@ -7,18 +7,16 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
-
 
 #include "acl/acl.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "thread_local_context.h"
 #include "kernel_workspace.h"
-
 
 OP_TYPE_REGISTER(Sub)
 OP_TYPE_REGISTER(Transpose);
@@ -43,7 +41,8 @@ protected:
 //     auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
 //     auto other = std::make_unique<aclTensor>(otherShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
 //     auto out =
-//         std::make_unique<aclTensor>(op::Shape{33, 15, 1, 48}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+//         std::make_unique<aclTensor>(op::Shape{33, 15, 1, 48}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+//         nullptr);
 
 //     auto uniqueExecutor = CREATE_EXECUTOR();
 //     aclOpExecutor *executor = uniqueExecutor.get();
@@ -84,16 +83,13 @@ TEST_F(KernelWorkspaceUt, KernelWorkspaceTestCase2)
     auto indices = std::make_unique<aclTensor>(selfShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
-    aclTensorList *workspace = nullptr;
-    auto ctx = op::MakeOpArgContext(OP_INPUT(self.get()),
-                                    OP_OUTPUT(values.get(), indices.get()),
-                                    OP_ATTR(-1, false));
+    aclOpExecutor* executor = uniqueExecutor.get();
+    aclTensorList* workspace = nullptr;
+    auto ctx = op::MakeOpArgContext(OP_INPUT(self.get()), OP_OUTPUT(values.get(), indices.get()), OP_ATTR(-1, false));
     SortOpTypeId();
-    auto ret = op::internal::GetWorkspace(op::OpTypeDict::ToOpType("Sort"), &workspace, executor, 
-        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    auto ret = op::internal::GetWorkspace(
+        op::OpTypeDict::ToOpType("Sort"), &workspace, executor, *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret, ACL_SUCCESS);
     ASSERT_NE(workspace, nullptr);
     ASSERT_EQ(workspace->Size(), 3u);

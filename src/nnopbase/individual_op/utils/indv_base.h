@@ -38,8 +38,8 @@ static constexpr uint32_t NNOPBASE_STATIC_VEB_KEY_LEN = 512U;
 
 constexpr size_t NNOPBASE_BLOCK_NUM = 75U;
 static constexpr size_t NNOPBASE_NORM_MAX_WORKSPACE_NUMS = 20U;
-static constexpr size_t NNOPBASE_WORKSPACE_STRUCT_SIZE = sizeof(gert::ContinuousVector) +
-    NNOPBASE_NORM_MAX_WORKSPACE_NUMS * sizeof(size_t);
+static constexpr size_t NNOPBASE_WORKSPACE_STRUCT_SIZE =
+    sizeof(gert::ContinuousVector) + NNOPBASE_NORM_MAX_WORKSPACE_NUMS * sizeof(size_t);
 
 // 1字节在16进制占2位
 static constexpr size_t NNOPBASE_BYTE_FOR_HEX = 2U;
@@ -78,7 +78,7 @@ struct NnopbaseTimeStamp {
 };
 
 typedef struct {
-    void *overflowAddr;
+    void* overflowAddr;
     bool deterministic;
     NnopbaseUChar precision;
     bool enableArgsCache;
@@ -88,18 +88,18 @@ typedef struct {
 } NnopbaseSysGlobalParams;
 
 typedef struct {
-    NnopbaseAnchorInstanceInfo *instStart;
-    NnopbaseCompileTimeTensorDesc *inputTdStart;
-    NnopbaseCompileTimeTensorDesc *outputTdStart;
-    NnopbaseRuntimeAttrsDef *attrStart;
-    NnopbaseAnchorInstanceInfo *outputInstStart;
-    NnopbaseUChar *buf;
+    NnopbaseAnchorInstanceInfo* instStart;
+    NnopbaseCompileTimeTensorDesc* inputTdStart;
+    NnopbaseCompileTimeTensorDesc* outputTdStart;
+    NnopbaseRuntimeAttrsDef* attrStart;
+    NnopbaseAnchorInstanceInfo* outputInstStart;
+    NnopbaseUChar* buf;
     size_t bufLen;
-    NnopbaseComputeNodeInfo *node;
+    NnopbaseComputeNodeInfo* node;
 } NnopbaseComputeNodeInfoExt;
 
 typedef struct {
-    NnopbaseKernelRunContext *context;
+    NnopbaseKernelRunContext* context;
     NnopbaseComputeNodeInfoExt nodeExt;
     uint32_t contextLen;
     bool hasPrepared;
@@ -120,7 +120,7 @@ typedef struct {
 } NnopbaseTilingInfo;
 
 typedef struct {
-    void *workspaces[NNOPBASE_NORM_MAX_WORKSPACE_NUMS];
+    void* workspaces[NNOPBASE_NORM_MAX_WORKSPACE_NUMS];
     size_t num;
     uint64_t length;
     uint32_t workspaceArgsOffset[NNOPBASE_NORM_MAX_WORKSPACE_NUMS];
@@ -128,7 +128,7 @@ typedef struct {
 } NnopbaseWorkSpaces;
 
 typedef struct {
-    uint32_t num; // 每个原型实例的tensor个数
+    uint32_t num;    // 每个原型实例的tensor个数
     uint32_t cfgNum; // 0:optional 1:required 2:dynamic
     uint32_t startIndex;
     bool isInput;
@@ -136,24 +136,24 @@ typedef struct {
     std::vector<uint8_t> scalarValue;
     int32_t scalarIndex = -1;
     int32_t refIdx = -1;
-    const char *name = nullptr;
+    const char* name = nullptr;
     bool isDisable;
     bool ignoreCont = false;
-    const aclTensor *tensor = nullptr;
-    const aclTensorList *tensorList = nullptr;
-    const aclIntArray *intArray = nullptr;
-    const aclBoolArray *boolArray = nullptr;
-    const aclFloatArray *floatArray = nullptr;
-    const aclScalar *scalar = nullptr;
-    const aclScalarList *scalarList = nullptr;
+    const aclTensor* tensor = nullptr;
+    const aclTensorList* tensorList = nullptr;
+    const aclIntArray* intArray = nullptr;
+    const aclBoolArray* boolArray = nullptr;
+    const aclFloatArray* floatArray = nullptr;
+    const aclScalar* scalar = nullptr;
+    const aclScalarList* scalarList = nullptr;
     ge::DataType scalarDtype = ge::DT_UNDEFINED;
     int32_t srcIndex = -1;
 } NnopbaseParamInstance;
 
 typedef struct {
     std::vector<NnopbaseParamInstance> instances;
-    uint32_t count; // 原型个数
-    uint32_t emptyNum; // 空tensor个数
+    uint32_t count;            // 原型个数
+    uint32_t emptyNum;         // 空tensor个数
     uint32_t activeInputCount; // active的index个数
 } NnopbaseParamDesc;
 
@@ -167,21 +167,21 @@ typedef struct {
 } NnopbaseTensor;
 
 struct NnopbaseTensorList : public op::Object {
-    const aclTensor **tensors = nullptr;
+    const aclTensor** tensors = nullptr;
     uint64_t size = 0U;
 };
 
 struct NnopbaseUnContTensors {
-    std::vector<const aclTensor *> tensors;
+    std::vector<const aclTensor*> tensors;
     std::vector<size_t> idxs;
     op::FVector<uint64_t> workspaceOffsets;
     NnopbaseTensorList tensorList;
 
     std::vector<size_t> refIdxs;
-    std::vector<const aclTensor *> refUnContTensors;
+    std::vector<const aclTensor*> refUnContTensors;
     NnopbaseTensorList refUnContTensorList;
-    std::vector<aclTensor *> refContTensors;
-    aclTensorList *refContTensorList = nullptr;
+    std::vector<aclTensor*> refContTensors;
+    aclTensorList* refContTensorList = nullptr;
 };
 
 typedef struct {
@@ -202,7 +202,7 @@ typedef struct {
     size_t dynamicSize = 0U;
     size_t outPutShapeSize = 0U;
     size_t outPutShapeArgsOffset = 0U;
-    std::map<uint32_t, aclTensor *> outPutShapeMap;
+    std::map<uint32_t, aclTensor*> outPutShapeMap;
 } NnopbaseTensors;
 
 struct NnopbaseAttr {
@@ -211,33 +211,33 @@ struct NnopbaseAttr {
 };
 
 typedef struct {
-    NnopbaseAttr *attrs = nullptr;
+    NnopbaseAttr* attrs = nullptr;
     size_t num = 0U;
     size_t totalSize = 0U;
     size_t totalDataLen = 0U;
 } NnopbaseAttrs;
 
-static inline NnopbaseUChar *NnopbaseAppend1Byte(NnopbaseUChar *buf, NnopbaseUChar src)
+static inline NnopbaseUChar* NnopbaseAppend1Byte(NnopbaseUChar* buf, NnopbaseUChar src)
 {
     *buf = src;
     return buf + 1;
 }
 
-static inline NnopbaseUChar *NnopbaseAppend4Byte(void *buf, uint32_t src)
+static inline NnopbaseUChar* NnopbaseAppend4Byte(void* buf, uint32_t src)
 {
     uint32_t* dst = (uint32_t*)buf;
     *dst = src;
-    return (uint8_t *)buf + sizeof(src);
+    return (uint8_t*)buf + sizeof(src);
 }
 
-static inline NnopbaseUChar *NnopbaseAppend8Byte(NnopbaseUChar *buf, uint64_t src)
+static inline NnopbaseUChar* NnopbaseAppend8Byte(NnopbaseUChar* buf, uint64_t src)
 {
     uint64_t* p = op::internal::PtrCastTo<uint64_t>(buf);
     *p = src;
     return buf + sizeof(uint64_t);
 }
 
-static inline void NnopbasePrintHex(const uint8_t *const p, const size_t num, std::stringstream &ss)
+static inline void NnopbasePrintHex(const uint8_t* const p, const size_t num, std::stringstream& ss)
 {
     for (size_t i = 0U; i < num; ++i) {
         ss << "0x" << std::setfill('0') << std::setw(NNOPBASE_BYTE_FOR_HEX) << std::hex << +p[i] << ' ';
@@ -248,9 +248,9 @@ static inline void NnopbasePrintHex(const uint8_t *const p, const size_t num, st
 }
 namespace nnopbase {
 std::string ToStr(const NnopbaseAttrDtype dtype);
-std::string ToStr(const NnopbaseAttrs &attrs);
-std::string ToStr(const NnopbaseAttr &attr);
-std::string ToStr(const GertTensor &tensor);
-} // nnopbase
+std::string ToStr(const NnopbaseAttrs& attrs);
+std::string ToStr(const NnopbaseAttr& attr);
+std::string ToStr(const GertTensor& tensor);
+} // namespace nnopbase
 #endif
 #endif

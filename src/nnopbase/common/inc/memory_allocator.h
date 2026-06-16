@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_SRC_MEM_MGR_MEMORY_ALLOCATOR_H
 #define OP_API_OP_API_COMMON_SRC_MEM_MGR_MEMORY_ALLOCATOR_H
 #include "kernel_tensor.h"
@@ -22,29 +22,29 @@ class TensorBucket {
 public:
     uint64_t GetSize() const { return size_; }
 
-    bool IsReusable(const KernelTensor *tensor);
+    bool IsReusable(const KernelTensor* tensor);
 
     void UpdateOffset(const uint64_t offset);
 
-    void AddRef(KernelTensor *tensor);
+    void AddRef(KernelTensor* tensor);
 
-    const op::FVector<KernelTensor *> &GetRefs() const { return refs_; }
+    const op::FVector<KernelTensor*>& GetRefs() const { return refs_; }
 
 private:
     uint64_t offset_{0};
     uint64_t size_{0};
-    op::FVector<KernelTensor *> refs_;
+    op::FVector<KernelTensor*> refs_;
 };
 
 class MemoryAllocator {
 public:
     virtual ~MemoryAllocator() = default;
-    virtual uint64_t Allocate(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors) = 0;
+    virtual uint64_t Allocate(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors) = 0;
 };
 
 class LinearAllocator : public MemoryAllocator {
 public:
-    uint64_t Allocate(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors) override;
+    uint64_t Allocate(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors) override;
 
 private:
     uint64_t size_{0};
@@ -52,14 +52,14 @@ private:
 
 class MaxAllocator : public MemoryAllocator {
 public:
-    uint64_t Allocate(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors) override;
+    uint64_t Allocate(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors) override;
 
 private:
-    TensorBucket &GetBestFitBucket(const KernelTensor *tensor);
+    TensorBucket& GetBestFitBucket(const KernelTensor* tensor);
 
     uint64_t size_{0};
     op::FVector<TensorBucket> buckets_;
 };
-}
-}
+} // namespace mem
+} // namespace op
 #endif

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <algorithm>
 
 #include "opdev/format_utils.h"
@@ -18,7 +18,7 @@ namespace op {
 
 using StrideShapePairs = FVector<std::pair<int64_t, int64_t>, op::MAX_DIM_NUM>;
 
-inline bool IsContiguous(const Shape &shape, const Strides &strides)
+inline bool IsContiguous(const Shape& shape, const Strides& strides)
 {
     int64_t validStride = 1;
     for (int64_t i = static_cast<int64_t>(strides.size()) - 1; i >= 0; --i) {
@@ -33,21 +33,21 @@ inline bool IsContiguous(const Shape &shape, const Strides &strides)
     return true;
 }
 
-bool IsContiguous(const aclTensor *tensor)
+bool IsContiguous(const aclTensor* tensor)
 {
     CHECK_RET(tensor != nullptr, true);
 
     if (IsPrivateFormat(tensor->GetStorageFormat())) {
         return true;
     }
-    const auto &viewShape = tensor->GetViewShape();
+    const auto& viewShape = tensor->GetViewShape();
     if (viewShape.GetShapeSize() == 0 || viewShape.GetShapeSize() == 1) {
         return true;
     }
     return IsContiguous(viewShape, tensor->GetViewStrides());
 }
 
-bool Validate(const aclTensor *tensor)
+bool Validate(const aclTensor* tensor)
 {
     auto viewShape = tensor->GetViewShape();
     auto viewStrides = tensor->GetViewStrides();
@@ -70,9 +70,8 @@ bool Validate(const aclTensor *tensor)
     return true;
 }
 
-inline StrideShapePairs BuildStrideShapePairs(const op::Shape &viewShape,
-                                              const op::Strides &viewStrides,
-                                              bool &mayTranspose, bool &mayBroadcast)
+inline StrideShapePairs BuildStrideShapePairs(
+    const op::Shape& viewShape, const op::Strides& viewStrides, bool& mayTranspose, bool& mayBroadcast)
 {
     StrideShapePairs strideShapePairs;
     strideShapePairs.reserve(viewStrides.size());
@@ -93,7 +92,7 @@ inline StrideShapePairs BuildStrideShapePairs(const op::Shape &viewShape,
     return strideShapePairs;
 }
 
-inline bool IsContiguous(const StrideShapePairs &strideShapePairs)
+inline bool IsContiguous(const StrideShapePairs& strideShapePairs)
 {
     int64_t stride = 1;
     for (auto it = strideShapePairs.rbegin(); it != strideShapePairs.rend(); it++) {
@@ -105,10 +104,10 @@ inline bool IsContiguous(const StrideShapePairs &strideShapePairs)
     return true;
 }
 
-bool CanPickViewAsContiguous(const aclTensor *tensor)
+bool CanPickViewAsContiguous(const aclTensor* tensor)
 {
-    const auto &viewShape = tensor->GetViewShape();
-    const auto &viewStrides = tensor->GetViewStrides();
+    const auto& viewShape = tensor->GetViewShape();
+    const auto& viewStrides = tensor->GetViewStrides();
     if (IsContiguous(viewShape, viewStrides)) {
         return true;
     }
@@ -127,15 +126,15 @@ bool CanPickViewAsContiguous(const aclTensor *tensor)
     return IsContiguous(strideShapePairs);
 }
 
-bool CanPickViewAsContiguous(std::initializer_list<const aclTensor *> tensorList)
+bool CanPickViewAsContiguous(std::initializer_list<const aclTensor*> tensorList)
 {
     if (tensorList.size() == 0) {
         return true;
     }
     auto firstTensor = *(tensorList.begin());
     for (auto tensor = tensorList.begin() + 1; tensor != tensorList.end(); tensor++) {
-        if ((*tensor)->GetViewShape() != firstTensor->GetViewShape()
-            || (*tensor)->GetViewStrides() != firstTensor->GetViewStrides()) {
+        if ((*tensor)->GetViewShape() != firstTensor->GetViewShape() ||
+            (*tensor)->GetViewStrides() != firstTensor->GetViewStrides()) {
             return false;
         }
     }

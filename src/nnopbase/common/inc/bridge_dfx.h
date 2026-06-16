@@ -11,14 +11,13 @@
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_BRIDGE_DFX_H_
 #define OP_API_OP_API_COMMON_INC_OPDEV_BRIDGE_DFX_H_
 
-
 namespace op {
 namespace internal {
-    bool IsDumpEnable();
-    bool IsExceptionDumpEnable();
-    bool IsArgExceptionDumpEnable();
-    bool IsOverflowDumpEnable();
-    bool IsNeedL0ExceptionDump();
+bool IsDumpEnable();
+bool IsExceptionDumpEnable();
+bool IsArgExceptionDumpEnable();
+bool IsOverflowDumpEnable();
+bool IsNeedL0ExceptionDump();
 } // namespace internal
 } // namespace op
 #endif

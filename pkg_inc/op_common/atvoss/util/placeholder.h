@@ -27,26 +27,26 @@ namespace Placeholder {
 
 #define CONCATENATE_DETAIL(name, idx) name##idx
 #define MAKE_UNIQ_NAME(name, idx) CONCATENATE_DETAIL(name, idx)
-#define MAKE_CONST(t, v)                                   \
-  struct MAKE_UNIQ_NAME(ConcatValue_##t##_, __COUNTER__) { \
-    constexpr static bool IsConstValue_ = true;            \
-    static constexpr t value = v;                          \
-  }
+#define MAKE_CONST(t, v)                                     \
+    struct MAKE_UNIQ_NAME(ConcatValue_##t##_, __COUNTER__) { \
+        constexpr static bool IsConstValue_ = true;          \
+        static constexpr t value = v;                        \
+    }
 
 enum HolderScope { GM, VECTOR };
 
 template <class T, class Attr_ = void, int cur = 0>
 struct Holder {
-  constexpr static int Pos = cur;
-  constexpr static bool IsHolder = true;
-  using DType = T;
-  using Attr = Attr_;
+    constexpr static int Pos = cur;
+    constexpr static bool IsHolder = true;
+    using DType = T;
+    using Attr = Attr_;
 };
 
 template <HolderScope scope = HolderScope::GM, int isScalar = 0>
 struct InAttr {
-  constexpr static int IsScalar = isScalar;
-  constexpr static HolderScope Scope = scope;
+    constexpr static int IsScalar = isScalar;
+    constexpr static HolderScope Scope = scope;
 };
 
 template <int isScalar = 0>
@@ -96,69 +96,69 @@ struct In11 : public Holder<T, Attr, INPUT_HOLDER11> {};
 
 template <class T>
 struct IsInHolder {
-  constexpr static bool Value = false;
+    constexpr static bool Value = false;
 };
 template <class U, class Attr, template <class, class> class T>
 struct IsInHolder<T<U, Attr>> {
-  constexpr static bool Value = false;
+    constexpr static bool Value = false;
 };
 template <class U, class Attr>
 struct IsInHolder<In0<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In1<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In2<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In3<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In4<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In5<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In6<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In7<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In8<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In9<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In10<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr>
 struct IsInHolder<In11<U, Attr>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 
 /** 判断输入是否是Scalar输入 */
 template <class T>
 struct IsInScalar {
-  constexpr static bool Value = false;
+    constexpr static bool Value = false;
 };
 template <class U, class Attr, template <class, class> class T>
 struct IsInScalar<T<U, Attr>> {
-  constexpr static bool Value = Attr::IsScalar == 1;
+    constexpr static bool Value = Attr::IsScalar == 1;
 };
 
 constexpr static int OUTPUT_HOLDER0 = 0;
@@ -175,108 +175,108 @@ constexpr static int OUTPUT_HOLDER9 = 9;
 /** GM输出，不存在Scalar输出 */
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out0 : public Holder<T, Attr, OUTPUT_HOLDER0> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out1 : public Holder<T, Attr, OUTPUT_HOLDER1> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out2 : public Holder<T, Attr, OUTPUT_HOLDER2> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out3 : public Holder<T, Attr, OUTPUT_HOLDER3> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out4 : public Holder<T, Attr, OUTPUT_HOLDER4> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out5 : public Holder<T, Attr, OUTPUT_HOLDER5> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out6 : public Holder<T, Attr, OUTPUT_HOLDER6> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out7 : public Holder<T, Attr, OUTPUT_HOLDER7> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out8 : public Holder<T, Attr, OUTPUT_HOLDER8> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 template <typename T, class Attr = void, class Parent_ = void>
 struct Out9 : public Holder<T, Attr, OUTPUT_HOLDER9> {
-  using Parent = Parent_;
+    using Parent = Parent_;
 };
 
 template <class T>
 struct IsOutHolder {
-  constexpr static bool Value = false;
+    constexpr static bool Value = false;
 };
 template <class U, class Attr, class P, template <class, class, class> class T>
 struct IsOutHolder<T<U, Attr, P>> {
-  constexpr static bool Value = false;
+    constexpr static bool Value = false;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out0<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out1<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out2<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out3<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out4<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out5<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out6<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out7<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out8<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 template <class U, class Attr, class P>
 struct IsOutHolder<Out9<U, Attr, P>> {
-  constexpr static bool Value = true;
+    constexpr static bool Value = true;
 };
 
 template <class T, int cur, class Attr = void>
 struct Var : public Holder<T, Attr, cur> {
-  constexpr static bool IsVarValue = true;
+    constexpr static bool IsVarValue = true;
 };
 
-#define CHECK_TYPE(NAME, V)                                                 \
-  template <typename T>                                                     \
-  struct NAME {                                                             \
-    template <typename>                                                     \
-    static uint8_t has(...);                                                \
-    template <typename C>                                                   \
-    static uint32_t has(decltype(C::V));                                    \
-    constexpr static bool Value = sizeof(has<T>(NULL)) == sizeof(uint32_t); \
-  }
+#define CHECK_TYPE(NAME, V)                                                     \
+    template <typename T>                                                       \
+    struct NAME {                                                               \
+        template <typename>                                                     \
+        static uint8_t has(...);                                                \
+        template <typename C>                                                   \
+        static uint32_t has(decltype(C::V));                                    \
+        constexpr static bool Value = sizeof(has<T>(NULL)) == sizeof(uint32_t); \
+    }
 
 CHECK_TYPE(IsVar, IsVarValue);
 CHECK_TYPE(IsConstValue, IsConstValue_);
@@ -288,47 +288,51 @@ template <>
 struct VarTypeStruct<> {};
 template <class T>
 struct VarTypeStruct<T> {
-  using DataType = typename T::DType;
-  DataType value;
-  template <int offset = 0>
-  __aicore__ inline constexpr DataType Get() {
-    return value;
-  }
-  template <int offset = 0>
-  __aicore__ inline constexpr void Set(DataType v) {
-    value = v;
-  }
+    using DataType = typename T::DType;
+    DataType value;
+    template <int offset = 0>
+    __aicore__ inline constexpr DataType Get()
+    {
+        return value;
+    }
+    template <int offset = 0>
+    __aicore__ inline constexpr void Set(DataType v)
+    {
+        value = v;
+    }
 };
 
 template <class T, class... Ts>
 struct VarTypeStruct<T, Ts...> : public VarTypeStruct<Ts...> {
-  using DataType = typename T::DType;
-  DataType value;
-  template <int offset = 0>
-  __aicore__ inline constexpr DataType Get() {
-    if constexpr (offset == 0) {
-      return value;
-    } else {
-      return VarTypeStruct<Ts...>::template Get<offset - 1>();
+    using DataType = typename T::DType;
+    DataType value;
+    template <int offset = 0>
+    __aicore__ inline constexpr DataType Get()
+    {
+        if constexpr (offset == 0) {
+            return value;
+        } else {
+            return VarTypeStruct<Ts...>::template Get<offset - 1>();
+        }
     }
-  }
-  template <int offset = 0>
-  __aicore__ inline constexpr void Set(DataType v) {
-    if constexpr (offset == 0) {
-      value = v;
-    } else {
-      VarTypeStruct<Ts...>::template Set<offset - 1>(v);
+    template <int offset = 0>
+    __aicore__ inline constexpr void Set(DataType v)
+    {
+        if constexpr (offset == 0) {
+            value = v;
+        } else {
+            VarTypeStruct<Ts...>::template Set<offset - 1>(v);
+        }
     }
-  }
 };
 
 template <class... Ts>
 struct VarTypeAux {
-  using Type = VarTypeStruct<Ts...>;
+    using Type = VarTypeStruct<Ts...>;
 };
 
-}  // namespace Placeholder
-}  // namespace Base
+} // namespace Placeholder
+} // namespace Base
 } // namespace Ops
 
-#endif  // UTIL_PLACEHOLDER_H_
+#endif // UTIL_PLACEHOLDER_H_

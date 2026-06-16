@@ -24,7 +24,6 @@
 #include "launcher_ctx.h"
 #include "kernel_context_holder.h"
 
-
 namespace op::internal {
 
 using float32_t = float;
@@ -37,14 +36,14 @@ struct MemSetTensorInfo {
     size_t tensorSize_;
     size_t tensorDataSize_;
     OpArgType argType_;
-    void *tensorData_;
-    const aclTensor *tensor_;
-    const aclTensorList *tensorList_;
+    void* tensorData_;
+    const aclTensor* tensor_;
+    const aclTensorList* tensorList_;
 };
 
 class MemSetKernelContextHolder : public KernelContextHolder {
 public:
-    aclnnStatus UpdateComputeNodeInfo(const std::vector<MemSetTensorInfo> &memsetTensorInfo)
+    aclnnStatus UpdateComputeNodeInfo(const std::vector<MemSetTensorInfo>& memsetTensorInfo)
     {
         ResetComputeNodeInfo("MemSet", memsetTensorInfo.size(), 0);
         UpdateCompileDescOffset(memsetTensorInfo.size());
@@ -55,8 +54,8 @@ public:
     }
 
 private:
-    void UpdateInputArg(const std::vector<MemSetTensorInfo> &memsetTensorInfo);
-    void UpdateAttrArg(const std::vector<MemSetTensorInfo> &memsetTensorInfo);
+    void UpdateInputArg(const std::vector<MemSetTensorInfo>& memsetTensorInfo);
+    void UpdateAttrArg(const std::vector<MemSetTensorInfo>& memsetTensorInfo);
 };
 
 } // namespace op::internal

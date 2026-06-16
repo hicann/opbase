@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 
 #include "opdev/tensor_view_utils.h"
@@ -16,11 +16,13 @@
 class TensorViewUtilsTest : public ::testing::Test {
 public:
     TensorViewUtilsTest() : executor(nullptr) {}
-    aclTensor *CreateAclTensor(std::vector<int64_t> view_shape, std::vector<int64_t> stride, int64_t offset,
-                               std::vector<int64_t> storage_shape)
+    aclTensor* CreateAclTensor(
+        std::vector<int64_t> view_shape, std::vector<int64_t> stride, int64_t offset,
+        std::vector<int64_t> storage_shape)
     {
-        return aclCreateTensor(view_shape.data(), view_shape.size(), ACL_FLOAT, stride.data(), offset, ACL_FORMAT_ND,
-                               storage_shape.data(), storage_shape.size(), nullptr);
+        return aclCreateTensor(
+            view_shape.data(), view_shape.size(), ACL_FLOAT, stride.data(), offset, ACL_FORMAT_ND, storage_shape.data(),
+            storage_shape.size(), nullptr);
     }
 
 public:
@@ -61,8 +63,8 @@ TEST_F(TensorViewUtilsTest, IsContiguous)
 TEST_F(TensorViewUtilsTest, Validate)
 {
     // auto tensor = CreateAclTensor({4, 5, 6, 7}, {210, 42, 7, 1}, 0, {4, 5, 6, 7});
-//    tensor->SetViewStrides(op::Strides({42, 7, 1}));
-//    EXPECT_FALSE(op::Validate(tensor));
+    //    tensor->SetViewStrides(op::Strides({42, 7, 1}));
+    //    EXPECT_FALSE(op::Validate(tensor));
 
     auto tensor = CreateAclTensor({4, 5, 6, 7}, {210, 42, 7, 1}, 0, {4, 5, 6, 7});
     EXPECT_TRUE(op::Validate(tensor));
@@ -82,7 +84,6 @@ TEST_F(TensorViewUtilsTest, CanPickViewAsContiguous)
     tensor = CreateAclTensor({4, 6, 5, 7}, {42, 7, 0, 1}, 0, {4, 1, 6, 7});
     EXPECT_FALSE(op::CanPickViewAsContiguous({tensor, tensor, tensor}));
 
-
     auto tensor2 = CreateAclTensor({3, 5, 5, 7}, {42, 0, 0, 1}, 0, {4, 1, 6, 7});
     EXPECT_FALSE(op::CanPickViewAsContiguous({tensor, tensor2, tensor}));
     aclDestroyTensor(tensor);
@@ -95,7 +96,6 @@ TEST_F(TensorViewUtilsTest, CanPickViewAsContiguous)
     tensor = CreateAclTensor({5, 4, 6, 7}, {42, 210, 7, 1}, 0, {4, 5, 6, 7});
     EXPECT_TRUE(op::CanPickViewAsContiguous({tensor, tensor, tensor}));
     aclDestroyTensor(tensor);
-
 
     tensor = CreateAclTensor({4, 5, 6, 7}, {42, 0, 7, 1}, 0, {4, 1, 6, 7});
     EXPECT_FALSE(op::CanPickViewAsContiguous({tensor, tensor, tensor}));

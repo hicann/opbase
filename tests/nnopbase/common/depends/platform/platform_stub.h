@@ -16,7 +16,7 @@
 class PlatformInfoStub {
 public:
     virtual ~PlatformInfoStub() = default;
-    static PlatformInfoStub *GetInstance()
+    static PlatformInfoStub* GetInstance()
     {
         if (instance_ == nullptr) {
             instance_ = std::make_shared<PlatformInfoStub>();
@@ -36,7 +36,7 @@ public:
         soCVersion_ = soCVer;
     }
 
-    void GetSoCVersion(std::string &shortSoCVer, std::string &soCVer) const
+    void GetSoCVersion(std::string& shortSoCVer, std::string& soCVer) const
     {
         shortSoCVer = shortSoCVersion_;
         soCVer = soCVersion_;

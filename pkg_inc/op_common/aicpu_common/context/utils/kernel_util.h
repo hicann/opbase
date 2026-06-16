@@ -85,17 +85,17 @@ constexpr int kShift8 = 8;
 constexpr int kShift32 = 32;
 
 enum class SocVersion {
-  ASCEND910 = 0,
-  ASCEND910B,
-  ASCEND910_93,
-  ASCEND950,
-  ASCEND910E,
-  ASCEND310,
-  ASCEND310P,
-  ASCEND310B,
-  ASCEND310C,
-  ASCEND610LITE,
-  RESERVED_VERSION = 99999
+    ASCEND910 = 0,
+    ASCEND910B,
+    ASCEND910_93,
+    ASCEND950,
+    ASCEND910E,
+    ASCEND310,
+    ASCEND310P,
+    ASCEND310B,
+    ASCEND310C,
+    ASCEND610LITE,
+    RESERVED_VERSION = 99999
 };
 /*
  * str cat util function
@@ -103,18 +103,20 @@ enum class SocVersion {
  * return concatted string
  */
 template <typename T>
-std::string ConcatString(T arg) {
-  std::ostringstream oss;
-  oss << arg;
-  return oss.str();
+std::string ConcatString(T arg)
+{
+    std::ostringstream oss;
+    oss << arg;
+    return oss.str();
 }
 
 template <typename T, typename... Ts>
-std::string ConcatString(T arg, Ts... arg_left) {
-  std::ostringstream oss;
-  oss << arg;
-  oss << ConcatString(arg_left...);
-  return oss.str();
+std::string ConcatString(T arg, Ts... arg_left)
+{
+    std::ostringstream oss;
+    oss << arg;
+    oss << ConcatString(arg_left...);
+    return oss.str();
 }
 
 /**
@@ -123,24 +125,26 @@ std::string ConcatString(T arg, Ts... arg_left) {
  * @return string of values
  */
 template <typename T>
-inline std::string VectorToString(const std::vector<T> &values) {
-  std::stringstream ss;
-  for (auto iter = values.begin(); iter != values.end(); ++iter) {
-    ss << *iter;
-    if (iter != values.end() - 1) {
-      ss << ", ";
+inline std::string VectorToString(const std::vector<T>& values)
+{
+    std::stringstream ss;
+    for (auto iter = values.begin(); iter != values.end(); ++iter) {
+        ss << *iter;
+        if (iter != values.end() - 1) {
+            ss << ", ";
+        }
     }
-  }
-  return ss.str();
+    return ss.str();
 }
 
 template <typename T>
-std::string FmtToStr(const T &t) {
-  std::string fmt;
-  std::stringstream st;
-  st << "[" << t << "]";
-  fmt = st.str();
-  return fmt;
+std::string FmtToStr(const T& t)
+{
+    std::string fmt;
+    std::stringstream st;
+    st << "[" << t << "]";
+    fmt = st.str();
+    return fmt;
 }
 
 std::string FormatToSerialString(Format format);
@@ -156,12 +160,11 @@ std::string FormatToSerialString(Format format);
  * @param format
  * @return
  */
-inline int32_t GetPrimaryFormat(int32_t format) {
-  return static_cast<int32_t>(static_cast<uint32_t>(format) & 0xff);
-}
+inline int32_t GetPrimaryFormat(int32_t format) { return static_cast<int32_t>(static_cast<uint32_t>(format) & 0xff); }
 
-inline int32_t GetSubFormat(int32_t format) {
-  return static_cast<int32_t>((static_cast<uint32_t>(format) & 0xffff00) >> kShift8);
+inline int32_t GetSubFormat(int32_t format)
+{
+    return static_cast<int32_t>((static_cast<uint32_t>(format) & 0xffff00) >> kShift8);
 }
 
 inline bool HasSubFormat(int32_t format) { return GetSubFormat(format) > 0; }
@@ -171,7 +174,7 @@ inline bool HasSubFormat(int32_t format) { return GetSubFormat(format) > 0; }
  * @param tensor need judged tensor
  * @return true: is empty tensor, false: isn't empty tensor
  */
-bool IsEmptyTensor(Tensor *tensor);
+bool IsEmptyTensor(Tensor* tensor);
 
 /**
  * @brief multiply two nonnegative int64's
@@ -180,32 +183,33 @@ bool IsEmptyTensor(Tensor *tensor);
  * @param xy product of x and y
  * @return true: normal, false: overflow
  */
-inline bool MulWithoutOverflow(const int64_t x, const int64_t y, int64_t &xy) {
-  // Multiply in uint64 rather than int64 since signed overflow is undefined.
-  // Negative values will wrap around to large unsigned values in the casts
-  // (see section 4.7 [conv.integral] of the C++14 standard).
-  const uint64_t ux = static_cast<uint64_t>(x);
-  const uint64_t uy = static_cast<uint64_t>(y);
-  const uint64_t uxy = ux * uy;
+inline bool MulWithoutOverflow(const int64_t x, const int64_t y, int64_t& xy)
+{
+    // Multiply in uint64 rather than int64 since signed overflow is undefined.
+    // Negative values will wrap around to large unsigned values in the casts
+    // (see section 4.7 [conv.integral] of the C++14 standard).
+    const uint64_t ux = static_cast<uint64_t>(x);
+    const uint64_t uy = static_cast<uint64_t>(y);
+    const uint64_t uxy = ux * uy;
 
-  // Check if we overflow uint64, using a cheap check if both inputs are small
-  if (((ux | uy) >> kShift32) != 0) {
-    // Ensure nonnegativity.  Note that negative numbers will appear "large"
-    // to the unsigned comparisons above.
-    if (x < 0 || y < 0) {
-      KERNEL_LOG_ERROR("Can't multiply negative numbers.");
-      return false;
+    // Check if we overflow uint64, using a cheap check if both inputs are small
+    if (((ux | uy) >> kShift32) != 0) {
+        // Ensure nonnegativity.  Note that negative numbers will appear "large"
+        // to the unsigned comparisons above.
+        if (x < 0 || y < 0) {
+            KERNEL_LOG_ERROR("Can't multiply negative numbers.");
+            return false;
+        }
+
+        // Otherwise, detect overflow using a division
+        if (ux != 0 && uxy / ux != uy) {
+            return false;
+        }
     }
 
-    // Otherwise, detect overflow using a division
-    if (ux != 0 && uxy / ux != uy) {
-      return false;
-    }
-  }
-
-  // Cast back to signed.  Any negative value will signal an error.
-  xy = static_cast<int64_t>(uxy);
-  return true;
+    // Cast back to signed.  Any negative value will signal an error.
+    xy = static_cast<int64_t>(uxy);
+    return true;
 }
 
 /**
@@ -215,13 +219,14 @@ inline bool MulWithoutOverflow(const int64_t x, const int64_t y, int64_t &xy) {
  * @param sum sum of x and y
  * @return true: normal, false: overflow
  */
-inline bool AddWithoutOverflow(const int64_t x, const int64_t y, int64_t &sum) {
-  const uint64_t ux = static_cast<uint64_t>(x);
-  const uint64_t uy = static_cast<uint64_t>(y);
-  const uint64_t usum = ux + uy;
-  sum = static_cast<int64_t>(usum);
+inline bool AddWithoutOverflow(const int64_t x, const int64_t y, int64_t& sum)
+{
+    const uint64_t ux = static_cast<uint64_t>(x);
+    const uint64_t uy = static_cast<uint64_t>(y);
+    const uint64_t usum = ux + uy;
+    sum = static_cast<int64_t>(usum);
 
-  return !(((x >= 0) == (y >= 0)) && ((sum >= 0) != (x >= 0)));
+    return !(((x >= 0) == (y >= 0)) && ((sum >= 0) != (x >= 0)));
 }
 
 /**
@@ -230,16 +235,17 @@ inline bool AddWithoutOverflow(const int64_t x, const int64_t y, int64_t &sum) {
  * @param [in] b  multiplicator
  * @return bool
  */
-inline bool CheckUint32MulOverflow(const uint32_t a, const uint32_t b) {
-  if ((a == 0U) || (b == 0U)) {
+inline bool CheckUint32MulOverflow(const uint32_t a, const uint32_t b)
+{
+    if ((a == 0U) || (b == 0U)) {
+        return true;
+    }
+
+    if (a > (UINT32_MAX / b)) {
+        return false;
+    }
+
     return true;
-  }
-
-  if (a > (UINT32_MAX / b)) {
-    return false;
-  }
-
-  return true;
 }
 
 /**
@@ -248,29 +254,30 @@ inline bool CheckUint32MulOverflow(const uint32_t a, const uint32_t b) {
  * @param [in] b  multiplicator
  * @return bool
  */
-inline bool CheckInt32MulOverflow(const int32_t a, const int32_t b) {
-  if (a > 0) {
-    if (b > 0) {
-      if (a > (INT32_MAX / b)) {
-        return false;
-      }
+inline bool CheckInt32MulOverflow(const int32_t a, const int32_t b)
+{
+    if (a > 0) {
+        if (b > 0) {
+            if (a > (INT32_MAX / b)) {
+                return false;
+            }
+        } else {
+            if (b < (INT32_MIN / a)) {
+                return false;
+            }
+        }
     } else {
-      if (b < (INT32_MIN / a)) {
-        return false;
-      }
+        if (b > 0) {
+            if (a < (INT32_MIN / b)) {
+                return false;
+            }
+        } else {
+            if ((a != 0) && (b < (INT32_MAX / a))) {
+                return false;
+            }
+        }
     }
-  } else {
-    if (b > 0) {
-      if (a < (INT32_MIN / b)) {
-        return false;
-      }
-    } else {
-      if ((a != 0) && (b < (INT32_MAX / a))) {
-        return false;
-      }
-    }
-  }
-  return true;
+    return true;
 }
 
 /**
@@ -279,16 +286,17 @@ inline bool CheckInt32MulOverflow(const int32_t a, const int32_t b) {
  * @param [in] b  multiplicator
  * @return bool
  */
-inline bool CheckUint64MulOverflow(const uint64_t a, const uint64_t b) {
-  if ((a == 0UL) || (b == 0UL)) {
+inline bool CheckUint64MulOverflow(const uint64_t a, const uint64_t b)
+{
+    if ((a == 0UL) || (b == 0UL)) {
+        return true;
+    }
+
+    if (a > (UINT64_MAX / b)) {
+        return false;
+    }
+
     return true;
-  }
-
-  if (a > (UINT64_MAX / b)) {
-    return false;
-  }
-
-  return true;
 }
 
 /**
@@ -297,34 +305,36 @@ inline bool CheckUint64MulOverflow(const uint64_t a, const uint64_t b) {
  * @param [in] b  multiplicator
  * @return bool
  */
-inline bool CheckInt64MulOverflow(const int64_t a, const int64_t b) {
-  if (a > 0) {
-    if (b > 0) {
-      if (a > (INT64_MAX / b)) {
-        return false;
-      }
+inline bool CheckInt64MulOverflow(const int64_t a, const int64_t b)
+{
+    if (a > 0) {
+        if (b > 0) {
+            if (a > (INT64_MAX / b)) {
+                return false;
+            }
+        } else {
+            if (b < (INT64_MIN / a)) {
+                return false;
+            }
+        }
     } else {
-      if (b < (INT64_MIN / a)) {
-        return false;
-      }
+        if (b > 0) {
+            if (a < (INT64_MIN / b)) {
+                return false;
+            }
+        } else {
+            if ((a != 0) && (b < (INT64_MAX / a))) {
+                return false;
+            }
+        }
     }
-  } else {
-    if (b > 0) {
-      if (a < (INT64_MIN / b)) {
-        return false;
-      }
-    } else {
-      if ((a != 0) && (b < (INT64_MAX / a))) {
-        return false;
-      }
-    }
-  }
-  return true;
+    return true;
 }
 
-template<typename TI, typename TO>
-inline auto PtrToPtr(TI *const ptr) -> TO* {
-  return reinterpret_cast<TO *>(ptr);
+template <typename TI, typename TO>
+inline auto PtrToPtr(TI* const ptr) -> TO*
+{
+    return reinterpret_cast<TO*>(ptr);
 }
 
 /**
@@ -334,11 +344,12 @@ inline auto PtrToPtr(TI *const ptr) -> TO* {
  *  @param [in] b  addend
  * @return Status
  */
-inline bool CheckFloatAddOverflow(float a, float b) {
-  if (!std::isfinite(static_cast<float>(a) + static_cast<float>(b))) {
-    return false;
-  }
-  return true;
+inline bool CheckFloatAddOverflow(float a, float b)
+{
+    if (!std::isfinite(static_cast<float>(a) + static_cast<float>(b))) {
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -346,7 +357,7 @@ inline bool CheckFloatAddOverflow(float a, float b) {
  * @param ctx context
  * @return status code
  */
-uint32_t NormalMathCheck(CpuKernelContext &ctx);
+uint32_t NormalMathCheck(CpuKernelContext& ctx);
 
 /**
  * @brief normal check for kernel
@@ -355,8 +366,7 @@ uint32_t NormalMathCheck(CpuKernelContext &ctx);
  * @param outputs_num num of outputs
  * @return status code
  */
-uint32_t NormalCheck(CpuKernelContext &ctx, const uint32_t inputs_num,
-                     const uint32_t outputs_num);
+uint32_t NormalCheck(CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num);
 
 /**
  * @brief normal check for kernel
@@ -366,26 +376,25 @@ uint32_t NormalCheck(CpuKernelContext &ctx, const uint32_t inputs_num,
  * @param attr_names names of attrs
  * @return status code
  */
-uint32_t NormalCheck(CpuKernelContext &ctx, const uint32_t inputs_num,
-                     const uint32_t outputs_num,
-                     const std::vector<std::string> &attr_names);
+uint32_t NormalCheck(
+    CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num,
+    const std::vector<std::string>& attr_names);
 
-bool IsScalar(const std::vector<int64_t> &shape);
+bool IsScalar(const std::vector<int64_t>& shape);
 
-bool IsMatrix(const std::vector<int64_t> &shape);
+bool IsMatrix(const std::vector<int64_t>& shape);
 
-bool IsVector(const std::vector<int64_t> &shape);
+bool IsVector(const std::vector<int64_t>& shape);
 
-bool IsSquareMatrix(const std::vector<int64_t> &shape);
+bool IsSquareMatrix(const std::vector<int64_t>& shape);
 /**
  * @brief check if addr is aligned
  * @param addr address for check
  * @return true: aligned, false: not aligned
  */
-bool AddrAlignedCheck(const void *addr,
-                      uint64_t alignment = kEigenAlignmentBytes);
+bool AddrAlignedCheck(const void* addr, uint64_t alignment = kEigenAlignmentBytes);
 
-bool IsVectorOrHigher(const std::vector<int64_t> &shape);
+bool IsVectorOrHigher(const std::vector<int64_t>& shape);
 
 /**
  * @brief get data type from string
@@ -401,71 +410,71 @@ DataType DType(std::string dtype_str);
  */
 std::string DTypeStr(DataType dtype);
 
-bool BiggerMemCpy(void *dst_addr, const std::size_t dst_len,
-                  const void *src_addr, const std::size_t src_len);
+bool BiggerMemCpy(void* dst_addr, const std::size_t dst_len, const void* src_addr, const std::size_t src_len);
 
-bool BiggerMemSet(void *dst_addr, const std::size_t dst_len, const int c,
-                  const std::size_t count);
+bool BiggerMemSet(void* dst_addr, const std::size_t dst_len, const int c, const std::size_t count);
 
 int64_t CeilMultiple(const int64_t x, const int64_t base);
 
 template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
-inline bool IsNanVal(T val) {
-  (void)val;
-  return false;
+inline bool IsNanVal(T val)
+{
+    (void)val;
+    return false;
 }
 
 template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
-inline bool IsNanVal(T val) {
-  return std::isnan(val);
+inline bool IsNanVal(T val)
+{
+    return std::isnan(val);
 }
 
 template <typename T, typename std::enable_if<std::is_same<T, Eigen::half>::value, T>::type* = nullptr>
-inline bool IsNanVal(T val) {
-  return std::isnan(static_cast<float>(val));
+inline bool IsNanVal(T val)
+{
+    return std::isnan(static_cast<float>(val));
 }
 
 template <typename T, typename std::enable_if<std::is_same<T, std::complex<float>>::value, T>::type* = nullptr>
-inline bool IsNanVal(T val) {
-  return std::isnan(val.real()) || std::isnan(val.imag());
+inline bool IsNanVal(T val)
+{
+    return std::isnan(val.real()) || std::isnan(val.imag());
 }
 
 template <typename T, typename std::enable_if<std::is_same<T, std::complex<double>>::value, T>::type* = nullptr>
-inline bool IsNanVal(T val) {
-  return std::isnan(val.real()) || std::isnan(val.imag());
+inline bool IsNanVal(T val)
+{
+    return std::isnan(val.real()) || std::isnan(val.imag());
 }
 
 int64_t GetMaxCompilerCoreNum();
 
-uint64_t CalFileSize(const std::string &file_path);
+uint64_t CalFileSize(const std::string& file_path);
 
 uint64_t AlignedTo(const uint64_t size, const uint64_t alignment);
 
 template <typename T>
 typename std::enable_if<
-         !(std::is_same<T, float>::value || std::is_same<T, double>::value
-                        || std::is_same<T, Eigen::half>::value), bool
-         >::type
-IsValueEqual(T a, T b) {
+    !(std::is_same<T, float>::value || std::is_same<T, double>::value || std::is_same<T, Eigen::half>::value),
+    bool>::type
+IsValueEqual(T a, T b)
+{
     return a == b;
 }
 
 template <typename T>
-typename std::enable_if<
-         std::is_same<T, float>::value || std::is_same<T, double>::value, bool
-         >::type
-IsValueEqual(T a, T b) { 
-  constexpr T epsilon = std::is_same<T, float>::value ? 1e-5f : 1e-9;
-  return std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b));
+typename std::enable_if<std::is_same<T, float>::value || std::is_same<T, double>::value, bool>::type IsValueEqual(
+    T a, T b)
+{
+    constexpr T epsilon = std::is_same<T, float>::value ? 1e-5f : 1e-9;
+    return std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b));
 }
 
 template <typename T>
-typename std::enable_if<
-         std::is_same<T, Eigen::half>::value, bool
-         >::type
-IsValueEqual(T a, T b) {
-  constexpr float epsilon = 1e-3f;
-  return std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b));
+typename std::enable_if<std::is_same<T, Eigen::half>::value, bool>::type IsValueEqual(T a, T b)
+{
+    constexpr float epsilon = 1e-3f;
+    return std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b));
 }
-}  // namespace aicpu
+} // namespace aicpu
 #endif

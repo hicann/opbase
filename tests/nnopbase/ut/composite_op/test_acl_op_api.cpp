@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "aclnn/aclnn_base.h"
 #include "aclnn/acl_meta.h"
 #include "gtest/gtest.h"
@@ -25,7 +25,7 @@
 using namespace std;
 using namespace op;
 
-#define INIT_ACL_TENSOR_ARRAY(tensors, ...)  aclTensor* tensors[] = {__VA_ARGS__}
+#define INIT_ACL_TENSOR_ARRAY(tensors, ...) aclTensor* tensors[] = {__VA_ARGS__}
 
 class AclOpApiTest : public testing::Test {
 protected:
@@ -34,8 +34,9 @@ protected:
         NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
         std::cout << "AclOpApiTest SetUp" << std::endl;
     }
+
 public:
-    bool ShapeEq(const op::Shape &shape, const vector<int64_t> &value)
+    bool ShapeEq(const op::Shape& shape, const vector<int64_t>& value)
     {
         if (shape.GetDimNum() != value.size()) {
             return false;
@@ -51,38 +52,34 @@ public:
     }
 };
 
-#define CHECK_TENSOR(tensorName, viewShape, storageShape, dataType, strides, viewOffset, format, tensorData)                   \
-    vector<int64_t> _viewShape = viewShape;                                                                                    \
-    vector<int64_t> _storageShape = storageShape;                                                                              \
-    auto tensorName = aclCreateTensor(_viewShape.data(),                                                                       \
-                                      _viewShape.size(),                                                                       \
-                                      dataType,                                                                                \
-                                      strides,                                                                                 \
-                                      viewOffset,                                                                              \
-                                      format,                                                                                  \
-                                      _storageShape.data(),                                                                    \
-                                      _storageShape.size(),                                                                    \
-                                      tensorData);                                                                             \
-    ASSERT_NE(tensorName, nullptr);                                                                                            \
-    std::unique_ptr<aclTensor> uniqueTensor(tensorName);                                                                       \
-    EXPECT_TRUE(ShapeEq(tensorName->GetViewShape(), viewShape));                                                               \
-    op::Shape expectStorageShape({1});                                                                                         \
-    EXPECT_TRUE(ShapeEq(tensorName->GetStorageShape(), storageShape));                                                         \
-    EXPECT_EQ(tensorName->GetDataType(), op::ToOpDataType(dataType));                                                          \
-    EXPECT_EQ(tensorName->GetViewFormat(), op::ToOpFormat(format));                                                            \
-    EXPECT_EQ(tensorName->GetStorageAddr(), tensorData);                                                                       \
-    EXPECT_EQ(tensorName->GetData(), static_cast<char *>(tensorData) + viewOffset * op::TypeSize(op::ToOpDataType(dataType))); \
-    EXPECT_EQ(tensorName->IsFromWorkspace(), false);                                                                           \
-    EXPECT_EQ(tensorName->GetViewOffset(), viewOffset);                                                                        \
-    EXPECT_EQ(tensorName->GetStorageAddr(), tensorData);                                                                       \
-    EXPECT_EQ(tensorName->GetStorageFormat(), op::Format::FORMAT_ND);                                                          \
-    EXPECT_EQ(tensorName->GetPlacement(), TensorPlacement::kOnDeviceHbm);                                                      \
+#define CHECK_TENSOR(tensorName, viewShape, storageShape, dataType, strides, viewOffset, format, tensorData) \
+    vector<int64_t> _viewShape = viewShape;                                                                  \
+    vector<int64_t> _storageShape = storageShape;                                                            \
+    auto tensorName = aclCreateTensor(                                                                       \
+        _viewShape.data(), _viewShape.size(), dataType, strides, viewOffset, format, _storageShape.data(),   \
+        _storageShape.size(), tensorData);                                                                   \
+    ASSERT_NE(tensorName, nullptr);                                                                          \
+    std::unique_ptr<aclTensor> uniqueTensor(tensorName);                                                     \
+    EXPECT_TRUE(ShapeEq(tensorName->GetViewShape(), viewShape));                                             \
+    op::Shape expectStorageShape({1});                                                                       \
+    EXPECT_TRUE(ShapeEq(tensorName->GetStorageShape(), storageShape));                                       \
+    EXPECT_EQ(tensorName->GetDataType(), op::ToOpDataType(dataType));                                        \
+    EXPECT_EQ(tensorName->GetViewFormat(), op::ToOpFormat(format));                                          \
+    EXPECT_EQ(tensorName->GetStorageAddr(), tensorData);                                                     \
+    EXPECT_EQ(                                                                                               \
+        tensorName->GetData(),                                                                               \
+        static_cast<char*>(tensorData) + viewOffset * op::TypeSize(op::ToOpDataType(dataType)));             \
+    EXPECT_EQ(tensorName->IsFromWorkspace(), false);                                                         \
+    EXPECT_EQ(tensorName->GetViewOffset(), viewOffset);                                                      \
+    EXPECT_EQ(tensorName->GetStorageAddr(), tensorData);                                                     \
+    EXPECT_EQ(tensorName->GetStorageFormat(), op::Format::FORMAT_ND);                                        \
+    EXPECT_EQ(tensorName->GetPlacement(), TensorPlacement::kOnDeviceHbm);                                    \
     EXPECT_EQ(tensorName->IsView(), false);
 
 TEST_F(AclOpApiTest, CreateEmptyViewTensor)
 {
     std::vector<int64_t> strides = {1};
-    CHECK_TENSOR(a, { 0 }, { 1 }, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(a, {0}, {1}, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a->GetStorageFormat(), op::Format::FORMAT_ND);
     EXPECT_EQ(a->GetViewStrides(), op::Strides({1}));
 }
@@ -90,45 +87,49 @@ TEST_F(AclOpApiTest, CreateEmptyViewTensor)
 TEST_F(AclOpApiTest, CreateEmptyStorageTensor)
 {
     std::vector<int64_t> strides = {1};
-    CHECK_TENSOR(a, { 0 }, { 0 }, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(a, {0}, {0}, aclDataType::ACL_FLOAT, strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a->GetViewStrides(), op::Strides({1}));
 }
 
 TEST_F(AclOpApiTest, CreateContiguousTensor001)
 {
     std::vector<int64_t> strides = {2, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a->GetViewStrides(), op::Strides({2, 1}));
 }
 
 TEST_F(AclOpApiTest, CreateContiguousTensor002)
 {
-    CHECK_TENSOR(a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT,
-                 nullptr, 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({8}), aclDataType::ACL_FLOAT, nullptr, 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a->GetViewStrides(), op::Strides({8, 2, 1}));
 }
 
 TEST_F(AclOpApiTest, CreateContiguousTensor003)
 {
     vector<float> values(8, 3.0);
-    CHECK_TENSOR(a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({16}), aclDataType::ACL_FLOAT,
-                 nullptr, 3, aclFormat::ACL_FORMAT_ND, static_cast<void *>(values.data()));
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({1, 4, 2}), std::vector<int64_t>({16}), aclDataType::ACL_FLOAT, nullptr, 3,
+        aclFormat::ACL_FORMAT_ND, static_cast<void*>(values.data()));
     EXPECT_EQ(a->GetViewStrides(), op::Strides({8, 2, 1}));
 }
 
 TEST_F(AclOpApiTest, CreateUnContiguousTensor001)
 {
     std::vector<int64_t> strides = {8, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     EXPECT_EQ(a->GetViewStrides(), op::Strides({8, 1}));
 }
 
 #define CHECK_SCALAR(scalarName, value, valueType, dataType)                                  \
     valueType scalarName##valueType = value;                                                  \
     std::unique_ptr<aclScalar> scalarName(aclCreateScalar(&scalarName##valueType, dataType)); \
-    ASSERT_NE(scalarName.get(), nullptr);                                                           \
+    ASSERT_NE(scalarName.get(), nullptr);                                                     \
     ASSERT_NE(scalarName->GetData(), nullptr);                                                \
     ASSERT_EQ(scalarName->Size(), sizeof(valueType));                                         \
     EXPECT_EQ(memcmp(scalarName->GetData(), &scalarName##valueType, sizeof(valueType)), 0);   \
@@ -158,35 +159,34 @@ TEST_F(AclOpApiTest, CreateScalar)
     EXPECT_EQ(nullScalar, nullptr);
 }
 
-#define CHECK_ARRAY(arrayName, value, count, valueType, arrayType)                        \
-    std::unique_ptr<acl##arrayType##Array> arrayName(aclCreate##arrayType##Array(value,   \
-                                                                                 count)); \
-    ASSERT_NE(arrayName.get(), nullptr);                                                        \
-    if (value != nullptr && count != 0) {                                                 \
-        ASSERT_NE(arrayName->GetData(), nullptr);                                         \
-        EXPECT_EQ(memcmp(arrayName->GetData(), value, count * sizeof(valueType)), 0);     \
-        EXPECT_EQ(arrayName->Size(), count);                                              \
-    } else {                                                                              \
-        EXPECT_EQ(arrayName->GetData(), nullptr);                                         \
-        EXPECT_EQ(arrayName->Size(), 0);                                                  \
+#define CHECK_ARRAY(arrayName, value, count, valueType, arrayType)                               \
+    std::unique_ptr<acl##arrayType##Array> arrayName(aclCreate##arrayType##Array(value, count)); \
+    ASSERT_NE(arrayName.get(), nullptr);                                                         \
+    if (value != nullptr && count != 0) {                                                        \
+        ASSERT_NE(arrayName->GetData(), nullptr);                                                \
+        EXPECT_EQ(memcmp(arrayName->GetData(), value, count * sizeof(valueType)), 0);            \
+        EXPECT_EQ(arrayName->Size(), count);                                                     \
+    } else {                                                                                     \
+        EXPECT_EQ(arrayName->GetData(), nullptr);                                                \
+        EXPECT_EQ(arrayName->Size(), 0);                                                         \
     }
 
 TEST_F(AclOpApiTest, CreateArray)
 {
     int64_t intValue[] = {1, 2, 3};
     CHECK_ARRAY(intArray1, intValue, 3UL, int64_t, Int);
-    int64_t *nullInt = nullptr;
+    int64_t* nullInt = nullptr;
     CHECK_ARRAY(intArray2, nullInt, 0UL, int64_t, Int);
     CHECK_ARRAY(intArray3, intValue, 0UL, int64_t, Int);
 
     float fpValue[] = {1, 2, 3};
-    float *nullFloat = nullptr;
+    float* nullFloat = nullptr;
     CHECK_ARRAY(floatArray1, fpValue, 3UL, float, Float);
     CHECK_ARRAY(floatArray2, nullFloat, 0UL, float, Float);
     CHECK_ARRAY(floatArray3, fpValue, 0UL, float, Float);
 
     bool boolValue[] = {true, false, true};
-    bool *nullBool = nullptr;
+    bool* nullBool = nullptr;
     CHECK_ARRAY(boolArray1, boolValue, 3UL, bool, Bool);
     CHECK_ARRAY(boolArray2, nullBool, 0UL, bool, Bool);
     CHECK_ARRAY(boolArray3, boolValue, 0UL, bool, Bool);
@@ -194,7 +194,7 @@ TEST_F(AclOpApiTest, CreateArray)
 
 TEST_F(AclOpApiTest, CreateTensorList)
 {
-    aclTensor *list1[] = {nullptr, nullptr, nullptr};
+    aclTensor* list1[] = {nullptr, nullptr, nullptr};
     auto aclTensorList1 = aclCreateTensorList(list1, 0);
     ASSERT_NE(aclTensorList1, nullptr);
     EXPECT_EQ(aclTensorList1->GetData(), nullptr);
@@ -202,12 +202,16 @@ TEST_F(AclOpApiTest, CreateTensorList)
     aclDestroyTensorList(aclTensorList1);
 
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *list2[] = {aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr),
-                          aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr),
-                          aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr)};
+    aclTensor* list2[] = {
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr),
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr),
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr)};
     auto aclTensorList2 = aclCreateTensorList(list2, 3);
     ASSERT_NE(aclTensorList2, nullptr);
     ASSERT_NE(aclTensorList2->GetData(), nullptr);
@@ -218,25 +222,28 @@ TEST_F(AclOpApiTest, CreateTensorList)
 TEST_F(AclOpApiTest, aclDestroyTensor)
 {
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *tensorNull = aclCreateTensor(nullptr, shape.size(), aclDataType::ACL_FLOAT, nullptr,
-                                            0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensorNull = aclCreateTensor(
+        nullptr, shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
+        nullptr);
     EXPECT_EQ(tensorNull, nullptr);
     EXPECT_EQ(aclDestroyTensor(tensorNull), OK);
-    aclTensor *tensorNull1 = aclCreateTensor(nullptr, 0, aclDataType::ACL_FLOAT, nullptr, 0,
-                                             aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensorNull1 = aclCreateTensor(
+        nullptr, 0, aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     EXPECT_NE(tensorNull1, nullptr);
     EXPECT_EQ(aclDestroyTensor(tensorNull1), OK);
-    aclTensor *tensorNull2 = aclCreateTensor(nullptr, shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
-                                            aclFormat::ACL_FORMAT_ND, nullptr, shape.size(), nullptr);
+    aclTensor* tensorNull2 = aclCreateTensor(
+        nullptr, shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, nullptr, shape.size(),
+        nullptr);
     EXPECT_EQ(tensorNull2, nullptr);
     EXPECT_EQ(aclDestroyTensor(tensorNull2), OK);
-    aclTensor *tensorNull3 = aclCreateTensor(nullptr, 0, aclDataType::ACL_FLOAT, nullptr, 0, 
-                                             aclFormat::ACL_FORMAT_ND, nullptr, 0, nullptr);
+    aclTensor* tensorNull3 =
+        aclCreateTensor(nullptr, 0, aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, nullptr, 0, nullptr);
     EXPECT_NE(tensorNull3, nullptr);
     EXPECT_EQ(aclDestroyTensor(tensorNull3), OK);
 
-    aclTensor *tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
     EXPECT_EQ(aclDestroyTensor(tensor), OK);
     EXPECT_EQ(aclDestroyTensor(nullptr), OK);
 }
@@ -246,7 +253,7 @@ TEST_F(AclOpApiTest, aclDestroyScalar)
     EXPECT_EQ(aclCreateScalar(nullptr, aclDataType::ACL_FLOAT), nullptr);
 
     float fpValue = 3.2;
-    auto *value = aclCreateScalar(&fpValue, aclDataType::ACL_FLOAT);
+    auto* value = aclCreateScalar(&fpValue, aclDataType::ACL_FLOAT);
     EXPECT_EQ(aclDestroyScalar(value), OK);
     EXPECT_EQ(aclDestroyScalar(nullptr), OK);
     EXPECT_EQ(aclDestroyScalarList(nullptr), OK);
@@ -255,7 +262,7 @@ TEST_F(AclOpApiTest, aclDestroyScalar)
 TEST_F(AclOpApiTest, aclIntArray)
 {
     int64_t values[] = {3, 4, 5};
-    auto *value = aclCreateIntArray(values, sizeof(values) / sizeof(values[0]));
+    auto* value = aclCreateIntArray(values, sizeof(values) / sizeof(values[0]));
     EXPECT_EQ(aclDestroyIntArray(value), OK);
     EXPECT_EQ(aclDestroyIntArray(nullptr), OK);
 }
@@ -263,7 +270,7 @@ TEST_F(AclOpApiTest, aclIntArray)
 TEST_F(AclOpApiTest, aclFloatArray)
 {
     float values[] = {3, 4, 5};
-    auto *value = aclCreateFloatArray(values, sizeof(values) / sizeof(values[0]));
+    auto* value = aclCreateFloatArray(values, sizeof(values) / sizeof(values[0]));
     EXPECT_EQ(aclDestroyFloatArray(value), OK);
     EXPECT_EQ(aclDestroyFloatArray(nullptr), OK);
 }
@@ -271,24 +278,28 @@ TEST_F(AclOpApiTest, aclFloatArray)
 TEST_F(AclOpApiTest, aclBoolArray)
 {
     bool values[] = {true, false, true};
-    auto *value = aclCreateBoolArray(values, sizeof(values) / sizeof(values[0]));
+    auto* value = aclCreateBoolArray(values, sizeof(values) / sizeof(values[0]));
     EXPECT_EQ(aclDestroyBoolArray(value), OK);
     EXPECT_EQ(aclDestroyBoolArray(nullptr), OK);
 }
 
 TEST_F(AclOpApiTest, aclDestroyTensorList)
 {
-    aclTensor *list1[] = {nullptr, nullptr, nullptr};
+    aclTensor* list1[] = {nullptr, nullptr, nullptr};
     auto aclTensorList1 = aclCreateTensorList(list1, 0);
     aclDestroyTensorList(aclTensorList1);
 
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *list2[] = {aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr),
-                          aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr),
-                          aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr)};
+    aclTensor* list2[] = {
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr),
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr),
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr)};
     auto aclTensorList2 = aclCreateTensorList(list2, 3);
     aclDestroyTensorList(aclTensorList2);
 
@@ -299,16 +310,17 @@ TEST_F(AclOpApiTest, aclGetViewShape)
 {
     EXPECT_NE(aclGetViewShape(nullptr, nullptr, nullptr), OK);
     std::vector<int64_t> strides = {8, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
-    int64_t *view_dims = nullptr;
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
+    int64_t* view_dims = nullptr;
     uint64_t view_dim_num = 0;
     EXPECT_EQ(aclGetViewShape(a, &view_dims, &view_dim_num), OK);
     EXPECT_NE(view_dims, nullptr);
     EXPECT_EQ(view_dim_num, 2);
     EXPECT_EQ(view_dims[0], 4);
     EXPECT_EQ(view_dims[1], 2);
-    delete[]view_dims;
+    delete[] view_dims;
 }
 
 TEST_F(AclOpApiTest, aclnnInit)
@@ -333,33 +345,32 @@ TEST_F(AclOpApiTest, aclnnInit)
     EXPECT_EQ(flag, true);
 }
 
-TEST_F(AclOpApiTest, aclnnFinalize)
-{
-    EXPECT_EQ(aclnnFinalize(), OK);
-}
+TEST_F(AclOpApiTest, aclnnFinalize) { EXPECT_EQ(aclnnFinalize(), OK); }
 
 TEST_F(AclOpApiTest, aclGetViewStrides)
 {
     EXPECT_NE(aclGetViewStrides(nullptr, nullptr, nullptr), OK);
     std::vector<int64_t> strides = {8, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
-    int64_t *viewStrides = nullptr;
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
+    int64_t* viewStrides = nullptr;
     uint64_t viewStridesNum = 0;
     EXPECT_EQ(aclGetViewStrides(a, &viewStrides, &viewStridesNum), OK);
     EXPECT_NE(viewStrides, nullptr);
     EXPECT_EQ(viewStridesNum, 2);
     EXPECT_EQ(viewStrides[0], 8);
     EXPECT_EQ(viewStrides[1], 1);
-    delete[]viewStrides;
+    delete[] viewStrides;
 }
 
 TEST_F(AclOpApiTest, aclGetViewOffset)
 {
     EXPECT_NE(aclGetViewOffset(nullptr, nullptr), OK);
     std::vector<int64_t> strides = {8, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     int64_t offset = 0;
     EXPECT_EQ(aclGetViewOffset(a, &offset), OK);
     EXPECT_EQ(offset, 0);
@@ -369,8 +380,9 @@ TEST_F(AclOpApiTest, aclGetFormat)
 {
     EXPECT_NE(aclGetFormat(nullptr, nullptr), OK);
     std::vector<int64_t> strides = {8, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     aclFormat formatRes = aclFormat::ACL_FORMAT_UNDEFINED;
     EXPECT_EQ(aclGetFormat(a, &formatRes), OK);
     EXPECT_EQ(formatRes, aclFormat::ACL_FORMAT_ND);
@@ -380,8 +392,9 @@ TEST_F(AclOpApiTest, aclGetDataType)
 {
     EXPECT_NE(aclGetFormat(nullptr, nullptr), OK);
     std::vector<int64_t> strides = {8, 1};
-    CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT,
-                 strides.data(), 0, aclFormat::ACL_FORMAT_ND, nullptr);
+    CHECK_TENSOR(
+        a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
+        aclFormat::ACL_FORMAT_ND, nullptr);
     aclDataType dataType = aclDataType::ACL_DT_UNDEFINED;
     EXPECT_EQ(aclGetDataType(a, &dataType), OK);
     EXPECT_EQ(dataType, aclDataType::ACL_FLOAT);
@@ -391,7 +404,7 @@ TEST_F(AclOpApiTest, aclGetIntArraySize)
 {
     EXPECT_NE(aclGetIntArraySize(nullptr, nullptr), OK);
     int64_t values[] = {3, 4, 5};
-    auto *value = aclCreateIntArray(values, sizeof(values) / sizeof(values[0]));
+    auto* value = aclCreateIntArray(values, sizeof(values) / sizeof(values[0]));
     uint64_t size = 0;
     EXPECT_EQ(aclGetIntArraySize(value, &size), OK);
     EXPECT_EQ(size, 3);
@@ -402,7 +415,7 @@ TEST_F(AclOpApiTest, aclGetFloatArraySize)
 {
     EXPECT_NE(aclGetFloatArraySize(nullptr, nullptr), OK);
     float values[] = {3.0, 4.0, 5.0};
-    auto *value = aclCreateFloatArray(values, sizeof(values) / sizeof(values[0]));
+    auto* value = aclCreateFloatArray(values, sizeof(values) / sizeof(values[0]));
     uint64_t size = 0;
     EXPECT_EQ(aclGetFloatArraySize(value, &size), OK);
     EXPECT_EQ(size, 3);
@@ -413,7 +426,7 @@ TEST_F(AclOpApiTest, aclGetBoolArraySize)
 {
     EXPECT_NE(aclGetBoolArraySize(nullptr, nullptr), OK);
     bool values[] = {true, true, true};
-    auto *value = aclCreateBoolArray(values, sizeof(values) / sizeof(values[0]));
+    auto* value = aclCreateBoolArray(values, sizeof(values) / sizeof(values[0]));
     uint64_t size = 0;
     EXPECT_EQ(aclGetBoolArraySize(value, &size), OK);
     EXPECT_EQ(size, 3);
@@ -424,12 +437,16 @@ TEST_F(AclOpApiTest, aclGetTensorListSize)
 {
     EXPECT_NE(aclGetTensorListSize(nullptr, nullptr), OK);
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *list2[] = {aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr),
-                          aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr),
-                          aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr)};
+    aclTensor* list2[] = {
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr),
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr),
+        aclCreateTensor(
+            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+            shape.size(), nullptr)};
     auto aclTensorList2 = aclCreateTensorList(list2, 3);
     ASSERT_NE(aclTensorList2, nullptr);
     ASSERT_NE(aclTensorList2->GetData(), nullptr);
@@ -445,35 +462,37 @@ TEST_F(AclOpApiTest, aclGetTensorListSize)
 TEST_F(AclOpApiTest, aclUpdateTensorAddr)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     uniqueExecutor.ReleaseTo(&executor);
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *input1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-    aclTensor *input2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-    aclTensor *list1[] = {input1, input2};
+    aclTensor* input1 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
+    aclTensor* input2 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
+    aclTensor* list1[] = {input1, input2};
     auto aclTensorList1 = aclCreateTensorList(list1, 2);
-    int *ptr1 = new int;
-    void *addr = reinterpret_cast<void *>(ptr1);
+    int* ptr1 = new int;
+    void* addr = reinterpret_cast<void*>(ptr1);
     aclnnStatus ret = AclSetInputTensorAddr(executor, 0, input1, addr);
     EXPECT_EQ(ret, ACL_SUCCESS);
     EXPECT_EQ(input1->GetStorageAddr(), addr);
 
-    int *ptr2 = new int;
-    addr = reinterpret_cast<void *>(ptr2);
+    int* ptr2 = new int;
+    addr = reinterpret_cast<void*>(ptr2);
     ret = AclSetOutputTensorAddr(executor, 0, input1, addr);
     EXPECT_EQ(ret, ACL_SUCCESS);
     EXPECT_EQ(input1->GetStorageAddr(), addr);
 
-    int *ptr3 = new int;
-    addr = reinterpret_cast<void *>(ptr3);
+    int* ptr3 = new int;
+    addr = reinterpret_cast<void*>(ptr3);
     ret = AclSetDynamicInputTensorAddr(executor, 0, 0, aclTensorList1, addr);
     EXPECT_EQ(ret, ACL_SUCCESS);
     EXPECT_EQ(input1->GetStorageAddr(), addr);
 
-    int *ptr4 = new int;
-    void *addr2 = reinterpret_cast<void *>(ptr4);
+    int* ptr4 = new int;
+    void* addr2 = reinterpret_cast<void*>(ptr4);
     ret = AclSetDynamicOutputTensorAddr(executor, 0, 1, aclTensorList1, addr2);
     EXPECT_EQ(ret, ACL_SUCCESS);
     EXPECT_EQ(input1->GetStorageAddr(), addr);
@@ -488,16 +507,17 @@ TEST_F(AclOpApiTest, aclUpdateTensorAddr)
 
 TEST_F(AclOpApiTest, aclUpdateRawTensorAddr)
 {
-    aclTensor *testTensor = nullptr;
-    int *ptr = new int;
-    void *setAddr = static_cast<void *>(ptr);
-    void *getAddr = nullptr;
+    aclTensor* testTensor = nullptr;
+    int* ptr = new int;
+    void* setAddr = static_cast<void*>(ptr);
+    void* getAddr = nullptr;
     EXPECT_NE(aclSetRawTensorAddr(testTensor, setAddr), OK);
     EXPECT_NE(aclGetRawTensorAddr(testTensor, &getAddr), OK);
 
     std::vector<int64_t> shape = {1, 2, 3};
-    testTensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
-        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    testTensor = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
     EXPECT_EQ(aclGetRawTensorAddr(testTensor, &getAddr), OK);
     EXPECT_EQ(getAddr, nullptr);
     EXPECT_EQ(aclSetRawTensorAddr(testTensor, setAddr), OK);
@@ -511,34 +531,36 @@ TEST_F(AclOpApiTest, aclSetAclOpExecutorRepeatable)
     bool oriCacheHasFull = op::internal::GetThreadLocalContext().cacheHasFull_;
     op::internal::GetThreadLocalContext().cacheHasFull_ = false;
     op::internal::GetThreadLocalContext().hashKey_ = 0;
-    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello1";
+    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello1";
     op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 6;
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *input1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-    aclTensor *input2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* input1 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
+    aclTensor* input2 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
     op::internal::GetThreadLocalContext().cachedStorageList_.clear();
     op::internal::GetThreadLocalContext().cachedStorageList_.push_back(input1->GetStorage());
     op::internal::GetThreadLocalContext().cachedStorageList_.push_back(input2->GetStorage());
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     uniqueExecutor.ReleaseTo(&executor);
     executor->AddTensorRelation(input1, input2);
     aclnnStatus ret = aclSetAclOpExecutorRepeatable(executor);
     EXPECT_EQ(ret, ACL_SUCCESS);
 
     // check addr update with relation
-    int *ptr = new int;
-    void *addr = reinterpret_cast<void *>(ptr);
+    int* ptr = new int;
+    void* addr = reinterpret_cast<void*>(ptr);
     ret = AclSetInputTensorAddr(executor, 0, input1, addr);
     EXPECT_EQ(ret, ACL_SUCCESS);
     executor->UpdateStorageAddr();
     EXPECT_EQ(input2->GetStorageAddr(), addr);
 
-    op::internal::OpExecCache *cache = executor->GetOpExecCache();
-    op::internal::OpExecCacheWrap *cacheWrap = op::internal::CreateCacheWrap(cache);
-    aclOpExecutor *fakeExecutor = reinterpret_cast<aclOpExecutor*>(cacheWrap);
+    op::internal::OpExecCache* cache = executor->GetOpExecCache();
+    op::internal::OpExecCacheWrap* cacheWrap = op::internal::CreateCacheWrap(cache);
+    aclOpExecutor* fakeExecutor = reinterpret_cast<aclOpExecutor*>(cacheWrap);
     ret = aclSetAclOpExecutorRepeatable(fakeExecutor);
     EXPECT_EQ(ret, ACLNN_ERR_INNER);
     ret = aclDestroyAclOpExecutor(fakeExecutor);
@@ -560,10 +582,8 @@ TEST_F(AclOpApiTest, aclSetAclOpExecutorRepeatable)
 }
 
 class RepeatRunDump : public Adx::DumpStub {
-  public:
-    uint64_t AdumpGetDumpSwitch(Adx::DumpType type) {
-        return 0;
-    }
+public:
+    uint64_t AdumpGetDumpSwitch(Adx::DumpType type) { return 0; }
 };
 
 TEST_F(AclOpApiTest, RepeatRunWithCache)
@@ -571,14 +591,14 @@ TEST_F(AclOpApiTest, RepeatRunWithCache)
     bool oriCacheHasFull = op::internal::GetThreadLocalContext().cacheHasFull_;
     op::internal::GetThreadLocalContext().cacheHasFull_ = false;
     op::internal::GetThreadLocalContext().hashKey_ = 0;
-    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello1";
+    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello1";
     op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 6;
 
     RepeatRunDump dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     uniqueExecutor.ReleaseTo(&executor);
     auto cache = executor->GetOpExecCache();
     ASSERT_NE(cache, nullptr);
@@ -604,11 +624,11 @@ TEST_F(AclOpApiTest, RepeatRunWithCacheWithDFX)
     bool oriCacheHasFull = op::internal::GetThreadLocalContext().cacheHasFull_;
     op::internal::GetThreadLocalContext().cacheHasFull_ = false;
     op::internal::GetThreadLocalContext().hashKey_ = 0;
-    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t *)"hello1";
+    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello1";
     op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 6;
 
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = nullptr;
+    aclOpExecutor* executor = nullptr;
     uniqueExecutor.ReleaseTo(&executor);
     auto cache = executor->GetOpExecCache();
     ASSERT_NE(cache, nullptr);
@@ -637,12 +657,15 @@ TEST_F(AclOpApiTest, DumpOpTensors)
     ret = aclDumpOpTensors("opType", "opName", nullptr, 0, 0, stream);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
     std::vector<int64_t> shape = {1, 2, 3};
-    aclTensor *input1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-    aclTensor *input2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                        nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
-    aclTensor *output1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT,
-                                         nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* input1 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
+    aclTensor* input2 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
+    aclTensor* output1 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), nullptr);
     INIT_ACL_TENSOR_ARRAY(tensors, input1, input2, output1);
     EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
     ret = aclDumpOpTensors("opType", "opName", tensors, 2, 1, stream);

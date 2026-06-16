@@ -4,6 +4,8 @@
     "blockDim": 8,
     "localMemorySize": 8589934592,
     "workspace": {
-        "size": [1024]
+        "size": [
+            1024
+        ]
     }
 }

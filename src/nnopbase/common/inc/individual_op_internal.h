@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    const void *addr;
+    const void* addr;
     size_t size;
     bool isOptional;
     bool isVector;
@@ -49,12 +49,9 @@ struct NnopbaseStaticRuntimeInfo {
  * @param [in] staticRuntimeInfo runtime infomation of operator
  * @return if find static kernel return path else return nullptr
  */
-const char *NnopbaseFindStaticKernel(const aclTensor* tensors[],
-    const NnopbaseAttrAddr* attrs[],
-    const int64_t valueDepend[],
-    const NnopbaseStaticTensorNumInfo* const tensorNumInfo,
-    const NnopbaseStaticRuntimeInfo* const staticRuntimeInfo);
-
+const char* NnopbaseFindStaticKernel(
+    const aclTensor* tensors[], const NnopbaseAttrAddr* attrs[], const int64_t valueDepend[],
+    const NnopbaseStaticTensorNumInfo* const tensorNumInfo, const NnopbaseStaticRuntimeInfo* const staticRuntimeInfo);
 
 /**
  * @description: 获取从stream和event
@@ -66,8 +63,9 @@ const char *NnopbaseFindStaticKernel(const aclTensor* tensors[],
  * @return OK for ok
  * @return ACLNN_ERR_RUNTIME_ERROR for error input
  */
-aclnnStatus NnopbaseGetStreamAndEvent(const aclrtStream stream, aclrtStream *subStream,
-    aclrtEvent *evtA, aclrtEvent *evtB, std::shared_ptr<std::mutex> &streamLckPtr);
+aclnnStatus NnopbaseGetStreamAndEvent(
+    const aclrtStream stream, aclrtStream* subStream, aclrtEvent* evtA, aclrtEvent* evtB,
+    std::shared_ptr<std::mutex>& streamLckPtr);
 #ifdef __cplusplus
 }
 #endif

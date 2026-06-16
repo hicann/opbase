@@ -14,52 +14,39 @@
 #include <cstdint>
 
 namespace {
-    // ============= FP32 format constants =============
-    constexpr int FP32_EXP_BIAS_VAL = 127;
-    constexpr int FP32_MAN_LEN_VAL = 23;
-    constexpr int FP32_SIGN_SHIFT_VAL = 31;
-    constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-    constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-    constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
-    constexpr uint32_t FP32_EXP_MAX_VAL = 0xFF;
+// ============= FP32 format constants =============
+constexpr int FP32_EXP_BIAS_VAL = 127;
+constexpr int FP32_MAN_LEN_VAL = 23;
+constexpr int FP32_SIGN_SHIFT_VAL = 31;
+constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
+constexpr uint32_t FP32_EXP_MAX_VAL = 0xFF;
 
-    // ============= E4M3FN format constants =============
-    constexpr int EXP_BITS = 4;
-    constexpr int MAN_BITS = 3;
-    constexpr int EXP_BIAS = 7;
-    constexpr int SIGN_SHIFT = 7;
-    constexpr uint8_t SIGN_MASK = 0x80;          // 1 0000 000
-    constexpr uint8_t EXP_MASK = 0x78;           // 0 1111 000
-    constexpr uint8_t MAN_MASK = 0x07;           // 0 0000 111
-    constexpr uint8_t ABS_VALUE_MASK = 0x7F;     // 0 1111 111 (exclude sign bit)
-    constexpr uint8_t MAX_EXP = 0x0F;            // 1111
-    constexpr uint8_t NEG_NAN_VALUE = 0xFF;      // 1 1111 111
+// ============= E4M3FN format constants =============
+constexpr int EXP_BITS = 4;
+constexpr int MAN_BITS = 3;
+constexpr int EXP_BIAS = 7;
+constexpr int SIGN_SHIFT = 7;
+constexpr uint8_t SIGN_MASK = 0x80;      // 1 0000 000
+constexpr uint8_t EXP_MASK = 0x78;       // 0 1111 000
+constexpr uint8_t MAN_MASK = 0x07;       // 0 0000 111
+constexpr uint8_t ABS_VALUE_MASK = 0x7F; // 0 1111 111 (exclude sign bit)
+constexpr uint8_t MAX_EXP = 0x0F;        // 1111
+constexpr uint8_t NEG_NAN_VALUE = 0xFF;  // 1 1111 111
 } // anonymous namespace
 
 namespace op {
 
-Float8E4M3FN::Float8E4M3FN(float v) : value(FloatToFloat8E4M3FN(v).value)
-{}
+Float8E4M3FN::Float8E4M3FN(float v) : value(FloatToFloat8E4M3FN(v).value) {}
 
-Float8E4M3FN::operator float() const
-{
-    return Float8E4M3FNToFloat(*this);
-}
+Float8E4M3FN::operator float() const { return Float8E4M3FNToFloat(*this); }
 
-Float8E4M3FN::operator double() const
-{
-    return static_cast<double>(Float8E4M3FNToFloat(*this));
-}
+Float8E4M3FN::operator double() const { return static_cast<double>(Float8E4M3FNToFloat(*this)); }
 
-bool Float8E4M3FN::IsZero() const
-{
-    return (value & ABS_VALUE_MASK) == 0;
-}
+bool Float8E4M3FN::IsZero() const { return (value & ABS_VALUE_MASK) == 0; }
 
-bool Float8E4M3FN::IsNaN() const
-{
-    return value == NAN_VALUE || value == NEG_NAN_VALUE;
-}
+bool Float8E4M3FN::IsNaN() const { return value == NAN_VALUE || value == NEG_NAN_VALUE; }
 
 bool Float8E4M3FN::IsInf() const
 {

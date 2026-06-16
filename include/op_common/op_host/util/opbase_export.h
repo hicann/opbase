@@ -17,4 +17,4 @@
 
 #define OPBASE_API __attribute__((visibility("default")))
 
-#endif  // OP_COMMON_OPBASE_EXPORT_H
+#endif // OP_COMMON_OPBASE_EXPORT_H

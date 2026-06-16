@@ -20,6 +20,6 @@
 #include "graph/types.h"
 
 namespace aclnnOpInfoRecord {
-extern const std::map<ge::DataType, std::function<nlohmann::json(const void *, size_t)>> BIN_TO_JSON;
+extern const std::map<ge::DataType, std::function<nlohmann::json(const void*, size_t)>> BIN_TO_JSON;
 } // namespace aclnnOpInfoRecord
 #endif // __OP_INFO_RECORD_BIN_TO_JSON_H__

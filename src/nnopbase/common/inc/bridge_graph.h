@@ -19,74 +19,64 @@
 namespace op {
 namespace internal {
 
-void *BuildKernelNodeImpl(uint32_t opType,
-                          FVector<aclTensor *> &aclInputs,
-                          FVector<aclTensor *> &aclOutputs,
-                          FVector<aclTensor *> &aclWorkspace);
+void* BuildKernelNodeImpl(
+    uint32_t opType, FVector<aclTensor*>& aclInputs, FVector<aclTensor*>& aclOutputs,
+    FVector<aclTensor*>& aclWorkspace);
 
-void *CreateGraphImpl();
+void* CreateGraphImpl();
 
-void FreeGraphImpl(void *graph);
+void FreeGraphImpl(void* graph);
 
-void FreeExtendTensorImpl(void *extendTensor);
+void FreeExtendTensorImpl(void* extendTensor);
 
-aclnnStatus AddKernelNodeToGraph(void *kn, void *graph);
+aclnnStatus AddKernelNodeToGraph(void* kn, void* graph);
 
-template<typename... Args>
-static void TraitsAclTensor(FVector<aclTensor *> &result, const std::tuple<Args...> &t)
+template <typename... Args>
+static void TraitsAclTensor(FVector<aclTensor*>& result, const std::tuple<Args...>& t)
 {
-    std::apply([&](auto &...args) {
-        ((std::is_same_v<aclTensor,
-                         std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>>
-              ? AddToList(result, args)
-              : void()),
-         ...);
-    },
-               t);
-    std::apply([&](auto &...args) {
-        ((std::is_same_v<aclTensorList,
-                         std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>>
-              ? AddToList(result, args)
-              : void()),
-         ...);
-    },
-               t);
+    std::apply(
+        [&](auto&... args) {
+            ((std::is_same_v<
+                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+                  AddToList(result, args) :
+                  void()),
+             ...);
+        },
+        t);
+    std::apply(
+        [&](auto&... args) {
+            ((std::is_same_v<
+                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+                  AddToList(result, args) :
+                  void()),
+             ...);
+        },
+        t);
 }
- 
-template<typename INPUT, typename OUTPUT, typename WORKSPACE>
-aclnnStatus BuildGraph(void *graph,
-                       uint32_t opType,
-                       const INPUT &inputs,
-                       const OUTPUT &outputs,
-                       const WORKSPACE &workspace)
+
+template <typename INPUT, typename OUTPUT, typename WORKSPACE>
+aclnnStatus BuildGraph(
+    void* graph, uint32_t opType, const INPUT& inputs, const OUTPUT& outputs, const WORKSPACE& workspace)
 {
-    FVector<aclTensor *> acl_inputs;
-    FVector<aclTensor *> acl_outputs;
-    FVector<aclTensor *> acl_workspace;
- 
+    FVector<aclTensor*> acl_inputs;
+    FVector<aclTensor*> acl_outputs;
+    FVector<aclTensor*> acl_workspace;
+
     TraitsAclTensor(acl_inputs, inputs);
     TraitsAclTensor(acl_outputs, outputs);
     TraitsAclTensor(acl_workspace, workspace);
- 
-    void *kn = BuildKernelNodeImpl(opType, acl_inputs, acl_outputs, acl_workspace);
+
+    void* kn = BuildKernelNodeImpl(opType, acl_inputs, acl_outputs, acl_workspace);
     if (kn != nullptr) {
         AddKernelNodeToGraph(kn, graph);
     }
     return ACL_SUCCESS;
 }
 
-aclnnStatus BuildGraph(void *graph,
-                       uint32_t opType,
-                       OpArgList &inputs,
-                       OpArgList &outputs,
-                       OpArgList &workspace);
+aclnnStatus BuildGraph(void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace);
 
-aclnnStatus BuildGraph(void *graph,
-                       uint32_t opType,
-                       OpArgList &inputs,
-                       OpArgList &outputs,
-                       OpArgList &workspace,
-                       OpArgList &outputshape);
+aclnnStatus BuildGraph(
+    void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace, OpArgList& outputshape);
 
 } // namespace internal
 } // namespace op

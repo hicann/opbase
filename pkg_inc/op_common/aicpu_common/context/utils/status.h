@@ -30,5 +30,5 @@ constexpr uint32_t KERNEL_STATUS_DETECT_FAULT = 502U;
 constexpr uint32_t KERNEL_STATUS_DETECT_FAULT_NORAS = 503U;
 constexpr uint32_t KERNEL_STATUS_DETECT_LOW_BIT_FAULT = 504U;
 constexpr uint32_t KERNEL_STATUS_DETECT_LOW_BIT_FAULT_NORAS = 505U;
-}  // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_STATUS_H
+} // namespace aicpu
+#endif // AICPU_CONTEXT_COMMON_STATUS_H

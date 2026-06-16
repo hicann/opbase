@@ -17,27 +17,28 @@ namespace aicpu {
  * ParallelFor shards the "total" units of work.
  */
 void HostSharder::ParallelFor(
-    int64_t total, int64_t per_unit_size,
-    const std::function<void(int64_t, int64_t)> &work) const {
-  EigenThreadPool *threadpool = EigenThreadPool::GetInstance();
-  if (threadpool == nullptr) {
-    KERNEL_LOG_ERROR("Get eigen thread pool failed");
-    return;
-  }
+    int64_t total, int64_t per_unit_size, const std::function<void(int64_t, int64_t)>& work) const
+{
+    EigenThreadPool* threadpool = EigenThreadPool::GetInstance();
+    if (threadpool == nullptr) {
+        KERNEL_LOG_ERROR("Get eigen thread pool failed");
+        return;
+    }
 
-  threadpool->ParallelFor(total, per_unit_size, work);
+    threadpool->ParallelFor(total, per_unit_size, work);
 }
 
 /*
  * Get CPU number
  */
-uint32_t HostSharder::GetCPUNum() const {
-  EigenThreadPool *threadpool = EigenThreadPool::GetInstance();
-  if (threadpool == nullptr) {
-    KERNEL_LOG_ERROR("Get eigen thread pool failed");
-    return 0;
-  }
+uint32_t HostSharder::GetCPUNum() const
+{
+    EigenThreadPool* threadpool = EigenThreadPool::GetInstance();
+    if (threadpool == nullptr) {
+        KERNEL_LOG_ERROR("Get eigen thread pool failed");
+        return 0;
+    }
 
-  return threadpool->GetCPUNum();
+    return threadpool->GetCPUNum();
 }
-}  // namespace aicpu
+} // namespace aicpu

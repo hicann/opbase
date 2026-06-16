@@ -15,14 +15,11 @@
 extern "C" {
 #endif
 
-aclnnStatus aclnnMulStubGetWorkspaceSize(const aclTensor *intput1,
-    const aclTensor *intput2,
-    aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+aclnnStatus aclnnMulStubGetWorkspaceSize(
+    const aclTensor* intput1, const aclTensor* intput2, aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor);
 
-aclnnStatus aclnnMulStub(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    const aclrtStream stream);
+aclnnStatus aclnnMulStub(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
 
 #ifdef __cplusplus
 }

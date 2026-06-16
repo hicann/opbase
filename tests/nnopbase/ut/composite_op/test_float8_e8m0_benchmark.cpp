@@ -33,10 +33,7 @@ namespace benchmark {
 // 辅助函数
 // ============================================================================
 
-static Float8E8M0 FromBits(uint8_t bits)
-{
-    return Float8E8M0(bits, Float8E8M0::FromBits());
-}
+static Float8E8M0 FromBits(uint8_t bits) { return Float8E8M0(bits, Float8E8M0::FromBits()); }
 
 // ============================================================================
 // Float8 E8M0 标杆值定义 (来源: OCP MX - Scale Factor Format)
@@ -44,10 +41,8 @@ static Float8E8M0 FromBits(uint8_t bits)
 // ============================================================================
 
 static constexpr BenchmarkCase<Float8E8M0> kE8M0_BoundaryCases[] = {
-    {1.0f, 0x7F, 1.0f, 0.0f, "one (2^0)", "OCP"},
-    {2.0f, 0x80, 2.0f, 0.0f, "two (2^1)", "OCP"},
-    {0.5f, 0x7E, 0.5f, 0.0f, "half (2^-1)", "OCP"},
-    {4.0f, 0x81, 4.0f, 0.0f, "four (2^2)", "OCP"},
+    {1.0f, 0x7F, 1.0f, 0.0f, "one (2^0)", "OCP"},        {2.0f, 0x80, 2.0f, 0.0f, "two (2^1)", "OCP"},
+    {0.5f, 0x7E, 0.5f, 0.0f, "half (2^-1)", "OCP"},      {4.0f, 0x81, 4.0f, 0.0f, "four (2^2)", "OCP"},
     {0.25f, 0x7D, 0.25f, 0.0f, "quarter (2^-2)", "OCP"},
 };
 
@@ -62,13 +57,11 @@ protected:
         Float8E8M0 result(tc.input);
 
         // 验证位表示
-        EXPECT_EQ(result.value, tc.expected_bits)
-            << "Input: " << tc.input << ", Desc: " << tc.description;
+        EXPECT_EQ(result.value, tc.expected_bits) << "Input: " << tc.input << ", Desc: " << tc.description;
 
         // 验证转换值
         float actual = static_cast<float>(result);
-        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance)
-            << "Desc: " << tc.description;
+        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance) << "Desc: " << tc.description;
     }
 };
 
@@ -87,7 +80,7 @@ TEST_F(Float8E8M0Benchmark, PowerOfTwoOnly)
 {
     // E8M0 只能表示 2 的幂次
     // 验证非 2 的幂次值的行为
-    Float8E8M0 val(3.0f);  // 3 不是 2 的幂
+    Float8E8M0 val(3.0f); // 3 不是 2 的幂
     float result = static_cast<float>(val);
     // 实现应该将其舍入到最近的 2 的幂
     EXPECT_TRUE(result == 2.0f || result == 4.0f);
@@ -95,14 +88,14 @@ TEST_F(Float8E8M0Benchmark, PowerOfTwoOnly)
 
 TEST_F(Float8E8M0Benchmark, LargePowerOfTwo)
 {
-    Float8E8M0 large_val(256.0f);  // 2^8
+    Float8E8M0 large_val(256.0f); // 2^8
     float result = static_cast<float>(large_val);
     EXPECT_FLOAT_EQ(result, 256.0f);
 }
 
 TEST_F(Float8E8M0Benchmark, SmallPowerOfTwo)
 {
-    Float8E8M0 small_val(0.125f);  // 2^-3
+    Float8E8M0 small_val(0.125f); // 2^-3
     float result = static_cast<float>(small_val);
     EXPECT_FLOAT_EQ(result, 0.125f);
 }

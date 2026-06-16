@@ -16,8 +16,8 @@
 
 namespace op {
 namespace opploader {
-aclnnStatus LoadOpProto(const std::string &oppPath);
-aclnnStatus LoadBuiltinOpProto(const std::string &oppPath);
-}
-}
+aclnnStatus LoadOpProto(const std::string& oppPath);
+aclnnStatus LoadBuiltinOpProto(const std::string& oppPath);
+} // namespace opploader
+} // namespace op
 #endif // OP_API_OP_API_COMMON_SRC_LIB_LOADER_OP_PROTO_LOADER_H

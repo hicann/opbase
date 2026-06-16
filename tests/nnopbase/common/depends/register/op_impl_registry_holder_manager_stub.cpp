@@ -10,9 +10,8 @@
 
 #include <memory>
 
-std::unique_ptr<TypesToImpl[]> gert::OpImplRegistryHolder::GetOpImplFunctionsByHandle(const void *handle,
-                                                                                      const std::string &so_path,
-                                                                                      size_t &impl_num) const
+std::unique_ptr<TypesToImpl[]> gert::OpImplRegistryHolder::GetOpImplFunctionsByHandle(
+    const void* handle, const std::string& so_path, size_t& impl_num) const
 {
     if (handle != nullptr && !so_path.empty()) {
         impl_num = 0;

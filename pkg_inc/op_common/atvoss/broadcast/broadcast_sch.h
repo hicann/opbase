@@ -30,11 +30,10 @@ namespace Base {
   scheMode 模板内部的tilingkey
 */
 // 模板实现
-template <uint64_t schMode, class BrcDag> class BroadcastSch {
+template <uint64_t schMode, class BrcDag>
+class BroadcastSch {
 public:
-    __aicore__ inline explicit BroadcastSch(GM_ADDR& tmpTiling)
-        : tiling(tmpTiling)
-    {}
+    __aicore__ inline explicit BroadcastSch(GM_ADDR& tmpTiling) : tiling(tmpTiling) {}
 
     template <class... Args>
     __aicore__ inline void Process(Args... args)

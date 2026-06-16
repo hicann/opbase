@@ -27,7 +27,7 @@
 #include "lib_path.h"
 #include "nlohmann/json.hpp"
 
-class OpInfoRecordUtest: public testing::Test {
+class OpInfoRecordUtest : public testing::Test {
 protected:
     virtual void SetUp()
     {
@@ -44,8 +44,8 @@ protected:
     virtual void TearDown()
     {
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().ClearSpaceRegistry();
-        aclnnOpInfoRecord::Path confFile = aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath()
-            .Concat("conf/dump_tool_config.ini");
+        aclnnOpInfoRecord::Path confFile =
+            aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath().Concat("conf/dump_tool_config.ini");
         (void)std::remove(confFile.GetCString());
     }
 };
@@ -65,7 +65,8 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize)
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo(
         "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json", 0);
+        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+        0);
     op::Shape shape{33, 15, 1, 48};
     auto self = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto other = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
@@ -78,10 +79,8 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize)
     auto spaceRegistry = std::make_shared<gert::OpImplSpaceRegistryV2>();
     gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(spaceRegistry);
     uint32_t opType = op::GenOpTypeId("Axpy");
-    gert::TilingContext *tilingCtx = op::internal::OpRunContextMgr::opRunCtx_.UpdateTilingCtx(
-        opType,
-        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+    gert::TilingContext* tilingCtx = op::internal::OpRunContextMgr::opRunCtx_.UpdateTilingCtx(
+        opType, *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     ASSERT_NE(tilingCtx, nullptr);
 
@@ -93,7 +92,8 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize)
 TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize_without_supportInfo)
 {
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
-    aclnnOpInfoRecord::OpKernelInfo kernelInfo("../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
+    aclnnOpInfoRecord::OpKernelInfo kernelInfo(
+        "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
     gert::TilingContext ctx;
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(&ctx, opt, &kernelInfo), -1);
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), 0);

@@ -26,8 +26,7 @@
 
 namespace Ops {
 namespace Base {
-namespace ReduceOpTmpl
-{
+namespace ReduceOpTmpl {
 constexpr int32_t DIM0 = 0;
 constexpr int32_t DIM1 = 1;
 constexpr int32_t DIM2 = 2;
@@ -65,15 +64,13 @@ constexpr int32_t PATTERN_ARARARAR = 7;
 constexpr int32_t PATTERN_ARARARARA = 8;
 
 template <class T, class U>
-struct IsSameV {
-};
+struct IsSameV {};
 template <class T>
 struct IsSameV<T, T> {
     using Type = T;
 };
 
-namespace __reducePattern
-{
+namespace __reducePattern {
 template <uint32_t id, bool firstA, bool tailA, int32_t dim>
 struct PatternConstInfo {
     constexpr static uint32_t ID = id;
@@ -82,30 +79,19 @@ struct PatternConstInfo {
     constexpr static int32_t Dim = dim;
 };
 
-struct A : public PatternConstInfo<PATTERN_A, true, true, CONST1> {
-};
-struct RA : public PatternConstInfo<PATTERN_RA, false, true, CONST2> {
-};
-struct AR : public PatternConstInfo<PATTERN_AR, true, false, CONST2> {
-};
-struct ARA : public PatternConstInfo<PATTERN_ARA, true, true, CONST3> {
-};
-struct ARAR : public PatternConstInfo<PATTERN_ARAR, true, false, CONST4> {
-};
-struct ARARA : public PatternConstInfo<PATTERN_ARARA, true, true, CONST5> {
-};
-struct ARARAR : public PatternConstInfo<PATTERN_ARARAR, true, false, CONST6> {
-};
-struct ARARARA : public PatternConstInfo<PATTERN_ARARARA, true, true, CONST7> {
-};
-struct ARARARAR : public PatternConstInfo<PATTERN_ARARARAR, true, false, CONST8> {
-};
-struct ARARARARA : public PatternConstInfo<PATTERN_ARARARARA, true, true, CONST9> {
-};
+struct A : public PatternConstInfo<PATTERN_A, true, true, CONST1> {};
+struct RA : public PatternConstInfo<PATTERN_RA, false, true, CONST2> {};
+struct AR : public PatternConstInfo<PATTERN_AR, true, false, CONST2> {};
+struct ARA : public PatternConstInfo<PATTERN_ARA, true, true, CONST3> {};
+struct ARAR : public PatternConstInfo<PATTERN_ARAR, true, false, CONST4> {};
+struct ARARA : public PatternConstInfo<PATTERN_ARARA, true, true, CONST5> {};
+struct ARARAR : public PatternConstInfo<PATTERN_ARARAR, true, false, CONST6> {};
+struct ARARARA : public PatternConstInfo<PATTERN_ARARARA, true, true, CONST7> {};
+struct ARARARAR : public PatternConstInfo<PATTERN_ARARARAR, true, false, CONST8> {};
+struct ARARARARA : public PatternConstInfo<PATTERN_ARARARARA, true, true, CONST9> {};
 
 template <int32_t id>
-struct GetPattern {
-};
+struct GetPattern {};
 
 template <>
 struct GetPattern<PATTERN_A> {
@@ -148,7 +134,7 @@ template <>
 struct GetPattern<PATTERN_ARARARARA> {
     using T = ARARARARA;
 };
-}  // namespace __reducePattern
+} // namespace __reducePattern
 
 #ifdef __CCE_AICORE__
 const half HALF_MAX_VALUE = INFINITY;
@@ -172,7 +158,7 @@ struct Shape {
 template <int32_t dim>
 struct SliceView {
     uint64_t addr;
-    uint32_t isBlockAligned;  // burstLen的dstStride是否block对齐
+    uint32_t isBlockAligned; // burstLen的dstStride是否block对齐
     uint64_t axisSize;
     struct {
         uint64_t start = 0;
@@ -186,15 +172,15 @@ struct SliceView {
 };
 
 struct PaddingParam {
-    int32_t burstPaddingStart = 0;   // burstLen 补pad的起始位置
-    int32_t burstPaddingLen = 0;     // burstLen 补pad的长度
-    int32_t burstPaddingRepeat = 0;  // burstLen 补pad的循环次数
-    int32_t rPaddingStart = 0;       // r轴 补pad的起始位置
-    int32_t rPaddingLen = 0;         // r轴 补pad的长度
-    int32_t rPaddingRepeat = 0;      // r轴 补pad的循环次数
-    int32_t aPaddingStart = 0;       // a轴 补pad的起始位置
-    int32_t aPaddingLen = 0;         // a轴 补pad的长度
-    int32_t aPaddingRepeat = 0;      // a轴 补pad的循环次数
+    int32_t burstPaddingStart = 0;  // burstLen 补pad的起始位置
+    int32_t burstPaddingLen = 0;    // burstLen 补pad的长度
+    int32_t burstPaddingRepeat = 0; // burstLen 补pad的循环次数
+    int32_t rPaddingStart = 0;      // r轴 补pad的起始位置
+    int32_t rPaddingLen = 0;        // r轴 补pad的长度
+    int32_t rPaddingRepeat = 0;     // r轴 补pad的循环次数
+    int32_t aPaddingStart = 0;      // a轴 补pad的起始位置
+    int32_t aPaddingLen = 0;        // a轴 补pad的长度
+    int32_t aPaddingRepeat = 0;     // a轴 补pad的循环次数
 };
 
 struct SliceFactors {
@@ -202,11 +188,9 @@ struct SliceFactors {
     uint64_t sliceNumFactor;
 };
 
-namespace __reduceType
-{
+namespace __reduceType {
 template <typename DType>
-struct GetPromoteType {
-};
+struct GetPromoteType {};
 
 template <>
 struct GetPromoteType<half> {
@@ -247,7 +231,7 @@ template <>
 struct GetPromoteType<bool> {
     using T = half;
 };
-}  // namespace __reduceType
+} // namespace __reduceType
 
 struct ReduceSchLoopInfo {
     int32_t patternID;
@@ -266,19 +250,16 @@ struct ReduceSchLoopInfo {
 
 #pragma region "Template base"
 template <typename T>
-class ReduceTmpl
-{
+class ReduceTmpl {
 public:
     using DataType = T;
 
 public:
-    __aicore__ inline ReduceTmpl()
-    {
-    }
+    __aicore__ inline ReduceTmpl() {}
 };
 #pragma endregion
 #endif
-}  // namespace ReduceOpTmpl
+} // namespace ReduceOpTmpl
 } // namespace Base
 } // namespace Ops
 #endif

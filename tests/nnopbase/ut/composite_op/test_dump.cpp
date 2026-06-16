@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
@@ -31,36 +31,34 @@ using namespace op::internal::test;
 
 OP_TYPE_REGISTER(NonFiniteCheck);
 
-namespace op{
-namespace internal{
+namespace op {
+namespace internal {
 void OpCacheTid();
 bool IsExceptionDumpEnable();
-}
-}
+} // namespace internal
+} // namespace op
 
 char arr[100] = {0};
 bool getSizeInfoAddr = false;
 uint32_t spaceNum = 0;
 
 class UtArgsExceptionDump : public Adx::DumpStub {
-  public:
-    void *AdumpGetSizeInfoAddr(uint32_t space, uint32_t &atomicIndex){
+public:
+    void* AdumpGetSizeInfoAddr(uint32_t space, uint32_t& atomicIndex)
+    {
         spaceNum = space;
         atomicIndex = 1;
         getSizeInfoAddr = true;
-        return (void *)arr;
+        return (void*)arr;
     }
 };
 
-class DumpUt: public testing::Test {
+class DumpUt : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() {
-    }
+    static void TearDownTestCase() {}
 };
-
 
 TEST_F(DumpUt, dump_l2)
 {
@@ -75,11 +73,13 @@ TEST_F(DumpUt, dump_l2)
     vector<int64_t> shapeA = {2, 1, 32, 16};
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
     auto storageShapeA = shapeA;
-    void *deviceDataA = nullptr;
+    void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor * tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                   storageShapeA.data(), storageShapeA.size(), deviceDataA);;
+    const aclTensor* tensor = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
     std::vector<const aclTensor*> in;
     op::internal::OpLogInfo info;
     in.push_back(tensor);
@@ -88,10 +88,7 @@ TEST_F(DumpUt, dump_l2)
     aclDestroyTensor(tensor);
 }
 
-TEST_F(DumpUt, exception_dump)
-{
-    op::internal::IsExceptionDumpEnable();
-}
+TEST_F(DumpUt, exception_dump) { op::internal::IsExceptionDumpEnable(); }
 
 TEST_F(DumpUt, exception_dump_assert)
 {
@@ -110,7 +107,7 @@ TEST_F(DumpUt, exception_dump_assert)
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     op::internal::LaunchArgInfo argInfo(false, false, ctx);
@@ -130,27 +127,27 @@ TEST_F(DumpUt, TraitsAclTensorAndIdxTest)
     static aclTensor out(outShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     static aclTensor inputTensor(&self, op::DataType::DT_INT32);
 
-    aclTensor *inputTensorNull = nullptr;
+    aclTensor* inputTensorNull = nullptr;
 
     op::Shape selfShape{33, 15, 64};
     aclTensor input1(&self, op::DataType::DT_INT32);
     aclTensor input2(&self, op::DataType::DT_INT32);
-    aclTensor *input3 = nullptr;
-    aclTensor *input4 = nullptr;
-    const aclTensor *inputTensorList[4] = {&input1, input3, &input2, input4};
-    aclTensorList *inputList = aclCreateTensorList(inputTensorList, 4);
-    aclTensorList *inputTensorListNull = nullptr;
+    aclTensor* input3 = nullptr;
+    aclTensor* input4 = nullptr;
+    const aclTensor* inputTensorList[4] = {&input1, input3, &input2, input4};
+    aclTensorList* inputList = aclCreateTensorList(inputTensorList, 4);
+    aclTensorList* inputTensorListNull = nullptr;
 
-    aclTensorList *workSapceList = aclCreateTensorList(inputTensorList, 4);
+    aclTensorList* workSapceList = aclCreateTensorList(inputTensorList, 4);
 
     auto input_arg = OP_INPUT(&inputTensor, inputTensorNull, inputList, inputTensorListNull);
     auto output_arg = OP_OUTPUT(&out);
     auto workspace_arg = OP_WORKSPACE(workSapceList);
     auto ctx = op::MakeOpArgContext(input_arg, output_arg, workspace_arg);
 
-    std::vector<const aclTensor *> aclInTensors;
-    std::vector<const aclTensor *> aclOutTensors;
-    std::vector<const aclTensor *> aclWorkSpaceTensors;
+    std::vector<const aclTensor*> aclInTensors;
+    std::vector<const aclTensor*> aclOutTensors;
+    std::vector<const aclTensor*> aclWorkSpaceTensors;
     std::vector<uint32_t> inTensorsIdxList;
     std::vector<uint32_t> outTensorsIdxList;
     std::vector<uint32_t> workSpaceTensorsIdxList;
@@ -233,10 +230,7 @@ TEST_F(DumpUt, TraitsAclTensorAndIdxTest)
     delete inputTensorListNull;
 }
 
-TEST_F(DumpUt, overflow_dump_check)
-{
-    op::internal::IsOverflowDumpEnable();
-}
+TEST_F(DumpUt, overflow_dump_check) { op::internal::IsOverflowDumpEnable(); }
 
 TEST_F(DumpUt, overflow_dump_saturation)
 {
@@ -254,21 +248,22 @@ TEST_F(DumpUt, overflow_dump_saturation)
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
-    auto output = OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
+    auto output =
+        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
 
     auto ws1 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws2 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws3 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
-    aclTensorList *wsList = aclCreateTensorList(wsArr, 3);
+    const aclTensor* wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
+    aclTensorList* wsList = aclCreateTensorList(wsArr, 3);
 
     auto wsArg = OP_WORKSPACE(wsList);
     auto ctx = op::MakeOpArgContext(input, output, attr, wsArg);
     aclOpExecutor executor;
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     op::internal::OpLogInfo logInfo;
     aclnnStatus ret = OverflowDumpProcess(ctx, &executor, stream, logInfo);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
@@ -302,14 +297,14 @@ TEST_F(DumpUt, overflow_dump_infnan)
     auto ws2 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws3 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
-    aclTensorList *wsList = aclCreateTensorList(wsArr, 3);
+    const aclTensor* wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
+    aclTensorList* wsList = aclCreateTensorList(wsArr, 3);
 
     auto wsArg = OP_WORKSPACE(wsList);
     auto ctx = op::MakeOpArgContext(input, output, attr, wsArg);
     aclOpExecutor executor;
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     op::internal::OpLogInfo logInfo;
     aclnnStatus ret = OverflowDumpProcess(ctx, &executor, stream, logInfo);
     EXPECT_EQ(ret, ACLNN_SUCCESS);

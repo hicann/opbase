@@ -39,10 +39,7 @@ namespace op {
  */
 struct Float8E8M0 {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
 
@@ -53,11 +50,9 @@ struct Float8E8M0 {
     static constexpr uint8_t MIN_POSITIVE_VALUE = 0x01; // 1 (min positive: 2^-126)
 
     // Default constructor - initialize to zero
-    constexpr Float8E8M0() : value(0)
-    {}
+    constexpr Float8E8M0() : value(0) {}
 
-    constexpr Float8E8M0(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits)
-    {}
+    constexpr Float8E8M0(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits) {}
 
     Float8E8M0(float v);
 
@@ -67,7 +62,7 @@ struct Float8E8M0 {
     static constexpr Float8E8M0 Epsilon()
     {
         // epsilon = nextafter(1.0) - 1.0 = 2.0 - 1.0 = 1.0
-        return Float8E8M0(ONE_VALUE, FromBits());  // 2^0 = 1.0
+        return Float8E8M0(ONE_VALUE, FromBits()); // 2^0 = 1.0
     }
 
     static constexpr Float8E8M0 Highest()
@@ -99,7 +94,7 @@ private:
     static Float8E8M0 FloatToFloat8E8M0(float f);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Float8E8M0 &dt)
+inline std::ostream& operator<<(std::ostream& os, const Float8E8M0& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -109,27 +104,21 @@ inline std::ostream &operator<<(std::ostream &os, const Float8E8M0 &dt)
 
 namespace std {
 
-inline bool isinf(const op::Float8E8M0 &a)
-{
-    return a.IsInf();
-}
+inline bool isinf(const op::Float8E8M0& a) { return a.IsInf(); }
 
-inline bool isnan(const op::Float8E8M0 &a)
-{
-    return a.IsNaN();
-}
+inline bool isnan(const op::Float8E8M0& a) { return a.IsNaN(); }
 
-inline bool isfinite(const op::Float8E8M0 &a)
+inline bool isfinite(const op::Float8E8M0& a)
 {
     // E8M0 has no infinity encoding, only NaN at 0xFF
     // Zero (0x00) is a valid finite value in this context
     return !a.IsNaN();
 }
 
-template<>
+template <>
 class numeric_limits<op::Float8E8M0> {
 public:
-    static constexpr bool has_infinity = false;  // E8M0 has no infinity encoding
+    static constexpr bool has_infinity = false; // E8M0 has no infinity encoding
     static constexpr bool has_quiet_NaN = true;
     static constexpr bool has_signaling_NaN = false;
     static constexpr bool is_bounded = true;
@@ -137,9 +126,9 @@ public:
     static constexpr bool is_integer = false;
     static constexpr bool is_iec559 = false;
     static constexpr bool is_modulo = false;
-    static constexpr bool is_signed = false;  // E8M0 is unsigned
+    static constexpr bool is_signed = false; // E8M0 is unsigned
     static constexpr bool is_specialized = true;
-    static constexpr int digits = 0;  // No mantissa bits
+    static constexpr int digits = 0; // No mantissa bits
     static constexpr int digits10 = 0;
     static constexpr int max_digits10 = 0;
     static constexpr int min_exponent = -126;
@@ -149,29 +138,20 @@ public:
     static constexpr int radix = 2;
     static constexpr float round_error()
     {
-        return 1.0f;  // No fractional precision
+        return 1.0f; // No fractional precision
     }
     static constexpr float denorm_min()
     {
-        return 0.0f;  // No denormals
+        return 0.0f; // No denormals
     }
 
-    static constexpr op::Float8E8M0 min()
-    {
-        return op::Float8E8M0::MinPositive();
-    }
+    static constexpr op::Float8E8M0 min() { return op::Float8E8M0::MinPositive(); }
     static constexpr op::Float8E8M0 lowest()
     {
-        return op::Float8E8M0::MinPositive();  // Unsigned, lowest = min
+        return op::Float8E8M0::MinPositive(); // Unsigned, lowest = min
     }
-    static constexpr op::Float8E8M0 max()
-    {
-        return op::Float8E8M0::Highest();
-    }
-    static constexpr op::Float8E8M0 epsilon()
-    {
-        return op::Float8E8M0::Epsilon();
-    }
+    static constexpr op::Float8E8M0 max() { return op::Float8E8M0::Highest(); }
+    static constexpr op::Float8E8M0 epsilon() { return op::Float8E8M0::Epsilon(); }
     static constexpr op::Float8E8M0 infinity()
     {
         // E8M0 has no infinity encoding, return max value
@@ -181,10 +161,7 @@ public:
     {
         return op::Float8E8M0(op::Float8E8M0::NAN_VALUE, op::Float8E8M0::FromBits());
     }
-    static constexpr op::Float8E8M0 signaling_NaN()
-    {
-        return quiet_NaN();
-    }
+    static constexpr op::Float8E8M0 signaling_NaN() { return quiet_NaN(); }
 };
 
 } // namespace std

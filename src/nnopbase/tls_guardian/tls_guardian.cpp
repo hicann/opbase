@@ -20,6 +20,6 @@ std::thread::id DummyTls___()
     return dummy;
 }
 
-}
+} // namespace fixglibc27136
 
 #endif

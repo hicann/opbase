@@ -10,7 +10,7 @@
 
 /*!
  * \file broadcast_tiling_noncontiguous.cpp
- * \brief atvoss broadcast template tiling 
+ * \brief atvoss broadcast template tiling
  */
 #include "op_common/atvoss/broadcast/broadcast_tiling_noncontiguous.h"
 
@@ -113,8 +113,7 @@ ge::graphStatus DoBrodcastTilingLastTranspose(
     }
     OP_CHECK_IF(
         broadcastTilingParams.ubSize < computeParams.extraSize[0],
-        OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."),
-        return ge::GRAPH_FAILED);
+        OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."), return ge::GRAPH_FAILED);
 
     // 获取最大存活空间大小
     uint64_t maxElemNum = BroadcastGetMaxElemNum(broadcastTilingParams.ubSize, computeParams);
@@ -122,14 +121,11 @@ ge::graphStatus DoBrodcastTilingLastTranspose(
         "Broadcast", "Broadcast DoBrodcastTiling. origin maxElemNum: %lu ubSize: %ld", maxElemNum,
         broadcastTilingParams.ubSize);
     OP_CHECK_IF(
-        broadcastTilingParams.ubSize <= 0, OP_LOGE("BroadcastTiling", "ubSize can not be 0"),
-        return ge::GRAPH_FAILED);
+        broadcastTilingParams.ubSize <= 0, OP_LOGE("BroadcastTiling", "ubSize can not be 0"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         broadcastTilingParams.coreNum <= 0, OP_LOGE("BroadcastTiling", "coreNum can not be 0"),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        maxElemNum == 0, OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(maxElemNum == 0, OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"), return ge::GRAPH_FAILED);
 
     ubSplitInfo ubInfo;
     if (broadcastTilingData.dims.back().size() < 2) {
@@ -262,8 +258,7 @@ ge::graphStatus BroadcastTilingNLastTranspose(
     }
     OP_CHECK_IF(
         broadcastTilingParams.ubSize < computeParams.extraSize[0],
-        OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."),
-        return ge::GRAPH_FAILED);
+        OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."), return ge::GRAPH_FAILED);
 
     // 获取最大存活空间大小
     uint64_t maxElemNum = BroadcastGetMaxElemNum(broadcastTilingParams.ubSize, computeParams);
@@ -271,17 +266,15 @@ ge::graphStatus BroadcastTilingNLastTranspose(
         "Broadcast", "Broadcast DoBrodcastTiling. origin maxElemNum: %lu ubSize: %ld", maxElemNum,
         broadcastTilingParams.ubSize);
     OP_CHECK_IF(
-        broadcastTilingParams.ubSize <= 0, OP_LOGE("BroadcastTiling", "ubSize can not be 0"),
-        return ge::GRAPH_FAILED);
+        broadcastTilingParams.ubSize <= 0, OP_LOGE("BroadcastTiling", "ubSize can not be 0"), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         broadcastTilingParams.coreNum <= 0, OP_LOGE("BroadcastTiling", "coreNum can not be 0"),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        maxElemNum == 0, OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(maxElemNum == 0, OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"), return ge::GRAPH_FAILED);
 
     ubSplitInfo ubInfo;
-    uint64_t fusedProduct = GetBlockSplitFactorNLastTranspose(broadcastTilingData, ubInfo, maxElemNum, computeParams, isUbBroadcast);
+    uint64_t fusedProduct =
+        GetBlockSplitFactorNLastTranspose(broadcastTilingData, ubInfo, maxElemNum, computeParams, isUbBroadcast);
     uint64_t blockFormer = (fusedProduct + broadcastTilingParams.coreNum - 1) / broadcastTilingParams.coreNum;
     uint64_t blockNum = (fusedProduct + blockFormer - 1) / blockFormer;
 
@@ -295,11 +288,13 @@ ge::graphStatus BroadcastTilingNLastTranspose(
             if (maxElemNum <= CACHE_LINE_512) {
                 break;
             }
-            tmpFusedProduct = GetBlockSplitFactorNLastTranspose(broadcastTilingData, ubInfo, maxElemNum, computeParams,isUbBroadcast);
+            tmpFusedProduct = GetBlockSplitFactorNLastTranspose(
+                broadcastTilingData, ubInfo, maxElemNum, computeParams, isUbBroadcast);
         }
         // 计算最终调整后的多核切分因子
         maxElemNum = (maxElemNum + CACHE_LINE + CACHE_LINE - 1) / CACHE_LINE * CACHE_LINE;
-        fusedProduct = GetBlockSplitFactorNLastTranspose(broadcastTilingData, ubInfo, maxElemNum, computeParams,isUbBroadcast);
+        fusedProduct =
+            GetBlockSplitFactorNLastTranspose(broadcastTilingData, ubInfo, maxElemNum, computeParams, isUbBroadcast);
         // 更新blockFormer和blockNum
         blockFormer = (fusedProduct + broadcastTilingParams.coreNum - 1) / broadcastTilingParams.coreNum;
         blockNum = (fusedProduct + blockFormer - 1) / blockFormer;
@@ -329,5 +324,5 @@ ge::graphStatus BroadcastTilingNLastTranspose(
     return ge::GRAPH_SUCCESS;
 }
 
-}  // namespace Base
+} // namespace Base
 } // namespace Ops

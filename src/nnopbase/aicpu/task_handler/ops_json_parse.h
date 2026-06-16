@@ -43,59 +43,59 @@ const std::string kConfigOpInfos = "opInfos";
 // op kernel json file configuration item: kernel lib name
 const std::string kConfigLibName = "libName";
 
-}  // namespace
+} // namespace
 
 namespace op {
 namespace internal {
 class OpsJsonFile {
- public:
-  /**
-   * Get instance
-   * @return OpsJsonFile instance reference
-   */
-  static OpsJsonFile &Instance();
+public:
+    /**
+     * Get instance
+     * @return OpsJsonFile instance reference
+     */
+    static OpsJsonFile& Instance();
 
-  /**
-   * Default Destructor
-   */
-  virtual ~OpsJsonFile() = default;
+    /**
+     * Default Destructor
+     */
+    virtual ~OpsJsonFile() = default;
 
-  /**
-   * Read json file in specified path(based on source file's current path)
-   * @param filePath json file path
-   * @param jsonRead read json handle
-   * @return whether read file successfully
-   */
-  aclnnStatus ParseUnderPath(const std::string &filePath, nlohmann::json &jsonRead) const;
+    /**
+     * Read json file in specified path(based on source file's current path)
+     * @param filePath json file path
+     * @param jsonRead read json handle
+     * @return whether read file successfully
+     */
+    aclnnStatus ParseUnderPath(const std::string& filePath, nlohmann::json& jsonRead) const;
 
-  // Copy operations are prohibited
-  OpsJsonFile(const OpsJsonFile &) = delete;
-  // Copy operations are prohibited
-  OpsJsonFile &operator=(const OpsJsonFile &) = delete;
-  // Move operations are prohibited
-  OpsJsonFile(OpsJsonFile &&) = delete;
-  // Move operations are prohibited
-  OpsJsonFile &operator=(OpsJsonFile &&) = delete;
+    // Copy operations are prohibited
+    OpsJsonFile(const OpsJsonFile&) = delete;
+    // Copy operations are prohibited
+    OpsJsonFile& operator=(const OpsJsonFile&) = delete;
+    // Move operations are prohibited
+    OpsJsonFile(OpsJsonFile&&) = delete;
+    // Move operations are prohibited
+    OpsJsonFile& operator=(OpsJsonFile&&) = delete;
 
- private:
-  // Default Constructor
-  OpsJsonFile() = default;
+private:
+    // Default Constructor
+    OpsJsonFile() = default;
 
-  bool ConvertJsonFormat(nlohmann::json &jsonRead) const;
-  aclnnStatus StringToBool(const std::string &str, bool &result) const;
-  bool CheckAndGetUserDefine(const nlohmann::json &buff, const  std::string &opType,
-                             const std::string &fieldStr, bool &value) const;
+    bool ConvertJsonFormat(nlohmann::json& jsonRead) const;
+    aclnnStatus StringToBool(const std::string& str, bool& result) const;
+    bool CheckAndGetUserDefine(
+        const nlohmann::json& buff, const std::string& opType, const std::string& fieldStr, bool& value) const;
 };
-                       
+
 /**
  * OpInfoDescs json to struct object function
  * @param jsonRead read json handle
  * @param infos all op infos
  * @return whether read file successfully
  */
-void from_json(const nlohmann::json &jsonRead, OpInfoDescs &infos);
+void from_json(const nlohmann::json& jsonRead, OpInfoDescs& infos);
 
-void from_json(const nlohmann::json &jsonRead, OpInfoDesc &desc);
+void from_json(const nlohmann::json& jsonRead, OpInfoDesc& desc);
 
 /**
  * OpInfo json to struct object function
@@ -103,9 +103,9 @@ void from_json(const nlohmann::json &jsonRead, OpInfoDesc &desc);
  * @param op_info engine information that the op
  * @return whether read file successfully
  */
-void from_json(const nlohmann::json &jsonRead, OpFullInfo &opInfo);
+void from_json(const nlohmann::json& jsonRead, OpFullInfo& opInfo);
 
-}
-}
+} // namespace internal
+} // namespace op
 
 #endif

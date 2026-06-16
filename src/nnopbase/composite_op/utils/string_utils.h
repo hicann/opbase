@@ -16,10 +16,10 @@
 
 namespace op {
 
-std::vector<std::string> SplitWith(const std::string &str, const char pattern);
+std::vector<std::string> SplitWith(const std::string& str, const char pattern);
 
-void TrimWith(std::string &result, const char delims);
+void TrimWith(std::string& result, const char delims);
 
-}
+} // namespace op
 
 #endif // OP_API_OP_API_COMMON_SRC_UTILS_STRING_UTILS_H

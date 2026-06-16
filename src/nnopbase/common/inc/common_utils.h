@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_COMMON_UTILS_H
 #define OP_API_OP_API_COMMON_INC_COMMON_UTILS_H
 
@@ -24,11 +24,10 @@ constexpr uint32_t FLAG_EXECUTED = 2;
 
 class ResettableOnceFlag {
 public:
-    ResettableOnceFlag() : onceFlag_(FLAG_NOT_EXECUTE)
-    {}
+    ResettableOnceFlag() : onceFlag_(FLAG_NOT_EXECUTE) {}
 
     template <typename F, typename... Args>
-    void CallOnce(F &&func, Args &&...args)
+    void CallOnce(F&& func, Args&&... args)
     {
         uint32_t expect = FLAG_NOT_EXECUTE;
         if (onceFlag_.compare_exchange_strong(expect, FLAG_EXECUTING)) {
@@ -36,7 +35,7 @@ public:
                 // execute func
                 std::invoke(std::forward<F>(func), std::forward<Args>(args)...);
                 onceFlag_.store(FLAG_EXECUTED);
-            } catch (std::exception &e) {
+            } catch (std::exception& e) {
                 OP_LOGW("invoke call function failed, reason: %s", e.what());
                 onceFlag_.store(FLAG_NOT_EXECUTE);
                 throw;
@@ -63,7 +62,7 @@ private:
     std::atomic<uint32_t> onceFlag_;
 };
 
-}  // namespace internal
-}  // namespace op
+} // namespace internal
+} // namespace op
 
 #endif // OP_API_OP_API_COMMON_INC_COMMON_UTILS_H

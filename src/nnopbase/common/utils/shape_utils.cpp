@@ -14,7 +14,7 @@
 
 namespace op {
 
-op::ShapeVector ToShapeVector(const op::Shape &shape)
+op::ShapeVector ToShapeVector(const op::Shape& shape)
 {
     op::ShapeVector ret;
     ret.resize(shape.GetDimNum());
@@ -25,7 +25,7 @@ op::ShapeVector ToShapeVector(const op::Shape &shape)
     return ret;
 }
 
-ge::AscendString ToString(const op::Shape &shape)
+ge::AscendString ToString(const op::Shape& shape)
 {
     std::ostringstream oss;
     auto v = ToShapeVector(shape);
@@ -40,7 +40,7 @@ ge::AscendString ToString(const op::Shape &shape)
     return ge::AscendString((oss.str()).c_str());
 }
 
-ge::AscendString ToString(const op::Strides &strides)
+ge::AscendString ToString(const op::Strides& strides)
 {
     std::ostringstream oss;
     oss << "[";
@@ -54,7 +54,7 @@ ge::AscendString ToString(const op::Strides &strides)
     return ge::AscendString((oss.str()).c_str());
 }
 
-void ToShape(const int64_t *dims, uint64_t dimNum, op::Shape &shape)
+void ToShape(const int64_t* dims, uint64_t dimNum, op::Shape& shape)
 {
     shape.SetDimNum(dimNum);
     for (uint64_t i = 0; i < dimNum; i++) {
@@ -62,12 +62,12 @@ void ToShape(const int64_t *dims, uint64_t dimNum, op::Shape &shape)
     }
 }
 
-void ToShape(const op::ShapeVector &shapeVector, op::Shape &shape)
+void ToShape(const op::ShapeVector& shapeVector, op::Shape& shape)
 {
     ToShape(shapeVector.data(), shapeVector.size(), shape);
 }
 
-void ToContiguousStrides(const op::Shape &shape, op::Strides &strides)
+void ToContiguousStrides(const op::Shape& shape, op::Strides& strides)
 {
     strides.assign(shape.GetDimNum(), 1);
     for (int64_t i = static_cast<int64_t>(shape.GetDimNum() - 2); i >= 0; i--) {
@@ -75,7 +75,7 @@ void ToContiguousStrides(const op::Shape &shape, op::Strides &strides)
     }
 }
 
-static bool BroadcastDim(int64_t &dim1, const int64_t dim2)
+static bool BroadcastDim(int64_t& dim1, const int64_t dim2)
 {
     if (dim1 == dim2) {
         return true;
@@ -94,13 +94,13 @@ static bool BroadcastDim(int64_t &dim1, const int64_t dim2)
     return true;
 }
 
-bool CheckBroadcastShape(const op::Shape &self, const op::Shape &other)
+bool CheckBroadcastShape(const op::Shape& self, const op::Shape& other)
 {
     OP_LOGD("check broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
     size_t selfShapeLen = self.GetDimNum();
     size_t otherShapeLen = other.GetDimNum();
-    const auto &largerDimShape = selfShapeLen > otherShapeLen ? self : other;
-    const auto &smallerDimShape = &largerDimShape == &self ? other : self;
+    const auto& largerDimShape = selfShapeLen > otherShapeLen ? self : other;
+    const auto& smallerDimShape = &largerDimShape == &self ? other : self;
     auto largerDimNum = largerDimShape.GetDimNum();
     auto smallerDimNum = smallerDimShape.GetDimNum();
     auto lenSub = largerDimNum - smallerDimNum;
@@ -115,14 +115,14 @@ bool CheckBroadcastShape(const op::Shape &self, const op::Shape &other)
     return true;
 }
 
-bool BroadcastInferShape(const op::Shape &self, const op::Shape &other, op::Shape &broadcastShape)
+bool BroadcastInferShape(const op::Shape& self, const op::Shape& other, op::Shape& broadcastShape)
 {
     OP_LOGD("start broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
     OP_LOGD("check broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
     size_t selfShapeLen = self.GetDimNum();
     size_t otherShapeLen = other.GetDimNum();
-    const auto &largerDimShape = selfShapeLen > otherShapeLen ? self : other;
-    const auto &smallerDimShape = &largerDimShape == &self ? other : self;
+    const auto& largerDimShape = selfShapeLen > otherShapeLen ? self : other;
+    const auto& smallerDimShape = &largerDimShape == &self ? other : self;
     auto largerDimNum = largerDimShape.GetDimNum();
     auto smallerDimNum = smallerDimShape.GetDimNum();
     auto lenSub = largerDimNum - smallerDimNum;
@@ -135,9 +135,9 @@ bool BroadcastInferShape(const op::Shape &self, const op::Shape &other, op::Shap
             std::string smallerDimShapeStr = "smaller input" + std::string(op::ToString(smallerDimShape).GetString());
             std::string dim1Str = std::to_string(dim1);
             std::string dim2Str = std::to_string(dim2);
-            std::string reason = "Shape dim " + dim1Str +
-                " of parameter " + largerDimShapeStr + " does not meet the broadcast relationship with shape dim " +
-                dim2Str + " of parameter " + smallerDimShapeStr;
+            std::string reason = "Shape dim " + dim1Str + " of parameter " + largerDimShapeStr +
+                                 " does not meet the broadcast relationship with shape dim " + dim2Str +
+                                 " of parameter " + smallerDimShapeStr;
             OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(largerDimShapeStr.c_str(), dim1Str.c_str(), reason.c_str());
             return false;
         }

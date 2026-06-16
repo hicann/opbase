@@ -33,26 +33,21 @@ namespace op {
  */
 struct Float8E5M2 {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
 
-    static constexpr uint8_t INF_VALUE = 0x7C;          // 0 11111 00
-    static constexpr uint8_t NAN_VALUE = 0x7F;          // 0 11111 11
-    static constexpr uint8_t HIGHEST_VALUE = 0x7B;      // 0 11110 11 (max finite: 57344)
-    static constexpr uint8_t LOWEST_VALUE = 0xFB;       // 1 11110 11 (min finite: -57344)
-    static constexpr uint8_t EPSILON_VALUE = 0x34;      // 0 01101 00 (epsilon at 1.0)
+    static constexpr uint8_t INF_VALUE = 0x7C;            // 0 11111 00
+    static constexpr uint8_t NAN_VALUE = 0x7F;            // 0 11111 11
+    static constexpr uint8_t HIGHEST_VALUE = 0x7B;        // 0 11110 11 (max finite: 57344)
+    static constexpr uint8_t LOWEST_VALUE = 0xFB;         // 1 11110 11 (min finite: -57344)
+    static constexpr uint8_t EPSILON_VALUE = 0x34;        // 0 01101 00 (epsilon at 1.0)
     static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x04; // 0 00001 00 (min positive normal)
 
     // Default constructor - initialize to zero
-    constexpr Float8E5M2() : value(0)
-    {}
+    constexpr Float8E5M2() : value(0) {}
 
-    constexpr Float8E5M2(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits)
-    {}
+    constexpr Float8E5M2(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits) {}
 
     Float8E5M2(float v);
 
@@ -62,7 +57,7 @@ struct Float8E5M2 {
     static constexpr Float8E5M2 Epsilon()
     {
         // 2^-2 = 0.25 at exp = 15 (1.0)
-        return Float8E5M2(EPSILON_VALUE, FromBits());  // 0 01101 00 = 1.0
+        return Float8E5M2(EPSILON_VALUE, FromBits()); // 0 01101 00 = 1.0
     }
 
     static constexpr Float8E5M2 Highest()
@@ -97,7 +92,7 @@ private:
     static Float8E5M2 FloatToFloat8E5M2(float f);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Float8E5M2 &dt)
+inline std::ostream& operator<<(std::ostream& os, const Float8E5M2& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -107,23 +102,13 @@ inline std::ostream &operator<<(std::ostream &os, const Float8E5M2 &dt)
 
 namespace std {
 
-inline bool isinf(const op::Float8E5M2 &a)
-{
-    return a.IsInf();
-}
+inline bool isinf(const op::Float8E5M2& a) { return a.IsInf(); }
 
-inline bool isnan(const op::Float8E5M2 &a)
-{
-    return a.IsNaN();
-}
+inline bool isnan(const op::Float8E5M2& a) { return a.IsNaN(); }
 
-inline bool isfinite(const op::Float8E5M2 &a)
-{
-    return !a.IsNaN() && !a.IsInf();
-}
+inline bool isfinite(const op::Float8E5M2& a) { return !a.IsNaN() && !a.IsInf(); }
 
-
-template<>
+template <>
 class numeric_limits<op::Float8E5M2> {
 public:
     static constexpr bool has_infinity = true;
@@ -144,31 +129,16 @@ public:
     static constexpr int max_exponent = 16;
     static constexpr int max_exponent10 = 4;
     static constexpr int radix = 2;
-    static constexpr float round_error()
-    {
-        return 0.5f;
-    }
+    static constexpr float round_error() { return 0.5f; }
     static constexpr float denorm_min()
     {
-        return 0.0000152587890625f;  // 2^-16
+        return 0.0000152587890625f; // 2^-16
     }
 
-    static constexpr op::Float8E5M2 min()
-    {
-        return op::Float8E5M2::MinPositiveNormal();
-    }
-    static constexpr op::Float8E5M2 lowest()
-    {
-        return op::Float8E5M2::Lowest();
-    }
-    static constexpr op::Float8E5M2 max()
-    {
-        return op::Float8E5M2::Highest();
-    }
-    static constexpr op::Float8E5M2 epsilon()
-    {
-        return op::Float8E5M2::Epsilon();
-    }
+    static constexpr op::Float8E5M2 min() { return op::Float8E5M2::MinPositiveNormal(); }
+    static constexpr op::Float8E5M2 lowest() { return op::Float8E5M2::Lowest(); }
+    static constexpr op::Float8E5M2 max() { return op::Float8E5M2::Highest(); }
+    static constexpr op::Float8E5M2 epsilon() { return op::Float8E5M2::Epsilon(); }
     static constexpr op::Float8E5M2 infinity()
     {
         return op::Float8E5M2(op::Float8E5M2::INF_VALUE, op::Float8E5M2::FromBits());
@@ -177,10 +147,7 @@ public:
     {
         return op::Float8E5M2(op::Float8E5M2::NAN_VALUE, op::Float8E5M2::FromBits());
     }
-    static constexpr op::Float8E5M2 signaling_NaN()
-    {
-        return quiet_NaN();
-    }
+    static constexpr op::Float8E5M2 signaling_NaN() { return quiet_NaN(); }
 };
 
 } // namespace std

@@ -10,7 +10,7 @@
 
 /*!
  * \file broadcast_tiling_base.cpp
- * \brief atvoss broadcast template tiling 
+ * \brief atvoss broadcast template tiling
  */
 #include "op_common/atvoss/broadcast/broadcast_tiling_base.h"
 
@@ -23,10 +23,7 @@ static constexpr uint64_t SCHEDULE_KEY_1 = 100;
 static constexpr uint64_t SCHEDULE_KEY_2 = 1100;
 static constexpr int64_t DEFAULT_SCHEMODE = 1;
 
-uint64_t BroadcastGetComputeKey()
-{
-    return BROADCAST_COMPUTE_KEY;
-}
+uint64_t BroadcastGetComputeKey() { return BROADCAST_COMPUTE_KEY; }
 
 uint64_t BroadcastGetScheduleKey(uint32_t axisInsideUB)
 {
@@ -36,7 +33,7 @@ uint64_t BroadcastGetScheduleKey(uint32_t axisInsideUB)
     return SCHEDULE_KEY_2;
 }
 
-int64_t BroadcastGetMaxElemNum(int64_t ubSize, const BroadcastComputeParams &computeParams)
+int64_t BroadcastGetMaxElemNum(int64_t ubSize, const BroadcastComputeParams& computeParams)
 {
     int64_t minDtypeBits = computeParams.minDtypeBits;
     int64_t extraSize = computeParams.extraSize[0];
@@ -46,5 +43,5 @@ int64_t BroadcastGetMaxElemNum(int64_t ubSize, const BroadcastComputeParams &com
     int64_t maxElemNumAlign = maxElemNums / alignFactor * alignFactor;
     return maxElemNumAlign;
 }
-}  // namespace Base
+} // namespace Base
 } // namespace Ops

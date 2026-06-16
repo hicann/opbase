@@ -28,10 +28,10 @@ using Json = nlohmann::json;
 #ifdef __cplusplus
 extern "C" {
 #endif
-aclnnStatus InitSystemConfig(const char *configPath)
+aclnnStatus InitSystemConfig(const char* configPath)
 {
     // 获取环境变量中的配置
-    const char *enableDebugKernelEnv = nullptr;
+    const char* enableDebugKernelEnv = nullptr;
     MM_SYS_GET_ENV(MM_ENV_NPU_COLLECT_PATH, enableDebugKernelEnv);
     if (enableDebugKernelEnv != nullptr && strlen(enableDebugKernelEnv) != 0) {
         return op::internal::systemConfig.SetEnableDebugKernelFlag(true);
@@ -45,8 +45,8 @@ aclnnStatus InitSystemConfig(const char *configPath)
 
     string configPathStr(configPath);
     string realConfigPathStr = op::RealPath(configPathStr);
-    OP_CHECK(!realConfigPathStr.empty(),
-        OP_LOGI("real path of the input config path [%s] is not exist", configPath),
+    OP_CHECK(
+        !realConfigPathStr.empty(), OP_LOGI("real path of the input config path [%s] is not exist", configPath),
         return op::internal::systemConfig.SetEnableDebugKernelFlag(false));
 
     // 解析json文件中的配置
@@ -74,7 +74,7 @@ aclnnStatus InitSystemConfig(const char *configPath)
     return op::internal::systemConfig.SetEnableDebugKernelFlag(false);
 }
 
-aclnnStatus aclnnInit([[maybe_unused]]const char *configPath)
+aclnnStatus aclnnInit([[maybe_unused]] const char* configPath)
 {
     OP_LOGI("Entering func: aclnnInit");
     op::opploader::LoadAllOppPackage();

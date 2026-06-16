@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <iostream>
@@ -29,30 +29,21 @@ using namespace op::internal;
 
 class OpArgDefUt : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() {
-    }
+    static void TearDownTestCase() {}
 };
 
-TEST_F(OpArgDefUt, OpArgType_aclTensor) {
+TEST_F(OpArgDefUt, OpArgType_aclTensor)
+{
     // OPARG_ACLTENSOR
-    std::vector<op::DataType> dtypes{op::DataType::DT_INT8,
-        op::DataType::DT_UINT8,
-        op::DataType::DT_INT16,
-        op::DataType::DT_INT32,
-        op::DataType::DT_INT64,
-        op::DataType::DT_UINT16,
-        op::DataType::DT_UINT32,
-        op::DataType::DT_UINT64,
-        op::DataType::DT_FLOAT16,
-        op::DataType::DT_DOUBLE,
-        op::DataType::DT_FLOAT,
-        op::DataType::DT_BF16,
-        op::DataType::DT_BOOL};
+    std::vector<op::DataType> dtypes{op::DataType::DT_INT8,   op::DataType::DT_UINT8,  op::DataType::DT_INT16,
+                                     op::DataType::DT_INT32,  op::DataType::DT_INT64,  op::DataType::DT_UINT16,
+                                     op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_FLOAT16,
+                                     op::DataType::DT_DOUBLE, op::DataType::DT_FLOAT,  op::DataType::DT_BF16,
+                                     op::DataType::DT_BOOL};
     op::Shape tShape{1, 2, 3};
-    for (auto dtype: dtypes){
+    for (auto dtype : dtypes) {
         aclTensor t1(tShape, dtype, ge::FORMAT_ND, nullptr);
         aclTensor t2(tShape, dtype, ge::FORMAT_ND, nullptr);
 
@@ -75,14 +66,15 @@ TEST_F(OpArgDefUt, OpArgType_aclTensor) {
     }
 }
 
-TEST_F(OpArgDefUt, OpArgType_aclTensorList) {
+TEST_F(OpArgDefUt, OpArgType_aclTensorList)
+{
     // aclTensorList
     op::Shape tShape{1, 2, 3};
     aclTensor t3(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t4(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t5(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t6(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
-    aclTensor *list[] = {&t3, &t4};
+    aclTensor* list[] = {&t3, &t4};
     auto tensorList = aclCreateTensorList(list, 2);
 
     auto input_arg1 = OP_INPUT(tensorList, &t5);
@@ -111,8 +103,8 @@ TEST_F(OpArgDefUt, OpArgType_aclTensorList) {
     delete tensorList;
 
     // aclTensorList1 contains nullptr
-    aclTensor *list2[] = {&t3, &t4, nullptr};
-    aclTensorList *tensorList2 = aclCreateTensorList(list2, 3);
+    aclTensor* list2[] = {&t3, &t4, nullptr};
+    aclTensorList* tensorList2 = aclCreateTensorList(list2, 3);
     aclTensor outShapeTensor(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
 
     auto input_arg2 = OP_INPUT(tensorList2);
@@ -140,7 +132,8 @@ TEST_F(OpArgDefUt, OpArgType_aclTensorList) {
     delete tensorList2;
 }
 
-TEST_F(OpArgDefUt, OpArgType_aclScalar) {
+TEST_F(OpArgDefUt, OpArgType_aclScalar)
+{
     // aclScalar
     float fpValue = 3.2;
     aclScalar scalar(&fpValue, op::DataType::DT_FLOAT);
@@ -174,7 +167,8 @@ TEST_F(OpArgDefUt, OpArgType_aclScalar) {
     op::DestroyOpArgContext(ctx1);
 }
 
-TEST_F(OpArgDefUt, OpArgType_string) {
+TEST_F(OpArgDefUt, OpArgType_string)
+{
     op::Shape tShape{1, 2, 3};
     aclTensor t3(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t4(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
@@ -205,7 +199,8 @@ TEST_F(OpArgDefUt, OpArgType_string) {
     op::DestroyOpArgContext(ctx1);
 }
 
-TEST_F(OpArgDefUt, OpArgType_arithmetic) {
+TEST_F(OpArgDefUt, OpArgType_arithmetic)
+{
     op::Shape tShape{1, 2, 3};
     aclTensor t1(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t2(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
@@ -244,7 +239,8 @@ TEST_F(OpArgDefUt, OpArgType_arithmetic) {
     op::DestroyOpArgContext(ctx1);
 }
 
-TEST_F(OpArgDefUt, OpArgType_DATATYPE_and_list) {
+TEST_F(OpArgDefUt, OpArgType_DATATYPE_and_list)
+{
     op::Shape tShape{1, 2, 3};
     aclTensor t1(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t2(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
@@ -282,7 +278,8 @@ TEST_F(OpArgDefUt, OpArgType_DATATYPE_and_list) {
     op::DestroyOpArgContext(ctx1);
 }
 
-TEST_F(OpArgDefUt, OpArgType_other) {
+TEST_F(OpArgDefUt, OpArgType_other)
+{
     op::Shape tShape{1, 2, 3};
     aclTensor t1(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t2(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
@@ -316,21 +313,21 @@ TEST_F(OpArgDefUt, OpArgValue_String)
     EXPECT_NE(opArgValue.data.pointer, nullptr);
     op::OpArgValue opArgValue1(&str);
     EXPECT_NE(opArgValue1.data.pointer, nullptr);
-    const std::string *str1 = nullptr;
+    const std::string* str1 = nullptr;
     op::OpArgValue opArgValue2(str1);
     EXPECT_EQ(opArgValue2.data.pointer, nullptr);
 
-    const char *cstr = "clkncskzn";
+    const char* cstr = "clkncskzn";
     op::OpArgValue opArgValue5(cstr);
     EXPECT_NE(opArgValue5.data.pointer, nullptr);
-    const char *cstr1 = nullptr;
+    const char* cstr1 = nullptr;
     op::OpArgValue opArgValue6(cstr1);
     EXPECT_EQ(opArgValue6.data.pointer, nullptr);
 }
 
 TEST_F(OpArgDefUt, DeAllocated)
 {
-    uint8_t *addr = static_cast<uint8_t *>(op::internal::Allocate(10));
+    uint8_t* addr = static_cast<uint8_t*>(op::internal::Allocate(10));
     op::DeAllocated(addr);
 }
 
@@ -340,26 +337,24 @@ TEST_F(OpArgDefUt, TestAllType)
     int64_t shape[] = {1, 2, 3};
     aclTensor t1(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
     aclTensor t2(tShape, op::DataType::DT_FLOAT16, ge::FORMAT_ND, nullptr);
-    aclTensor *nullTensor = nullptr;
-    aclTensorList *nullTensorList = nullptr;
-    aclTensor *list2[] = {aclCreateTensor(shape, 3, aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape, 3, nullptr),
-                          aclCreateTensor(shape, 3, aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape, 3, nullptr),
-                          aclCreateTensor(shape, 3, aclDataType::ACL_FLOAT,
-                                          nullptr, 0, aclFormat::ACL_FORMAT_ND, shape, 3, nullptr)};
-    aclTensorList *tensorList = aclCreateTensorList(list2, 3);
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
+    aclTensor* list2[] = {
+        aclCreateTensor(shape, 3, aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape, 3, nullptr),
+        aclCreateTensor(shape, 3, aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape, 3, nullptr),
+        aclCreateTensor(shape, 3, aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape, 3, nullptr)};
+    aclTensorList* tensorList = aclCreateTensorList(list2, 3);
 
     bool boolAttr = false;
     op::DataType dtypeAttr = op::DataType::DT_FLOAT16;
     float scalar_value = 5;
-    aclScalar *scalarAttr = aclCreateScalar(&scalar_value, aclDataType::ACL_FLOAT);
+    aclScalar* scalarAttr = aclCreateScalar(&scalar_value, aclDataType::ACL_FLOAT);
     int64_t array[] = {3, 4, 5};
-    aclIntArray *intArrayAttr = aclCreateIntArray(array, sizeof(array) / sizeof(array[0]));
+    aclIntArray* intArrayAttr = aclCreateIntArray(array, sizeof(array) / sizeof(array[0]));
     std::string stringAttr = "123";
     std::string s = "456";
-    std::string *stringPAttr = &s;
-    char *charPAttr = "789";
+    std::string* stringPAttr = &s;
+    char* charPAttr = "789";
     double doubleAttr = 3.14159;
     float floatAttr = 3.14;
     int32_t intAttr = -1;
@@ -372,8 +367,8 @@ TEST_F(OpArgDefUt, TestAllType)
 
     auto input_arg = OP_INPUT(&t1, nullTensor, nullTensorList, tensorList);
     auto output_arg = OP_OUTPUT(&t2);
-    auto attr_arg = OP_ATTR(boolAttr, dtypeAttr, scalarAttr, intArrayAttr,
-        stringAttr, stringPAttr, charPAttr, doubleAttr, floatAttr,
+    auto attr_arg = OP_ATTR(
+        boolAttr, dtypeAttr, scalarAttr, intArrayAttr, stringAttr, stringPAttr, charPAttr, doubleAttr, floatAttr,
         intAttr, uintAttr, int64Attr, uint64Attr);
     auto option_arg = OP_OPTION(implMode);
     auto outshape_arg = OP_OUTSHAPE({&outShapeTensor, 0});
@@ -385,10 +380,10 @@ TEST_F(OpArgDefUt, TestAllType)
     EXPECT_EQ(ctx->ContainsOpArgType(op::OpArgDef::OP_ATTR_ARG), true);
     EXPECT_EQ(ctx->ContainsOpArgType(op::OpArgDef::OP_OUTSHAPE_ARG), true);
 
-    op::OpArgList &input = *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG);
-    op::OpArgList &output = *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG);
-    op::OpArgList &attr = *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG);
-    op::OpArgList &outshape = *ctx->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG);
+    op::OpArgList& input = *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG);
+    op::OpArgList& output = *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG);
+    op::OpArgList& attr = *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG);
+    op::OpArgList& outshape = *ctx->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG);
 
     EXPECT_EQ(input.count, 4);
     EXPECT_EQ(output.count, 1);
@@ -415,11 +410,11 @@ TEST_F(OpArgDefUt, TestAllType)
     EXPECT_EQ(attr.args[3].type, op::OpArgType::OPARG_INT_LIST);
     EXPECT_EQ(attr.args[3]->pointer, intArrayAttr);
     EXPECT_EQ(attr.args[4].type, op::OpArgType::OPARG_STRING);
-    EXPECT_EQ(0, strcmp(static_cast<char *>(attr.args[4]->pointer), "123"));
+    EXPECT_EQ(0, strcmp(static_cast<char*>(attr.args[4]->pointer), "123"));
     EXPECT_EQ(attr.args[5].type, op::OpArgType::OPARG_STRING);
-    EXPECT_EQ(0, strcmp(static_cast<char *>(attr.args[5]->pointer), "456"));
+    EXPECT_EQ(0, strcmp(static_cast<char*>(attr.args[5]->pointer), "456"));
     EXPECT_EQ(attr.args[6].type, op::OpArgType::OPARG_STRING);
-    EXPECT_EQ(0, strcmp(static_cast<char *>(attr.args[6]->pointer), "789"));
+    EXPECT_EQ(0, strcmp(static_cast<char*>(attr.args[6]->pointer), "789"));
     EXPECT_EQ(attr.args[7].type, op::OpArgType::OPARG_DOUBLE);
     EXPECT_LE(attr.args[7]->dvalue - 3.14159, std::numeric_limits<double>::epsilon());
     EXPECT_EQ(attr.args[8].type, op::OpArgType::OPARG_FLOAT);

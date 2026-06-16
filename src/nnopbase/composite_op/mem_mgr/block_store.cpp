@@ -43,7 +43,7 @@ int BlockStore::Init(uint16_t tag, size_t block_size, size_t block_count)
     }
 
     for (BlockIdx i = 0; i < static_cast<BlockIdx>(blockCount_); i++) {
-        BlockHeader *head = GetHeader(i);
+        BlockHeader* head = GetHeader(i);
         new (head) BlockHeader;
         head->userTag_ = tag;
         head->blockIdx_ = i;
@@ -66,10 +66,7 @@ void BlockStore::UnInit()
     freeHead_ = -1;
 }
 
-BlockStore::~BlockStore()
-{
-    FREE(mem_);
-}
+BlockStore::~BlockStore() { FREE(mem_); }
 
 } // namespace internal
 } // namespace op

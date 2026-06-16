@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_SHAPE_INFERENCE_H
 #define OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_SHAPE_INFERENCE_H
 
@@ -17,25 +17,25 @@
 
 namespace op {
 namespace internal {
-aclnnStatus UpdateOutputShape(aclTensor *tensor);
+aclnnStatus UpdateOutputShape(aclTensor* tensor);
 
-aclnnStatus UpdateOutputShape(aclTensorList *tensors);
+aclnnStatus UpdateOutputShape(aclTensorList* tensors);
 
-inline aclnnStatus UpdateOutputShape(OpArgList &outputs)
+inline aclnnStatus UpdateOutputShape(OpArgList& outputs)
 {
-    return outputs.VisitBy([]([[maybe_unused]] size_t idx, OpArg &arg) {
+    return outputs.VisitBy([]([[maybe_unused]] size_t idx, OpArg& arg) {
         switch (arg.type) {
             case OpArgType::OPARG_ACLTENSOR:
-                return UpdateOutputShape(reinterpret_cast<aclTensor *>(arg->pointer));
+                return UpdateOutputShape(reinterpret_cast<aclTensor*>(arg->pointer));
             case OpArgType::OPARG_ACLTENSOR_LIST:
-                return UpdateOutputShape(reinterpret_cast<aclTensorList *>(arg->pointer));
+                return UpdateOutputShape(reinterpret_cast<aclTensorList*>(arg->pointer));
             default:
                 return ACLNN_SUCCESS;
         }
     });
 }
 
-inline aclnnStatus InferShape(uint32_t optype, OpArgList &inputs, OpArgList &outputs, OpArgList &attrs)
+inline aclnnStatus InferShape(uint32_t optype, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
 {
     auto ret = gKernelMgr.InferShape(optype, inputs, outputs, attrs);
     if (ret != ACLNN_SUCCESS) {
@@ -44,6 +44,6 @@ inline aclnnStatus InferShape(uint32_t optype, OpArgList &inputs, OpArgList &out
     ret = UpdateOutputShape(outputs);
     return ret;
 }
-}
-}
+} // namespace internal
+} // namespace op
 #endif

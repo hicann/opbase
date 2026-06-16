@@ -17,17 +17,16 @@
 namespace op::internal {
 
 namespace {
-    // Growth factor for capacity expansion (similar to std::vector)
-    constexpr size_t GROWTH_FACTOR = 2;
+// Growth factor for capacity expansion (similar to std::vector)
+constexpr size_t GROWTH_FACTOR = 2;
 } // anonymous namespace
 
 void KernelContextHolder::BuildComputeNodeInfo()
 {
-    computeNodeInfoSize_ = sizeof(ComputeNodeInfo)
-        + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_
-        + sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_
-        + sizeof(RuntimeAttrsDef) + attrCapacity_;
-    computeNodeInfo_ = static_cast<ComputeNodeInfo *>(malloc(computeNodeInfoSize_));
+    computeNodeInfoSize_ = sizeof(ComputeNodeInfo) + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_ +
+                           sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_ + sizeof(RuntimeAttrsDef) +
+                           attrCapacity_;
+    computeNodeInfo_ = static_cast<ComputeNodeInfo*>(malloc(computeNodeInfoSize_));
     if (computeNodeInfo_ == nullptr) {
         return;
     }
@@ -38,7 +37,7 @@ void KernelContextHolder::BuildComputeNodeInfo()
 void KernelContextHolder::BuildOpInOutArg()
 {
     size_t sz = sizeof(AsyncAnyValue) * opInArgCapacity_;
-    opInArg_ = static_cast<AsyncAnyValue *>(malloc(sz));
+    opInArg_ = static_cast<AsyncAnyValue*>(malloc(sz));
     if (opInArg_ == nullptr) {
         return;
     }
@@ -60,16 +59,16 @@ aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
 
     // Allocate new memory (do NOT use realloc)
     size_t newSize = sizeof(AsyncAnyValue) * newCapacity;
-    AsyncAnyValue *newArg = static_cast<AsyncAnyValue *>(malloc(newSize));
-    OP_CHECK(newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc opInArg, size %zu.", newSize),
+    AsyncAnyValue* newArg = static_cast<AsyncAnyValue*>(malloc(newSize));
+    OP_CHECK(
+        newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc opInArg, size %zu.", newSize),
         return ACLNN_ERR_INNER);
 
     // Copy existing data to new location
     size_t oldSize = sizeof(AsyncAnyValue) * opInArgCapacity_;
-    OP_CHECK(memcpy_s(newArg, newSize, opInArg_, oldSize) == EOK,
-        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy opInArg."),
-        std::free(newArg);
-        return ACLNN_ERR_INNER);
+    OP_CHECK(memcpy_s(newArg, newSize, opInArg_, oldSize) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy opInArg."),
+             std::free(newArg);
+             return ACLNN_ERR_INNER);
 
     // Zero out the new portion
     size_t zeroSize = newSize - oldSize;
@@ -98,19 +97,17 @@ aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCa
     }
 
     // Allocate new memory
-    size_t newSize = sizeof(ComputeNodeInfo)
-        + sizeof(AnchorInstanceInfo) * newCapacity
-        + sizeof(CompileTimeTensorDesc) * newCapacity
-        + sizeof(RuntimeAttrsDef) + attrCapacity_;
-    ComputeNodeInfo *newInfo = static_cast<ComputeNodeInfo *>(malloc(newSize));
-    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo, size %zu.", newSize),
+    size_t newSize = sizeof(ComputeNodeInfo) + sizeof(AnchorInstanceInfo) * newCapacity +
+                     sizeof(CompileTimeTensorDesc) * newCapacity + sizeof(RuntimeAttrsDef) + attrCapacity_;
+    ComputeNodeInfo* newInfo = static_cast<ComputeNodeInfo*>(malloc(newSize));
+    OP_CHECK(
+        newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo, size %zu.", newSize),
         return ACLNN_ERR_INNER);
 
     // Copy existing data
     OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
-        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."),
-        std::free(newInfo);
-        return ACLNN_ERR_INNER);
+             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."), std::free(newInfo);
+             return ACLNN_ERR_INNER);
 
     // Zero out the new portion
     size_t zeroOffset = computeNodeInfoSize_;
@@ -156,19 +153,18 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
     }
 
     // Need to reallocate the entire computeNodeInfo_ since attr data is embedded in it
-    size_t newSize = sizeof(ComputeNodeInfo)
-        + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_
-        + sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_
-        + sizeof(RuntimeAttrsDef) + newCapacity;
-    ComputeNodeInfo *newInfo = static_cast<ComputeNodeInfo *>(malloc(newSize));
-    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo for attr expansion, size %zu.", newSize),
+    size_t newSize = sizeof(ComputeNodeInfo) + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_ +
+                     sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_ + sizeof(RuntimeAttrsDef) + newCapacity;
+    ComputeNodeInfo* newInfo = static_cast<ComputeNodeInfo*>(malloc(newSize));
+    OP_CHECK(
+        newInfo != nullptr,
+        OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo for attr expansion, size %zu.", newSize),
         return ACLNN_ERR_INNER);
 
     // Copy data up to current computeNodeInfoSize_
     OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
-        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."),
-        std::free(newInfo);
-        return ACLNN_ERR_INNER);
+             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."), std::free(newInfo);
+             return ACLNN_ERR_INNER);
 
     // Zero out the new portion
     size_t zeroOffset = computeNodeInfoSize_;
@@ -176,12 +172,12 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
     (void)memset_s(PtrCastTo<uint8_t>(newInfo) + zeroOffset, zeroSize, 0, zeroSize);
 
     // Update pointers based on new memory layout
-    ComputeNodeInfo *oldInfo = computeNodeInfo_;
+    ComputeNodeInfo* oldInfo = computeNodeInfo_;
     computeNodeInfo_ = newInfo;
     anchorInfo_ = PtrCastTo<AnchorInstanceInfo>(&newInfo->place_holder);
     compileDesc_ = PtrCastTo<CompileTimeTensorDesc>(anchorInfo_ + irInputNum_);
     UpdateAttrDefOffset(inputNum_ + outputNum_, attrNum_);
-    
+
     computeNodeInfoSize_ = newSize;
     attrCapacity_ = newCapacity;
 
@@ -192,7 +188,7 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
     return ACLNN_SUCCESS;
 }
 
-void KernelContextHolder::UpdateKernelExtendInfo(const char *kernelType, const char *kernelName)
+void KernelContextHolder::UpdateKernelExtendInfo(const char* kernelType, const char* kernelName)
 {
     kernelExtendInfo_.kernel_type_ = kernelType;
     kernelExtendInfo_.kernel_name_ = kernelName;
@@ -210,12 +206,13 @@ void KernelContextHolder::UpdateAttrDefOffset(size_t inoutNum, size_t attrNum)
     attrDef_->attr_num = attrNum;
     attrDataStart_ = PtrCastTo<uint8_t>(attrDef_ + 1) + sizeof(size_t) * attrNum;
 #ifdef DEBUG
-    OP_LOGD("Adjust attr offset. [%zu]. inout num %zu. attr num: %zu,  %zu",
-            attrOffset, inoutNum, attrNum, PtrOffset(computeNodeInfo_, attrDef_));
+    OP_LOGD(
+        "Adjust attr offset. [%zu]. inout num %zu. attr num: %zu,  %zu", attrOffset, inoutNum, attrNum,
+        PtrOffset(computeNodeInfo_, attrDef_));
 #endif
 }
 
-aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensor *tensor)
+aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensor* tensor)
 {
     if (tensor == nullptr) {
         // Caution: RT2.0 seems not support null op input in the middle or op args
@@ -230,7 +227,7 @@ aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensor *ten
     if (tensor->GetPlacement() == gert::kOnHost) {
         OP_LOGD("Update Input arg HOST aclTensor. Size: %zu", tensor->Size());
         for (auto i = 0; i < tensor->Size(); i++) {
-            uint64_t *p = (static_cast<uint64_t *>(tensor->GetData()) + i);
+            uint64_t* p = (static_cast<uint64_t*>(tensor->GetData()) + i);
             OP_LOGD("Update Input arg HOST aclTensor Data: %lu", *p);
         }
     }
@@ -250,7 +247,7 @@ aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensor *ten
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensorList *tensorList)
+aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensorList* tensorList)
 {
     if (tensorList == nullptr || tensorList->Size() == 0) {
         OP_LOGD("Update Input Arg Tensor List is Null Or Empty");
@@ -272,20 +269,20 @@ aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, const aclTensorList 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, OpArg &arg)
+aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, OpArg& arg)
 {
     switch (arg.type) {
         case OpArgType::OPARG_ACLTENSOR:
-            return UpdateInputArg(idx, reinterpret_cast<aclTensor *>(arg->pointer));
+            return UpdateInputArg(idx, reinterpret_cast<aclTensor*>(arg->pointer));
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            return UpdateInputArg(idx, reinterpret_cast<aclTensorList *>(arg->pointer));
+            return UpdateInputArg(idx, reinterpret_cast<aclTensorList*>(arg->pointer));
         default:
             OP_LOGE(ACLNN_ERR_INNER, "invalid input arg type %d.", static_cast<int>(arg.type));
             return ACLNN_ERR_INNER;
     }
 }
 
-aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensor *tensor)
+aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensor* tensor)
 {
     if (tensor == nullptr) {
         OP_LOGI("Update Output Arg Tensor List is Null [%zu]", idx);
@@ -308,7 +305,7 @@ aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensor *te
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensorList *tensorList)
+aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensorList* tensorList)
 {
     if (tensorList == nullptr || tensorList->Size() == 0) {
         OP_LOGD("Update Output Arg Tensor List is Null Or Empty");
@@ -322,20 +319,20 @@ aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, const aclTensorList
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, OpArg &arg)
+aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, OpArg& arg)
 {
     switch (arg.type) {
         case OpArgType::OPARG_ACLTENSOR:
-            return UpdateOutputArg(idx, reinterpret_cast<aclTensor *>(arg->pointer));
+            return UpdateOutputArg(idx, reinterpret_cast<aclTensor*>(arg->pointer));
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            return UpdateOutputArg(idx, reinterpret_cast<aclTensorList *>(arg->pointer));
+            return UpdateOutputArg(idx, reinterpret_cast<aclTensorList*>(arg->pointer));
         default:
             OP_LOGE(ACLNN_ERR_INNER, "invalid output arg type %d.", static_cast<int>(arg.type));
             return ACLNN_ERR_INNER;
     }
 }
 
-void KernelContextHolder::UpdateOutputArgIr(size_t idx, const aclTensor *tensor, size_t &seq) const
+void KernelContextHolder::UpdateOutputArgIr(size_t idx, const aclTensor* tensor, size_t& seq) const
 {
     if (tensor == nullptr) {
         // Caution: RT2.0 seems not support null op input in the middle or op args
@@ -348,7 +345,7 @@ void KernelContextHolder::UpdateOutputArgIr(size_t idx, const aclTensor *tensor,
     outputAnchorInfo_[idx].instantiation_num_ = 1;
 }
 
-void KernelContextHolder::UpdateOutputArgIr(size_t idx, const aclTensorList *tensorList, size_t &seq) const
+void KernelContextHolder::UpdateOutputArgIr(size_t idx, const aclTensorList* tensorList, size_t& seq) const
 {
     if (tensorList == nullptr || tensorList->Size() == 0) {
         OP_LOGD("Update IR Output argList is Null Or Empty");
@@ -365,14 +362,14 @@ void KernelContextHolder::UpdateOutputArgIr(size_t idx, const aclTensorList *ten
     outputAnchorInfo_[idx].instantiation_num_ = seq - start;
 }
 
-void KernelContextHolder::UpdateOutputArgIr(size_t idx, OpArg &arg, size_t &seq) const
+void KernelContextHolder::UpdateOutputArgIr(size_t idx, OpArg& arg, size_t& seq) const
 {
     switch (arg.type) {
         case OpArgType::OPARG_ACLTENSOR:
-            UpdateOutputArgIr(idx, reinterpret_cast<aclTensor *>(arg->pointer), seq);
+            UpdateOutputArgIr(idx, reinterpret_cast<aclTensor*>(arg->pointer), seq);
             break;
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            UpdateOutputArgIr(idx, reinterpret_cast<aclTensorList *>(arg->pointer), seq);
+            UpdateOutputArgIr(idx, reinterpret_cast<aclTensorList*>(arg->pointer), seq);
             break;
         default:
             OP_LOGW("invalid output arg type %d.", static_cast<int>(arg.type));
@@ -380,7 +377,7 @@ void KernelContextHolder::UpdateOutputArgIr(size_t idx, OpArg &arg, size_t &seq)
     }
 }
 
-void KernelContextHolder::ResetComputeNodeInfo(const char *opType, size_t irInputNum, size_t irOutputNum)
+void KernelContextHolder::ResetComputeNodeInfo(const char* opType, size_t irInputNum, size_t irOutputNum)
 {
     computeNodeInfo_->node_type_ = opType;
     computeNodeInfo_->node_name_ = opType;

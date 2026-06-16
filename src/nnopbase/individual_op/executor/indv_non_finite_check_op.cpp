@@ -15,13 +15,13 @@
 #include "individual_op_api.h"
 
 namespace {
-constexpr const char *opType = "NonFiniteCheck";
+constexpr const char* opType = "NonFiniteCheck";
 constexpr uint16_t kModelId = 61; // OP model
 constexpr float f05 = 0.5F;
 
 constexpr ge::DataType supportDtypes[] = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
 uint32_t socSupportListLen = 0;
-uint32_t *socSupportList = nnopbase::IndvSoc::GetInstance().GetNonFiniteCheckSocSupportList(socSupportListLen);
+uint32_t* socSupportList = nnopbase::IndvSoc::GetInstance().GetNonFiniteCheckSocSupportList(socSupportListLen);
 
 TensorDesc inputDesc0_0[] = {{ge::DT_FLOAT16, ge::FORMAT_ND}};
 TensorDesc inputDesc0_1[] = {{ge::DT_FLOAT, ge::FORMAT_ND}};
@@ -41,10 +41,10 @@ constexpr OpSocSupportInfo socSupportInfo0 = {supportInfo0, supportInfoLen};
 OpSocSupportInfo opSocSupportList[] = {socSupportInfo0, socSupportInfo0};
 OpSupportList supportList = {opSocSupportList, socSupportListLen};
 
-aclnnStatus NnopbaseCopyTensor(const GertTensor &src, NnopbaseTensor &dst)
+aclnnStatus NnopbaseCopyTensor(const GertTensor& src, NnopbaseTensor& dst)
 {
     dst.isNull = false;
-    auto &rt2Tensor = dst.rt2Tensor;
+    auto& rt2Tensor = dst.rt2Tensor;
     rt2Tensor.GetShape() = src.GetShape();
     rt2Tensor.SetDataType(src.GetDataType());
     rt2Tensor.MutableFormat() = src.GetFormat();
@@ -56,7 +56,7 @@ aclnnStatus NnopbaseCopyTensor(const GertTensor &src, NnopbaseTensor &dst)
     return OK;
 }
 
-aclnnStatus NnopbaseNonFiniteCheckAddInputs(const std::vector<const GertTensor *> &inputs, NnopbaseExecutor *executor)
+aclnnStatus NnopbaseNonFiniteCheckAddInputs(const std::vector<const GertTensor*>& inputs, NnopbaseExecutor* executor)
 {
     // startIndex在初始化时已设置为0
     executor->ownArgs.inputs.paramDescs.instances[0U].isInput = true;
@@ -78,14 +78,14 @@ aclnnStatus NnopbaseNonFiniteCheckAddInputs(const std::vector<const GertTensor *
     return OK;
 }
 
-aclnnStatus NnopbaseNonFiniteCheckAddOutputs(NnopbaseExecutor *executor, void *const outputAddr)
+aclnnStatus NnopbaseNonFiniteCheckAddOutputs(NnopbaseExecutor* executor, void* const outputAddr)
 {
-    auto &outputs = executor->ownArgs.outputs;
+    auto& outputs = executor->ownArgs.outputs;
     // num在初始化时设置过为1
     outputs.paramDescs.instances[0U].isInput = false;
 
     outputs.extTensors[0U].isNull = false;
-    auto &rt2Tensor = outputs.extTensors[0U].rt2Tensor;
+    auto& rt2Tensor = outputs.extTensors[0U].rt2Tensor;
     rt2Tensor.MutableOriginShape() = {1};
     rt2Tensor.MutableStorageShape() = {1};
     rt2Tensor.SetDataType(ge::DataType::DT_FLOAT);
@@ -100,17 +100,16 @@ aclnnStatus NnopbaseNonFiniteCheckAddOutputs(NnopbaseExecutor *executor, void *c
 }
 
 // 出参和入参
-aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(const std::vector<const GertTensor *> &inputs,
-                                                      void *const outputAddr,
-                                                      uint64_t *workspaceSize,
-                                                      NnopbaseExecutor **executor)
+aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(
+    const std::vector<const GertTensor*>& inputs, void* const outputAddr, uint64_t* workspaceSize,
+    NnopbaseExecutor** executor)
 {
     const uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000U, __func__, false};
     static NnopbaseDfxId tilingId = {0x60000U, "NonFiniteCheckTiling", false};
 
     // 创建space
-    static void *space = nullptr;
+    static void* space = nullptr;
     if (space == nullptr) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCreateExecutorSpace(&space));
     }
@@ -119,7 +118,7 @@ aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(const std::vector<const Ge
     NnopbaseChar inputDesc[] = {2}; // 2表示动态输入
     NnopbaseChar outputDesc[] = {1};
     NnopbaseChar attrDesc[] = {};
-    *executor = (NnopbaseExecutor *)NnopbaseGetExecutor(space, opType, inputDesc, 1U, outputDesc, 1U, attrDesc, 0U);
+    *executor = (NnopbaseExecutor*)NnopbaseGetExecutor(space, opType, inputDesc, 1U, outputDesc, 1U, attrDesc, 0U);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(*executor);
 
     // 添加输入输出
@@ -136,8 +135,8 @@ aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(const std::vector<const Ge
     return ret;
 }
 
-aclnnStatus NnopbaseNonFiniteCheckRunWithWorkspace(void *workspace, uint64_t workspaceSize, NnopbaseExecutor *executor,
-                                                   aclrtStream stream)
+aclnnStatus NnopbaseNonFiniteCheckRunWithWorkspace(
+    void* workspace, uint64_t workspaceSize, NnopbaseExecutor* executor, aclrtStream stream)
 {
     const uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000U, __func__, false};
@@ -146,15 +145,14 @@ aclnnStatus NnopbaseNonFiniteCheckRunWithWorkspace(void *workspace, uint64_t wor
     return ret;
 }
 
-aclnnStatus NnopbaseNonFiniteCheckOp(const std::vector<const GertTensor *> &inputs, aclrtStream stream,
-                                     bool &isOverflow)
+aclnnStatus NnopbaseNonFiniteCheckOp(const std::vector<const GertTensor*>& inputs, aclrtStream stream, bool& isOverflow)
 {
-    void *workspace = nullptr;
-    void *outputAddr = nullptr;
+    void* workspace = nullptr;
+    void* outputAddr = nullptr;
     aclrtMallocAttrValue moduleIdValue;
     moduleIdValue.moduleId = kModelId;
-    aclrtMallocAttribute attrs { .attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue };
-    aclrtMallocConfig cfg { .attrs = &attrs, .numAttrs = 1 };
+    aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
+    aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtMallocWithCfg(&outputAddr, sizeof(float), ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg));
     const NnopbaseGuard guard([&workspace, &outputAddr]() {
         if (workspace != nullptr) {
@@ -168,7 +166,7 @@ aclnnStatus NnopbaseNonFiniteCheckOp(const std::vector<const GertTensor *> &inpu
     });
 
     // 调用一、二段接口
-    NnopbaseExecutor *executor = nullptr;
+    NnopbaseExecutor* executor = nullptr;
     uint64_t workspaceSize = 0U;
     NNOPBASE_ASSERT_RTOK_RETVAL(
         NnopbaseNonFiniteCheckRunForWorkspaceSize(inputs, outputAddr, &workspaceSize, &executor));
@@ -180,18 +178,19 @@ aclnnStatus NnopbaseNonFiniteCheckOp(const std::vector<const GertTensor *> &inpu
     // 同步，并查看结果
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtSynchronizeStream(stream));
     float status = 0.0;
-    NNOPBASE_ASSERT_RTOK_RETVAL(aclrtMemcpy(&status, sizeof(float), outputAddr, sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST));
+    NNOPBASE_ASSERT_RTOK_RETVAL(
+        aclrtMemcpy(&status, sizeof(float), outputAddr, sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST));
 
     // 由于计算结果为float，为防止类型转换的精度问题，这里使用0.5作为阈值判别结果
     isOverflow = isOverflow || (status > f05);
     return OK;
 }
 
-std::vector<const GertTensor *> GetNonFiniteCheckInputTensors(const NnopbaseTensors &tensors, const ge::DataType dtype)
+std::vector<const GertTensor*> GetNonFiniteCheckInputTensors(const NnopbaseTensors& tensors, const ge::DataType dtype)
 {
-    std::vector<const GertTensor *> res;
+    std::vector<const GertTensor*> res;
     for (size_t i = 0U; i < tensors.num; i++) {
-        const auto &tensor = tensors.extTensors[i];
+        const auto& tensor = tensors.extTensors[i];
         if (tensor.isNull || tensor.rt2Tensor.GetShapeSize() == 0) {
             OP_LOGD("OutputTensor[%zu] is nullptr or shape size is 0, skip checking.", i);
             continue;
@@ -208,11 +207,11 @@ std::vector<const GertTensor *> GetNonFiniteCheckInputTensors(const NnopbaseTens
 extern "C" {
 #endif
 
-aclnnStatus NnopbaseRunNonFiniteCheckOp(const NnopbaseTensors &tensors, aclrtStream stream, bool &isOverflow)
+aclnnStatus NnopbaseRunNonFiniteCheckOp(const NnopbaseTensors& tensors, aclrtStream stream, bool& isOverflow)
 {
     for (const auto type : supportDtypes) {
         // 由于NonFiniteCheck算子仅支持同样的类型输入，被检测算子输出可能有不同类型，将同样的类型分组分别送入NonFiniteCheck检测
-        const auto &inputs = GetNonFiniteCheckInputTensors(tensors, type);
+        const auto& inputs = GetNonFiniteCheckInputTensors(tensors, type);
         if (!inputs.empty()) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseNonFiniteCheckOp(inputs, stream, isOverflow));
         }

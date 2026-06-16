@@ -7,12 +7,11 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "opdev/data_type_utils.h"
 #include "gtest/gtest.h"
 
-class TestDataTypeUtils : public testing::Test {
-};
+class TestDataTypeUtils : public testing::Test {};
 
 TEST_F(TestDataTypeUtils, TestCanCast)
 {
@@ -24,8 +23,7 @@ TEST_F(TestDataTypeUtils, TestCanCast)
     EXPECT_FALSE(op::CanCast(op::DataType::DT_FLOAT, op::DataType::DT_BOOL));
 }
 
-#define TEST_PROMOTE(typeA, typeB, TypeExpected) \
-    EXPECT_EQ(TypeExpected, op::PromoteType(typeA, typeB))
+#define TEST_PROMOTE(typeA, typeB, TypeExpected) EXPECT_EQ(TypeExpected, op::PromoteType(typeA, typeB))
 
 TEST_F(TestDataTypeUtils, TestPromoteType)
 {
@@ -270,10 +268,7 @@ TEST_F(TestDataTypeUtils, TestPromoteType)
     TEST_PROMOTE(op::DataType::DT_BF16, op::DataType::DT_BF16, op::DataType::DT_BF16);
 }
 
-TEST_F(TestDataTypeUtils, ToDataType)
-{
-    EXPECT_EQ(op::ToDataType("DT_FLOAT16"), op::DataType::DT_FLOAT16);
-}
+TEST_F(TestDataTypeUtils, ToDataType) { EXPECT_EQ(op::ToDataType("DT_FLOAT16"), op::DataType::DT_FLOAT16); }
 
 TEST_F(TestDataTypeUtils, ToString1)
 {

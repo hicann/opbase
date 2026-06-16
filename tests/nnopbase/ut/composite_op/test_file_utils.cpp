@@ -18,7 +18,8 @@
 
 class FileReaderTest : public ::testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         std::filesystem::path tempFile = std::filesystem::temp_directory_path() / "testfile.bin";
         std::ofstream ofs(tempFile, std::ios::out | std::ios::binary);
         ofs.write("testdata", 8);
@@ -26,7 +27,8 @@ protected:
         testFilePath = tempFile;
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         if (!testFilePath.empty()) {
             std::filesystem::remove(testFilePath);
         }
@@ -65,7 +67,7 @@ TEST_F(FileReaderTest, ReadFailedFile)
 
     uint32_t dataLen = 0;
     auto data = op::GetBinFromFile(tempFile.string(), dataLen);
-    
+
     EXPECT_NE(data, nullptr);
 
     std::filesystem::remove(tempFile);

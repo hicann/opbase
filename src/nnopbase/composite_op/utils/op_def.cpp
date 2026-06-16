@@ -27,28 +27,28 @@ using std::string;
 using std::vector;
 
 static std::atomic<uint32_t> opTypeNum = 0;
-static std::mutex opTypeMutex __attribute__ ((init_priority (200)));
-std::unordered_map<std::string, uint32_t> globalOpTypeName2Id__  __attribute__ ((init_priority (201)));
-std::vector<ge::AscendString> globalOpTypeName__ __attribute__ ((init_priority (201)));
-std::unordered_map<std::string, uint32_t> &OpTypeDict::opTypeName2Id_ = globalOpTypeName2Id__;
-std::vector<ge::AscendString> &OpTypeDict::opTypeName_ = globalOpTypeName__;
+static std::mutex opTypeMutex __attribute__((init_priority(200)));
+std::unordered_map<std::string, uint32_t> globalOpTypeName2Id__ __attribute__((init_priority(201)));
+std::vector<ge::AscendString> globalOpTypeName__ __attribute__((init_priority(201)));
+std::unordered_map<std::string, uint32_t>& OpTypeDict::opTypeName2Id_ = globalOpTypeName2Id__;
+std::vector<ge::AscendString>& OpTypeDict::opTypeName_ = globalOpTypeName__;
 
 std::vector<std::vector<std::string>> BinConfigJsonDict::opConfigJsonPath_;
 std::unordered_map<std::string, uint32_t> BinConfigJsonDict::opConfigJsonPath2Id_;
 uint32_t BinConfigJsonDict::transDataId_ = INVALID_OP_TYPE_ID;
-constexpr char const *TRANS_DATA = "TransData";
+constexpr char const* TRANS_DATA = "TransData";
 
-aclnnStatus ReadDirBySuffix(const string &dir, const string &suffix, vector<string> &paths)
+aclnnStatus ReadDirBySuffix(const string& dir, const string& suffix, vector<string>& paths)
 {
-    //GX
-    DIR *dirp = opendir(dir.c_str());
+    // GX
+    DIR* dirp = opendir(dir.c_str());
     if (dirp == nullptr) {
         OP_LOGW("Dir %s is invalid.", dir.c_str());
         return ACLNN_ERR_INNER;
     }
-    struct dirent *dp;
+    struct dirent* dp;
     while ((dp = readdir(dirp)) != nullptr) {
-        const string &fn = string(dp->d_name);
+        const string& fn = string(dp->d_name);
         size_t fnlen = fn.size();
         if (fnlen >= suffix.size() && fn.substr(fnlen - suffix.size()) == suffix) {
             paths.emplace_back(fn);
@@ -58,7 +58,7 @@ aclnnStatus ReadDirBySuffix(const string &dir, const string &suffix, vector<stri
     return ACLNN_SUCCESS;
 }
 
-static std::string GetConfigJsonNameOld(const ge::AscendString &s)
+static std::string GetConfigJsonNameOld(const ge::AscendString& s)
 {
     std::string result;
     size_t letterCountFromLastUnderline = 0;
@@ -83,7 +83,7 @@ static std::string GetConfigJsonNameOld(const ge::AscendString &s)
     return result;
 }
 
-static std::string GetConfigJsonName(const ge::AscendString &s)
+static std::string GetConfigJsonName(const ge::AscendString& s)
 {
     std::string result;
     size_t letterCountFromLastUnderline = 0;
@@ -112,7 +112,7 @@ static std::string GetConfigJsonName(const ge::AscendString &s)
     return result;
 }
 
-aclnnStatus OpTypeDict::Add(uint32_t &id, const char *opName)
+aclnnStatus OpTypeDict::Add(uint32_t& id, const char* opName)
 {
     const std::lock_guard<std::mutex> lock(opTypeMutex);
     if (opTypeName2Id_.find(opName) != opTypeName2Id_.end()) {
@@ -135,14 +135,13 @@ aclnnStatus OpTypeDict::Add(uint32_t &id, const char *opName)
     OP_LOGI("Add op %s with id %u, config json name [%s].\n", opName, id, opConfigFileStr.c_str());
     opTypeName2Id_[opName] = id;
 
-    //compatible with the operator naming rules with old version
+    // compatible with the operator naming rules with old version
     string opConfigFileStrOld(GetConfigJsonNameOld(opTypeName_.back()));
 
-    //updata BinConfigJsonDict
+    // updata BinConfigJsonDict
     std::vector<std::string> configFiles;
     configFiles.emplace_back(opConfigFileStr);
-    if (opConfigFileStrOld != opConfigFileStr)
-    {
+    if (opConfigFileStrOld != opConfigFileStr) {
         configFiles.emplace_back(opConfigFileStrOld);
     }
     BinConfigJsonDict::opConfigJsonPath_.emplace_back(configFiles);
@@ -159,7 +158,7 @@ aclnnStatus OpTypeDict::Add(uint32_t &id, const char *opName)
     return ACLNN_SUCCESS;
 }
 
-uint32_t OpTypeDict::ToOpType(const std::string &opName)
+uint32_t OpTypeDict::ToOpType(const std::string& opName)
 {
     const std::lock_guard<std::mutex> lock(opTypeMutex);
     auto iter = opTypeName2Id_.find(opName);
@@ -178,12 +177,9 @@ const ge::AscendString OpTypeDict::ToString(uint32_t opType)
     return opTypeName_[opType];
 }
 
-size_t OpTypeDict::GetAllOpTypeSize()
-{
-    return static_cast<size_t>(opTypeNum);
-}
+size_t OpTypeDict::GetAllOpTypeSize() { return static_cast<size_t>(opTypeNum); }
 
-uint32_t BinConfigJsonDict::ToOpTypeByConfigJson(const std::string &op_config_json)
+uint32_t BinConfigJsonDict::ToOpTypeByConfigJson(const std::string& op_config_json)
 {
     const std::lock_guard<std::mutex> lock(opTypeMutex);
     auto iter = opConfigJsonPath2Id_.find(op_config_json);
@@ -193,7 +189,7 @@ uint32_t BinConfigJsonDict::ToOpTypeByConfigJson(const std::string &op_config_js
     return iter->second;
 }
 
-void BinConfigJsonDict::UpdateConfigJsonPath(uint32_t opType, const std::string &opFile)
+void BinConfigJsonDict::UpdateConfigJsonPath(uint32_t opType, const std::string& opFile)
 {
     const std::lock_guard<std::mutex> lock(opTypeMutex);
     if (opType < opConfigJsonPath_.size()) {
@@ -214,9 +210,9 @@ std::vector<std::string> GetOpConfigJsonFileName(uint32_t opType)
     return BinConfigJsonDict::opConfigJsonPath_[opType];
 }
 
-aclnnStatus ReadFile2String(const char *filename, string &content)
+aclnnStatus ReadFile2String(const char* filename, string& content)
 {
-    std::FILE *fp = std::fopen(filename, "rb");
+    std::FILE* fp = std::fopen(filename, "rb");
     if (fp == nullptr) {
         return ACLNN_ERR_INNER;
     }
@@ -240,8 +236,7 @@ static const std::map<std::string, OpImplMode> STRING_TO_OP_IMPL_MODE_MAP = {
     {"enable_float32_execution", OpImplMode::IMPL_MODE_ENABLE_FLOAT32_EXECUTION},
     {"enable_hi_float32_execution", OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION},
     {"keep_fp16", OpImplMode::IMPL_MODE_KEEP_FP16},
-    {"default", OpImplMode::IMPL_MODE_DEFAULT}
-};
+    {"default", OpImplMode::IMPL_MODE_DEFAULT}};
 
 static const std::map<OpImplMode, ge::AscendString> OP_IMPL_MODE_TO_STRING_MAP = {
     {OpImplMode::IMPL_MODE_HIGH_PERFORMANCE, ge::AscendString("high_performance")},
@@ -252,10 +247,9 @@ static const std::map<OpImplMode, ge::AscendString> OP_IMPL_MODE_TO_STRING_MAP =
     {OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION, ge::AscendString("enable_hi_float32_execution")},
     {OpImplMode::IMPL_MODE_KEEP_FP16, ge::AscendString("keep_fp16")},
     {OpImplMode::IMPL_MODE_DEFAULT, ge::AscendString("default")},
-    {OpImplMode::IMPL_MODE_RESERVED, ge::AscendString("unknown")}
-};
+    {OpImplMode::IMPL_MODE_RESERVED, ge::AscendString("unknown")}};
 
-OpImplMode ToOpImplMode(const std::string &implModeStr)
+OpImplMode ToOpImplMode(const std::string& implModeStr)
 {
     OpImplMode implMode = OpImplMode::IMPL_MODE_RESERVED;
     auto found = STRING_TO_OP_IMPL_MODE_MAP.find(implModeStr);
@@ -276,7 +270,7 @@ ge::AscendString ToString(OpImplMode implMode)
     return OP_IMPL_MODE_TO_STRING_MAP.at(OpImplMode::IMPL_MODE_RESERVED);
 }
 
-const ge::AscendString &ImplModeToString(OpImplMode implMode)
+const ge::AscendString& ImplModeToString(OpImplMode implMode)
 {
     auto found = OP_IMPL_MODE_TO_STRING_MAP.find(implMode);
     if (found != OP_IMPL_MODE_TO_STRING_MAP.end()) {
@@ -285,10 +279,7 @@ const ge::AscendString &ImplModeToString(OpImplMode implMode)
     return OP_IMPL_MODE_TO_STRING_MAP.at(OpImplMode::IMPL_MODE_RESERVED);
 }
 
-int64_t ToIndex(OpImplMode implMode)
-{
-    return ffs(static_cast<int64_t>(implMode)) - 1;
-}
+int64_t ToIndex(OpImplMode implMode) { return ffs(static_cast<int64_t>(implMode)) - 1; }
 
 wchar_t ToIndexChar(OpImplMode implMode)
 {

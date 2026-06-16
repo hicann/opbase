@@ -15,12 +15,13 @@
 #include "host_sharder.h"
 
 namespace aicpu {
-Device::Device(DeviceType device) : device_(device), sharder_(InitSharder(device)){};
+Device::Device(DeviceType device) : device_(device), sharder_(InitSharder(device)) {};
 
-Device::~Device() {
-  if (sharder_ != nullptr) {
-    delete sharder_;
-  }
+Device::~Device()
+{
+    if (sharder_ != nullptr) {
+        delete sharder_;
+    }
 }
 
 /*
@@ -33,11 +34,12 @@ DeviceType Device::GetDeviceType() const { return device_; }
  * get sharder.
  * @return Sharder *: host or device sharder
  */
-const Sharder *Device::GetSharder() const {
-  if (sharder_ != nullptr) {
-    return sharder_;
-  }
-  return nullptr;
+const Sharder* Device::GetSharder() const
+{
+    if (sharder_ != nullptr) {
+        return sharder_;
+    }
+    return nullptr;
 }
 
 /*
@@ -45,11 +47,12 @@ const Sharder *Device::GetSharder() const {
  * param device: type of device
  * @return Sharder *: not null->success, null->success
  */
-Sharder *Device::InitSharder(DeviceType device_type) const {
-  if (device_type == DEVICE) {
-    return new (std::nothrow) DeviceSharder(device_type);
-  } else {
-    return new (std::nothrow) HostSharder(device_type);
-  }
+Sharder* Device::InitSharder(DeviceType device_type) const
+{
+    if (device_type == DEVICE) {
+        return new (std::nothrow) DeviceSharder(device_type);
+    } else {
+        return new (std::nothrow) HostSharder(device_type);
+    }
 }
-}  // namespace aicpu
+} // namespace aicpu

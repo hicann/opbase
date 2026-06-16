@@ -33,12 +33,9 @@ class RuntimeStub {
         return instance_.get();
     }
 
-    virtual rtError_t rtGeneralCtrl(uintptr_t *ctrl, uint32_t num, uint32_t type)
-    {
-        return RT_ERROR_NONE;
-    }
+    virtual rtError_t rtGeneralCtrl(uintptr_t* ctrl, uint32_t num, uint32_t type) { return RT_ERROR_NONE; }
 
-    virtual rtError_t rtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+    virtual rtError_t rtMemcpy(void* dst, uint64_t destMax, const void* src, uint64_t count, rtMemcpyKind_t kind)
     {
         if (kind != RT_MEMCPY_DEVICE_TO_HOST) {
             memcpy(dst, src, count);
@@ -50,28 +47,24 @@ class RuntimeStub {
         return RT_ERROR_NONE;
     }
 
-    virtual rtError_t rtKernelLaunchWithHandleV2(void *hdl, const uint64_t tilingKey, uint32_t blockDim, rtArgsEx_t *argsInfo,
-        rtSmDesc_t *smDesc, rtStream_t stm, const rtTaskCfgInfo_t *cfgInfo)
+    virtual rtError_t rtKernelLaunchWithHandleV2(
+        void* hdl, const uint64_t tilingKey, uint32_t blockDim, rtArgsEx_t* argsInfo, rtSmDesc_t* smDesc,
+        rtStream_t stm, const rtTaskCfgInfo_t* cfgInfo)
     {
         return RT_ERROR_NONE;
     }
 
-    virtual rtError_t rtsGetResInCurrentThread(const rtDevResLimitType_t type, uint32_t *const value)
+    virtual rtError_t rtsGetResInCurrentThread(const rtDevResLimitType_t type, uint32_t* const value)
     {
         *value = 24;
         return RT_ERROR_NONE;
     }
 
-    void Install(RuntimeStub* instance)
-    {
-        fake_instance_ = instance;
-    }
+    void Install(RuntimeStub* instance) { fake_instance_ = instance; }
 
-    void UnInstall() {
-        fake_instance_ = nullptr;
-    }
+    void UnInstall() { fake_instance_ = nullptr; }
 
-  private:
+private:
     thread_local static std::shared_ptr<RuntimeStub> instance_;
     thread_local static RuntimeStub* fake_instance_;
 };

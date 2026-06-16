@@ -47,13 +47,11 @@ protected:
         HiFloat4 result(tc.input);
 
         // 验证位表示
-        EXPECT_EQ(result.value, tc.expected_bits)
-            << "Input: " << tc.input << ", Desc: " << tc.description;
+        EXPECT_EQ(result.value, tc.expected_bits) << "Input: " << tc.input << ", Desc: " << tc.description;
 
         // 验证转换值
         float actual = static_cast<float>(result);
-        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance)
-            << "Desc: " << tc.description;
+        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance) << "Desc: " << tc.description;
     }
 };
 
@@ -72,15 +70,15 @@ TEST_F(HiFloat4Benchmark, NegativeValues)
 {
     // 负值：最高位为符号位
     HiFloat4 neg_quarter(-0.25f);
-    EXPECT_EQ(neg_quarter.value, 0x9);  // 1 0 01
+    EXPECT_EQ(neg_quarter.value, 0x9); // 1 0 01
     EXPECT_FLOAT_EQ(static_cast<float>(neg_quarter), -0.25f);
 
     HiFloat4 neg_one(-1.0f);
-    EXPECT_EQ(neg_one.value, 0xC);  // 1 1 00
+    EXPECT_EQ(neg_one.value, 0xC); // 1 1 00
     EXPECT_FLOAT_EQ(static_cast<float>(neg_one), -1.0f);
 
     HiFloat4 neg_max(-1.75f);
-    EXPECT_EQ(neg_max.value, 0xF);  // 1 1 11
+    EXPECT_EQ(neg_max.value, 0xF); // 1 1 11
     EXPECT_FLOAT_EQ(static_cast<float>(neg_max), -1.75f);
 }
 
@@ -114,7 +112,7 @@ TEST_F(HiFloat4Benchmark, NaNClampToMax)
     // HiFloat4 没有 NaN，输入 NaN 应 clamp 到最大值
     HiFloat4 nan_val(std::nanf(""));
     float result = static_cast<float>(nan_val);
-    EXPECT_FLOAT_EQ(result, 1.75f);  // 正 NaN -> +max
+    EXPECT_FLOAT_EQ(result, 1.75f); // 正 NaN -> +max
 }
 
 TEST_F(HiFloat4Benchmark, InfinityClampToMax)
@@ -186,7 +184,7 @@ TEST_F(HiFloat4Benchmark, ZeroSignHandling)
     EXPECT_TRUE(pos_zero.IsZero());
 
     HiFloat4 neg_zero(-0.0f);
-    EXPECT_EQ(neg_zero.value, 0x8);  // 符号位为 1
+    EXPECT_EQ(neg_zero.value, 0x8); // 符号位为 1
     EXPECT_TRUE(neg_zero.IsZero());
 }
 

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <fstream>
 #include <string>
 #include <thread>
@@ -28,11 +28,11 @@
 namespace op {
 namespace internal {
 using std::ifstream;
+using std::map;
 using std::pair;
 using std::string;
 using std::stringstream;
 using std::vector;
-using std::map;
 
 using json = nlohmann::json;
 
@@ -44,9 +44,9 @@ constexpr const char* DEBUG_CONFIG_JSON_PATH = "/debug_kernel/config/";
 constexpr const char* DEBUG_CONFIG_FILE_NAME = "binary_info_config.json";
 constexpr const char* DEBUG_BIN_AND_JSON_DIR_PATH = "/debug_kernel/";
 
-KernelMgr &gKernelMgr = KernelMgr::getInstance();
+KernelMgr& gKernelMgr = KernelMgr::getInstance();
 
-static void StrSplit(const std::string &src, std::vector<std::string> &dst, const string &sep)
+static void StrSplit(const std::string& src, std::vector<std::string>& dst, const string& sep)
 {
     std::string strs = src + sep;
     size_t pos = strs.find(sep);
@@ -61,15 +61,14 @@ static void StrSplit(const std::string &src, std::vector<std::string> &dst, cons
     }
 }
 
-OpKernel *KernelMgr::GetKernel(uint32_t opType)
+OpKernel* KernelMgr::GetKernel(uint32_t opType)
 {
     if (opType >= OpTypeDict::GetAllOpTypeSize() || opType == 0 || opType >= kernel_.size()) {
-        OP_LOGE(ACLNN_ERR_INNER, "Op type [%u, %s] is invalid.",
-                opType, op::OpTypeDict::ToString(opType).GetString());
+        OP_LOGE(ACLNN_ERR_INNER, "Op type [%u, %s] is invalid.", opType, op::OpTypeDict::ToString(opType).GetString());
         return nullptr;
     }
     OP_LOGD("Found kernel of op type %s.", op::OpTypeDict::ToString(opType).GetString());
-    auto &kernel = kernel_[opType];
+    auto& kernel = kernel_[opType];
     kernel.SetOpType(opType);
     return &kernel;
 }
@@ -78,11 +77,12 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
 {
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load static bin json", "ASCEND_OPP_PATH"),
-             return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS && !oppRealPath.empty(),
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load static bin json", "ASCEND_OPP_PATH"),
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string configJsonPath = oppRealPath;
-    auto &knlLib = OpKernelLib::GetInstance();
+    auto& knlLib = OpKernelLib::GetInstance();
     configJsonPath.append(STATIC_CONFIG_JSON_PATH);
     configJsonPath.append(knlLib.GetSocPath());
     configJsonPath.append(STATIC_CONFIG_FILE_NAME);
@@ -91,7 +91,7 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
     ifstream f(configJsonPath);
     try {
         staticConfigJson_ = nlohmann::json::parse(f);
-    } catch (nlohmann::json::exception &e) {
+    } catch (nlohmann::json::exception& e) {
         OP_LOGW("Cannot parse static json for config file [%s] because %s.", configJsonPath.c_str(), e.what());
         return ACLNN_SUCCESS;
     }
@@ -102,11 +102,12 @@ aclnnStatus KernelMgr::LoadDebugStaticBinJson()
 {
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load debug static bin json", "ASCEND_OPP_PATH"),
-             return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS && !oppRealPath.empty(),
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load debug static bin json", "ASCEND_OPP_PATH"),
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string debugConfigJsonPath = oppRealPath;
-    auto &knlLib = OpKernelLib::GetInstance();
+    auto& knlLib = OpKernelLib::GetInstance();
     debugConfigJsonPath.append(DEBUG_CONFIG_JSON_PATH);
     debugConfigJsonPath.append(knlLib.GetSocPath());
     debugConfigJsonPath.append(DEBUG_CONFIG_FILE_NAME);
@@ -115,7 +116,7 @@ aclnnStatus KernelMgr::LoadDebugStaticBinJson()
     ifstream f(debugConfigJsonPath);
     try {
         debugStaticConfigJson_ = nlohmann::json::parse(f);
-    } catch (nlohmann::json::exception &e) {
+    } catch (nlohmann::json::exception& e) {
         OP_LOGW("Cannot parse static json for config file [%s] because %s.", debugConfigJsonPath.c_str(), e.what());
         return ACLNN_SUCCESS;
     }
@@ -125,8 +126,8 @@ aclnnStatus KernelMgr::LoadDebugStaticBinJson()
 aclnnStatus KernelMgr::ParseStaticKernelConfig(uint32_t opType)
 {
     CHECK_RET(opType < MAX_OP_TYPE_COUNT, ACLNN_ERR_PARAM_INVALID);
-    auto &kernel = kernel_[opType];
-    const string &opTypeStr = kernel.GetOpTypeStr();
+    auto& kernel = kernel_[opType];
+    const string& opTypeStr = kernel.GetOpTypeStr();
     OP_LOGD("Parse kernel %s", opTypeStr.c_str());
     auto opIter = staticConfigJson_.find(opTypeStr);
     if (opIter == staticConfigJson_.end() || opIter->is_null()) {
@@ -147,21 +148,22 @@ aclnnStatus KernelMgr::ParseStaticKernelConfig(uint32_t opType)
         if (opDebugIter == debugStaticConfigJson_.end() || opDebugIter->is_null()) {
             return ACLNN_SUCCESS;
         }
-        OP_LOGI("Start to parse debug static kernel for %s, bin and json dir is %s.",
-                opTypeStr.c_str(), debugStaticBinAndJsonDir_.c_str());
+        OP_LOGI(
+            "Start to parse debug static kernel for %s, bin and json dir is %s.", opTypeStr.c_str(),
+            debugStaticBinAndJsonDir_.c_str());
         kernel.AppendStaticBin(*opDebugIter, debugStaticBinAndJsonDir_);
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelMgr::ParseDynamicKernelInStaticLib(const string &configFileName)
+aclnnStatus KernelMgr::ParseDynamicKernelInStaticLib(const string& configFileName)
 {
     auto opType = op::BinConfigJsonDict::ToOpTypeByConfigJson(configFileName);
     if (opType >= op::OpTypeDict::GetAllOpTypeSize() || opType == 0) {
         OP_LOGD("Cannot find op type for config json %s.", configFileName.c_str());
         return ACLNN_ERR_INNER;
     }
-    auto &kernel = kernel_[opType];
+    auto& kernel = kernel_[opType];
     kernel.SetOpType(opType);
     ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
     kernel.SetOpType(opTypeAscendStr.GetString());
@@ -173,14 +175,15 @@ aclnnStatus KernelMgr::ParseDynamicKernelInStaticLib(const string &configFileNam
         ret == ACLNN_SUCCESS, OP_LOGW("No builtin op desc info [%s]", opTypeAscendStr.GetString()),
         return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
     ret = kernel.AppendDynBin("", "", false);
-    OP_CHECK(ret == ACLNN_SUCCESS,
-             OP_LOGW("Failed to append dynamic kernel from static lib, op name: %s.", opTypeAscendStr.GetString()),
-             return ACLNN_ERR_INNER);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS,
+        OP_LOGW("Failed to append dynamic kernel from static lib, op name: %s.", opTypeAscendStr.GetString()),
+        return ACLNN_ERR_INNER);
     OP_LOGI("Successfully parse dynamic kernel from static lib, op name: %s.", opTypeAscendStr.GetString());
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &configFileNames)
+aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string>& configFileNames)
 {
     for (size_t i = 0; i < customConfigDirs_.size(); i++) {
         for (const auto& fileName : configFileNames) {
@@ -190,8 +193,7 @@ aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &
                 OP_LOGI("json file path [%s] is invalid or does not exist, continue next priority", jsonFile.c_str());
                 continue;
             }
-            auto ret =
-                ParseDynamicKernelConfig(customConfigDirs_[i], customBinAndJsonDirs_[i], fileName, "", false);
+            auto ret = ParseDynamicKernelConfig(customConfigDirs_[i], customBinAndJsonDirs_[i], fileName, "", false);
             if (ret == ACLNN_SUCCESS) {
                 OP_LOGI("Parse dynamic kernel config success, file path: %s", realJsonFile.c_str());
                 return ACLNN_SUCCESS;
@@ -225,9 +227,9 @@ aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &
     return ACLNN_ERR_INNER;
 }
 
-aclnnStatus KernelMgr::ParseDynamicKernelConfig(const string &configDir, const string &binJsonDir,
-                                                const string &configFileName, const string &opsRepoName,
-                                                bool debug = false)
+aclnnStatus KernelMgr::ParseDynamicKernelConfig(
+    const string& configDir, const string& binJsonDir, const string& configFileName, const string& opsRepoName,
+    bool debug = false)
 {
     auto suffixPos = configFileName.find(JSON_SUFFIX);
     if (suffixPos == string::npos) {
@@ -241,23 +243,25 @@ aclnnStatus KernelMgr::ParseDynamicKernelConfig(const string &configDir, const s
         return ACLNN_ERR_INNER;
     }
 
-    auto &kernel = kernel_[opType];
+    auto& kernel = kernel_[opType];
     kernel.SetOpType(opType);
     ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
     kernel.SetOpType(opTypeAscendStr.GetString());
     kernel.SetOpsRepoName(opsRepoName);
-    OP_LOGD("Set op type for kernel %u %s%s/%s", opType, configDir.c_str(), opsRepoName.c_str(), configFileName.c_str());
+    OP_LOGD(
+        "Set op type for kernel %u %s%s/%s", opType, configDir.c_str(), opsRepoName.c_str(), configFileName.c_str());
     auto ret = kernel.AppendDynBin(configDir + opsRepoName + "/" + configFileName, binJsonDir, debug);
-    OP_CHECK(ret == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "Failed to parse kernel in %s.", configFileName.c_str()),
-             return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "Failed to parse kernel in %s.", configFileName.c_str()),
+        return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
     OP_LOGI("Successfully parse kernel in %s.", configFileName.c_str());
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &configDir,
-                                                const std::vector<std::string> &binJsonDir,
-                                                const std::vector<std::string> &configFileNames)
+aclnnStatus KernelMgr::ParseDynamicKernelConfig(
+    const std::vector<std::string>& configDir, const std::vector<std::string>& binJsonDir,
+    const std::vector<std::string>& configFileNames)
 {
     for (size_t i = 0; i < configDir.size(); i++) {
         for (size_t j = 0; j < configFileNames.size(); j++) {
@@ -285,13 +289,13 @@ aclnnStatus KernelMgr::ParseDynamicKernelConfig(const std::vector<std::string> &
 
 void KernelMgr::GetDirPath()
 {
-    auto &knlLib = OpKernelLib::GetInstance();
+    auto& knlLib = OpKernelLib::GetInstance();
     static bool isDirsInited = false;
     if (!isDirsInited) {
         // append custom opp path
         std::vector<std::string> customImplPath = knlLib.GetCustomImplPath();
         if (!customImplPath.empty()) {
-            for (const auto &element : customImplPath) {
+            for (const auto& element : customImplPath) {
                 OP_LOGI("add custom opp path: %s", element.c_str());
                 customConfigDirs_.emplace_back(element + DYN_KERNEL_CONFIG_PATH + knlLib.GetSocPath());
                 customBinAndJsonDirs_.emplace_back(element + DYN_BIN_AND_JSON_PATH);
@@ -301,7 +305,7 @@ void KernelMgr::GetDirPath()
         // append opp vendors
         std::vector<std::string> configImplPath = knlLib.GetConfigImplPath();
         if (!configImplPath.empty()) {
-            for (const auto &element : configImplPath) {
+            for (const auto& element : configImplPath) {
                 OP_LOGI("add vector config.imi opp path: %s", element.c_str());
                 customConfigDirs_.emplace_back(element + DYN_KERNEL_CONFIG_PATH + knlLib.GetSocPath());
                 customBinAndJsonDirs_.emplace_back(element + DYN_BIN_AND_JSON_PATH);
@@ -316,9 +320,9 @@ void KernelMgr::GetDirPath()
 
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-            OP_LOGW("opp kernel real path can not be found. ret %d", ret),
-            return);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS && !oppRealPath.empty(), OP_LOGW("opp kernel real path can not be found. ret %d", ret),
+        return);
     if (debugConfigDir_.empty()) {
         debugConfigDir_ = oppRealPath;
         debugConfigDir_ += DYN_DEBUG_KERNEL_CONFIG_PATH;
@@ -331,9 +335,10 @@ void KernelMgr::GetDirPath()
     }
 }
 
-static aclnnStatus PrintConfigJsonOpsFolders(std::vector<std::string> &folders) {
+static aclnnStatus PrintConfigJsonOpsFolders(std::vector<std::string>& folders)
+{
     std::string foldersName = "";
-    for (auto &folder : folders) {
+    for (auto& folder : folders) {
         foldersName += "[" + folder + "],";
     }
     OP_LOGI("Config json ops folders: %s", foldersName.c_str());
@@ -345,12 +350,12 @@ void KernelMgr::GetConfigJsonOpsFolders()
     static std::once_flag foldersInitFlag;
     std::call_once(foldersInitFlag, [&]() {
         configJsonOpsFolders_.emplace_back("");
-        DIR *curDir = opendir(builtInConfigDir_.c_str());
+        DIR* curDir = opendir(builtInConfigDir_.c_str());
         if (curDir == nullptr) {
             OP_LOGW("The built-in config dir [%s] is invalid.", builtInConfigDir_.c_str());
             return;
         }
-        struct dirent *entry;
+        struct dirent* entry;
         bool hasLegacyFold = false;
         const std::string legacyFolderName = "ops_legacy";
         while ((entry = readdir(curDir)) != nullptr) {
@@ -370,8 +375,9 @@ void KernelMgr::GetConfigJsonOpsFolders()
         }
         closedir(curDir);
     });
-    OP_LOGI("The built-in config dir: %s, print folders result: %d",
-            builtInConfigDir_.c_str(), PrintConfigJsonOpsFolders(configJsonOpsFolders_));
+    OP_LOGI(
+        "The built-in config dir: %s, print folders result: %d", builtInConfigDir_.c_str(),
+        PrintConfigJsonOpsFolders(configJsonOpsFolders_));
 }
 
 aclnnStatus KernelMgr::Prepare()
@@ -414,7 +420,8 @@ aclnnStatus KernelMgr::ParseDynamicKernels(uint32_t opType)
         return ACLNN_SUCCESS;
     }
     if (enableDebug) {
-        OP_LOGI("Start to parse debug kernel, debugStaticBinAndJsonDir is %s, debugDynBinAndJsonDir is %s.",
+        OP_LOGI(
+            "Start to parse debug kernel, debugStaticBinAndJsonDir is %s, debugDynBinAndJsonDir is %s.",
             debugStaticBinAndJsonDir_.c_str(), debugDynBinAndJsonDir_.c_str());
 
         for (size_t i = 0; i < configFileNames.size(); i++) {
@@ -426,12 +433,12 @@ aclnnStatus KernelMgr::ParseDynamicKernels(uint32_t opType)
             }
             try {
                 auto j = nlohmann::json::parse(f);
-            } catch (nlohmann::json::exception &e) {
+            } catch (nlohmann::json::exception& e) {
                 OP_LOGW("Cannot parse debug json for config file [%s].", jsonPath.c_str());
                 continue;
             }
-            ret = internal::gKernelMgr.ParseDynamicKernelConfig(debugConfigDir_, 
-                    debugDynBinAndJsonDir_, configFileNames[i], "", true);
+            ret = internal::gKernelMgr.ParseDynamicKernelConfig(
+                debugConfigDir_, debugDynBinAndJsonDir_, configFileNames[i], "", true);
             if (ret == ACLNN_SUCCESS) {
                 return ACLNN_SUCCESS;
             }
@@ -451,8 +458,9 @@ aclnnStatus KernelMgr::AclOpKernelInit(uint32_t opType)
 {
     // init_ change name to initDynKernelFlags_. 2025.7.8
     if (opType >= MAX_OP_TYPE_COUNT) {
-        OP_LOGD("Op type %u %s is larger than %zu has been initialized.",
-                opType, OpTypeDict::ToString(opType).GetString(), MAX_OP_TYPE_COUNT);
+        OP_LOGD(
+            "Op type %u %s is larger than %zu has been initialized.", opType, OpTypeDict::ToString(opType).GetString(),
+            MAX_OP_TYPE_COUNT);
         return ACLNN_SUCCESS;
     }
 
@@ -475,8 +483,7 @@ aclnnStatus KernelMgr::AclOpKernelInit(uint32_t opType)
     std::call_once(opFlag[opType], [&]() { rc = OpKernelLib::GetInstance().ParseKernelLibInfos(opType); });
     CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseKernelLibInfos.");
 
-    std::call_once(initDynKernelFlags_[opType],
-        [&]() { rc = internal::gKernelMgr.ParseDynamicKernels(opType); });
+    std::call_once(initDynKernelFlags_[opType], [&]() { rc = internal::gKernelMgr.ParseDynamicKernels(opType); });
     CHECK_COND(rc == ACLNN_SUCCESS, rc, "Failed to ParseDynamicKernels.");
 
     initStaticKernelFlags_[opType].CallOnce([&]() { rc = internal::gKernelMgr.ParseStaticKernels(opType); });
@@ -487,18 +494,16 @@ aclnnStatus KernelMgr::AclOpKernelInit(uint32_t opType)
 
 aclnnStatus OpKernelBin::JsonLoad()
 {
-    auto f = [this](nlohmann::json &jsonObj) -> aclnnStatus {
-        return JsonLoadImpl(jsonObj);
-    };
+    auto f = [this](nlohmann::json& jsonObj) -> aclnnStatus { return JsonLoadImpl(jsonObj); };
     return binJson_.InitVar(f);
 }
 
-aclnnStatus OpKernelBin::GetBinJson(nlohmann::json &jsonObj)
+aclnnStatus OpKernelBin::GetBinJson(nlohmann::json& jsonObj)
 {
-    (void) jsonObj;
+    (void)jsonObj;
     std::tuple<nlohmann::json, nnopbase::Binary> binInfo;
-    auto ret = nnopbase::OpBinaryResourceManager::GetInstance().
-        GetOpBinaryDescByPath(relativeJsonPath_.c_str(), binInfo);
+    auto ret =
+        nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDescByPath(relativeJsonPath_.c_str(), binInfo);
     if (ret == ACLNN_SUCCESS) {
         OP_LOGI("Get builtin op kernel bin json [%s]", jsonPath_.c_str());
         jsonObj = std::get<0>(binInfo);
@@ -508,21 +513,20 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json &jsonObj)
     OP_LOGW("No builtin op kernel bin json [%s]", relativeJsonPath_.c_str());
 
     const std::string realJsonPath = RealPath(jsonPath_);
-    const std::string &openPath = realJsonPath.empty() ? jsonPath_ : realJsonPath;
+    const std::string& openPath = realJsonPath.empty() ? jsonPath_ : realJsonPath;
     std::ifstream f(openPath);
-    OP_CHECK(f.is_open(),
-        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), strerror(errno)),
-        return ACLNN_ERR_INNER);
+    OP_CHECK(
+        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), strerror(errno)), return ACLNN_ERR_INNER);
     try {
         jsonObj = json::parse(f);
-    } catch (nlohmann::json::exception &e) {
+    } catch (nlohmann::json::exception& e) {
         OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(jsonPath_.c_str(), e.what());
         return ACLNN_ERR_INNER;
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernelBin::JsonLoadImpl(nlohmann::json &jsonObj)
+aclnnStatus OpKernelBin::JsonLoadImpl(nlohmann::json& jsonObj)
 {
     auto ret = GetBinJson(jsonObj);
     CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Failed to get op kernel bin json [%s]", jsonPath_.c_str());
@@ -566,9 +570,9 @@ aclnnStatus OpKernelBin::JsonLoadImpl(nlohmann::json &jsonObj)
 
     if (jsonObj.contains("kernelList")) {
         isFatbin_ = true;
-        for (const auto &elem : jsonObj["kernelList"]) {
+        for (const auto& elem : jsonObj["kernelList"]) {
             if (elem.contains("coreType") && elem["coreType"] == "MIX" && elem.contains("kernelName")) {
-                const auto &kernelName = elem["kernelName"];
+                const auto& kernelName = elem["kernelName"];
                 std::vector<std::string> parts;
                 StrSplit(kernelName, parts, "_");
                 if (parts.size() > 1) {

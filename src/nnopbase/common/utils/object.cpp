@@ -14,32 +14,19 @@
 
 namespace op {
 
-void *Object::operator new(size_t size) throw()
+void* Object::operator new(size_t size) throw() { return op::internal::Allocate(size); }
+void* Object::operator new[](size_t size) throw() { return op::internal::Allocate(size); }
+
+void* Object::operator new(size_t size, [[maybe_unused]] const std::nothrow_t& tag) throw()
 {
     return op::internal::Allocate(size);
 }
-void *Object::operator new[](size_t size) throw()
+void* Object::operator new[](size_t size, [[maybe_unused]] const std::nothrow_t& tag) throw()
 {
     return op::internal::Allocate(size);
 }
 
-void *Object::operator new(size_t size, [[maybe_unused]] const std::nothrow_t &tag) throw()
-{
-    return op::internal::Allocate(size);
-}
-void *Object::operator new[](size_t size, [[maybe_unused]] const std::nothrow_t &tag) throw()
-{
-    return op::internal::Allocate(size);
-}
-
-void Object::operator delete(void *addr)
-{
-    op::internal::DeAllocate(addr);
-}
-void Object::operator delete[](void *addr)
-{
-    op::internal::DeAllocate(addr);
-}
+void Object::operator delete(void* addr) { op::internal::DeAllocate(addr); }
+void Object::operator delete[](void* addr) { op::internal::DeAllocate(addr); }
 
 } // namespace op
-

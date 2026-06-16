@@ -16,8 +16,9 @@
 extern "C" {
 #endif
 
-aclnnStatus NnopbaseSetRefTensorAddr(NnopbaseExecutor *executor, const size_t index, const void *const addr,
-    const std::vector<NnopbaseParamInstance> &inInstances, const std::vector<NnopbaseParamInstance> &outInstances)
+aclnnStatus NnopbaseSetRefTensorAddr(
+    NnopbaseExecutor* executor, const size_t index, const void* const addr,
+    const std::vector<NnopbaseParamInstance>& inInstances, const std::vector<NnopbaseParamInstance>& outInstances)
 {
     if (inInstances.size() != 0U) {
         int64_t irIndex = inInstances.size() - 1;
@@ -27,11 +28,10 @@ aclnnStatus NnopbaseSetRefTensorAddr(NnopbaseExecutor *executor, const size_t in
                     size_t offset = index - inInstances[irIndex].startIndex;
                     size_t outputIrIndex = inInstances[irIndex].refIdx;
                     size_t outputStartIndex = outInstances[outputIrIndex].startIndex;
-                    CHECK_COND(NnopbaseSetOutputTensorAddr(executor, outputStartIndex + offset, addr) == OK,
-                        ACLNN_ERR_PARAM_INVALID,
-                        "Set output addr failed, outputStartIndex[%zu], offset[%zu].",
-                        outputStartIndex,
-                        offset);
+                    CHECK_COND(
+                        NnopbaseSetOutputTensorAddr(executor, outputStartIndex + offset, addr) == OK,
+                        ACLNN_ERR_PARAM_INVALID, "Set output addr failed, outputStartIndex[%zu], offset[%zu].",
+                        outputStartIndex, offset);
                 }
                 break;
             }
@@ -40,28 +40,26 @@ aclnnStatus NnopbaseSetRefTensorAddr(NnopbaseExecutor *executor, const size_t in
     return OK;
 }
 
-aclnnStatus NnopbaseUpdateDynamicTensors(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors, uint32_t index)
+aclnnStatus NnopbaseUpdateDynamicTensors(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors, uint32_t index)
 {
     const uint32_t startIndex = dstTensors->paramDescs.instances[index].startIndex;
     const uint32_t dynamicNum = dstTensors->paramDescs.instances[index].num;
     const uint32_t tensorListSize = static_cast<uint32_t>(tensors->paramDescs.instances[index].tensorList->Size());
-    CHECK_COND((dynamicNum == tensorListSize),
-        ACLNN_ERR_PARAM_INVALID,
-        "Update dynamic tensor[%u] failed, instance num is %u, tensorListSize is %u.",
-        index,
-        dynamicNum,
+    CHECK_COND(
+        (dynamicNum == tensorListSize), ACLNN_ERR_PARAM_INVALID,
+        "Update dynamic tensor[%u] failed, instance num is %u, tensorListSize is %u.", index, dynamicNum,
         tensorListSize);
     for (uint32_t j = 0U; j < dynamicNum; j++) {
         NNOPBASE_ASSERT_OK_RETVAL(dstTensors->extTensors[startIndex + j].rt2Tensor.MutableTensorData().SetAddr(
             (*tensors->paramDescs.instances[index].tensorList)[j]->GetData(), nullptr));
-        OP_LOGI("Update dynamic tensor[%u] addr %p successfully.",
-            startIndex + j,
+        OP_LOGI(
+            "Update dynamic tensor[%u] addr %p successfully.", startIndex + j,
             dstTensors->extTensors[startIndex + j].rt2Tensor.GetAddr());
     }
     return OK;
 }
 
-static aclnnStatus NnopbaseUpdateScalarAddr(NnopbaseExecutor *executor, const aclScalar *scalar, const uint32_t index)
+static aclnnStatus NnopbaseUpdateScalarAddr(NnopbaseExecutor* executor, const aclScalar* scalar, const uint32_t index)
 {
     ge::DataType dataType = scalar->GetDataType();
     ge::DataType dtype = executor->args->inputs.paramDescs.instances[index].scalarDtype;
@@ -73,7 +71,8 @@ static aclnnStatus NnopbaseUpdateScalarAddr(NnopbaseExecutor *executor, const ac
         dataType = dtype;
     }
 
-    auto rt2Tensor = &executor->args->inputs.extTensors[executor->args->inputs.paramDescs.instances[index].startIndex].rt2Tensor;
+    auto rt2Tensor =
+        &executor->args->inputs.extTensors[executor->args->inputs.paramDescs.instances[index].startIndex].rt2Tensor;
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
     if (scalar->GetDataType() == ge::DataType::DT_DOUBLE) {
         dataType = ge::DataType::DT_FLOAT;
@@ -96,7 +95,7 @@ static aclnnStatus NnopbaseUpdateScalarAddr(NnopbaseExecutor *executor, const ac
 }
 
 static aclnnStatus NnopbaseUpdateScalarListAddr(
-    NnopbaseExecutor *executor, const aclScalarList *scalarList, const uint32_t index)
+    NnopbaseExecutor* executor, const aclScalarList* scalarList, const uint32_t index)
 {
     const int32_t srcIndex = executor->args->inputs.paramDescs.instances[index].srcIndex;
     ge::DataType dtype = executor->args->inputs.paramDescs.instances[index].scalarDtype;
@@ -107,7 +106,8 @@ static aclnnStatus NnopbaseUpdateScalarListAddr(
     } else if (dtype != ge::DT_UNDEFINED) {
         dataType = dtype;
     }
-    auto rt2Tensor = &executor->args->inputs.extTensors[executor->args->inputs.paramDescs.instances[index].startIndex].rt2Tensor;
+    auto rt2Tensor =
+        &executor->args->inputs.extTensors[executor->args->inputs.paramDescs.instances[index].startIndex].rt2Tensor;
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
 
     const size_t elementSize = op::TypeSize(dataType);
@@ -117,7 +117,8 @@ static aclnnStatus NnopbaseUpdateScalarListAddr(
         NNOPBASE_ASSERT_NOTNULL_RETVAL((*scalarList)[i]);
         if ((*scalarList)[i]->GetDataType() == ge::DataType::DT_DOUBLE) {
             dataType = ge::DataType::DT_FLOAT;
-            *op::internal::PtrCastTo<float>(executor->args->inputs.paramDescs.instances[index].scalarValue.data() + offset) =
+            *op::internal::PtrCastTo<float>(
+                executor->args->inputs.paramDescs.instances[index].scalarValue.data() + offset) =
                 (*scalarList)[i]->ToFloat();
             offset += op::TypeSize(ge::DataType::DT_FLOAT);
         } else if ((*scalarList)[i]->GetDataType() != dataType) {
@@ -126,21 +127,22 @@ static aclnnStatus NnopbaseUpdateScalarListAddr(
             offset += op::TypeSize(dataType);
         } else {
             NNOPBASE_ASSERT_TRUE_RETVAL(
-                memcpy_s(executor->args->inputs.paramDescs.instances[index].scalarValue.data() + offset,
-                    tensorSize - offset, (*scalarList)[i]->GetData(), elementSize) == EOK);
+                memcpy_s(
+                    executor->args->inputs.paramDescs.instances[index].scalarValue.data() + offset, tensorSize - offset,
+                    (*scalarList)[i]->GetData(), elementSize) == EOK);
             offset += elementSize;
         }
     }
-    NNOPBASE_ASSERT_OK_RETVAL(
-        rt2Tensor->MutableTensorData().SetAddr(executor->args->inputs.paramDescs.instances[index].scalarValue.data(), nullptr));
+    NNOPBASE_ASSERT_OK_RETVAL(rt2Tensor->MutableTensorData().SetAddr(
+        executor->args->inputs.paramDescs.instances[index].scalarValue.data(), nullptr));
     OP_LOGI("Update scalarList[%u] addr successfully.", index);
     return OK;
 }
 
-static aclnnStatus NnopbaseSetRt2Tensor(NnopbaseTensor *dstTensors, NnopbaseTensor *srcTensor)
+static aclnnStatus NnopbaseSetRt2Tensor(NnopbaseTensor* dstTensors, NnopbaseTensor* srcTensor)
 {
-    GertTensor *dstRt2Tensor = &dstTensors->rt2Tensor;
-    GertTensor *srcRt2Tensor = &srcTensor->rt2Tensor;
+    GertTensor* dstRt2Tensor = &dstTensors->rt2Tensor;
+    GertTensor* srcRt2Tensor = &srcTensor->rt2Tensor;
     dstRt2Tensor->MutableOriginShape() = srcRt2Tensor->MutableOriginShape();
     dstRt2Tensor->MutableStorageShape() = srcRt2Tensor->MutableStorageShape();
     dstRt2Tensor->SetDataType(srcRt2Tensor->GetDataType());
@@ -154,7 +156,7 @@ static aclnnStatus NnopbaseSetRt2Tensor(NnopbaseTensor *dstTensors, NnopbaseTens
     return OK;
 }
 
-static void NnopbaseSaveParamDesc(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors)
+static void NnopbaseSaveParamDesc(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors)
 {
     dstTensors->paramDescs.emptyNum = tensors->paramDescs.emptyNum;
     dstTensors->paramDescs.activeInputCount = tensors->paramDescs.activeInputCount;
@@ -174,7 +176,7 @@ static void NnopbaseSaveParamDesc(NnopbaseTensors *dstTensors, NnopbaseTensors *
     }
 }
 
-aclnnStatus NnopbaseSaveCachedTensor(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors, bool isInput)
+aclnnStatus NnopbaseSaveCachedTensor(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors, bool isInput)
 {
     NnopbaseSaveParamDesc(dstTensors, tensors);
     dstTensors->usedNum = tensors->usedNum;
@@ -208,7 +210,7 @@ aclnnStatus NnopbaseSaveCachedTensor(NnopbaseTensors *dstTensors, NnopbaseTensor
     return OK;
 }
 
-void NnopbaseSetCachedInfo(NnopbaseExecutor *executor)
+void NnopbaseSetCachedInfo(NnopbaseExecutor* executor)
 {
     executor->workspaces.num = executor->args->workspaceNum;
     executor->workspaces.length = executor->args->workspaceLen;
@@ -216,10 +218,10 @@ void NnopbaseSetCachedInfo(NnopbaseExecutor *executor)
     executor->hasMemset = executor->args->hasMemset;
 }
 
-aclnnStatus NnopbaseUpdateInputAddr(NnopbaseExecutor *executor)
+aclnnStatus NnopbaseUpdateInputAddr(NnopbaseExecutor* executor)
 {
-    auto &dstTensors = executor->args->inputs;
-    auto &tensors = executor->ownArgs.inputs;
+    auto& dstTensors = executor->args->inputs;
+    auto& tensors = executor->ownArgs.inputs;
     for (uint32_t i = 0U; i < tensors.paramDescs.count; i++) {
         if (tensors.paramDescs.instances[i].tensorList != nullptr) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateDynamicTensors(&dstTensors, &tensors, i));
@@ -238,26 +240,30 @@ aclnnStatus NnopbaseUpdateInputAddr(NnopbaseExecutor *executor)
                 NNOPBASE_ASSERT_OK_RETVAL(dstTensors.extTensors[startIndex].rt2Tensor.MutableTensorData().SetAddr(
                     tensors.paramDescs.instances[i].floatArray->GetData(), nullptr));
             } else if (tensors.paramDescs.instances[i].scalar != nullptr) {
-                NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateScalarAddr(executor, tensors.paramDescs.instances[i].scalar, i));
+                NNOPBASE_ASSERT_OK_RETVAL(
+                    NnopbaseUpdateScalarAddr(executor, tensors.paramDescs.instances[i].scalar, i));
             } else if (tensors.paramDescs.instances[i].scalarList != nullptr) {
                 NNOPBASE_ASSERT_OK_RETVAL(
                     NnopbaseUpdateScalarListAddr(executor, tensors.paramDescs.instances[i].scalarList, i));
             }
-            OP_LOGI("Update input tensor[%u] addr %p successfully.", startIndex,
-                    dstTensors.extTensors[startIndex].rt2Tensor.GetAddr());
+            OP_LOGI(
+                "Update input tensor[%u] addr %p successfully.", startIndex,
+                dstTensors.extTensors[startIndex].rt2Tensor.GetAddr());
         }
     }
     return OK;
 }
 
-aclnnStatus NnopbaseUpdateOutputAddr(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors)
+aclnnStatus NnopbaseUpdateOutputAddr(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors)
 {
     for (uint32_t i = 0U; i < tensors->paramDescs.count; i++) {
         if (tensors->paramDescs.instances[i].tensor != nullptr) {
             const uint32_t startIndex = dstTensors->paramDescs.instances[i].startIndex;
             NNOPBASE_ASSERT_OK_RETVAL(dstTensors->extTensors[startIndex].rt2Tensor.MutableTensorData().SetAddr(
                 tensors->paramDescs.instances[i].tensor->GetData(), nullptr));
-            OP_LOGI("Tensor[%u] update addr %p successfully", startIndex, dstTensors->extTensors[startIndex].rt2Tensor.GetAddr());
+            OP_LOGI(
+                "Tensor[%u] update addr %p successfully", startIndex,
+                dstTensors->extTensors[startIndex].rt2Tensor.GetAddr());
         } else if (tensors->paramDescs.instances[i].tensorList != nullptr) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateDynamicTensors(dstTensors, tensors, i));
         }
@@ -265,9 +271,9 @@ aclnnStatus NnopbaseUpdateOutputAddr(NnopbaseTensors *dstTensors, NnopbaseTensor
     return OK;
 }
 
-static aclnnStatus NnopbaseAddInputsTensors(NnopbaseExecutor *executor, NnopbaseTensors *tensors, uint32_t index)
+static aclnnStatus NnopbaseAddInputsTensors(NnopbaseExecutor* executor, NnopbaseTensors* tensors, uint32_t index)
 {
-    NnopbaseParamInstance &irInsts = tensors->paramDescs.instances[index];
+    NnopbaseParamInstance& irInsts = tensors->paramDescs.instances[index];
     if (irInsts.tensorList != nullptr) {
         return NnopbaseExecutorAddDynamicTensors(executor, irInsts.tensorList, index, true, irInsts.ignoreCont);
     } else {
@@ -279,9 +285,11 @@ static aclnnStatus NnopbaseAddInputsTensors(NnopbaseExecutor *executor, Nnopbase
         } else if (irInsts.floatArray != nullptr) {
             return nnopbase::NnopbaseExecutorAddArrayInput<aclFloatArray>(tensors, irInsts.floatArray, index);
         } else if (irInsts.scalar != nullptr) {
-            return NnopbaseExecutorAddScalarInput(tensors, irInsts.scalar, index, irInsts.srcIndex, irInsts.scalarDtype);
+            return NnopbaseExecutorAddScalarInput(
+                tensors, irInsts.scalar, index, irInsts.srcIndex, irInsts.scalarDtype);
         } else if (irInsts.scalarList != nullptr) {
-            return NnopbaseExecutorAddScalarListInput(tensors, irInsts.scalarList, index, irInsts.srcIndex, irInsts.scalarDtype);
+            return NnopbaseExecutorAddScalarListInput(
+                tensors, irInsts.scalarList, index, irInsts.srcIndex, irInsts.scalarDtype);
         } else if (irInsts.tensor != nullptr) {
             return NnopbaseExecutorAddTensor(executor, irInsts.tensor, index, true, irInsts.ignoreCont);
         } else {
@@ -292,9 +300,9 @@ static aclnnStatus NnopbaseAddInputsTensors(NnopbaseExecutor *executor, Nnopbase
     return OK;
 }
 
-static aclnnStatus NnopbaseAddOutputsTensors(NnopbaseExecutor *executor, NnopbaseTensors *tensors, uint32_t index)
+static aclnnStatus NnopbaseAddOutputsTensors(NnopbaseExecutor* executor, NnopbaseTensors* tensors, uint32_t index)
 {
-    NnopbaseParamInstance &irInsts = tensors->paramDescs.instances[index];
+    NnopbaseParamInstance& irInsts = tensors->paramDescs.instances[index];
     if (irInsts.tensorList != nullptr) {
         return NnopbaseExecutorAddDynamicTensors(executor, irInsts.tensorList, index, false);
     } else if (irInsts.tensor != nullptr) {
@@ -309,7 +317,7 @@ static aclnnStatus NnopbaseAddOutputsTensors(NnopbaseExecutor *executor, Nnopbas
     return OK;
 }
 
-void NnopbaseClearParamInstance(NnopbaseTensors *tensors)
+void NnopbaseClearParamInstance(NnopbaseTensors* tensors)
 {
     for (uint32_t i = 0; i < tensors->paramDescs.count; i++) {
         tensors->paramDescs.instances[i].tensor = nullptr;
@@ -325,7 +333,7 @@ void NnopbaseClearParamInstance(NnopbaseTensors *tensors)
     }
 }
 
-aclnnStatus NnopbaseAddIoTensors(NnopbaseExecutor *executor)
+aclnnStatus NnopbaseAddIoTensors(NnopbaseExecutor* executor)
 {
     for (uint32_t i = 0U; i < executor->ownArgs.inputs.paramDescs.count; i++) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddInputsTensors(executor, &executor->ownArgs.inputs, i));
@@ -336,20 +344,19 @@ aclnnStatus NnopbaseAddIoTensors(NnopbaseExecutor *executor)
     return OK;
 }
 
-aclnnStatus UpdateArgsIoAddr(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors)
+aclnnStatus UpdateArgsIoAddr(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors)
 {
     for (uint32_t i = 0; i < dstTensors->num; ++i) {
         NNOPBASE_ASSERT_OK_RETVAL(dstTensors->extTensors[i].rt2Tensor.MutableTensorData().SetAddr(
             tensors->extTensors[i].rt2Tensor.GetAddr(), nullptr));
-        OP_LOGI("After update dst tensor[%u] addr is %p, src tensor addr is %p.",
-            i,
-            dstTensors->extTensors[i].rt2Tensor.GetAddr(),
-            tensors->extTensors[i].rt2Tensor.GetAddr());
+        OP_LOGI(
+            "After update dst tensor[%u] addr is %p, src tensor addr is %p.", i,
+            dstTensors->extTensors[i].rt2Tensor.GetAddr(), tensors->extTensors[i].rt2Tensor.GetAddr());
     }
     return OK;
 }
 
-void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors &dstUncontTensors, NnopbaseUnContTensors &srcUncontTensors)
+void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors& dstUncontTensors, NnopbaseUnContTensors& srcUncontTensors)
 {
     // 刷新非连续tensor地址
     dstUncontTensors.idxs = srcUncontTensors.idxs;
@@ -363,23 +370,24 @@ void UpdateArgsUncontiguousTensor(NnopbaseUnContTensors &dstUncontTensors, Nnopb
     dstUncontTensors.refContTensors = srcUncontTensors.refContTensors;
 }
 
-bool NnopbaseIsV2CacheKeyEnabled(const NnopbaseExecutor *executor)
+bool NnopbaseIsV2CacheKeyEnabled(const NnopbaseExecutor* executor)
 {
-    return ((executor->matchArgsV2) && (g_nnopbaseSysCfgParams.enableArgsCache) &&
-            !op::internal::GetOpProfilingRecordArgFlag());
+    return (
+        (executor->matchArgsV2) && (g_nnopbaseSysCfgParams.enableArgsCache) &&
+        !op::internal::GetOpProfilingRecordArgFlag());
 }
 
-void NnopbaseCheckHasContiguous(NnopbaseExecutor *executor)
+void NnopbaseCheckHasContiguous(NnopbaseExecutor* executor)
 {
-    NnopbaseTensors *inputs = &executor->args->inputs;
+    NnopbaseTensors* inputs = &executor->args->inputs;
     NnopbaseExecutorClearUnContiguousTensors(inputs);
     for (uint32_t i = 0U; i < inputs->paramDescs.count; i++) {
-        auto &tensors = executor->ownArgs.inputs;
+        auto& tensors = executor->ownArgs.inputs;
         if (tensors.paramDescs.instances[i].ignoreCont) {
             continue;
         }
         const size_t startIndex = inputs->paramDescs.instances[i].startIndex;
-        if (inputs->paramDescs.instances[i].cfgNum == 2) { // 2表示dynamic 
+        if (inputs->paramDescs.instances[i].cfgNum == 2) { // 2表示dynamic
             const uint32_t dynamicNum = inputs->paramDescs.instances[i].num;
             for (uint32_t j = 0U; j < dynamicNum; j++) {
                 NnopbaseCheckContiguous(inputs, (*tensors.paramDescs.instances[i].tensorList)[j], startIndex + j, i);
@@ -390,20 +398,20 @@ void NnopbaseCheckHasContiguous(NnopbaseExecutor *executor)
     }
 }
 
-void NnopbaseSaveUnContiguousTensors(NnopbaseTensors *dstTensors, NnopbaseTensors *tensors)
+void NnopbaseSaveUnContiguousTensors(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors)
 {
     OP_LOGI("UnContiguous tensor size is %zu.", tensors->unContiguousTensors.tensors.size());
     if (tensors->unContiguousTensors.tensors.empty()) {
         return;
     }
-    auto &inUnContTensors = dstTensors->unContiguousTensors;
+    auto& inUnContTensors = dstTensors->unContiguousTensors;
     inUnContTensors.tensors = tensors->unContiguousTensors.tensors;
     inUnContTensors.idxs = tensors->unContiguousTensors.idxs;
     inUnContTensors.workspaceOffsets = tensors->unContiguousTensors.workspaceOffsets;
-    OP_LOGI("UnContiguous tensors idxes size is %zu, workspaceOffsets size is %zu.",
-        inUnContTensors.idxs.size(),
+    OP_LOGI(
+        "UnContiguous tensors idxes size is %zu, workspaceOffsets size is %zu.", inUnContTensors.idxs.size(),
         inUnContTensors.workspaceOffsets.size());
-    auto &inVec = inUnContTensors.tensors;
+    auto& inVec = inUnContTensors.tensors;
     inUnContTensors.tensorList.tensors = (&inVec[0U]);
     inUnContTensors.tensorList.size = inVec.size();
     if (!tensors->unContiguousTensors.refIdxs.empty()) {

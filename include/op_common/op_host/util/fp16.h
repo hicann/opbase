@@ -39,14 +39,13 @@ public:
      * @ingroup fp16_t constructor
      * @brief   Constructor without any param(default constructor)
      */
-    tagFp16(void) : val(0x0u)
-    {}
+    tagFp16(void) : val(0x0u) {}
     /**
      * @ingroup all type constructor
      * @brief   Constructor with all type
      */
     template <typename T>
-    tagFp16(const T &value)
+    tagFp16(const T& value)
     {
         *this = value;
     }
@@ -54,14 +53,12 @@ public:
      * @ingroup fp16_t constructor
      * @brief   Constructor with an uint16_t value
      */
-    tagFp16(const uint16_t &uiVal) : val(uiVal)
-    {}
+    tagFp16(const uint16_t& uiVal) : val(uiVal) {}
     /**
      * @ingroup fp16_t constructor
      * @brief   Constructor with a fp16_t object(copy constructor)
      */
-    tagFp16(const tagFp16 &fp) : val(fp.val)
-    {}
+    tagFp16(const tagFp16& fp) : val(fp.val) {}
 
     /**
      * @ingroup fp16_t math operator
@@ -126,42 +123,42 @@ public:
      * @brief   Override basic comparison operator to performing fp16_t if-equal comparison
      * @return  Return boolean result of if-equal comparison of this and fp.
      */
-    bool operator==(const tagFp16 &fp) const;
+    bool operator==(const tagFp16& fp) const;
     /**
      * @ingroup fp16_t math compare operator
      * @param [in] fp fp16_t object to be compared
      * @brief   Override basic comparison operator to performing fp16_t not-equal comparison
      * @return  Return boolean result of not-equal comparison of this and fp.
      */
-    bool operator!=(const tagFp16 &fp) const;
+    bool operator!=(const tagFp16& fp) const;
     /**
      * @ingroup fp16_t math compare operator
      * @param [in] fp fp16_t object to be compared
      * @brief   Override basic comparison operator to performing fp16_t greater-than comparison
      * @return  Return boolean result of greater-than comparison of this and fp.
      */
-    bool operator>(const tagFp16 &fp) const;
+    bool operator>(const tagFp16& fp) const;
     /**
      * @ingroup fp16_t math compare operator
      * @param [in] fp fp16_t object to be compared
      * @brief   Override basic comparison operator to performing fp16_t greater-equal comparison
      * @return  Return boolean result of greater-equal comparison of this and fp.
      */
-    bool operator>=(const tagFp16 &fp) const;
+    bool operator>=(const tagFp16& fp) const;
     /**
      * @ingroup fp16_t math compare operator
      * @param [in] fp fp16_t object to be compared
      * @brief   Override basic comparison operator to performing fp16_t less-than comparison
      * @return  Return boolean result of less-than comparison of this and fp.
      */
-    bool operator<(const tagFp16 &fp) const;
+    bool operator<(const tagFp16& fp) const;
     /**
      * @ingroup fp16_t math compare operator
      * @param [in] fp fp16_t object to be compared
      * @brief   Override basic comparison operator to performing fp16_t less-equal comparison
      * @return  Return boolean result of less-equal comparison of this and fp.
      */
-    bool operator<=(const tagFp16 &fp) const;
+    bool operator<=(const tagFp16& fp) const;
 
     /**
      * @ingroup fp16_t math evaluation operator
@@ -169,63 +166,63 @@ public:
      * @brief   Override basic evaluation operator to copy fp16_t to a new fp16_t
      * @return  Return fp16_t result from fp
      */
-    tagFp16 &operator=(const tagFp16 &fp);
+    tagFp16& operator=(const tagFp16& fp);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] fVal float object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert float to fp16_t
      * @return  Return fp16_t result from fVal
      */
-    tagFp16 &operator=(const float &fVal);
+    tagFp16& operator=(const float& fVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] dVal double object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert double to fp16_t
      * @return  Return fp16_t result from dVal
      */
-    tagFp16 &operator=(const double &dVal);
+    tagFp16& operator=(const double& dVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] iVal float object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert float to fp16_t
      * @return  Return fp16_t result from iVal
      */
-    tagFp16 &operator=(const int8_t &iVal);
+    tagFp16& operator=(const int8_t& iVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] uiVal uint8_t object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert uint8_t to fp16_t
      * @return  Return fp16_t result from uiVal
      */
-    tagFp16 &operator=(const uint8_t &uiVal);
+    tagFp16& operator=(const uint8_t& uiVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] iVal int16_t object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert int16_t to fp16_t
      * @return  Return fp16_t result from iVal
      */
-    tagFp16 &operator=(const int16_t &iVal);
+    tagFp16& operator=(const int16_t& iVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] uiVal uint16_t object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert uint16_t to fp16_t
      * @return  Return fp16_t result from uiVal
      */
-    tagFp16 &operator=(const uint16_t &uiVal);
+    tagFp16& operator=(const uint16_t& uiVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] iVal int32_t object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert int32_t to fp16_t
      * @return  Return fp16_t result from iVal
      */
-    tagFp16 &operator=(const int32_t &iVal);
+    tagFp16& operator=(const int32_t& iVal);
     /**
      * @ingroup fp16_t math evaluation operator
      * @param [in] uiVal uint32_t object to be converted to fp16_t
      * @brief   Override basic evaluation operator to convert uint32_t to fp16_t
      * @return  Return fp16_t result from uiVal
      */
-    tagFp16 &operator=(const uint32_t &uiVal);
+    tagFp16& operator=(const uint32_t& uiVal);
     /**
      * @ingroup fp16_t math conversion
      * @brief   Override convert operator to convert fp16_t to float/fp32

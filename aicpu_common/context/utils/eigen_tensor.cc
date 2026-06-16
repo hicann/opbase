@@ -11,5 +11,5 @@
 #include "eigen_tensor.h"
 
 namespace aicpu {
-const Tensor *EigenTensor::GetTensor() const { return tensor_; }
-}
+const Tensor* EigenTensor::GetTensor() const { return tensor_; }
+} // namespace aicpu

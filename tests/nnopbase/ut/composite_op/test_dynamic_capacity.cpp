@@ -75,12 +75,12 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureArgCapacity_SingleExpansion)
     KernelContextHolder holder;
 
     size_t initialCapacity = holder.opInArgCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     // Request more than initial capacity, should trigger 2x expansion
     aclnnStatus ret = holder.EnsureArgCapacity(MAX_OP_ARG_NUM + 1);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    EXPECT_EQ(holder.opInArgCapacity_, MAX_OP_ARG_NUM * 2);  // 2048
+    EXPECT_EQ(holder.opInArgCapacity_, MAX_OP_ARG_NUM * 2); // 2048
 }
 
 TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureArgCapacity_MultipleExpansion)
@@ -88,7 +88,7 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureArgCapacity_MultipleExpansio
     KernelContextHolder holder;
 
     size_t initialCapacity = holder.opInArgCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     // Request 10x capacity, should trigger multiple expansions
     aclnnStatus ret = holder.EnsureArgCapacity(MAX_OP_ARG_NUM * 10);
@@ -120,7 +120,7 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureComputeNodeInfoCapacity_NoEx
     KernelContextHolder holder;
 
     size_t initialCapacity = holder.computeNodeInfoCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     aclnnStatus ret = holder.EnsureComputeNodeInfoCapacity(512);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
@@ -132,11 +132,11 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureComputeNodeInfoCapacity_Sing
     KernelContextHolder holder;
 
     size_t initialCapacity = holder.computeNodeInfoCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     aclnnStatus ret = holder.EnsureComputeNodeInfoCapacity(MAX_OP_ARG_NUM + 1);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    EXPECT_EQ(holder.computeNodeInfoCapacity_, MAX_OP_ARG_NUM * 2);  // 2048
+    EXPECT_EQ(holder.computeNodeInfoCapacity_, MAX_OP_ARG_NUM * 2); // 2048
 }
 
 TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureComputeNodeInfoCapacity_WithAttrs)
@@ -162,7 +162,7 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureAttrCapacity_NoExpansionNeed
     KernelContextHolder holder;
 
     size_t initialCapacity = holder.attrCapacity_;
-    EXPECT_EQ(initialCapacity, ATTR_CAPACITY);  // 32KB initial
+    EXPECT_EQ(initialCapacity, ATTR_CAPACITY); // 32KB initial
 
     // Request less than initial capacity
     aclnnStatus ret = holder.EnsureAttrCapacity(16 * 1024);
@@ -184,12 +184,12 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureAttrCapacity_SingleExpansion
     holder.UpdateAttrDefOffset(10, 0);
 
     size_t initialCapacity = holder.attrCapacity_;
-    EXPECT_EQ(initialCapacity, ATTR_CAPACITY);  // 32KB initial
+    EXPECT_EQ(initialCapacity, ATTR_CAPACITY); // 32KB initial
 
     // Request more than initial capacity (32KB + 1)
     aclnnStatus ret = holder.EnsureAttrCapacity(ATTR_CAPACITY + 1);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    EXPECT_EQ(holder.attrCapacity_, ATTR_CAPACITY * 2);  // 64KB
+    EXPECT_EQ(holder.attrCapacity_, ATTR_CAPACITY * 2); // 64KB
 }
 
 TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureAttrCapacity_MultipleExpansion)
@@ -205,12 +205,12 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureAttrCapacity_MultipleExpansi
     holder.UpdateAttrDefOffset(10, 0);
 
     size_t initialCapacity = holder.attrCapacity_;
-    EXPECT_EQ(initialCapacity, ATTR_CAPACITY);  // 32KB initial
+    EXPECT_EQ(initialCapacity, ATTR_CAPACITY); // 32KB initial
 
     // Request 4x capacity
     aclnnStatus ret = holder.EnsureAttrCapacity(ATTR_CAPACITY * 4);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    EXPECT_EQ(holder.attrCapacity_, ATTR_CAPACITY * 4);  // 128KB
+    EXPECT_EQ(holder.attrCapacity_, ATTR_CAPACITY * 4); // 128KB
 }
 
 TEST_F(DynamicCapacityUT, KernelContextHolder_EnsureAttrCapacity_LargeExpansion)
@@ -245,19 +245,19 @@ TEST_F(DynamicCapacityUT, InferShapeContextHolder_BuildAndExpand)
     InferShapeContextHolder holder;
 
     size_t initialCapacity = holder.inferShapeCtxCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     // Request expansion
     aclnnStatus ret = const_cast<InferShapeContextHolder&>(holder).EnsureContextCapacity(MAX_OP_ARG_NUM + 10);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    EXPECT_EQ(holder.inferShapeCtxCapacity_, MAX_OP_ARG_NUM * 2);  // 2048
+    EXPECT_EQ(holder.inferShapeCtxCapacity_, MAX_OP_ARG_NUM * 2); // 2048
 }
 
 TEST_F(DynamicCapacityUT, InferShapeContextHolder_MultipleExpansions)
 {
     InferShapeContextHolder holder;
 
-    size_t expectedCapacity = MAX_OP_ARG_NUM;  // Start from 1024
+    size_t expectedCapacity = MAX_OP_ARG_NUM; // Start from 1024
     for (int i = 0; i < 4; i++) {
         expectedCapacity *= 2;
         aclnnStatus ret = const_cast<InferShapeContextHolder&>(holder).EnsureContextCapacity(expectedCapacity);
@@ -275,7 +275,7 @@ TEST_F(DynamicCapacityUT, TilingCtxHolder_EnsureTilingCtxCapacity_NoExpansionNee
     TilingCtxHolder holder;
 
     size_t initialCapacity = holder.tilingCtxCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     aclnnStatus ret = holder.EnsureTilingCtxCapacity(512);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
@@ -287,11 +287,11 @@ TEST_F(DynamicCapacityUT, TilingCtxHolder_EnsureTilingCtxCapacity_SingleExpansio
     TilingCtxHolder holder;
 
     size_t initialCapacity = holder.tilingCtxCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     aclnnStatus ret = holder.EnsureTilingCtxCapacity(MAX_OP_ARG_NUM + 1);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    EXPECT_EQ(holder.tilingCtxCapacity_, MAX_OP_ARG_NUM * 2);  // 2048
+    EXPECT_EQ(holder.tilingCtxCapacity_, MAX_OP_ARG_NUM * 2); // 2048
 }
 
 TEST_F(DynamicCapacityUT, TilingCtxHolder_EnsureTilingCtxCapacity_MultipleExpansion)
@@ -299,7 +299,7 @@ TEST_F(DynamicCapacityUT, TilingCtxHolder_EnsureTilingCtxCapacity_MultipleExpans
     TilingCtxHolder holder;
 
     size_t initialCapacity = holder.tilingCtxCapacity_;
-    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM);  // Initial is 1024
+    EXPECT_EQ(initialCapacity, MAX_OP_ARG_NUM); // Initial is 1024
 
     // Request 5x capacity
     aclnnStatus ret = holder.EnsureTilingCtxCapacity(MAX_OP_ARG_NUM * 5);
@@ -351,8 +351,10 @@ TEST_F(DynamicCapacityUT, KernelContextHolder_InputOutput_ExpansionTriggered)
 
     for (int i = 0; i < 600; i++) {
         op::Shape shape{2, 2};
-        inputTensors.push_back(std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr));
-        outputTensors.push_back(std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr));
+        inputTensors.push_back(
+            std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr));
+        outputTensors.push_back(
+            std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr));
     }
 
     // Initialize state properly
@@ -411,15 +413,15 @@ TEST_F(DynamicCapacityUT, DynamicCapacity_InitialCapacityValues)
 {
     // Verify initial capacity values match expected constants
     KernelContextHolder kernelHolder;
-    EXPECT_EQ(kernelHolder.opInArgCapacity_, MAX_OP_ARG_NUM);  // 1024
-    EXPECT_EQ(kernelHolder.computeNodeInfoCapacity_, MAX_OP_ARG_NUM);  // 1024
-    EXPECT_EQ(kernelHolder.attrCapacity_, ATTR_CAPACITY);  // 32KB
+    EXPECT_EQ(kernelHolder.opInArgCapacity_, MAX_OP_ARG_NUM);         // 1024
+    EXPECT_EQ(kernelHolder.computeNodeInfoCapacity_, MAX_OP_ARG_NUM); // 1024
+    EXPECT_EQ(kernelHolder.attrCapacity_, ATTR_CAPACITY);             // 32KB
 
     InferShapeContextHolder inferShapeHolder;
-    EXPECT_EQ(inferShapeHolder.inferShapeCtxCapacity_, MAX_OP_ARG_NUM);  // 1024
+    EXPECT_EQ(inferShapeHolder.inferShapeCtxCapacity_, MAX_OP_ARG_NUM); // 1024
 
     TilingCtxHolder tilingHolder;
-    EXPECT_EQ(tilingHolder.tilingCtxCapacity_, MAX_OP_ARG_NUM);  // 1024
+    EXPECT_EQ(tilingHolder.tilingCtxCapacity_, MAX_OP_ARG_NUM); // 1024
 }
 
 // ============================================================================
@@ -433,11 +435,11 @@ TEST_F(DynamicCapacityUT, DynamicCapacity_SmallRequest)
 
     // Sequential small expansions (still within MAX_OP_ARG_NUM, no expansion triggered)
     for (int i = 1; i <= 5; i++) {
-        size_t request = 200 * i;  // 200, 400, 600, 800, 1000 (all < 1024)
+        size_t request = 200 * i; // 200, 400, 600, 800, 1000 (all < 1024)
         aclnnStatus ret = holder.EnsureArgCapacity(request);
         EXPECT_EQ(ret, ACLNN_SUCCESS);
         // No expansion should occur as all requests are within MAX_OP_ARG_NUM
-        EXPECT_EQ(holder.opInArgCapacity_, MAX_OP_ARG_NUM);  // Still 1024
+        EXPECT_EQ(holder.opInArgCapacity_, MAX_OP_ARG_NUM); // Still 1024
     }
 }
 
@@ -448,7 +450,7 @@ TEST_F(DynamicCapacityUT, DynamicCapacity_AttrCapacitySmallExpansion)
     // Test small incremental expansions for attr capacity
     size_t currentCap = holder.attrCapacity_;
     for (int i = 1; i <= 3; i++) {
-        size_t request = currentCap + (16 * 1024);  // Add 16KB each time
+        size_t request = currentCap + (16 * 1024); // Add 16KB each time
         aclnnStatus ret = holder.EnsureAttrCapacity(request);
         EXPECT_EQ(ret, ACLNN_SUCCESS);
         EXPECT_GE(holder.attrCapacity_, request);

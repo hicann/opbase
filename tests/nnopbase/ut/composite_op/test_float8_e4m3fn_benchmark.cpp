@@ -33,10 +33,7 @@ namespace benchmark {
 // 辅助函数
 // ============================================================================
 
-static Float8E4M3FN FromBits(uint8_t bits)
-{
-    return Float8E4M3FN(bits, Float8E4M3FN::FromBits());
-}
+static Float8E4M3FN FromBits(uint8_t bits) { return Float8E4M3FN(bits, Float8E4M3FN::FromBits()); }
 
 // ============================================================================
 // Float8 E4M3FN 标杆值定义 (来源: ONNX/OCP/NVIDIA)
@@ -58,16 +55,11 @@ static constexpr BenchmarkCase<Float8E4M3FN> kE4M3FN_SpecialCases[] = {
 
 // 典型值测试用例
 static constexpr BenchmarkCase<Float8E4M3FN> kE4M3FN_TypicalCases[] = {
-    {1.0f, 0x38, 1.0f, 0.0f, "one", "OCP"},
-    {2.0f, 0x40, 2.0f, 0.0f, "two", "OCP"},
-    {0.5f, 0x30, 0.5f, 0.0f, "half", "OCP"},
-    {1.5f, 0x3C, 1.5f, 0.0f, "1.5", "OCP"},
-    {1.25f, 0x3A, 1.25f, 0.0f, "1.25", "OCP"},
-    {4.0f, 0x48, 4.0f, 0.0f, "four", "OCP"},
-    {8.0f, 0x50, 8.0f, 0.0f, "eight", "OCP"},
-    {0.25f, 0x28, 0.25f, 0.0f, "quarter", "OCP"},
-    {3.0f, 0x44, 3.0f, 0.0f, "three", "OCP"},
-    {6.0f, 0x4C, 6.0f, 0.0f, "six", "OCP"},
+    {1.0f, 0x38, 1.0f, 0.0f, "one", "OCP"},    {2.0f, 0x40, 2.0f, 0.0f, "two", "OCP"},
+    {0.5f, 0x30, 0.5f, 0.0f, "half", "OCP"},   {1.5f, 0x3C, 1.5f, 0.0f, "1.5", "OCP"},
+    {1.25f, 0x3A, 1.25f, 0.0f, "1.25", "OCP"}, {4.0f, 0x48, 4.0f, 0.0f, "four", "OCP"},
+    {8.0f, 0x50, 8.0f, 0.0f, "eight", "OCP"},  {0.25f, 0x28, 0.25f, 0.0f, "quarter", "OCP"},
+    {3.0f, 0x44, 3.0f, 0.0f, "three", "OCP"},  {6.0f, 0x4C, 6.0f, 0.0f, "six", "OCP"},
     {7.0f, 0x4E, 7.0f, 0.0f, "seven", "OCP"},
 };
 
@@ -89,16 +81,14 @@ protected:
         Float8E4M3FN result(tc.input);
 
         // 验证位表示
-        EXPECT_EQ(result.value, tc.expected_bits)
-            << "Input: " << tc.input << ", Desc: " << tc.description;
+        EXPECT_EQ(result.value, tc.expected_bits) << "Input: " << tc.input << ", Desc: " << tc.description;
 
         // 验证转换值
         float actual = static_cast<float>(result);
         if (std::isnan(tc.expected_value)) {
             EXPECT_TRUE(std::isnan(actual)) << "Desc: " << tc.description;
         } else {
-            EXPECT_NEAR(actual, tc.expected_value, tc.tolerance)
-                << "Desc: " << tc.description;
+            EXPECT_NEAR(actual, tc.expected_value, tc.tolerance) << "Desc: " << tc.description;
         }
     }
 };

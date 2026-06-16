@@ -34,51 +34,47 @@ public:
 
     ~KernelContextHolder();
 
-    KernelContextHolder(const KernelContextHolder &) = delete;
-    KernelContextHolder(KernelContextHolder &&) = delete;
-    KernelContextHolder &operator=(const KernelContextHolder &) = delete;
-    KernelContextHolder &operator=(KernelContextHolder &&) = delete;
+    KernelContextHolder(const KernelContextHolder&) = delete;
+    KernelContextHolder(KernelContextHolder&&) = delete;
+    KernelContextHolder& operator=(const KernelContextHolder&) = delete;
+    KernelContextHolder& operator=(KernelContextHolder&&) = delete;
 
-    void UpdateOutputArgIr(OpArgList &output) const
+    void UpdateOutputArgIr(OpArgList& output) const
     {
         size_t outputIdx = 0;
-        output.VisitByNoReturn(
-            [this, &outputIdx](size_t idx, OpArg &arg) {
-                UpdateOutputArgIr(idx, arg, outputIdx);
-            });
+        output.VisitByNoReturn([this, &outputIdx](size_t idx, OpArg& arg) { UpdateOutputArgIr(idx, arg, outputIdx); });
     }
 
-    aclnnStatus UpdateComputeNodeInfo(const char *opType, OpArgList &input, OpArgList &output,
-                                      OpArgList &attr)
+    aclnnStatus UpdateComputeNodeInfo(const char* opType, OpArgList& input, OpArgList& output, OpArgList& attr)
     {
         ResetComputeNodeInfo(opType, input.count, output.count);
         UpdateCompileDescOffset(input.count);
-        CHECK_RET_CODE(input.VisitBy([this](size_t idx, OpArg &arg) { return UpdateInputArg(idx, arg); }),
-                       "UpdateInputArg failed.");
-        CHECK_RET_CODE(output.VisitBy([this](size_t idx, OpArg &arg) { return UpdateOutputArg(idx, arg); }),
-                       "UpdateInputArg failed.");
+        CHECK_RET_CODE(
+            input.VisitBy([this](size_t idx, OpArg& arg) { return UpdateInputArg(idx, arg); }),
+            "UpdateInputArg failed.");
+        CHECK_RET_CODE(
+            output.VisitBy([this](size_t idx, OpArg& arg) { return UpdateOutputArg(idx, arg); }),
+            "UpdateInputArg failed.");
         FinalizeComputeNodeInfo(attr.count);
-        void *attrPtr = attrDataStart_;
-        CHECK_RET_CODE(attr.VisitBy(
-                           [this, &attrPtr](size_t idx, OpArg &arg) {
-                               return UpdateAttrArg(idx, arg, attrPtr);
-                           }),
-                       "Update Attr Arg failed");
+        void* attrPtr = attrDataStart_;
+        CHECK_RET_CODE(
+            attr.VisitBy([this, &attrPtr](size_t idx, OpArg& arg) { return UpdateAttrArg(idx, arg, attrPtr); }),
+            "Update Attr Arg failed");
         computeNodeInfo_->attr_size_ = PtrOffset(attrDef_, attrPtr);
         outputAnchorInfo_ = PtrCastTo<AnchorInstanceInfo>(attrPtr);
         UpdateOutputArgIr(output);
         return ACLNN_SUCCESS;
     }
 
-    void UpdateKernelExtendInfo(const char *kernelType, const char *kernelName);
-    void ResetComputeNodeInfo(const char *opType, size_t irInputNum, size_t irOutputNum);
+    void UpdateKernelExtendInfo(const char* kernelType, const char* kernelName);
+    void ResetComputeNodeInfo(const char* opType, size_t irInputNum, size_t irOutputNum);
     void UpdateCompileDescOffset(size_t irInputNum);
     void FinalizeComputeNodeInfo(size_t attrNum);
 
-    template<size_t N>
-    void AppendAttr(const std::array<size_t, N> &attrSize, std::array<void *, N> &attrAddr) const
+    template <size_t N>
+    void AppendAttr(const std::array<size_t, N>& attrSize, std::array<void*, N>& attrAddr) const
     {
-        void *attrPtr = attrDataStart_;
+        void* attrPtr = attrDataStart_;
         for (size_t i = 0; i < N; i++) {
             attrDef_->offset[i] = PtrOffset(attrDef_, attrPtr);
             attrAddr[i] = attrPtr;
@@ -88,10 +84,10 @@ public:
 
     size_t inputNum_{0};
     size_t outputNum_{0};
-    AsyncAnyValue *opInArg_{nullptr};
-    void *attrDataStart_{nullptr};
+    AsyncAnyValue* opInArg_{nullptr};
+    void* attrDataStart_{nullptr};
 
-    ComputeNodeInfo *computeNodeInfo_{nullptr};
+    ComputeNodeInfo* computeNodeInfo_{nullptr};
     KernelExtendInfo kernelExtendInfo_;
 
     // Dynamic capacity management
@@ -111,27 +107,27 @@ private:
 
     void UpdateAttrDefOffset(size_t inoutNum, size_t attrNum);
 
-    aclnnStatus UpdateInputArg(size_t idx, OpArg &arg);
-    aclnnStatus UpdateInputArg(size_t idx, const aclTensor *tensor);
-    aclnnStatus UpdateInputArg(size_t idx, const aclTensorList *tensorList);
-    aclnnStatus UpdateOutputArg(size_t idx, OpArg &arg);
-    aclnnStatus UpdateOutputArg(size_t idx, const aclTensor *tensor);
-    aclnnStatus UpdateOutputArg(size_t idx, const aclTensorList *tensorList);
+    aclnnStatus UpdateInputArg(size_t idx, OpArg& arg);
+    aclnnStatus UpdateInputArg(size_t idx, const aclTensor* tensor);
+    aclnnStatus UpdateInputArg(size_t idx, const aclTensorList* tensorList);
+    aclnnStatus UpdateOutputArg(size_t idx, OpArg& arg);
+    aclnnStatus UpdateOutputArg(size_t idx, const aclTensor* tensor);
+    aclnnStatus UpdateOutputArg(size_t idx, const aclTensorList* tensorList);
 
-    void UpdateOutputArgIr(size_t idx, OpArg &arg, size_t &seq) const;
-    void UpdateOutputArgIr(size_t idx, const aclTensor *tensor, size_t &seq) const;
-    void UpdateOutputArgIr(size_t idx, const aclTensorList *tensorList, size_t &seq) const;
+    void UpdateOutputArgIr(size_t idx, OpArg& arg, size_t& seq) const;
+    void UpdateOutputArgIr(size_t idx, const aclTensor* tensor, size_t& seq) const;
+    void UpdateOutputArgIr(size_t idx, const aclTensorList* tensorList, size_t& seq) const;
 
-    inline aclnnStatus UpdateAttrArg(size_t idx, op::DataType value, void *&attrPtr)
+    inline aclnnStatus UpdateAttrArg(size_t idx, op::DataType value, void*& attrPtr)
     {
         OP_LOGD("Update Attr DataType: [%zu], %d", idx, value);
-        *static_cast<int64_t *>(attrPtr) = 0L;
-        *static_cast<DataType *>(attrPtr) = value;
+        *static_cast<int64_t*>(attrPtr) = 0L;
+        *static_cast<DataType*>(attrPtr) = value;
         attrPtr = PtrShift(attrPtr, sizeof(int64_t));
         return ACLNN_SUCCESS;
     }
 
-    inline aclnnStatus UpdateAttrArg(size_t idx, int64_t value, void *&attrPtr)
+    inline aclnnStatus UpdateAttrArg(size_t idx, int64_t value, void*& attrPtr)
     {
 #ifdef DEBUG
         std::stringstream ss;
@@ -140,12 +136,12 @@ private:
 #else
         OP_LOGD("Update Attr arg Scalar: [%zu]", idx);
 #endif
-        *static_cast<int64_t *>(attrPtr) = value;
+        *static_cast<int64_t*>(attrPtr) = value;
         attrPtr = PtrShift(attrPtr, sizeof(uint64_t));
         return ACLNN_SUCCESS;
     }
 
-    inline aclnnStatus UpdateAttrArg(size_t idx, double value, void *&attrPtr)
+    inline aclnnStatus UpdateAttrArg(size_t idx, double value, void*& attrPtr)
     {
 #ifdef DEBUG
         std::stringstream ss;
@@ -154,12 +150,12 @@ private:
 #else
         OP_LOGD("Update Attr arg Scalar: [%zu]", idx);
 #endif
-        *static_cast<double *>(attrPtr) = value;
+        *static_cast<double*>(attrPtr) = value;
         attrPtr = PtrShift(attrPtr, sizeof(double));
         return ACLNN_SUCCESS;
     }
 
-    inline aclnnStatus UpdateAttrArg(size_t idx, float value, void *&attrPtr)
+    inline aclnnStatus UpdateAttrArg(size_t idx, float value, void*& attrPtr)
     {
 #ifdef DEBUG
         std::stringstream ss;
@@ -168,17 +164,17 @@ private:
 #else
         OP_LOGD("Update Attr arg Scalar: [%zu]", idx);
 #endif
-        *static_cast<int64_t *>(attrPtr) = 0L;
-        *static_cast<float *>(attrPtr) = value;
+        *static_cast<int64_t*>(attrPtr) = 0L;
+        *static_cast<float*>(attrPtr) = value;
         attrPtr = PtrShift(attrPtr, sizeof(int64_t));
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus UpdateAttrArg(size_t idx, char *value, void *&attrPtr)
+    aclnnStatus UpdateAttrArg(size_t idx, char* value, void*& attrPtr)
     {
         if (value == nullptr) {
             OP_LOGW("Update Attr NULL char*: [%zu]", idx);
-            *static_cast<char *>(attrPtr) = '\0';
+            *static_cast<char*>(attrPtr) = '\0';
             attrPtr = PtrShift(attrPtr, sizeof(int64_t));
         } else {
             OP_LOGD("Update Attr char*: [%zu]. %s", idx, value);
@@ -192,11 +188,11 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus UpdateAttrArg(size_t idx, aclScalar *value, void *&attrPtr)
+    aclnnStatus UpdateAttrArg(size_t idx, aclScalar* value, void*& attrPtr)
     {
         if (value == nullptr) {
             OP_LOGW("Update Attr NULL aclScalar*: [%zu]", idx);
-            *static_cast<int64_t *>(attrPtr) = 0;
+            *static_cast<int64_t*>(attrPtr) = 0;
             attrPtr = PtrShift(attrPtr, sizeof(int64_t));
         } else {
             OP_LOGD("Update Attr aclScalar*: [%zu]", idx);
@@ -208,9 +204,9 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus UpdateAttrArg(size_t idx, aclIntArray *value, void *&attrPtr)
+    aclnnStatus UpdateAttrArg(size_t idx, aclIntArray* value, void*& attrPtr)
     {
-        auto *pv = static_cast<gert::ContinuousVector *>(attrPtr);
+        auto* pv = static_cast<gert::ContinuousVector*>(attrPtr);
         if (value == nullptr || value->Size() == 0) {
             OP_LOGW("Update Attr NULL aclIntArray*: [%zu]", idx);
             pv->Init(0);
@@ -229,9 +225,9 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus UpdateAttrArg(size_t idx, aclFloatArray *fvalue, void *&attrPtr)
+    aclnnStatus UpdateAttrArg(size_t idx, aclFloatArray* fvalue, void*& attrPtr)
     {
-        auto *pv = static_cast<gert::ContinuousVector *>(attrPtr);
+        auto* pv = static_cast<gert::ContinuousVector*>(attrPtr);
         if (fvalue == nullptr || fvalue->Size() == 0) {
             OP_LOGW("Update Attr NULL aclFloatArray*: [%zu]", idx);
             pv->Init(0);
@@ -250,9 +246,9 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus UpdateAttrArg(size_t idx, aclBoolArray *value, void *&attrPtr)
+    aclnnStatus UpdateAttrArg(size_t idx, aclBoolArray* value, void*& attrPtr)
     {
-        auto *pv = static_cast<gert::ContinuousVector *>(attrPtr);
+        auto* pv = static_cast<gert::ContinuousVector*>(attrPtr);
         if (value == nullptr || value->Size() == 0) {
             OP_LOGW("Update Attr NULL aclBoolArray*: [%zu]", idx);
             pv->Init(0);
@@ -271,12 +267,12 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus UpdateAttrArg(size_t idx, OpArg &arg, void *&attrPtr)
+    aclnnStatus UpdateAttrArg(size_t idx, OpArg& arg, void*& attrPtr)
     {
         // Ensure attr capacity is sufficient
         // Calculate required size conservatively (estimate max possible attr size)
         size_t currentOffset = PtrOffset(attrDataStart_, attrPtr);
-        size_t estimatedRequiredSize = currentOffset + 4096;  // Reserve 4KB per attr for safety
+        size_t estimatedRequiredSize = currentOffset + 4096; // Reserve 4KB per attr for safety
         CHECK_RET_CODE(EnsureAttrCapacity(estimatedRequiredSize), "EnsureAttrCapacity failed.");
 
         // 重新计算attrPtr(基于可能已经更新的attrDataStart_)
@@ -295,17 +291,18 @@ private:
             case OpArgType::OPARG_DOUBLE:
                 return UpdateAttrArg(idx, arg->dvalue, attrPtr);
             case OpArgType::OPARG_STRING:
-                return UpdateAttrArg(idx, reinterpret_cast<char *>(arg->pointer), attrPtr);
+                return UpdateAttrArg(idx, reinterpret_cast<char*>(arg->pointer), attrPtr);
             case OpArgType::OPARG_ACLSCALAR:
-                return UpdateAttrArg(idx, reinterpret_cast<aclScalar *>(arg->pointer), attrPtr);
+                return UpdateAttrArg(idx, reinterpret_cast<aclScalar*>(arg->pointer), attrPtr);
             case OpArgType::OPARG_INT_LIST:
-                return UpdateAttrArg(idx, reinterpret_cast<aclIntArray *>(arg->pointer), attrPtr);
+                return UpdateAttrArg(idx, reinterpret_cast<aclIntArray*>(arg->pointer), attrPtr);
             case OpArgType::OPARG_FLOAT_LIST:
-                return UpdateAttrArg(idx, reinterpret_cast<aclFloatArray *>(arg->pointer), attrPtr);
+                return UpdateAttrArg(idx, reinterpret_cast<aclFloatArray*>(arg->pointer), attrPtr);
             case OpArgType::OPARG_BOOL_LIST:
-                return UpdateAttrArg(idx, reinterpret_cast<aclBoolArray *>(arg->pointer), attrPtr);
+                return UpdateAttrArg(idx, reinterpret_cast<aclBoolArray*>(arg->pointer), attrPtr);
             default:
-                std::string argTypeRange = "[OPARG_ACLSCALAR(2), OPARG_STRING(3), OPARG_BOOL(4), OPARG_INT(5), "
+                std::string argTypeRange =
+                    "[OPARG_ACLSCALAR(2), OPARG_STRING(3), OPARG_BOOL(4), OPARG_INT(5), "
                     "OPARG_UINT(6), OPARG_FLOAT(7), OPARG_DOUBLE(8), OPARG_DATATYPE(9), "
                     "OPARG_INT_LIST(10), OPARG_FLOAT_LIST(12), OPARG_BOOL_LIST(13), OPARG_IMPLMODE(14)]";
                 auto typeStr = OpArgTypeToStr(arg.type);
@@ -318,13 +315,13 @@ private:
     size_t irOutputNum_{0};
     size_t computeNodeInfoSize_{0};
 
-    AnchorInstanceInfo *anchorInfo_{nullptr};
-    AnchorInstanceInfo *outputAnchorInfo_{nullptr};
-    CompileTimeTensorDesc *compileDesc_{nullptr};
-    RuntimeAttrsDef *attrDef_{nullptr};
+    AnchorInstanceInfo* anchorInfo_{nullptr};
+    AnchorInstanceInfo* outputAnchorInfo_{nullptr};
+    CompileTimeTensorDesc* compileDesc_{nullptr};
+    RuntimeAttrsDef* attrDef_{nullptr};
     size_t attrNum_{0};
 };
 
 } // namespace op::internal
 
-#endif //OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_KERNEL_CONTEXT_HOLDER_H
+#endif // OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_KERNEL_CONTEXT_HOLDER_H

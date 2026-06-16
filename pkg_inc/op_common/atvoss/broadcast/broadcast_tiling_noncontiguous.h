@@ -243,6 +243,6 @@ ge::graphStatus DoBroadcastTilingNLastTranspose(
 
     return ge::GRAPH_SUCCESS;
 }
-}  // namespace Base
+} // namespace Base
 } // namespace Ops
 #endif // BROADCAST_TILING_NONCONTIGUOUS_H_

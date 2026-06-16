@@ -17,7 +17,7 @@
 namespace aclnnOpInfoRecord {
 constexpr char LIBSUFFIX[] = ".so";
 
-LibPath &LibPath::Instance()
+LibPath& LibPath::Instance()
 {
     static LibPath libPath;
     return libPath;
@@ -39,7 +39,7 @@ Path LibPath::GetSelfLibraryDir() const
 {
     mmDlInfo info;
     LibPath& (*instancePtr)() = &LibPath::Instance;
-    const auto ret = mmDladdr(reinterpret_cast<void *>(instancePtr), &info);
+    const auto ret = mmDladdr(reinterpret_cast<void*>(instancePtr), &info);
     if (ret != EN_OK) {
         OP_LOGE(ACLNN_ERR_INNER, "Cannot find symbol GetSelfLibraryDir");
         return Path();
@@ -83,4 +83,3 @@ Path LibPath::GetSelfPath() const
 }
 
 } // namespace aclnnOpInfoRecord
-

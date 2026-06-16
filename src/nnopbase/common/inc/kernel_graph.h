@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_SRC_MEM_MGR_KERNEL_GRAPH_H
 #define OP_API_OP_API_COMMON_SRC_MEM_MGR_KERNEL_GRAPH_H
 
@@ -15,14 +15,9 @@
 #include "opdev/object.h"
 
 namespace op::mem {
-enum class SortType {
-    USER_CUSTOM,
-    DFS,
-    BFS,
-    DFS_WITH_REARRANGEMENT
-};
+enum class SortType { USER_CUSTOM, DFS, BFS, DFS_WITH_REARRANGEMENT };
 
-bool cmp(const KernelTensor *a, const KernelTensor *b);
+bool cmp(const KernelTensor* a, const KernelTensor* b);
 
 class KernelGraph : public op::Object {
 public:
@@ -32,18 +27,19 @@ public:
 
     int64_t GetGraphId() const;
 
-    const op::FVector<KernelNode *, DEFAULT_NODE_NUM> &GetKernelNodes() const;
+    const op::FVector<KernelNode*, DEFAULT_NODE_NUM>& GetKernelNodes() const;
 
-    aclnnStatus AddKernelNode(KernelNode *kernelNode);
+    aclnnStatus AddKernelNode(KernelNode* kernelNode);
 
-    aclnnStatus SetKernelNodes(op::FVector<KernelNode *, DEFAULT_NODE_NUM> &kernelNodes);
+    aclnnStatus SetKernelNodes(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& kernelNodes);
 
     aclnnStatus TopologicalSortBFS();
 
     aclnnStatus TopologicalSortDFS();
 
-    const FVector<KernelNode *, DEFAULT_NODE_NUM> &GetSortedNodes();
-    const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &GetSortedKernelTensors(SortType sortType = SortType::USER_CUSTOM);
+    const FVector<KernelNode*, DEFAULT_NODE_NUM>& GetSortedNodes();
+    const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& GetSortedKernelTensors(
+        SortType sortType = SortType::USER_CUSTOM);
 
 private:
     aclnnStatus SortKernelTensor(SortType sortType);
@@ -54,15 +50,15 @@ private:
 
     aclnnStatus CalcLifeTimeAndSize();
 
-    size_t PrintTensors(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors) const;
+    size_t PrintTensors(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors) const;
     size_t PrintGraph();
 
     int64_t graphId_;
-    op::FVector<KernelNode *, DEFAULT_NODE_NUM> kernelNodes_;
-    op::FVector<KernelNode *, DEFAULT_NODE_NUM> sortedNodes_;
-    op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> sortedKernelTensors_;
+    op::FVector<KernelNode*, DEFAULT_NODE_NUM> kernelNodes_;
+    op::FVector<KernelNode*, DEFAULT_NODE_NUM> sortedNodes_;
+    op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> sortedKernelTensors_;
     op::FVector<int64_t, DEFAULT_STACK_SIZE> indegrees_;
     op::FVector<size_t, DEFAULT_STACK_SIZE> stack_;
 };
 } // namespace op::mem
-#endif //OP_API_OP_API_COMMON_SRC_MEM_MGR_KERNEL_GRAPH_H
+#endif // OP_API_OP_API_COMMON_SRC_MEM_MGR_KERNEL_GRAPH_H

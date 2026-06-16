@@ -30,13 +30,9 @@
 namespace op {
 namespace internal {
 
-class TilingResCache
-{
+class TilingResCache {
 public:
-    bool IsValid() const
-    {
-        return valid_;
-    }
+    bool IsValid() const { return valid_; }
 
     explicit TilingResCache(const TilingCtxOutput* res)
     {
@@ -103,13 +99,9 @@ public:
     size_t outputNum_;
 };
 
-class TilingCtxHolder
-{
+class TilingCtxHolder {
 public:
-    TilingCtxHolder()
-    {
-        BuildTilingCtx();
-    }
+    TilingCtxHolder() { BuildTilingCtx(); }
 
     ~TilingCtxHolder();
 
@@ -122,8 +114,7 @@ public:
      * outputs[4]: workspace sizes
      * outputs[5]: tiling condition
      */
-    enum TilingOutputIndex
-    {
+    enum TilingOutputIndex {
         kOutputTilingKey,
         kOutputBlockDim,
         kOutputAtomicCleanFlag,
@@ -154,15 +145,9 @@ public:
         return ctx;
     };
 
-    gert::TilingContext* GetTilingCtx() const
-    {
-        return PtrCastTo<gert::TilingContext>(tilingCtx_);
-    };
+    gert::TilingContext* GetTilingCtx() const { return PtrCastTo<gert::TilingContext>(tilingCtx_); };
 
-    const TilingCtxOutput* GetTilingResult() const
-    {
-        return &tilingOutput_;
-    };
+    const TilingCtxOutput* GetTilingResult() const { return &tilingOutput_; };
 
     const TilingCtxOutput* GetTilingResFromCache(const TilingResCache& res)
     {

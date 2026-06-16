@@ -17,14 +17,14 @@
 namespace nnopbase {
 class ArgsPool {
 public:
-    static ArgsPool &GetInstance();
+    static ArgsPool& GetInstance();
     ~ArgsPool();
     void Finalize();
 
     // 通过executor的ownArgs，在这两个接口间传递了inputKey, keyLen, enableCache, seed
-    bool MatchArgs(NnopbaseExecutor *executor);
-    aclnnStatus CreateArgs(NnopbaseExecutor *executor);
-    inline void ReleaseArgs(NnopbaseExecutorArgs *const args)
+    bool MatchArgs(NnopbaseExecutor* executor);
+    aclnnStatus CreateArgs(NnopbaseExecutor* executor);
+    inline void ReleaseArgs(NnopbaseExecutorArgs* const args)
     {
         if (args == nullptr) {
             return;
@@ -34,24 +34,24 @@ public:
         args->isVist = false;
     }
 
-    void FixCache(NnopbaseExecutorArgs *const args);
+    void FixCache(NnopbaseExecutorArgs* const args);
 
-    void Put(NnopbaseExecutorArgs *const args);
+    void Put(NnopbaseExecutorArgs* const args);
 
 private:
     ArgsPool() = default;
 
     // 在调用端保证此处传入的args一定是缓存中存在的
-    inline void Get(NnopbaseExecutorArgs *const args)
+    inline void Get(NnopbaseExecutorArgs* const args)
     {
-        const auto &it = argsCache.find(args);
+        const auto& it = argsCache.find(args);
         if (it != argsCache.end()) {
             cacheList.splice(cacheList.begin(), cacheList, it->second);
         }
     }
-    void ReleaseFixedCache(NnopbaseExecutorArgs *const args);
-    bool IsArgsMatch(NnopbaseExecutorArgs *const args, NnopbaseExecutor *executor);
-    void EraseArgs(NnopbaseExecutorArgs *const tmp);
+    void ReleaseFixedCache(NnopbaseExecutorArgs* const args);
+    bool IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* executor);
+    void EraseArgs(NnopbaseExecutorArgs* const tmp);
 
     static size_t GetCacheSizeLimit();
 
@@ -62,5 +62,5 @@ private:
     std::unordered_map<size_t, std::list<NnopbaseExecutorArgs*>> argsMap;
     std::unordered_map<size_t, std::vector<NnopbaseExecutorArgs*>> fixedCacheMap;
 };
-} // nnopbase
+} // namespace nnopbase
 #endif

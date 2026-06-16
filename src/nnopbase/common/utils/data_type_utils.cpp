@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <map>
 #include <string>
 #include <graph/utils/type_utils.h>
@@ -22,17 +22,14 @@ constexpr int64_t BIT_TO_BTYE_ALIGN = 7;
 using std::map;
 using std::string;
 
-DataType ToDataType(const string &dataTypeStr)
-{
-    return ge::TypeUtils::SerialStringToDataType(dataTypeStr);
-}
+DataType ToDataType(const string& dataTypeStr) { return ge::TypeUtils::SerialStringToDataType(dataTypeStr); }
 
 ge::AscendString ToString(DataType dataType)
 {
     return ge::AscendString(ge::TypeUtils::DataTypeToSerialString(dataType).c_str());
 }
 
-ge::AscendString ToString(const std::initializer_list<DataType> &dataTypes)
+ge::AscendString ToString(const std::initializer_list<DataType>& dataTypes)
 {
     if (!std::empty(dataTypes)) {
         std::string str("[");
@@ -57,7 +54,7 @@ int64_t CalcShapeBytes(int64_t size, DataType dataType, bool ceil)
         }
         // convert bit to Byte
         if (!ceil) {
-            byteNum = (byteNum + BIT_TO_BTYE_ALIGN)  >> BIT_TO_BYTE_SHIFT;
+            byteNum = (byteNum + BIT_TO_BTYE_ALIGN) >> BIT_TO_BYTE_SHIFT;
         } else {
             byteNum = byteNum >> BIT_TO_BYTE_SHIFT;
         }

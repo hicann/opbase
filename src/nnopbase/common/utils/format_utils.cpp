@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "opdev/format_utils.h"
 #include <graph/utils/type_utils.h>
 #include <map>
@@ -20,15 +20,17 @@ namespace op {
 
 bool IsPrivateFormat(Format format)
 {
-    if (format == Format::FORMAT_NC1HWC0 || format == Format::FORMAT_FRACTAL_Z || format == Format::FORMAT_NDC1HWC0 || format == Format::FORMAT_FRACTAL_Z_3D || format == Format::FORMAT_FRACTAL_NZ
-        || format == Format::FORMAT_NC1HWC0_C04 || format == Format::FORMAT_FRACTAL_NZ_C0_16 || format == Format::FORMAT_FRACTAL_NZ_C0_32 || format == Format::FORMAT_FRACTAL_NZ_C0_2
-        || format == Format::FORMAT_FRACTAL_NZ_C0_4 || format == Format::FORMAT_FRACTAL_NZ_C0_8) {
+    if (format == Format::FORMAT_NC1HWC0 || format == Format::FORMAT_FRACTAL_Z || format == Format::FORMAT_NDC1HWC0 ||
+        format == Format::FORMAT_FRACTAL_Z_3D || format == Format::FORMAT_FRACTAL_NZ ||
+        format == Format::FORMAT_NC1HWC0_C04 || format == Format::FORMAT_FRACTAL_NZ_C0_16 ||
+        format == Format::FORMAT_FRACTAL_NZ_C0_32 || format == Format::FORMAT_FRACTAL_NZ_C0_2 ||
+        format == Format::FORMAT_FRACTAL_NZ_C0_4 || format == Format::FORMAT_FRACTAL_NZ_C0_8) {
         return true;
     }
     return false;
 }
 
-Format ToFormat(const std::string &formatStr)
+Format ToFormat(const std::string& formatStr)
 {
     static const std::map<std::string, Format> kStringToFormatMap = {
         {"NCHW", Format::FORMAT_NCHW},

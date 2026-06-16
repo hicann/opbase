@@ -41,10 +41,10 @@ constexpr uint32_t SOC_VERSION_INVALID = 99U;
 class IndvSoc {
 public:
     static IndvSoc& GetInstance(void);
-    
+
     const std::map<std::string, uint32_t>& GetSocTypeMap(void) const;
 
-    const std::string &GetCurSocVersion(void);
+    const std::string& GetCurSocVersion(void);
     bool SupportCurrentSoc(void) const;
     bool UseCoreTypeMagic(void) const;
     bool SupportMc2FusionLaunch(void);
@@ -54,29 +54,26 @@ public:
     bool IsCouplingArch(void) const;
     bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType);
     bool NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType);
-    uint32_t *GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const;
+    uint32_t* GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const;
     uint32_t GetSocEnum();
-    bool IsSupportedSocName(const std::string &name) const;
-    uint32_t GetSocEnumByName(const std::string &name) const;
+    bool IsSupportedSocName(const std::string& name) const;
+    uint32_t GetSocEnumByName(const std::string& name) const;
     std::string GetSupportedSocNamesStr() const;
     void Reset(void);
     bool isInit = false;
     std::string socVersion;
+
 private:
     IndvSoc(void);
     void Init(void);
 
     const std::map<std::string, uint32_t> supportSocMap = {
-        {OPS_SUBPATH_ASCEND910, SOC_VERSION_ASCEND910A},
-        {OPS_SUBPATH_ASCEND910B, SOC_VERSION_ASCEND910B},
-        {OPS_SUBPATH_ASCEND910_93, SOC_VERSION_ASCEND910_93},
-        {OPS_SUBPATH_ASCEND310P, SOC_VERSION_ASCEND310P},
-        {OPS_SUBPATH_ASCEND310B, SOC_VERSION_ASCEND310B},
-        {OPS_SUBPATH_ASCEND950, SOC_VERSION_ASCEND950},
-        {OPS_SUBPATH_ASCEND610LITE, SOC_VERSION_ASCEND610Lite},
-        {OPS_SUBPATH_ASCEND910_96, SOC_VERSION_ASCEND910_96},
+        {OPS_SUBPATH_ASCEND910, SOC_VERSION_ASCEND910A},        {OPS_SUBPATH_ASCEND910B, SOC_VERSION_ASCEND910B},
+        {OPS_SUBPATH_ASCEND910_93, SOC_VERSION_ASCEND910_93},   {OPS_SUBPATH_ASCEND310P, SOC_VERSION_ASCEND310P},
+        {OPS_SUBPATH_ASCEND310B, SOC_VERSION_ASCEND310B},       {OPS_SUBPATH_ASCEND950, SOC_VERSION_ASCEND950},
+        {OPS_SUBPATH_ASCEND610LITE, SOC_VERSION_ASCEND610Lite}, {OPS_SUBPATH_ASCEND910_96, SOC_VERSION_ASCEND910_96},
         {OPS_SUBPATH_ASCEND350, SOC_VERSION_ASCEND350},
     };
 };
-} // namespace
+} // namespace nnopbase
 #endif

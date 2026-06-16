@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <array>
 #include <iostream>
 #include <memory>
@@ -61,27 +61,30 @@ protected:
     }
     static void TearDownTestCase() {}
 
-    op::internal::OpKernelBin *CreateFakeOpKernelBin(bool hasDevPtrArg)
+    op::internal::OpKernelBin* CreateFakeOpKernelBin(bool hasDevPtrArg)
     {
         uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
-        const char *p = std::getenv("ASCEND_OPP_PATH");
+        const char* p = std::getenv("ASCEND_OPP_PATH");
         EXPECT_NE(p, nullptr);
         KeyAndDetail key;
         key.key = "hahaha";
         size_t hashKey = 123;
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
+        snprintf_s(
+            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/"
+            "QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
             p);
-        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
+        snprintf_s(
+            binPath, sizeof(binPath), sizeof(binPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/"
+            "Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
             p);
-        op::internal::OpKernelBin *fakeBin = new op::internal::OpKernelBin(
+        op::internal::OpKernelBin* fakeBin = new op::internal::OpKernelBin(
             opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, hasDevPtrArg);
         return fakeBin;
     }
-
 };
 
 TEST_F(KernelLaunchUT, KernelLaunchUTCase1)
@@ -101,7 +104,7 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase1)
     auto attr = OP_ATTR(alpha);
     auto ws = OP_WORKSPACE(out.get());
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     // create arg
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
@@ -125,19 +128,20 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase2)
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
-    auto output = OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
+    auto output =
+        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
 
     auto ws1 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws2 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws3 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
-    aclTensorList *wsList = aclCreateTensorList(wsArr, 3);
+    const aclTensor* wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
+    aclTensorList* wsList = aclCreateTensorList(wsArr, 3);
 
     auto wsArg = OP_WORKSPACE(wsList);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     // create arg
     auto ctx = op::MakeOpArgContext(input, output, attr, wsArg);
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
@@ -158,8 +162,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase3)
     auto other = std::make_unique<aclTensor>(outShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *inputTensor[2] = {self.get(), other.get()};
-    aclTensorList *inputList = aclCreateTensorList(inputTensor, 2);
+    const aclTensor* inputTensor[2] = {self.get(), other.get()};
+    aclTensorList* inputList = aclCreateTensorList(inputTensor, 2);
 
     uint32_t opType = op::OpTypeDict::ToOpType("AddN");
     auto input = OP_INPUT(inputList);
@@ -167,7 +171,7 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase3)
     auto attr = OP_ATTR(alpha);
     auto ws = OP_WORKSPACE(out.get());
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     delete inputList;
@@ -184,8 +188,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase4)
     auto other = std::make_unique<aclTensor>(outShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *inputTensor[2] = {self.get(), other.get()};
-    aclTensorList *inputList = aclCreateTensorList(inputTensor, 2);
+    const aclTensor* inputTensor[2] = {self.get(), other.get()};
+    aclTensorList* inputList = aclCreateTensorList(inputTensor, 2);
 
     auto input = OP_INPUT(inputList);
     auto output = OP_OUTPUT(out.get());
@@ -210,11 +214,11 @@ TEST_F(KernelLaunchUT, MemSetTiling1)
     EXPECT_EQ(ctx.inputNum_, 2ul);
 }
 
-extern "C" int InitHugeMemThreadLocal(void *arg, bool sync);
-extern "C" void UnInitHugeMemThreadLocal(void *arg, bool sync);
-extern "C" void ReleaseHugeMem(void *arg, bool sync);
+extern "C" int InitHugeMemThreadLocal(void* arg, bool sync);
+extern "C" void UnInitHugeMemThreadLocal(void* arg, bool sync);
+extern "C" void ReleaseHugeMem(void* arg, bool sync);
 
-static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
+static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin* kernelBin)
 {
     OP_LOGI("not support dev ptr");
     InitHugeMemThreadLocal(nullptr, false);
@@ -226,27 +230,27 @@ static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
     int addr[6] = {0};
     aclTensor tensor1(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, &addr[0]);
     tensor1.SetFromWorkspace(false);
-    aclTensor *tensorPtr1 = &tensor1;
+    aclTensor* tensorPtr1 = &tensor1;
     aclTensor tensor2(selfShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, &addr[1]);
     tensor2.SetFromWorkspace(false);
-    aclTensor *tensorPtr2 = &tensor2;
+    aclTensor* tensorPtr2 = &tensor2;
     aclTensor tensor3(selfShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, &addr[2]);
     tensor3.SetFromWorkspace(false);
-    aclTensor *tensorPtr3 = &tensor3;
+    aclTensor* tensorPtr3 = &tensor3;
     aclTensor tensor4(wsShape, op::DataType::DT_UINT32, op::Format::FORMAT_ND, &addr[3]);
     tensor4.SetFromWorkspace(false);
-    aclTensor *tensorPtr4 = &tensor4;
+    aclTensor* tensorPtr4 = &tensor4;
     aclTensor tensor5(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, &addr[4]);
     tensor5.SetFromWorkspace(false);
-    aclTensor *tensorPtr5 = &tensor5;
+    aclTensor* tensorPtr5 = &tensor5;
     aclTensor tensor6(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, &addr[5]);
     tensor6.SetFromWorkspace(false);
-    aclTensor *tensorPtr6 = &tensor6;
+    aclTensor* tensorPtr6 = &tensor6;
     // int32 tensor list
-    const aclTensor *tensorArr1[3] = {tensorPtr2, tensorPtr3, nullptr};
-    aclTensorList *tensorList1 = aclCreateTensorList(tensorArr1, 3);
-    const aclTensor *tensorsArr2[2] = {tensorPtr5, tensorPtr6};
-    aclTensorList *workspaceTensorList = aclCreateTensorList(tensorsArr2, 2);
+    const aclTensor* tensorArr1[3] = {tensorPtr2, tensorPtr3, nullptr};
+    aclTensorList* tensorList1 = aclCreateTensorList(tensorArr1, 3);
+    const aclTensor* tensorsArr2[2] = {tensorPtr5, tensorPtr6};
+    aclTensorList* workspaceTensorList = aclCreateTensorList(tensorsArr2, 2);
 
     auto input = OP_INPUT(tensorPtr1, tensorList1);
     auto output = OP_OUTPUT(tensorPtr1, tensorList1);
@@ -265,7 +269,7 @@ static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
         {9, op::DataType::DT_UINT32, 0.0f, 4, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr}};
 
     auto unique_executor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = unique_executor.get();
+    aclOpExecutor* executor = unique_executor.get();
     op::internal::GetThreadLocalContext().executor_ = executor;
     aclrtStream stream = 0;
     auto ret = kernelBin->MemsetOutputTensor(stream, ctx);
@@ -297,7 +301,7 @@ static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
     MemsetV2ArgContext memsetV2ArgCtx;
     ret = memsetV2ArgCtx.Init(kernelBin->memSetValueCtx_);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    op::OpArgContext *memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
+    op::OpArgContext* memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
     EXPECT_EQ(memsetV2OpArgCtx->ContainsOpArgType(op::OP_INPUT_ARG), true);
     EXPECT_EQ(memsetV2OpArgCtx->ContainsOpArgType(op::OP_OUTPUT_ARG), true);
     EXPECT_EQ(memsetV2OpArgCtx->ContainsOpArgType(op::OP_WORKSPACE_ARG), true);
@@ -328,7 +332,7 @@ static void MemSetV2OutputTensorNoDevPtr(op::internal::OpKernelBin *kernelBin)
     UnInitHugeMemThreadLocal(nullptr, false);
 }
 
-static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
+static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin* kernelBin)
 {
     OP_LOGI("support dev ptr");
     PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend950", "Ascend950DT_9591");
@@ -339,25 +343,25 @@ static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
     int addr[6] = {0};
     aclTensor tensor1(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, &addr[0]);
     tensor1.SetFromWorkspace(false);
-    aclTensor *tensorPtr1 = &tensor1;
+    aclTensor* tensorPtr1 = &tensor1;
     aclTensor tensor2(selfShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, &addr[1]);
     tensor2.SetFromWorkspace(false);
-    aclTensor *tensorPtr2 = &tensor2;
+    aclTensor* tensorPtr2 = &tensor2;
     aclTensor tensor3(selfShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, &addr[2]);
     tensor3.SetFromWorkspace(false);
-    aclTensor *tensorPtr3 = &tensor3;
+    aclTensor* tensorPtr3 = &tensor3;
     aclTensor tensor4(selfShape, op::DataType::DT_UINT32, op::Format::FORMAT_ND, &addr[3]);
     tensor4.SetFromWorkspace(false);
-    aclTensor *tensorPtr4 = &tensor4;
+    aclTensor* tensorPtr4 = &tensor4;
     aclTensor tensor5(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, &addr[4]);
     tensor5.SetFromWorkspace(false);
-    aclTensor *tensorPtr5 = &tensor5;
+    aclTensor* tensorPtr5 = &tensor5;
     aclTensor tensor6(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, &addr[5]);
     tensor6.SetFromWorkspace(false);
-    aclTensor *tensorPtr6 = &tensor6;
+    aclTensor* tensorPtr6 = &tensor6;
     // int32 tensor list
-    const aclTensor *tensorArr1[3] = {tensorPtr2, tensorPtr3, nullptr};
-    aclTensorList *tensorList1 = aclCreateTensorList(tensorArr1, 3);
+    const aclTensor* tensorArr1[3] = {tensorPtr2, tensorPtr3, nullptr};
+    aclTensorList* tensorList1 = aclCreateTensorList(tensorArr1, 3);
 
     auto input = OP_INPUT(tensorPtr1, tensorList1);
     auto output = OP_OUTPUT(tensorPtr1, tensorList1, nullptr);
@@ -365,8 +369,8 @@ static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
     // create arg
     auto ctx = op::MakeOpArgContext(input, output, outshape);
     // append workspace float16 tensor list
-    const aclTensor *tensorsArr2[2] = {tensorPtr5, tensorPtr6};
-    aclTensorList *workspaceTensorList = aclCreateTensorList(tensorsArr2, 2);
+    const aclTensor* tensorsArr2[2] = {tensorPtr5, tensorPtr6};
+    aclTensorList* workspaceTensorList = aclCreateTensorList(tensorsArr2, 2);
     EXPECT_EQ(ctx->ContainsOpArgType(OP_WORKSPACE_ARG), false);
     ctx->AppendOpWorkspaceArg(workspaceTensorList);
     EXPECT_EQ(ctx->ContainsOpArgType(OP_WORKSPACE_ARG), true);
@@ -374,11 +378,12 @@ static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
     kernelBin->memSetValue_ = {
         {2, op::DataType::DT_FLOAT, 6.6f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr},
         {3, op::DataType::DT_INT32, 0.0f, 6, 100, 256, op::OpArgType::OPARG_ACLTENSOR_LIST, nullptr, nullptr, nullptr},
-        {4, op::DataType::DT_FLOAT16, 8.8f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR_LIST, nullptr, nullptr, nullptr},
+        {4, op::DataType::DT_FLOAT16, 8.8f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR_LIST, nullptr, nullptr,
+         nullptr},
         {5, op::DataType::DT_UINT32, 0.0f, 8, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr}};
 
     auto unique_executor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = unique_executor.get();
+    aclOpExecutor* executor = unique_executor.get();
     op::internal::GetThreadLocalContext().executor_ = executor;
     aclrtStream stream = 0;
     auto ret = kernelBin->MemsetOutputTensor(stream, ctx);
@@ -401,7 +406,7 @@ static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
     MemsetV2ArgContext memsetV2ArgCtx;
     ret = memsetV2ArgCtx.Init(kernelBin->memSetValueCtx_);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    op::OpArgContext *memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
+    op::OpArgContext* memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
     EXPECT_EQ(memsetV2OpArgCtx->ContainsOpArgType(op::OP_INPUT_ARG), true);
     EXPECT_EQ(memsetV2OpArgCtx->ContainsOpArgType(op::OP_OUTPUT_ARG), true);
     EXPECT_EQ(memsetV2OpArgCtx->ContainsOpArgType(op::OP_WORKSPACE_ARG), true);
@@ -429,7 +434,7 @@ static void MemSetV2OutputTensorWithDevPtr(op::internal::OpKernelBin *kernelBin)
     DestroyOpArgContext(ctx);
 }
 
-static void MemSetV2OutputTensorWithDevPtr2(op::internal::OpKernelBin *kernelBin)
+static void MemSetV2OutputTensorWithDevPtr2(op::internal::OpKernelBin* kernelBin)
 {
     OP_LOGI("support dev ptr 2");
     PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend950", "Ascend950DT_9591");
@@ -440,32 +445,33 @@ static void MemSetV2OutputTensorWithDevPtr2(op::internal::OpKernelBin *kernelBin
     int addr[6] = {0};
     aclTensor tensor1(selfShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, &addr[0]);
     tensor1.SetFromWorkspace(false);
-    aclTensor *tensorPtr1 = &tensor1;
+    aclTensor* tensorPtr1 = &tensor1;
     aclTensor tensor2(wsShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, &addr[1]);
     tensor2.SetFromWorkspace(false);
-    aclTensor *tensorPtr2 = &tensor2;
+    aclTensor* tensorPtr2 = &tensor2;
     aclTensor tensor3(wsShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, &addr[2]);
     tensor3.SetFromWorkspace(false);
-    aclTensor *tensorPtr3 = &tensor3;
+    aclTensor* tensorPtr3 = &tensor3;
 
     // int32 tensor list
-    const aclTensor *tensorArr1[3] = {tensorPtr2, tensorPtr3, nullptr};
-    aclTensorList *tensorList1 = aclCreateTensorList(tensorArr1, 3);
+    const aclTensor* tensorArr1[3] = {tensorPtr2, tensorPtr3, nullptr};
+    aclTensorList* tensorList1 = aclCreateTensorList(tensorArr1, 3);
 
     kernelBin->memSetValueCtx_ = {
         {2, op::DataType::DT_FLOAT, 6.6f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, tensorPtr1, nullptr},
         {3, op::DataType::DT_FLOAT, 8.8f, 6, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr},
-        {4, op::DataType::DT_INT32, 0.0f, 6, 100, 256, op::OpArgType::OPARG_ACLTENSOR_LIST, nullptr, nullptr, tensorList1},
+        {4, op::DataType::DT_INT32, 0.0f, 6, 100, 256, op::OpArgType::OPARG_ACLTENSOR_LIST, nullptr, nullptr,
+         tensorList1},
         {5, op::DataType::DT_INT32, 0.0f, 8, 100, 256, op::OpArgType::OPARG_ACLTENSOR_LIST, nullptr, nullptr, nullptr}};
 
     auto unique_executor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = unique_executor.get();
+    aclOpExecutor* executor = unique_executor.get();
     op::internal::GetThreadLocalContext().executor_ = executor;
 
     MemsetV2ArgContext memsetV2ArgCtx;
     auto ret = memsetV2ArgCtx.Init(kernelBin->memSetValueCtx_);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    op::OpArgContext *memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
+    op::OpArgContext* memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
 
     EXPECT_EQ(memsetV2ArgCtx.memsetTensors_->Size(), 3);
     EXPECT_EQ((*memsetV2ArgCtx.memsetTensors_)[0], tensorPtr1);
@@ -484,10 +490,10 @@ static void MemSetV2OutputTensorWithDevPtr2(op::internal::OpKernelBin *kernelBin
 
 TEST_F(KernelLaunchUT, MemSetV2LaunchTest)
 {
-    auto *kernelBinWithDevPtr = CreateFakeOpKernelBin(true);
+    auto* kernelBinWithDevPtr = CreateFakeOpKernelBin(true);
     aclnnStatus ret = kernelBinWithDevPtr->JsonLoad();
-    
-    auto *kernelBinNoDevPtr = CreateFakeOpKernelBin(false);
+
+    auto* kernelBinNoDevPtr = CreateFakeOpKernelBin(false);
     ret = kernelBinNoDevPtr->JsonLoad();
 
     const uint64_t threadCount = 0;
@@ -501,13 +507,13 @@ TEST_F(KernelLaunchUT, MemSetV2LaunchTest)
         threadVec[i].join();
     }
 
-    for (auto &[key, value] : kernelBinWithDevPtr->tilingParseCtxHolder_) {
+    for (auto& [key, value] : kernelBinWithDevPtr->tilingParseCtxHolder_) {
         if (value.get()) {
             value.get()->ReleaseTilingParse();
         }
     }
 
-    for (auto &[key, value] : kernelBinNoDevPtr->tilingParseCtxHolder_) {
+    for (auto& [key, value] : kernelBinNoDevPtr->tilingParseCtxHolder_) {
         if (value.get()) {
             value.get()->ReleaseTilingParse();
         }
@@ -515,7 +521,6 @@ TEST_F(KernelLaunchUT, MemSetV2LaunchTest)
     delete kernelBinWithDevPtr;
     delete kernelBinNoDevPtr;
 }
-
 
 TEST_F(KernelLaunchUT, KernelLaunchUT_Outshape)
 {
@@ -541,7 +546,7 @@ TEST_F(KernelLaunchUT, KernelLaunchUT_Outshape)
 
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto ctx = op::MakeOpArgContext(input_arg, output_arg, attr_arg, ws_arg, outshape_arg);
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
 
@@ -550,8 +555,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUT_Outshape)
 
 TEST_F(KernelLaunchUT, GetAclTensorCountTerst1)
 {
-    aclTensor *nullTensor = nullptr;
-    aclTensorList *nullTensorList = nullptr;
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
     auto input_arg = OP_INPUT(nullTensor, nullTensorList);
     // create arg
     auto ctx = op::MakeOpArgContext(input_arg);
@@ -561,7 +566,7 @@ TEST_F(KernelLaunchUT, GetAclTensorCountTerst1)
 
 TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)
 {
-    const char *p = std::getenv("ASCEND_OPP_PATH");
+    const char* p = std::getenv("ASCEND_OPP_PATH");
     EXPECT_NE(p, nullptr);
 
     op::internal::KeyAndDetail key;
@@ -569,15 +574,17 @@ TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)
     size_t hashKey = 123;
 
     constexpr size_t binNum = 4;
-    op::internal::OpKernelBin *bins[binNum];
+    op::internal::OpKernelBin* bins[binNum];
     for (size_t i = 1; i <= binNum; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-                "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.json", p, i);
-        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
-                "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.o", p, i);
-        op::internal::OpKernelBin *bin = new op::internal::OpKernelBin(
+        snprintf_s(
+            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.json", p, i);
+        snprintf_s(
+            binPath, sizeof(binPath), sizeof(binPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.o", p, i);
+        op::internal::OpKernelBin* bin = new op::internal::OpKernelBin(
             9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = bin->JsonLoad();
         EXPECT_EQ(rc, ACLNN_SUCCESS);
@@ -634,7 +641,7 @@ TEST_F(KernelLaunchUT, RtsArgTest)
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     auto ctx = op::MakeOpArgContext(input_arg, output_arg);
@@ -644,7 +651,7 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
+    launchCfg.funcHandle = (void*)0x12345678;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 0;
@@ -682,8 +689,8 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
     auto out = exe.AllocTensor(outShape, op::DataType::DT_INT32);
     auto inputTensor = exe.ConvertToTensor(self, op::DataType::DT_INT32);
     auto inputTensor2 = exe.ConvertToTensor(self, op::DataType::DT_INT32);
-    const aclTensor *inputArr[] = {inputTensor, inputTensor2};
-    aclTensorList *inputTensors = aclCreateTensorList(inputArr, 2);
+    const aclTensor* inputArr[] = {inputTensor, inputTensor2};
+    aclTensorList* inputTensors = aclCreateTensorList(inputArr, 2);
 
     auto input_arg = OP_INPUT(inputTensors);
     auto output_arg = OP_OUTPUT(out);
@@ -691,7 +698,7 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     op::internal::LaunchArgInfo argInfo(false, true, ctx);
@@ -699,7 +706,7 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
+    launchCfg.funcHandle = (void*)0x12345678;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 0;
@@ -711,7 +718,8 @@ TEST_F(KernelLaunchUT, TestWithHandleTensorPtrList)
     op::DestroyOpArgContext(ctx);
 }
 
-TEST_F(KernelLaunchUT, Launch1982Test) {
+TEST_F(KernelLaunchUT, Launch1982Test)
+{
     setenv("ENABLE_1982", "1", 1);
     PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend910_93", "Ascend910_9391");
     op::Shape selfShape{100};
@@ -730,7 +738,7 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     op::internal::LaunchArgInfo argInfo(false, false, ctx);
@@ -738,7 +746,7 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
+    launchCfg.funcHandle = (void*)0x12345678;
     launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 1;
@@ -755,8 +763,7 @@ TEST_F(KernelLaunchUT, Launch1982Test) {
 
 class CaptureActiveStub : public AclrtStub {
 public:
-    aclError aclmdlRICaptureGetInfo(
-        aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl) override
+    aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus* status, aclmdlRI* captureMdl) override
     {
         *status = ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE;
         return ACL_SUCCESS;
@@ -765,14 +772,13 @@ public:
 
 class CaptureGetInfoFailStub : public AclrtStub {
 public:
-    aclError aclmdlRICaptureGetInfo(
-        aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl) override
+    aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus* status, aclmdlRI* captureMdl) override
     {
         return ACL_ERROR_FAILURE;
     }
 };
 
-static void TestLaunchWithCaptureStub(AclrtStub *captureStub)
+static void TestLaunchWithCaptureStub(AclrtStub* captureStub)
 {
     if (captureStub != nullptr) {
         AclrtStub::GetInstance()->Install(captureStub);
@@ -789,14 +795,12 @@ static void TestLaunchWithCaptureStub(AclrtStub *captureStub)
 
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     auto uniqueExecutor = CREATE_EXECUTOR();
-    aclOpExecutor *executor = uniqueExecutor.get();
+    aclOpExecutor* executor = uniqueExecutor.get();
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Axpy");
     op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
-    auto ctx = op::MakeOpArgContext(OP_INPUT(self.get(), other.get()),
-                                    OP_OUTPUT(out.get()),
-                                    OP_ATTR(alpha),
-                                    OP_WORKSPACE(out.get()));
+    auto ctx = op::MakeOpArgContext(
+        OP_INPUT(self.get(), other.get()), OP_OUTPUT(out.get()), OP_ATTR(alpha), OP_WORKSPACE(out.get()));
     auto launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
 
     auto rc = launcher->Launch();
@@ -814,10 +818,7 @@ TEST_F(KernelLaunchUT, KernelLaunch_CaptureActive_SkipOverflow)
     TestLaunchWithCaptureStub(&captureStub);
 }
 
-TEST_F(KernelLaunchUT, KernelLaunch_CaptureNone_NormalOverflow)
-{
-    TestLaunchWithCaptureStub(nullptr);
-}
+TEST_F(KernelLaunchUT, KernelLaunch_CaptureNone_NormalOverflow) { TestLaunchWithCaptureStub(nullptr); }
 
 TEST_F(KernelLaunchUT, KernelLaunch_CaptureGetInfoFail_NormalOverflow)
 {

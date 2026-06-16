@@ -33,10 +33,7 @@ namespace benchmark {
 // 辅助函数
 // ============================================================================
 
-static Float6E2M3 FromBits(uint8_t bits)
-{
-    return Float6E2M3(bits, Float6E2M3::FromBits());
-}
+static Float6E2M3 FromBits(uint8_t bits) { return Float6E2M3(bits, Float6E2M3::FromBits()); }
 
 // ============================================================================
 // Float6 E2M3 标杆值定义 (来源: OCP MX)
@@ -45,14 +42,10 @@ static Float6E2M3 FromBits(uint8_t bits)
 // ============================================================================
 
 static constexpr BenchmarkCase<Float6E2M3> kE2M3_TypicalCases[] = {
-    {0.0f, 0x00, 0.0f, 0.0f, "zero", "OCP"},
-    {0.125f, 0x01, 0.125f, 0.0f, "0.125", "OCP"},
-    {0.25f, 0x02, 0.25f, 0.0f, "0.25", "OCP"},
-    {0.5f, 0x04, 0.5f, 0.0f, "half", "OCP"},
-    {0.875f, 0x07, 0.875f, 0.0f, "0.875", "OCP"},
-    {1.0f, 0x08, 1.0f, 0.0f, "one", "OCP"},
-    {1.5f, 0x0C, 1.5f, 0.0f, "1.5", "OCP"},
-    {2.0f, 0x10, 2.0f, 0.0f, "two", "OCP"},
+    {0.0f, 0x00, 0.0f, 0.0f, "zero", "OCP"},      {0.125f, 0x01, 0.125f, 0.0f, "0.125", "OCP"},
+    {0.25f, 0x02, 0.25f, 0.0f, "0.25", "OCP"},    {0.5f, 0x04, 0.5f, 0.0f, "half", "OCP"},
+    {0.875f, 0x07, 0.875f, 0.0f, "0.875", "OCP"}, {1.0f, 0x08, 1.0f, 0.0f, "one", "OCP"},
+    {1.5f, 0x0C, 1.5f, 0.0f, "1.5", "OCP"},       {2.0f, 0x10, 2.0f, 0.0f, "two", "OCP"},
 };
 
 // ============================================================================
@@ -66,13 +59,11 @@ protected:
         Float6E2M3 result(tc.input);
 
         // 验证位表示
-        EXPECT_EQ(result.value, tc.expected_bits)
-            << "Input: " << tc.input << ", Desc: " << tc.description;
+        EXPECT_EQ(result.value, tc.expected_bits) << "Input: " << tc.input << ", Desc: " << tc.description;
 
         // 验证转换值
         float actual = static_cast<float>(result);
-        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance)
-            << "Desc: " << tc.description;
+        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance) << "Desc: " << tc.description;
     }
 };
 

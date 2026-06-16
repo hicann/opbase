@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_EXTERNAL_ACLNN_BASE_H
 #define OP_API_OP_API_COMMON_INC_EXTERNAL_ACLNN_BASE_H
 
@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-ACL_FUNC_VISIBILITY aclnnStatus aclnnInit(const char *configPath);
+ACL_FUNC_VISIBILITY aclnnStatus aclnnInit(const char* configPath);
 ACL_FUNC_VISIBILITY aclnnStatus aclnnFinalize();
 
 #ifdef __cplusplus

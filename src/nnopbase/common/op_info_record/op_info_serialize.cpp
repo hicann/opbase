@@ -21,11 +21,7 @@
 #include "ini_parse.h"
 
 namespace aclnnOpInfoRecord {
-enum class OpInfoType {
-    OP_INFO = 0,
-    OP_INFO_FOR_DEBUG,
-    OP_INFO_FOR_OPCOMPILE
-};
+enum class OpInfoType { OP_INFO = 0, OP_INFO_FOR_DEBUG, OP_INFO_FOR_OPCOMPILE };
 
 namespace {
 std::mutex g_opInfoStatisticsLck;
@@ -58,19 +54,12 @@ std::set<std::string> g_opTypeWhiteList = {
 };
 
 std::set<std::string> g_opTypeBlackList = {
-    "ReduceSum",
-    "ReduceMin",
-    "ReduceMax",
-    "ArgMinWithValue",
-    "FusedInferAttentionScore",
-    "GatherV2",
-    "ArgMaxWithValue",
-    "Range"
-};
+    "ReduceSum", "ReduceMin",       "ReduceMax", "ArgMinWithValue", "FusedInferAttentionScore",
+    "GatherV2",  "ArgMaxWithValue", "Range"};
 
 constexpr int JSON_INDENT = 2;
 
-int32_t ReadJsonInfo(const std::string &binaryInfoPath, nlohmann::json &binaryInfoConfig)
+int32_t ReadJsonInfo(const std::string& binaryInfoPath, nlohmann::json& binaryInfoConfig)
 {
     char opInfoPath[MMPA_MAX_PATH] = {0};
     const int32_t ret = mmRealPath(binaryInfoPath.c_str(), opInfoPath, MMPA_MAX_PATH);
@@ -80,11 +69,13 @@ int32_t ReadJsonInfo(const std::string &binaryInfoPath, nlohmann::json &binaryIn
     }
     OP_LOGI("Reading ascendc operator jsonfile path: %s", opInfoPath);
     std::ifstream ifs(opInfoPath);
-    if (!ifs.is_open()) { return ACLNN_ERR_INNER_LOAD_JSON_FAILED; }
+    if (!ifs.is_open()) {
+        return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
+    }
     try {
         ifs >> binaryInfoConfig;
         ifs.close();
-    } catch (const nlohmann::json::exception &e) {
+    } catch (const nlohmann::json::exception& e) {
         OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "Read jsonfile [%s] failed, reason %s.", opInfoPath, e.what());
         ifs.close();
         return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
@@ -93,8 +84,7 @@ int32_t ReadJsonInfo(const std::string &binaryInfoPath, nlohmann::json &binaryIn
     return 0;
 }
 
-
-std::string GetFirstShapeStr(const nlohmann::json &j)
+std::string GetFirstShapeStr(const nlohmann::json& j)
 {
     if (j.is_null()) {
         return "";
@@ -117,7 +107,7 @@ std::string GetFirstShapeStr(const nlohmann::json &j)
     return str;
 }
 
-int32_t DumpJsonToFile(const nlohmann::json &opJson, const OpInfoType type)
+int32_t DumpJsonToFile(const nlohmann::json& opJson, const OpInfoType type)
 {
     static uint32_t cnt = 0;
     static uint32_t cntDebug = 0;
@@ -127,8 +117,8 @@ int32_t DumpJsonToFile(const nlohmann::json &opJson, const OpInfoType type)
     }
     // input 首节点为dynamic需要处理
     if (!opJson["inputs"].is_array()) {
-        OP_LOGE(ACLNN_ERR_INNER,
-            "DumpJsonToFile cannot record node[%s] because the input quantity is null!",
+        OP_LOGE(
+            ACLNN_ERR_INNER, "DumpJsonToFile cannot record node[%s] because the input quantity is null!",
             opJson["op_type"].get<std::string>().c_str());
         return 0;
     }
@@ -149,7 +139,9 @@ int32_t DumpJsonToFile(const nlohmann::json &opJson, const OpInfoType type)
     OP_LOGI("DumpJsonToFile start to record json[%s]!", fileName.c_str());
     std::string jStr = opJson.dump(JSON_INDENT);
     if (Adx::AdumpSaveToFile(jStr.c_str(), jStr.size(), fileName.c_str(), Adx::SaveType::OVERWRITE) != 0) {
-        OP_LOGE(ACLNN_ERR_INNER, "DumpJsonToFile dump node[%s] json file failed!", opJson["op_type"].get<std::string>().c_str());
+        OP_LOGE(
+            ACLNN_ERR_INNER, "DumpJsonToFile dump node[%s] json file failed!",
+            opJson["op_type"].get<std::string>().c_str());
         return -1;
     }
 
@@ -157,14 +149,14 @@ int32_t DumpJsonToFile(const nlohmann::json &opJson, const OpInfoType type)
     return 0;
 }
 
-int32_t DumpJson(const std::set<nlohmann::json> &gOpInfoStatistics, const OpInfoType type)
+int32_t DumpJson(const std::set<nlohmann::json>& gOpInfoStatistics, const OpInfoType type)
 {
     int32_t ret = 0;
     int32_t tmpRes = 0;
-    for (const auto &item : gOpInfoStatistics) {
+    for (const auto& item : gOpInfoStatistics) {
         try {
             tmpRes = DumpJsonToFile(item, type);
-        } catch (nlohmann::json::exception &e) {
+        } catch (nlohmann::json::exception& e) {
             ret = -1;
         }
         if (ret == 0 && tmpRes == -1) {
@@ -174,7 +166,7 @@ int32_t DumpJson(const std::set<nlohmann::json> &gOpInfoStatistics, const OpInfo
     return ret;
 }
 
-void AddPlatformInfoToJson(nlohmann::json &opJson, const gert::TilingContext *ctx)
+void AddPlatformInfoToJson(nlohmann::json& opJson, const gert::TilingContext* ctx)
 {
     auto platformInfo = ctx->GetPlatformInfo();
     if (platformInfo != nullptr) {
@@ -186,38 +178,34 @@ void AddPlatformInfoToJson(nlohmann::json &opJson, const gert::TilingContext *ct
             // 不存在异常string转化int失败的场景, 依赖组件的fe::PlatFormInfos在保存值时已做约束
             opJson["platform_info"]["vector_core_cnt"] = std::stoi(res[vecCoreCntKey]);
             opJson["platform_info"]["cube_core_cnt"] = std::stoi(res[cubeCoreCntKey]);
-            OP_LOGI("Save coreNum[%d, %d] to json.", opJson["platform_info"]["cube_core_cnt"].get<int32_t>(),
+            OP_LOGI(
+                "Save coreNum[%d, %d] to json.", opJson["platform_info"]["cube_core_cnt"].get<int32_t>(),
                 opJson["platform_info"]["vector_core_cnt"].get<int32_t>());
         }
     }
 }
 
-void AddJsonToOpInfoCompile(const nlohmann::json &opJson)
+void AddJsonToOpInfoCompile(const nlohmann::json& opJson)
 {
     if (g_opTypeBlackList.find(opJson["op_type"]) == g_opTypeBlackList.cend()) {
         g_opInfoStatisticsOpcompile.emplace(opJson);
     } else {
-        OP_LOGD("TilingContextToJson node type[%s] is in black list!",
-            opJson["op_type"].get<std::string>().c_str());
+        OP_LOGD("TilingContextToJson node type[%s] is in black list!", opJson["op_type"].get<std::string>().c_str());
     }
 }
 
-void AddJsonToOpInfo(const nlohmann::json &opJson)
+void AddJsonToOpInfo(const nlohmann::json& opJson)
 {
     if (g_opTypeWhiteList.find(opJson["op_type"]) == g_opTypeWhiteList.cend()) {
-        OP_LOGD("TilingContextToJson node type[%s] not in white list!",
-            opJson["op_type"].get<std::string>().c_str());
+        OP_LOGD("TilingContextToJson node type[%s] not in white list!", opJson["op_type"].get<std::string>().c_str());
     } else {
         g_opInfoStatistics.emplace(opJson);
     }
 }
 
-void AddJsonToOpInfoDebug(const nlohmann::json &opJson)
-{
-    g_opInfoStatisticsDebug.emplace(opJson);
-}
+void AddJsonToOpInfoDebug(const nlohmann::json& opJson) { g_opInfoStatisticsDebug.emplace(opJson); }
 
-}  // namespace
+} // namespace
 
 int32_t OpInfoDump(void)
 {
@@ -240,8 +228,9 @@ int32_t OpInfoDump(void)
  * @param [in] ctx: TilingContext
  * @return int32_t: 0 == SUCCESS, others is FAILED
  */
-int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord::OpCompilerOption &opt,
-    const aclnnOpInfoRecord::OpKernelInfo *kernelInfo)
+int32_t OpInfoSerialize(
+    const gert::TilingContext* ctx, const aclnnOpInfoRecord::OpCompilerOption& opt,
+    const aclnnOpInfoRecord::OpKernelInfo* kernelInfo)
 {
     OP_CHECK(ctx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize ctx is nullptr!"), return -1);
     OP_CHECK(kernelInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize kernelInfo is nullptr!"), return -1);
@@ -267,7 +256,8 @@ int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord:
             OP_LOGE(ACLNN_ERR_INNER, "Json %s does not contains supportInfo keyword.", builtInJsonPath.c_str());
             return -1;
         }
-        nlohmann::json jsonDebug = TilingContextToJson(ctx, iniConfigMap, builtInJsonConfig["supportInfo"], kernelInfo->isMc2);
+        nlohmann::json jsonDebug =
+            TilingContextToJson(ctx, iniConfigMap, builtInJsonConfig["supportInfo"], kernelInfo->isMc2);
         if (jsonDebug.is_null()) {
             return 0;
         }
@@ -280,10 +270,10 @@ int32_t OpInfoSerialize(const gert::TilingContext *ctx, const aclnnOpInfoRecord:
         jsonDebug["bin_info"] = kernelInfo->bin_info;
         AddJsonToOpInfo(jsonDebug);
         AddJsonToOpInfoDebug(jsonDebug);
-    } catch (nlohmann::json::exception &e) {
+    } catch (nlohmann::json::exception& e) {
         OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize json exception:%s!", e.what());
         return -1;
     }
     return 0;
 }
-}  // namespace aclnnOpInfoRecord
+} // namespace aclnnOpInfoRecord

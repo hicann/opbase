@@ -16,8 +16,8 @@
 #include "utils/indv_base.h"
 
 struct NnopbaseRTArgsExt {
-    void *args;                             // args host mem addr
-    aclrtPlaceHolderInfo *hostInputInfoPtr;  // nullptr means no host mem input
+    void* args;                             // args host mem addr
+    aclrtPlaceHolderInfo* hostInputInfoPtr; // nullptr means no host mem input
     uint32_t argsSize;                      // input + output + tiling addr size + tiling data size + host mem
     uint32_t tilingAddrOffset;              // tiling addr offset
     uint32_t tilingDataOffset;              // tiling data offset
@@ -27,7 +27,6 @@ struct NnopbaseRTArgsExt {
 
 std::vector<aclrtPlaceHolderInfo> NnopbaseGetRTSPlaceHolder(NnopbaseRTArgsExt* argsExt);
 
-void NnopbaseGetIrIndex(const NnopbaseParamDesc &paramDesc, const size_t index,
-                        size_t &irIndex, size_t &relativeIndex);
+void NnopbaseGetIrIndex(const NnopbaseParamDesc& paramDesc, const size_t index, size_t& irIndex, size_t& relativeIndex);
 
 #endif

@@ -33,10 +33,7 @@ namespace benchmark {
 // 辅助函数
 // ============================================================================
 
-static Float4E2M1 FromBits(uint8_t bits)
-{
-    return Float4E2M1(bits, Float4E2M1::FromBits());
-}
+static Float4E2M1 FromBits(uint8_t bits) { return Float4E2M1(bits, Float4E2M1::FromBits()); }
 
 // ============================================================================
 // Float4 E2M1 标杆值定义 (来源: OCP MX MXFP4)
@@ -67,13 +64,11 @@ protected:
         Float4E2M1 result(tc.input);
 
         // 验证位表示
-        EXPECT_EQ(result.value, tc.expected_bits)
-            << "Input: " << tc.input << ", Desc: " << tc.description;
+        EXPECT_EQ(result.value, tc.expected_bits) << "Input: " << tc.input << ", Desc: " << tc.description;
 
         // 验证转换值
         float actual = static_cast<float>(result);
-        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance)
-            << "Desc: " << tc.description;
+        EXPECT_NEAR(actual, tc.expected_value, tc.tolerance) << "Desc: " << tc.description;
     }
 };
 
@@ -92,15 +87,15 @@ TEST_F(Float4E2M1Benchmark, NegativeValues)
 {
     // 负值：最高位为符号位
     Float4E2M1 neg_half(-0.5f);
-    EXPECT_EQ(neg_half.value, 0x9);  // 1 00 1
+    EXPECT_EQ(neg_half.value, 0x9); // 1 00 1
     EXPECT_FLOAT_EQ(static_cast<float>(neg_half), -0.5f);
 
     Float4E2M1 neg_one(-1.0f);
-    EXPECT_EQ(neg_one.value, 0xA);  // 1 01 0
+    EXPECT_EQ(neg_one.value, 0xA); // 1 01 0
     EXPECT_FLOAT_EQ(static_cast<float>(neg_one), -1.0f);
 
     Float4E2M1 neg_max(-6.0f);
-    EXPECT_EQ(neg_max.value, 0xF);  // 1 11 1
+    EXPECT_EQ(neg_max.value, 0xF); // 1 11 1
     EXPECT_FLOAT_EQ(static_cast<float>(neg_max), -6.0f);
 }
 
@@ -134,7 +129,7 @@ TEST_F(Float4E2M1Benchmark, NaNClampToMax)
     // E2M1 没有 NaN，输入 NaN 应 clamp 到最大值
     Float4E2M1 nan_val(std::nanf(""));
     float result = static_cast<float>(nan_val);
-    EXPECT_FLOAT_EQ(result, 6.0f);  // 正 NaN -> +max
+    EXPECT_FLOAT_EQ(result, 6.0f); // 正 NaN -> +max
 }
 
 TEST_F(Float4E2M1Benchmark, InfinityClampToMax)

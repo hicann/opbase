@@ -65,23 +65,23 @@ auto call(Function f, Tuple t)
     return call(f, t, std::make_index_sequence<size>{});
 }
 
-#define RunOp(aclnn_api, ...)                                                                                  \
-    ({                                                                                                         \
-        uint64_t workspace_size = 0;                                                                           \
-        uint64_t *workspace_size_addr = &workspace_size;                                                       \
-        aclOpExecutor *executor = nullptr;                                                                     \
-        aclOpExecutor **executor_addr = &executor;                                                             \
-        auto converted_params = std::make_tuple(__VA_ARGS__, workspace_size_addr, executor_addr);              \
-        aclnnStatus _chk_stutus = call(aclnn_api##GetWorkspaceSize, converted_params);                         \
-        void *workspace_addr = nullptr;                                                                        \
-        if (workspace_size != 0) {                                                                             \
-            workspace_addr = malloc(workspace_size);                                                           \
-        }                                                                                                      \
-        _chk_stutus = aclnn_api(workspace_addr, workspace_size, executor, nullptr);                            \
-        if (workspace_addr != nullptr) {                                                                       \
-            free(workspace_addr);                                                                              \
-        }                                                                                                      \
-        _chk_stutus;                                                                                           \
+#define RunOp(aclnn_api, ...)                                                                     \
+    ({                                                                                            \
+        uint64_t workspace_size = 0;                                                              \
+        uint64_t* workspace_size_addr = &workspace_size;                                          \
+        aclOpExecutor* executor = nullptr;                                                        \
+        aclOpExecutor** executor_addr = &executor;                                                \
+        auto converted_params = std::make_tuple(__VA_ARGS__, workspace_size_addr, executor_addr); \
+        aclnnStatus _chk_stutus = call(aclnn_api##GetWorkspaceSize, converted_params);            \
+        void* workspace_addr = nullptr;                                                           \
+        if (workspace_size != 0) {                                                                \
+            workspace_addr = malloc(workspace_size);                                              \
+        }                                                                                         \
+        _chk_stutus = aclnn_api(workspace_addr, workspace_size, executor, nullptr);               \
+        if (workspace_addr != nullptr) {                                                          \
+            free(workspace_addr);                                                                 \
+        }                                                                                         \
+        _chk_stutus;                                                                              \
     })
 
 #endif

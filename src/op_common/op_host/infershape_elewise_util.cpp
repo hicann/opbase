@@ -16,12 +16,11 @@
 #include "op_common/log/log.h"
 #include "op_common/op_host/infershape_elewise_util.h"
 
-
 namespace Ops {
 namespace Base {
 using namespace ge;
 
-ge::graphStatus InferShape4Elewise(gert::InferShapeContext *context)
+ge::graphStatus InferShape4Elewise(gert::InferShapeContext* context)
 {
     auto inShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inShape);
@@ -38,5 +37,5 @@ ge::graphStatus InferShape4Elewise(gert::InferShapeContext *context)
     return ge::GRAPH_SUCCESS;
 }
 
-}  // namespace Base
-}  // namespace Ops
+} // namespace Base
+} // namespace Ops

@@ -13,13 +13,7 @@
 namespace op {
 namespace internal {
 
-void *MallocPtr(size_t size)
-{
-    return internal::BlockPool::Malloc(size);
-}
-void FreePtr(void *block)
-{
-    internal::BlockPool::Free(block);
-}
-}  // namespace internal
-}  // namespace op
+void* MallocPtr(size_t size) { return internal::BlockPool::Malloc(size); }
+void FreePtr(void* block) { internal::BlockPool::Free(block); }
+} // namespace internal
+} // namespace op

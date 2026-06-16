@@ -24,72 +24,74 @@ namespace Ops {
 namespace Base {
 template <typename... Ts>
 struct Elems {
-  using Type = Elems<Ts...>;
-  constexpr static size_t Size = sizeof...(Ts);
+    using Type = Elems<Ts...>;
+    constexpr static size_t Size = sizeof...(Ts);
 
-  template <typename... T>
-  using Append = Elems<Ts..., T...>;
+    template <typename... T>
+    using Append = Elems<Ts..., T...>;
 
-  template <template <class...> class T>
-  using Export = T<Ts...>;
+    template <template <class...> class T>
+    using Export = T<Ts...>;
 
-  template <typename Es>
-  using Concat = typename Es::template Export<Append>;
+    template <typename Es>
+    using Concat = typename Es::template Export<Append>;
 
-  template <int pos>
-  using At = __aux::GetElemAt<pos, 0, Ts...>;
+    template <int pos>
+    using At = __aux::GetElemAt<pos, 0, Ts...>;
 
-  template <typename T, int start = 0>
-  __aicore__ constexpr static bool IsExist() {
-    if constexpr (start < Size) {
-      if constexpr (__aux::IsSameType<T, At<start>>::Value) {
-        return true;
-      }
-      return IsExist<T, start + 1>();
+    template <typename T, int start = 0>
+    __aicore__ constexpr static bool IsExist()
+    {
+        if constexpr (start < Size) {
+            if constexpr (__aux::IsSameType<T, At<start>>::Value) {
+                return true;
+            }
+            return IsExist<T, start + 1>();
+        }
+        return false;
     }
-    return false;
-  }
 
-  template <typename T, int start = 0>
-  __aicore__ constexpr static int GetIndex() {
-    if constexpr (__aux::IsSameType<T, At<start>>::Value) {
-      return start;
-    } else if constexpr (start + 1 < Size) {
-      return GetIndex<T, start + 1>();
+    template <typename T, int start = 0>
+    __aicore__ constexpr static int GetIndex()
+    {
+        if constexpr (__aux::IsSameType<T, At<start>>::Value) {
+            return start;
+        } else if constexpr (start + 1 < Size) {
+            return GetIndex<T, start + 1>();
+        }
+        return -1;
     }
-    return -1;
-  }
 
-  template <template <class, class> class Check, typename Filtered = Elems<>>
-  using Filter = typename __aux::FilterAux<Elems<Ts...>, Check, Filtered>::Type;
+    template <template <class, class> class Check, typename Filtered = Elems<>>
+    using Filter = typename __aux::FilterAux<Elems<Ts...>, Check, Filtered>::Type;
 
-  using Unique = __aux::UniqAuxT<Elems<Ts...>>;
+    using Unique = __aux::UniqAuxT<Elems<Ts...>>;
 
-  template <class Es>
-  using Union = typename Concat<Es>::Unique;
+    template <class Es>
+    using Union = typename Concat<Es>::Unique;
 
- private:
-  template <class Es>
-  struct _RemoveAux {
-    template <typename E, typename T>
-    struct Check {
-      constexpr static bool Value = !Es::template IsExist<T>();
+private:
+    template <class Es>
+    struct _RemoveAux {
+        template <typename E, typename T>
+        struct Check {
+            constexpr static bool Value = !Es::template IsExist<T>();
+        };
+
+        using Type = typename __aux::FilterAux<Elems<Ts...>, Check>::Type;
     };
 
-    using Type = typename __aux::FilterAux<Elems<Ts...>, Check>::Type;
-  };
+public:
+    template <class Es>
+    using Remove = typename _RemoveAux<Es>::Type;
 
- public:
-  template <class Es>
-  using Remove = typename _RemoveAux<Es>::Type;
+    template <template <class...> class F>
+    using ForEach = Elems<typename F<Ts>::Type...>;
 
-  template <template <class...> class F>
-  using ForEach = Elems<typename F<Ts>::Type...>;
-
-  template <typename ToPop>
-  using PopFront = typename __aux::PopFrontAux<Elems<Ts...>, ToPop>::Type;
+    template <typename ToPop>
+    using PopFront = typename __aux::PopFrontAux<Elems<Ts...>, ToPop>::Type;
 };
-}  // namespace Base
+} // namespace Base
 } // namespace Ops
 
-#endif  // UTIL_ELEMS_H_
+#endif // UTIL_ELEMS_H_

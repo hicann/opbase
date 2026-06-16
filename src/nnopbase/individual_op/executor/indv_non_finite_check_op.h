@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-aclnnStatus NnopbaseRunNonFiniteCheckOp(const NnopbaseTensors &tensors, aclrtStream stream, bool &isOverflow);
+aclnnStatus NnopbaseRunNonFiniteCheckOp(const NnopbaseTensors& tensors, aclrtStream stream, bool& isOverflow);
 
 #ifdef __cplusplus
 }

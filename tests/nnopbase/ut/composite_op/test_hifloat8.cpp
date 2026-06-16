@@ -44,7 +44,7 @@ TEST_F(TestHiFP8, Infinity)
     EXPECT_TRUE(std::isinf(f));
     EXPECT_GT(f, 0.0f);
 
-    op::HiFloat8 negInf(op::HiFloat8::HIF8_INF_VALUE | 0x80, op::HiFloat8::FromBits());  // Set sign bit
+    op::HiFloat8 negInf(op::HiFloat8::HIF8_INF_VALUE | 0x80, op::HiFloat8::FromBits()); // Set sign bit
     EXPECT_TRUE(negInf.IsInf());
     f = static_cast<float>(negInf);
     EXPECT_TRUE(std::isinf(f));
@@ -119,8 +119,7 @@ TEST_F(TestHiFP8, NegativeValues)
 // Test conversion from float and back
 TEST_F(TestHiFP8, FloatRoundTrip)
 {
-    float testValues[] = {0.0f, 1.0f, -1.0f, 0.5f, -0.5f, 2.0f, -2.0f,
-                          0.25f, -0.25f, 4.0f, -4.0f, 0.125f, -0.125f};
+    float testValues[] = {0.0f, 1.0f, -1.0f, 0.5f, -0.5f, 2.0f, -2.0f, 0.25f, -0.25f, 4.0f, -4.0f, 0.125f, -0.125f};
 
     for (float val : testValues) {
         op::HiFloat8 hif8(val);
@@ -151,10 +150,10 @@ TEST_F(TestHiFP8, FromBitsConstructorRaw)
     op::HiFloat8 val(0x00, op::HiFloat8::FromBits());
     EXPECT_TRUE(val.IsZero());
 
-    val = op::HiFloat8(0x80, op::HiFloat8::FromBits());  // NaN
+    val = op::HiFloat8(0x80, op::HiFloat8::FromBits()); // NaN
     EXPECT_TRUE(val.IsNaN());
 
-    val = op::HiFloat8(0x6F, op::HiFloat8::FromBits());  // +Inf
+    val = op::HiFloat8(0x6F, op::HiFloat8::FromBits()); // +Inf
     EXPECT_TRUE(val.IsInf());
 }
 

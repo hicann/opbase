@@ -14,56 +14,40 @@
 #include <cstdint>
 
 namespace {
-    // FP32 format constants
-    constexpr int FP32_EXP_BIAS_VAL = 127;
-    constexpr int FP32_MAN_LEN_VAL = 23;
-    constexpr int FP32_SIGN_SHIFT_VAL = 31;
-    constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-    constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-    constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
+// FP32 format constants
+constexpr int FP32_EXP_BIAS_VAL = 127;
+constexpr int FP32_MAN_LEN_VAL = 23;
+constexpr int FP32_SIGN_SHIFT_VAL = 31;
+constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
+constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
+constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
 
-    // E5M2 format constants
-    constexpr int EXP_BITS = 5;
-    constexpr int MAN_BITS = 2;
-    constexpr int EXP_BIAS = 15;
-    constexpr int SIGN_SHIFT = 7;
-    constexpr uint8_t SIGN_MASK = 0x80;          // 1 00000 00
-    constexpr uint8_t EXP_MASK = 0x7C;           // 0 11111 00
-    constexpr uint8_t MAN_MASK = 0x03;           // 0 00000 11
-    constexpr uint8_t ABS_VALUE_MASK = 0x7F;     // 0 11111 11 (exclude sign bit)
-    constexpr uint8_t MAX_EXP = 0x1F;            // 11111
-    constexpr uint8_t NEG_INF_VALUE = 0xFC;      // 1 11111 00
+// E5M2 format constants
+constexpr int EXP_BITS = 5;
+constexpr int MAN_BITS = 2;
+constexpr int EXP_BIAS = 15;
+constexpr int SIGN_SHIFT = 7;
+constexpr uint8_t SIGN_MASK = 0x80;      // 1 00000 00
+constexpr uint8_t EXP_MASK = 0x7C;       // 0 11111 00
+constexpr uint8_t MAN_MASK = 0x03;       // 0 00000 11
+constexpr uint8_t ABS_VALUE_MASK = 0x7F; // 0 11111 11 (exclude sign bit)
+constexpr uint8_t MAX_EXP = 0x1F;        // 11111
+constexpr uint8_t NEG_INF_VALUE = 0xFC;  // 1 11111 00
 } // anonymous namespace
 
 namespace op {
 
-Float8E5M2::Float8E5M2(float v) : value(FloatToFloat8E5M2(v).value)
-{}
+Float8E5M2::Float8E5M2(float v) : value(FloatToFloat8E5M2(v).value) {}
 
-Float8E5M2::operator float() const
-{
-    return Float8E5M2ToFloat(*this);
-}
+Float8E5M2::operator float() const { return Float8E5M2ToFloat(*this); }
 
-Float8E5M2::operator double() const
-{
-    return static_cast<double>(Float8E5M2ToFloat(*this));
-}
+Float8E5M2::operator double() const { return static_cast<double>(Float8E5M2ToFloat(*this)); }
 
-bool Float8E5M2::IsZero() const
-{
-    return (value & ABS_VALUE_MASK) == 0;
-}
+bool Float8E5M2::IsZero() const { return (value & ABS_VALUE_MASK) == 0; }
 
-bool Float8E5M2::IsNaN() const
-{
-    return (value & EXP_MASK) == EXP_MASK && (value & MAN_MASK) != 0;
-}
+bool Float8E5M2::IsNaN() const { return (value & EXP_MASK) == EXP_MASK && (value & MAN_MASK) != 0; }
 
-bool Float8E5M2::IsInf() const
-{
-    return value == INF_VALUE || value == NEG_INF_VALUE;
-}
+bool Float8E5M2::IsInf() const { return value == INF_VALUE || value == NEG_INF_VALUE; }
 
 float Float8E5M2::Float8E5M2ToFloat(Float8E5M2 fp8)
 {
@@ -77,7 +61,7 @@ float Float8E5M2::Float8E5M2ToFloat(Float8E5M2 fp8)
 
     if (fp8.IsInf()) {
         return (fp8.value & SIGN_MASK) != 0 ? -std::numeric_limits<float>::infinity() :
-                                         std::numeric_limits<float>::infinity();
+                                              std::numeric_limits<float>::infinity();
     }
 
     uint32_t sign = (fp8.value & SIGN_MASK) >> SIGN_SHIFT;

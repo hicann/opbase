@@ -58,7 +58,7 @@ constexpr int32_t DETERMINISTIC_LEVEL_NORMAL = 1;
 constexpr int32_t DETERMINISTIC_LEVEL_HIGH = 2;
 constexpr int32_t STRONG_CONSISTENCY_ON = 1;
 
-uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json &opJson)
+uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json& opJson)
 {
     if (!opJson.contains("taskRation")) {
         OP_LOGW("MIX op has no taskRation");
@@ -92,8 +92,9 @@ uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json
     }
 }
 
-void UpdateThradLocalPlatformInfo(fe::PlatFormInfos *platformInfo, const uint32_t &coreNum, const uint32_t &cubeCoreNum,
-    const uint32_t &vectorCoreNum)
+void UpdateThradLocalPlatformInfo(
+    fe::PlatFormInfos* platformInfo, const uint32_t& coreNum, const uint32_t& cubeCoreNum,
+    const uint32_t& vectorCoreNum)
 {
     thread_local static uint32_t cubeCoreNumLast = -1;
     thread_local static uint32_t vectorCoreNumLast = -1;
@@ -118,7 +119,7 @@ void UpdateThradLocalPlatformInfo(fe::PlatFormInfos *platformInfo, const uint32_
     platformInfo->SetCoreNum(coreNum);
 }
 
-void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &coreNum)
+void SetCoreNum(const Json& opJson, fe::PlatFormInfos* platformInfo, uint32_t& coreNum)
 {
     uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
     uint32_t vectorCoreNum = GetThreadLocalContext().opConfigInfo_.aivNum_;
@@ -149,9 +150,9 @@ void SetCoreNum(const Json &opJson, fe::PlatFormInfos *platformInfo, uint32_t &c
 }
 
 aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
-    uint32_t opType, const gert::OpImplKernelRegistry::OpImplFunctions *tilingFuncs, const Json &opJson,
-    fe::PlatFormInfos *platformInfo, const aclnnOpInfoRecord::OpCompilerOption &compileOptions,
-    const aclnnOpInfoRecord::OpKernelInfo &opKernelInfo)
+    uint32_t opType, const gert::OpImplKernelRegistry::OpImplFunctions* tilingFuncs, const Json& opJson,
+    fe::PlatFormInfos* platformInfo, const aclnnOpInfoRecord::OpCompilerOption& compileOptions,
+    const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo)
 {
     if (tilingFuncs == nullptr) {
         OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
@@ -176,23 +177,23 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     tilingParseInfo_.opType_ = opTypeStr_.c_str();
 
     std::size_t sz = sizeof(AsyncAnyValue) * static_cast<int>(kParseOutputNum);
-    tilingParseCtxValue_ = static_cast<AsyncAnyValue *>(malloc(sz));
+    tilingParseCtxValue_ = static_cast<AsyncAnyValue*>(malloc(sz));
     CHECK_COND(tilingParseCtxValue_ != nullptr, ACLNN_ERR_INNER, "malloc failed. [%zu]", sz);
 
-    (void) memset_s(tilingParseCtxValue_, sz, 0, sz);
+    (void)memset_s(tilingParseCtxValue_, sz, 0, sz);
 
-    tilingParseCtxValue_[kCompileInfo].data.pointer = const_cast<char *>(tilingParseInfo_.compileInfo_);
+    tilingParseCtxValue_[kCompileInfo].data.pointer = const_cast<char*>(tilingParseInfo_.compileInfo_);
     tilingParseCtxValue_[kPlatformInfo].data.pointer = tilingParseInfo_.platformInfo_;
-    tilingParseCtxValue_[kOpType].data.pointer = const_cast<char *>(tilingParseInfo_.opType_);
+    tilingParseCtxValue_[kOpType].data.pointer = const_cast<char*>(tilingParseInfo_.opType_);
 
     std::size_t tilingParseCtxSize =
-        sizeof(AsyncAnyValue *) * static_cast<int>(kParseOutputNum) + sizeof(KernelRunContext);
-    tilingParseCtx_ = static_cast<KernelRunContext *>(malloc(tilingParseCtxSize));
+        sizeof(AsyncAnyValue*) * static_cast<int>(kParseOutputNum) + sizeof(KernelRunContext);
+    tilingParseCtx_ = static_cast<KernelRunContext*>(malloc(tilingParseCtxSize));
     CHECK_COND(tilingParseCtx_ != nullptr, ACLNN_ERR_INNER, "malloc failed. [%zu]", tilingParseCtxSize);
 
-    (void) memset_s(tilingParseCtx_, tilingParseCtxSize, 0, tilingParseCtxSize);
+    (void)memset_s(tilingParseCtx_, tilingParseCtxSize, 0, tilingParseCtxSize);
 
-    (void) memset_s(&dummyComputeNodeInfo_, sizeof(dummyComputeNodeInfo_), 0, sizeof(dummyComputeNodeInfo_));
+    (void)memset_s(&dummyComputeNodeInfo_, sizeof(dummyComputeNodeInfo_), 0, sizeof(dummyComputeNodeInfo_));
     dummyComputeNodeInfo_.node_type_ = opTypeStr_.c_str();
     dummyComputeNodeInfo_.node_name_ = opTypeStr_.c_str();
 
@@ -210,7 +211,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     tilingParseCtx_->output_start = tilingParseCtx_->values + tilingParseCtx_->input_size;
 
     auto compileInfoCreator = tilingFuncs->compile_info_creator;
-    void *pStruct = nullptr;
+    void* pStruct = nullptr;
     if (compileInfoCreator) {
         OP_LOGI("Op [%s] use compile info creator to alloc compile info struct", opTypeStr_.c_str());
         pStruct = compileInfoCreator();
@@ -222,7 +223,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     } else {
         pStruct = malloc(MAX_COMPILE_INFO_STRUCT_SIZE);
         CHECK_COND(pStruct != nullptr, ACLNN_ERR_INNER, "malloc failed");
-        (void) memset_s(pStruct, MAX_COMPILE_INFO_STRUCT_SIZE, 0, MAX_COMPILE_INFO_STRUCT_SIZE);
+        (void)memset_s(pStruct, MAX_COMPILE_INFO_STRUCT_SIZE, 0, MAX_COMPILE_INFO_STRUCT_SIZE);
     }
     tilingParseCtxValue_[kCompileInfoStruct].data.pointer = pStruct;
     tilingParseInfo_.compileInfoStruct_ = pStruct;
@@ -247,15 +248,15 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
      */
     int32_t deterministicLevel = DETERMINISTIC_LEVEL_NONE;
     if (GetThreadLocalContext().opConfigInfo_.isDeterministicOn_) {
-        deterministicLevel = (consistency == STRONG_CONSISTENCY_ON) ?
-            DETERMINISTIC_LEVEL_HIGH : DETERMINISTIC_LEVEL_NORMAL;
+        deterministicLevel =
+            (consistency == STRONG_CONSISTENCY_ON) ? DETERMINISTIC_LEVEL_HIGH : DETERMINISTIC_LEVEL_NORMAL;
     }
-    int32_t *deterministicLevelDataInplace = reinterpret_cast<int32_t *>(DeterministicLevel_.data.inplace);
+    int32_t* deterministicLevelDataInplace = reinterpret_cast<int32_t*>(DeterministicLevel_.data.inplace);
     *deterministicLevelDataInplace = deterministicLevel;
     OP_LOGD("Get deterministic level success, level = %d, strong consistency = %lld", deterministicLevel, consistency);
 
-    OP_CHECK(tilingFuncs->tiling_parse != nullptr,
-        OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
+    OP_CHECK(
+        tilingFuncs->tiling_parse != nullptr, OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
         return ACLNN_SUCCESS);
 
     auto rc = tilingFuncs->tiling_parse(PtrCastTo<gert::KernelContext>(tilingParseCtx_));
@@ -264,15 +265,9 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     return ACLNN_SUCCESS;
 }
 
-const aclnnOpInfoRecord::OpCompilerOption& TilingParseCtxHolder::GetCompileOptions() const
-{
-    return compileOptions_;
-}
+const aclnnOpInfoRecord::OpCompilerOption& TilingParseCtxHolder::GetCompileOptions() const { return compileOptions_; }
 
-const aclnnOpInfoRecord::OpKernelInfo* TilingParseCtxHolder::GetOpKernelInfo() const
-{
-    return &opKernelInfo_;
-}
+const aclnnOpInfoRecord::OpKernelInfo* TilingParseCtxHolder::GetOpKernelInfo() const { return &opKernelInfo_; }
 
 TilingParseCtxHolder::~TilingParseCtxHolder()
 {

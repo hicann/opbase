@@ -7,15 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <numeric>
 
 #include "opdev/bfloat16.h"
 #include "gtest/gtest.h"
 #include "sstream"
 
-class TestBFloat16 : public testing::Test {
-};
+class TestBFloat16 : public testing::Test {};
 
 TEST_F(TestBFloat16, Inf)
 {

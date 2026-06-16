@@ -37,10 +37,7 @@ namespace op {
  */
 struct Float6E2M3 {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
 
@@ -52,11 +49,9 @@ struct Float6E2M3 {
     static constexpr uint8_t EPSILON_VALUE = 0x01;        // 0 00 001 = denorm 0.125
 
     // Default constructor - initialize to zero
-    constexpr Float6E2M3() : value(0)
-    {}
+    constexpr Float6E2M3() : value(0) {}
 
-    constexpr Float6E2M3(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK)
-    {}
+    constexpr Float6E2M3(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK) {}
 
     Float6E2M3(float v);
 
@@ -66,19 +61,19 @@ struct Float6E2M3 {
     static constexpr Float6E2M3 Epsilon()
     {
         // 2^-3 = 0.125 (the difference between 1.0 and next representable value)
-        return Float6E2M3(EPSILON_VALUE, FromBits());  // 0 00 001 = denorm 0.125
+        return Float6E2M3(EPSILON_VALUE, FromBits()); // 0 00 001 = denorm 0.125
     }
 
     static constexpr Float6E2M3 Highest()
     {
         // exp=3, man=7 -> 2^2 * (1 + 7/8) = 4 * 1.875 = 7.5
         // OCP MX E2M3 has no NaN, all bit patterns are valid
-        return Float6E2M3(HIGHEST_VALUE, FromBits());  // 0 11 111 = 7.5
+        return Float6E2M3(HIGHEST_VALUE, FromBits()); // 0 11 111 = 7.5
     }
 
     static constexpr Float6E2M3 Lowest()
     {
-        return Float6E2M3(LOWEST_VALUE, FromBits());  // 1 11 111 = -7.5
+        return Float6E2M3(LOWEST_VALUE, FromBits()); // 1 11 111 = -7.5
     }
 
     static constexpr Float6E2M3 MinPositiveNormal()
@@ -101,7 +96,7 @@ private:
     static Float6E2M3 FloatToFloat6E2M3(float f);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Float6E2M3 &dt)
+inline std::ostream& operator<<(std::ostream& os, const Float6E2M3& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -111,26 +106,26 @@ inline std::ostream &operator<<(std::ostream &os, const Float6E2M3 &dt)
 
 namespace std {
 
-inline bool isinf(const op::Float6E2M3 &a [[maybe_unused]])
+inline bool isinf(const op::Float6E2M3& a [[maybe_unused]])
 {
-    return false;  // E2M3 has no infinity
+    return false; // E2M3 has no infinity
 }
 
-inline bool isnan(const op::Float6E2M3 &a [[maybe_unused]])
+inline bool isnan(const op::Float6E2M3& a [[maybe_unused]])
 {
-    return false;  // OCP MX E2M3 has no NaN
+    return false; // OCP MX E2M3 has no NaN
 }
 
-inline bool isfinite(const op::Float6E2M3 &a [[maybe_unused]])
+inline bool isfinite(const op::Float6E2M3& a [[maybe_unused]])
 {
-    return true;  // All bit patterns are valid finite numbers
+    return true; // All bit patterns are valid finite numbers
 }
 
-template<>
+template <>
 class numeric_limits<op::Float6E2M3> {
 public:
     static constexpr bool has_infinity = false;
-    static constexpr bool has_quiet_NaN = false;  // OCP MX E2M3 has no NaN
+    static constexpr bool has_quiet_NaN = false; // OCP MX E2M3 has no NaN
     static constexpr bool has_signaling_NaN = false;
     static constexpr bool is_bounded = true;
     static constexpr bool is_exact = false;
@@ -147,10 +142,7 @@ public:
     static constexpr int max_exponent = 2;
     static constexpr int max_exponent10 = 0;
     static constexpr int radix = 2;
-    static constexpr float round_error()
-    {
-        return 0.5f;
-    }
+    static constexpr float round_error() { return 0.5f; }
     static constexpr float denorm_min()
     {
         // OCP MX E2M3: min subnorm = S 00 001 = 2^0 * 0.125 = 0.125
@@ -159,35 +151,20 @@ public:
         return 0.125f;
     }
 
-    static constexpr op::Float6E2M3 min()
-    {
-        return op::Float6E2M3::MinPositiveNormal();
-    }
-    static constexpr op::Float6E2M3 lowest()
-    {
-        return op::Float6E2M3::Lowest();
-    }
-    static constexpr op::Float6E2M3 max()
-    {
-        return op::Float6E2M3::Highest();
-    }
-    static constexpr op::Float6E2M3 epsilon()
-    {
-        return op::Float6E2M3::Epsilon();
-    }
+    static constexpr op::Float6E2M3 min() { return op::Float6E2M3::MinPositiveNormal(); }
+    static constexpr op::Float6E2M3 lowest() { return op::Float6E2M3::Lowest(); }
+    static constexpr op::Float6E2M3 max() { return op::Float6E2M3::Highest(); }
+    static constexpr op::Float6E2M3 epsilon() { return op::Float6E2M3::Epsilon(); }
     static constexpr op::Float6E2M3 infinity()
     {
-        return op::Float6E2M3::Highest();  // No infinity, use max
+        return op::Float6E2M3::Highest(); // No infinity, use max
     }
     static constexpr op::Float6E2M3 quiet_NaN()
     {
         // OCP MX E2M3 has no NaN, return zero as fallback
         return op::Float6E2M3(0x00, op::Float6E2M3::FromBits());
     }
-    static constexpr op::Float6E2M3 signaling_NaN()
-    {
-        return quiet_NaN();
-    }
+    static constexpr op::Float6E2M3 signaling_NaN() { return quiet_NaN(); }
 };
 
 } // namespace std

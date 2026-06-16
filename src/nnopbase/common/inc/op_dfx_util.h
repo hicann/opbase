@@ -11,7 +11,6 @@
 #ifndef OP_DFX_INTERNAL_UTIL_H_
 #define OP_DFX_INTERNAL_UTIL_H_
 
-
 #include <type_traits>
 #include <vector>
 #include <string>
@@ -32,19 +31,18 @@
 
 namespace op {
 namespace internal {
-constexpr const char *BLOCK_DIM_STR = "block_dim";
-constexpr const char *DEV_FUNC = "dev_func";
-constexpr const char *TVM_MAGIC = "tvm_magic";
-constexpr const char *TILING_KEY_STR = "tiling_key";
-constexpr const char *TILING_DATA_STR = "tiling_data";
-constexpr const char *ARGS_BEFORE_EXEC = "args before execute";
-
+constexpr const char* BLOCK_DIM_STR = "block_dim";
+constexpr const char* DEV_FUNC = "dev_func";
+constexpr const char* TVM_MAGIC = "tvm_magic";
+constexpr const char* TILING_KEY_STR = "tiling_key";
+constexpr const char* TILING_DATA_STR = "tiling_data";
+constexpr const char* ARGS_BEFORE_EXEC = "args before execute";
 
 class SystemConfig {
 public:
     SystemConfig()
     {
-        const char *enableDebugKernelEnv = nullptr;
+        const char* enableDebugKernelEnv = nullptr;
         MM_SYS_GET_ENV(MM_ENV_NPU_COLLECT_PATH, enableDebugKernelEnv);
         if (enableDebugKernelEnv != nullptr) {
             enableDebugKernelFlag = true;
@@ -61,7 +59,7 @@ public:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus GetEnableDebugKernelFlag(bool &flag)
+    aclnnStatus GetEnableDebugKernelFlag(bool& flag)
     {
         int64_t debugFlag = 0;
         aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &debugFlag);
@@ -81,17 +79,18 @@ private:
 
 class RecordOpArgCallbacker {
 public:
-    RecordOpArgCallbacker(){};
-    ~RecordOpArgCallbacker(){};
+    RecordOpArgCallbacker() {};
+    ~RecordOpArgCallbacker() {};
 
     static int32_t RecordOpArgCallback(
-        uint64_t dumpSwitch, [[maybe_unused]] char *dumpConfig, [[maybe_unused]] int32_t size);
-    static int32_t RecordOpArgDump(uint64_t dumpSwitch, [[maybe_unused]] char *dumpConfig, [[maybe_unused]] int32_t size);
+        uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size);
+    static int32_t RecordOpArgDump(
+        uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size);
 };
 
 class DevPtrGuard {
 public:
-    DevPtrGuard(void *ptr) : ptr_(ptr) {}
+    DevPtrGuard(void* ptr) : ptr_(ptr) {}
     ~DevPtrGuard()
     {
         if (ptr_) {
@@ -100,10 +99,10 @@ public:
     }
 
 private:
-    void *ptr_{nullptr};
+    void* ptr_{nullptr};
 };
 
-inline Adx::DeviceInfo BuildDeviceInfo(const std::string &name, void *addr, uint64_t length)
+inline Adx::DeviceInfo BuildDeviceInfo(const std::string& name, void* addr, uint64_t length)
 {
     Adx::DeviceInfo di;
     di.name = name;
@@ -114,14 +113,14 @@ inline Adx::DeviceInfo BuildDeviceInfo(const std::string &name, void *addr, uint
 
 class OperatorInfoBuilder {
 public:
-    OperatorInfoBuilder(const std::string &opType, const std::string &opName, bool aging = true)
+    OperatorInfoBuilder(const std::string& opType, const std::string& opName, bool aging = true)
     {
         info_.opType = opType;
         info_.opName = opName;
         info_.agingFlag = aging;
     }
 
-    OperatorInfoBuilder &Task(uint32_t deviceId, uint32_t taskId, uint32_t streamId, uint32_t contextId = UINT32_MAX)
+    OperatorInfoBuilder& Task(uint32_t deviceId, uint32_t taskId, uint32_t streamId, uint32_t contextId = UINT32_MAX)
     {
         info_.deviceId = deviceId;
         info_.taskId = taskId;
@@ -130,23 +129,23 @@ public:
         return *this;
     }
 
-    OperatorInfoBuilder &TensorInfo(const std::vector<Adx::TensorInfoV2> &tensors)
+    OperatorInfoBuilder& TensorInfo(const std::vector<Adx::TensorInfoV2>& tensors)
     {
-        for (auto &it : tensors) {
+        for (auto& it : tensors) {
             info_.tensorInfos.emplace_back(it);
         }
         return *this;
     }
 
-    OperatorInfoBuilder &AdditionInfo(const std::string &key, const std::string &value)
+    OperatorInfoBuilder& AdditionInfo(const std::string& key, const std::string& value)
     {
         info_.additionalInfo[key] = value;
         return *this;
     }
 
-    OperatorInfoBuilder &DeviceInfo(const std::string &name, void *addr, uint64_t length)
+    OperatorInfoBuilder& DeviceInfo(const std::string& name, void* addr, uint64_t length)
     {
-        for (auto &devInfo : info_.deviceInfos) {
+        for (auto& devInfo : info_.deviceInfos) {
             if (devInfo.name == name) {
                 devInfo.addr = addr;
                 devInfo.length = length;
@@ -157,113 +156,115 @@ public:
         return *this;
     }
 
-    Adx::OperatorInfoV2 Build()
-    {
-        return info_;
-    }
+    Adx::OperatorInfoV2 Build() { return info_; }
 
 private:
     Adx::OperatorInfoV2 info_;
 };
 
-template<typename... Args>
-static void TraitsAclTensor(std::vector<const aclTensor *> &result, const std::tuple<Args...> &t)
+template <typename... Args>
+static void TraitsAclTensor(std::vector<const aclTensor*>& result, const std::tuple<Args...>& t)
 {
-    std::apply([&](auto &...args) {
-        ((std::is_same_v<aclTensor,
-                         std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>>
-              ? AddToList(result, args)
-              : void()),
-         ...);
-    },
-               t);
-    std::apply([&](auto &...args) {
-        ((std::is_same_v<aclTensorList,
-                         std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>>
-              ? AddToList(result, args)
-              : void()),
-         ...);
-    },
-               t);
+    std::apply(
+        [&](auto&... args) {
+            ((std::is_same_v<
+                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+                  AddToList(result, args) :
+                  void()),
+             ...);
+        },
+        t);
+    std::apply(
+        [&](auto&... args) {
+            ((std::is_same_v<
+                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+                  AddToList(result, args) :
+                  void()),
+             ...);
+        },
+        t);
 }
 
-template<typename... Args>
-static void TraitsAclTensor(FVector<const aclTensor *> &result, const std::tuple<Args...> &t)
+template <typename... Args>
+static void TraitsAclTensor(FVector<const aclTensor*>& result, const std::tuple<Args...>& t)
 {
-    std::apply([&](auto &...args) {
-        ((std::is_same_v<aclTensor,
-                         std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>>
-              ? AddToList(result, args)
-              : void()),
-         ...);
-    },
-               t);
-    std::apply([&](auto &...args) {
-        ((std::is_same_v<aclTensorList,
-                         std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>>
-              ? AddToList(result, args)
-              : void()),
-         ...);
-    },
-               t);
+    std::apply(
+        [&](auto&... args) {
+            ((std::is_same_v<
+                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+                  AddToList(result, args) :
+                  void()),
+             ...);
+        },
+        t);
+    std::apply(
+        [&](auto&... args) {
+            ((std::is_same_v<
+                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+                  AddToList(result, args) :
+                  void()),
+             ...);
+        },
+        t);
 }
 
-[[maybe_unused]] static void TraitsAclTensor(std::vector<const aclTensor *> &result, OpArgList &opArgList)
+[[maybe_unused]] static void TraitsAclTensor(std::vector<const aclTensor*>& result, OpArgList& opArgList)
 {
-    opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg &arg) {
+    opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg& arg) {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AddToList(result, reinterpret_cast<aclTensor *>(arg->pointer));
+            AddToList(result, reinterpret_cast<aclTensor*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AddToList(result, reinterpret_cast<aclTensorList *>(arg->pointer));
+            AddToList(result, reinterpret_cast<aclTensorList*>(arg->pointer));
         }
     });
 }
 
-[[maybe_unused]] static void TraitsAclTensor(FVector<const aclTensor *> &result, OpArgList &opArgList)
+[[maybe_unused]] static void TraitsAclTensor(FVector<const aclTensor*>& result, OpArgList& opArgList)
 {
-    opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg &arg) {
+    opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg& arg) {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AddToList(result, reinterpret_cast<aclTensor *>(arg->pointer));
+            AddToList(result, reinterpret_cast<aclTensor*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AddToList(result, reinterpret_cast<aclTensorList *>(arg->pointer));
+            AddToList(result, reinterpret_cast<aclTensorList*>(arg->pointer));
         }
     });
 }
 
-[[maybe_unused]] static void TraitsAclTensorAndIdx(std::vector<const aclTensor *> &result, std::vector<uint32_t> &idxs,
-    OpArgList &opArgList, bool genPlaceholder, int32_t &currentIdx)
+[[maybe_unused]] static void TraitsAclTensorAndIdx(
+    std::vector<const aclTensor*>& result, std::vector<uint32_t>& idxs, OpArgList& opArgList, bool genPlaceholder,
+    int32_t& currentIdx)
 {
-    opArgList.VisitByNoReturn([&result, &idxs, genPlaceholder, &currentIdx]([[maybe_unused]] size_t idx, OpArg &arg) {
+    opArgList.VisitByNoReturn([&result, &idxs, genPlaceholder, &currentIdx]([[maybe_unused]] size_t idx, OpArg& arg) {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensor *>(arg->pointer), currentIdx);
+            AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensor*>(arg->pointer), currentIdx);
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensorList *>(arg->pointer), currentIdx);
+            AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer), currentIdx);
         }
     });
 }
 
-[[maybe_unused]] static void TraitsAclTensorAndIdx(std::vector<const aclTensor *> &result, std::vector<uint32_t> &idxs,
-    OpArgList &opArgList, bool genPlaceholder, bool hasDevPtrArg, int32_t &currentIdx,
-    std::vector<int32_t> &tensorOffset)
+[[maybe_unused]] static void TraitsAclTensorAndIdx(
+    std::vector<const aclTensor*>& result, std::vector<uint32_t>& idxs, OpArgList& opArgList, bool genPlaceholder,
+    bool hasDevPtrArg, int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
 {
-    opArgList.VisitByNoReturn(
-        [&result, &idxs, genPlaceholder, hasDevPtrArg, &currentIdx, &tensorOffset]([[maybe_unused]] size_t idx,
-                                                                                    OpArg &arg) {
-            if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-                AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensor *>(arg->pointer), currentIdx);
-            } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-                if (hasDevPtrArg) {
-                    AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensorList *>(arg->pointer),
-                                    currentIdx, tensorOffset);
-                } else {
-                    AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensorList *>(arg->pointer),
-                                    currentIdx);
-                }
+    opArgList.VisitByNoReturn([&result, &idxs, genPlaceholder, hasDevPtrArg, &currentIdx, &tensorOffset](
+                                  [[maybe_unused]] size_t idx, OpArg& arg) {
+        if (arg.type == OpArgType::OPARG_ACLTENSOR) {
+            AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensor*>(arg->pointer), currentIdx);
+        } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
+            if (hasDevPtrArg) {
+                AddToListAndIdx(
+                    result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer), currentIdx,
+                    tensorOffset);
+            } else {
+                AddToListAndIdx(
+                    result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer), currentIdx);
             }
+        }
     });
 }
 
-}  // namespace internal
-}  // namespace op
+} // namespace internal
+} // namespace op
 
 #endif

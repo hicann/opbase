@@ -20,26 +20,27 @@ namespace benchmark {
 
 // 测试类别
 enum class TestCategory {
-    BOUNDARY,   // 边界值
-    SPECIAL,    // 特殊值 (0, NaN, Inf)
-    TYPICAL,    // 典型值
-    OVERFLOW,   // 溢出处理
-    ROUNDING    // 舍入验证
+    BOUNDARY, // 边界值
+    SPECIAL,  // 特殊值 (0, NaN, Inf)
+    TYPICAL,  // 典型值
+    OVERFLOW, // 溢出处理
+    ROUNDING  // 舍入验证
 };
 
 // 单个测试用例
-template<typename FloatType>
+template <typename FloatType>
 struct BenchmarkCase {
-    float input;              // 输入值 (float32)
-    uint8_t expected_bits;    // 期望的位表示
-    float expected_value;     // 期望的转换回 float 的值
-    float tolerance;          // 允许误差
-    const char* description;  // 用例描述
-    const char* source;       // 来源标识
+    float input;             // 输入值 (float32)
+    uint8_t expected_bits;   // 期望的位表示
+    float expected_value;    // 期望的转换回 float 的值
+    float tolerance;         // 允许误差
+    const char* description; // 用例描述
+    const char* source;      // 来源标识
 };
 
 // 辅助函数：检查 NaN
-inline bool IsNanOrBothNan(float expected, float actual) {
+inline bool IsNanOrBothNan(float expected, float actual)
+{
     if (std::isnan(expected)) {
         return std::isnan(actual);
     }

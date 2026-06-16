@@ -19,19 +19,18 @@ struct AxpyTilingStruct {
     int dummy;
 };
 
-ge::graphStatus AxpyTiling(gert::TilingContext *context)
+ge::graphStatus AxpyTiling(gert::TilingContext* context)
 {
-
     context->SetBlockDim(16);
     context->SetTilingKey(1234);
     context->SetNeedAtomic(false);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
+    gert::TilingData* tiling_data = context->GetRawTilingData();
     tiling_data->Append(9876);
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus AxpyTilingParse(gert::TilingParseContext *context)
+ge::graphStatus AxpyTilingParse(gert::TilingParseContext* context)
 {
     auto ci = context->GetCompiledInfo<AxpyTilingStruct>();
     ci->dummy = 100;
@@ -42,14 +41,13 @@ struct SortTilingStruct {
     int dummy;
 };
 
-ge::graphStatus SortTiling(gert::TilingContext *context)
+ge::graphStatus SortTiling(gert::TilingContext* context)
 {
-
     context->SetBlockDim(16);
     context->SetTilingKey(1234);
     context->SetNeedAtomic(true);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
-    size_t *ws = context->GetWorkspaceSizes(3);
+    gert::TilingData* tiling_data = context->GetRawTilingData();
+    size_t* ws = context->GetWorkspaceSizes(3);
     ws[0] = 32;
     ws[1] = 32;
     ws[2] = 32;
@@ -59,55 +57,51 @@ ge::graphStatus SortTiling(gert::TilingContext *context)
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SortTilingParse(gert::TilingParseContext *context)
+ge::graphStatus SortTilingParse(gert::TilingParseContext* context)
 {
     auto ci = context->GetCompiledInfo<SortTilingStruct>();
     ci->dummy = 100;
     return ge::GRAPH_SUCCESS;
 }
 
-
 struct MemSetTilingStruct {
     int dummy;
 };
 
-ge::graphStatus MemSetTiling(gert::TilingContext *context)
+ge::graphStatus MemSetTiling(gert::TilingContext* context)
 {
-
     context->SetBlockDim(16);
     context->SetTilingKey(1234);
     context->SetNeedAtomic(false);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
+    gert::TilingData* tiling_data = context->GetRawTilingData();
     tiling_data->Append(9876);
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus MemSetTilingParse(gert::TilingParseContext *context)
+ge::graphStatus MemSetTilingParse(gert::TilingParseContext* context)
 {
     auto ci = context->GetCompiledInfo<MemSetTilingStruct>();
     ci->dummy = 100;
     return ge::GRAPH_SUCCESS;
 }
 
-
 struct AddNTilingStruct {
     int dummy;
 };
 
-ge::graphStatus AddNTiling(gert::TilingContext *context)
+ge::graphStatus AddNTiling(gert::TilingContext* context)
 {
-
     context->SetBlockDim(16);
     context->SetTilingKey(1234);
     context->SetNeedAtomic(false);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
+    gert::TilingData* tiling_data = context->GetRawTilingData();
     tiling_data->Append(9876);
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus AddNTilingParse(gert::TilingParseContext *context)
+ge::graphStatus AddNTilingParse(gert::TilingParseContext* context)
 {
     auto ci = context->GetCompiledInfo<AddNTilingStruct>();
     ci->dummy = 100;
@@ -118,19 +112,18 @@ struct MulTilingStruct {
     int dummy;
 };
 
-ge::graphStatus MulTiling(gert::TilingContext *context)
+ge::graphStatus MulTiling(gert::TilingContext* context)
 {
-
     context->SetBlockDim(17);
     context->SetTilingKey(1234567);
     context->SetNeedAtomic(false);
-    gert::TilingData *tiling_data = context->GetRawTilingData();
+    gert::TilingData* tiling_data = context->GetRawTilingData();
     tiling_data->Append(8910);
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus MulTilingParse(gert::TilingParseContext *context)
+ge::graphStatus MulTilingParse(gert::TilingParseContext* context)
 {
     auto ci = context->GetCompiledInfo<AxpyTilingStruct>();
     ci->dummy = 100;
@@ -144,5 +137,3 @@ IMPL_OP(AddN).Tiling(AddNTiling).TilingParse<SortTilingStruct>(AddNTilingParse);
 IMPL_OP(Mul).Tiling(MulTiling).TilingParse<MulTilingStruct>(MulTilingParse);
 
 // ---- op register stub end ----
-
-

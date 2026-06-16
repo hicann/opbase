@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
@@ -19,12 +18,12 @@
 #include "register/op_binary_resource_manager.h"
 #include "executor/indv_executor.h"
 
-#define ASSERT_TRUE(exp)                                        \
-    do {                                                        \
-        if (!(exp)) {                                           \
+#define ASSERT_TRUE(exp)                                                                \
+    do {                                                                                \
+        if (!(exp)) {                                                                   \
             std::cout << __FUNCTION__ << " Assert " << #exp << " failed!" << std::endl; \
-            return 0;                                           \
-        }                                                       \
+            return 0;                                                                   \
+        }                                                                               \
     } while (false)
 
 #define ASSERT_SUCC(exp) ASSERT_TRUE((exp) == 1)
@@ -34,7 +33,7 @@ std::string OPP_PATH;
 
 int32_t CreateStubCustConfig()
 {
-    FILE *file = fopen((OPP_PATH + "/vendors/config.ini").c_str(), "w");
+    FILE* file = fopen((OPP_PATH + "/vendors/config.ini").c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     fprintf(file, "load_priority=cust\n");
     fclose(file);
@@ -43,7 +42,7 @@ int32_t CreateStubCustConfig()
 
 int32_t CreateStubSceneFile()
 {
-    FILE *file = fopen((OPP_PATH + "/scene.info").c_str(), "w");
+    FILE* file = fopen((OPP_PATH + "/scene.info").c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     fprintf(file, "os=linux\n");
     fprintf(file, "os_version=\n");
@@ -52,7 +51,7 @@ int32_t CreateStubSceneFile()
     return 1;
 }
 
-void CreateOppDir(const std::string &dirPrefix)
+void CreateOppDir(const std::string& dirPrefix)
 {
     mkdir(dirPrefix.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((dirPrefix + "/op_impl").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
@@ -86,7 +85,7 @@ void CreateOppDir(const std::string &dirPrefix)
     mkdir((dirPrefix + "/op_impl/ai_core/tbe/op_host/lib/linux/x86_64/emptyDir").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 }
 
-void CreateStubFolders(const std::string &opp_path, const bool isOppLastest = false)
+void CreateStubFolders(const std::string& opp_path, const bool isOppLastest = false)
 {
     if (opp_path.empty()) {
         OPP_PATH = "./usr/local/Ascend/latest/opp";
@@ -129,10 +128,16 @@ void CreateStubFolders(const std::string &opp_path, const bool isOppLastest = fa
     mkdir((OPP_PATH + "/static_kernel/ai_core").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/Flash").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/TestStatic").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/TestStaticAdd").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir(
+        (OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/TestStatic").c_str(),
+        S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir(
+        (OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/TestStaticAdd").c_str(),
+        S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/Conv2D").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-    mkdir((OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/TransData").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
+    mkdir(
+        (OPP_PATH + "/static_kernel/ai_core/static_kernel_202307261051/TransData").c_str(),
+        S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/config").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/config/ascend910b").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
     mkdir((OPP_PATH + "/static_kernel/ai_core/config/ascend910").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
@@ -153,9 +158,9 @@ void CreateStubFolders(const std::string &opp_path, const bool isOppLastest = fa
     mkdir((OPP_PATH + "/conf/op_api").c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 }
 
-int32_t NnopbaseCreateStubOpInfoConfig(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubOpInfoConfig(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
     const std::string binPath = std::string("                \"binPath\": \"");
@@ -426,14 +431,14 @@ int32_t NnopbaseCreateStubOpInfoConfig(const std::string &filePath, const std::s
     fprintf(file, "        ]\n");
     fprintf(file, "    }\n");
     fprintf(file, "}\n");
-    
+
     fclose(file);
     return 1;
 }
 
-int32_t CreateStaticStubOpInfoConfig(const std::string &filePath)
+int32_t CreateStaticStubOpInfoConfig(const std::string& filePath)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     fprintf(file, "{\n");
 
@@ -448,8 +453,12 @@ int32_t CreateStaticStubOpInfoConfig(const std::string &filePath)
     fprintf(file, "                    \"kernelName\": \"TestStaticAdd_1e04ee05ab491cc5ae9c3d5c9ee8950b\"\n");
     fprintf(file, "                },\n");
     fprintf(file, "                \"coreType\": 1,\n");
-    fprintf(file, "                \"binPath\": \"static_kernel_202307261051/TestStaticAdd/TestStaticAdd_high_performance_0.o\",\n");
-    fprintf(file, "                \"simplifiedKey\": \"TestStaticAdd/d=0,p=1/0,0,(200,200,3,3)/0,0,(200,200,3,3)/0,0,(200,200,3,3)/\"\n");
+    fprintf(
+        file, "                \"binPath\": "
+              "\"static_kernel_202307261051/TestStaticAdd/TestStaticAdd_high_performance_0.o\",\n");
+    fprintf(
+        file, "                \"simplifiedKey\": "
+              "\"TestStaticAdd/d=0,p=1/0,0,(200,200,3,3)/0,0,(200,200,3,3)/0,0,(200,200,3,3)/\"\n");
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    },\n");
@@ -466,7 +475,10 @@ int32_t CreateStaticStubOpInfoConfig(const std::string &filePath)
     fprintf(file, "                },\n");
     fprintf(file, "                \"coreType\": 1,\n");
     fprintf(file, "                \"binPath\": \"static_kernel_202307261051/Conv2D/Conv2D_high_performance_0.o\",\n");
-    fprintf(file, "                \"simplifiedKey\": \"Conv2D/d=0,p=2/1,3,(20,4,60,60,10)/1,4,(24,4,10,10)/_/_/1,3,(20,4,60,60,10)/[1,1,1,1]/[1,1,1,1]/[1,1,1,1]/1/5748434e/0\"\n");
+    fprintf(
+        file, "                \"simplifiedKey\": "
+              "\"Conv2D/d=0,p=2/1,3,(20,4,60,60,10)/1,4,(24,4,10,10)/_/_/1,3,(20,4,60,60,10)/[1,1,1,1]/[1,1,1,1]/"
+              "[1,1,1,1]/1/5748434e/0\"\n");
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    },\n");
@@ -483,7 +495,9 @@ int32_t CreateStaticStubOpInfoConfig(const std::string &filePath)
     fprintf(file, "                    \"workspace\": [100,101,102]\n");
     fprintf(file, "                },\n");
     fprintf(file, "                \"coreType\": 0,\n");
-    fprintf(file, "                \"binPath\": \"static_kernel_202307261051/TestStatic/TestStatic_high_performance_0.o\",\n");
+    fprintf(
+        file,
+        "                \"binPath\": \"static_kernel_202307261051/TestStatic/TestStatic_high_performance_0.o\",\n");
     fprintf(file, "                \"simplifiedKey\": \"xxxxx\"\n");
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
@@ -502,19 +516,51 @@ int32_t CreateStaticStubOpInfoConfig(const std::string &filePath)
     fprintf(file, "                },\n");
     fprintf(file, "                \"coreType\": 0,\n");
     fprintf(file, "                \"binPath\": \"static_kernel_202307261051/Flash/flash.o\",\n");
-    fprintf(file, "                \"simplifiedKey\": [\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/_/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)\", \n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/3,2,(5),[1b,1b,1b,1b,9bb0]/3,2,(5)/3,2,(5)/3,2,(5)\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/[1,0,1]/[3,28,5]/65636261/[3f4ccccd,3f4ccccd,3f4ccccd]\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1),[3f4ccccd]/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/[1,0,1]/[3,28,5]/65636261/[3f4ccccd,3f4ccccd,3f4ccccd]\",\n");
+    fprintf(
+        file, "                \"simplifiedKey\": "
+              "[\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)\",\n");
+    fprintf(
+        file,
+        "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/_/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)\", \n");
+    fprintf(
+        file,
+        "                                    \"Flash/d=0,p=0/3,2,(5),[1b,1b,1b,1b,9bb0]/3,2,(5)/3,2,(5)/3,2,(5)\",\n");
+    fprintf(
+        file, "                                    "
+              "\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/[1,0,1]/[3,28,5]/"
+              "65636261/[3f4ccccd,3f4ccccd,3f4ccccd]\",\n");
+    fprintf(
+        file, "                                    "
+              "\"Flash/d=0,p=0/0,2,(1,1,1,1,1),[3f4ccccd]/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/[1,0,1]/"
+              "[3,28,5]/65636261/[3f4ccccd,3f4ccccd,3f4ccccd]\",\n");
     fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(5)/0,2,(5)/0,2,(5),(5),(5)/0,2,(5)\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(5)/0,2,(5)/0,2,(5)/0,2,(5)/5a5f4c415443415246\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/3f4ccccd\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/[3f4ccccd,3f4ccccd]\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)/0,2,(1,1,1,1,1)/_/0,2,(1,1,1,1,1),(1,1,1,1,1)\",\n");
-    fprintf(file, "                                    \"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)/0,2,(1,1,1,1,1)/_/0,2,(1,1,1,1,1),(1,1,1,1,1)/6061626364656667/1234\",\n");
-    fprintf(file, "                                    \"Flash/p=2,d=1/0,2,(8,20)/_/0,2,(2)/3,2,(2710),[0,7b,ffffffff,4,5]/0,2,(7b,7b),[3f4ccccd,42f60000,bf800000,40800000,40a00000]/1e,2e,(4);1,7,(5,1d)/0,2,(6,6)/[1,2,3]/7b/61626365/1/3f4ccccd/[3f4ccccd,3f666666,3f800000]/[[1,2,3,4],[7b,3,2,1]]\"]\n");
+    fprintf(
+        file,
+        "                                    \"Flash/d=0,p=0/0,2,(5)/0,2,(5)/0,2,(5)/0,2,(5)/5a5f4c415443415246\",\n");
+    fprintf(
+        file, "                                    "
+              "\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/3f4ccccd\",\n");
+    fprintf(
+        file,
+        "                                    "
+        "\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1)/[3f4ccccd,3f4ccccd]\",\n");
+    fprintf(
+        file,
+        "                                    "
+        "\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)\",\n");
+    fprintf(
+        file, "                                    "
+              "\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)/0,2,(1,1,1,1,1)/_/"
+              "0,2,(1,1,1,1,1),(1,1,1,1,1)\",\n");
+    fprintf(
+        file, "                                    "
+              "\"Flash/d=0,p=0/0,2,(1,1,1,1,1)/0,2,(1,1,1,1,1),(1,1,1,1,1)/0,2,(1,1,1,1,1)/_/"
+              "0,2,(1,1,1,1,1),(1,1,1,1,1)/6061626364656667/1234\",\n");
+    fprintf(
+        file, "                                    "
+              "\"Flash/p=2,d=1/0,2,(8,20)/_/0,2,(2)/3,2,(2710),[0,7b,ffffffff,4,5]/"
+              "0,2,(7b,7b),[3f4ccccd,42f60000,bf800000,40800000,40a00000]/1e,2e,(4);1,7,(5,1d)/0,2,(6,6)/[1,2,3]/7b/"
+              "61626365/1/3f4ccccd/[3f4ccccd,3f666666,3f800000]/[[1,2,3,4],[7b,3,2,1]]\"]\n");
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    }\n");
@@ -523,9 +569,9 @@ int32_t CreateStaticStubOpInfoConfig(const std::string &filePath)
     return 1;
 }
 
-int32_t CreateCustomStubOpInfoConfig(const std::string &filePath, const std::string &soc)
+int32_t CreateCustomStubOpInfoConfig(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
     fprintf(file, "{\n");
@@ -557,7 +603,8 @@ int32_t CreateCustomStubOpInfoConfig(const std::string &filePath, const std::str
     fprintf(file, "                \"coreType\": 0,\n");
     fprintf(file, "                \"simplifiedKey\": [\"custom_op1/d=0,p=0/1,30/1,30/1,30/1,30\",\n");
     fprintf(file, "                                    \"custom_op1/d=0,p=0/0,2/0,2/0,2/0,2\"],\n");
-    fprintf(file, (binPathPrefix + "/kernel_custom_op1_dync_main.o\"\n").c_str());;
+    fprintf(file, (binPathPrefix + "/kernel_custom_op1_dync_main.o\"\n").c_str());
+    ;
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    }\n");
@@ -566,9 +613,9 @@ int32_t CreateCustomStubOpInfoConfig(const std::string &filePath, const std::str
     return 1;
 }
 
-int32_t CreateUserDefineStubOpInfoConfig(const std::string &filePath, const std::string &soc)
+int32_t CreateUserDefineStubOpInfoConfig(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -591,9 +638,9 @@ int32_t CreateUserDefineStubOpInfoConfig(const std::string &filePath, const std:
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor1971ForMixNormal(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonFor1971ForMixNormal(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -652,9 +699,10 @@ int32_t NnopbaseCreateStubBinJsonFor1971ForMixNormal(const std::string &filePath
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(const std::string &filePath, const std::string &soc) // 缺少字段 crossCoreSync
+int32_t NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(
+    const std::string& filePath, const std::string& soc) // 缺少字段 crossCoreSync
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -675,9 +723,10 @@ int32_t NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(const std::string &filePa
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor1971ForMixUnNormal2(const std::string &filePath, const std::string &soc) // 缺少字段 tilingKey
+int32_t NnopbaseCreateStubBinJsonFor1971ForMixUnNormal2(
+    const std::string& filePath, const std::string& soc) // 缺少字段 tilingKey
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -697,9 +746,9 @@ int32_t NnopbaseCreateStubBinJsonFor1971ForMixUnNormal2(const std::string &fileP
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor310pForMixAicNormal(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonFor310pForMixAicNormal(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -732,9 +781,9 @@ int32_t NnopbaseCreateStubBinJsonFor310pForMixAicNormal(const std::string &fileP
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor310pForMixAivNormal(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonFor310pForMixAivNormal(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -767,9 +816,9 @@ int32_t NnopbaseCreateStubBinJsonFor310pForMixAivNormal(const std::string &fileP
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonForProfilingMixAic(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonForProfilingMixAic(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
     fprintf(file, "{\n");
@@ -787,9 +836,9 @@ int32_t NnopbaseCreateStubBinJsonForProfilingMixAic(const std::string &filePath,
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonForProfilingMixAiv(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonForProfilingMixAiv(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
     fprintf(file, "{\n");
@@ -807,9 +856,9 @@ int32_t NnopbaseCreateStubBinJsonForProfilingMixAiv(const std::string &filePath,
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinOpInfoConfigForAdd(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinOpInfoConfigForAdd(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -822,10 +871,9 @@ int32_t NnopbaseCreateStubBinOpInfoConfigForAdd(const std::string &filePath, con
     return 1;
 }
 
-
-int32_t CreateDebugStubOpInfoConfig(const std::string &filePath, const std::string &soc)
+int32_t CreateDebugStubOpInfoConfig(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
     fprintf(file, "{\n");
@@ -841,7 +889,10 @@ int32_t CreateDebugStubOpInfoConfig(const std::string &filePath, const std::stri
     fprintf(file, "                    \"kernelName\": \"Conv2D_1e04ee05ab491cc5ae9c3d5c9ee8950b\"\n");
     fprintf(file, "                },\n");
     fprintf(file, "                \"coreType\": 1,\n");
-    fprintf(file, "                \"simplifiedKey\": \"Conv2D/d=0,p=2/1,3,(20,4,60,60,10)/1,4,(24,4,10,10)/_/_/1,3,(20,4,60,60,10)/[1,1,1,1]/[1,1,1,1]/[1,1,1,1]/1/5748434e/0\",\n");
+    fprintf(
+        file, "                \"simplifiedKey\": "
+              "\"Conv2D/d=0,p=2/1,3,(20,4,60,60,10)/1,4,(24,4,10,10)/_/_/1,3,(20,4,60,60,10)/[1,1,1,1]/[1,1,1,1]/"
+              "[1,1,1,1]/1/5748434e/0\",\n");
     fprintf(file, (binPathPrefix + "/Conv2D_high_performance_0.o\"\n").c_str());
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
@@ -858,7 +909,10 @@ int32_t CreateDebugStubOpInfoConfig(const std::string &filePath, const std::stri
     fprintf(file, "                    \"kernelName\": \"StaticDebug\"\n");
     fprintf(file, "                },\n");
     fprintf(file, "                \"coreType\": 1,\n");
-    fprintf(file, "                \"simplifiedKey\": \"StaticDebug/d=0,p=0/1,3,(20,4,60,60,10)/1,4,(24,4,10,10)/_/_/1,3,(20,4,60,60,10)/[1,1,1,1]/[1,1,1,1]/[1,1,1,1]/1/5748434e/0\",\n");
+    fprintf(
+        file, "                \"simplifiedKey\": "
+              "\"StaticDebug/d=0,p=0/1,3,(20,4,60,60,10)/1,4,(24,4,10,10)/_/_/1,3,(20,4,60,60,10)/[1,1,1,1]/[1,1,1,1]/"
+              "[1,1,1,1]/1/5748434e/0\",\n");
     fprintf(file, (binPathPrefix + "/StaticDebug_high_performance_0.o\"\n").c_str());
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
@@ -873,7 +927,8 @@ int32_t CreateDebugStubOpInfoConfig(const std::string &filePath, const std::stri
     fprintf(file, "                \"coreType\": 0,\n");
     fprintf(file, "                \"simplifiedKey\": [\"custom_op3/d=0,p=0/1,30/1,30/1,30/1,30\",\n");
     fprintf(file, "                                    \"custom_op3/d=0,p=0/0,2/0,2/0,2/0,2\"],\n");
-    fprintf(file, (binPathPrefix + "/kernel_custom_op3_dync_main.o\"\n").c_str());;
+    fprintf(file, (binPathPrefix + "/kernel_custom_op3_dync_main.o\"\n").c_str());
+    ;
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    }\n");
@@ -882,15 +937,15 @@ int32_t CreateDebugStubOpInfoConfig(const std::string &filePath, const std::stri
     return 1;
 }
 
-int32_t CreateBinFile(const std::string &filePath)
+int32_t CreateBinFile(const std::string& filePath)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     fprintf(file, "000\n");
     fclose(file);
     return 1;
 }
-    
+
 int32_t CreateStubTilingSo()
 {
     // build-in
@@ -917,9 +972,9 @@ int32_t CreateStubTilingSo()
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonForSparseAttention(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonForSparseAttention(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
 
     fprintf(file, "{\n");
@@ -1008,9 +1063,9 @@ int32_t NnopbaseCreateStubBinJsonForSparseAttention(const std::string &filePath,
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor1971(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonFor1971(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -1037,9 +1092,9 @@ int32_t NnopbaseCreateStubBinJsonFor1971(const std::string &filePath, const std:
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonFor1980(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonFor1980(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -1061,9 +1116,9 @@ int32_t NnopbaseCreateStubBinJsonFor1980(const std::string &filePath, const std:
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonForAutomicClean(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonForAutomicClean(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -1131,9 +1186,9 @@ int32_t NnopbaseCreateStubBinJsonForAutomicClean(const std::string &filePath, co
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonForTestDavidCustom(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonForTestDavidCustom(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -1169,9 +1224,9 @@ int32_t NnopbaseCreateStubBinJsonForTestDavidCustom(const std::string &filePath,
     return 1;
 }
 
-int32_t NnopbaseCreateStubBinJsonForMemSetV2(const std::string &filePath, const std::string &soc)
+int32_t NnopbaseCreateStubBinJsonForMemSetV2(const std::string& filePath, const std::string& soc)
 {
-    FILE *file = fopen(filePath.c_str(), "w");
+    FILE* file = fopen(filePath.c_str(), "w");
     ASSERT_TRUE(file != nullptr);
     const std::string binPathPrefix = std::string("                \"binPath\": \"") + soc;
 
@@ -1230,25 +1285,33 @@ int32_t CreateStubKernelFiles()
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/kernel_bninference_d_dync_main.json"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/add_tik2_entry_ascend910.json"));
 
-    ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
-    ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910/binary_info_config.json", "ascend910"));
-    ASSERT_SUCC(NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend950/binary_info_config.json", "ascend950"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971(buildInPrefix + "ascend910b/kernel_bninference_d_dync_main.json", "ascend910b"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1980(buildInPrefix + "ascend910/kernel_bninference_d_dync_main.json", "ascend910"));
+    ASSERT_SUCC(
+        NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
+    ASSERT_SUCC(
+        NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend910/binary_info_config.json", "ascend910"));
+    ASSERT_SUCC(
+        NnopbaseCreateStubOpInfoConfig(buildInPrefix + "config/ascend950/binary_info_config.json", "ascend950"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971(
+        buildInPrefix + "ascend910b/kernel_bninference_d_dync_main.json", "ascend910b"));
+    ASSERT_SUCC(
+        NnopbaseCreateStubBinJsonFor1980(buildInPrefix + "ascend910/kernel_bninference_d_dync_main.json", "ascend910"));
 
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/NativeSparseAttention_fatbin.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/NativeSparseAttention_fatbin.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForSparseAttention(buildInPrefix + "ascend910b/NativeSparseAttention_fatbin.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForSparseAttention(
+        buildInPrefix + "ascend910b/NativeSparseAttention_fatbin.json", "ascend910b"));
 
     // AutomicClean 1980
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/kernel_output_automic_clean.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/kernel_output_automic_clean.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForAutomicClean(buildInPrefix + "ascend910/kernel_output_automic_clean.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForAutomicClean(
+        buildInPrefix + "ascend910/kernel_output_automic_clean.json", "ascend910"));
 
     // AutomicClean 1971
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/kernel_output_automic_clean.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/kernel_output_automic_clean.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForAutomicClean(buildInPrefix + "ascend910b/kernel_output_automic_clean.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForAutomicClean(
+        buildInPrefix + "ascend910b/kernel_output_automic_clean.json", "ascend910b"));
 
     // MemSetV2 david only
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/MemSetV2.o"));
@@ -1258,7 +1321,8 @@ int32_t CreateStubKernelFiles()
     // TestDavidCustom david only
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/TestDavidCustom.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend950/TestDavidCustom.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForTestDavidCustom(buildInPrefix + "ascend950/TestDavidCustom.json", "ascend950"));
+    ASSERT_SUCC(
+        NnopbaseCreateStubBinJsonForTestDavidCustom(buildInPrefix + "ascend950/TestDavidCustom.json", "ascend950"));
 
     // test_register
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/test_registe_ascend910.o"));
@@ -1267,67 +1331,80 @@ int32_t CreateStubKernelFiles()
     // 1971_for_mix_normal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/1971_for_mix_normal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/1971_for_mix_normal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixNormal(buildInPrefix + "ascend910/1971_for_mix_normal.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixNormal(
+        buildInPrefix + "ascend910/1971_for_mix_normal.json", "ascend910"));
 
     // 1971_for_mix_normal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/1971_for_mix_normal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/1971_for_mix_normal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixNormal(buildInPrefix + "ascend910b/1971_for_mix_normal.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixNormal(
+        buildInPrefix + "ascend910b/1971_for_mix_normal.json", "ascend910b"));
 
     // 1971_for_mix_unnormal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/1971_for_mix_unnormal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/1971_for_mix_unnormal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(buildInPrefix + "ascend910/1971_for_mix_unnormal.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(
+        buildInPrefix + "ascend910/1971_for_mix_unnormal.json", "ascend910"));
 
     // 1971_for_mix_unnormal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/1971_for_mix_unnormal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/1971_for_mix_unnormal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(buildInPrefix + "ascend910b/1971_for_mix_unnormal.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixUnNormal(
+        buildInPrefix + "ascend910b/1971_for_mix_unnormal.json", "ascend910b"));
 
     // 1971_for_mix_unnormal2 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/1971_for_mix_unnormal2.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/1971_for_mix_unnormal2.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixUnNormal2(buildInPrefix + "ascend910/1971_for_mix_unnormal2.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor1971ForMixUnNormal2(
+        buildInPrefix + "ascend910/1971_for_mix_unnormal2.json", "ascend910"));
 
     // 310p_for_mix_aic_normal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/310p_for_mix_aic_normal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/310p_for_mix_aic_normal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAicNormal(buildInPrefix + "ascend910/310p_for_mix_aic_normal.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAicNormal(
+        buildInPrefix + "ascend910/310p_for_mix_aic_normal.json", "ascend910"));
 
     // 310p_for_mix_aic_normal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/310p_for_mix_aic_normal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/310p_for_mix_aic_normal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAicNormal(buildInPrefix + "ascend910b/310p_for_mix_aic_normal.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAicNormal(
+        buildInPrefix + "ascend910b/310p_for_mix_aic_normal.json", "ascend910b"));
 
     // 310p_for_mix_aiv_normal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/310p_for_mix_aiv_normal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/310p_for_mix_aiv_normal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAivNormal(buildInPrefix + "ascend910/310p_for_mix_aiv_normal.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAivNormal(
+        buildInPrefix + "ascend910/310p_for_mix_aiv_normal.json", "ascend910"));
 
     // 310p_for_mix_aiv_normal 多个.o创建同一个json文件
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/310p_for_mix_aiv_normal.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/310p_for_mix_aiv_normal.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAivNormal(buildInPrefix + "ascend910b/310p_for_mix_aiv_normal.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonFor310pForMixAivNormal(
+        buildInPrefix + "ascend910b/310p_for_mix_aiv_normal.json", "ascend910b"));
 
     // test_profiling_mix_aic
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/test_profiling_mix_aic.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/test_profiling_mix_aic.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAic(buildInPrefix + "ascend910/test_profiling_mix_aic.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAic(
+        buildInPrefix + "ascend910/test_profiling_mix_aic.json", "ascend910"));
 
     // test_profiling_mix_aic
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/test_profiling_mix_aic.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/test_profiling_mix_aic.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAic(buildInPrefix + "ascend910b/test_profiling_mix_aic.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAic(
+        buildInPrefix + "ascend910b/test_profiling_mix_aic.json", "ascend910b"));
 
     // test_profiling_mix_aiv
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/test_profiling_mix_aiv.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910/test_profiling_mix_aiv.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAiv(buildInPrefix + "ascend910/test_profiling_mix_aiv.json", "ascend910"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAiv(
+        buildInPrefix + "ascend910/test_profiling_mix_aiv.json", "ascend910"));
 
     // test_profiling_mix_aiv
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/test_profiling_mix_aiv.o"));
     ASSERT_SUCC(CreateBinFile(buildInPrefix + "ascend910b/test_profiling_mix_aiv.json"));
-    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAiv(buildInPrefix + "ascend910b/test_profiling_mix_aiv.json", "ascend910b"));
+    ASSERT_SUCC(NnopbaseCreateStubBinJsonForProfilingMixAiv(
+        buildInPrefix + "ascend910b/test_profiling_mix_aiv.json", "ascend910b"));
 
     // cust
     std::string custPrefix = OPP_PATH + "/vendors/cust/op_impl/ai_core/tbe/kernel/";
@@ -1365,8 +1442,10 @@ int32_t CreateStubKernelFiles()
     ASSERT_SUCC(CreateBinFile(userDefinePrefix + "ascend910/kernel_custom_op2_dync_main.json"));
     ASSERT_SUCC(CreateBinFile(userDefinePrefix + "ascend910/kernel_custom_op2_main_entry.json"));
 
-    ASSERT_SUCC(CreateUserDefineStubOpInfoConfig(userDefinePrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
-    ASSERT_SUCC(CreateUserDefineStubOpInfoConfig(userDefinePrefix + "config/ascend910/binary_info_config.json", "ascend910"));
+    ASSERT_SUCC(
+        CreateUserDefineStubOpInfoConfig(userDefinePrefix + "config/ascend910b/binary_info_config.json", "ascend910b"));
+    ASSERT_SUCC(
+        CreateUserDefineStubOpInfoConfig(userDefinePrefix + "config/ascend910/binary_info_config.json", "ascend910"));
 
     // static
     std::string staticPrefix = OPP_PATH + "/static_kernel/ai_core/";
@@ -1395,7 +1474,8 @@ int32_t CreateStubKernelFiles()
 
 } // namespace
 
-int32_t NnopbaseSetStaticBinOp() {
+int32_t NnopbaseSetStaticBinOp()
+{
     const std::string opType = "AddCustom";
     nlohmann::json binDesc = nlohmann::json::parse(R"(
         {
@@ -1479,7 +1559,7 @@ int32_t NnopbaseSetStaticBinOp() {
     const uint8_t* ptr5 = (uint8_t*)(&bin[0]);
     const uint8_t* ptr6 = ptr5 + size;
 
-    // 添加包含taskRation的场景 + buildType的场景 
+    // 添加包含taskRation的场景 + buildType的场景
     nlohmann::json binJson2 = nlohmann::json::parse(R"(
         {
             "coreType": "VectorCore",
@@ -1552,7 +1632,7 @@ int32_t NnopbaseSetStaticBinOp() {
     size = binJson4Str.size();
     const uint8_t* ptr11 = (uint8_t*)(&binJson4Str[0]);
     const uint8_t* ptr12 = ptr11 + size;
-    
+
     // jsonPath不以json结尾场景
     nlohmann::json binJson5 = nlohmann::json::parse(R"(
         {
@@ -1575,11 +1655,11 @@ int32_t NnopbaseSetStaticBinOp() {
     const uint8_t* ptr13 = (uint8_t*)(&binJson5Str[0]);
     const uint8_t* ptr14 = ptr13 + size;
 
-    const std::vector<std::tuple<const uint8_t*, const uint8_t*>> opBinary = {std::make_tuple(ptr1, ptr2), std::make_tuple(ptr3, ptr4), std::make_tuple(ptr5, ptr6),
-                                                                              std::make_tuple(ptr7, ptr8), std::make_tuple(ptr5, ptr6),
-                                                                              std::make_tuple(ptr9, ptr10), std::make_tuple(ptr5, ptr6),
-                                                                              std::make_tuple(ptr11, ptr12), std::make_tuple(ptr5, ptr6),
-                                                                              std::make_tuple(ptr13, ptr14), std::make_tuple(ptr5, ptr6)};
+    const std::vector<std::tuple<const uint8_t*, const uint8_t*>> opBinary = {
+        std::make_tuple(ptr1, ptr2),   std::make_tuple(ptr3, ptr4),   std::make_tuple(ptr5, ptr6),
+        std::make_tuple(ptr7, ptr8),   std::make_tuple(ptr5, ptr6),   std::make_tuple(ptr9, ptr10),
+        std::make_tuple(ptr5, ptr6),   std::make_tuple(ptr11, ptr12), std::make_tuple(ptr5, ptr6),
+        std::make_tuple(ptr13, ptr14), std::make_tuple(ptr5, ptr6)};
     nnopbase::OpBinaryResourceManager::GetInstance().AddBinary(opType.c_str(), opBinary);
 
     return 1;
@@ -1589,7 +1669,7 @@ int32_t CreateStubConf()
 {
     // op_debug_config.json
     const std::string opDebugConfigPath = OPP_PATH + "/conf/op_api/op_debug_config.json";
-    FILE *opDebugConfigFile = fopen(opDebugConfigPath.c_str(), "w");
+    FILE* opDebugConfigFile = fopen(opDebugConfigPath.c_str(), "w");
     ASSERT_TRUE(opDebugConfigFile != nullptr);
     nlohmann::json json1 = nlohmann::json::parse(R"(
         {
@@ -1604,7 +1684,7 @@ int32_t CreateStubConf()
 
     // error_code.json
     const std::string errorCodePath = OPP_PATH + "/conf/error_manager/error_code.json";
-    FILE *errorCodeFile = fopen(errorCodePath.c_str(), "w");
+    FILE* errorCodeFile = fopen(errorCodePath.c_str(), "w");
     ASSERT_TRUE(errorCodeFile != nullptr);
     nlohmann::json json2 = nlohmann::json::parse(R"(
         {
@@ -1616,7 +1696,7 @@ int32_t CreateStubConf()
     return 1;
 }
 
-int32_t NnopbaseSetStubFiles(const std::string &opp_path, const bool isOppLastest)
+int32_t NnopbaseSetStubFiles(const std::string& opp_path, const bool isOppLastest)
 {
     CreateStubFolders(opp_path, isOppLastest);
     ASSERT_SUCC(CreateStubCustConfig());

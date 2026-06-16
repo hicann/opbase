@@ -29,12 +29,7 @@
 
 namespace op {
 namespace internal {
-enum class FormatType {
-    NOT_SUPPORT_ND,
-    SUPPORT_ND,
-    ONLY_SUPPORT_ND,
-    BOTTOM
-};
+enum class FormatType { NOT_SUPPORT_ND, SUPPORT_ND, ONLY_SUPPORT_ND, BOTTOM };
 
 struct FormatInfo {
     std::unordered_set<ge::Format> supportFormats;
@@ -91,150 +86,116 @@ constexpr wchar_t RIGHT_BRACKET = ']';
 constexpr wchar_t SLASH = '/';
 constexpr wchar_t COMMA = ',';
 
-constexpr size_t PTR_OFFSET_SIZE = 8;    // ptr_offset(8B)
-constexpr size_t PRT_DIM_SIZE = 8;           // dim(4B) + cnt(4B)
+constexpr size_t PTR_OFFSET_SIZE = 8; // ptr_offset(8B)
+constexpr size_t PRT_DIM_SIZE = 8;    // dim(4B) + cnt(4B)
 constexpr size_t ARG_VECTOR_CAP_SIZE = 32;
 
 class LaunchArgInfo {
 public:
-    LaunchArgInfo(bool genPlaceholder, bool hasDevPtrArg, OpArgContext *args)
+    LaunchArgInfo(bool genPlaceholder, bool hasDevPtrArg, OpArgContext* args)
         : allArg_(addrInfo), genPlaceholder_(genPlaceholder), hasDevPtrArg_(hasDevPtrArg)
     {
         allArg_.reserve(ARG_VECTOR_CAP_SIZE);
         if (args->ContainsOpArgType(OpArgDef::OP_INPUT_ARG)) {
-            args->GetOpArg(OpArgDef::OP_INPUT_ARG)->VisitByNoReturn(
-                [this]([[maybe_unused]] size_t idx, OpArg &elem) {
+            args->GetOpArg(OpArgDef::OP_INPUT_ARG)->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg& elem) {
                 this->AppendInputLaunchArg(elem);
             });
         }
         if (args->ContainsOpArgType(OpArgDef::OP_OUTPUT_ARG)) {
-            args->GetOpArg(OpArgDef::OP_OUTPUT_ARG)->VisitByNoReturn(
-                [this]([[maybe_unused]] size_t idx, OpArg &elem) {
+            args->GetOpArg(OpArgDef::OP_OUTPUT_ARG)->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg& elem) {
                 this->AppendLaunchArg(elem);
             });
         }
         if (args->ContainsOpArgType(OpArgDef::OP_OUTSHAPE_ARG)) {
             this->AppendOutshapeLaunchArg(
-                reinterpret_cast<aclTensor *>((*args->GetOpArg(OpArgDef::OP_OUTSHAPE_ARG))[0]->pointer));
+                reinterpret_cast<aclTensor*>((*args->GetOpArg(OpArgDef::OP_OUTSHAPE_ARG))[0]->pointer));
         }
         if (args->ContainsOpArgType(OpArgDef::OP_WORKSPACE_ARG)) {
-            args->GetOpArg(OpArgDef::OP_WORKSPACE_ARG)->VisitByNoReturn(
-                [this]([[maybe_unused]] size_t idx, OpArg &elem) {
-                this->AppendWorkspaceLaunchArg(elem);
-            });
+            args->GetOpArg(OpArgDef::OP_WORKSPACE_ARG)
+                ->VisitByNoReturn(
+                    [this]([[maybe_unused]] size_t idx, OpArg& elem) { this->AppendWorkspaceLaunchArg(elem); });
         }
     }
 
-    size_t GetDevArgNum() const
-    {
-        return devArgNum_;
-    }
+    size_t GetDevArgNum() const { return devArgNum_; }
 
-    size_t GetHostArgNum() const
-    {
-        return hostArgNum_;
-    }
+    size_t GetHostArgNum() const { return hostArgNum_; }
 
-    size_t GetTensorNum() const
-    {
-        return tensorNum_;
-    }
+    size_t GetTensorNum() const { return tensorNum_; }
 
-    uint32_t GetDFXInfoDumpElemCount() const
-    {
-        return dfxInfoDumpElemCount_;
-    }
+    uint32_t GetDFXInfoDumpElemCount() const { return dfxInfoDumpElemCount_; }
 
-    void *GetDFXInfoDumpAddr() const
-    {
-        return dfxInfoDumpAddr_;
-    }
+    void* GetDFXInfoDumpAddr() const { return dfxInfoDumpAddr_; }
 
-    void SetDFXInfoDumpAddr(void *dumpAddr)
-    {
-        dfxInfoDumpAddr_ = dumpAddr;
-    }
+    void SetDFXInfoDumpAddr(void* dumpAddr) { dfxInfoDumpAddr_ = dumpAddr; }
 
-    size_t GetDFXInfoOffsetInTilingData() const
-    {
-        return dfxInfoOffsetInTilingData_;
-    }
+    size_t GetDFXInfoOffsetInTilingData() const { return dfxInfoOffsetInTilingData_; }
 
-    void SetDFXInfoOffsetInTilingData(size_t offset)
-    {
-        dfxInfoOffsetInTilingData_ = offset;
-    }
+    void SetDFXInfoOffsetInTilingData(size_t offset) { dfxInfoOffsetInTilingData_ = offset; }
 
     struct DevArgInfo {
-        const aclTensor *tensor;
-        void *devAddr;
+        const aclTensor* tensor;
+        void* devAddr;
     };
     struct HostArgInfo {
-        void *hostAddr;
+        void* hostAddr;
         size_t hostDataLen;
     };
     struct DevPtrArgInfo {
-        const aclTensorList *tensors;
+        const aclTensorList* tensors;
         size_t ptrListLen;
     };
     class ArgAddr {
     public:
-        explicit ArgAddr(const aclTensor *tensor, void *devAddr, bool isOutShapeTensor = false)
-            : tag_(ArgTag::DEVICE_ARG), devAddr_({tensor, devAddr}), hostTensor_(nullptr),
-              isOutShapeTensor_(isOutShapeTensor){};
-        explicit ArgAddr(void *hostAddr, size_t hostDataLen, const aclTensor *tensor = nullptr)
-            : tag_(ArgTag::HOST_ARG), hostAddr_({hostAddr, hostDataLen}), hostTensor_(tensor),
-              isOutShapeTensor_(false){};
-        explicit ArgAddr(const aclTensorList *tensors, size_t ptrListLen)
-            : tag_(ArgTag::DEVICE_PTR_ARG), devPtrAddr_({tensors, ptrListLen}), hostTensor_(nullptr),
-              isOutShapeTensor_(false){};
-        enum class ArgTag {
-            DEVICE_ARG,
-            HOST_ARG,
-            DEVICE_PTR_ARG
-        };
+        explicit ArgAddr(const aclTensor* tensor, void* devAddr, bool isOutShapeTensor = false)
+            : tag_(ArgTag::DEVICE_ARG),
+              devAddr_({tensor, devAddr}),
+              hostTensor_(nullptr),
+              isOutShapeTensor_(isOutShapeTensor) {};
+        explicit ArgAddr(void* hostAddr, size_t hostDataLen, const aclTensor* tensor = nullptr)
+            : tag_(ArgTag::HOST_ARG),
+              hostAddr_({hostAddr, hostDataLen}),
+              hostTensor_(tensor),
+              isOutShapeTensor_(false) {};
+        explicit ArgAddr(const aclTensorList* tensors, size_t ptrListLen)
+            : tag_(ArgTag::DEVICE_PTR_ARG),
+              devPtrAddr_({tensors, ptrListLen}),
+              hostTensor_(nullptr),
+              isOutShapeTensor_(false) {};
+        enum class ArgTag { DEVICE_ARG, HOST_ARG, DEVICE_PTR_ARG };
         ArgTag tag_;
         union {
             DevArgInfo devAddr_;
             HostArgInfo hostAddr_;
             DevPtrArgInfo devPtrAddr_;
         };
-        const aclTensor *hostTensor_;
+        const aclTensor* hostTensor_;
         bool isOutShapeTensor_;
     };
 
-    const std::vector<ArgAddr> &GetAllArgInfo() const
-    {
-        return allArg_;
-    }
+    const std::vector<ArgAddr>& GetAllArgInfo() const { return allArg_; }
 
-    size_t GetArgSize() const
-    {
-        return argSize_;
-    }
+    size_t GetArgSize() const { return argSize_; }
 
-    size_t GetFirstWorkspaceIdx() const
-    {
-        return firstWorkspaceIdx_;
-    }
+    size_t GetFirstWorkspaceIdx() const { return firstWorkspaceIdx_; }
 
 private:
-    std::vector<ArgAddr> &allArg_;
+    std::vector<ArgAddr>& allArg_;
     size_t argSize_{0};
     size_t devArgNum_{0};
     size_t hostArgNum_{0};
     size_t tensorNum_{0};
     uint32_t dfxInfoDumpElemCount_{0};
-    void *dfxInfoDumpAddr_{nullptr};
+    void* dfxInfoDumpAddr_{nullptr};
     size_t dfxInfoOffsetInTilingData_{0};
     bool genPlaceholder_{false};
     bool hasDevPtrArg_{false};
     size_t firstWorkspaceIdx_{0}; // workspace cant be first param for any ops
 
-    static constexpr uint32_t DFX_INFO_SCALAR_ELEM_COUNT = 3U;  // 标量tensor固定占用3个uint64_t
-    static constexpr uint32_t DFX_INFO_FIXED_ELEM_COUNT = 2U;   // 每个tensor固定占用2个uint64_t(size + dimNum)
+    static constexpr uint32_t DFX_INFO_SCALAR_ELEM_COUNT = 3U; // 标量tensor固定占用3个uint64_t
+    static constexpr uint32_t DFX_INFO_FIXED_ELEM_COUNT = 2U;  // 每个tensor固定占用2个uint64_t(size + dimNum)
 
-    inline uint32_t CalAdumpDFXInfoElemCount(const aclTensor *tensor) const
+    inline uint32_t CalAdumpDFXInfoElemCount(const aclTensor* tensor) const
     {
         if (tensor == nullptr) {
             return 0;
@@ -249,12 +210,12 @@ private:
         return elemCount;
     }
 
-    void AddDeviceArg(const aclTensor *tensor, void *devAddr, bool isOutShapeTensor = false)
+    void AddDeviceArg(const aclTensor* tensor, void* devAddr, bool isOutShapeTensor = false)
     {
         if (argSize_ >= allArg_.size()) {
             allArg_.emplace_back(tensor, devAddr, isOutShapeTensor);
         } else {
-            ArgAddr &argAddr = allArg_.at(argSize_);
+            ArgAddr& argAddr = allArg_.at(argSize_);
             argAddr.devAddr_.tensor = tensor;
             argAddr.devAddr_.devAddr = devAddr;
             argAddr.tag_ = ArgAddr::ArgTag::DEVICE_ARG;
@@ -264,12 +225,12 @@ private:
         argSize_++;
     }
 
-    void AddHostArg(void *hostAddr, size_t hostDataLen, const aclTensor *tensor=nullptr)
+    void AddHostArg(void* hostAddr, size_t hostDataLen, const aclTensor* tensor = nullptr)
     {
         if (argSize_ >= allArg_.size()) {
             allArg_.emplace_back(hostAddr, hostDataLen, tensor);
         } else {
-            ArgAddr &argAddr = allArg_.at(argSize_);
+            ArgAddr& argAddr = allArg_.at(argSize_);
             argAddr.hostAddr_.hostAddr = hostAddr;
             argAddr.hostAddr_.hostDataLen = hostDataLen;
             argAddr.tag_ = ArgAddr::ArgTag::HOST_ARG;
@@ -279,12 +240,12 @@ private:
         argSize_++;
     }
 
-    void AddDevicePtrArg(const aclTensorList *tensors, size_t ptrListLen)
+    void AddDevicePtrArg(const aclTensorList* tensors, size_t ptrListLen)
     {
         if (argSize_ >= allArg_.size()) {
             allArg_.emplace_back(tensors, ptrListLen);
         } else {
-            ArgAddr &argAddr = allArg_.at(argSize_);
+            ArgAddr& argAddr = allArg_.at(argSize_);
             argAddr.devPtrAddr_.tensors = tensors;
             argAddr.devPtrAddr_.ptrListLen = ptrListLen;
             argAddr.tag_ = ArgAddr::ArgTag::DEVICE_PTR_ARG;
@@ -294,7 +255,7 @@ private:
         argSize_++;
     }
 
-    void AppendInputLaunchArg(const aclTensor *arg)
+    void AppendInputLaunchArg(const aclTensor* arg)
     {
         if (arg == nullptr) {
             // This is somewhat inconsitence here: null inputs are needed in op tiling, but no in kernel larunching.
@@ -313,13 +274,11 @@ private:
             devArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
-            OP_LOGD("Append Launch DEVICE aclTensor. dims: %zu, dtype: %d, aclTensor: %p, addr: %p, tensor size: %zu",
-                arg->GetStorageShape().GetDimNum(),
-                arg->GetDataType(),
-                arg,
-                arg->GetData(),
+            OP_LOGD(
+                "Append Launch DEVICE aclTensor. dims: %zu, dtype: %d, aclTensor: %p, addr: %p, tensor size: %zu",
+                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, arg->GetData(),
                 arg->GetTensor()->GetSize());
-            const auto &shape = arg->GetStorageShape();
+            const auto& shape = arg->GetStorageShape();
             for (size_t i = 0; i < shape.GetDimNum(); i++) {
                 OP_LOGD("#### DEVICE aclTensor Shape: %lu", shape.GetDim(i));
             }
@@ -330,13 +289,10 @@ private:
             hostArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
-            OP_LOGD("Append Launch HOST aclTensor. dims: %zu, dtype: %d, %p, calc size: %zu, tensor size: %zu",
-                arg->GetStorageShape().GetDimNum(),
-                arg->GetDataType(),
-                arg,
-                size,
-                arg->GetTensor()->GetSize());
-            const auto &shape = arg->GetStorageShape();
+            OP_LOGD(
+                "Append Launch HOST aclTensor. dims: %zu, dtype: %d, %p, calc size: %zu, tensor size: %zu",
+                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, size, arg->GetTensor()->GetSize());
+            const auto& shape = arg->GetStorageShape();
             for (size_t i = 0; i < shape.GetDimNum(); i++) {
                 OP_LOGD("#### HOST aclTensor Shape: %lu", shape.GetDim(i));
             }
@@ -345,9 +301,9 @@ private:
         dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(arg);
     }
 
-    void AppendInputLaunchArg(const aclTensorList *arg)
+    void AppendInputLaunchArg(const aclTensorList* arg)
     {
-        if(arg == nullptr) {
+        if (arg == nullptr) {
             OP_LOGW("aclTensorList is nullptr.");
             return;
         }
@@ -373,16 +329,16 @@ private:
         }
     }
 
-    void AppendInputLaunchArg(OpArg &arg)
+    void AppendInputLaunchArg(OpArg& arg)
     {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AppendInputLaunchArg(reinterpret_cast<aclTensor *>(arg->pointer));
+            AppendInputLaunchArg(reinterpret_cast<aclTensor*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AppendInputLaunchArg(reinterpret_cast<aclTensorList *>(arg->pointer));
+            AppendInputLaunchArg(reinterpret_cast<aclTensorList*>(arg->pointer));
         }
     }
 
-    void AppendLaunchArg(const aclTensor *arg)
+    void AppendLaunchArg(const aclTensor* arg)
     {
         if (arg == nullptr) {
             OP_LOGW("Append Launch NULL aclTensor");
@@ -393,18 +349,19 @@ private:
         tensorNum_++;
         dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(arg);
 #ifdef DEBUG
-        OP_LOGD("Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu",
-                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData(), arg->GetTensor()->GetSize());
-        const auto &shape = arg->GetStorageShape();
+        OP_LOGD(
+            "Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu",
+            arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData(), arg->GetTensor()->GetSize());
+        const auto& shape = arg->GetStorageShape();
         for (size_t i = 0; i < shape.GetDimNum(); i++) {
             OP_LOGD("#### DEVICE aclTensor Shape: %lu", shape.GetDim(i));
         }
 #endif
     }
 
-    void AppendLaunchArg(const aclTensorList *arg)
+    void AppendLaunchArg(const aclTensorList* arg)
     {
-        if(arg == nullptr) {
+        if (arg == nullptr) {
             return;
         }
         if (hasDevPtrArg_) {
@@ -429,37 +386,35 @@ private:
         }
     }
 
-    void AppendLaunchArg(OpArg &arg)
+    void AppendLaunchArg(OpArg& arg)
     {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AppendLaunchArg(reinterpret_cast<aclTensor *>(arg->pointer));
+            AppendLaunchArg(reinterpret_cast<aclTensor*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AppendLaunchArg(reinterpret_cast<aclTensorList *>(arg->pointer));
+            AppendLaunchArg(reinterpret_cast<aclTensorList*>(arg->pointer));
         }
     }
 
-    void AppendOutshapeLaunchArg(const aclTensor *arg)
+    void AppendOutshapeLaunchArg(const aclTensor* arg)
     {
         AddDeviceArg(arg, arg->GetData(), true);
         devArgNum_++;
         tensorNum_++;
         dfxInfoDumpElemCount_++;
 #ifdef DEBUG
-        OP_LOGD("Append Launch Outshape Tensor. dims: %zu, dtype: %d, data:%p",
-                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData());
-        const auto &shape = arg->GetStorageShape();
+        OP_LOGD(
+            "Append Launch Outshape Tensor. dims: %zu, dtype: %d, data:%p", arg->GetStorageShape().GetDimNum(),
+            arg->GetDataType(), arg->GetData());
+        const auto& shape = arg->GetStorageShape();
         for (size_t i = 0; i < shape.GetDimNum(); i++) {
             OP_LOGD("#### DEVICE aclTensor Shape: %lu", shape.GetDim(i));
         }
 #endif
     }
 
-    void AppendWorkspaceLaunchArg(const aclTensor *arg)
-    {
-        AppendLaunchArg(arg);
-    }
+    void AppendWorkspaceLaunchArg(const aclTensor* arg) { AppendLaunchArg(arg); }
 
-    void AppendWorkspaceLaunchArg(const aclTensorList *arg)
+    void AppendWorkspaceLaunchArg(const aclTensorList* arg)
     {
         if (arg != nullptr) {
             for (uint64_t i = 0; i < arg->Size(); i++) {
@@ -468,12 +423,11 @@ private:
         }
     }
 
-    void AppendWorkspaceLaunchArg(const std::vector<std::tuple<void*, const aclTensor*>> &arg)
+    void AppendWorkspaceLaunchArg(const std::vector<std::tuple<void*, const aclTensor*>>& arg)
     {
-        for (const auto &elem : arg) {
+        for (const auto& elem : arg) {
 #ifdef DEBUG
-            OP_LOGD("Append Launch Memset Tensor. tensor: %p, data:%p",
-                std::get<1>(elem), std::get<0>(elem));
+            OP_LOGD("Append Launch Memset Tensor. tensor: %p, data:%p", std::get<1>(elem), std::get<0>(elem));
 #endif
             if (std::get<1>(elem) == nullptr) {
                 OP_LOGW("Memset tensor is nullptr.");
@@ -485,24 +439,24 @@ private:
         }
     }
 
-    void AppendWorkspaceLaunchArg(OpArg &arg)
+    void AppendWorkspaceLaunchArg(OpArg& arg)
     {
         if (firstWorkspaceIdx_ == 0) {
             firstWorkspaceIdx_ = argSize_;
         }
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            AppendLaunchArg(reinterpret_cast<aclTensor *>(arg->pointer));
+            AppendLaunchArg(reinterpret_cast<aclTensor*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            AppendWorkspaceLaunchArg(reinterpret_cast<aclTensorList *>(arg->pointer));
+            AppendWorkspaceLaunchArg(reinterpret_cast<aclTensorList*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_MEMSET_WORKSPACE) {
             AppendWorkspaceLaunchArg(
-                *reinterpret_cast<std::vector<std::tuple<void*, const aclTensor*>> *>(arg->pointer));
+                *reinterpret_cast<std::vector<std::tuple<void*, const aclTensor*>>*>(arg->pointer));
         }
     }
 
     thread_local static std::vector<ArgAddr> addrInfo;
 };
-}
-}  // namespace op
+} // namespace internal
+} // namespace op
 
 #endif

@@ -18,17 +18,15 @@
 
 namespace Ops {
 namespace Base {
-namespace ReduceOpTmpl
-{
+namespace ReduceOpTmpl {
 using namespace Ops::Base;
 
 template <typename T>
-class ReduceTensorEmpty
-{
+class ReduceTensorEmpty {
 public:
     template <class... Args>
-    __aicore__ inline explicit ReduceTensorEmpty(const ReduceOpTilingData* tilingData, GlobalTensor<uint8_t>* output,
-                                                 TPipe* pipeIn, Args... args)
+    __aicore__ inline explicit ReduceTensorEmpty(
+        const ReduceOpTilingData* tilingData, GlobalTensor<uint8_t>* output, TPipe* pipeIn, Args... args)
     {
         tiling_ = tilingData;
         bufferSize_ = tiling_->basicBlock == 0 ? bufferSize_ : tiling_->basicBlock;
@@ -124,7 +122,7 @@ __aicore__ inline void ReduceTensorEmpty<T>::ProcessPerCore()
     }
 }
 
-}  // namespace ReduceOpTmpl
+} // namespace ReduceOpTmpl
 } // namespace Base
 } // namespace Ops
-#endif  // REDUCE_TENSOR_EMPTY_H
+#endif // REDUCE_TENSOR_EMPTY_H

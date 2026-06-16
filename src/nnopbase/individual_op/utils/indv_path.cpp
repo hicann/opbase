@@ -11,14 +11,14 @@
 #include "indv_linux.h"
 
 namespace nnopbase {
-void IndvPath::GetChildDirs(std::string &baseDir, std::vector<std::string> &childDirs, uint32_t depth,
-        uint32_t maxDepth)
+void IndvPath::GetChildDirs(
+    std::string& baseDir, std::vector<std::string>& childDirs, uint32_t depth, uint32_t maxDepth)
 {
     if (baseDir.empty() || depth > maxDepth) {
         return;
     }
     // 扫描子文件
-    IndvDirent **nameList = nullptr;
+    IndvDirent** nameList = nullptr;
     const int32_t fileCount = IndvScandir(baseDir.c_str(), &nameList, nullptr, nullptr);
     if (fileCount == INDV_EN_ERROR || fileCount == INDV_EN_INVALID_PARAM) {
         return;
@@ -42,4 +42,4 @@ void IndvPath::GetChildDirs(std::string &baseDir, std::vector<std::string> &chil
 
     IndvScandirFree(nameList, fileCount);
 }
-}
+} // namespace nnopbase

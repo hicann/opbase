@@ -102,10 +102,7 @@ const std::string GetTypeName()
 
 template <typename T, T v>
 struct Print2 {
-    constexpr operator char()
-    {
-        return 1 + 0xFF;
-    }
+    constexpr operator char() { return 1 + 0xFF; }
 };
 #define BUILD_LOG(...) char UNIQUE_NAME(print_value_) = Print2<__VA_ARGS__>()
 

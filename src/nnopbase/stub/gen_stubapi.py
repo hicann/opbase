@@ -124,14 +124,15 @@ def need_generate_func(func_line, file_path):
     :return:
     """
     file_name = file_path.split("/")[-1]
-    if func_line.strip().endswith("aclTensor::aclTensor(const T *value, uint64_t size, op::DataType dataType)"):
+    func_compact = re.sub(r'\s+', '', func_line.strip())
+    if func_compact.endswith(re.sub(r'\s+', '', "aclTensor::aclTensor(const T *value, uint64_t size, op::DataType dataType)")):
         return False
     if file_name == "common_types.h":
-        if func_line.strip() == 'size_t TypeSize(DataType dataType)':
+        if func_compact == re.sub(r'\s+', '', 'size_t TypeSize(DataType dataType)'):
             return False
-        if func_line.strip() == 'std::string ToString(op::DataType dataType)':
+        if func_compact == re.sub(r'\s+', '', 'ge::AscendString ToString(op::DataType dataType)'):
             return False
-        if func_line.strip() == 'void ToContiguousStrides(const op::Shape &shape, op::Strides &strides)':
+        if func_compact == re.sub(r'\s+', '', 'void ToContiguousStrides(const op::Shape &shape, op::Strides &strides)'):
             return False
     if func_line.strip().endswith("default") or func_line.strip().endswith("delete") \
             or func_line.strip().startswith("typedef") or func_line.strip().startswith("using"):
@@ -410,7 +411,7 @@ class H2CC(object):
                 continue
 
             # handle func
-            handle_func1_result, line, start_i = self.handle_func1(line)
+            handle_func1_result, line, start_i = self.handle_func1(line, template_string)
             if handle_func1_result == "continue":
                 continue
 
@@ -457,7 +458,7 @@ class H2CC(object):
         logging.info('Added %s functions', len(self.func_list_exist))
         logging.info('Successfully converted,please see ' + self.output_file)
 
-    def handle_func1(self, line):
+    def handle_func1(self, line, template_string=''):
         """
         :param line:
         :return:
@@ -499,8 +500,12 @@ class H2CC(object):
         (line, match) = pattern_func.subn(r'\3\n', line)
         logging.info("line[%s]", line)
         # deal with case of 'return type' and 'func_name' are not in the same line, like: 'int \n abc(int a, int b)'
-        if re.search(r'^\s*(inline)?\s*[a-zA-Z0-9_]+\s*$', self.input_content[start_i - 1]):
-            line = self.input_content[start_i - 1] + line
+        prev_line = self.input_content[start_i - 1]
+        stripped_prev = prev_line.strip()
+        if (not template_string and stripped_prev
+                and not stripped_prev.endswith(':')
+                and re.match(r'^[\w:<>*&\s]+$', stripped_prev)):
+            line = prev_line + line
         line = line.lstrip()
         if not match:
             self.line_index += 1

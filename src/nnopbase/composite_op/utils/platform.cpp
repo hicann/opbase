@@ -38,10 +38,10 @@ public:
         }
     };
 
-    const PlatformInfo &GetPlatformInfo();
+    const PlatformInfo& GetPlatformInfo();
 
 private:
-    std::vector<PlatformInfo *> platformInfoList_;
+    std::vector<PlatformInfo*> platformInfoList_;
     PlatformInfo invalidPlatform_;
 };
 
@@ -49,7 +49,7 @@ static thread_local PlatformThreadLocalCtx g_tPlatformCtx;
 
 class PlatformInfoImpl {
 public:
-    explicit PlatformInfoImpl(fe::PlatFormInfos *platformOriginInfo);
+    explicit PlatformInfoImpl(fe::PlatFormInfos* platformOriginInfo);
 
     ~PlatformInfoImpl();
 
@@ -57,7 +57,7 @@ public:
 
     SocVersion GetSocVersion() const;
 
-    const std::string &GetSocLongVersion() const;
+    const std::string& GetSocLongVersion() const;
 
     int64_t GetBlockSize() const;
 
@@ -65,7 +65,7 @@ public:
 
     uint32_t GetVectorCoreNum() const;
 
-    fe::PlatFormInfos *GetPlatformInfos() const;
+    fe::PlatFormInfos* GetPlatformInfos() const;
 
     bool GetFftsPlusMode() const;
 
@@ -76,7 +76,7 @@ private:
 
     void InitAiCoreInstAbility();
 
-    void InitInstMMadSocSpecAbility(map<string, vector<string>> &aiCoreInstMap);
+    void InitInstMMadSocSpecAbility(map<string, vector<string>>& aiCoreInstMap);
 
     void InitAiCoreSpec();
 
@@ -89,7 +89,7 @@ private:
     void InitNpuArch();
 
 private:
-    fe::PlatFormInfos *platformOriInfo_;
+    fe::PlatFormInfos* platformOriInfo_;
     SocVersion socVersion_ = SocVersion::RESERVED_VERSION;
     std::string socLogVersion_;
     int64_t blockSize_ = DEFAULT_BLOCK_SIZE;
@@ -100,7 +100,7 @@ private:
     NpuArch npuArch_{NpuArch::DAV_RESV};
 };
 
-PlatformInfoImpl::PlatformInfoImpl(fe::PlatFormInfos *platformOriginInfo) : platformOriInfo_(platformOriginInfo)
+PlatformInfoImpl::PlatformInfoImpl(fe::PlatFormInfos* platformOriginInfo) : platformOriInfo_(platformOriginInfo)
 {
     InitAiCoreInstAbility();
     InitAiCoreInstFromOriginPlatformInfo();
@@ -127,50 +127,26 @@ bool PlatformInfoImpl::CheckAiCoreInstSupport(op::SocSpec socSpec, op::SocSpecAb
 {
     CHECK_RET(aiCoreInstAbility_.size() >= static_cast<size_t>(socSpec), false);
     auto socSpecIdx = static_cast<int32_t>(socSpec);
-    auto &specAbilityVector = aiCoreInstAbility_[socSpecIdx];
+    auto& specAbilityVector = aiCoreInstAbility_[socSpecIdx];
     auto it = std::find(specAbilityVector.begin(), specAbilityVector.end(), specAbility);
     return it != specAbilityVector.end();
 }
 
-SocVersion PlatformInfoImpl::GetSocVersion() const
-{
-    return socVersion_;
-}
+SocVersion PlatformInfoImpl::GetSocVersion() const { return socVersion_; }
 
-const std::string &PlatformInfoImpl::GetSocLongVersion() const
-{
-    return socLogVersion_;
-}
+const std::string& PlatformInfoImpl::GetSocLongVersion() const { return socLogVersion_; }
 
-int64_t PlatformInfoImpl::GetBlockSize() const
-{
-    return blockSize_;
-}
+int64_t PlatformInfoImpl::GetBlockSize() const { return blockSize_; }
 
-uint32_t PlatformInfoImpl::GetCubeCoreNum() const
-{
-    return cubeCoreNum_;
-}
+uint32_t PlatformInfoImpl::GetCubeCoreNum() const { return cubeCoreNum_; }
 
-uint32_t PlatformInfoImpl::GetVectorCoreNum() const
-{
-    return vectorCoreNum_;
-}
+uint32_t PlatformInfoImpl::GetVectorCoreNum() const { return vectorCoreNum_; }
 
-bool PlatformInfoImpl::GetFftsPlusMode() const
-{
-    return fftsPlusMode_;
-}
+bool PlatformInfoImpl::GetFftsPlusMode() const { return fftsPlusMode_; }
 
-NpuArch PlatformInfoImpl::GetCurNpuArch() const
-{
-    return npuArch_;
-}
+NpuArch PlatformInfoImpl::GetCurNpuArch() const { return npuArch_; }
 
-fe::PlatFormInfos *PlatformInfoImpl::GetPlatformInfos() const
-{
-    return platformOriInfo_;
-}
+fe::PlatFormInfos* PlatformInfoImpl::GetPlatformInfos() const { return platformOriInfo_; }
 
 void PlatformInfoImpl::InitAiCoreInstFromOriginPlatformInfo()
 {
@@ -184,7 +160,7 @@ void PlatformInfoImpl::InitAiCoreInstFromOriginPlatformInfo()
     InitSoCInfo();
 }
 
-void PlatformInfoImpl::InitInstMMadSocSpecAbility(map<string, vector<string>> &aiCoreInstMap)
+void PlatformInfoImpl::InitInstMMadSocSpecAbility(map<string, vector<string>>& aiCoreInstMap)
 {
     OP_LOGI("Start InitInstMMadSocSpecAbility.");
     // all ability:
@@ -207,7 +183,7 @@ void PlatformInfoImpl::InitInstMMadSocSpecAbility(map<string, vector<string>> &a
 
     auto instMapIt = aiCoreInstMap.find("Intrinsic_mmad");
     if (instMapIt != aiCoreInstMap.end()) {
-        for (auto &instStr : instMapIt->second) {
+        for (auto& instStr : instMapIt->second) {
             auto abilityIt = convertMap.find(instStr);
             if (abilityIt != convertMap.end()) {
                 aiCoreInstAbility_[static_cast<::int32_t>(SocSpec::INST_MMAD)].push_back(abilityIt->second);
@@ -229,20 +205,13 @@ void PlatformInfoImpl::InitSocVersion()
         socVersion_ = SocVersion::RESERVED_VERSION;
     } else {
         map<string, SocVersion> convertMap = {
-            {"Ascend910", SocVersion::ASCEND910},
-            {"Ascend910B", SocVersion::ASCEND910B},
-            {"Ascend910_93", SocVersion::ASCEND910_93},
-            {"Ascend910_95", SocVersion::ASCEND910_95},
-            {"Ascend950", SocVersion::ASCEND950},
-            {"Ascend910E", SocVersion::ASCEND910E},
-            {"Ascend310", SocVersion::ASCEND310},
-            {"Ascend310B", SocVersion::ASCEND310B},
-            {"Ascend310C", SocVersion::ASCEND310C},
-            {"Ascend310P", SocVersion::ASCEND310P},
-            {"Ascend350", SocVersion::ASCEND350},
-            {"Ascend610Lite", SocVersion::ASCEND610LITE},
-            {"KirinX90", SocVersion::KIRINX90},
-            {"Kirin9030", SocVersion::KIRIN9030}};
+            {"Ascend910", SocVersion::ASCEND910},       {"Ascend910B", SocVersion::ASCEND910B},
+            {"Ascend910_93", SocVersion::ASCEND910_93}, {"Ascend910_95", SocVersion::ASCEND910_95},
+            {"Ascend950", SocVersion::ASCEND950},       {"Ascend910E", SocVersion::ASCEND910E},
+            {"Ascend310", SocVersion::ASCEND310},       {"Ascend310B", SocVersion::ASCEND310B},
+            {"Ascend310C", SocVersion::ASCEND310C},     {"Ascend310P", SocVersion::ASCEND310P},
+            {"Ascend350", SocVersion::ASCEND350},       {"Ascend610Lite", SocVersion::ASCEND610LITE},
+            {"KirinX90", SocVersion::KIRINX90},         {"Kirin9030", SocVersion::KIRIN9030}};
         auto it = convertMap.find(socVersionStr);
         if (it != convertMap.end()) {
             socVersion_ = it->second;
@@ -265,17 +234,16 @@ void PlatformInfoImpl::InitAiCoreSpec()
     string blockSizeStr;
     auto ret = platformOriInfo_->GetPlatformResWithLock("AICoreSpec", "ubblock_size", blockSizeStr);
     OP_LOGI("GetPlatformResWithLock get ubblock_size ret is: %d, ubblock_size is: %ld", ret, blockSize_);
-    CHECK_RET(ret,);
+    CHECK_RET(ret, );
     try {
         int num = stoi(blockSizeStr);
         blockSize_ = num;
         OP_LOGI("InitAiCoreSpec success, block size is: %ld", blockSize_);
-    } catch (const invalid_argument &e) {
-        OP_LOGW("InitAiCoreSpec Failed, ubblock_size is not a number string: %s, use default 32.",
-                blockSizeStr.c_str());
-    } catch (const out_of_range &e) {
-        OP_LOGW("InitAiCoreSpec Failed, ubblock_size is out of int range: %s, use default 32.",
-                blockSizeStr.c_str());
+    } catch (const invalid_argument& e) {
+        OP_LOGW(
+            "InitAiCoreSpec Failed, ubblock_size is not a number string: %s, use default 32.", blockSizeStr.c_str());
+    } catch (const out_of_range& e) {
+        OP_LOGW("InitAiCoreSpec Failed, ubblock_size is out of int range: %s, use default 32.", blockSizeStr.c_str());
     }
 }
 
@@ -307,7 +275,7 @@ void PlatformInfoImpl::InitNpuArch()
     uint32_t npuArchVal = 0;
     try {
         npuArchVal = static_cast<uint32_t>(std::stoul(archStrVal));
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         OP_LOGW("stoul %s to uint32_t value failed, reason: %s", archStrVal.c_str(), e.what());
         npuArch_ = NpuArch::DAV_RESV;
         return;
@@ -331,12 +299,9 @@ PlatformInfo::~PlatformInfo()
     }
 }
 
-bool PlatformInfo::Valid() const
-{
-    return valid_;
-}
+bool PlatformInfo::Valid() const { return valid_; }
 
-void PlatformInfo::SetPlatformImpl(op::PlatformInfoImpl *impl)
+void PlatformInfo::SetPlatformImpl(op::PlatformInfoImpl* impl)
 {
     impl_ = impl;
     valid_ = true;
@@ -348,17 +313,14 @@ SocVersion PlatformInfo::GetSocVersion() const
     return impl_->GetSocVersion();
 }
 
-const std::string &PlatformInfo::GetSocLongVersion() const
+const std::string& PlatformInfo::GetSocLongVersion() const
 {
     static std::string unknownVersion = "unknownVersion";
     CHECK_RET(impl_ != nullptr, unknownVersion);
     return impl_->GetSocLongVersion();
 }
 
-int32_t PlatformInfo::GetDeviceId() const
-{
-    return deviceId_;
-}
+int32_t PlatformInfo::GetDeviceId() const { return deviceId_; }
 
 int64_t PlatformInfo::GetBlockSize() const
 {
@@ -390,47 +352,44 @@ NpuArch PlatformInfo::GetCurNpuArch() const
     return impl_->GetCurNpuArch();
 }
 
-fe::PlatFormInfos *PlatformInfo::GetPlatformInfos() const
+fe::PlatFormInfos* PlatformInfo::GetPlatformInfos() const
 {
     CHECK_RET(impl_ != nullptr, nullptr);
     return impl_->GetPlatformInfos();
 }
 
-const PlatformInfo &PlatformThreadLocalCtx::GetPlatformInfo()
+const PlatformInfo& PlatformThreadLocalCtx::GetPlatformInfo()
 {
     int32_t deviceId;
     auto ret = aclrtGetDevice(&deviceId);
-    OP_CHECK(ret == ACL_SUCCESS,
-             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get device id failed when do GetCurrentPlatformInfo."),
-             return invalidPlatform_);
+    OP_CHECK(
+        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get device id failed when do GetCurrentPlatformInfo."),
+        return invalidPlatform_);
     while (platformInfoList_.size() <= static_cast<size_t>(deviceId)) {
-        PlatformInfo *info = new PlatformInfo(platformInfoList_.size());
+        PlatformInfo* info = new PlatformInfo(platformInfoList_.size());
         platformInfoList_.push_back(info);
     }
-    OP_LOGI("GetCurrentPlatformInfo, get current device is: %d, tPlatformInfoList.size(): %lu",
-        deviceId, platformInfoList_.size());
+    OP_LOGI(
+        "GetCurrentPlatformInfo, get current device is: %d, tPlatformInfoList.size(): %lu", deviceId,
+        platformInfoList_.size());
     if (!platformInfoList_[deviceId]->Valid()) {
-        fe::PlatFormInfos *platformOriginInfo = new fe::PlatFormInfos();
+        fe::PlatFormInfos* platformOriginInfo = new fe::PlatFormInfos();
         auto getPlatformRet =
-            fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId,
-                                                                                  *platformOriginInfo);
+            fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId, *platformOriginInfo);
         if (getPlatformRet != 0) {
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR,
-                    "Call PlatformInfoManager::GeInstance().GetPlatformInstanceByDevice failed.");
+            OP_LOGE(
+                ACLNN_ERR_RUNTIME_ERROR, "Call PlatformInfoManager::GeInstance().GetPlatformInstanceByDevice failed.");
             delete platformOriginInfo;
         } else {
             OP_LOGI("GetRuntimePlatformInfosByDevice success.");
-            PlatformInfoImpl *platformInfoImpl = new PlatformInfoImpl(platformOriginInfo);
+            PlatformInfoImpl* platformInfoImpl = new PlatformInfoImpl(platformOriginInfo);
             platformInfoList_[deviceId]->SetPlatformImpl(platformInfoImpl);
         }
     }
     return *platformInfoList_[deviceId];
 }
 
-const PlatformInfo &GetCurrentPlatformInfo()
-{
-    return g_tPlatformCtx.GetPlatformInfo();
-}
+const PlatformInfo& GetCurrentPlatformInfo() { return g_tPlatformCtx.GetPlatformInfo(); }
 
 ge::AscendString ToString(SocVersion socVersion)
 {
@@ -443,7 +402,7 @@ ge::AscendString ToString(SocVersion socVersion)
         {SocVersion::ASCEND310, "Ascend310"},               // SocVersion::ASCEND310
         {SocVersion::ASCEND310B, "Ascend310B"},             // SocVersion::ASCEND310B
         {SocVersion::ASCEND310C, "Ascend310C"},             // SocVersion::ASCEND310C
-        {SocVersion::ASCEND350, "Ascend350"},             // SocVersion::ASCEND350
+        {SocVersion::ASCEND350, "Ascend350"},               // SocVersion::ASCEND350
         {SocVersion::ASCEND310P, "Ascend310P"},             // SocVersion::ASCEND310P
         {SocVersion::ASCEND610LITE, "Ascend610Lite"},       // SocVersion::ASCEND610LITE
         {SocVersion::KIRINX90, "KirinX90"},                 // SocVersion::KIRINX90

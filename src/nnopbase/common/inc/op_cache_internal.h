@@ -34,31 +34,13 @@ struct TaskInfo {
 
 class OpExecCacheDfx {
 public:
-    void SetExceptionDumpInfo(const ExceptionDumpInfo &info)
-    {
-        exceptionDumpInfo_.push_back(info);
-    }
-    ExceptionDumpInfo GetExceptionDumpInfo(int32_t index) const
-    {
-        return exceptionDumpInfo_[index];
-    }
-    void SetProfilingInfoId(const op::internal::ProfilingInfoId &id)
-    {
-        profilingInfoId_.push_back(id);
-    }
-    op::internal::ProfilingInfoId GetProfilingInfoId(int32_t index) const
-    {
-        return profilingInfoId_[index];
-    }
-    void SetTaskInfo(const TaskInfo &taskInfo);
-    MsprofGeTaskType GetTaskType(int32_t index) const
-    {
-        return taskInfo_[index].type;
-    }
-    TaskInfo GetTaskInfo(int32_t index) const
-    {
-        return taskInfo_[index];
-    }
+    void SetExceptionDumpInfo(const ExceptionDumpInfo& info) { exceptionDumpInfo_.push_back(info); }
+    ExceptionDumpInfo GetExceptionDumpInfo(int32_t index) const { return exceptionDumpInfo_[index]; }
+    void SetProfilingInfoId(const op::internal::ProfilingInfoId& id) { profilingInfoId_.push_back(id); }
+    op::internal::ProfilingInfoId GetProfilingInfoId(int32_t index) const { return profilingInfoId_[index]; }
+    void SetTaskInfo(const TaskInfo& taskInfo);
+    MsprofGeTaskType GetTaskType(int32_t index) const { return taskInfo_[index].type; }
+    TaskInfo GetTaskInfo(int32_t index) const { return taskInfo_[index]; }
 
 private:
     std::vector<TaskInfo> taskInfo_;
@@ -68,36 +50,36 @@ private:
 
 class OpExecCacheWrap {
 public:
-    OpExecCacheWrap()
-    {}
-    explicit OpExecCacheWrap(OpExecCache *cache);
+    OpExecCacheWrap() {}
+    explicit OpExecCacheWrap(OpExecCache* cache);
     ~OpExecCacheWrap();
 
-    aclnnStatus Run(void *workspaceAddr, const aclrtStream stream);
+    aclnnStatus Run(void* workspaceAddr, const aclrtStream stream);
     std::string ReportAddr();
 
     uint64_t magicNumber_{K_CACHE_WRAP_MAGIC_NUMBER};
-    OpExecCache *opExecCache_;
-    std::vector<void *> cachedTensorList_;
+    OpExecCache* opExecCache_;
+    std::vector<void*> cachedTensorList_;
     op::internal::OpLogInfo opLogInfo_;
     int32_t hugeMemPoolIndex_{op::kInvalidHugeMemIndexId};
-    void *opExecCacheManager_{nullptr};
+    void* opExecCacheManager_{nullptr};
 };
 
 aclnnStatus DoReportAdditionInfo(
-    void *infoLists, const TaskInfo &taskInfo, const op::internal::ProfilingInfoId &profilingInfoId);
+    void* infoLists, const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId);
 
 void DoExceptionDump(
-    void *infoLists, void *workspaceAddr, const std::vector<void *> &tensors, const ExceptionDumpInfo &dumpInfo, const aclrtStream stream);
+    void* infoLists, void* workspaceAddr, const std::vector<void*>& tensors, const ExceptionDumpInfo& dumpInfo,
+    const aclrtStream stream);
 
 class OpCacheContext {
 public:
-    void SetOpCache(OpExecCache *cache);
+    void SetOpCache(OpExecCache* cache);
 
-    OpExecCache *GetOpCache();
+    OpExecCache* GetOpCache();
 
 private:
-    OpExecCache *cache_{nullptr};
+    OpExecCache* cache_{nullptr};
 };
 
 class OpCacheGuard {
@@ -106,10 +88,10 @@ public:
     ~OpCacheGuard();
 };
 
-OpCacheContext &GetOpCacheContext();
-OpExecCacheWrap *CreateCacheWrap(OpExecCache *opExecCache);
-void *GetOpExecCacheManager();
-void ReleaseOpExecCacheManager(void *ptr);
+OpCacheContext& GetOpCacheContext();
+OpExecCacheWrap* CreateCacheWrap(OpExecCache* opExecCache);
+void* GetOpExecCacheManager();
+void ReleaseOpExecCacheManager(void* ptr);
 void DisableOpCacheCount();
 void ReinitOpCacheManager();
 
@@ -119,9 +101,9 @@ extern "C" {
 void ResetCacheThreadLocal();
 void UnInitPTACacheThreadLocal();
 void InitPTACacheThreadLocal();
-void AddTensorAddrToCachedList(void *addr);
+void AddTensorAddrToCachedList(void* addr);
 void SetPTAHashKey(uint64_t hash);
-void SetPTACacheHashKey(uint8_t *key, size_t len);
+void SetPTACacheHashKey(uint8_t* key, size_t len);
 
 #ifdef __cplusplus
 }

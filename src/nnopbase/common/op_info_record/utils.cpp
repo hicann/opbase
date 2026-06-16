@@ -13,22 +13,21 @@
 #include <cstdint>
 
 namespace aclnnOpInfoRecord {
-std::string Utils::TrimLeft(const std::string &s)
+std::string Utils::TrimLeft(const std::string& s)
 {
     std::string rs = s;
     (void)rs.erase(rs.begin(), std::find_if(rs.begin(), rs.end(), [](uint8_t ch) { return !std::isspace(ch); }));
     return rs;
 }
 
-std::string Utils::TrimRight(const std::string &s)
+std::string Utils::TrimRight(const std::string& s)
 {
     std::string rs = s;
-    (void)rs.erase(std::find_if(rs.rbegin(), rs.rend(), [](uint8_t ch) { return !std::isspace(ch); }).base(),
-        rs.end());
+    (void)rs.erase(std::find_if(rs.rbegin(), rs.rend(), [](uint8_t ch) { return !std::isspace(ch); }).base(), rs.end());
     return rs;
 }
 
-std::string Utils::Trim(const std::string &s)
+std::string Utils::Trim(const std::string& s)
 {
     std::string tmp = TrimLeft(s);
     return TrimRight(tmp);

@@ -25,28 +25,28 @@ constexpr uint8_t NNOPBASE_MC2_NOTIFY_COUNT = 2;
 constexpr uint16_t NNOPBASE_HCCL_DEFAULT_TIME = 1836;
 
 namespace {
-aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor *executor, HcclComm comm, void *stream, void *tilingData,
-    void **commCtx)
+aclnnStatus DoHcclAllocComResourceByTiling(
+    NnopbaseExecutor* executor, HcclComm comm, void* stream, void* tilingData, void** commCtx)
 {
     const bool supportA5AiCpu = nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2OpCfg.sType);
-    OP_LOGI("Nnopbase MC2 alloc resource route, sType[%d], supportA5AiCpu[%d].",
-        executor->mc2OpCfg.sType, supportA5AiCpu);
+    OP_LOGI(
+        "Nnopbase MC2 alloc resource route, sType[%d], supportA5AiCpu[%d].", executor->mc2OpCfg.sType, supportA5AiCpu);
     if (supportA5AiCpu) {
-        return nnopbase::IndvMc2ClientWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData,
-            commCtx);
+        return nnopbase::IndvMc2ClientWrapper::GetInstance().HcclAllocComResourceByTiling(
+            comm, stream, tilingData, commCtx);
     } else {
         return nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData, commCtx);
     }
 }
-}
+} // namespace
 
-aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, aclrtStream const stream)
+aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor* executor, aclrtStream const stream)
 {
     executor->contextAddr.clear();
     executor->aicpuStream.clear();
     executor->aicpuNotify.clear();
     for (HcclComm commHandle : executor->mc2OpCfg.hcomHandle) {
-        void *contextAddr = nullptr;
+        void* contextAddr = nullptr;
         if (commHandle == nullptr) {
             executor->contextAddr.push_back(contextAddr);
             executor->aicpuStream.push_back(nullptr);
@@ -56,16 +56,10 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, aclrtStream cons
         if (!executor->hasTiling) {
             // 静态mc2算子场景，用json读取的静态tilingData去激活Hccl通信
             NNOPBASE_ASSERT_OK_RETVAL(DoHcclAllocComResourceByTiling(
-                executor,
-                commHandle,
-                stream,
-                executor->args->tilingInfo.staticTilingData.data(),
-                &contextAddr));
+                executor, commHandle, stream, executor->args->tilingInfo.staticTilingData.data(), &contextAddr));
         } else {
             NNOPBASE_ASSERT_OK_RETVAL(DoHcclAllocComResourceByTiling(
-                executor,
-                commHandle,
-                stream,
+                executor, commHandle, stream,
                 (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(),
                 &contextAddr));
         }
@@ -73,19 +67,22 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, aclrtStream cons
         aclrtStream aicpuStream = nullptr;
         aclrtStream notify[NNOPBASE_MC2_NOTIFY_COUNT] = {};
         if (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
-            NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclGetAicpuOpStreamAndNotify(
-                commHandle, &aicpuStream, NNOPBASE_MC2_NOTIFY_COUNT, notify));
+            NNOPBASE_ASSERT_OK_RETVAL(
+                nnopbase::IndvHcclWrapper::GetInstance().HcclGetAicpuOpStreamAndNotify(
+                    commHandle, &aicpuStream, NNOPBASE_MC2_NOTIFY_COUNT, notify));
             executor->aicpuStream.push_back(aicpuStream);
             executor->aicpuNotify.push_back(std::make_pair(notify[0], notify[1]));
         }
-        OP_LOGI("Executor is %p, stream is %p, commHandle is %p, get contextAddr is %p, get aicpuStream is %p, notify[0] is %p, notify[1] is %p.",
+        OP_LOGI(
+            "Executor is %p, stream is %p, commHandle is %p, get contextAddr is %p, get aicpuStream is %p, notify[0] "
+            "is %p, notify[1] is %p.",
             executor, stream, commHandle, contextAddr, aicpuStream, notify[0], notify[1]);
     }
     return OK;
 }
 
 aclnnStatus NnopbaseExecutorGetMc2Num(
-    NnopbaseExecutor *executor, aclrtStream const stream, NnopbaseExecutorArgsAddr *argsAddr, uint32_t *mc2Num)
+    NnopbaseExecutor* executor, aclrtStream const stream, NnopbaseExecutorArgsAddr* argsAddr, uint32_t* mc2Num)
 {
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetHcomResource(executor, stream));
     argsAddr->hcclDesc->version = 1U;
@@ -113,7 +110,7 @@ aclnnStatus NnopbaseAddCapture(aclrtStream stream, std::vector<aclrtStream> aicp
     aclmdlRI captureMdl;
     if ((aclmdlRICaptureGetInfo(stream, &status, &captureMdl) == ACL_SUCCESS) &&
         (status == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE)) {
-        for (auto &stm :aicpuStream) {
+        for (auto& stm : aicpuStream) {
             if (stm != nullptr) {
                 NNOPBASE_ASSERT_RTOK_RETVAL(rtStreamAddToModel(stm, captureMdl));
             }
@@ -122,23 +119,23 @@ aclnnStatus NnopbaseAddCapture(aclrtStream stream, std::vector<aclrtStream> aicp
     return OK;
 }
 
-aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor *const executor, aclrtStream stream)
+aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor* const executor, aclrtStream stream)
 {
     OP_LOGI("Launch kernel by KFC mode.");
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddCapture(stream, executor->aicpuStream));
     if (executor->aicpuStream[0] != nullptr) {
-        CHECK_COND(aclrtWaitAndResetNotify(executor->aicpuNotify[0].first, executor->aicpuStream[0], UINT32_MAX) == ACL_SUCCESS,
+        CHECK_COND(
+            aclrtWaitAndResetNotify(executor->aicpuNotify[0].first, executor->aicpuStream[0], UINT32_MAX) ==
+                ACL_SUCCESS,
             ACLNN_ERR_RUNTIME_ERROR,
             "Call aclrtWaitAndResetNotify failed, executor is %p, aicpuStream is %p, stream is %p, Notify is %p.",
-            executor,
-            executor->aicpuStream[0],
-            stream,
-            executor->aicpuNotify[0].first);
+            executor, executor->aicpuStream[0], stream, executor->aicpuNotify[0].first);
         NNOPBASE_ASSERT_RTOK_RETVAL(aclrtRecordNotify(executor->aicpuNotify[0].first, stream));
     }
     for (size_t i = 1U; i < executor->aicpuStream.size(); i++) {
         if ((executor->aicpuStream[0] != nullptr) && (executor->aicpuNotify[i].first != nullptr)) {
-            NNOPBASE_ASSERT_RTOK_RETVAL(aclrtWaitAndResetNotify(executor->aicpuNotify[i].first, executor->aicpuStream[0], UINT32_MAX));
+            NNOPBASE_ASSERT_RTOK_RETVAL(
+                aclrtWaitAndResetNotify(executor->aicpuNotify[i].first, executor->aicpuStream[0], UINT32_MAX));
         }
         // aicpuStream和aicpuNotify是hccl同时创建的，aicpuStream不是null，aicpuNotify也不应该是null
         if (executor->aicpuStream[i] != nullptr) {
@@ -148,7 +145,8 @@ aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor *const executor, aclrtStream 
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAicpuKernelLaunch(executor));
     for (size_t i = 1U; i < executor->aicpuStream.size(); i++) {
         if (executor->aicpuStream[i] != nullptr) {
-            NNOPBASE_ASSERT_RTOK_RETVAL(aclrtWaitAndResetNotify(executor->aicpuNotify[i].second, executor->aicpuStream[i], UINT32_MAX));
+            NNOPBASE_ASSERT_RTOK_RETVAL(
+                aclrtWaitAndResetNotify(executor->aicpuNotify[i].second, executor->aicpuStream[i], UINT32_MAX));
         }
         if ((executor->aicpuStream[0] != nullptr) && (executor->aicpuNotify[i].second != nullptr)) {
             NNOPBASE_ASSERT_RTOK_RETVAL(aclrtRecordNotify(executor->aicpuNotify[i].second, executor->aicpuStream[0]));
@@ -158,61 +156,54 @@ aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor *const executor, aclrtStream 
     return OK;
 }
 
-void NnopbaseCopyDavidMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
+void NnopbaseCopyDavidMC2ParamDesc(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr)
 {
-    const NnopbaseUChar *const args = op::internal::PtrCastTo<NnopbaseUChar>(executor->fusionArgs.args);
+    const NnopbaseUChar* const args = op::internal::PtrCastTo<NnopbaseUChar>(executor->fusionArgs.args);
     const uint16_t kfcArgsFmtOffset = static_cast<uint16_t>(argsAddr->hostInputData - args);
-    executor->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset = kfcArgsFmtOffset / sizeof(void *);
+    executor->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset = kfcArgsFmtOffset / sizeof(void*);
     OP_LOGI("KfcArgsFmtOffset is %u.", kfcArgsFmtOffset);
     for (size_t i = 0U; i < sizeof(NnopbaseHcclCommParamDesc); i++) {
-        argsAddr->hostInputData =
-            NnopbaseAppend1Byte(argsAddr->hostInputData, (op::internal::PtrCastTo<NnopbaseUChar>(argsAddr->hcclDesc))[i]);
+        argsAddr->hostInputData = NnopbaseAppend1Byte(
+            argsAddr->hostInputData, (op::internal::PtrCastTo<NnopbaseUChar>(argsAddr->hcclDesc))[i]);
     }
-    OP_LOGI("GroupNum is %u, hasffts is %u, tilingOff is %u, isDyn is %lu.",
-        argsAddr->hcclDesc->groupNum,
-        argsAddr->hcclDesc->hasFfts,
-        argsAddr->hcclDesc->tilingOff,
-        argsAddr->hcclDesc->isDyn);
+    OP_LOGI(
+        "GroupNum is %u, hasffts is %u, tilingOff is %u, isDyn is %lu.", argsAddr->hcclDesc->groupNum,
+        argsAddr->hcclDesc->hasFfts, argsAddr->hcclDesc->tilingOff, argsAddr->hcclDesc->isDyn);
     // 3 is soname/kernelname/opname
-    executor->fusionArgs.argsSize = kfcArgsFmtOffset +
-                                    sizeof(NnopbaseHcclCommParamDesc) + NNOPBASE_PARAM_EXT_LEN +
+    executor->fusionArgs.argsSize = kfcArgsFmtOffset + sizeof(NnopbaseHcclCommParamDesc) + NNOPBASE_PARAM_EXT_LEN +
                                     static_cast<uint32_t>(sizeof(rtHostInputInfo_t));
 }
 
-void NnopbaseCopyMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
+void NnopbaseCopyMC2ParamDesc(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr)
 {
-    NnopbaseUChar *descAddr = op::internal::PtrCastTo<NnopbaseUChar>(executor->aicpuArgs.args);
+    NnopbaseUChar* descAddr = op::internal::PtrCastTo<NnopbaseUChar>(executor->aicpuArgs.args);
     for (size_t i = 0U; i < sizeof(NnopbaseHcclCommParamDesc); i++) {
         descAddr = NnopbaseAppend1Byte(descAddr, (op::internal::PtrCastTo<NnopbaseUChar>(argsAddr->hcclDesc))[i]);
     }
 
-    OP_LOGI("GroupNum is %u, hasffts is %u, tilingOff is %u, isDyn is %lu.",
-        argsAddr->hcclDesc->groupNum,
-        argsAddr->hcclDesc->hasFfts,
-        argsAddr->hcclDesc->tilingOff,
-        argsAddr->hcclDesc->isDyn);
+    OP_LOGI(
+        "GroupNum is %u, hasffts is %u, tilingOff is %u, isDyn is %lu.", argsAddr->hcclDesc->groupNum,
+        argsAddr->hcclDesc->hasFfts, argsAddr->hcclDesc->tilingOff, argsAddr->hcclDesc->isDyn);
 
     // 3 is soname/kernelname/opname
     executor->aicpuArgs.argsSize =
         executor->argsExt.argsSize + sizeof(NnopbaseHcclCommParamDesc) + NNOPBASE_AICPU_PARAM_LEN * 3U;
 }
 
-void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
+void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr)
 {
-    NnopbaseUChar *args = nullptr;
+    NnopbaseUChar* args = nullptr;
     if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
-        args = (NnopbaseUChar *)executor->fusionArgs.args;
+        args = (NnopbaseUChar*)executor->fusionArgs.args;
         executor->fusionArgs.aicpuArgs[0].soNameAddrOffset = static_cast<uint16_t>(argsAddr->hostInputData - args);
     } else {
-        args = (NnopbaseUChar *)executor->aicpuArgs.args;
+        args = (NnopbaseUChar*)executor->aicpuArgs.args;
         executor->aicpuArgs.soNameAddrOffset = static_cast<uint32_t>(argsAddr->hostInputData - args);
     }
-    
+
     bool isA5AiCpu = nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2OpCfg.sType);
-    const NnopbaseUChar *pSoName = isA5AiCpu ? NNOPBASE_MC2_SERVER_SO_NAME :
-                                                                      NNOPBASE_MC2_AICPU_SO_NAME;
-    const NnopbaseUChar *pKernelName = isA5AiCpu ? NNOPBASE_MC2_SERVER_KERNEL_NAME :
-                                                                          NNOPBASE_MC2_AICPU_KERNEL_NAME;
+    const NnopbaseUChar* pSoName = isA5AiCpu ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
+    const NnopbaseUChar* pKernelName = isA5AiCpu ? NNOPBASE_MC2_SERVER_KERNEL_NAME : NNOPBASE_MC2_AICPU_KERNEL_NAME;
 
     for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pSoName[i]);
@@ -229,9 +220,9 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
     }
 
     const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
-    OP_CHECK(memcpy_s(argsAddr->hostInputData, opName.length(), &opName[0], opName.length()) == EOK,
-        OP_LOGW("Memcpy aicpu opName failed, opName is %s, length %zu.", opName.c_str(), opName.length()),
-        return); 
+    OP_CHECK(
+        memcpy_s(argsAddr->hostInputData, opName.length(), &opName[0], opName.length()) == EOK,
+        OP_LOGW("Memcpy aicpu opName failed, opName is %s, length %zu.", opName.c_str(), opName.length()), return);
 
     if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
         const size_t opLen = ((opName.length() + 7) / 8) * 8;
@@ -243,11 +234,11 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
     }
 }
 
-static aclnnStatus NnopbaseGetAicpuTimeout(uint32_t *time)
+static aclnnStatus NnopbaseGetAicpuTimeout(uint32_t* time)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(time);
     CHECK_COND(aclrtGetOpExecuteTimeout(time) == ACL_RT_SUCCESS, ACLNN_ERR_RUNTIME_ERROR, "Get op timeout failed.");
-    const NnopbaseChar *hcclTimeoutEnv = nullptr;
+    const NnopbaseChar* hcclTimeoutEnv = nullptr;
     MM_SYS_GET_ENV(MM_ENV_HCCL_EXEC_TIMEOUT, hcclTimeoutEnv);
     uint32_t hcclTimeout = NNOPBASE_HCCL_DEFAULT_TIME;
     if (hcclTimeoutEnv != nullptr) {
@@ -258,7 +249,7 @@ static aclnnStatus NnopbaseGetAicpuTimeout(uint32_t *time)
     return OK;
 }
 
-aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
+aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor* const executor)
 {
     uint32_t time = 0;
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetAicpuTimeout(&time));
@@ -267,12 +258,8 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
     const std::string opType = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     const uint32_t numBlocks =
         executor->args->tilingInfo.aicpuNumBlocks == 0U ? 1U : executor->args->tilingInfo.aicpuNumBlocks;
-    NNOPBASE_ASSERT_RTOK_RETVAL(rtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC,
-        &opType[0],
-        numBlocks,
-        &executor->aicpuArgs,
-        nullptr,
-        executor->aicpuStream[0],
+    NNOPBASE_ASSERT_RTOK_RETVAL(rtAicpuKernelLaunchExWithArgs(
+        KERNEL_TYPE_AICPU_KFC, &opType[0], numBlocks, &executor->aicpuArgs, nullptr, executor->aicpuStream[0],
         RT_KERNEL_USE_SPECIAL_TIMEOUT));
     OP_LOGI("%s launch successfully, numBlocks is %u.", opType.c_str(), numBlocks);
 
@@ -282,7 +269,7 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor *const executor)
     return OK;
 }
 
-aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, aclrtStream const stream)
+aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor* const executor, aclrtStream const stream)
 {
     OP_LOGI("Launch kernel by fusion mode.");
     uint32_t numBlocks = executor->args->tilingInfo.numBlocks;
@@ -296,17 +283,19 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, aclrtSt
     rtAicoreFusionInfo_t aicoreInfo = {executor->args->binInfo->ccuBinHandle, tilingKey, &launchCfg, nullptr};
     rtFunsionTaskInfo_t fusionTaskInfo = {};
     rtCcuTaskGroup_t ccuTaskGroup = {};
-    NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclGetCcuTaskInfo(
-        executor->mc2OpCfg.hcomHandle[0], (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(), &ccuTaskGroup));
+    NNOPBASE_ASSERT_RTOK_RETVAL(
+        nnopbase::IndvHcclWrapper::GetInstance().HcclGetCcuTaskInfo(
+            executor->mc2OpCfg.hcomHandle[0],
+            (op::internal::PtrCastTo<NnopbaseTilingData>(executor->args->tilingInfo.tilingData))->GetData(),
+            &ccuTaskGroup));
     fusionTaskInfo.subTask[0].type = RT_FUSION_CCU;
     fusionTaskInfo.subTask[0].task.ccuInfo = ccuTaskGroup;
     fusionTaskInfo.subTaskNum = 2U;
     fusionTaskInfo.subTask[1].type = RT_FUSION_AICORE;
     fusionTaskInfo.subTask[1].task.aicoreInfo = aicoreInfo;
-    OP_LOGI("SubTaskNum is %u. subTask[0].type is %d, subTask[1].type is %d.",
-        fusionTaskInfo.subTaskNum,
-        fusionTaskInfo.subTask[0].type,
-        fusionTaskInfo.subTask[1].type);
+    OP_LOGI(
+        "SubTaskNum is %u. subTask[0].type is %d, subTask[1].type is %d.", fusionTaskInfo.subTaskNum,
+        fusionTaskInfo.subTask[0].type, fusionTaskInfo.subTask[1].type);
 
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     NNOPBASE_ASSERT_RTOK_RETVAL(rtFusionLaunch(&fusionTaskInfo, stream, &executor->fusionArgs));
@@ -315,23 +304,23 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor *const executor, aclrtSt
     return OK;
 }
 
-static aclnnStatus NnopbaseMC2KernelMTE(NnopbaseExecutor *executor, aclrtStream stream)
+static aclnnStatus NnopbaseMC2KernelMTE(NnopbaseExecutor* executor, aclrtStream stream)
 {
     return NnopbaseExecutorKernelLaunch(executor, stream);
 }
 
-static aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor *const executor, aclrtStream stream)
+static aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor* const executor, aclrtStream stream)
 {
     return NnopbaseFusionKernelLaunch(executor, stream);
 }
 
-static aclnnStatus NnopbaseMC2KernelAicpu(NnopbaseExecutor *executor, aclrtStream stream)
+static aclnnStatus NnopbaseMC2KernelAicpu(NnopbaseExecutor* executor, aclrtStream stream)
 {
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseLaunchKFCTask(executor, stream));
     return NnopbaseExecutorKernelLaunch(executor, stream);
 }
 
-aclnnStatus NnopbaseMC2KernelLaunch(NnopbaseExecutor *executor, aclrtStream stream)
+aclnnStatus NnopbaseMC2KernelLaunch(NnopbaseExecutor* executor, aclrtStream stream)
 {
     OP_LOGI("HcclServerType is %d.", executor->mc2OpCfg.sType);
     if (NnopbaseSkipKernelLaunch(executor)) {

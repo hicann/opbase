@@ -20,7 +20,7 @@ namespace Base {
 constexpr int64_t UNKNOWN_RANK_DIM_VALUE = -2LL;
 constexpr int64_t UNKNOWN_DIM_VALUE = -1LL;
 
-void SetUnknownRank(gert::Shape &shape)
+void SetUnknownRank(gert::Shape& shape)
 {
     shape.SetDimNum(0);
     shape.AppendDim(UNKNOWN_RANK_DIM_VALUE);
@@ -31,12 +31,12 @@ void SetUnknownRank(gert::Shape &shape)
  * @param [out] shape: the output shape ptr
  * @return ge::graphStatus
  */
-bool IsUnknownRank(const gert::Shape &shape)
+bool IsUnknownRank(const gert::Shape& shape)
 {
     return shape.GetDimNum() == 1 && shape.GetDim(0) == UNKNOWN_RANK_DIM_VALUE;
 }
 
-void SetUnknownShape(int64_t rank, gert::Shape &shape)
+void SetUnknownShape(int64_t rank, gert::Shape& shape)
 {
     OP_CHECK_IF(rank < 0, OP_LOGE("SetUnknownShape", "the rank value is invalid, return unsuccessful"), return);
     const size_t dimNum = static_cast<size_t>(rank);
@@ -46,7 +46,7 @@ void SetUnknownShape(int64_t rank, gert::Shape &shape)
     }
 }
 
-bool IsUnknownShape(const gert::Shape &shape)
+bool IsUnknownShape(const gert::Shape& shape)
 {
     size_t dimNum = shape.GetDimNum();
     for (size_t i = 0; i < dimNum; i++) {
@@ -57,5 +57,5 @@ bool IsUnknownShape(const gert::Shape &shape)
     return false;
 }
 
-}  // namespace Base
-}  // namespace Ops
+} // namespace Base
+} // namespace Ops

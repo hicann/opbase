@@ -20,7 +20,7 @@ namespace Ops {
 namespace Base {
 
 // Do infershape for OP which is single-input single-output and in-shape equal out-shape.
-ge::graphStatus InferShape4Reduce(gert::InferShapeContext *context)
+ge::graphStatus InferShape4Reduce(gert::InferShapeContext* context)
 {
     auto inShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inShape);
@@ -31,7 +31,7 @@ ge::graphStatus InferShape4Reduce(gert::InferShapeContext *context)
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
-    const bool *keepDims = attrs->GetAttrPointer<bool>(0);
+    const bool* keepDims = attrs->GetAttrPointer<bool>(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, keepDims);
 
     auto axesSize = static_cast<int32_t>(axesTensor->GetShapeSize());
@@ -46,7 +46,8 @@ ge::graphStatus InferShape4Reduce(gert::InferShapeContext *context)
     }
 
     auto dtype = axesTensor->GetDataType();
-    OP_CHECK_IF(dtype != ge::DT_INT32 && dtype != ge::DT_INT64,
+    OP_CHECK_IF(
+        dtype != ge::DT_INT32 && dtype != ge::DT_INT64,
         OP_LOGE(context->GetNodeName(), "axes datatype %s must in (int32, int64)", ToString(dtype).c_str()),
         return ge::GRAPH_FAILED);
     if (dtype == ge::DT_INT32) {
@@ -54,5 +55,5 @@ ge::graphStatus InferShape4Reduce(gert::InferShapeContext *context)
     }
     return ReduceDims<int64_t>(inShape, axesTensor, axesSize, *keepDims, outShape);
 }
-}  // namespace Base
-}  // namespace Ops
+} // namespace Base
+} // namespace Ops

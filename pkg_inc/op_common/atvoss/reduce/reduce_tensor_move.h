@@ -18,14 +18,13 @@
 
 namespace Ops {
 namespace Base {
-namespace ReduceOpTmpl
-{
+namespace ReduceOpTmpl {
 template <typename T>
-class ReduceTensorMove
-{
+class ReduceTensorMove {
 public:
-    __aicore__ inline ReduceTensorMove(const ReduceOpTilingData* tilingData, GlobalTensor<uint8_t>* input,
-                                       GlobalTensor<uint8_t>* output, TPipe* pipeIn)
+    __aicore__ inline ReduceTensorMove(
+        const ReduceOpTilingData* tilingData, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output,
+        TPipe* pipeIn)
     {
         tiling_ = tilingData;
         input_ = input;
@@ -94,7 +93,7 @@ __aicore__ inline void ReduceTensorMove<T>::ProcessPerCore()
     }
 }
 
-}  // namespace ReduceOpTmpl
+} // namespace ReduceOpTmpl
 } // namespace Base
 } // namespace Ops
-#endif  // REDUCE_TENSOR_MOVE_H
+#endif // REDUCE_TENSOR_MOVE_H

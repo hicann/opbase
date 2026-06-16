@@ -21,7 +21,7 @@
 #include "opdev/op_log.h"
 
 class AclrtStub {
-  public:
+public:
     virtual ~AclrtStub() = default;
     static AclrtStub* GetInstance()
     {
@@ -35,78 +35,69 @@ class AclrtStub {
     }
 
     virtual aclError aclrtBinaryGetFunctionByEntry(
-        aclrtBinHandle binHandle, uint64_t funcEntry, aclrtFuncHandle *funcHandle)
+        aclrtBinHandle binHandle, uint64_t funcEntry, aclrtFuncHandle* funcHandle)
     {
-        *funcHandle = (void *)0x12341234;
+        *funcHandle = (void*)0x12341234;
         return ACL_SUCCESS;
     }
 
     virtual aclError aclrtBinaryGetFunction(
-        const aclrtBinHandle binHandle, const char *kernelName, aclrtFuncHandle *funcHandle)
+        const aclrtBinHandle binHandle, const char* kernelName, aclrtFuncHandle* funcHandle)
     {
         CHECK_COND(kernelName != nullptr, ACL_ERROR_INVALID_PARAM, "Parameter kernelName is nullptr.");
         std::string name(kernelName);
         CHECK_COND(
             std::count(name.begin(), name.end(), '_') > 0, ACL_ERROR_INVALID_PARAM,
             "Parameter kernelName is invalid, name: %s", kernelName);
-        *funcHandle = (void *)0x43214321;
+        *funcHandle = (void*)0x43214321;
         return ACL_SUCCESS;
     }
 
     virtual aclError aclrtBinaryLoadFromData(
-        const void *data, size_t length, const aclrtBinaryLoadOptions *options, aclrtBinHandle *binHandle)
+        const void* data, size_t length, const aclrtBinaryLoadOptions* options, aclrtBinHandle* binHandle)
     {
         return ACL_SUCCESS;
     }
 
     virtual aclError aclrtBinaryLoadFromFile(
-        const char *binPath, aclrtBinaryLoadOptions *options, aclrtBinHandle *binHandle)
+        const char* binPath, aclrtBinaryLoadOptions* options, aclrtBinHandle* binHandle)
     {
         return ACL_SUCCESS;
     }
 
-    virtual aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
-        aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize, aclrtPlaceHolderInfo *placeHolderArray,
-        size_t placeHolderNum)
+    virtual aclError aclrtLaunchKernelWithHostArgs(
+        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
+        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         return ACL_SUCCESS;
     }
 
-    virtual aclError aclrtRegisterCpuFunc(const aclrtBinHandle handle, const char *funcName,
-        const char *kernelName, aclrtFuncHandle *funcHandle)
+    virtual aclError aclrtRegisterCpuFunc(
+        const aclrtBinHandle handle, const char* funcName, const char* kernelName, aclrtFuncHandle* funcHandle)
     {
         return ACL_SUCCESS;
     }
 
-    void Install(AclrtStub* instance)
-    {
-        fakeAclrtInstance_ = instance;
-    }
+    void Install(AclrtStub* instance) { fakeAclrtInstance_ = instance; }
 
-    void UnInstall() {
-        fakeAclrtInstance_ = nullptr;
-    }
+    void UnInstall() { fakeAclrtInstance_ = nullptr; }
 
-    virtual aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType,
-        aclrtStreamAttrValue *value)
+    virtual aclError aclrtGetStreamAttribute(
+        aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue* value)
     {
         value->cacheOpInfoSwitch = 1;
         return ACL_SUCCESS;
     }
 
-    virtual aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, size_t infoSize)
-    {
-        return ACL_SUCCESS;
-    }
+    virtual aclError aclrtCacheLastTaskOpInfo(const void* const infoPtr, size_t infoSize) { return ACL_SUCCESS; }
 
-    virtual aclError aclmdlRICaptureGetInfo(
-        aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *captureMdl)
+    virtual aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus* status, aclmdlRI* captureMdl)
     {
         *status = ACL_MODEL_RI_CAPTURE_STATUS_NONE;
         return ACL_SUCCESS;
     }
 
-  private:
+private:
     thread_local static std::shared_ptr<AclrtStub> aclrtInstance_;
     thread_local static AclrtStub* fakeAclrtInstance_;
 };

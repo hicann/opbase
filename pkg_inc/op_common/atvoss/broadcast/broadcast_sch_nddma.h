@@ -22,20 +22,22 @@ static constexpr int64_t NDDMA_COPYINBRC_LEAST_NUMBER_NEED_FUSE = 3;
 template <class BrcDag, bool withLoop>
 class BroadcastNddmaSch : public BroadcastBaseSch<BrcDag, true> {
 public:
-    __aicore__ inline explicit BroadcastNddmaSch(const BroadcastBaseTilingData<BrcDag> *baseTilingData)
+    __aicore__ inline explicit BroadcastNddmaSch(const BroadcastBaseTilingData<BrcDag>* baseTilingData)
         : BroadcastBaseSch<BrcDag, true>(baseTilingData), tilingData(baseTilingData)
     {}
 
     template <class... Args>
-    __aicore__ inline void Init(TPipe *pipe, Args... args)
+    __aicore__ inline void Init(TPipe* pipe, Args... args)
     {
-        static_assert(BrcDag::InputSize + BrcDag::OutputSize == sizeof...(Args),
+        static_assert(
+            BrcDag::InputSize + BrcDag::OutputSize == sizeof...(Args),
             "BroadcastNddmaSch.Init args num should match DAG holders.");
         static_assert(BrcDag::CopyBrcSize != 0, "Broadcast NDDMA schedule CopyInBrc node number should at least one.");
 
         InitInputArgs<0>(args...); // 调用入参分析,input, output
         this->template SetScalar<0>(0);
-        RUN_LOG("BufferNum: %d, Mte2Num: %d, Mte3Num: %d, BufLevel: %d", bufferNum, BrcDag::Mte2Num, BrcDag::Mte3Num,
+        RUN_LOG(
+            "BufferNum: %d, Mte2Num: %d, Mte3Num: %d, BufLevel: %d", bufferNum, BrcDag::Mte2Num, BrcDag::Mte3Num,
             BrcDag::BufLevel);
 
         TBuf<TPosition::VECCALC> buf;
@@ -75,18 +77,19 @@ public:
         int64_t ubLoopNum =
             AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingData->blockTail : tilingData->blockFormer;
         int64_t axesIndices[BROADCAST_MAX_DIMS] = {0};
-        BroadcastGetAxesIndices(axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(), tilingData->outputDims,
+        BroadcastGetAxesIndices(
+            axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(), tilingData->outputDims,
             tilingData->ubSplitAxis, tilingData->dimProductBeforeUbInner);
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum; ubLoopIdx += 1) {
             copyInBrcCount = 0;
             if (ubLoopIdx != 0) {
-                BroadcastUpdateAxesIndices(axesIndices, tilingData->outputDims, tilingData->ubSplitAxis,
-                    tilingData->ubOuter);
+                BroadcastUpdateAxesIndices(
+                    axesIndices, tilingData->outputDims, tilingData->ubSplitAxis, tilingData->ubOuter);
             }
 
             int64_t ubSplitSize = axesIndices[tilingData->ubSplitAxis] == tilingData->ubOuter - 1 ?
-                tilingData->ubTail :
-                tilingData->ubFormer;
+                                      tilingData->ubTail :
+                                      tilingData->ubFormer;
             // ub整循环处理的元素个数
             Run<0, false>(ubSplitSize, axesIndices, ubLoopIdx, ubLoopIdx & 1);
         }
@@ -116,8 +119,8 @@ protected:
     }
 
     template <typename Op, int pos>
-    __aicore__ inline void CopyInBrc(int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_MAX_DIMS],
-        int64_t ubLoopIdx, int32_t pingPong)
+    __aicore__ inline void CopyInBrc(
+        int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_MAX_DIMS], int64_t ubLoopIdx, int32_t pingPong)
     {
         static_assert(Op::InHolders::Size == 1, "CopyIn input inHolders num should be 1.");
         using input = typename Op::InHolders::template At<0>;
@@ -132,38 +135,44 @@ protected:
         inTensor.SetBufferLen(this->blockEleNum_);
 #endif
         GlobalTensor<inputType> globalTensor;
-        globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType *>(this->inGm_[input::Pos]));
+        globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(this->inGm_[input::Pos]));
 
         RUN_LOG("copyInBrcCount is %d , input::Pos is %d ,pingpong is %d", copyInBrcCount, input::Pos, pingPong);
-        if ((tilingData->inputBrcStrides[copyInBrcCount][tilingData->ubSplitAxis] != 0) || (ubLoopIdx <= 1 ||
-            (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter <= 1)) {
+        if ((tilingData->inputBrcStrides[copyInBrcCount][tilingData->ubSplitAxis] != 0) ||
+            (ubLoopIdx <= 1 ||
+             (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter <= 1)) {
             GetTensor<TPosition::VECIN>(bufId);
 
             if constexpr (withLoop) {
                 if constexpr (BrcDag::CopyBrcSize <= NDDMA_COPYINBRC_INLINE_MAX_SUPPORT) {
                     if constexpr (BrcDag::CopyBrcSize >= NDDMA_COPYINBRC_LEAST_NUMBER_NEED_FUSE) {
-                        BroadcastNddmaWithLoopContiguousFuseAxis(globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                        BroadcastNddmaWithLoopContiguousFuseAxis(
+                            globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
                             tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
                             tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
                     } else {
-                        BroadcastNddmaWithLoop(globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                        BroadcastNddmaWithLoop(
+                            globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
                             tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
                             tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
                     }
                 } else {
-                    BroadcastNddmaWithLoopNoInline(globalTensor, inTensor, tilingData->outputDims,
-                        tilingData->outputStrides, tilingData->inputBrcStrides[copyInBrcCount], axesIndices,
-                        tilingData->ubSplitAxis, tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
+                    BroadcastNddmaWithLoopNoInline(
+                        globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                        tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
+                        tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
                 }
             } else {
                 if constexpr (BrcDag::CopyBrcSize <= NDDMA_COPYINBRC_INLINE_MAX_SUPPORT) {
-                    BroadcastNddmaWithoutLoop(globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                    BroadcastNddmaWithoutLoop(
+                        globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
                         tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
                         tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
                 } else {
-                    BroadcastNddmaWithoutLoopNoInline(globalTensor, inTensor, tilingData->outputDims,
-                        tilingData->outputStrides, tilingData->inputBrcStrides[copyInBrcCount], axesIndices,
-                        tilingData->ubSplitAxis, tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
+                    BroadcastNddmaWithoutLoopNoInline(
+                        globalTensor, inTensor, tilingData->outputDims, tilingData->outputStrides,
+                        tilingData->inputBrcStrides[copyInBrcCount], axesIndices, tilingData->ubSplitAxis,
+                        tilingData->shapeLen, ubSplitSize, tilingData->ubFormer);
                 }
             }
 
@@ -175,8 +184,8 @@ protected:
 
     // 遍历执行图
     template <int pos = 0, bool insideIf = false>
-    __aicore__ inline void Run(int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_MAX_DIMS],
-        int64_t ubLoopIdx, int32_t pingPong)
+    __aicore__ inline void Run(
+        int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_MAX_DIMS], int64_t ubLoopIdx, int32_t pingPong)
     {
         if constexpr (pos >= BrcDag::FunList::Size) {
             return;
@@ -188,8 +197,9 @@ protected:
         if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value && !insideIf) {
             constexpr int vecIndex = BrcDag::template VecBrcIdxDepend<Op>;
             if constexpr (vecIndex >= 0) {
-                if ((tilingData->inputVecBrcStrides[vecIndex] != 0) || (ubLoopIdx == 0 ||
-                    (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter == 0)) {
+                if ((tilingData->inputVecBrcStrides[vecIndex] != 0) ||
+                    (ubLoopIdx == 0 ||
+                     (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter == 0)) {
                     Run<pos, true>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
                 }
                 using vecBrcOp = typename BrcDag::VecBrcNodes::template At<vecIndex>;
@@ -204,8 +214,8 @@ protected:
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyInBrc>::Value) {
             CopyInBrc<Op, pos>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyOut>::Value) {
-            int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingData->outputStrides, tilingData->ubSplitAxis,
-                tilingData->ubFormer);
+            int64_t gmOffset = BroadcastGetGmOffset(
+                axesIndices, tilingData->outputStrides, tilingData->ubSplitAxis, tilingData->ubFormer);
             int64_t tileLength = ubSplitSize * tilingData->outputStrides[tilingData->ubSplitAxis];
             this->template CopyOut<Op, pos>(gmOffset, tileLength, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::Brc>::Value) {
@@ -228,7 +238,7 @@ protected:
 private:
     constexpr static int bufferNum = BrcDag::template GetBufferNum<true, true>();
     int copyInBrcCount = 0;
-    const BroadcastBaseTilingData<BrcDag> *tilingData;
+    const BroadcastBaseTilingData<BrcDag>* tilingData;
 };
 } // namespace Base
 } // namespace Ops

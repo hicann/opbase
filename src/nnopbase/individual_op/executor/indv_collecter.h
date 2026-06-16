@@ -22,12 +22,12 @@
 extern "C" {
 #endif
 
-const char *const SCENE = "scene.info";
+const char* const SCENE = "scene.info";
 const size_t SCENE_VALUE_COUNT = 2U;
 const size_t SCENE_KEY_INDEX = 0U;
 const size_t SCENE_VALUE_INDEX = 1U;
-const char *const SCENE_OS = "os";
-const char *const SCENE_ARCH = "arch";
+const char* const SCENE_OS = "os";
+const char* const SCENE_ARCH = "arch";
 
 constexpr const char* NNOPBASE_SIMPLIFIED_KEY_MODE_JSON_KEY = "simplifiedKeyMode";
 constexpr int32_t NNOPBASE_SIMPLIFIED_KEY_MODE_CUSTOMIZED = 2;
@@ -48,67 +48,78 @@ typedef struct {
     struct timespec collectorTp[NnopbaseCollectorTimeIdx::kEnd];
 } NnopbaseBinCollecter;
 
-extern NnopbaseBinCollecter *gBinCollecter;
-aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter);
-NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo *const regInfo, const size_t hashKey,
-    const NnopbaseUChar *const verbose, const uint32_t verbLen, const NnopbaseCoreNum *const coreNum = nullptr);
-void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo *const regInfo, NnopbaseBinInfo* binInfo);
-aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *const regInfo, const NnopbaseJsonInfo &jsonInfo,
-    const NnopbaseUChar *const verbose, const uint32_t len);
-aclnnStatus NnopbaseCollecterAddRegInfoToTbl(NnopbaseBinCollecter *const collecter, const NnopbaseJsonInfo &jsonInfo,
-                                             const uint64_t hashKey, NnopbaseRegInfo *&reg, gert::OppImplVersionTag oppImplVersion);
-aclnnStatus NnopbaseCollecterAddRepoInfo(NnopbaseBinCollecter *const collecter, const NnopbaseJsonInfo &jsonInfo,
-                                         const std::string &key, gert::OppImplVersionTag oppImplVersion);
-aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar *const strKey,  NnopbaseUChar *const binKey,
-                                                      uint32_t *const size);
-aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar *const strKey, NnopbaseUChar *const binKey,
-                                                   uint32_t *const size);
-aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strKey,
-                                                  NnopbaseUChar *const binKey, uint32_t *const size);
-aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter *collecter);
+extern NnopbaseBinCollecter* gBinCollecter;
+aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter* const collecter);
+NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(
+    NnopbaseRegInfo* const regInfo, const size_t hashKey, const NnopbaseUChar* const verbose, const uint32_t verbLen,
+    const NnopbaseCoreNum* const coreNum = nullptr);
+void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo* const regInfo, NnopbaseBinInfo* binInfo);
+aclnnStatus NnopbaseCollecterAddBinInfo(
+    const string& key, NnopbaseRegInfo* const regInfo, const NnopbaseJsonInfo& jsonInfo,
+    const NnopbaseUChar* const verbose, const uint32_t len);
+aclnnStatus NnopbaseCollecterAddRegInfoToTbl(
+    NnopbaseBinCollecter* const collecter, const NnopbaseJsonInfo& jsonInfo, const uint64_t hashKey,
+    NnopbaseRegInfo*& reg, gert::OppImplVersionTag oppImplVersion);
+aclnnStatus NnopbaseCollecterAddRepoInfo(
+    NnopbaseBinCollecter* const collecter, const NnopbaseJsonInfo& jsonInfo, const std::string& key,
+    gert::OppImplVersionTag oppImplVersion);
+aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(
+    const NnopbaseChar* const strKey, NnopbaseUChar* const binKey, uint32_t* const size);
+aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(
+    const NnopbaseChar* const strKey, NnopbaseUChar* const binKey, uint32_t* const size);
+aclnnStatus NnopbaseCollecterConvertStaticVerbKey(
+    const NnopbaseChar* const strKey, NnopbaseUChar* const binKey, uint32_t* const size);
+aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter* collecter);
 
-void NnopbaseCollecterOpRegInfoDestroy(NnopbaseRegInfo **regInfo);
-aclnnStatus NnopbaseCollecterGcRegInfo(void *data);
-aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
-    const nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion,
-    const std::string pkgName);
+void NnopbaseCollecterOpRegInfoDestroy(NnopbaseRegInfo** regInfo);
+aclnnStatus NnopbaseCollecterGcRegInfo(void* data);
+aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(
+    NnopbaseBinCollecter* const collecter, const nlohmann::json& binaryInfoConfig, const std::string& basePath,
+    gert::OppImplVersionTag oppImplVersion, const std::string pkgName);
 
-void NnopbaseGetCustomOpApiPath(std::vector<std::string> &basePath);
-void NnopbaseGetOppApiPath(std::vector<std::string> &basePath);
-void NnopbaseGetCustomOppPath(std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath);
-void NnopbaseGetOppPath(NnopbaseBinCollecter *const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath,
-    int32_t &builtInStartIndex);
-aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::string &hostEnvCpu);
-aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath);
-aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingFun *const tiling, gert::OppImplVersionTag oppImplVersion);
-bool NnopbaseReadConfigFile(const std::string &configPath, std::vector<std::string> &subPath);
-NnopbaseUChar *NnopbaseCollecterGenStaticKey(NnopbaseUChar *verKey, const NnopbaseRegInfoKey *const regInfoKey,
-    const NnopbaseStaticTensorNumInfo *const tensorNumInfo, const aclTensor* tensors[], const NnopbaseAttrAddr *attrs[],
-    const int64_t implMode, const int64_t deterMin, const int64_t *const vDepend, const bool usingStride);
-const char *NnopbaseCollecterGetStaticKernelBin(
-    const NnopbaseChar *const opType, const uint64_t key, const NnopbaseUChar *verbose, const uint32_t verbLen,
-    const NnopbaseCoreNum *const coreNum = nullptr);
-aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter);
-aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo);
-void NnopbaseSplitStr(const std::string &configPath, const std::string &pattern, std::vector<std::string> &subPaths);
-aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
-    nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion);
-aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter,
-    const std::vector<std::pair<std::string, gert::OppImplVersionTag>> &basePath, int32_t builtInStartIndex);
-aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *const collecter,
-    nlohmann::json &binaryInfoConfig, const std::string &basePath, gert::OppImplVersionTag oppImplVersion);
-NnopbaseUChar *NnopbaseBeyond8ByteCopy(
-    const int32_t start, const int32_t end, const NnopbaseChar *const strKey, NnopbaseUChar *verKey);
-aclnnStatus NnopbaseCollecterOpRegInfoInit(NnopbaseRegInfo *regInfo, const NnopbaseJsonInfo &jsonInfo,
-                                           const uint64_t hashKey, gert::OppImplVersionTag oppImplVersion);
-aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json &binInfo, NnopbaseJsonInfo &jsonInfo);
+void NnopbaseGetCustomOpApiPath(std::vector<std::string>& basePath);
+void NnopbaseGetOppApiPath(std::vector<std::string>& basePath);
+void NnopbaseGetCustomOppPath(std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath);
+void NnopbaseGetOppPath(
+    NnopbaseBinCollecter* const collecter, std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath,
+    int32_t& builtInStartIndex);
+aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string& hostEnvOs, std::string& hostEnvCpu);
+aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath);
+aclnnStatus NnopbaseCollecterSetTiling(
+    const NnopbaseJsonInfo& jsonInfo, TilingFun* const tiling, gert::OppImplVersionTag oppImplVersion);
+bool NnopbaseReadConfigFile(const std::string& configPath, std::vector<std::string>& subPath);
+NnopbaseUChar* NnopbaseCollecterGenStaticKey(
+    NnopbaseUChar* verKey, const NnopbaseRegInfoKey* const regInfoKey,
+    const NnopbaseStaticTensorNumInfo* const tensorNumInfo, const aclTensor* tensors[], const NnopbaseAttrAddr* attrs[],
+    const int64_t implMode, const int64_t deterMin, const int64_t* const vDepend, const bool usingStride);
+const char* NnopbaseCollecterGetStaticKernelBin(
+    const NnopbaseChar* const opType, const uint64_t key, const NnopbaseUChar* verbose, const uint32_t verbLen,
+    const NnopbaseCoreNum* const coreNum = nullptr);
+aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter* const collecter);
+aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo* regInfo);
+void NnopbaseSplitStr(const std::string& configPath, const std::string& pattern, std::vector<std::string>& subPaths);
+aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(
+    NnopbaseBinCollecter* const collecter, nlohmann::json& binaryInfoConfig, const std::string& basePath,
+    gert::OppImplVersionTag oppImplVersion);
+aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(
+    NnopbaseBinCollecter* const collecter, const std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath,
+    int32_t builtInStartIndex);
+aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(
+    NnopbaseBinCollecter* const collecter, nlohmann::json& binaryInfoConfig, const std::string& basePath,
+    gert::OppImplVersionTag oppImplVersion);
+NnopbaseUChar* NnopbaseBeyond8ByteCopy(
+    const int32_t start, const int32_t end, const NnopbaseChar* const strKey, NnopbaseUChar* verKey);
+aclnnStatus NnopbaseCollecterOpRegInfoInit(
+    NnopbaseRegInfo* regInfo, const NnopbaseJsonInfo& jsonInfo, const uint64_t hashKey,
+    gert::OppImplVersionTag oppImplVersion);
+aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json& binInfo, NnopbaseJsonInfo& jsonInfo);
 
-aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter *const collecter, const NnopbaseChar *const opType);
-aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter);
-aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo &jsonInfo);
-void SetExtraKernelInfoToBin(const NnopbaseJsonInfo &jsonInfo, std::unique_ptr<NnopbaseBinInfo> &binInfo);
+aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter* const collecter, const NnopbaseChar* const opType);
+aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter* const collecter);
+aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo& jsonInfo);
+void SetExtraKernelInfoToBin(const NnopbaseJsonInfo& jsonInfo, std::unique_ptr<NnopbaseBinInfo>& binInfo);
 
-static inline aclnnStatus NnopbaseCollecterInit(NnopbaseBinCollecter *collecter)
+static inline aclnnStatus NnopbaseCollecterInit(NnopbaseBinCollecter* collecter)
 {
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
         DoubleListInit(&collecter->regInfoTbl.buckets[i].head);
@@ -116,7 +127,7 @@ static inline aclnnStatus NnopbaseCollecterInit(NnopbaseBinCollecter *collecter)
     return NnopbaseSetCollecterSocVersion(collecter);
 }
 
-static inline void NnopbaseCollecterInitBinTbl(BinTbl *binTbl)
+static inline void NnopbaseCollecterInitBinTbl(BinTbl* binTbl)
 {
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
         DoubleListInit(&binTbl->buckets[i].head);
@@ -124,8 +135,8 @@ static inline void NnopbaseCollecterInitBinTbl(BinTbl *binTbl)
     }
 }
 
-NnopbaseRegInfo* NnopbaseCollecterFindRegInfoInTbl(const NnopbaseBinCollecter *const collecter,
-                                                   const NnopbaseChar *const opType, const uint64_t hashKey);
+NnopbaseRegInfo* NnopbaseCollecterFindRegInfoInTbl(
+    const NnopbaseBinCollecter* const collecter, const NnopbaseChar* const opType, const uint64_t hashKey);
 #ifdef __cplusplus
 }
 #endif

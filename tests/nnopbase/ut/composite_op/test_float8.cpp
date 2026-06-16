@@ -24,12 +24,8 @@
 
 class TestFloat8E4M3 : public testing::Test {
 protected:
-    void SetUp() override
-    {
-    }
-    void TearDown() override
-    {
-    }
+    void SetUp() override {}
+    void TearDown() override {}
 };
 
 TEST_F(TestFloat8E4M3, DefaultConstructor)
@@ -252,12 +248,8 @@ TEST_F(TestFloat8E4M3, OutputStream)
 
 class TestFloat8E5M2 : public testing::Test {
 protected:
-    void SetUp() override
-    {
-    }
-    void TearDown() override
-    {
-    }
+    void SetUp() override {}
+    void TearDown() override {}
 };
 
 TEST_F(TestFloat8E5M2, DefaultConstructor)
@@ -499,12 +491,8 @@ TEST_F(TestFloat8E5M2, OutputStream)
 
 class TestFloat8E8M0 : public testing::Test {
 protected:
-    void SetUp() override
-    {
-    }
-    void TearDown() override
-    {
-    }
+    void SetUp() override {}
+    void TearDown() override {}
 };
 
 TEST_F(TestFloat8E8M0, DefaultConstructor)
@@ -528,7 +516,7 @@ TEST_F(TestFloat8E8M0, FromBits)
     // 0xFF = NaN (OCP MX E8M0: only NaN at 0xFF, no infinity encoding)
     op::Float8E8M0 nan_val(0xFF, op::Float8E8M0::FromBits());
     EXPECT_TRUE(nan_val.IsNaN());
-    EXPECT_FALSE(nan_val.IsInf());  // E8M0 has no infinity
+    EXPECT_FALSE(nan_val.IsInf()); // E8M0 has no infinity
 
     // 0x81 = 2^(129-127) = 2^2 = 4.0 (exp=129)
     op::Float8E8M0 two(0x81, op::Float8E8M0::FromBits());
@@ -540,7 +528,7 @@ TEST_F(TestFloat8E8M0, FromBits)
 
     // 0xFE = 2^127 = max value (exp=254, no infinity encoding in E8M0)
     op::Float8E8M0 max_val(0xFE, op::Float8E8M0::FromBits());
-    EXPECT_FALSE(max_val.IsInf());  // E8M0 has no infinity
+    EXPECT_FALSE(max_val.IsInf()); // E8M0 has no infinity
     EXPECT_FALSE(max_val.IsNaN());
 }
 
@@ -660,7 +648,7 @@ TEST_F(TestFloat8E8M0, StdFunctions)
     // E8M0 represents powers of 2 only, so 4.0 is valid
     EXPECT_TRUE(std::isfinite(val) || val.value != 0);
     // E8M0 has no infinity, so isinf always returns false
-    EXPECT_FALSE(std::isinf(inf_input));  // infinity input is clamped to max, not stored as infinity
+    EXPECT_FALSE(std::isinf(inf_input)); // infinity input is clamped to max, not stored as infinity
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
     EXPECT_FLOAT_EQ(std::abs(static_cast<float>(val)), 4.0f);
@@ -696,7 +684,7 @@ TEST_F(TestFloat8E8M0, SpecialValues)
 
     // E8M0 has NO infinity encoding - infinity input clamps to max value (2^127)
     op::Float8E8M0 inf_input(std::numeric_limits<float>::infinity());
-    EXPECT_FALSE(inf_input.IsInf());  // E8M0 has no infinity encoding
+    EXPECT_FALSE(inf_input.IsInf()); // E8M0 has no infinity encoding
     EXPECT_FALSE(inf_input.IsNaN());
     // Infinity input should clamp to max value (0xFE = 2^127)
     EXPECT_GT(static_cast<float>(inf_input), 1e38f);
@@ -744,7 +732,7 @@ TEST(Float8CrossType, PrecisionComparison)
     // E5M2 has 2 mantissa bits
     // E8M0 has 0 mantissa bits
 
-    float test_val = 1.125f;  // 1 + 1/8
+    float test_val = 1.125f; // 1 + 1/8
 
     op::Float8E4M3FN e4m3(test_val);
     op::Float8E5M2 e5m2(test_val);
@@ -877,4 +865,3 @@ TEST(Float8Fp16Conversion, E8M0ToFp16)
 // Note: Direct conversion tests (e.g., op::fp16_t fp16_result(e4m3)) cannot be
 // used because fp16_t's template constructor causes ambiguous overload errors.
 // The ToFp16/ToBFloat16 tests above already verify the conversion via float.
-

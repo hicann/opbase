@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include "kernel_utils.h"
 #include "opdev/op_errno.h"
@@ -20,7 +20,8 @@ protected:
         unsetenv("ASCEND_OPP_PATH");
     }
 
-    static void TearDownTestCase() {
+    static void TearDownTestCase()
+    {
         unsetenv("ASCEND_OPP_PATH");
         unsetenv("ASCEND_HOME_PATH");
     }
@@ -42,4 +43,3 @@ TEST_F(KernelUtilsUT, TestGetOppKernelPath)
 
     KernelUtilsUT::TearDownTestCase();
 }
-

@@ -24,23 +24,20 @@ namespace internal {
 constexpr size_t RESERVE_SIZE_32 = 32;
 
 struct ProfilingInfoId {
+    ProfilingInfoId() { Init(); }
 
-    ProfilingInfoId()
-    {
-        Init();
-    }
+    ProfilingInfoId(uint32_t tilingProfilingId, uint64_t kernelLauncherId, uint64_t itemId)
+        : tilingProfilingId_(tilingProfilingId), kernelLauncherId_(kernelLauncherId), summaryItemId_(itemId)
+    {}
 
-    ProfilingInfoId(uint32_t tilingProfilingId, uint64_t kernelLauncherId, uint64_t itemId) : tilingProfilingId_(
-        tilingProfilingId), kernelLauncherId_(kernelLauncherId), summaryItemId_(itemId) {}
-
-    ProfilingInfoId(const ProfilingInfoId &rhs)
+    ProfilingInfoId(const ProfilingInfoId& rhs)
     {
         tilingProfilingId_ = rhs.tilingProfilingId_;
         kernelLauncherId_ = rhs.kernelLauncherId_;
         summaryItemId_ = rhs.summaryItemId_;
     }
 
-    ProfilingInfoId &operator=(const ProfilingInfoId &rhs)
+    ProfilingInfoId& operator=(const ProfilingInfoId& rhs)
     {
         tilingProfilingId_ = rhs.tilingProfilingId_;
         kernelLauncherId_ = rhs.kernelLauncherId_;
@@ -68,9 +65,9 @@ struct L2IOTensors {
         workspaceTensors_.clear();
     }
     // std::vector does not expand stack size if no dfx, but FVector do.
-    std::vector<const aclTensor *> inputTensors_;
-    std::vector<const aclTensor *> outputTensors_;
-    std::vector<const aclTensor *> workspaceTensors_;
+    std::vector<const aclTensor*> inputTensors_;
+    std::vector<const aclTensor*> outputTensors_;
+    std::vector<const aclTensor*> workspaceTensors_;
 };
 
 struct ExceptionDumpInfo {
@@ -79,7 +76,7 @@ struct ExceptionDumpInfo {
     std::string magic_;
     std::string tilingKey_;
     std::string tilingData_;
-    void *rtsArgs_{nullptr};
+    void* rtsArgs_{nullptr};
     uint32_t rtsArgsSize_{0};
     bool IsEmpty() const
     {
@@ -88,10 +85,7 @@ struct ExceptionDumpInfo {
 };
 
 struct OpThreadLocalContext {
-    OpThreadLocalContext()
-    {
-        Init();
-    }
+    OpThreadLocalContext() { Init(); }
     void Init()
     {
         profilingInfoId_.Init();
@@ -112,20 +106,20 @@ struct OpThreadLocalContext {
     uint64_t kernelLauncherStartTime_;
     int32_t poolIndex_;
     uint32_t numBlocks_{0};
-    std::vector<const aclStorage *> cachedStorageList_;
+    std::vector<const aclStorage*> cachedStorageList_;
     size_t cachedStorageListSize_{0};
-    std::vector<void *> cachedTensorList_;
+    std::vector<void*> cachedTensorList_;
     size_t cachedTensorListSize_{0};
     uint64_t hashKey_ = 0;
-    uint8_t *cacheHashKey_ = nullptr;
+    uint8_t* cacheHashKey_ = nullptr;
     size_t cacheHashKeyLen_ = 0;
     bool usePTAHash_{false};
     bool cacheHasFull_{false};
-    const char *cacheApi_{nullptr};
-    aclOpExecutor *executor_{nullptr};
+    const char* cacheApi_{nullptr};
+    aclOpExecutor* executor_{nullptr};
 };
 
-OpThreadLocalContext &GetThreadLocalContext();
+OpThreadLocalContext& GetThreadLocalContext();
 
 } // namespace internal
 } // namespace op

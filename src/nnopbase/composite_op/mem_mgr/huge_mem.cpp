@@ -20,29 +20,25 @@ namespace op {
 namespace internal {
 static int32_t GetAvaiablePoolIndex();
 }
-}
+} // namespace op
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-int InitHugeMemThreadLocal([[maybe_unused]] void *arg, [[maybe_unused]] bool sync)
+int InitHugeMemThreadLocal([[maybe_unused]] void* arg, [[maybe_unused]] bool sync)
 {
     op::internal::GetThreadLocalContext().poolIndex_ = op::internal::GetAvaiablePoolIndex();
     OP_LOGI("Hugemem trace: get avaiable pool index: %d", op::internal::GetThreadLocalContext().poolIndex_);
     return 0;
 }
 
-void UnInitHugeMemThreadLocal([[maybe_unused]] void *arg, [[maybe_unused]] bool sync)
+void UnInitHugeMemThreadLocal([[maybe_unused]] void* arg, [[maybe_unused]] bool sync)
 {
     op::internal::GetThreadLocalContext().poolIndex_ = op::kInvalidHugeMemIndexId;
 }
 
-void ReleaseHugeMem([[maybe_unused]] void *arg, [[maybe_unused]] bool sync)
-{
-    op::internal::FreeHugeMem();
-}
+void ReleaseHugeMem([[maybe_unused]] void* arg, [[maybe_unused]] bool sync) { op::internal::FreeHugeMem(); }
 
 #ifdef __cplusplus
 }
@@ -85,10 +81,7 @@ static int32_t GetAvaiablePoolIndex()
 }
 
 struct BlockLink {
-    BlockLink()
-    {
-        Init();
-    }
+    BlockLink() { Init(); }
 
     void Init()
     {
@@ -96,20 +89,17 @@ struct BlockLink {
         next_ = nullptr;
     }
 
-    void *block_;
-    BlockLink *next_;
+    void* block_;
+    BlockLink* next_;
 };
 
 class HugeMemPool {
 public:
-    HugeMemPool()
-    {
-        Init(false);
-    }
+    HugeMemPool() { Init(false); }
 
-    HugeMemPool(const HugeMemPool &other) = delete;
+    HugeMemPool(const HugeMemPool& other) = delete;
 
-    HugeMemPool &operator=(const HugeMemPool &rhs) noexcept
+    HugeMemPool& operator=(const HugeMemPool& rhs) noexcept
     {
         if (this != &rhs) {
             syncFlag_ = rhs.syncFlag_;
@@ -136,21 +126,18 @@ public:
         }
     }
 
-    void UnInit(const bool syncFlag)
-    {
-        Init(syncFlag);
-    }
+    void UnInit(const bool syncFlag) { Init(syncFlag); }
 
-    void *AddOneHugeBlockToLinkList(size_t size)
+    void* AddOneHugeBlockToLinkList(size_t size)
     {
-        void *block = op::internal::BlockPool::GetOneHugeBlock();
+        void* block = op::internal::BlockPool::GetOneHugeBlock();
         if (block == nullptr) {
             OP_LOGW("Hugemem trace: GetOneHugeBlock failed, use block cache to allocate memory!");
             return op::internal::BlockCache::CacheAlloc(size);
         }
-        int64_t *offset = static_cast<int64_t *>(block);
+        int64_t* offset = static_cast<int64_t*>(block);
         offset[0] = op::internal::kHugeBlockDefaultOffset;
-        BlockLink *link = new (std::nothrow) BlockLink();
+        BlockLink* link = new (std::nothrow) BlockLink();
         if (link == nullptr) {
             return nullptr;
         }
@@ -162,12 +149,12 @@ public:
             current_->next_ = link;
             current_ = link;
         }
-        auto *res = static_cast<void *>(static_cast<uint8_t *>(block) + offset[0]);
+        auto* res = static_cast<void*>(static_cast<uint8_t*>(block) + offset[0]);
         offset[0] += size;
         return res;
     }
 
-    void *GetAddr(size_t size)
+    void* GetAddr(size_t size)
     {
         // 1. size is gt than kHugeMemorySize, pool can not provide memory, from libc to allocate.
         if (size > kHugeBlockSize - kHugeBlockDefaultOffset) {
@@ -180,23 +167,24 @@ public:
                 break; // array is full, goto Slow path
             }
             if (baseArray_[currentArrayIndex_] == nullptr) {
-                void *block = op::internal::BlockPool::GetOneHugeBlock();
+                void* block = op::internal::BlockPool::GetOneHugeBlock();
                 if (block == nullptr) {
-                    OP_LOGW("Hugemem trace: current array index: %d, GetOneHugeBlock failed, use block cache to "
-                            "allocate memory!",
+                    OP_LOGW(
+                        "Hugemem trace: current array index: %d, GetOneHugeBlock failed, use block cache to "
+                        "allocate memory!",
                         currentArrayIndex_);
                     return op::internal::BlockCache::CacheAlloc(size);
                 }
-                int64_t *offset = static_cast<int64_t *>(block);
+                int64_t* offset = static_cast<int64_t*>(block);
                 offset[0] = op::internal::kHugeBlockDefaultOffset;
                 baseArray_[currentArrayIndex_] = block;
-                auto *res = static_cast<void *>(static_cast<uint8_t *>(block) + offset[0]);
+                auto* res = static_cast<void*>(static_cast<uint8_t*>(block) + offset[0]);
                 offset[0] += size;
                 return res;
             } else {
-                int64_t *offset = (int64_t *) baseArray_[currentArrayIndex_];
+                int64_t* offset = (int64_t*)baseArray_[currentArrayIndex_];
                 if (offset[0] + size <= op::internal::kHugeBlockSize) {
-                    auto *res = static_cast<void *>(static_cast<uint8_t *>(baseArray_[currentArrayIndex_]) + offset[0]);
+                    auto* res = static_cast<void*>(static_cast<uint8_t*>(baseArray_[currentArrayIndex_]) + offset[0]);
                     offset[0] += size;
                     return res;
                 }
@@ -208,9 +196,9 @@ public:
         if (current_ == nullptr) {
             return AddOneHugeBlockToLinkList(size);
         } else {
-            int64_t *offset = static_cast<int64_t *>(current_->block_);
+            int64_t* offset = static_cast<int64_t*>(current_->block_);
             if (offset[0] + size <= kHugeBlockSize) {
-                auto *res = static_cast<void *>(static_cast<uint8_t *>(current_->block_) + offset[0]);
+                auto* res = static_cast<void*>(static_cast<uint8_t*>(current_->block_) + offset[0]);
                 offset[0] += size;
                 return res;
             } else {
@@ -225,7 +213,7 @@ public:
             op::internal::BlockPool::FreeOneHugeBlock(baseArray_[i]);
         }
 
-        BlockLink *link = head_;
+        BlockLink* link = head_;
         while (link != nullptr) {
             op::internal::BlockPool::FreeOneHugeBlock(link->block_);
             link = link->next_;
@@ -233,33 +221,24 @@ public:
 
         link = head_;
         while (link != nullptr) {
-            const BlockLink *tmp = link;
+            const BlockLink* tmp = link;
             link = link->next_;
             delete tmp;
         }
     }
 
-    int32_t GetIndex() const
-    {
-        return currentArrayIndex_;
-    }
+    int32_t GetIndex() const { return currentArrayIndex_; }
 
-    const void *GetHead() const
-    {
-        return head_;
-    }
+    const void* GetHead() const { return head_; }
 
-    const void *GetCurrent() const
-    {
-        return current_;
-    }
+    const void* GetCurrent() const { return current_; }
 
 private:
     char reserved1[64]{0};
-    void *baseArray_[kMaxHugeMemPoolArryNum];
+    void* baseArray_[kMaxHugeMemPoolArryNum];
     int32_t currentArrayIndex_;
-    BlockLink *head_;
-    BlockLink *current_;
+    BlockLink* head_;
+    BlockLink* current_;
     bool syncFlag_;
     int32_t poolIndex_;
     char reserved2[64]{0}; // avoid false sharing
@@ -281,7 +260,7 @@ void FreeHugeMem()
     gHugeMemPoolIndex.push_back(id);
 }
 
-void *GetAddr(const int32_t id, size_t size)
+void* GetAddr(const int32_t id, size_t size)
 {
     if (id == op::kInvalidHugeMemIndexId || id >= kMaxHugeMemObjectNum) {
         return nullptr;
@@ -297,7 +276,7 @@ int32_t GetPoolCurrentArrayIndex(const int32_t id)
     return gHugeMemPool[id].GetIndex();
 }
 
-const void *GetPoolLinkHead(const int32_t id)
+const void* GetPoolLinkHead(const int32_t id)
 {
     if (id >= kMaxHugeMemObjectNum) {
         return nullptr;
@@ -305,7 +284,7 @@ const void *GetPoolLinkHead(const int32_t id)
     return gHugeMemPool[id].GetHead();
 }
 
-const void *GetPoolLinkCurrent(const int32_t id)
+const void* GetPoolLinkCurrent(const int32_t id)
 {
     if (id >= kMaxHugeMemObjectNum) {
         return nullptr;

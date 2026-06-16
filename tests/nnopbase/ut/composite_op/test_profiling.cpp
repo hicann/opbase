@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
@@ -24,8 +24,8 @@ using namespace op;
 static bool profiling_called = false;
 
 class ProfilingUtProfiler : public ProfilerStub {
-  public:
-    int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi *api)
+public:
+    int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi* api)
     {
         profiling_called = true;
         return 0;
@@ -33,16 +33,14 @@ class ProfilingUtProfiler : public ProfilerStub {
 };
 static ProfilingUtProfiler prof;
 
-uint64_t MsprofGetHashId(const char *hashInfo, size_t length){
-    return 100;
-}
+uint64_t MsprofGetHashId(const char* hashInfo, size_t length) { return 100; }
 
 namespace op {
 namespace internal {
 extern OpProfilingSwitch opProfilingSwitch;
 int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len);
-}
-}
+} // namespace internal
+} // namespace op
 
 class ProfilingUt : public testing::Test {
 protected:
@@ -69,40 +67,40 @@ TEST_F(ProfilingUt, l2_phase_one_api_profiling)
     /*
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "aclnnAdd";
     op::internal::GetThreadLocalContext().logInfo_.l2SequenceCounter = op::internal::OpGetLogSequence();
-    thread_local uint32_t aclnnAddGetWorkspaceSize_Profiling_Phase_1_Id_L2_DFX_REGISTER = 
+    thread_local uint32_t aclnnAddGetWorkspaceSize_Profiling_Phase_1_Id_L2_DFX_REGISTER =
         op::internal::CollectProfilingStr("aclnnAddGetWorkspaceSize");
     */
-    aclIntArray *intArrNull = nullptr;
+    aclIntArray* intArrNull = nullptr;
     int64_t intValues[] = {3, 4, 5};
-    aclIntArray *intArr = aclCreateIntArray(intValues, sizeof(intValues) / sizeof(intValues[0]));
+    aclIntArray* intArr = aclCreateIntArray(intValues, sizeof(intValues) / sizeof(intValues[0]));
 
-    aclFloatArray *floatArrNull = nullptr;
+    aclFloatArray* floatArrNull = nullptr;
     float floatValues[] = {3.3f, 4.4f, 5.5f};
-    aclFloatArray *floatArr = aclCreateFloatArray(floatValues, sizeof(floatValues) / sizeof(floatValues[0]));
+    aclFloatArray* floatArr = aclCreateFloatArray(floatValues, sizeof(floatValues) / sizeof(floatValues[0]));
 
-    aclBoolArray *boolArrNull = nullptr;
+    aclBoolArray* boolArrNull = nullptr;
     bool boolValues[] = {true, false, true};
-    aclBoolArray *boolArr = aclCreateBoolArray(boolValues, sizeof(boolValues) / sizeof(boolValues[0]));
+    aclBoolArray* boolArr = aclCreateBoolArray(boolValues, sizeof(boolValues) / sizeof(boolValues[0]));
 
-    aclTensorList *tensorListNull = nullptr;
+    aclTensorList* tensorListNull = nullptr;
     op::Shape tShape{1, 2, 3};
     aclTensor t1(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
     aclTensor t2(tShape, op::DataType::DT_INT32, ge::FORMAT_ND, nullptr);
-    aclTensor *tensorNull = nullptr;
-    aclTensor *tensorPtr = &t1;
-    aclTensor *list1[] = {&t1, &t2, nullptr};
+    aclTensor* tensorNull = nullptr;
+    aclTensor* tensorPtr = &t1;
+    aclTensor* list1[] = {&t1, &t2, nullptr};
     aclTensorList tensorList(list1, 3);
-    const aclTensorList *tensorListPtr = &tensorList;
+    const aclTensorList* tensorListPtr = &tensorList;
 
-    aclScalarList *scalarListNull = nullptr;
+    aclScalarList* scalarListNull = nullptr;
     int32_t intVal = 8;
     aclScalar s1(intVal);
     aclScalar s2(intVal);
-    aclScalar *scalarNull = nullptr;
-    aclScalar *scalarPtr = &s1;
-    aclScalar *list2[] = {&s1, &s2, nullptr};
+    aclScalar* scalarNull = nullptr;
+    aclScalar* scalarPtr = &s1;
+    aclScalar* list2[] = {&s1, &s2, nullptr};
     aclScalarList scalarList(list2, 3);
-    const aclScalarList *scalarListPtr = &scalarList;
+    const aclScalarList* scalarListPtr = &scalarList;
 
     op::DataType dt = op::DataType::DT_FLOAT16;
     op::Format fm = op::Format::FORMAT_FRACTAL_NZ;
@@ -110,13 +108,14 @@ TEST_F(ProfilingUt, l2_phase_one_api_profiling)
 
     profiling_called = false;
     {
-        op::OpDfxGuard opDfxGuard(__FILE__,
-            __LINE__,
-            op::LevelTwo,
-            __func__,
-            "DFX_IN(intArrNull, intArr, floatArrNull, floatArr, boolArrNull, boolArr, scalarNull, scalarPtr, tensorNull, tensorPtr, dt, fm, number)",
+        op::OpDfxGuard opDfxGuard(
+            __FILE__, __LINE__, op::LevelTwo, __func__,
+            "DFX_IN(intArrNull, intArr, floatArrNull, floatArr, boolArrNull, boolArr, scalarNull, scalarPtr, "
+            "tensorNull, tensorPtr, dt, fm, number)",
             "DFX_OUT(tensorListPtr, scalarListPtr)",
-            std::make_tuple(intArrNull, intArr, floatArrNull, floatArr, boolArrNull, boolArr, scalarNull, scalarPtr, tensorNull, tensorPtr, dt, fm, number),
+            std::make_tuple(
+                intArrNull, intArr, floatArrNull, floatArr, boolArrNull, boolArr, scalarNull, scalarPtr, tensorNull,
+                tensorPtr, dt, fm, number),
             std::make_tuple(tensorListPtr, scalarListPtr));
     }
     EXPECT_TRUE(profiling_called);
@@ -138,7 +137,7 @@ TEST_F(ProfilingUt, l2_phase_two_api_profiling)
 TEST_F(ProfilingUt, l0_api_profiling)
 {
     profiling_called = false;
-    aclTensor *inTensor = 0;
+    aclTensor* inTensor = 0;
     {
         op::OpDfxGuard opDfxGuard(100001, __FILE__, __LINE__, op::LevelZero, __func__, "aa", std::make_tuple(inTensor));
     }
@@ -147,9 +146,8 @@ TEST_F(ProfilingUt, l0_api_profiling)
 
 TEST_F(ProfilingUt, kernel_launch_profiling)
 {
-
     MsprofCommandHandle handle;
-    
+
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_INVALID, nullptr, 0), -1);
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, 0), -1);
 
@@ -166,19 +164,20 @@ TEST_F(ProfilingUt, kernel_launch_profiling)
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
     int64_t multiStride1 = 2;
     auto storageShapeA = shapeA;
-    void *deviceDataA = nullptr;
+    void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor
-        *tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
-    auto ctx = op::MakeOpArgContext(OP_INPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor),
-                                    OP_OUTPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor));
+    const aclTensor* tensor = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
+    auto ctx = op::MakeOpArgContext(
+        OP_INPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor),
+        OP_OUTPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor));
     {
-        op::internal::ReportAdditionInfo(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-                                         *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-                                         MSPROF_GE_TASK_TYPE_AI_CORE,
-                                         100001);
+        op::internal::ReportAdditionInfo(
+            *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+            MSPROF_GE_TASK_TYPE_AI_CORE, 100001);
         op::OpDfxGuard opDfxGuard(100001, op::DfxProfilingKernelLaunch);
         op::internal::TaskInfo info;
         info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
@@ -221,13 +220,13 @@ TEST_F(ProfilingUt, AddTensorToThreadLocalCtx)
     op::Shape tShape{1, 2, 3};
     auto self = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(tShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
-    aclTensor *wsArr[] = {self.get(), out.get()};
-    const aclTensorList *wsList = aclCreateTensorList(wsArr, 2);
+    aclTensor* wsArr[] = {self.get(), out.get()};
+    const aclTensorList* wsList = aclCreateTensorList(wsArr, 2);
     AddInputTensorToThreadLocalCtx(self.get());
     AddOutputTensorToThreadLocalCtx(out.get());
     AddInputTensorToThreadLocalCtx(wsList);
     AddOutputTensorToThreadLocalCtx(wsList);
-    aclTensorList *wsListUnconst = const_cast<aclTensorList *>(wsList);
+    aclTensorList* wsListUnconst = const_cast<aclTensorList*>(wsList);
     AddInputTensorToThreadLocalCtx(wsListUnconst);
     AddOutputTensorToThreadLocalCtx(wsListUnconst);
     delete wsList;
@@ -245,7 +244,7 @@ TEST_F(ProfilingUt, GetLogApiInfo)
 {
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "TestStaticAdd";
     op::internal::GetThreadLocalContext().logInfo_.l0Name = "TestStaticAdd";
-    std::cout << "GetLogApiInfo() " << op::internal::GetLogApiInfo() << std::endl; 
+    std::cout << "GetLogApiInfo() " << op::internal::GetLogApiInfo() << std::endl;
 }
 
 TEST_F(ProfilingUt, GetTimeStampFlag)

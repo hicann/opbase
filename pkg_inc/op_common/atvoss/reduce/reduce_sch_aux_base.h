@@ -20,8 +20,7 @@
 
 namespace Ops {
 namespace Base {
-namespace ReduceOpTmpl
-{
+namespace ReduceOpTmpl {
 template <auto LoopInfo, class ReduceSch, bool IsStageOne, class OpDag, class Derived>
 struct ReduceSchAuxBase {
     using ReduceOpBind = typename OpDag::FunList::template At<OpDag::ReduceOpPos>;
@@ -32,11 +31,9 @@ struct ReduceSchAuxBase {
     // 输入数据类型
     using InDType = typename InputDType<OpDag, DataType, IsStageOne, IsSameType<OpDag, void>::value>::T;
     // reduce计算的数据类型
-    using PromoteDType =
-    	typename OutputDType<OpDag, DataType, OpDag::ReduceOpPos, IsSameType<OpDag, void>::value>::T;
+    using PromoteDType = typename OutputDType<OpDag, DataType, OpDag::ReduceOpPos, IsSameType<OpDag, void>::value>::T;
     // 输出数据类型
-    using OutDType =
-        typename OutputDType<OpDag, DataType, OpDag::FunList::Size - 1, IsSameType<OpDag, void>::value>::T;
+    using OutDType = typename OutputDType<OpDag, DataType, OpDag::FunList::Size - 1, IsSameType<OpDag, void>::value>::T;
 
 public:
     constexpr static int32_t Dim = Pattern::Dim;
@@ -86,8 +83,9 @@ public:
     constexpr static int32_t preBufNum_ = GetPreBufferNum();
 
 public:
-    __aicore__ inline ReduceSchAuxBase(ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output,
-                                       GlobalTensor<uint8_t>* workspace, const ReduceOpTilingData* tiling)
+    __aicore__ inline ReduceSchAuxBase(
+        ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output, GlobalTensor<uint8_t>* workspace,
+        const ReduceOpTilingData* tiling)
     {
         sch_ = sch;
         input_ = input;
@@ -151,20 +149,20 @@ public:
         } else {
             constexpr int32_t axis = LoopInfo->loopInnerAAxis[start];
             uint64_t shape = tiling_->sliceShape[axis];
-            if constexpr (start + 1 == end) {  // 为最内轴
+            if constexpr (start + 1 == end) { // 为最内轴
                 uint64_t loopSize = shape / ubFactorA_;
                 uint64_t tail = shape - loopSize * ubFactorA_;
                 static_cast<Derived*>(this)->iterAddr_[axis].start = 0;
                 static_cast<Derived*>(this)->iterAddr_[axis].stride = ubFactorA_;
 
-                for (uint64_t i = 0; i < loopSize; i++) {  // 整块
+                for (uint64_t i = 0; i < loopSize; i++) { // 整块
                     IterateInnerA<start + 1, end>(aIndex, args...);
                     static_cast<Derived*>(this)->iterAddr_[axis].start += ubFactorA_;
                 }
 
                 if (tail) {
-                    static_cast<Derived*>(this)->iterAddr_[axis].stride = shape -
-                        static_cast<Derived*>(this)->iterAddr_[axis].start;
+                    static_cast<Derived*>(this)->iterAddr_[axis].stride =
+                        shape - static_cast<Derived*>(this)->iterAddr_[axis].start;
                     IterateInnerA<start + 1, end>(aIndex, args...);
                 }
             } else {
@@ -185,8 +183,8 @@ public:
         int32_t idx = startIdx;
         // 对于ReduceOpPos = 1的场景，共有4份输入空间，ping两份，pong两份，idx是为了计算pingpong索引的下标
         for (uint64_t i = 0; i < bisectionTail_; i++) {
-            PreReduce(view, shape, padParam0, i, idx, 0);                  // ping
-            PreReduce(view, shape, padParam1, i + bisectionPos_, idx, 1);  // pong
+            PreReduce(view, shape, padParam0, i, idx, 0);                 // ping
+            PreReduce(view, shape, padParam1, i + bisectionPos_, idx, 1); // pong
             ReduceComputeMerge(view, shape, padParam0, padParam1, idx);
             UpdateCache(i, shape);
             idx = (idx + 1) & 1;
@@ -263,8 +261,8 @@ public:
     {
         static_assert(IsSameType<PromoteDType, DataType>::value, "reduce calc dtype must be same with pre dag out.");
         const int32_t innerR =
-            (padParam0.burstPaddingStart > padParam1.burstPaddingStart ? padParam0.burstPaddingStart
-                                                                       : padParam1.burstPaddingStart);
+            (padParam0.burstPaddingStart > padParam1.burstPaddingStart ? padParam0.burstPaddingStart :
+                                                                         padParam1.burstPaddingStart);
         const int32_t rRepeats =
             (padParam0.rPaddingStart > padParam1.rPaddingStart ? padParam0.rPaddingStart : padParam1.rPaddingStart);
         CalculataRDetails(view, shape, innerR, rRepeats);
@@ -343,13 +341,13 @@ public:
     {
         using ElemOp = typename OpDag::FunList::template At<pos>;
         using Func = typename ElemOp::Fun;
-        RUN_LOG("RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld\n", PRINT_TYPE(Func), ElemOp::Args::Size,
-                ElemOp::InArgs::Size);
+        RUN_LOG(
+            "RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld\n", PRINT_TYPE(Func), ElemOp::Args::Size, ElemOp::InArgs::Size);
         if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value) {
             CopyIn<ElemOp, pos>(view, shape, pingPong, idx);
-        } else if constexpr (Vec::IsCastOp<Func>::Value &&
-                             IsSameType<typename ElemOp::template FunRetArgType<1>,
-                                        typename ElemOp::template FunRetArgType<0>>::value) {
+        } else if constexpr (
+            Vec::IsCastOp<Func>::Value &&
+            IsSameType<typename ElemOp::template FunRetArgType<1>, typename ElemOp::template FunRetArgType<0>>::value) {
             RUN_LOG("Cast with same src and dst type, skip cast.\n");
         } else {
             RunNormalOp<ElemOp, pos>(shape, pingPong);
@@ -364,17 +362,18 @@ public:
     {
         using ElemOp = typename OpDag::FunList::template At<pos>;
         using Func = typename ElemOp::Fun;
-        RUN_LOG("RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld, Pos:%d\n", PRINT_TYPE(Func), ElemOp::Args::Size,
-                ElemOp::InArgs::Size, pos);
+        RUN_LOG(
+            "RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld, Pos:%d\n", PRINT_TYPE(Func), ElemOp::Args::Size,
+            ElemOp::InArgs::Size, pos);
         if constexpr (Vec::IsReduceOp<Func>::Value) {
             CopyFromReduce<ElemOp>(aIndex, shape);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyOut>::Value) {
             CopyOut<ElemOp, pos>(view, shape);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value) {
             PostCopyIn<ElemOp, pos>(shape);
-        } else if constexpr (Vec::IsCastOp<Func>::Value &&
-                             IsSameType<typename ElemOp::template FunRetArgType<1>,
-                                        typename ElemOp::template FunRetArgType<0>>::value) {
+        } else if constexpr (
+            Vec::IsCastOp<Func>::Value &&
+            IsSameType<typename ElemOp::template FunRetArgType<1>, typename ElemOp::template FunRetArgType<0>>::value) {
             RUN_LOG("Cast with same src and dst type, skip cast.\n");
         } else {
             RunNormalOp<ElemOp, pos>(shape, 0);
@@ -390,8 +389,8 @@ public:
         static_assert(ElemOp::InHolders::Size == 1, "CopyIn input inHolders num should be 1.");
         using Input = typename ElemOp::InHolders::template At<0>;
         using InputType = typename ElemOp::template FunInArgType<0>;
-        static_assert(IsSameType<typename Input::DType, InputType>::value,
-                      "CopyIn data type is inconsistent with Opdata type.");
+        static_assert(
+            IsSameType<typename Input::DType, InputType>::value, "CopyIn data type is inconsistent with Opdata type.");
 
         // Prepare Input args
         uint8_t bufId = GetPreBufId<pos>(pingPong, idx);
@@ -462,8 +461,8 @@ public:
                 return scalar;
             } else {
                 // 判断当前输入是否是同一个操作的多引用输出，避免重复插入同步
-                int32_t eleNum = pos < OpDag::ReduceOpPos ? tiling_->basicBlock / sizeof(InDType)
-                                                          : tiling_->resultBlock / sizeof(PromoteDType);
+                int32_t eleNum = pos < OpDag::ReduceOpPos ? tiling_->basicBlock / sizeof(InDType) :
+                                                            tiling_->resultBlock / sizeof(PromoteDType);
                 auto inputTensor = GetInputTensor<ElemOp, ArgPos>(pingPong, eleNum);
                 return inputTensor;
             }
@@ -497,8 +496,8 @@ public:
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength,
-                                    AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(
+        LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
     {
         return Func(outTensor, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -506,13 +505,13 @@ public:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(outTensor, inputs, tileLength,
-                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(
+            outTensor, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(OutputType& outScalar, Tuple& inputs, uint64_t tileLength,
-                                    AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(
+        OutputType& outScalar, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
     {
         return Func(outScalar, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -520,8 +519,8 @@ public:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(OutputType& outScalar, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(outScalar, inputs, tileLength,
-                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(
+            outScalar, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename ElemOp, size_t... I>
@@ -555,8 +554,8 @@ public:
         uint8_t syncId = isPre ? bufId : bufId + preBufNum_;
         LocalTensor<RetType> out = sch_->ReduceSch::template AllocTensorAux<RetType, pos>(bufId);
 #ifndef __CCE_KT_TEST__
-        int32_t eleNum = pos < OpDag::ReduceOpPos ? tiling_->basicBlock / sizeof(InDType)
-                                                  : tiling_->resultBlock / sizeof(PromoteDType);
+        int32_t eleNum = pos < OpDag::ReduceOpPos ? tiling_->basicBlock / sizeof(InDType) :
+                                                    tiling_->resultBlock / sizeof(PromoteDType);
         out.SetBufferLen(eleNum);
 #endif
         GetTensor<TPosition::VECCALC>(syncId);
@@ -708,10 +707,10 @@ public:
 
         uint64_t axisStep = LoopInfo->loopACount > 0 ? loopAAxisStep_ : 1;
         newView.addr = (blockId % tiling_->groupR) *
-                           Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(VL_ELEMS)) +     // group offset
-                       (blockId / (tiling_->groupR * axisStep)) * tiling_->sliceShape[axis] * innerA +  // AAxis offset
-                       (blockId / tiling_->groupR % axisStep) * ubFactorA_ * innerA +        // main offset
-                       addrOffset;                                                                 // innerA offset
+                           Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(VL_ELEMS)) +   // group offset
+                       (blockId / (tiling_->groupR * axisStep)) * tiling_->sliceShape[axis] * innerA + // AAxis offset
+                       (blockId / tiling_->groupR % axisStep) * ubFactorA_ * innerA +                  // main offset
+                       addrOffset;                                                                     // innerA offset
 
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
         LocalTensor<PromoteDType> outTensor;
@@ -793,7 +792,7 @@ public:
         if constexpr (Vec::IsReduceOp<typename InputOp::Fun>::Value) {
             return reduceOut_;
         } else {
-            constexpr int32_t pos = GetFunOutputPos <InputOp>();
+            constexpr int32_t pos = GetFunOutputPos<InputOp>();
             constexpr bool isPre = pos < OpDag::ReduceOpPos;
             constexpr bool isDuplicate = Op::InArgs::template IsExist<InputOp, ArgPos + 1>();
             uint8_t bufId = GetBufId<pos>(pingPong, idx);
@@ -839,7 +838,7 @@ public:
         return -1;
     }
 };
-}  // namespace ReduceOpTmpl
+} // namespace ReduceOpTmpl
 } // namespace Base
 } // namespace Ops
 #endif

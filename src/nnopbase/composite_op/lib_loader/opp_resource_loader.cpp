@@ -28,29 +28,27 @@ namespace opploader {
 
 class ResourceHandlersManager {
 public:
-    static ResourceHandlersManager &GetInstance()
+    static ResourceHandlersManager& GetInstance()
     {
         static ResourceHandlersManager instance;
         return instance;
     }
 
-    std::vector<void *> resourceHandlers_;
+    std::vector<void*> resourceHandlers_;
 };
 
-static bool GetBuiltinOppPath(string &oppPath)
+static bool GetBuiltinOppPath(string& oppPath)
 {
     string oppPathEnv;
-    const char *currHomePath = nullptr;
+    const char* currHomePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, currHomePath);
     if (currHomePath) {
         const std::string kernelPath = std::string(currHomePath) + "/opp_latest";
         oppPathEnv = RealPath(kernelPath);
-        OP_CHECK(oppPathEnv.empty(),
-                 OP_LOGI("opp kernel path %s", oppPathEnv.c_str()),
-                 return true);
+        OP_CHECK(oppPathEnv.empty(), OP_LOGI("opp kernel path %s", oppPathEnv.c_str()), return true);
     }
 
-    const char *currOppPath = nullptr;
+    const char* currOppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, currOppPath);
     OP_CHECK(currOppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH not config."), return false);
     oppPathEnv = currOppPath;
@@ -59,9 +57,7 @@ static bool GetBuiltinOppPath(string &oppPath)
 
     oppPath = oppPathEnv;
     string filePath = RealPath(oppPath);
-    OP_CHECK(!filePath.empty(),
-        OP_LOGW("ASCEND_OPP_PATH is invalid, path is: %s", oppPathEnv.c_str()),
-        return false);
+    OP_CHECK(!filePath.empty(), OP_LOGW("ASCEND_OPP_PATH is invalid, path is: %s", oppPathEnv.c_str()), return false);
     OP_LOGI("ASCEND_OPP_PATH is: %s", oppPathEnv.c_str());
     if (oppPath.back() != '/') {
         oppPath += '/';
@@ -87,7 +83,7 @@ aclnnStatus LoadOppResource()
 
 void ReleaseOppResource()
 {
-    for (void *handler : ResourceHandlersManager::GetInstance().resourceHandlers_) {
+    for (void* handler : ResourceHandlersManager::GetInstance().resourceHandlers_) {
         OP_CHECK(dlclose(handler) == 0, OP_LOGW("dlclose opp resource failed"), ;);
     }
 }
@@ -102,5 +98,5 @@ void LoadAllOppPackage()
         OP_LOGI("Load OPP package completed.");
     });
 }
-}  // namespace opploader
-}  // namespace op
+} // namespace opploader
+} // namespace op

@@ -45,26 +45,21 @@ namespace op {
  */
 struct HiFloat4 {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
 
     // HiFloat4 format semantic constants
-    static constexpr uint8_t HIGHEST_VALUE = 0x07;          // Max value 1.75
-    static constexpr uint8_t LOWEST_VALUE = 0x0F;           // Min value -1.75
-    static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x04;   // Min positive normal 1.0
-    static constexpr uint8_t BITS_MASK = 0x0F;              // 4-bit effective mask
-    static constexpr uint8_t EPSILON_VALUE = 0x01;          // Epsilon value
+    static constexpr uint8_t HIGHEST_VALUE = 0x07;        // Max value 1.75
+    static constexpr uint8_t LOWEST_VALUE = 0x0F;         // Min value -1.75
+    static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x04; // Min positive normal 1.0
+    static constexpr uint8_t BITS_MASK = 0x0F;            // 4-bit effective mask
+    static constexpr uint8_t EPSILON_VALUE = 0x01;        // Epsilon value
 
     // Default constructor - initialize to zero
-    constexpr HiFloat4() : value(0)
-    {}
+    constexpr HiFloat4() : value(0) {}
 
-    constexpr HiFloat4(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK)
-    {}
+    constexpr HiFloat4(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK) {}
 
     HiFloat4(float v);
 
@@ -74,7 +69,7 @@ struct HiFloat4 {
     static constexpr HiFloat4 Epsilon()
     {
         // 2^-2 = 0.25 (the difference between 1.0 and next representable value)
-        return HiFloat4(EPSILON_VALUE, FromBits());  // 0 0 01 = denorm 0.25
+        return HiFloat4(EPSILON_VALUE, FromBits()); // 0 0 01 = denorm 0.25
     }
 
     static constexpr HiFloat4 Highest()
@@ -86,7 +81,7 @@ struct HiFloat4 {
     static constexpr HiFloat4 Lowest()
     {
         // 1 1 11 = sign=1, exp=1, man=3 -> -2^0 * 1.75 = -1.75
-        return HiFloat4(LOWEST_VALUE, FromBits());  // 1 1 11 = -1.75
+        return HiFloat4(LOWEST_VALUE, FromBits()); // 1 1 11 = -1.75
     }
 
     static constexpr HiFloat4 MinPositiveNormal()
@@ -109,7 +104,7 @@ private:
     static HiFloat4 FloatToHiFloat4(float f);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const HiFloat4 &dt)
+inline std::ostream& operator<<(std::ostream& os, const HiFloat4& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -119,22 +114,16 @@ inline std::ostream &operator<<(std::ostream &os, const HiFloat4 &dt)
 
 namespace std {
 
-inline bool isinf(const op::HiFloat4 &a [[maybe_unused]])
+inline bool isinf(const op::HiFloat4& a [[maybe_unused]])
 {
-    return false;  // HiFloat4 has no infinity
+    return false; // HiFloat4 has no infinity
 }
 
-inline bool isnan(const op::HiFloat4 &a)
-{
-    return a.IsNaN();
-}
+inline bool isnan(const op::HiFloat4& a) { return a.IsNaN(); }
 
-inline bool isfinite(const op::HiFloat4 &a)
-{
-    return !a.IsNaN();
-}
+inline bool isfinite(const op::HiFloat4& a) { return !a.IsNaN(); }
 
-template<>
+template <>
 class numeric_limits<op::HiFloat4> {
 public:
     static constexpr bool has_infinity = false;
@@ -155,44 +144,26 @@ public:
     static constexpr int max_exponent = 0;
     static constexpr int max_exponent10 = 0;
     static constexpr int radix = 2;
-    static constexpr float round_error()
-    {
-        return 0.5f;
-    }
+    static constexpr float round_error() { return 0.5f; }
     static constexpr float denorm_min()
     {
-        return 0.25f;  // 2^0 * (1/4) = 0.25 (man=1, exp=0)
+        return 0.25f; // 2^0 * (1/4) = 0.25 (man=1, exp=0)
     }
 
-    static constexpr op::HiFloat4 min()
-    {
-        return op::HiFloat4::MinPositiveNormal();
-    }
-    static constexpr op::HiFloat4 lowest()
-    {
-        return op::HiFloat4::Lowest();
-    }
-    static constexpr op::HiFloat4 max()
-    {
-        return op::HiFloat4::Highest();
-    }
-    static constexpr op::HiFloat4 epsilon()
-    {
-        return op::HiFloat4::Epsilon();
-    }
+    static constexpr op::HiFloat4 min() { return op::HiFloat4::MinPositiveNormal(); }
+    static constexpr op::HiFloat4 lowest() { return op::HiFloat4::Lowest(); }
+    static constexpr op::HiFloat4 max() { return op::HiFloat4::Highest(); }
+    static constexpr op::HiFloat4 epsilon() { return op::HiFloat4::Epsilon(); }
     static constexpr op::HiFloat4 infinity()
     {
-        return op::HiFloat4::Highest();  // No infinity, use max
+        return op::HiFloat4::Highest(); // No infinity, use max
     }
     static constexpr op::HiFloat4 quiet_NaN()
     {
         // HiFloat4 has no NaN, return zero as fallback
         return op::HiFloat4(0x00, op::HiFloat4::FromBits());
     }
-    static constexpr op::HiFloat4 signaling_NaN()
-    {
-        return quiet_NaN();
-    }
+    static constexpr op::HiFloat4 signaling_NaN() { return quiet_NaN(); }
 };
 
 } // namespace std

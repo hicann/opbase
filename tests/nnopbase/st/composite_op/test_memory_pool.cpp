@@ -7,11 +7,10 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
-
 
 #include "acl/acl.h"
 #include "opdev/make_op_executor.h"
@@ -20,27 +19,24 @@
 
 using namespace op;
 
-namespace op{
-namespace internal{
-    void *Allocate(size_t size);
-    int32_t GetPoolCurrentArrayIndex(int32_t id);
-    void *GetPoolLinkHead(int32_t id);
-    void *GetPoolLinkCurrent(int32_t id);
-}
-}
+namespace op {
+namespace internal {
+void* Allocate(size_t size);
+int32_t GetPoolCurrentArrayIndex(int32_t id);
+void* GetPoolLinkHead(int32_t id);
+void* GetPoolLinkCurrent(int32_t id);
+} // namespace internal
+} // namespace op
 
-
-extern "C" int InitHugeMemThreadLocal(void *arg, bool sync);
-extern "C" void UnInitHugeMemThreadLocal(void *arg, bool sync);
-extern "C" void ReleaseHugeMem(void *arg, bool sync);
+extern "C" int InitHugeMemThreadLocal(void* arg, bool sync);
+extern "C" void UnInitHugeMemThreadLocal(void* arg, bool sync);
+extern "C" void ReleaseHugeMem(void* arg, bool sync);
 
 class MemoryPoolUt : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() {
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(MemoryPoolUt, test_allocate_by_link)
@@ -55,12 +51,12 @@ TEST_F(MemoryPoolUt, test_allocate_by_link)
 
     int half = op::internal::kHugeBlockSize / 2;
     int quda = op::internal::kHugeBlockSize / 4;
-    void * addr1 = op::internal::Allocate(half);
-    void * addr2 = op::internal::Allocate(quda); // array 0
+    void* addr1 = op::internal::Allocate(half);
+    void* addr2 = op::internal::Allocate(quda); // array 0
     EXPECT_TRUE(addr1 != nullptr);
     EXPECT_TRUE(addr2 != nullptr);
-    for(int i = 0; i < 5 - 1; i++) { // kMaxHugeMemPoolArryNum = 5
-        void * addr = op::internal::Allocate(half); // array[1],[2],[3],[4]
+    for (int i = 0; i < 5 - 1; i++) {              // kMaxHugeMemPoolArryNum = 5
+        void* addr = op::internal::Allocate(half); // array[1],[2],[3],[4]
         EXPECT_TRUE(addr != nullptr);
     }
 
@@ -69,15 +65,15 @@ TEST_F(MemoryPoolUt, test_allocate_by_link)
     EXPECT_TRUE(op::internal::GetPoolLinkHead(id) == nullptr);
     EXPECT_TRUE(op::internal::GetPoolLinkCurrent(id) == nullptr);
 
-    void * addr7 = op::internal::Allocate(half); // link 0
+    void* addr7 = op::internal::Allocate(half); // link 0
     EXPECT_TRUE(addr7 != nullptr);
-    void * addr8 = op::internal::Allocate(quda); // link 0
+    void* addr8 = op::internal::Allocate(quda); // link 0
     EXPECT_TRUE(addr8 != nullptr);
 
     EXPECT_TRUE(op::internal::GetPoolLinkHead(id) != nullptr);
     EXPECT_TRUE(op::internal::GetPoolLinkHead(id) == op::internal::GetPoolLinkCurrent(id));
 
-    void * addr9 = op::internal::Allocate(half); // link 1
+    void* addr9 = op::internal::Allocate(half); // link 1
     EXPECT_TRUE(addr9 != nullptr);
 
     EXPECT_TRUE(op::internal::GetPoolLinkHead(id) != nullptr);
@@ -92,6 +88,4 @@ TEST_F(MemoryPoolUt, test_allocate_by_link)
     UnInitHugeMemThreadLocal(nullptr, false);
     id = op::internal::GetThreadLocalContext().poolIndex_;
     EXPECT_EQ(id, op::kInvalidHugeMemIndexId);
-
 }
-

@@ -12,7 +12,7 @@
 #include "acl/acl_base.h"
 #include "acl/acl_rt.h"
 
-size_t aclGetTensorDescNumDims(const aclTensorDesc *desc)
+size_t aclGetTensorDescNumDims(const aclTensorDesc* desc)
 {
     if (desc == nullptr) {
         printf("desc == nullptr \n");
@@ -25,7 +25,7 @@ size_t aclGetTensorDescNumDims(const aclTensorDesc *desc)
     return desc->dims.size();
 }
 
-aclError aclGetTensorDescDimV2(const aclTensorDesc *desc, size_t index, int64_t *dimSize)
+aclError aclGetTensorDescDimV2(const aclTensorDesc* desc, size_t index, int64_t* dimSize)
 {
     if (desc == nullptr || dimSize == nullptr || index >= desc->dims.size()) {
         printf("desc == nullptr || dimSize == nullptr || index >= desc->dims.size() \n");
@@ -35,8 +35,9 @@ aclError aclGetTensorDescDimV2(const aclTensorDesc *desc, size_t index, int64_t 
     return ACL_SUCCESS;
 }
 
-aclTensorDesc::aclTensorDesc(const aclDataType aclTensorDataType,
-    const std::initializer_list<int64_t> shape, const aclFormat aclTensorFormat): dims(shape)
+aclTensorDesc::aclTensorDesc(
+    const aclDataType aclTensorDataType, const std::initializer_list<int64_t> shape, const aclFormat aclTensorFormat)
+    : dims(shape)
 {
     this->dataType = aclTensorDataType;
     this->format = aclTensorFormat;
@@ -46,4 +47,4 @@ aclTensorDesc::aclTensorDesc(const aclDataType aclTensorDataType,
 
 namespace gert {
 GlobalProfilingWrapper::GlobalProfilingWrapper() {}
-}  // namespace gert
+} // namespace gert

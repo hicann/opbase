@@ -14,7 +14,7 @@
 namespace op {
 namespace internal {
 
-void *Allocate(size_t size)
+void* Allocate(size_t size)
 {
     int32_t id = op::internal::GetThreadLocalContext().poolIndex_;
     if (id != op::kInvalidHugeMemIndexId) {
@@ -24,11 +24,9 @@ void *Allocate(size_t size)
     }
 }
 
-void DeAllocate(void *addr)
+void DeAllocate(void* addr)
 {
-    OP_CHECK(addr != nullptr, 
-            OP_LOGW("deAllocate addr is nullptr."),
-            return);
+    OP_CHECK(addr != nullptr, OP_LOGW("deAllocate addr is nullptr."), return);
     if (op::internal::BlockPool::InHugeMemRange(addr)) {
         // since huge mem pool use offset, so free just a dummy operation
     } else {
@@ -36,10 +34,7 @@ void DeAllocate(void *addr)
     }
 }
 
-int32_t GetPoolIndex()
-{
-    return op::internal::GetThreadLocalContext().poolIndex_;
-}
+int32_t GetPoolIndex() { return op::internal::GetThreadLocalContext().poolIndex_; }
 
 void UpdateHugeMemIndex(int32_t id)
 {

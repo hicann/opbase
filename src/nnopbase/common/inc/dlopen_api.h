@@ -18,14 +18,14 @@
 extern "C" {
 #endif
 
-aclOpExecutor *PTAGetExecCache(uint64_t hash, uint64_t *workspaceSize);
-aclOpExecutor *PTAFindExecCache(uint8_t *buf, size_t len, uint64_t *workspaceSize);
+aclOpExecutor* PTAGetExecCache(uint64_t hash, uint64_t* workspaceSize);
+aclOpExecutor* PTAFindExecCache(uint8_t* buf, size_t len, uint64_t* workspaceSize);
 
 aclnnStatus aclnnReselectStaticKernel();
 
-aclnnStatus InitSystemConfig(const char *configPath);  //Init
+aclnnStatus InitSystemConfig(const char* configPath); // Init
 
 #ifdef __cplusplus
 }
 #endif
-#endif  //OP_API_OP_API_COMMON_INC_DLOPEN_API_H_
+#endif // OP_API_OP_API_COMMON_INC_DLOPEN_API_H_

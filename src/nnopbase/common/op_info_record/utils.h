@@ -15,9 +15,9 @@
 namespace aclnnOpInfoRecord {
 class Utils {
 public:
-    static std::string TrimLeft(const std::string &s);
-    static std::string TrimRight(const std::string &s);
-    static std::string Trim(const std::string &s);
+    static std::string TrimLeft(const std::string& s);
+    static std::string TrimRight(const std::string& s);
+    static std::string Trim(const std::string& s);
 };
 } // namespace aclnnOpInfoRecord
 

@@ -16,10 +16,7 @@
 
 namespace op {
 namespace internal {
-bool IsDumpEnable()
-{
-    return Adx::AdumpGetDumpSwitch(Adx::DumpType::OPERATOR);
-}
+bool IsDumpEnable() { return Adx::AdumpGetDumpSwitch(Adx::DumpType::OPERATOR); }
 
 bool IsExceptionDumpEnable()
 {
@@ -49,8 +46,7 @@ bool IsOverflowDumpEnable()
 bool IsNeedL0ExceptionDump()
 {
     static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    static bool isNeed =
-        ((npuArch == NpuArch::DAV_1001 || npuArch == NpuArch::DAV_3002) && IsArgExceptionDumpEnable());
+    static bool isNeed = ((npuArch == NpuArch::DAV_1001 || npuArch == NpuArch::DAV_3002) && IsArgExceptionDumpEnable());
     OP_LOGI("npu arch: %u, is L0 exception dump need: %d", npuArch, isNeed);
     return isNeed;
 }

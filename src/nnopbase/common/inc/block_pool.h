@@ -50,10 +50,7 @@ private:
     std::atomic<unsigned int> atomic_flag;
 
 public:
-    OpSpinlock()
-    {
-        atomic_flag = 0;
-    }
+    OpSpinlock() { atomic_flag = 0; }
     void lock()
     {
         for (int i = 0; atomic_flag.load(std::memory_order_relaxed) != 0 ||
@@ -61,10 +58,7 @@ public:
              i++) {
         }
     }
-    void unlock()
-    {
-        atomic_flag.store(0, std::memory_order_release);
-    }
+    void unlock() { atomic_flag.store(0, std::memory_order_release); }
 };
 
 class BlockPool {
@@ -78,53 +72,35 @@ public:
         }
     };
 
-    ~BlockPool()
-    {
-        UnInit();
-    }
+    ~BlockPool() { UnInit(); }
 
-    static void *Malloc(size_t size)
-    {
-        return get_instance().MallocImpl(size);
-    }
+    static void* Malloc(size_t size) { return get_instance().MallocImpl(size); }
 
-    static size_t BatchMalloc(size_t size, void **addrList, size_t batch)
+    static size_t BatchMalloc(size_t size, void** addrList, size_t batch)
     {
         return get_instance().BatchMatchImpl(size, addrList, batch);
     }
 
-    static void Free(void *block)
-    {
-        return get_instance().FreeImpl(block);
-    }
+    static void Free(void* block) { return get_instance().FreeImpl(block); }
 
-    static void *GetOneHugeBlock()
-    {
-        return get_instance().GetOneHugeBlockImpl();
-    }
+    static void* GetOneHugeBlock() { return get_instance().GetOneHugeBlockImpl(); }
 
-    static void FreeOneHugeBlock(void *addr)
-    {
-        return get_instance().FreeOneHugeBlockImpl(addr);
-    }
+    static void FreeOneHugeBlock(void* addr) { return get_instance().FreeOneHugeBlockImpl(addr); }
 
-    static bool InHugeMemRange(void *p)
-    {
-        return get_instance().InHugeMemRangeImpl(p);
-    }
+    static bool InHugeMemRange(void* p) { return get_instance().InHugeMemRangeImpl(p); }
 
 private:
-    static BlockPool &globalPool_;
+    static BlockPool& globalPool_;
 
-    static BlockPool &get_instance()
+    static BlockPool& get_instance()
     {
         /* Return a new instance for each thread, so no locking is needed when doing malloc/free  */
         return globalPool_;
     }
 
-    inline void *MallocImpl(size_t size)
+    inline void* MallocImpl(size_t size)
     {
-        void *p = PoolMalloc(size);
+        void* p = PoolMalloc(size);
         if (p != nullptr) {
             return p;
         }
@@ -134,16 +110,16 @@ private:
             return nullptr;
         }
 
-        BlockStore::BlockHeader *head = static_cast<BlockStore::BlockHeader *>(p);
+        BlockStore::BlockHeader* head = static_cast<BlockStore::BlockHeader*>(p);
         head->userTag_ = SYS_TAG;
         head->cacheExt_ = BlockStore::NOT_IN_CACHE;
         return head + 1;
     }
 
-    size_t BatchMatchImpl(size_t size, void **addrList, size_t batch)
+    size_t BatchMatchImpl(size_t size, void** addrList, size_t batch)
     {
         size_t n = 0;
-        BlockStore *store = GetStore(size);
+        BlockStore* store = GetStore(size);
         if (store == nullptr) {
             OP_LOGW("Get BlockStore nullptr.");
             return n;
@@ -152,7 +128,7 @@ private:
         {
             const std::lock_guard<OpSpinlock> guard(guard_);
             while (n < batch) {
-                void *block = store->Alloc();
+                void* block = store->Alloc();
                 if (block) {
                     addrList[n++] = block;
                 } else {
@@ -162,9 +138,9 @@ private:
         }
 
         while (n < batch) {
-            void *block = std::malloc(sizeof(BlockStore::BlockHeader) + store->GetBlockSize());
+            void* block = std::malloc(sizeof(BlockStore::BlockHeader) + store->GetBlockSize());
             if (block) {
-                BlockStore::BlockHeader *head = static_cast<BlockStore::BlockHeader *>(block);
+                BlockStore::BlockHeader* head = static_cast<BlockStore::BlockHeader*>(block);
                 head->userTag_ = SYS_TAG;
                 addrList[n++] = head + 1;
             } else {
@@ -174,11 +150,11 @@ private:
         return n;
     }
 
-    inline void FreeImpl(void *block)
+    inline void FreeImpl(void* block)
     {
         uint16_t tag = BlockStore::GetBlockTag(block);
         if (tag == SYS_TAG) {
-            std::free(static_cast<BlockStore::BlockHeader *>(block) - 1);
+            std::free(static_cast<BlockStore::BlockHeader*>(block) - 1);
             return;
         }
 
@@ -187,22 +163,22 @@ private:
             // FATAL: try to free block not belong to this BlockPool
             return;
         }
-        BlockStore &store = blockStoreArray_[idx];
+        BlockStore& store = blockStoreArray_[idx];
         const std::lock_guard<OpSpinlock> guard(guard_);
         store.Free(block);
     }
 
-    inline void *PoolMalloc(size_t size)
+    inline void* PoolMalloc(size_t size)
     {
         const std::lock_guard<OpSpinlock> guard(guard_);
-        BlockStore *store = GetStore(size);
+        BlockStore* store = GetStore(size);
         if (store == nullptr) {
             return nullptr;
         }
         return store->Alloc();
     }
 
-    void *GetOneHugeBlockImpl()
+    void* GetOneHugeBlockImpl()
     {
         guard_.lock();
         if (hugeMemArray_.empty()) {
@@ -210,14 +186,14 @@ private:
             OP_LOGW("Hugemem trace: huge memory array is empty!!!");
             return nullptr;
         } else {
-            void *res = hugeMemArray_.back();
+            void* res = hugeMemArray_.back();
             hugeMemArray_.pop_back();
             guard_.unlock();
             return res;
         }
     }
 
-    inline void FreeOneHugeBlockImpl(void *addr)
+    inline void FreeOneHugeBlockImpl(void* addr)
     {
         if (addr == nullptr) {
             return;
@@ -226,17 +202,14 @@ private:
         hugeMemArray_.push_back(addr);
     }
 
-    inline bool InHugeMemRangeImpl(const void *addr)
-    {
-        return (addr >= hugeMemStart_) && (addr < hugeMemEnd_);
-    }
+    inline bool InHugeMemRangeImpl(const void* addr) { return (addr >= hugeMemStart_) && (addr < hugeMemEnd_); }
 
     bool Init();
     void UnInit();
 
     /**
-   * @brief Block size and count of BlockStore
-   */
+     * @brief Block size and count of BlockStore
+     */
     struct BlockDesc {
         BlockDesc(size_t s, size_t c) : size(s), count(c) {};
         size_t size{0};
@@ -256,15 +229,15 @@ private:
         BlockDesc(BLOCK_BASE_SIZE * 4, 16384),  // 256B 4MB
         BlockDesc(BLOCK_BASE_SIZE * 16, 32768), // 1KB 32MB
         BlockDesc(BLOCK_BASE_SIZE * 64, 8192),  // 4KB 32MB
-        BlockDesc(BLOCK_BASE_SIZE * 256, 2048),  // 16KB 32MB
-        BlockDesc(BLOCK_MAX_SIZE, 512)};       // 64KB 32MB
+        BlockDesc(BLOCK_BASE_SIZE * 256, 2048), // 16KB 32MB
+        BlockDesc(BLOCK_MAX_SIZE, 512)};        // 64KB 32MB
 
     using StoreArray = std::array<BlockStore, MAX_STORE>;
     StoreArray blockStoreArray_;
-    using HugeMemArray = std::vector<void *>;
+    using HugeMemArray = std::vector<void*>;
     HugeMemArray hugeMemArray_;
-    void *hugeMemStart_;
-    void *hugeMemEnd_;
+    void* hugeMemStart_;
+    void* hugeMemEnd_;
     static int GetStoreIndex(size_t req_size)
     {
         if (req_size == 0 || req_size > BLOCK_MAX_SIZE) {
@@ -287,7 +260,7 @@ private:
         } while (req_size);
         return idx;
     }
-    inline BlockStore *GetStore(size_t req_size)
+    inline BlockStore* GetStore(size_t req_size)
     {
         int idx = GetStoreIndex(req_size);
         if (idx == INVALID_STORE) {
@@ -304,49 +277,42 @@ public:
         size_t count = activeCacheCount_.fetch_add(1, std::memory_order_relaxed) + 1;
         if (count > kMaxCacheInstances) {
             cacheDisabled_ = true;
-            OP_LOGW("Thread count [%zu] is more than max cache limit [%zu], thread block cache is disabled.",
-                count, kMaxCacheInstances);
+            OP_LOGW(
+                "Thread count [%zu] is more than max cache limit [%zu], thread block cache is disabled.", count,
+                kMaxCacheInstances);
         }
     }
 
     ~BlockCache() = default;
 
-    static void *CacheAlloc(size_t size)
-    {
-        return get_instance().CacheAllocImpl(size);
-    }
+    static void* CacheAlloc(size_t size) { return get_instance().CacheAllocImpl(size); }
 
-    static void CacheFree(void *block)
-    {
-        return get_instance().CacheFreeImpl(block);
-    }
+    static void CacheFree(void* block) { return get_instance().CacheFreeImpl(block); }
 
     OpSpinlock guard_;
+
 private:
-    static BlockCache &get_instance()
+    static BlockCache& get_instance()
     {
         thread_local BlockCache blockCache_;
         return blockCache_;
     }
 
-    inline bool CacheEmpty(int index)
-    {
-        return cacheHead_[index] == nullptr;
-    }
+    inline bool CacheEmpty(int index) { return cacheHead_[index] == nullptr; }
 
-    void *PoolAlloc(size_t size, int index)
+    void* PoolAlloc(size_t size, int index)
     {
         if (index == BlockPool::INVALID_STORE) {
             return BlockPool::Malloc(size);
         }
 
         size_t batch = CacheBatchSize[index];
-        void *addrList[ADDR_LIST_LARGEST_SIZE];
+        void* addrList[ADDR_LIST_LARGEST_SIZE];
         size_t n = BlockPool::BatchMalloc(size, addrList, batch);
         if (n) {
             const std::lock_guard<OpSpinlock> guard(guard_);
             for (size_t i = 0; i < n; i++) {
-                BlockStore::BlockHeader *head = BlockStore::GetBlockHeader(addrList[i]);
+                BlockStore::BlockHeader* head = BlockStore::GetBlockHeader(addrList[i]);
                 head->cacheExt_ = reinterpret_cast<uintptr_t>(this);
                 // use blockIdx_ to store cache index if SYS_TAG
                 if (head->userTag_ == BlockPool::SYS_TAG) {
@@ -363,7 +329,7 @@ private:
         return nullptr;
     }
 
-    inline void *CacheAllocImpl(size_t size)
+    inline void* CacheAllocImpl(size_t size)
     {
         if (cacheDisabled_) {
             return BlockPool::Malloc(size);
@@ -381,8 +347,8 @@ private:
         {
             const std::lock_guard<OpSpinlock> guard(guard_);
             if (!CacheEmpty(index)) {
-                BlockStore::BlockHeader *head = cacheHead_[index];
-                cacheHead_[index] = reinterpret_cast<BlockStore::BlockHeader *>(head->cacheExt_);
+                BlockStore::BlockHeader* head = cacheHead_[index];
+                cacheHead_[index] = reinterpret_cast<BlockStore::BlockHeader*>(head->cacheExt_);
                 cacheCount_[index]--;
                 head->cacheExt_ = reinterpret_cast<uintptr_t>(this);
                 return head + 1;
@@ -391,7 +357,7 @@ private:
         return PoolAlloc(size, index);
     }
 
-    inline int GetBlockCacheIndex(BlockStore::BlockHeader *head)
+    inline int GetBlockCacheIndex(BlockStore::BlockHeader* head)
     {
         if (head->userTag_ != BlockPool::SYS_TAG) {
             return head->userTag_ - BlockPool::DEFAULT_TAG;
@@ -399,13 +365,13 @@ private:
         return static_cast<int>(head->blockIdx_);
     }
 
-    void CacheFreeImpl(void *block)
+    void CacheFreeImpl(void* block)
     {
         if (cacheDisabled_) {
             BlockPool::Free(block);
             return;
         }
-        BlockStore::BlockHeader *head = BlockStore::GetBlockHeader(block);
+        BlockStore::BlockHeader* head = BlockStore::GetBlockHeader(block);
         if (head->cacheExt_ == BlockStore::NOT_IN_CACHE) {
             BlockPool::Free(block);
             return;
@@ -413,8 +379,9 @@ private:
 
         int idx = GetBlockCacheIndex(head);
         if (idx < 0 || idx > BlockPool::MAX_STORE) {
-            OP_LOGW("invalid block to free, idx %d tag %u blockIdx %d cacheExt %lu",
-                idx, head->userTag_, head->blockIdx_, head->cacheExt_);
+            OP_LOGW(
+                "invalid block to free, idx %d tag %u blockIdx %d cacheExt %lu", idx, head->userTag_, head->blockIdx_,
+                head->cacheExt_);
             return;
         }
 
@@ -444,24 +411,17 @@ private:
         BlockPool::BlockDesc(BlockPool::BLOCK_MAX_SIZE, 64)          // 64KB 4MB
     };
 
-    const std::array<size_t, BlockPool::MAX_STORE> CacheBatchSize = {
-        16,
-        8,
-        16,
-        4,
-        1,
-        1
-    };
+    const std::array<size_t, BlockPool::MAX_STORE> CacheBatchSize = {16, 8, 16, 4, 1, 1};
 
-    BlockStore::BlockHeader *cacheHead_[BlockPool::MAX_STORE] = {nullptr};
+    BlockStore::BlockHeader* cacheHead_[BlockPool::MAX_STORE] = {nullptr};
     std::array<size_t, BlockPool::MAX_STORE> cacheCount_ = {0, 0, 0, 0, 0, 0};
     const std::array<size_t, BlockPool::MAX_STORE> cacheMaxCount_ = {
-        4096,  // 64B 256KB
-        2048,  // 256B 512KB
-        4096,  // 1KB 4MB
-        1024,  // 4KB 4MB
-        256,   // 16KB 4MB
-        64     // 64KB 4MB
+        4096, // 64B 256KB
+        2048, // 256B 512KB
+        4096, // 1KB 4MB
+        1024, // 4KB 4MB
+        256,  // 16KB 4MB
+        64    // 64KB 4MB
     };
 };
 

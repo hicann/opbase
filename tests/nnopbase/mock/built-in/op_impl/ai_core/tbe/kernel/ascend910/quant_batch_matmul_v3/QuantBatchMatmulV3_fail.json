@@ -412,7 +412,6 @@
             }
         ],
         "opMode": "dynamic",
-        "optionalInputMode": "gen_placeholder"
-        "deterministic": "ignore"
+        "optionalInputMode": "gen_placeholder""deterministic": "ignore"
     }
 }

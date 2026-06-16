@@ -38,43 +38,42 @@ static constexpr auto ud = ge::DataType::DT_UNDEFINED;
 
 constexpr uint32_t kDataTypeSizeBitOffset = 1000;
 
-inline bool CheckType(const DataType dtype,
-                      const std::initializer_list<DataType> &valid_types)
+inline bool CheckType(const DataType dtype, const std::initializer_list<DataType>& valid_types)
 {
     return std::find(valid_types.begin(), valid_types.end(), dtype) != valid_types.end();
 }
 
 inline bool IsBasicType(const DataType dtype)
 {
-    return CheckType(dtype,
-                     {DataType::DT_COMPLEX128, DataType::DT_COMPLEX64, DataType::DT_DOUBLE, DataType::DT_FLOAT,
-                      DataType::DT_FLOAT16, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64,
-                      DataType::DT_INT8, DataType::DT_QINT16, DataType::DT_QINT32, DataType::DT_QINT8,
-                      DataType::DT_QUINT16, DataType::DT_QUINT8, DataType::DT_UINT16, DataType::DT_UINT32,
-                      DataType::DT_UINT64, DataType::DT_UINT8, DataType::DT_BF16});
+    return CheckType(
+        dtype, {DataType::DT_COMPLEX128, DataType::DT_COMPLEX64, DataType::DT_DOUBLE, DataType::DT_FLOAT,
+                DataType::DT_FLOAT16, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64, DataType::DT_INT8,
+                DataType::DT_QINT16, DataType::DT_QINT32, DataType::DT_QINT8, DataType::DT_QUINT16, DataType::DT_QUINT8,
+                DataType::DT_UINT16, DataType::DT_UINT32, DataType::DT_UINT64, DataType::DT_UINT8, DataType::DT_BF16});
 }
 
 inline bool IsNumberType(const DataType dtype)
 {
-    return CheckType(dtype,
-                     {DataType::DT_COMPLEX128, DataType::DT_COMPLEX64, DataType::DT_DOUBLE, DataType::DT_FLOAT,
-                      DataType::DT_FLOAT16, DataType::DT_INT16, DataType::DT_INT32, DataType::DT_INT64,
-                      DataType::DT_INT8, DataType::DT_QINT32, DataType::DT_QINT8, DataType::DT_QUINT8,
-                      DataType::DT_UINT16, DataType::DT_UINT32, DataType::DT_UINT64, DataType::DT_UINT8,
-                      DataType::DT_BF16, DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN,
-                      DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3,
-                      DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2});
+    return CheckType(
+        dtype,
+        {DataType::DT_COMPLEX128,  DataType::DT_COMPLEX64,   DataType::DT_DOUBLE,      DataType::DT_FLOAT,
+         DataType::DT_FLOAT16,     DataType::DT_INT16,       DataType::DT_INT32,       DataType::DT_INT64,
+         DataType::DT_INT8,        DataType::DT_QINT32,      DataType::DT_QINT8,       DataType::DT_QUINT8,
+         DataType::DT_UINT16,      DataType::DT_UINT32,      DataType::DT_UINT64,      DataType::DT_UINT8,
+         DataType::DT_BF16,        DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN,
+         DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1,
+         DataType::DT_FLOAT4_E1M2});
 }
 
 inline bool IsRealNumberType(const DataType dtype)
 {
-    return CheckType(dtype,
-                     {DataType::DT_DOUBLE, DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_INT16,
-                      DataType::DT_INT32, DataType::DT_INT64,
-                      DataType::DT_INT8, DataType::DT_UINT16, DataType::DT_UINT32, DataType::DT_UINT64,
-                      DataType::DT_UINT8, DataType::DT_BF16, DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E5M2,
-                      DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2,
-                      DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2});
+    return CheckType(
+        dtype,
+        {DataType::DT_DOUBLE,      DataType::DT_FLOAT,       DataType::DT_FLOAT16,       DataType::DT_INT16,
+         DataType::DT_INT32,       DataType::DT_INT64,       DataType::DT_INT8,          DataType::DT_UINT16,
+         DataType::DT_UINT32,      DataType::DT_UINT64,      DataType::DT_UINT8,         DataType::DT_BF16,
+         DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
+         DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1,   DataType::DT_FLOAT4_E1M2});
 }
 
 inline size_t TypeSize(DataType dataType)
@@ -130,7 +129,7 @@ inline size_t TypeSize(DataType dataType)
     return static_cast<size_t>(data_type_size[dataType]);
 }
 
-DataType ToDataType(const std::string &dataTypeStr);
+DataType ToDataType(const std::string& dataTypeStr);
 constexpr inline DataType ToOpDataType(aclDataType type)
 {
     if (type != aclDataType::ACL_DT_UNDEFINED) {
@@ -142,27 +141,15 @@ constexpr inline DataType ToOpDataType(aclDataType type)
 
 inline aclDataType ToAclDataType(DataType type)
 {
-    static const std::vector<DataType> CAN_CONVERT_TO_ACL_DataType_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
-                                                                           DataType::DT_INT8, DataType::DT_INT32,
-                                                                           DataType::DT_UINT8, DataType::DT_INT16,
-                                                                           DataType::DT_UINT16, DataType::DT_UINT32,
-                                                                           DataType::DT_INT64, DataType::DT_DOUBLE,
-                                                                           DataType::DT_BOOL, DataType::DT_STRING,
-                                                                           DataType::DT_COMPLEX64,
-                                                                           DataType::DT_COMPLEX128,
-                                                                           DataType::DT_BF16, DataType::DT_UINT64,
-                                                                           DataType::DT_INT4, DataType::DT_UINT1, 
-                                                                           DataType::DT_COMPLEX32, DataType::DT_HIFLOAT8,
-                                                                           DataType::DT_FLOAT8_E5M2,
-                                                                           DataType::DT_FLOAT8_E4M3FN,
-                                                                           DataType::DT_FLOAT8_E8M0,
-                                                                           DataType::DT_FLOAT6_E3M2,
-                                                                           DataType::DT_FLOAT6_E2M3,
-                                                                           DataType::DT_FLOAT4_E2M1,
-                                                                           DataType::DT_FLOAT4_E1M2};
-    auto iter = std::find(CAN_CONVERT_TO_ACL_DataType_LIST.begin(),
-                          CAN_CONVERT_TO_ACL_DataType_LIST.end(),
-                          type);
+    static const std::vector<DataType> CAN_CONVERT_TO_ACL_DataType_LIST = {
+        DataType::DT_FLOAT,       DataType::DT_FLOAT16,       DataType::DT_INT8,        DataType::DT_INT32,
+        DataType::DT_UINT8,       DataType::DT_INT16,         DataType::DT_UINT16,      DataType::DT_UINT32,
+        DataType::DT_INT64,       DataType::DT_DOUBLE,        DataType::DT_BOOL,        DataType::DT_STRING,
+        DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,    DataType::DT_BF16,        DataType::DT_UINT64,
+        DataType::DT_INT4,        DataType::DT_UINT1,         DataType::DT_COMPLEX32,   DataType::DT_HIFLOAT8,
+        DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2,
+        DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1,   DataType::DT_FLOAT4_E1M2};
+    auto iter = std::find(CAN_CONVERT_TO_ACL_DataType_LIST.begin(), CAN_CONVERT_TO_ACL_DataType_LIST.end(), type);
     if (iter == CAN_CONVERT_TO_ACL_DataType_LIST.end()) {
         return aclDataType::ACL_DT_UNDEFINED;
     }
@@ -170,73 +157,107 @@ inline aclDataType ToAclDataType(DataType type)
     return static_cast<aclDataType>(type);
 }
 
-ge::AscendString ToString(const std::initializer_list<DataType> &dataTypes);
+ge::AscendString ToString(const std::initializer_list<DataType>& dataTypes);
 int64_t CalcShapeBytes(int64_t size, DataType dataType, bool ceil = false);
 
 // @formatter:off
-static constexpr ge::DataType kPromoteTypesLookup[static_cast<int>(
-    ge::DataType::DT_MAX)][static_cast<int>(ge::DataType::DT_MAX)] = {
-    /*          f4  f2  i1  i4  u1  xx  i2  u2  u4  i8  u8  f8  b1  sv  d1  D1  c4  c8  q1  q2  q4  Q1  Q2  rs  sr  du  va  bf, ud  t4  T1  t2  T2  c2*/
-    /* f4 0 */ {f4, f4, f4, f4, f4, ud, f4, ud, ud, f4, ud, f8, f4, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, f4, ud, ud, ud, ud, ud, c4},
-    /* f2 1 */ {f4, f2, f2, f2, f2, ud, f2, ud, ud, f2, ud, f8, f2, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, f4, ud, ud, ud, ud, ud, c2},
-    /* i1 2 */ {f4, f2, i1, i4, i2, ud, i2, ud, ud, i8, ud, f8, i1, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
-    /* i4 3 */ {f4, f2, i4, i4, i4, ud, i4, ud, ud, i8, ud, f8, i4, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
-    /* u1 4 */ {f4, f2, i2, i4, u1, ud, i2, ud, ud, i8, ud, f8, u1, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
-    /* xx 5 */ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* i2 6 */ {f4, f2, i2, i4, i2, ud, i2, ud, ud, i8, ud, f8, i2, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
-    /* u2 7 */ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* u4 8 */ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* i8 9 */ {f4, f2, i8, i8, i8, ud, i8, ud, ud, i8, ud, f8, i8, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
-    /* u8 10*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, c8, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* f8 11*/ {f8, f8, f8, f8, f8, ud, f8, ud, ud, f8, ud, f8, f8, ud, ud, ud, c8, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, f8, ud, ud, ud, ud, ud, c8},
-    /* b1 12*/ {f4, f2, i1, i4, u1, ud, i2, ud, ud, i8, ud, f8, b1, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
-    /* sv 13*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* d1 14*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* D1 15*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* c4 16*/ {c4, c4, c4, c4, c4, ud, c4, ud, ud, c4, ud, c8, c4, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4, ud, ud, ud, ud, ud, c4},
-    /* c8 17*/ {c8, c8, c8, c8, c8, ud, c8, ud, ud, c8, ud, c8, c8, ud, ud, ud, c8, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, c8, ud, ud, ud, ud, ud, c8},
-    /* q1 18*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* q2 19*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* q4 20*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* Q1 21*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* Q2 22*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* rs 23*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* sr 24*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* du 25*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* va 26*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* bf 27*/ {f4, f4, bf, bf, bf, ud, bf, ud, ud, bf, ud, f8, bf, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c4},
-    /* ud 28*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* t4 29*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* T1 30*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* t2 31*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* T2 32*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
-    /* c2 33*/ {c4, c2, c2, c2, c2, ud, c2, ud, ud, c2, ud, c8, c2, ud, ud, ud, c4, c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4, ud, ud, ud, ud, ud, c2},
+static constexpr ge::DataType
+    kPromoteTypesLookup[static_cast<int>(ge::DataType::DT_MAX)][static_cast<int>(ge::DataType::DT_MAX)] = {
+        /*          f4  f2  i1  i4  u1  xx  i2  u2  u4  i8  u8  f8  b1  sv  d1  D1  c4  c8  q1  q2  q4  Q1  Q2  rs  sr
+           du  va  bf, ud  t4  T1  t2  T2  c2*/
+        /* f4 0 */ {f4, f4, f4, f4, f4, ud, f4, ud, ud, f4, ud, f8, f4, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, f4, ud, ud, ud, ud, ud, c4},
+        /* f2 1 */ {f4, f2, f2, f2, f2, ud, f2, ud, ud, f2, ud, f8, f2, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, f4, ud, ud, ud, ud, ud, c2},
+        /* i1 2 */ {f4, f2, i1, i4, i2, ud, i2, ud, ud, i8, ud, f8, i1, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
+        /* i4 3 */ {f4, f2, i4, i4, i4, ud, i4, ud, ud, i8, ud, f8, i4, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
+        /* u1 4 */ {f4, f2, i2, i4, u1, ud, i2, ud, ud, i8, ud, f8, u1, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
+        /* xx 5 */ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* i2 6 */ {f4, f2, i2, i4, i2, ud, i2, ud, ud, i8, ud, f8, i2, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
+        /* u2 7 */ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* u4 8 */ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* i8 9 */ {f4, f2, i8, i8, i8, ud, i8, ud, ud, i8, ud, f8, i8, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
+        /* u8 10*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, c8,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* f8 11*/ {f8, f8, f8, f8, f8, ud, f8, ud, ud, f8, ud, f8, f8, ud, ud, ud, c8,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, f8, ud, ud, ud, ud, ud, c8},
+        /* b1 12*/ {f4, f2, i1, i4, u1, ud, i2, ud, ud, i8, ud, f8, b1, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c2},
+        /* sv 13*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* d1 14*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* D1 15*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* c4 16*/ {c4, c4, c4, c4, c4, ud, c4, ud, ud, c4, ud, c8, c4, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4, ud, ud, ud, ud, ud, c4},
+        /* c8 17*/ {c8, c8, c8, c8, c8, ud, c8, ud, ud, c8, ud, c8, c8, ud, ud, ud, c8,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, c8, ud, ud, ud, ud, ud, c8},
+        /* q1 18*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* q2 19*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* q4 20*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* Q1 21*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* Q2 22*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* rs 23*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* sr 24*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* du 25*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* va 26*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* bf 27*/ {f4, f4, bf, bf, bf, ud, bf, ud, ud, bf, ud, f8, bf, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, bf, ud, ud, ud, ud, ud, c4},
+        /* ud 28*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* t4 29*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* T1 30*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* t2 31*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* T2 32*/ {ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud,
+                    ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud, ud},
+        /* c2 33*/ {c4, c2, c2, c2, c2, ud, c2, ud, ud, c2, ud, c8, c2, ud, ud, ud, c4,
+                    c8, ud, ud, ud, ud, ud, ud, ud, ud, ud, c4, ud, ud, ud, ud, ud, c2},
 };
 // @formatter:on
-inline bool IsComplexType(const ge::DataType type) {
-  return (type == ge::DataType::DT_COMPLEX32 || type == ge::DataType::DT_COMPLEX64 ||
-          type == ge::DataType::DT_COMPLEX128);
+inline bool IsComplexType(const ge::DataType type)
+{
+    return (
+        type == ge::DataType::DT_COMPLEX32 || type == ge::DataType::DT_COMPLEX64 ||
+        type == ge::DataType::DT_COMPLEX128);
 }
 
 inline bool IsFloatingType(const ge::DataType type)
 {
-    return (type == ge::DataType::DT_DOUBLE || type == ge::DataType::DT_FLOAT || type == ge::DataType::DT_BF16
-        || type == ge::DataType::DT_FLOAT16
-        || type == ge::DataType::DT_HIFLOAT8
-        || type == ge::DataType::DT_FLOAT8_E5M2
-        || type == ge::DataType::DT_FLOAT8_E4M3FN
-        || type == ge::DataType::DT_FLOAT8_E8M0
-        || type == ge::DataType::DT_FLOAT6_E3M2
-        || type == ge::DataType::DT_FLOAT6_E2M3
-        || type == ge::DataType::DT_FLOAT4_E2M1
-        || type == ge::DataType::DT_FLOAT4_E1M2);
+    return (
+        type == ge::DataType::DT_DOUBLE || type == ge::DataType::DT_FLOAT || type == ge::DataType::DT_BF16 ||
+        type == ge::DataType::DT_FLOAT16 || type == ge::DataType::DT_HIFLOAT8 || type == ge::DataType::DT_FLOAT8_E5M2 ||
+        type == ge::DataType::DT_FLOAT8_E4M3FN || type == ge::DataType::DT_FLOAT8_E8M0 ||
+        type == ge::DataType::DT_FLOAT6_E3M2 || type == ge::DataType::DT_FLOAT6_E2M3 ||
+        type == ge::DataType::DT_FLOAT4_E2M1 || type == ge::DataType::DT_FLOAT4_E1M2);
 }
 
 inline bool IsIntegralType(const ge::DataType type)
 {
-    return (type == ge::DataType::DT_INT8 || type == ge::DataType::DT_INT16 || type == ge::DataType::DT_INT32
-        || type == ge::DataType::DT_INT64 || type == ge::DataType::DT_UINT8 || type == ge::DataType::DT_UINT16
-        || type == ge::DataType::DT_UINT32 || type == ge::DataType::DT_UINT64);
+    return (
+        type == ge::DataType::DT_INT8 || type == ge::DataType::DT_INT16 || type == ge::DataType::DT_INT32 ||
+        type == ge::DataType::DT_INT64 || type == ge::DataType::DT_UINT8 || type == ge::DataType::DT_UINT16 ||
+        type == ge::DataType::DT_UINT32 || type == ge::DataType::DT_UINT64);
 }
 
 inline bool IsIntegralType(const ge::DataType type, const bool include_bool)

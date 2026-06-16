@@ -33,13 +33,13 @@ bool CheckAxisBounds(const T1 dimNum, const T2 axis)
     return static_cast<int64_t>(axis) >= minimumNum && static_cast<int64_t>(axis) <= maximumNum;
 }
 
-OPBASE_API void SetUnknownRank(gert::Shape &shape);
+OPBASE_API void SetUnknownRank(gert::Shape& shape);
 
-OPBASE_API bool IsUnknownRank(const gert::Shape &shape);
+OPBASE_API bool IsUnknownRank(const gert::Shape& shape);
 
-OPBASE_API void SetUnknownShape(int64_t rank, gert::Shape &shape);
+OPBASE_API void SetUnknownShape(int64_t rank, gert::Shape& shape);
 
-OPBASE_API bool IsUnknownShape(const gert::Shape &shape);
-}  // namespace Base
-}  // namespace Ops
-#endif  // OP_COMMON_OP_HOST_UTIL_SHAPE_UTIL_H
+OPBASE_API bool IsUnknownShape(const gert::Shape& shape);
+} // namespace Base
+} // namespace Ops
+#endif // OP_COMMON_OP_HOST_UTIL_SHAPE_UTIL_H

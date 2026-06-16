@@ -27,64 +27,76 @@ constexpr int32_t TypeIdVectorBoolValue = 15;
 constexpr int32_t TypeIdVectorInt64Value = 16;
 constexpr int32_t TypeIdVectorDataTypeValue = 22;
 
-template<>
-TypeId GetTypeId<bool>() {
-  return reinterpret_cast<TypeId>(TypeIdBoolValue);
+template <>
+TypeId GetTypeId<bool>()
+{
+    return reinterpret_cast<TypeId>(TypeIdBoolValue);
 }
 
-template<>
-TypeId GetTypeId<std::string>() {
-  return reinterpret_cast<TypeId>(TypeIdStringValue);
+template <>
+TypeId GetTypeId<std::string>()
+{
+    return reinterpret_cast<TypeId>(TypeIdStringValue);
 }
 
-template<>
-TypeId GetTypeId<float>() {
-  return reinterpret_cast<TypeId>(TypeIdFloatValue);
+template <>
+TypeId GetTypeId<float>()
+{
+    return reinterpret_cast<TypeId>(TypeIdFloatValue);
 }
 
-template<>
-TypeId GetTypeId<int64_t>() {
-  return reinterpret_cast<TypeId>(TypeIdInt64Value);
+template <>
+TypeId GetTypeId<int64_t>()
+{
+    return reinterpret_cast<TypeId>(TypeIdInt64Value);
 }
 
-template<>
-TypeId GetTypeId<std::vector<std::vector<int64_t>>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorVectorInt64Value);
+template <>
+TypeId GetTypeId<std::vector<std::vector<int64_t>>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorVectorInt64Value);
 }
 
-template<>
-TypeId GetTypeId<ge::DataType>() {
-  return reinterpret_cast<TypeId>(TypeIdDataTypeValue);
+template <>
+TypeId GetTypeId<ge::DataType>()
+{
+    return reinterpret_cast<TypeId>(TypeIdDataTypeValue);
 }
 
-template<>
-TypeId GetTypeId<std::vector<std::vector<float>>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorVectorFloatValue);
+template <>
+TypeId GetTypeId<std::vector<std::vector<float>>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorVectorFloatValue);
 }
 
-template<>
-TypeId GetTypeId<std::vector<std::string>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorStringValue);
+template <>
+TypeId GetTypeId<std::vector<std::string>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorStringValue);
 }
 
-template<>
-TypeId GetTypeId<std::vector<float>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorFloatValue);
+template <>
+TypeId GetTypeId<std::vector<float>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorFloatValue);
 }
 
-template<>
-TypeId GetTypeId<std::vector<bool>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorBoolValue);
+template <>
+TypeId GetTypeId<std::vector<bool>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorBoolValue);
 }
 
-template<>
-TypeId GetTypeId<std::vector<int64_t>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorInt64Value);
+template <>
+TypeId GetTypeId<std::vector<int64_t>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorInt64Value);
 }
 
-template<>
-TypeId GetTypeId<std::vector<ge::DataType>>() {
-  return reinterpret_cast<TypeId>(TypeIdVectorDataTypeValue);
+template <>
+TypeId GetTypeId<std::vector<ge::DataType>>()
+{
+    return reinterpret_cast<TypeId>(TypeIdVectorDataTypeValue);
 }
 
 namespace {
@@ -103,46 +115,51 @@ std::unordered_map<TypeId, AnyValue::ValueType> type_ids_to_value_type = {
     {GetTypeId<std::vector<int64_t>>(), AnyValue::VT_LIST_INT},
     {GetTypeId<std::vector<ge::DataType>>(), AnyValue::VT_LIST_DATA_TYPE},
 };
-}  // namespace
+} // namespace
 
-AnyValue::AnyValue(AnyValue &&other) noexcept {
-  if (!other.IsEmpty()) {
-    other.operate_(OperateType::kOpMove, &other, this);
-  }
+AnyValue::AnyValue(AnyValue&& other) noexcept
+{
+    if (!other.IsEmpty()) {
+        other.operate_(OperateType::kOpMove, &other, this);
+    }
 }
 
-AnyValue &AnyValue::operator=(AnyValue &&other) noexcept {
-  if (&other == this) {
+AnyValue& AnyValue::operator=(AnyValue&& other) noexcept
+{
+    if (&other == this) {
+        return *this;
+    }
+    Clear();
+    if (!other.IsEmpty()) {
+        other.operate_(OperateType::kOpMove, &other, this);
+    }
     return *this;
-  }
-  Clear();
-  if (!other.IsEmpty()) {
-    other.operate_(OperateType::kOpMove, &other, this);
-  }
-  return *this;
 }
 
-TypeId AnyValue::GetValueTypeId() const noexcept {
-  TypeId vt{kInvalidTypeId};
-  if (!IsEmpty()) {
-    operate_(OperateType::kGetTypeId, this, &vt);
-  }
-  return vt;
+TypeId AnyValue::GetValueTypeId() const noexcept
+{
+    TypeId vt{kInvalidTypeId};
+    if (!IsEmpty()) {
+        operate_(OperateType::kGetTypeId, this, &vt);
+    }
+    return vt;
 }
 
-AnyValue::ValueType AnyValue::GetValueType() const noexcept {
-  auto vt = GetValueTypeId();
-  auto iter = type_ids_to_value_type.find(vt);
-  if (iter == type_ids_to_value_type.end()) {
-    return AnyValue::VT_NONE;
-  }
-  return iter->second;
+AnyValue::ValueType AnyValue::GetValueType() const noexcept
+{
+    auto vt = GetValueTypeId();
+    auto iter = type_ids_to_value_type.find(vt);
+    if (iter == type_ids_to_value_type.end()) {
+        return AnyValue::VT_NONE;
+    }
+    return iter->second;
 }
 
-const void *AnyValue::GetAddr() const {
-  void *addr = nullptr;
-  operate_(OperateType::kOpGetAddr, this, &addr);
-  return addr;
+const void* AnyValue::GetAddr() const
+{
+    void* addr = nullptr;
+    operate_(OperateType::kOpGetAddr, this, &addr);
+    return addr;
 }
 } // namespace internal
 } // namespace op

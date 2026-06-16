@@ -19,14 +19,14 @@
 extern "C" {
 #endif
 
-static constexpr size_t NNOPBASE_COMPUTE_NODE_BUF_LEN  = 4096U;
+static constexpr size_t NNOPBASE_COMPUTE_NODE_BUF_LEN = 4096U;
 static constexpr size_t NNOPBASE_COMPUTE_NODE_BUF_LEN_EXT = 128U;
 
-aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt *nodeExt, NnopbaseAttrs *attrs);
-aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseComputeNodeInfoInit(NnopbaseComputeNodeInfoExt *nodeExt);
+aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt* nodeExt, NnopbaseAttrs* attrs);
+aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor* executor);
+aclnnStatus NnopbaseComputeNodeInfoInit(NnopbaseComputeNodeInfoExt* nodeExt);
 
-static inline void NnopbaseComputeNodeInfoDeInit(NnopbaseComputeNodeInfoExt *nodeExt)
+static inline void NnopbaseComputeNodeInfoDeInit(NnopbaseComputeNodeInfoExt* nodeExt)
 {
     if (nodeExt->buf) {
         free(nodeExt->buf);
@@ -35,22 +35,20 @@ static inline void NnopbaseComputeNodeInfoDeInit(NnopbaseComputeNodeInfoExt *nod
     nodeExt->bufLen = 0;
 }
 
-static inline size_t NnopbaseComputeNodeCalcLen(NnopbaseExecutor *executor)
+static inline size_t NnopbaseComputeNodeCalcLen(NnopbaseExecutor* executor)
 {
-    NnopbaseComputeNodeInfo *node = executor->contextExt.nodeExt.node;
+    NnopbaseComputeNodeInfo* node = executor->contextExt.nodeExt.node;
     size_t size = node->irInputsNum * sizeof(NnopbaseAnchorInstanceInfo) +
                   node->irOutputsNum * sizeof(NnopbaseAnchorInstanceInfo) +
                   (node->outputsNum + node->inputsNum) * sizeof(NnopbaseCompileTimeTensorDesc) +
-                  sizeof(NnopbaseRuntimeAttrsDef) + executor->attrs.totalSize +
-                  sizeof(size_t) * executor->attrs.num + NNOPBASE_COMPUTE_NODE_BUF_LEN_EXT;
+                  sizeof(NnopbaseRuntimeAttrsDef) + executor->attrs.totalSize + sizeof(size_t) * executor->attrs.num +
+                  NNOPBASE_COMPUTE_NODE_BUF_LEN_EXT;
     return size;
 }
 
-static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(const size_t irNum,
-                                                         const size_t irIndex,
-                                                         NnopbaseAnchorInstanceInfo *nodeExtInstStart,
-                                                         const uint32_t instanceStart,
-                                                         const uint32_t instantiationNum)
+static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(
+    const size_t irNum, const size_t irIndex, NnopbaseAnchorInstanceInfo* nodeExtInstStart,
+    const uint32_t instanceStart, const uint32_t instantiationNum)
 {
     NNOPBASE_ASSERT_TRUE_RETVAL(irIndex < irNum);
     NnopbaseAnchorInstanceInfo* inst = nodeExtInstStart + irIndex;
@@ -60,9 +58,9 @@ static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(const size_t irNum,
     return OK;
 }
 
-aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor *executor);
+aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor* executor);
 
-static inline aclnnStatus NnopbaseTilingBuildOpAttrs(NnopbaseExecutor *executor)
+static inline aclnnStatus NnopbaseTilingBuildOpAttrs(NnopbaseExecutor* executor)
 {
     return NnopbaseComputeNodeAttrsUpdt(&executor->contextExt.nodeExt, &executor->attrs);
 }
@@ -70,4 +68,3 @@ static inline aclnnStatus NnopbaseTilingBuildOpAttrs(NnopbaseExecutor *executor)
 }
 #endif
 #endif
-

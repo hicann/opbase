@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_OP_DEF_H_
 #define OP_API_OP_API_COMMON_INC_OPDEV_OP_DEF_H_
 
@@ -23,11 +23,7 @@ namespace op {
 
 enum CoreType { AI_CORE = 0, AI_CPU, DVPP, NO_CALC };
 
-enum OpIOType {
-    OpInputType,
-    OpOutputType,
-    OpWorkspaceType
-};
+enum OpIOType { OpInputType, OpOutputType, OpWorkspaceType };
 
 enum class OpImplMode : uint32_t {
     // ImplMode support OR operation
@@ -50,34 +46,34 @@ enum class OpExecMode : uint32_t {
 };
 
 struct OpTypeDict {
-    static aclnnStatus Add(uint32_t &id, const char *opName);
-    static uint32_t ToOpType(const std::string &opName);
+    static aclnnStatus Add(uint32_t& id, const char* opName);
+    static uint32_t ToOpType(const std::string& opName);
     static const ge::AscendString ToString(uint32_t opType);
     static size_t GetAllOpTypeSize();
-    static std::vector<ge::AscendString> &opTypeName_;
-    static std::unordered_map<std::string, uint32_t> &opTypeName2Id_;
+    static std::vector<ge::AscendString>& opTypeName_;
+    static std::unordered_map<std::string, uint32_t>& opTypeName2Id_;
 };
 
 struct BinConfigJsonDict {
-    static uint32_t ToOpTypeByConfigJson(const std::string &op_config_json);
-    static void UpdateConfigJsonPath(uint32_t opType, const std::string &opFile);
+    static uint32_t ToOpTypeByConfigJson(const std::string& op_config_json);
+    static void UpdateConfigJsonPath(uint32_t opType, const std::string& opFile);
     static std::vector<std::vector<std::string>> opConfigJsonPath_;
     static std::unordered_map<std::string, uint32_t> opConfigJsonPath2Id_;
     static uint32_t transDataId_;
 };
 
 constexpr int MAX_DEV_NUM = 64;
-constexpr const char *JSON_SUFFIX = ".json";
-constexpr const char *BIN_SUFFIX = ".o";
+constexpr const char* JSON_SUFFIX = ".json";
+constexpr const char* BIN_SUFFIX = ".o";
 constexpr const uint32_t INVALID_OP_TYPE_ID = 0xFFFFFFFF;
 
 std::vector<std::string> GetOpConfigJsonFileName(uint32_t opType);
-aclnnStatus ReadFile2String(const char *filename, std::string &content);
-aclnnStatus ReadDirBySuffix(const std::string &dir, const std::string &suffix, std::vector<std::string> &paths);
+aclnnStatus ReadFile2String(const char* filename, std::string& content);
+aclnnStatus ReadDirBySuffix(const std::string& dir, const std::string& suffix, std::vector<std::string>& paths);
 
-OpImplMode ToOpImplMode(const std::string &implModeStr);
+OpImplMode ToOpImplMode(const std::string& implModeStr);
 ge::AscendString ToString(OpImplMode implMode);
-const ge::AscendString &ImplModeToString(OpImplMode implMode);
+const ge::AscendString& ImplModeToString(OpImplMode implMode);
 int64_t ToIndex(OpImplMode implMode);
 wchar_t ToIndexChar(OpImplMode implMode);
 } // namespace op

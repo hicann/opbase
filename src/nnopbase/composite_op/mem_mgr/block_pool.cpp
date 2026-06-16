@@ -40,14 +40,14 @@ bool BlockPool::Init()
         }
     }
 
-    auto *base = std::malloc(op::internal::kHugeBlockNum * op::internal::kHugeBlockSize);
+    auto* base = std::malloc(op::internal::kHugeBlockNum * op::internal::kHugeBlockSize);
     if (base == nullptr) {
         return false;
     }
     hugeMemStart_ = base;
     hugeMemEnd_ = (char*)base + op::internal::kHugeBlockNum * op::internal::kHugeBlockSize;
     for (int i = 0; i < op::internal::kHugeBlockNum; i++) {
-        int64_t *offset = (int64_t*)((char*)base + i * op::internal::kHugeBlockSize);
+        int64_t* offset = (int64_t*)((char*)base + i * op::internal::kHugeBlockSize);
         offset[0] = op::internal::kHugeBlockDefaultOffset;
         hugeMemArray_.push_back((char*)base + i * op::internal::kHugeBlockSize);
     }
@@ -65,8 +65,8 @@ void BlockPool::UnInit()
     }
 }
 
-BlockPool globalPoolImpl__  __attribute__ ((init_priority (200)));
-BlockPool &BlockPool::globalPool_ = globalPoolImpl__;
+BlockPool globalPoolImpl__ __attribute__((init_priority(200)));
+BlockPool& BlockPool::globalPool_ = globalPoolImpl__;
 
 } // namespace internal
 } // namespace op

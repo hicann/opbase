@@ -19,14 +19,13 @@
 
 namespace Ops {
 namespace Base {
-namespace ReduceOpTmpl
-{
+namespace ReduceOpTmpl {
 template <auto LoopInfo, class ReduceSch, bool IsStageOne, class OpDag = void>
-struct ReduceSchAux : public ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
-                                              ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>
-{
-    using AuxBase = ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
-                                     ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>;
+struct ReduceSchAux
+    : public ReduceSchAuxBase<
+          LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>> {
+    using AuxBase =
+        ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>;
     using InDType = typename AuxBase::InDType;
 
 public:
@@ -34,17 +33,19 @@ public:
     constexpr static uint64_t UB_BLOCK = AuxBase::UB_BLOCK;
     constexpr static uint64_t MIN_DTYPE_BYTES = AuxBase::MIN_DTYPE_BYTES;
 
-public: 
+public:
     struct IterAddr {
         uint64_t start = 0;
         uint64_t stride = 1;
     } iterAddr_[Dim];
 
 public:
-    __aicore__ inline ReduceSchAux(ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output,
-                                       GlobalTensor<uint8_t>* workspace, const ReduceOpTilingData* tiling) :
-                      ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
-                           ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>(sch, input, output, workspace, tiling)
+    __aicore__ inline ReduceSchAux(
+        ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output, GlobalTensor<uint8_t>* workspace,
+        const ReduceOpTilingData* tiling)
+        : ReduceSchAuxBase<
+              LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>(
+              sch, input, output, workspace, tiling)
     {
         for (uint64_t i = 0; i < Dim; i++) {
             iterAddr_[i].stride = this->tiling_->shape[i];
@@ -70,7 +71,7 @@ public:
             }
         } else {
             this->loopRStartIndex_ = blockId / this->tiling_->groupR * this->tiling_->factorRTotalCnt +
-                               blockId % this->tiling_->groupR * this->tiling_->factorRCntPerCore;
+                                     blockId % this->tiling_->groupR * this->tiling_->factorRCntPerCore;
             this->loopREndIndex_ = this->loopRStartIndex_ + this->tiling_->factorRCntPerCore;
             uint64_t maxRCnt = (blockId / this->tiling_->groupR + 1) * this->tiling_->factorRTotalCnt;
             uint64_t totalCnt = this->tiling_->factorATotalCnt * this->tiling_->factorRTotalCnt;
@@ -402,7 +403,7 @@ public:
         }
     }
 };
-}  // namespace ReduceOpTmpl
+} // namespace ReduceOpTmpl
 } // namespace Base
 } // namespace Ops
 #endif

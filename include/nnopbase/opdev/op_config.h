@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_OP_CONFIG_H
 #define OP_API_OP_API_COMMON_INC_OPDEV_OP_CONFIG_H
 
@@ -17,14 +17,14 @@ namespace op {
 
 struct OpConfigInfo {
     OpConfigInfo() = default;
-    OpConfigInfo(const OpConfigInfo &rhs)
+    OpConfigInfo(const OpConfigInfo& rhs)
     {
         isDeterministicOn_ = rhs.isDeterministicOn_;
         isOpDumpEnable_ = rhs.isOpDumpEnable_;
         aicNum_ = rhs.aicNum_;
         aivNum_ = rhs.aivNum_;
     }
-    OpConfigInfo &operator=(const OpConfigInfo &rhs)
+    OpConfigInfo& operator=(const OpConfigInfo& rhs)
     {
         if (this != &rhs) {
             isDeterministicOn_ = rhs.isDeterministicOn_;
@@ -42,6 +42,6 @@ struct OpConfigInfo {
     uint8_t reserved[6] = {0};
 };
 
-}  // namespace op
+} // namespace op
 
-#endif  // OP_API_OP_API_COMMON_INC_OPDEV_OP_CONFIG_H
+#endif // OP_API_OP_API_COMMON_INC_OPDEV_OP_CONFIG_H

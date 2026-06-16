@@ -14,16 +14,17 @@
 
 class NnopbaseGuard {
 public:
-    NnopbaseGuard(NnopbaseGuard const &) = delete;
-    NnopbaseGuard &operator=(NnopbaseGuard const &) = delete;
-    explicit NnopbaseGuard(const std::function<void()> &callback) : callback_(callback) {}
+    NnopbaseGuard(NnopbaseGuard const&) = delete;
+    NnopbaseGuard& operator=(NnopbaseGuard const&) = delete;
+    explicit NnopbaseGuard(const std::function<void()>& callback) : callback_(callback) {}
 
     ~NnopbaseGuard()
     {
         if (callback_ != nullptr) {
             try {
                 callback_();
-            } catch (...) {}
+            } catch (...) {
+            }
         }
     }
 
@@ -32,4 +33,3 @@ private:
 };
 
 #endif
-

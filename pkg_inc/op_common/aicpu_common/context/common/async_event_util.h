@@ -15,47 +15,48 @@
 #include "aicpu_context.h"
 
 namespace aicpu {
-using NotifyWaitFunc = void (*)(void *notify_param, const uint32_t param_len);
-using RegEventCbFunc = bool (*)(const uint32_t event_id,
-    const uint32_t sub_event_id, const std::function<void(void *)> &cb);
-using RegEventCbWithTimesFunc = bool (*)(const uint32_t event_id,
-    const uint32_t sub_event_id, const std::function<void(void *)> &cb, const int32_t times);
+using NotifyWaitFunc = void (*)(void* notify_param, const uint32_t param_len);
+using RegEventCbFunc =
+    bool (*)(const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb);
+using RegEventCbWithTimesFunc = bool (*)(
+    const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb, const int32_t times);
 using UnregEventCbFunc = void (*)(const uint32_t event_id, const uint32_t sub_event_id);
 
-template<typename TI, typename TO>
-inline auto PtrToFunc(TI *const ptr) -> TO {
+template <typename TI, typename TO>
+inline auto PtrToFunc(TI* const ptr) -> TO
+{
     return reinterpret_cast<TO>(ptr);
 }
 
 class AsyncEventUtil {
- public:
-  static AsyncEventUtil &GetInstance();
+public:
+    static AsyncEventUtil& GetInstance();
 
-  void NotifyWait(void *notify_param, const uint32_t param_len) const;
+    void NotifyWait(void* notify_param, const uint32_t param_len) const;
 
-  bool RegEventCb(const uint32_t event_id, const uint32_t sub_event_id,
-                  const std::function<void(void *)> &cb);
+    bool RegEventCb(const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb);
 
-  bool RegEventCb(const uint32_t event_id, const uint32_t sub_event_id,
-                  const std::function<void(void *)> &cb, const int32_t times);
+    bool RegEventCb(
+        const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb,
+        const int32_t times);
 
-  void UnregEventCb(const uint32_t event_id, const uint32_t sub_event_id);
+    void UnregEventCb(const uint32_t event_id, const uint32_t sub_event_id);
 
-  bool RegOpEventCb(const uint32_t event_id, const uint32_t sub_event_id,
-                    const std::function<void(void *)> &cb) const;
+    bool RegOpEventCb(const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb) const;
 
-  void UnregOpEventCb(const uint32_t event_id, const uint32_t sub_event_id) const;
- private:
-  AsyncEventUtil();
-  ~AsyncEventUtil();
-  void InitEventUtil();
-  void *sharder_;
-  NotifyWaitFunc notify_wait_func_;
-  RegEventCbFunc reg_event_cb_func_;
-  RegEventCbWithTimesFunc reg_event_cb_with_times_func_;
-  UnregEventCbFunc unreg_event_cb_func_;
-  RegEventCbFunc reg_op_event_cb_func_;
-  UnregEventCbFunc unreg_op_event_cb_func_;
+    void UnregOpEventCb(const uint32_t event_id, const uint32_t sub_event_id) const;
+
+private:
+    AsyncEventUtil();
+    ~AsyncEventUtil();
+    void InitEventUtil();
+    void* sharder_;
+    NotifyWaitFunc notify_wait_func_;
+    RegEventCbFunc reg_event_cb_func_;
+    RegEventCbWithTimesFunc reg_event_cb_with_times_func_;
+    UnregEventCbFunc unreg_event_cb_func_;
+    RegEventCbFunc reg_op_event_cb_func_;
+    UnregEventCbFunc unreg_op_event_cb_func_;
 };
 } // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_ASYNC_EVENT_H_
+#endif // AICPU_CONTEXT_COMMON_ASYNC_EVENT_H_

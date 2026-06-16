@@ -43,10 +43,7 @@ static std::mutex opProfilingSwitchMutex;
 namespace internal {
 OpProfilingSwitch opProfilingSwitch;
 }
-ge::AscendString ToString(const std::string& str)
-{
-    return ge::AscendString(str.c_str());
-}
+ge::AscendString ToString(const std::string& str) { return ge::AscendString(str.c_str()); }
 
 constexpr uint32_t OP_RESOURCE_FUNC_IDX = 0;
 constexpr uint32_t OP_RESOURCE_BINARY_IDX = 1;
@@ -141,10 +138,7 @@ uint64_t OpGetLogSequence()
     return res;
 }
 
-void OpCacheTid()
-{
-    oPProfilingTid = mmGetTid();
-}
+void OpCacheTid() { oPProfilingTid = mmGetTid(); }
 
 int OpGetTid()
 {
@@ -1279,8 +1273,7 @@ bool CanUsePTACache(const char* api)
 
 } // namespace internal
 
-class OpDfxProfiler
-{
+class OpDfxProfiler {
 public:
     // L2_DFX
     explicit OpDfxProfiler(const char* funcName);
@@ -1300,24 +1293,12 @@ private:
     MsprofApi info_;
 };
 
-OpDfxProfiler* CreateDfxProfiler(const char* funcName)
-{
-    return new OpDfxProfiler(funcName);
-}
-OpDfxProfiler* CreateDfxProfiler(uint32_t id)
-{
-    return new OpDfxProfiler(id);
-}
+OpDfxProfiler* CreateDfxProfiler(const char* funcName) { return new OpDfxProfiler(funcName); }
+OpDfxProfiler* CreateDfxProfiler(uint32_t id) { return new OpDfxProfiler(id); }
 
-bool IsDumpEnabled()
-{
-    return op::internal::GetThreadLocalContext().opConfigInfo_.isOpDumpEnable_;
-}
+bool IsDumpEnabled() { return op::internal::GetThreadLocalContext().opConfigInfo_.isOpDumpEnable_; }
 
-void InitThreadLocalContext()
-{
-    op::internal::GetThreadLocalContext().l2IOTensors_.Init();
-}
+void InitThreadLocalContext() { op::internal::GetThreadLocalContext().l2IOTensors_.Init(); }
 
 void AddInputTensorToThreadLocalCtx(const aclTensor* const t)
 {

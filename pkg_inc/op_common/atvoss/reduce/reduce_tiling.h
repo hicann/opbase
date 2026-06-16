@@ -179,8 +179,8 @@ OPBASE_API ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t i
  * @param dimStrides
  *  return value, operator input dimStrides
  */
-OPBASE_API ge::graphStatus GetInputStride(const gert::TilingContext* context, int32_t idx,
-                                          std::vector<int64_t>& dimStrides);
+OPBASE_API ge::graphStatus GetInputStride(
+    const gert::TilingContext* context, int32_t idx, std::vector<int64_t>& dimStrides);
 
 /*
  * \brief get input dtype with input idx
@@ -229,8 +229,7 @@ OPBASE_API ge::graphStatus GetInputParam(
     gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx, int32_t axesIdx, int32_t outIdx);
 } // namespace ReduceOpTmpl
 
-class OPBASE_API ReduceOpTiling
-{
+class OPBASE_API ReduceOpTiling {
 public:
     /*
      * @param context
@@ -247,8 +246,7 @@ public:
         ReduceOpTilingData* tilingData = nullptr)
         : context_(context), compileInfo_(compileInfo), tilingData_(tilingData) {};
 
-    virtual ~ReduceOpTiling()
-    {}
+    virtual ~ReduceOpTiling() {}
     /*
      * \brief reduce template do tiling with input shape and axis
      *
@@ -454,9 +452,8 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(
 } // namespace Base
 } // namespace Ops
 
-#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                 \
-    result = GET_TPL_TILING_KEY(                                                            \
-        reduceTilingKey.isContiguous, reduceTilingKey.patternID,                            \
-        reduceTilingKey.loopARCount, reduceTilingKey.loopInnerARCount,                      \
-        __VA_ARGS__)
+#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                   \
+    result = GET_TPL_TILING_KEY(                                                              \
+        reduceTilingKey.isContiguous, reduceTilingKey.patternID, reduceTilingKey.loopARCount, \
+        reduceTilingKey.loopInnerARCount, __VA_ARGS__)
 #endif

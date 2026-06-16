@@ -24,13 +24,13 @@ size_t ArgsPool::maxCacheNum = ArgsPool::GetCacheSizeLimit();
 
 size_t ArgsPool::GetCacheSizeLimit()
 {
-    const char_t *cacheLimit = nullptr;
+    const char_t* cacheLimit = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ACLNN_CACHE_LIMIT, cacheLimit);
     size_t c = NNOPBASE_CACHE_ARGS_NUM;
     if (cacheLimit != nullptr) {
         try {
             c = std::stoull(cacheLimit);
-        } catch (const std::exception &e) {
+        } catch (const std::exception& e) {
             OP_LOGW("Env variable ACLNN_CACHE_LIMIT[%s] is invalid! must be a number!", cacheLimit);
         }
     }
@@ -41,21 +41,18 @@ size_t ArgsPool::GetCacheSizeLimit()
     return c;
 }
 
-ArgsPool &ArgsPool::GetInstance()
+ArgsPool& ArgsPool::GetInstance()
 {
     static ArgsPool args;
     return args;
 }
 
-ArgsPool::~ArgsPool()
-{
-    Finalize();
-}
+ArgsPool::~ArgsPool() { Finalize(); }
 
 void ArgsPool::Finalize()
 {
-    for (auto &iter : argsMap) {
-        for (auto &args : iter.second) {
+    for (auto& iter : argsMap) {
+        for (auto& args : iter.second) {
             if (args != nullptr) {
                 delete args;
                 args = nullptr;
@@ -68,15 +65,16 @@ void ArgsPool::Finalize()
     argsCache.clear();
 }
 
-bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs *const args, NnopbaseExecutor *executor)
+bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* executor)
 {
     if (args->isVist) {
         OP_LOGI("Op %s seed %zu args %p is visit.", executor->opType, args->seed, args);
         return false;
     }
     if (args->keyLen != executor->ownArgs.keyLen) {
-        OP_LOGI("Op %s seed %zu key len is not equal, cache len %zu, input len %zu.", executor->opType,
-                args->seed, args->keyLen, executor->ownArgs.keyLen);
+        OP_LOGI(
+            "Op %s seed %zu key len is not equal, cache len %zu, input len %zu.", executor->opType, args->seed,
+            args->keyLen, executor->ownArgs.keyLen);
         return false;
     }
     if (memcmp(args->inputKey.data(), executor->ownArgs.inputKey.data(), args->keyLen) == 0) {
@@ -85,14 +83,15 @@ bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs *const args, NnopbaseExecutor *e
         executor->isCachedArgs = true;
         args->isVist = true;
         Get(executor->args);
-        OP_LOGI("Op %s match args cache successfully, seed is %zu, key len is %zu.",
-                executor->opType, args->seed, args->keyLen);
+        OP_LOGI(
+            "Op %s match args cache successfully, seed is %zu, key len is %zu.", executor->opType, args->seed,
+            args->keyLen);
         return true;
     }
     return false;
 }
 
-bool ArgsPool::MatchArgs(NnopbaseExecutor *executor)
+bool ArgsPool::MatchArgs(NnopbaseExecutor* executor)
 {
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheStart);
     if (maxCacheNum == 0U) {
@@ -105,10 +104,10 @@ bool ArgsPool::MatchArgs(NnopbaseExecutor *executor)
     }
     {
         const std::lock_guard<std::mutex> lk(mutex);
-        const auto &iter = argsMap.find(executor->ownArgs.seed);
+        const auto& iter = argsMap.find(executor->ownArgs.seed);
         if (iter != argsMap.end()) {
             OP_LOGI("Op %s seed %zu args num is %zu.", executor->opType, executor->ownArgs.seed, iter->second.size());
-            for (auto &args : iter->second) {
+            for (auto& args : iter->second) {
                 if (IsArgsMatch(args, executor)) {
                     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheEnd);
                     return true;
@@ -116,13 +115,14 @@ bool ArgsPool::MatchArgs(NnopbaseExecutor *executor)
             }
         }
     }
-    OP_LOGI("Op %s cache miss, seed is %zu, key len is %zu.", executor->opType,
-            executor->ownArgs.seed, executor->ownArgs.keyLen);
+    OP_LOGI(
+        "Op %s cache miss, seed is %zu, key len is %zu.", executor->opType, executor->ownArgs.seed,
+        executor->ownArgs.keyLen);
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheEnd);
     return false;
 }
 
-aclnnStatus ArgsPool::CreateArgs(NnopbaseExecutor *executor)
+aclnnStatus ArgsPool::CreateArgs(NnopbaseExecutor* executor)
 {
     if (executor->ownArgs.enableCache) {
         auto args = std::make_unique<NnopbaseExecutorArgs>();
@@ -140,12 +140,13 @@ aclnnStatus ArgsPool::CreateArgs(NnopbaseExecutor *executor)
         if (executor->args->keyLen > executor->args->inputKey.size()) {
             executor->args->inputKey.resize(executor->args->keyLen);
         }
-        NNOPBASE_ASSERT_TRUE_RETVAL(memcpy_s(executor->args->inputKey.data(),
-                                        executor->ownArgs.keyLen,
-                                        executor->ownArgs.inputKey.data(),
-                                        executor->ownArgs.keyLen) == EOK);
+        NNOPBASE_ASSERT_TRUE_RETVAL(
+            memcpy_s(
+                executor->args->inputKey.data(), executor->ownArgs.keyLen, executor->ownArgs.inputKey.data(),
+                executor->ownArgs.keyLen) == EOK);
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSaveCachedTensor(&executor->args->inputs, &executor->ownArgs.inputs, true));
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSaveCachedTensor(&executor->args->outputs, &executor->ownArgs.outputs, false));
+        NNOPBASE_ASSERT_OK_RETVAL(
+            NnopbaseSaveCachedTensor(&executor->args->outputs, &executor->ownArgs.outputs, false));
         NnopbaseSaveUnContiguousTensors(&executor->args->inputs, &executor->ownArgs.inputs);
     } else {
         executor->args = &executor->ownArgs;
@@ -155,13 +156,14 @@ aclnnStatus ArgsPool::CreateArgs(NnopbaseExecutor *executor)
     return OK;
 }
 
-void ArgsPool::EraseArgs(NnopbaseExecutorArgs *const tmp)
+void ArgsPool::EraseArgs(NnopbaseExecutorArgs* const tmp)
 {
-    auto &argsList = argsMap[tmp->seed];
+    auto& argsList = argsMap[tmp->seed];
     for (auto it = argsList.begin(); it != argsList.end(); it++) {
         if (*it == tmp) {
-            OP_LOGI("The number of args %zu cached has reached %zu, delete the oldest args %p seed %zu.",
-                    argsCache.size(), maxCacheNum, tmp, tmp->seed);
+            OP_LOGI(
+                "The number of args %zu cached has reached %zu, delete the oldest args %p seed %zu.", argsCache.size(),
+                maxCacheNum, tmp, tmp->seed);
             (void)argsList.erase(it);
             if (argsList.empty()) {
                 (void)argsMap.erase(tmp->seed);
@@ -175,13 +177,15 @@ void ArgsPool::EraseArgs(NnopbaseExecutorArgs *const tmp)
 }
 
 // 在调用端保证一定传入新的args进来，make出来的args才会调用Put
-void ArgsPool::Put(NnopbaseExecutorArgs *const args)
+void ArgsPool::Put(NnopbaseExecutorArgs* const args)
 {
     while ((argsCache.size() >= maxCacheNum) && (!cacheList.empty())) {
-        const auto &tmp = cacheList.back();
+        const auto& tmp = cacheList.back();
         if (tmp->isVist) {
-            OP_LOGW("The number of args cached has reached %zu, but the oldest args %p seed %zu is in use! "
-                    "Can't delete args!", maxCacheNum, tmp, tmp->seed);
+            OP_LOGW(
+                "The number of args cached has reached %zu, but the oldest args %p seed %zu is in use! "
+                "Can't delete args!",
+                maxCacheNum, tmp, tmp->seed);
             break;
         }
         EraseArgs(tmp);
@@ -191,17 +195,17 @@ void ArgsPool::Put(NnopbaseExecutorArgs *const args)
     argsCache[args] = cacheList.begin();
 }
 
-void ArgsPool::FixCache(NnopbaseExecutorArgs *const args)
+void ArgsPool::FixCache(NnopbaseExecutorArgs* const args)
 {
     if (args == nullptr) {
         return;
     }
     const std::lock_guard<std::mutex> lk(mutex);
-    auto &argsList = argsMap[args->seed];
+    auto& argsList = argsMap[args->seed];
     for (auto it = argsList.begin(); it != argsList.end(); it++) {
         if (*it == args) {
             (void)argsList.erase(it);
-            const auto &argsPos = argsCache.find(args);
+            const auto& argsPos = argsCache.find(args);
             if (argsPos != argsCache.end()) {
                 cacheList.erase(argsPos->second);
             }
@@ -213,18 +217,19 @@ void ArgsPool::FixCache(NnopbaseExecutorArgs *const args)
     }
     (void)argsCache.erase(args);
     fixedCacheMap[args->seed].push_back(args);
-    OP_LOGI("Fix args cache successfully, current fixed cache pool size for seed %zu is %zu", args->seed,
+    OP_LOGI(
+        "Fix args cache successfully, current fixed cache pool size for seed %zu is %zu", args->seed,
         fixedCacheMap[args->seed].size());
     return;
 }
 
-void ArgsPool::ReleaseFixedCache(NnopbaseExecutorArgs *const args)
+void ArgsPool::ReleaseFixedCache(NnopbaseExecutorArgs* const args)
 {
     auto cacheListIter = fixedCacheMap.find(args->seed);
     if (cacheListIter == fixedCacheMap.cend()) {
         return;
     }
-    auto &fixedCacheList = cacheListIter->second;
+    auto& fixedCacheList = cacheListIter->second;
     for (auto it = fixedCacheList.begin(); it != fixedCacheList.end(); it++) {
         if (*it == args) {
             Put(args);
@@ -238,4 +243,4 @@ void ArgsPool::ReleaseFixedCache(NnopbaseExecutorArgs *const args)
     OP_LOGI("Release fixed args cache successfully, current fixed cache pool size is %zu", fixedCacheMap.size());
     return;
 }
-} // nnopbase
+} // namespace nnopbase

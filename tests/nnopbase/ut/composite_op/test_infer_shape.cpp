@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
@@ -15,7 +15,6 @@
 #include "acl/acl.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
-
 
 OP_TYPE_REGISTER(Add);
 OP_TYPE_REGISTER(TransData)
@@ -27,10 +26,7 @@ using graphStatus = uint32_t;
 
 class InferShapeUt : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-
-    }
+    static void SetUpTestCase() {}
 
     static void TearDownTestCase() {}
 };
@@ -122,8 +118,8 @@ protected:
 //                                          op::Format::FORMAT_NC1HWC0,
 //                                          op::Format::FORMAT_NCHW,
 //                                          nullptr);
-//     auto out = std::make_unique<aclTensor>(op::DataType::DT_FLOAT16, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCHW);
-//     auto ret = INFER_SHAPE(TransData, OP_INPUT(x.get()), OP_OUTPUT(out.get()));
+//     auto out = std::make_unique<aclTensor>(op::DataType::DT_FLOAT16, op::Format::FORMAT_NCHW,
+//     op::Format::FORMAT_NCHW); auto ret = INFER_SHAPE(TransData, OP_INPUT(x.get()), OP_OUTPUT(out.get()));
 //     EXPECT_EQ(ret, ACL_SUCCESS);
 //     EXPECT_EQ(out->GetOriginalShape(), xOriginalShape);
 //     EXPECT_EQ(out->GetStorageShape(), xOriginalShape);
@@ -221,40 +217,41 @@ protected:
 //     EXPECT_EQ(out->GetViewShape(), expectShape);
 // }
 
-//TEST_F(InferShapeUt, InferShapeTestCase6)
+// TEST_F(InferShapeUt, InferShapeTestCase6)
 //{
-//    const auto infer_shape_func = [](gert::InferShapeContext *context) -> graphStatus {
-//        auto input = context->GetInputShape(0);
-//        auto output0 = context->GetOutputShape(0);
-//        auto output1 = context->GetOutputShape(1);
-//        *output0 = *input;
-//        *output1 = *input;
-//        return ACLNN_SUCCESS;
-//    };
+//     const auto infer_shape_func = [](gert::InferShapeContext *context) -> graphStatus {
+//         auto input = context->GetInputShape(0);
+//         auto output0 = context->GetOutputShape(0);
+//         auto output1 = context->GetOutputShape(1);
+//         *output0 = *input;
+//         *output1 = *input;
+//         return ACLNN_SUCCESS;
+//     };
 //
-//    auto space_registry = std::make_shared<gert::OpImplSpaceRegistry>();
-//    auto registry_holder = std::make_shared<gert::OpImplRegistryHolder>();
-//    gert::OpImplKernelRegistry::OpImplFunctions op_impl_func;
-//    op_impl_func.infer_shape = infer_shape_func;
-//    registry_holder->AddTypesToImpl("SortDemo", op_impl_func);
-//    space_registry->AddRegistry(registry_holder);
-//    gert::DefaultOpImplSpaceRegistry::GetInstance().SetDefaultSpaceRegistry(space_registry);
+//     auto space_registry = std::make_shared<gert::OpImplSpaceRegistry>();
+//     auto registry_holder = std::make_shared<gert::OpImplRegistryHolder>();
+//     gert::OpImplKernelRegistry::OpImplFunctions op_impl_func;
+//     op_impl_func.infer_shape = infer_shape_func;
+//     registry_holder->AddTypesToImpl("SortDemo", op_impl_func);
+//     space_registry->AddRegistry(registry_holder);
+//     gert::DefaultOpImplSpaceRegistry::GetInstance().SetDefaultSpaceRegistry(space_registry);
 //
-//    op::Shape selfShape{1, 1, 1, 1, 2, 4};
-//    auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
+//     op::Shape selfShape{1, 1, 1, 1, 2, 4};
+//     auto self = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 //
-//    auto values = std::make_unique<aclTensor>(op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, op::Format::FORMAT_ND);
-//    auto indices = std::make_unique<aclTensor>(op::DataType::DT_INT32, op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+//     auto values = std::make_unique<aclTensor>(op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+//     op::Format::FORMAT_ND); auto indices = std::make_unique<aclTensor>(op::DataType::DT_INT32, op::Format::FORMAT_ND,
+//     op::Format::FORMAT_ND);
 //
-//    op::FVector<aclTensor *> tensors{values.get(), indices.get()};
-//    auto outputs = std::make_unique<aclTensorList>(tensors.data(), tensors.size());
+//     op::FVector<aclTensor *> tensors{values.get(), indices.get()};
+//     auto outputs = std::make_unique<aclTensorList>(tensors.data(), tensors.size());
 //
-//    auto ret = INFER_SHAPE(SortDemo, OP_INPUT(self.get()), OP_OUTPUT(outputs.get()), OP_ATTR(-1, false));
-//    EXPECT_EQ(ret, ACL_SUCCESS);
-//    EXPECT_EQ(values->GetOriginalShape(), selfShape);
-//    EXPECT_EQ(values->GetStorageShape(), selfShape);
-//    EXPECT_EQ(values->GetViewShape(), selfShape);
-//    EXPECT_EQ(indices->GetOriginalShape(), selfShape);
-//    EXPECT_EQ(indices->GetStorageShape(), selfShape);
-//    EXPECT_EQ(indices->GetViewShape(), selfShape);
-//}
+//     auto ret = INFER_SHAPE(SortDemo, OP_INPUT(self.get()), OP_OUTPUT(outputs.get()), OP_ATTR(-1, false));
+//     EXPECT_EQ(ret, ACL_SUCCESS);
+//     EXPECT_EQ(values->GetOriginalShape(), selfShape);
+//     EXPECT_EQ(values->GetStorageShape(), selfShape);
+//     EXPECT_EQ(values->GetViewShape(), selfShape);
+//     EXPECT_EQ(indices->GetOriginalShape(), selfShape);
+//     EXPECT_EQ(indices->GetStorageShape(), selfShape);
+//     EXPECT_EQ(indices->GetViewShape(), selfShape);
+// }

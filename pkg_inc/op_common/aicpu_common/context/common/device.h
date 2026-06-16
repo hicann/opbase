@@ -14,38 +14,38 @@
 
 namespace aicpu {
 class Device {
- public:
-  explicit Device(DeviceType device);
+public:
+    explicit Device(DeviceType device);
 
-  ~Device();
+    ~Device();
 
-  /*
-   * get device type.
-   * @return DeviceType: HOST/DEVICE
-   */
-  DeviceType GetDeviceType() const;
+    /*
+     * get device type.
+     * @return DeviceType: HOST/DEVICE
+     */
+    DeviceType GetDeviceType() const;
 
-  /*
-   * get sharder.
-   * @return Sharder *: host or device sharder
-   */
-  const Sharder *GetSharder() const;
+    /*
+     * get sharder.
+     * @return Sharder *: host or device sharder
+     */
+    const Sharder* GetSharder() const;
 
- private:
-  Device(const Device &) = delete;
-  Device(Device &&) = delete;
-  Device &operator=(const Device &) = delete;
-  Device &operator=(Device &&) = delete;
+private:
+    Device(const Device&) = delete;
+    Device(Device&&) = delete;
+    Device& operator=(const Device&) = delete;
+    Device& operator=(Device&&) = delete;
 
-  /*
-   * init sharder.
-   * param device_type: type of device
-   * @return Sharder *: not null->success, null->success
-   */
-  Sharder *InitSharder(DeviceType device_type) const;
+    /*
+     * init sharder.
+     * param device_type: type of device
+     * @return Sharder *: not null->success, null->success
+     */
+    Sharder* InitSharder(DeviceType device_type) const;
 
-  DeviceType device_;  // type of device
-  Sharder *sharder_;
+    DeviceType device_; // type of device
+    Sharder* sharder_;
 };
-}  // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_DEVICE_H
+} // namespace aicpu
+#endif // AICPU_CONTEXT_COMMON_DEVICE_H

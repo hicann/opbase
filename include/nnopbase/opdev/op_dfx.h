@@ -75,10 +75,7 @@ struct OpProfilingSwitch {
 extern OpProfilingSwitch opProfilingSwitch;
 
 struct OpLogInfo {
-    OpLogInfo()
-    {
-        Init();
-    }
+    OpLogInfo() { Init(); }
     OpLogInfo(const OpLogInfo& rhs)
     {
         l2ApiName = rhs.l2ApiName;
@@ -100,14 +97,8 @@ struct OpLogInfo {
         l0Name = nullptr;
         l2SequenceCounter = 0;
     }
-    inline void InitLevelZero()
-    {
-        l0Name = nullptr;
-    }
-    inline void InitLevelTwo()
-    {
-        Init();
-    }
+    inline void InitLevelZero() { l0Name = nullptr; }
+    inline void InitLevelTwo() { Init(); }
     const char* l2ApiName;
     const char* l0Name;
     uint64_t l2SequenceCounter;
@@ -193,27 +184,15 @@ static void AddOutputTensorsToThreadLocalCtx(const std::tuple<Args...>& t)
         t);
 }
 
-enum OpLevel
-{
-    LevelZero,
-    LevelOne,
-    LevelTwo
-};
-enum DfxProfilingType
-{
-    DfxProfilingDefault,
-    DfxProfilingInferShape,
-    DFXProfilingTiling,
-    DfxProfilingKernelLaunch
-};
+enum OpLevel { LevelZero, LevelOne, LevelTwo };
+enum DfxProfilingType { DfxProfilingDefault, DfxProfilingInferShape, DFXProfilingTiling, DfxProfilingKernelLaunch };
 
 constexpr int kInvalidProfilingId = 0;
 class OpDfxProfiler;
 
 OpDfxProfiler* CreateDfxProfiler(const char* funcName);
 OpDfxProfiler* CreateDfxProfiler(uint32_t id);
-class OpDfxGuard
-{
+class OpDfxGuard {
 public:
     // L2_DFX PHASE_ONE
     template <typename INPUT_TUPLE = void*, typename OUTPUT_TUPLE = void*>
@@ -270,16 +249,15 @@ public:
     ~OpDfxGuard();
 
 private:
-    OpDfxGuard()
-    {}
+    OpDfxGuard() {}
 
     template <typename T>
     void ToStr(const T& t, std::string& res, std::vector<std::string>& v, size_t& index)
     {
         size_t argNum = v.size();
         std::string splitStr = (index < (argNum - 1)) ? ", " : "";
-        if constexpr (std::is_fundamental<
-                          std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<T>>>>::value) {
+        if constexpr (
+            std::is_fundamental<std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<T>>>>::value) {
             if constexpr (std::is_same_v<T, char*> || std::is_same_v<T, const char*>) {
                 if (t == nullptr) {
                     res += v[index++] + ": nullptr" + splitStr;

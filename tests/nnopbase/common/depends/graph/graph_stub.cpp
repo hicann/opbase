@@ -8,8 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "transformer/transfer_shape_according_to_format.h"
- 
-bool transformer::ShapeTransferAccordingToFormat::TransferShape(ge::Format const&, ge::Format const&, ge::DataType const&, gert::Shape&, std::shared_ptr<ge::OpDesc>, const fe::PlatFormInfos*)
+
+bool transformer::ShapeTransferAccordingToFormat::TransferShape(
+    ge::Format const&, ge::Format const&, ge::DataType const&, gert::Shape&, std::shared_ptr<ge::OpDesc>,
+    const fe::PlatFormInfos*)
 {
     return true;
 }

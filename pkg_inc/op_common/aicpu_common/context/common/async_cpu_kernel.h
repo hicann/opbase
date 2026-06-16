@@ -15,14 +15,14 @@
 
 namespace aicpu {
 class AICPU_VISIBILITY AsyncCpuKernel : public CpuKernel {
- public:
-  using CpuKernel::CpuKernel;
+public:
+    using CpuKernel::CpuKernel;
 
-  using DoneCallback = std::function<void(uint32_t status)>;
+    using DoneCallback = std::function<void(uint32_t status)>;
 
-  virtual uint32_t ComputeAsync(CpuKernelContext &ctx, DoneCallback done) = 0;
+    virtual uint32_t ComputeAsync(CpuKernelContext& ctx, DoneCallback done) = 0;
 
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 };
 } // namespace aicpu
-#endif  // ASYNC_CPU_KERNEL_H
+#endif // ASYNC_CPU_KERNEL_H

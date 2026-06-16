@@ -25,25 +25,22 @@ IndvSoc& IndvSoc::GetInstance(void)
     return instance;
 }
 
-IndvSoc::IndvSoc(void)
-{
-}
+IndvSoc::IndvSoc(void) {}
 
 void IndvSoc::Init(void)
 {
-    if (isInit) return;
+    if (isInit)
+        return;
     ge::AscendString curSocVersion = op::ToString(op::GetCurrentPlatformInfo().GetSocVersion());
     socVersion = curSocVersion.GetString();
-    std::transform(socVersion.begin(), socVersion.end(), socVersion.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::transform(
+        socVersion.begin(), socVersion.end(), socVersion.begin(), [](unsigned char c) { return std::tolower(c); });
     isInit = true;
 }
 
-const std::map<std::string, uint32_t>& IndvSoc::GetSocTypeMap(void) const
-{
-    return supportSocMap;
-}
+const std::map<std::string, uint32_t>& IndvSoc::GetSocTypeMap(void) const { return supportSocMap; }
 
-const std::string &IndvSoc::GetCurSocVersion(void)
+const std::string& IndvSoc::GetCurSocVersion(void)
 {
     if (!isInit) {
         Init();
@@ -51,10 +48,7 @@ const std::string &IndvSoc::GetCurSocVersion(void)
     return socVersion;
 }
 
-bool IndvSoc::SupportCurrentSoc(void) const
-{
-    return supportSocMap.find(socVersion) != supportSocMap.cend();
-}
+bool IndvSoc::SupportCurrentSoc(void) const { return supportSocMap.find(socVersion) != supportSocMap.cend(); }
 
 bool IndvSoc::UseCoreTypeMagic(void) const
 {
@@ -63,22 +57,19 @@ bool IndvSoc::UseCoreTypeMagic(void) const
 
 bool IndvSoc::SupportMc2FusionLaunch(void)
 {
-    const std::string &curSocVersion = GetCurSocVersion();
+    const std::string& curSocVersion = GetCurSocVersion();
     return (curSocVersion == OPS_SUBPATH_ASCEND950) || (curSocVersion == OPS_SUBPATH_ASCEND910_96) ||
-        (curSocVersion == OPS_SUBPATH_ASCEND350);
+           (curSocVersion == OPS_SUBPATH_ASCEND350);
 }
 
 bool IndvSoc::NeedAlignInitValues(void) const
 {
     // 910B以及后继芯片场景 需要在Memset的输入tensor上做shape对齐
     return (socVersion != OPS_SUBPATH_ASCEND310B) && (socVersion != OPS_SUBPATH_ASCEND310P) &&
-        (socVersion != OPS_SUBPATH_ASCEND610LITE) && (socVersion != OPS_SUBPATH_ASCEND910);
+           (socVersion != OPS_SUBPATH_ASCEND610LITE) && (socVersion != OPS_SUBPATH_ASCEND910);
 }
 
-bool IndvSoc::NeedsExtraMemoryForOverflowDump(void) const
-{
-    return socVersion == OPS_SUBPATH_ASCEND910B;
-}
+bool IndvSoc::NeedsExtraMemoryForOverflowDump(void) const { return socVersion == OPS_SUBPATH_ASCEND910B; }
 
 bool IndvSoc::SupportL0ExceptionDump(void) const
 {
@@ -92,24 +83,26 @@ bool IndvSoc::IsCouplingArch(void) const
 
 bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType)
 {
-    const bool isEnableCcuLaunch = SupportMc2FusionLaunch() &&
-        ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) || (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU));
-    OP_LOGD("NnopbaseEnableCcuLaunch check, socVersion=%s, sType=%d, isEnableCcuLaunch=%d",
-            socVersion.c_str(), static_cast<int>(sType), isEnableCcuLaunch);
+    const bool isEnableCcuLaunch = SupportMc2FusionLaunch() && ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) ||
+                                                                (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU));
+    OP_LOGD(
+        "NnopbaseEnableCcuLaunch check, socVersion=%s, sType=%d, isEnableCcuLaunch=%d", socVersion.c_str(),
+        static_cast<int>(sType), isEnableCcuLaunch);
     return isEnableCcuLaunch;
 }
 
 bool IndvSoc::NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType)
 {
-    const std::string &curSocVersion = GetCurSocVersion();
+    const std::string& curSocVersion = GetCurSocVersion();
     const bool isSupportFusionLaunch = SupportMc2FusionLaunch();
     const bool isSupportA5AiCpu = (isSupportFusionLaunch && (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU));
-    OP_LOGD("NnopbaseSupportA5AiCpu check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, isSupportA5AiCpu=%d",
-            curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, isSupportA5AiCpu);
+    OP_LOGD(
+        "NnopbaseSupportA5AiCpu check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, isSupportA5AiCpu=%d",
+        curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, isSupportA5AiCpu);
     return isSupportA5AiCpu;
 }
 
-uint32_t *IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t &socSupportListLen) const
+uint32_t* IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const
 {
     static uint32_t socSupportList[] = {SOC_VERSION_ASCEND910B, SOC_VERSION_ASCEND910_93};
     socSupportListLen = sizeof(socSupportList) / sizeof(uint32_t);
@@ -127,12 +120,12 @@ uint32_t IndvSoc::GetSocEnum()
     return SOC_VERSION_INVALID;
 }
 
-bool IndvSoc::IsSupportedSocName(const std::string &name) const
+bool IndvSoc::IsSupportedSocName(const std::string& name) const
 {
     return supportSocMap.find(name) != supportSocMap.cend();
 }
 
-uint32_t IndvSoc::GetSocEnumByName(const std::string &name) const
+uint32_t IndvSoc::GetSocEnumByName(const std::string& name) const
 {
     auto iter = supportSocMap.find(name);
     if (iter != supportSocMap.cend()) {
@@ -144,7 +137,7 @@ uint32_t IndvSoc::GetSocEnumByName(const std::string &name) const
 std::string IndvSoc::GetSupportedSocNamesStr() const
 {
     std::string result;
-    for (const auto &entry : supportSocMap) {
+    for (const auto& entry : supportSocMap) {
         if (!result.empty()) {
             result += ", ";
         }
@@ -158,4 +151,4 @@ void IndvSoc::Reset(void)
     isInit = false;
     socVersion = "";
 }
-} // namespace
+} // namespace nnopbase

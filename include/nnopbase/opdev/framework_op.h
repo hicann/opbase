@@ -13,8 +13,8 @@
 #include "aclnn/acl_meta.h"
 
 namespace op {
-const aclTensor *CopyToNpu(const aclTensor *src, aclOpExecutor *executor);
-const aclTensor *CopyToNpuSync(const aclTensor *src, aclOpExecutor *executor);
-aclnnStatus CopyNpuToNpu(const aclTensor *src, const aclTensor *dst, aclOpExecutor *executor);
-}
+const aclTensor* CopyToNpu(const aclTensor* src, aclOpExecutor* executor);
+const aclTensor* CopyToNpuSync(const aclTensor* src, aclOpExecutor* executor);
+aclnnStatus CopyNpuToNpu(const aclTensor* src, const aclTensor* dst, aclOpExecutor* executor);
+} // namespace op
 #endif // OP_API_OP_API_COMMON_INC_OPDEV_FRAMEWORK_OP_H

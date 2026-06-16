@@ -24,69 +24,67 @@ namespace internal {
 
 static std::atomic<uint64_t> GRAPH_ID;
 
-void *CreateGraphImpl()
+void* CreateGraphImpl()
 {
-    KernelGraph *graph = new KernelGraph(GRAPH_ID++);
-    return static_cast<void *>(graph);
+    KernelGraph* graph = new KernelGraph(GRAPH_ID++);
+    return static_cast<void*>(graph);
 }
 
-void FreeGraphImpl(void *graph)
+void FreeGraphImpl(void* graph)
 {
-    KernelGraph *g = (KernelGraph *) graph;
+    KernelGraph* g = (KernelGraph*)graph;
     delete g;
 }
 
-void FreeExtendTensorImpl(void *extendTensor)
+void FreeExtendTensorImpl(void* extendTensor)
 {
-    aclTensorExtend *e = (aclTensorExtend *) extendTensor;
+    aclTensorExtend* e = (aclTensorExtend*)extendTensor;
     delete e;
 }
 
-aclnnStatus AddKernelNodeToGraph(void *kn, void *graph)
+aclnnStatus AddKernelNodeToGraph(void* kn, void* graph)
 {
     OP_LOGI("graph %p, kernel node: %p", graph, kn);
-    KernelGraph *g = static_cast<KernelGraph*>(graph);
+    KernelGraph* g = static_cast<KernelGraph*>(graph);
     g->AddKernelNode(static_cast<KernelNode*>(kn));
     return ACL_SUCCESS;
 }
 
-void *BuildKernelNodeImpl(uint32_t opType,
-                          FVector<aclTensor *> &aclInputs,
-                          FVector<aclTensor *> &aclOutputs,
-                          FVector<aclTensor *> &aclWorkspace)
+void* BuildKernelNodeImpl(
+    uint32_t opType, FVector<aclTensor*>& aclInputs, FVector<aclTensor*>& aclOutputs, FVector<aclTensor*>& aclWorkspace)
 {
     // KernelNode， KernelTensor derived from Object, so new will get memory from pool without nullptr.
-    KernelNode *kn = new KernelNode(opType);
+    KernelNode* kn = new KernelNode(opType);
 
-    for (aclTensor *tensor : aclInputs) {
-        KernelTensor *kt = new KernelTensor(tensor, 0);
+    for (aclTensor* tensor : aclInputs) {
+        KernelTensor* kt = new KernelTensor(tensor, 0);
         kn->AddInput(kt);
     }
 
-    for (aclTensor *tensor : aclOutputs) {
-        KernelTensor *out = new KernelTensor(tensor, 0);
+    for (aclTensor* tensor : aclOutputs) {
+        KernelTensor* out = new KernelTensor(tensor, 0);
         kn->AddOutput(out);
     }
 
-    for (aclTensor *tensor : aclWorkspace) {
-        KernelTensor *kt = new KernelTensor(tensor, 0);
+    for (aclTensor* tensor : aclWorkspace) {
+        KernelTensor* kt = new KernelTensor(tensor, 0);
         kn->AddWorkspace(kt);
     }
 
-    const FVector<KernelTensor *, BASIC_NUM> &kts = kn->GetInputs();
+    const FVector<KernelTensor*, BASIC_NUM>& kts = kn->GetInputs();
 
-    for (KernelTensor *kt : kts) {
-        const aclTensor *tensor = kt->GetAclTensor();
+    for (KernelTensor* kt : kts) {
+        const aclTensor* tensor = kt->GetAclTensor();
         if (tensor == nullptr) {
             continue;
         }
 
-        aclTensorExtend *extendTensor = static_cast<aclTensorExtend *>(tensor->GetExtend());
+        aclTensorExtend* extendTensor = static_cast<aclTensorExtend*>(tensor->GetExtend());
         if (extendTensor == nullptr) {
             continue;
         }
 
-        KernelTensor *ktp = extendTensor->GetKernelTensor();
+        KernelTensor* ktp = extendTensor->GetKernelTensor();
         if (ktp == nullptr) {
             continue;
         }
@@ -94,15 +92,15 @@ void *BuildKernelNodeImpl(uint32_t opType,
         kt->AddPeerTensor(ktp);
     }
 
-    for (auto &out : kn->GetOutputs()) {
-        aclTensorExtend *extend = static_cast<aclTensorExtend *>(out->GetAclTensor()->GetExtend());
+    for (auto& out : kn->GetOutputs()) {
+        aclTensorExtend* extend = static_cast<aclTensorExtend*>(out->GetAclTensor()->GetExtend());
         if (extend == nullptr) {
-            aclTensorExtend *extendTensor = new aclTensorExtend;
+            aclTensorExtend* extendTensor = new aclTensorExtend;
             extendTensor->SetKernelTensor(out);
             out->GetAclTensor()->SetExtend(extendTensor);
         } else {
             // 上一个l0算子的输出作为下一个l0算子的输出
-            KernelTensor *outPeerTensor = extend->GetKernelTensor();
+            KernelTensor* outPeerTensor = extend->GetKernelTensor();
             if (outPeerTensor != nullptr) {
                 OP_LOGW("the output of the previous op is used as the output of current op!!!");
                 outPeerTensor->AddPeerTensor(out);
@@ -125,9 +123,9 @@ void *BuildKernelNodeImpl(uint32_t opType,
     return kn;
 }
 
-static void TraitsAclTensor(FVector<aclTensor *> &result, OpArgList &opArgList)
+static void TraitsAclTensor(FVector<aclTensor*>& result, OpArgList& opArgList)
 {
-    opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg &arg) {
+    opArgList.VisitByNoReturn([&result]([[maybe_unused]] size_t idx, OpArg& arg) {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
             AddToList(result, PtrCastTo<aclTensor>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
@@ -136,44 +134,36 @@ static void TraitsAclTensor(FVector<aclTensor *> &result, OpArgList &opArgList)
     });
 }
 
-aclnnStatus BuildGraph(void *graph,
-                       uint32_t opType,
-                       OpArgList &inputs,
-                       OpArgList &outputs,
-                       OpArgList &workspace)
+aclnnStatus BuildGraph(void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace)
 {
-    FVector<aclTensor *> inputsList;
-    FVector<aclTensor *> outputsList;
-    FVector<aclTensor *> workspaceList;
+    FVector<aclTensor*> inputsList;
+    FVector<aclTensor*> outputsList;
+    FVector<aclTensor*> workspaceList;
 
     TraitsAclTensor(inputsList, inputs);
     TraitsAclTensor(outputsList, outputs);
     TraitsAclTensor(workspaceList, workspace);
 
-    void *kn = BuildKernelNodeImpl(opType, inputsList, outputsList, workspaceList);
+    void* kn = BuildKernelNodeImpl(opType, inputsList, outputsList, workspaceList);
     if (kn != nullptr) {
         AddKernelNodeToGraph(kn, graph);
     }
     return ACL_SUCCESS;
 }
 
-aclnnStatus BuildGraph(void *graph,
-                       uint32_t opType,
-                       OpArgList &inputs,
-                       OpArgList &outputs,
-                       OpArgList &workspace,
-                       OpArgList &outputshape)
+aclnnStatus BuildGraph(
+    void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace, OpArgList& outputshape)
 {
-    FVector<aclTensor *> inputsList;
-    FVector<aclTensor *> outputsList;
-    FVector<aclTensor *> workspaceList;
+    FVector<aclTensor*> inputsList;
+    FVector<aclTensor*> outputsList;
+    FVector<aclTensor*> workspaceList;
 
     TraitsAclTensor(inputsList, inputs);
     TraitsAclTensor(outputsList, outputs);
     TraitsAclTensor(workspaceList, workspace);
     TraitsAclTensor(workspaceList, outputshape);
 
-    void *kn = BuildKernelNodeImpl(opType, inputsList, outputsList, workspaceList);
+    void* kn = BuildKernelNodeImpl(opType, inputsList, outputsList, workspaceList);
     if (kn != nullptr) {
         AddKernelNodeToGraph(kn, graph);
     }

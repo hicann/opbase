@@ -18,29 +18,23 @@ namespace op {
 namespace internal {
 class InferShapeContextHolder {
 public:
-    InferShapeContextHolder()
-    {
-        BuildInferShapeContext();
-    }
+    InferShapeContextHolder() { BuildInferShapeContext(); }
 
     ~InferShapeContextHolder();
 
-    InferShapeContextHolder(const InferShapeContextHolder &) = delete;
-    InferShapeContextHolder(InferShapeContextHolder &&) = delete;
-    InferShapeContextHolder &operator=(const InferShapeContextHolder &) = delete;
-    InferShapeContextHolder &operator=(InferShapeContextHolder &&) = delete;
+    InferShapeContextHolder(const InferShapeContextHolder&) = delete;
+    InferShapeContextHolder(InferShapeContextHolder&&) = delete;
+    InferShapeContextHolder& operator=(const InferShapeContextHolder&) = delete;
+    InferShapeContextHolder& operator=(InferShapeContextHolder&&) = delete;
 
     void BuildInferShapeContext();
-    aclnnStatus UpdateInferShapeContext(const KernelContextHolder *kernelCtx) const;
+    aclnnStatus UpdateInferShapeContext(const KernelContextHolder* kernelCtx) const;
 
-    gert::InferShapeContext *GetInferShapeContext() const
-    {
-        return PtrCastTo<gert::InferShapeContext>(inferShapeCtx_);
-    }
+    gert::InferShapeContext* GetInferShapeContext() const { return PtrCastTo<gert::InferShapeContext>(inferShapeCtx_); }
 
 private:
-    KernelRunContext *inferShapeCtx_{nullptr};
-    AsyncAnyValue *inferShapeValues_{nullptr};
+    KernelRunContext* inferShapeCtx_{nullptr};
+    AsyncAnyValue* inferShapeValues_{nullptr};
 
     constexpr static size_t inferShapeValueNum_ = 2;
     // Initial capacity set to MAX_OP_ARG_NUM, expansion triggered only when exceeding this value
@@ -49,7 +43,7 @@ private:
     aclnnStatus EnsureContextCapacity(size_t requiredCapacity);
 };
 
-}
-}
+} // namespace internal
+} // namespace op
 
 #endif

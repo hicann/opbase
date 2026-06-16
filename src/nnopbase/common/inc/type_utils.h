@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_TYPE_UTILS_H
 #define OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_TYPE_UTILS_H
 
@@ -24,56 +24,56 @@
 
 namespace op::internal {
 
-template<typename T>
+template <typename T>
 struct ScalarValueType {
     using type = T;
 };
 
-template<typename T>
+template <typename T>
 struct ScalarValueType<std::complex<T>> {
     using type = T;
 };
 
-template<typename T>
+template <typename T>
 struct IsComplex : public std::false_type {};
 
-template<typename T>
+template <typename T>
 struct IsComplex<std::complex<T>> : public std::true_type {};
 
 // Type trait to detect custom floating point types (float8, float6, float4)
-template<typename T>
+template <typename T>
 struct IsCustomFloat : public std::false_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float8E5M2> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float8E4M3FN> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float8E8M0> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float6E3M2> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float6E2M3> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float4E2M1> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::Float4E1M2> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::HiFloat4> : public std::true_type {};
 
-template<>
+template <>
 struct IsCustomFloat<op::HiFloat8> : public std::true_type {};
 
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
-GreaterThanMax(const T &x)
+GreaterThanMax(const T& x)
 {
     constexpr bool canOverflow = std::numeric_limits<T>::digits > std::numeric_limits<Limit>::digits;
     if constexpr (canOverflow) {
@@ -83,125 +83,116 @@ GreaterThanMax(const T &x)
 }
 
 // Specialization for custom float types (T or Limit is custom float)
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<IsCustomFloat<T>::value || IsCustomFloat<Limit>::value, bool>::type
-GreaterThanMax(const T &x)
+GreaterThanMax(const T& x)
 {
     return static_cast<double>(x) > static_cast<double>(std::numeric_limits<Limit>::max());
 }
 
-template<typename T>
-inline constexpr bool IsNegative(
-    [[maybe_unused]] const T &x,
-    [[maybe_unused]] std::true_type isUnsigned)
+template <typename T>
+inline constexpr bool IsNegative([[maybe_unused]] const T& x, [[maybe_unused]] std::true_type isUnsigned)
 {
     return false;
 }
 
-template<typename T>
-inline constexpr bool IsNegative(
-    [[maybe_unused]] const T &x,
-    [[maybe_unused]] std::false_type isUnsigned)
+template <typename T>
+inline constexpr bool IsNegative([[maybe_unused]] const T& x, [[maybe_unused]] std::false_type isUnsigned)
 {
     return x < T(0);
 }
 
-template<typename T>
-inline constexpr typename std::enable_if<!IsCustomFloat<T>::value, bool>::type
-IsNegative(const T &x)
+template <typename T>
+inline constexpr typename std::enable_if<!IsCustomFloat<T>::value, bool>::type IsNegative(const T& x)
 {
     return IsNegative(x, std::is_unsigned<T>());
 }
 
 // Specialization for custom float types
-template<typename T>
-inline constexpr typename std::enable_if<IsCustomFloat<T>::value, bool>::type
-IsNegative(const T &x)
+template <typename T>
+inline constexpr typename std::enable_if<IsCustomFloat<T>::value, bool>::type IsNegative(const T& x)
 {
     return static_cast<double>(x) < 0.0;
 }
 
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
 LessThanLowest(
-    const T &x,
-    [[maybe_unused]] std::false_type limitIsUnsigned,
-    [[maybe_unused]] std::false_type xIsUnsigned)
+    const T& x, [[maybe_unused]] std::false_type limitIsUnsigned, [[maybe_unused]] std::false_type xIsUnsigned)
 {
     return static_cast<double>(x) < static_cast<double>(std::numeric_limits<Limit>::lowest());
 }
 
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
 LessThanLowest(
-    [[maybe_unused]] const T &x,
-    [[maybe_unused]] std::false_type limitIsUnsigned,
+    [[maybe_unused]] const T& x, [[maybe_unused]] std::false_type limitIsUnsigned,
     [[maybe_unused]] std::true_type xIsUnsigned)
 {
     return false;
 }
 
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
 LessThanLowest(
-    const T &x,
-    [[maybe_unused]] std::true_type limitIsUnsigned,
-    [[maybe_unused]] std::false_type xIsUnsigned)
+    const T& x, [[maybe_unused]] std::true_type limitIsUnsigned, [[maybe_unused]] std::false_type xIsUnsigned)
 {
     return static_cast<double>(x) < 0.0;
 }
 
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
 LessThanLowest(
-    [[maybe_unused]] const T &x,
-    [[maybe_unused]] std::true_type limitIsUnsigned,
+    [[maybe_unused]] const T& x, [[maybe_unused]] std::true_type limitIsUnsigned,
     [[maybe_unused]] std::true_type xIsUnsigned)
 {
     return false;
 }
 
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
-LessThanLowest(const T &x)
+LessThanLowest(const T& x)
 {
     return LessThanLowest<Limit>(x, std::is_unsigned<Limit>(), std::is_unsigned<T>());
 }
 
 // Specialization for custom float types (T or Limit is custom float)
-template<typename Limit, typename T>
+template <typename Limit, typename T>
 inline constexpr typename std::enable_if<IsCustomFloat<T>::value || IsCustomFloat<Limit>::value, bool>::type
-LessThanLowest(const T &x)
+LessThanLowest(const T& x)
 {
     return static_cast<double>(x) < static_cast<double>(std::numeric_limits<Limit>::lowest());
 }
 
-template<typename To, typename From>
+template <typename To, typename From>
 typename std::enable_if<std::is_same<From, bool>::value, bool>::type Overflows([[maybe_unused]] From f)
 {
     return false;
 }
 
-template<typename To, typename From>
+template <typename To, typename From>
 typename std::enable_if<std::is_integral<From>::value && !std::is_same<From, bool>::value, bool>::type Overflows(From f)
 {
     if constexpr (IsCustomFloat<typename ScalarValueType<To>::type>::value) {
         using targetType = typename ScalarValueType<To>::type;
         if (!std::numeric_limits<targetType>::is_signed && std::numeric_limits<From>::is_signed) {
-            return GreaterThanMax<To>(f) || (IsNegative(f) && -static_cast<double>(f) > static_cast<double>(std::numeric_limits<targetType>::max()));
+            return GreaterThanMax<To>(f) ||
+                   (IsNegative(f) &&
+                    -static_cast<double>(f) > static_cast<double>(std::numeric_limits<targetType>::max()));
         }
         return LessThanLowest<To>(f) || GreaterThanMax<To>(f);
     } else {
         using limit = std::numeric_limits<typename ScalarValueType<To>::type>;
         if (!limit::is_signed && std::numeric_limits<From>::is_signed) {
             // Use double to avoid INT64_MIN overflow when negating
-            return GreaterThanMax<To>(f) || (IsNegative(f) && -static_cast<double>(f) > static_cast<double>(limit::max()));
+            return GreaterThanMax<To>(f) ||
+                   (IsNegative(f) && -static_cast<double>(f) > static_cast<double>(limit::max()));
         }
         return LessThanLowest<To>(f) || GreaterThanMax<To>(f);
     }
 }
 
-template<typename To, typename From>
+template <typename To, typename From>
 typename std::enable_if<std::is_floating_point<From>::value, bool>::type Overflows(From f)
 {
     using limit = std::numeric_limits<typename ScalarValueType<To>::type>;
@@ -214,9 +205,8 @@ typename std::enable_if<std::is_floating_point<From>::value, bool>::type Overflo
     return f < static_cast<From>(limit::lowest()) || f > static_cast<From>(limit::max());
 }
 
-template<typename To, typename From>
-typename std::enable_if<std::is_same<op::fp16_t, typename std::decay<From>::type>::value, bool>::type
-Overflows(From f)
+template <typename To, typename From>
+typename std::enable_if<std::is_same<op::fp16_t, typename std::decay<From>::type>::value, bool>::type Overflows(From f)
 {
     if (std::isinf(static_cast<double>(f))) {
         return false;
@@ -226,9 +216,8 @@ Overflows(From f)
 }
 
 // Custom float types (float8/float6/float4) Overflows specialization
-template<typename To, typename From>
-typename std::enable_if<IsCustomFloat<typename std::decay<From>::type>::value, bool>::type
-Overflows(From f)
+template <typename To, typename From>
+typename std::enable_if<IsCustomFloat<typename std::decay<From>::type>::value, bool>::type Overflows(From f)
 {
     double d = static_cast<double>(f);
     using limit = std::numeric_limits<typename ScalarValueType<To>::type>;
@@ -246,23 +235,21 @@ Overflows(From f)
     return d < static_cast<double>(limit::lowest()) || d > static_cast<double>(limit::max());
 }
 
-template<typename To, typename From>
+template <typename To, typename From>
 typename std::enable_if<IsComplex<From>::value, bool>::type Overflows(From f)
 {
     if (!IsComplex<To>::value && std::abs(f.imag()) >= std::numeric_limits<decltype(f.imag())>::epsilon()) {
         return true;
     }
 
-    return Overflows<
-        typename ScalarValueType<To>::type,
-        typename From::value_type>(f.real())
-        || Overflows<typename ScalarValueType<To>::type, typename From::value_type>(f.imag());
+    return Overflows<typename ScalarValueType<To>::type, typename From::value_type>(f.real()) ||
+           Overflows<typename ScalarValueType<To>::type, typename From::value_type>(f.imag());
 }
 } //  namespace op::internal
 
 namespace std {
 
-template<>
+template <>
 class numeric_limits<op::fp16_t> {
 public:
     static constexpr bool is_specialized = true;
@@ -288,44 +275,17 @@ public:
     static constexpr int max_exponent10 = 4;
     static constexpr auto traps = numeric_limits<float>::traps;
     static constexpr auto tinyness_before = numeric_limits<float>::tinyness_before;
-    static constexpr op::fp16_t min()
-    {
-        return op::fp16_t(uint16_t(0x0400));
-    }
-    static constexpr op::fp16_t lowest()
-    {
-        return op::fp16_t(uint16_t(0xFBFF));
-    }
-    static constexpr op::fp16_t max()
-    {
-        return op::fp16_t(uint16_t(0x7BFF));
-    }
-    static constexpr op::fp16_t epsilon()
-    {
-        return op::fp16_t(uint16_t(0x1400));
-    }
-    static constexpr op::fp16_t round_error()
-    {
-        return op::fp16_t(uint16_t(0x3800));
-    }
-    static constexpr op::fp16_t infinity()
-    {
-        return op::fp16_t(uint16_t(0x7C00));
-    }
-    static constexpr op::fp16_t quiet_NaN()
-    {
-        return op::fp16_t(uint16_t(0x7E00));
-    }
-    static constexpr op::fp16_t signaling_NaN()
-    {
-        return op::fp16_t(uint16_t(0x7D00));
-    }
-    static constexpr op::fp16_t denorm_min()
-    {
-        return op::fp16_t(uint16_t(0x0001));
-    }
+    static constexpr op::fp16_t min() { return op::fp16_t(uint16_t(0x0400)); }
+    static constexpr op::fp16_t lowest() { return op::fp16_t(uint16_t(0xFBFF)); }
+    static constexpr op::fp16_t max() { return op::fp16_t(uint16_t(0x7BFF)); }
+    static constexpr op::fp16_t epsilon() { return op::fp16_t(uint16_t(0x1400)); }
+    static constexpr op::fp16_t round_error() { return op::fp16_t(uint16_t(0x3800)); }
+    static constexpr op::fp16_t infinity() { return op::fp16_t(uint16_t(0x7C00)); }
+    static constexpr op::fp16_t quiet_NaN() { return op::fp16_t(uint16_t(0x7E00)); }
+    static constexpr op::fp16_t signaling_NaN() { return op::fp16_t(uint16_t(0x7D00)); }
+    static constexpr op::fp16_t denorm_min() { return op::fp16_t(uint16_t(0x0001)); }
 };
 
 } // namespace std
 
-#endif //OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_TYPE_UTILS_H
+#endif // OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_TYPE_UTILS_H

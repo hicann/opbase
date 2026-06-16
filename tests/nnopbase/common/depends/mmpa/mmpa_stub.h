@@ -31,21 +31,13 @@ public:
         return instance_.get();
     }
 
-    void Install(MmpaStub *instance)
-    {
-        fake_instance_ = instance;
-    }
+    void Install(MmpaStub* instance) { fake_instance_ = instance; }
 
-    void UnInstall() {
-        fake_instance_ = nullptr;
-    }
+    void UnInstall() { fake_instance_ = nullptr; }
 
-    virtual void *mmDlsym(void *handle, const char *funcName)
-    {
-        return nullptr;
-    }
+    virtual void* mmDlsym(void* handle, const char* funcName) { return nullptr; }
 
-    virtual void *mmDlopen(const char *fileName, int32_t mode)
+    virtual void* mmDlopen(const char* fileName, int32_t mode)
     {
         static int64_t tmp = 0;
         return &tmp;
@@ -56,6 +48,6 @@ private:
     static MmpaStub* fake_instance_;
 };
 
-} // Adx
+} // namespace Adx
 
 #endif

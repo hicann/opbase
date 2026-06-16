@@ -19,12 +19,12 @@
 
 class NnopbaseExecutorIOTest : public testing::Test {
 protected:
-    void SetUp() {setenv("ASCEND_C", "1", 1);}
-    void TearDown() {unsetenv("ASCEND_C");}
+    void SetUp() { setenv("ASCEND_C", "1", 1); }
+    void TearDown() { unsetenv("ASCEND_C"); }
 };
 
 /**********InitIoCachesUT**********/
-void NnopbaseExecutorUnitTestIoCachesTensors(char *inputDesc, uint32_t num, NnopbaseTensors *tensors)
+void NnopbaseExecutorUnitTestIoCachesTensors(char* inputDesc, uint32_t num, NnopbaseTensors* tensors)
 {
     uint32_t dynamicCnt = std::count(inputDesc, inputDesc + num, 2);
     uint32_t requiredCnt = std::count(inputDesc, inputDesc + num, 1);
@@ -33,23 +33,23 @@ void NnopbaseExecutorUnitTestIoCachesTensors(char *inputDesc, uint32_t num, Nnop
     ASSERT_EQ(tensors->expectIndex, 0);
     ASSERT_EQ(tensors->hostInputNum, 0);
     ASSERT_EQ(tensors->hasDynamic, (dynamicCnt > 0 ? true : false));
-    ASSERT_EQ(tensors->num, num - dynamicCnt); //统计非动态输入，即0和1的值
+    ASSERT_EQ(tensors->num, num - dynamicCnt); // 统计非动态输入，即0和1的值
     ASSERT_EQ(tensors->nonDynamicCnt, tensors->num);
-    ASSERT_EQ(tensors->requiredCnt, requiredCnt); //统计必选输入，即1的值
+    ASSERT_EQ(tensors->requiredCnt, requiredCnt); // 统计必选输入，即1的值
     ASSERT_EQ(tensors->arrayLen, (tensors->hasDynamic ? (NNOPBASE_NORM_DEF_IO_NUMS + num) : num));
     ASSERT_EQ(tensors->usedNum, (tensors->hasDynamic ? 0 : num));
     ASSERT_EQ(tensors->paramDescs.count, num);
-    for(uint32_t i = 0; i < num; i++) {
+    for (uint32_t i = 0; i < num; i++) {
         ASSERT_EQ(tensors->paramDescs.instances[i].num, (inputDesc[i] == 2 ? 0 : 1));
         ASSERT_EQ(tensors->paramDescs.instances[i].cfgNum, inputDesc[i]);
         ASSERT_EQ(tensors->paramDescs.instances[i].startIndex, (tensors->hasDynamic ? 0 : i));
     }
-    for(uint32_t i = 0; i < tensors->arrayLen; i++) {
+    for (uint32_t i = 0; i < tensors->arrayLen; i++) {
         ASSERT_EQ(tensors->extTensors[i].isNull, true);
         if (tensors->hasDynamic) {
-            ASSERT_EQ(tensors->extTensors[i].isRequired, false); //有动态输入，全为false
+            ASSERT_EQ(tensors->extTensors[i].isRequired, false); // 有动态输入，全为false
         } else {
-            ASSERT_EQ(tensors->extTensors[i].isRequired, (inputDesc[i] == 1 ? true : false)); //无动态输入，根据输入
+            ASSERT_EQ(tensors->extTensors[i].isRequired, (inputDesc[i] == 1 ? true : false)); // 无动态输入，根据输入
         }
     }
     return;
@@ -58,7 +58,7 @@ void NnopbaseExecutorUnitTestIoCachesTensors(char *inputDesc, uint32_t num, Nnop
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesRequiredInput)
 {
     char inputDesc[] = {1, 1, 1};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -68,7 +68,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesRequiredInput)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesOptionInputTest)
 {
     char inputDesc[] = {0, 0, 0};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -78,7 +78,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesOptionInputTest)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesDynamicInput)
 {
     char inputDesc[] = {2, 2, 2};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -88,7 +88,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesDynamicInput)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput01)
 {
     char inputDesc[] = {0, 1, 2};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -98,7 +98,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput01)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput02)
 {
     char inputDesc[] = {0, 2, 1};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -108,7 +108,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput02)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput03)
 {
     char inputDesc[] = {1, 0, 2};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -118,7 +118,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput03)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput04)
 {
     char inputDesc[] = {1, 2, 0};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -128,7 +128,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput04)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput05)
 {
     char inputDesc[] = {2, 0, 1};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -138,7 +138,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput05)
 TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput06)
 {
     char inputDesc[] = {2, 1, 0};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -148,7 +148,7 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorInitIoCachesMixedInput06)
 TEST_F(NnopbaseExecutorIOTest, ExecutorExtendIoCaches01)
 {
     char inputDesc[30] = {2, 1, 0};
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     NnopbaseTensors tensors;
     auto ret = NnopbaseExecutorInitIoCaches(&tensors, inputDesc, num);
     ASSERT_EQ(ret, OK);
@@ -165,46 +165,48 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorExtendIoCaches01)
 
 TEST_F(NnopbaseExecutorIOTest, ExecutorIoCachesMixedInputSkipOptionalInput)
 {
-    NnopbaseExecutor *executor = new NnopbaseExecutor;
+    NnopbaseExecutor* executor = new NnopbaseExecutor;
     ASSERT_NE(executor, nullptr);
 
     char inputDesc[] = {0, 1, 0, 2};
     char outputDesc[] = {};
     char attrDesc[] = {};
-    auto ret = NnopbaseExecutorInit(executor, {inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-                                    sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char)});
+    auto ret = NnopbaseExecutorInit(
+        executor, {inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                   sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
-    uint32_t num = sizeof(inputDesc)/sizeof(char);
+    uint32_t num = sizeof(inputDesc) / sizeof(char);
     ret = NnopbaseExecutorInitIoCaches(&(executor->ownArgs.inputs), inputDesc, num);
     ASSERT_EQ(ret, OK);
     op::Shape shape({1, 1, 1, 1, 1});
-    aclTensor *tensor = new aclTensor(shape, shape, op::DataType::DT_FLOAT,
-         op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+    aclTensor* tensor =
+        new aclTensor(shape, shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, op::Format::FORMAT_ND);
     ASSERT_EQ(NnopbaseExecutorUpdateTensorsIndex(&(executor->ownArgs.inputs), 1), OK);
     ASSERT_EQ(NnopbaseExecutorAddTensor(executor, tensor, 1, true, false), OK);
-    
-    std::vector<const aclTensor *> tensor_list_a;
+
+    std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
-    aclTensorList *aclTensorTestList = aclCreateTensorList(tensor_list_a.data(), tensor_list_a.size());
+    aclTensorList* aclTensorTestList = aclCreateTensorList(tensor_list_a.data(), tensor_list_a.size());
     ASSERT_EQ(NnopbaseExecutorAddDynamicTensors(executor, aclTensorTestList, 3, true), OK);
     ASSERT_EQ(executor->ownArgs.inputs.usedNum, 4);
     NnopbaseExecutorDeInit(executor);
     delete executor;
-    aclDestroyTensorList((const aclTensorList *)aclTensorTestList);
+    aclDestroyTensorList((const aclTensorList*)aclTensorTestList);
 }
 
 TEST_F(NnopbaseExecutorIOTest, ExecutorIoCachesMixedInputDynamicTensorsNull)
 {
-    NnopbaseExecutor *executor = new NnopbaseExecutor;
+    NnopbaseExecutor* executor = new NnopbaseExecutor;
     ASSERT_NE(executor, nullptr);
 
     char inputDesc[] = {};
     char outputDesc[] = {2};
     char attrDesc[] = {};
-    auto ret = NnopbaseExecutorInit(executor, {inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-                                    sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char)});
+    auto ret = NnopbaseExecutorInit(
+        executor, {inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                   sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
-    uint32_t num = sizeof(outputDesc)/sizeof(char);
+    uint32_t num = sizeof(outputDesc) / sizeof(char);
     ret = NnopbaseExecutorInitIoCaches(&(executor->ownArgs.inputs), outputDesc, num);
     ASSERT_EQ(ret, OK);
     ASSERT_EQ(NnopbaseExecutorAddDynamicTensors(executor, nullptr, 0, true), OK);

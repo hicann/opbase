@@ -20,12 +20,13 @@ public:
     LibPath& operator=(const LibPath&) = delete;
     static LibPath& Instance();
     Path GetInstallParentPath() const;
+
 private:
-    LibPath(){};
-    ~LibPath(){};
+    LibPath() {};
+    ~LibPath() {};
     Path GetSelfLibraryDir() const;
     Path GetSelfPath() const;
-    bool IsPluginSo(const std::string &fileName) const;
+    bool IsPluginSo(const std::string& fileName) const;
 };
 } // namespace aclnnOpInfoRecord
 #endif

@@ -123,9 +123,7 @@ bool BroadcastShape(const std::vector<const gert::Shape*>& inShapes, gert::Shape
     for (size_t i = 1UL; i < size; i++) {
         OP_CHECK_IF(
             !BroadcastShapeToOutShape(inShapes[i], outShape),
-            OP_LOGE(
-                "BroadcastShape", "intput shapes %s cannot broadcast!", ToString(inShapes).c_str()),
-            return false);
+            OP_LOGE("BroadcastShape", "intput shapes %s cannot broadcast!", ToString(inShapes).c_str()), return false);
     }
 
     return true;

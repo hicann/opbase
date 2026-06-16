@@ -11,7 +11,8 @@
 #include "op_common/op_host/util/math_util.h"
 
 using namespace Ops::Base;
-TEST(TestMathUtil, testFloorDiv) {
+TEST(TestMathUtil, testFloorDiv)
+{
     EXPECT_EQ(FloorDiv<int32_t>(10, 3), 3);
     EXPECT_EQ(FloorDiv<int32_t>(87, 20), 4);
     EXPECT_EQ(FloorDiv<int32_t>(1500, 512), 2);
@@ -22,7 +23,8 @@ TEST(TestMathUtil, testFloorDiv) {
     EXPECT_EQ(FloorDiv<int64_t>(std::numeric_limits<int64_t>::max(), 64), 144115188075855871);
 }
 
-TEST(TestMathUtil, testFloorAlign) {
+TEST(TestMathUtil, testFloorAlign)
+{
     EXPECT_EQ(FloorAlign<int32_t>(12345, 4096), 12288);
     EXPECT_EQ(FloorAlign<int32_t>(130, 32), 128);
     EXPECT_EQ(FloorAlign<int32_t>(1023, 64), 960);
@@ -33,7 +35,8 @@ TEST(TestMathUtil, testFloorAlign) {
     EXPECT_EQ(FloorAlign<int64_t>(numX, 4), 4294967292);
 }
 
-TEST(TestMathUtil, testCeilDiv) {
+TEST(TestMathUtil, testCeilDiv)
+{
     EXPECT_EQ(CeilDiv<int32_t>(5000, 4096), 2);
     EXPECT_EQ(CeilDiv<int32_t>(130, 32), 5);
     EXPECT_EQ(CeilDiv<int32_t>(2500, 1024), 3);
@@ -43,7 +46,8 @@ TEST(TestMathUtil, testCeilDiv) {
     EXPECT_EQ(CeilDiv<int64_t>(std::numeric_limits<int64_t>::max(), 8), 1152921504606846976);
 }
 
-TEST(TestMathUtil, testCeilAlign) {
+TEST(TestMathUtil, testCeilAlign)
+{
     EXPECT_EQ(CeilAlign<int32_t>(262144, 64), 262144);
     EXPECT_EQ(CeilAlign<int32_t>(1000, 64), 1024);
     EXPECT_EQ(CeilAlign<int32_t>(257, 32), 288);

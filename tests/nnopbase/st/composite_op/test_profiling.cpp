@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
@@ -23,8 +23,8 @@ using namespace op;
 
 static bool profiling_called = false;
 class ProfilingUtProfiler : public ProfilerStub {
-  public:
-    int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi *api)
+public:
+    int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi* api)
     {
         profiling_called = true;
         return 0;
@@ -32,16 +32,14 @@ class ProfilingUtProfiler : public ProfilerStub {
 };
 static ProfilingUtProfiler prof;
 
-uint64_t MsprofGetHashId(const char *hashInfo, size_t length){
-    return 100;
-}
+uint64_t MsprofGetHashId(const char* hashInfo, size_t length) { return 100; }
 
 namespace op {
 namespace internal {
 extern OpProfilingSwitch opProfilingSwitch;
 int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len);
-}
-}
+} // namespace internal
+} // namespace op
 
 class ProfilingUt : public testing::Test {
 protected:
@@ -68,19 +66,14 @@ TEST_F(ProfilingUt, l2_phase_one_api_profiling)
     /*
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = "aclnnAdd";
     op::internal::GetThreadLocalContext().logInfo_.l2SequenceCounter = op::internal::OpGetLogSequence();
-    thread_local uint32_t aclnnAddGetWorkspaceSize_Profiling_Phase_1_Id_L2_DFX_REGISTER = 
+    thread_local uint32_t aclnnAddGetWorkspaceSize_Profiling_Phase_1_Id_L2_DFX_REGISTER =
         op::internal::CollectProfilingStr("aclnnAddGetWorkspaceSize");
     */
-    aclTensor *inTensor = 0;
-    aclTensor *outTensor = 0;
+    aclTensor* inTensor = 0;
+    aclTensor* outTensor = 0;
     {
-        op::OpDfxGuard opDfxGuard(__FILE__,
-            __LINE__,
-            op::LevelTwo,
-            __func__,
-            "DFX_IN(in)",
-            "DFX_OUT(out)",
-            std::make_tuple(inTensor),
+        op::OpDfxGuard opDfxGuard(
+            __FILE__, __LINE__, op::LevelTwo, __func__, "DFX_IN(in)", "DFX_OUT(out)", std::make_tuple(inTensor),
             std::make_tuple(outTensor));
     }
     EXPECT_TRUE(profiling_called);
@@ -98,17 +91,15 @@ TEST_F(ProfilingUt, l2_phase_two_api_profiling)
 TEST_F(ProfilingUt, l0_api_profiling)
 {
     profiling_called = false;
-    aclTensor *inTensor = 0;
+    aclTensor* inTensor = 0;
     {
-        op::OpDfxGuard opDfxGuard(
-            100001, __FILE__, __LINE__, op::LevelZero, __func__, "aa", std::make_tuple(inTensor));
+        op::OpDfxGuard opDfxGuard(100001, __FILE__, __LINE__, op::LevelZero, __func__, "aa", std::make_tuple(inTensor));
     }
     EXPECT_TRUE(profiling_called);
 }
 
 TEST_F(ProfilingUt, kernel_launch_profiling)
 {
-
     MsprofCommandHandle handle;
 
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_INVALID, nullptr, 0), -1);
@@ -126,19 +117,20 @@ TEST_F(ProfilingUt, kernel_launch_profiling)
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
     int64_t multiStride1 = 2;
     auto storageShapeA = shapeA;
-    void *deviceDataA = nullptr;
+    void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor
-        *tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
-                                  storageShapeA.data(), storageShapeA.size(), deviceDataA);;
-    auto ctx = op::MakeOpArgContext(OP_INPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor),
-                                    OP_OUTPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor));
+    const aclTensor* tensor = aclCreateTensor(
+        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
+        storageShapeA.size(), deviceDataA);
+    ;
+    auto ctx = op::MakeOpArgContext(
+        OP_INPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor),
+        OP_OUTPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor));
     {
-        op::internal::ReportAdditionInfo(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-                                         *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-                                         MSPROF_GE_TASK_TYPE_AI_CORE,
-                                         100001);
+        op::internal::ReportAdditionInfo(
+            *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+            MSPROF_GE_TASK_TYPE_AI_CORE, 100001);
         op::OpDfxGuard opDfxGuard(100001, op::DfxProfilingKernelLaunch);
         op::internal::TaskInfo info;
         info.type = MSPROF_GE_TASK_TYPE_AI_CORE;

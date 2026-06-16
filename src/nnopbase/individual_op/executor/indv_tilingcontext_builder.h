@@ -31,33 +31,34 @@ enum TilingParserIndex {
 };
 
 struct NnopbaseMemSetCompileInfo {
-  int32_t workspace_num = 0;
-  int32_t core_num = 0;
-  uint32_t ub_size = 0;
-  int32_t max_repeat_time = 0;
-  bool is_dynamic = false;
-  std::vector<int64_t> mask_nums;
-  std::vector<int64_t> byte_list;
-  std::vector<int64_t> _workspace_index_list;
+    int32_t workspace_num = 0;
+    int32_t core_num = 0;
+    uint32_t ub_size = 0;
+    int32_t max_repeat_time = 0;
+    bool is_dynamic = false;
+    std::vector<int64_t> mask_nums;
+    std::vector<int64_t> byte_list;
+    std::vector<int64_t> _workspace_index_list;
 };
 
 struct NnopbaseKernelExtendInfo {
-    const NnopbaseChar *kernelName;
-    const NnopbaseChar *kernelType;
+    const NnopbaseChar* kernelName;
+    const NnopbaseChar* kernelType;
 };
 
-aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueInfo> &initValues,
-    std::shared_ptr<MemsetOpInfo> &memsetInfo, const NnopbaseParamDesc& outputParamDescs);
-aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo> &memsetInfo);
+aclnnStatus NnopbaseMemsetTilingContextInit(
+    const std::vector<NnopbaseInitValueInfo>& initValues, std::shared_ptr<MemsetOpInfo>& memsetInfo,
+    const NnopbaseParamDesc& outputParamDescs);
+aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor* executor);
+aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo>& memsetInfo);
 aclnnStatus NnopbaseExecutorPlatFormInfosInit(void);
-void NnopbaseUpdatePlatformInfo(const NnopbaseExecutor *executor);
+void NnopbaseUpdatePlatformInfo(const NnopbaseExecutor* executor);
 static constexpr int32_t NNOPBASE_DYNAMIC_PARAM_DEF_NUM = 256;
-void NnopbaseTilingBuildOpInputs(NnopbaseExecutor *executor);
-void NnopbaseTilingBuildOpOutputs(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor *executor);
-aclnnStatus NnopbaseTilingContextInit(NnopbaseExecutor *executor);
-void NnopbaseTilingContextDeInit(NnopbaseExecutor *executor);
+void NnopbaseTilingBuildOpInputs(NnopbaseExecutor* executor);
+void NnopbaseTilingBuildOpOutputs(NnopbaseExecutor* executor);
+aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor);
+aclnnStatus NnopbaseTilingContextInit(NnopbaseExecutor* executor);
+void NnopbaseTilingContextDeInit(NnopbaseExecutor* executor);
 
 #ifdef __cplusplus
 }

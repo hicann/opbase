@@ -22,11 +22,11 @@ extern "C" {
 #define INDV_EN_INVALID_PARAM -2
 
 typedef struct dirent IndvDirent;
-typedef int32_t (*IndvFilter)(const IndvDirent *entry);
-typedef int32_t (*IndvSort)(const IndvDirent **a, const IndvDirent **b);
+typedef int32_t (*IndvFilter)(const IndvDirent* entry);
+typedef int32_t (*IndvSort)(const IndvDirent** a, const IndvDirent** b);
 
-int32_t IndvScandir(const char *path, IndvDirent ***entryList, IndvFilter filter, IndvSort sort);
-void IndvScandirFree(IndvDirent **entryList, int32_t fileCount);
+int32_t IndvScandir(const char* path, IndvDirent*** entryList, IndvFilter filter, IndvSort sort);
+void IndvScandirFree(IndvDirent** entryList, int32_t fileCount);
 #ifdef __cplusplus
 }
 #endif

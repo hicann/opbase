@@ -24,8 +24,8 @@ constexpr uint32_t NNOPBASE_ENV_VAR_LENGH = 128U;
 constexpr const char* IMPL_MODE_HIGH_PERFORMANCE = "high_performance";
 constexpr const char* IMPL_MODE_HIGH_PRECISION = "high_precision";
 
-template<typename T>
-NnopbaseUChar *NnopbaseAppendByte(NnopbaseUChar *buf, T src)
+template <typename T>
+NnopbaseUChar* NnopbaseAppendByte(NnopbaseUChar* buf, T src)
 {
     T* dst = op::internal::PtrCastTo<T>(buf);
     *dst = src;
@@ -34,27 +34,27 @@ NnopbaseUChar *NnopbaseAppendByte(NnopbaseUChar *buf, T src)
 
 inline bool EnableNnopbaseTimeStamp()
 {
-    const char *profilingToStdOut = nullptr;
+    const char* profilingToStdOut = nullptr;
     MM_SYS_GET_ENV(MM_ENV_GE_PROFILING_TO_STD_OUT, profilingToStdOut);
     return ((profilingToStdOut != nullptr) && strcmp(profilingToStdOut, "1") == 0);
 }
 
 inline bool EnableNnopbaseArgsCache()
 {
-    const char *disAbleArgsCache = nullptr;
+    const char* disAbleArgsCache = nullptr;
     MM_SYS_GET_ENV(MM_ENV_DISABLE_L2_CACHE, disAbleArgsCache);
     return disAbleArgsCache == nullptr ? true : strcmp(disAbleArgsCache, "1") != 0; // 1表示开启
 }
 
 inline bool GetGlobalDeterministic()
 {
-    int64_t value = 0; // 0表示非确定性
+    int64_t value = 0;                                                          // 0表示非确定性
     const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &value); // SYS_OPT_DETERMINISTIC
     OP_LOGD("Get system param deterministic ret = %d.", ret);
     return (value == 1); // 1表示确定性
 }
 
-inline void NnopbaseGetCoreNum(uint32_t *const aicNum, uint32_t *const aivNum)
+inline void NnopbaseGetCoreNum(uint32_t* const aicNum, uint32_t* const aivNum)
 {
     uint32_t coreNum = 0;
     auto ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_CUBE_CORE, &coreNum);
@@ -77,7 +77,7 @@ inline std::string NnopbaseGetImplMode(const NnopbaseUChar precision)
     }
 }
 
-inline aclnnStatus NnopbaseSetOverFlowAddr(void *&addr)
+inline aclnnStatus NnopbaseSetOverFlowAddr(void*& addr)
 {
     aclrtFloatOverflowMode floatOverflowMode = ACL_RT_OVERFLOW_MODE_SATURATION;
     const aclError ret = aclrtGetDeviceSatMode(&floatOverflowMode);
@@ -93,38 +93,38 @@ inline aclnnStatus NnopbaseSetOverFlowAddr(void *&addr)
 
 inline bool GetDebugKernel()
 {
-    int64_t value = 0; // 0表示不开启debug kernel
+    int64_t value = 0;                                                                // 0表示不开启debug kernel
     const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &value); // SYS_OPT_ENABLE_DEBUG_KERNEL = 1
     OP_LOGD("Get system param debug kernel ret = %d.", ret);
     return (value == 1); // 1表示开启debug kernel
 }
 
-static inline void NnopbaseSetDtypeAndSize(const aclIntArray *array, GertTensor *rt2Tensor)
+static inline void NnopbaseSetDtypeAndSize(const aclIntArray* array, GertTensor* rt2Tensor)
 {
     rt2Tensor->SetDataType(ge::DataType::DT_INT64);
     rt2Tensor->SetSize(static_cast<size_t>(array->Size()) * sizeof(int64_t));
 }
 
-static inline void NnopbaseSetDtypeAndSize(const aclBoolArray *array, GertTensor *rt2Tensor)
+static inline void NnopbaseSetDtypeAndSize(const aclBoolArray* array, GertTensor* rt2Tensor)
 {
     rt2Tensor->SetDataType(ge::DataType::DT_BOOL);
     rt2Tensor->SetSize(static_cast<size_t>(array->Size()) * sizeof(bool));
 }
 
-static inline void NnopbaseSetDtypeAndSize(const aclFloatArray *array, GertTensor *rt2Tensor)
+static inline void NnopbaseSetDtypeAndSize(const aclFloatArray* array, GertTensor* rt2Tensor)
 {
     rt2Tensor->SetDataType(ge::DataType::DT_FLOAT);
     rt2Tensor->SetSize(static_cast<size_t>(array->Size()) * sizeof(float));
 }
 
-template<typename T>
-aclnnStatus NnopbaseSaveArray(const T *array, NnopbaseTensor *tensor)
+template <typename T>
+aclnnStatus NnopbaseSaveArray(const T* array, NnopbaseTensor* tensor)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(array);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tensor);
     tensor->isNull = false;
 
-    GertTensor *rt2Tensor = &tensor->rt2Tensor;
+    GertTensor* rt2Tensor = &tensor->rt2Tensor;
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
     rt2Tensor->MutableOriginShape() = {static_cast<int64_t>(array->Size())};
     rt2Tensor->MutableStorageShape() = {static_cast<int64_t>(array->Size())};
@@ -138,14 +138,14 @@ aclnnStatus NnopbaseSaveArray(const T *array, NnopbaseTensor *tensor)
         (rt2Tensor->MutableTensorData().SetAddr(array->GetData(), nullptr)) == ge::GRAPH_SUCCESS);
     rt2Tensor->MutableStride().SetDimNum(0U);
     rt2Tensor->SetOffset(0);
-    OP_LOGI("Get ValueDepend Input StorageFormat %d, dataType %d, shape [%lu], addr is %p.",
-        rt2Tensor->GetStorageFormat(), rt2Tensor->GetDataType(),
-        array->Size(), rt2Tensor->GetAddr());
+    OP_LOGI(
+        "Get ValueDepend Input StorageFormat %d, dataType %d, shape [%lu], addr is %p.", rt2Tensor->GetStorageFormat(),
+        rt2Tensor->GetDataType(), array->Size(), rt2Tensor->GetAddr());
     return OK;
 }
 
-template<typename T>
-static aclnnStatus NnopbaseExecutorAddArrayInput(NnopbaseTensors *tensors, const T *array, const uint32_t index)
+template <typename T>
+static aclnnStatus NnopbaseExecutorAddArrayInput(NnopbaseTensors* tensors, const T* array, const uint32_t index)
 {
     tensors->paramDescs.instances[index].isInput = true;
     if (array != nullptr) {
@@ -162,37 +162,35 @@ static aclnnStatus NnopbaseExecutorAddArrayInput(NnopbaseTensors *tensors, const
     }
     return OK;
 }
-} // namespace
+} // namespace nnopbase
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-enum NnopbaseFormatCheckOption {
-    kNnopbaseDefault = 0,
-    kNnopbaseStrict,
-    kNnopbaseMax
-};
+enum NnopbaseFormatCheckOption { kNnopbaseDefault = 0, kNnopbaseStrict, kNnopbaseMax };
 
 enum class NnopbaseParamCheckMode {
-    kCheckRequiredIo = 0,        // 默认只校验必选输入输出
-    kCheckOptionalInput = 1,     // 默认校验必选输入输出+可选输入
-    kCheckOptionalOutput = 2,    // 默认校验必选输入输出+可选输出
-    kCheckAllIo = 3,             // 默认校验所有输入输出
+    kCheckRequiredIo = 0,     // 默认只校验必选输入输出
+    kCheckOptionalInput = 1,  // 默认校验必选输入输出+可选输入
+    kCheckOptionalOutput = 2, // 默认校验必选输入输出+可选输出
+    kCheckAllIo = 3,          // 默认校验所有输入输出
     kCheckEnd,
 };
 
-static inline bool IsContiguous(const GertShape &shape, const op::Strides &strides)
+static inline bool IsContiguous(const GertShape& shape, const op::Strides& strides)
 {
-    OP_LOGI("Input tensor view shape is %s, view strides is %s",
-            op::ToString(shape).GetString(), op::ToString(strides).GetString());
+    OP_LOGI(
+        "Input tensor view shape is %s, view strides is %s", op::ToString(shape).GetString(),
+        op::ToString(strides).GetString());
     int64_t valid_stride = 1;
     for (int64_t i = static_cast<int64_t>(strides.size()) - 1; i >= 0; --i) {
         if (shape[i] == 1) {
             continue;
         }
         if (valid_stride != strides[i]) {
-            OP_LOGI("Input tensor is not contiguous, valid_stride is %ld, strides[%ld] is %ld",
-                    valid_stride, i, strides[i]);
+            OP_LOGI(
+                "Input tensor is not contiguous, valid_stride is %ld, strides[%ld] is %ld", valid_stride, i,
+                strides[i]);
             return false;
         }
         valid_stride *= shape[i];
@@ -200,17 +198,17 @@ static inline bool IsContiguous(const GertShape &shape, const op::Strides &strid
     return true;
 }
 
-static inline bool IsContiguousShape(const aclTensor *tensor)
+static inline bool IsContiguousShape(const aclTensor* tensor)
 {
-    const auto &view_shape = tensor->GetViewShape();
+    const auto& view_shape = tensor->GetViewShape();
     if (view_shape.GetShapeSize() == 0 || view_shape.GetShapeSize() == 1) {
         return true;
     }
     return IsContiguous(view_shape, tensor->GetViewStrides());
 }
 
-inline void NnopbaseCheckContiguous(NnopbaseTensors *tensors, const aclTensor *tensor, const size_t index,
-                                    const size_t irIdx)
+inline void NnopbaseCheckContiguous(
+    NnopbaseTensors* tensors, const aclTensor* tensor, const size_t index, const size_t irIdx)
 {
     if (!IsContiguousShape(tensor)) {
         tensors->unContiguousTensors.tensors.push_back(tensor);
@@ -219,18 +217,20 @@ inline void NnopbaseCheckContiguous(NnopbaseTensors *tensors, const aclTensor *t
             tensors->unContiguousTensors.refUnContTensors.push_back(tensor);
             tensors->unContiguousTensors.refIdxs.push_back(index);
             // 构造连续的aclTensor，scalar一定不会进入非连续判断的分支，此处dim的数量一定不是0
-            const int64_t *dims = &tensor->GetViewShape()[0U];
+            const int64_t* dims = &tensor->GetViewShape()[0U];
             const uint64_t dumNum = tensor->GetViewShape().GetDimNum();
-            const auto contTensor = aclCreateTensor(dims, dumNum, op::ToAclDataType(tensor->GetDataType()), nullptr, 0,
+            const auto contTensor = aclCreateTensor(
+                dims, dumNum, op::ToAclDataType(tensor->GetDataType()), nullptr, 0,
                 op::ToAclFormat(tensor->GetViewFormat()), dims, dumNum, tensor->GetData());
             tensors->unContiguousTensors.refContTensors.push_back(contTensor);
         }
-        OP_LOGD("Op input irIdx [%zu] idx [%zu] refIdx[%d] is uncontiguous.", irIdx, index,
-                tensors->paramDescs.instances[irIdx].refIdx);
+        OP_LOGD(
+            "Op input irIdx [%zu] idx [%zu] refIdx[%d] is uncontiguous.", irIdx, index,
+            tensors->paramDescs.instances[irIdx].refIdx);
     }
 }
 
-static inline void NnopbaseExecutorGet8ByteSize(size_t totalSize, uint32_t *len)
+static inline void NnopbaseExecutorGet8ByteSize(size_t totalSize, uint32_t* len)
 {
     if (totalSize % sizeof(uint64_t) == 0) {
         *len += totalSize;
@@ -239,7 +239,7 @@ static inline void NnopbaseExecutorGet8ByteSize(size_t totalSize, uint32_t *len)
     }
 }
 
-static inline NnopbaseUChar *NnopbaseAppendBinary(void *buf, const size_t bufLen, const void *src, const size_t srcLen)
+static inline NnopbaseUChar* NnopbaseAppendBinary(void* buf, const size_t bufLen, const void* src, const size_t srcLen)
 {
     if (src != nullptr && memcpy_s(buf, bufLen, src, srcLen) == EOK) {
         buf = op::internal::PtrCastTo<NnopbaseUChar>(buf) + srcLen;
@@ -249,7 +249,8 @@ static inline NnopbaseUChar *NnopbaseAppendBinary(void *buf, const size_t bufLen
     return op::internal::PtrCastTo<NnopbaseUChar>(buf);
 }
 
-static inline uint32_t NnopbaseExecutorGetTaskType(const CoreType coreType, NnopbaseTaskRation taskRation) {
+static inline uint32_t NnopbaseExecutorGetTaskType(const CoreType coreType, NnopbaseTaskRation taskRation)
+{
     switch (taskRation) {
         case kRation10:
             return MSPROF_GE_TASK_TYPE_MIX_AIC;

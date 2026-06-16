@@ -16,7 +16,7 @@ using namespace std;
 
 namespace op {
 
-vector<string> SplitWith(const string &str, const char pattern)
+vector<string> SplitWith(const string& str, const char pattern)
 {
     vector<string> strs;
     if (str.empty()) {
@@ -36,10 +36,10 @@ vector<string> SplitWith(const string &str, const char pattern)
     return strs;
 }
 
-void TrimWith(string &result, const char delims)
+void TrimWith(string& result, const char delims)
 {
     if (result.length() <= 0) {
-       return;
+        return;
     }
     string::size_type index = result.find_last_not_of(delims);
     if (index != string::npos) {
@@ -51,10 +51,10 @@ void TrimWith(string &result, const char delims)
         (void)result.erase(0, index);
     }
 
-    if (result[0] == delims && result[result.length()-1] == delims) {
+    if (result[0] == delims && result[result.length() - 1] == delims) {
         result = "";
     }
     return;
 }
 
-}
+} // namespace op

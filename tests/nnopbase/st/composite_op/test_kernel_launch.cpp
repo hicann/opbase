@@ -44,11 +44,10 @@ protected:
     static void SetUpTestCase()
     {
         // aclInit(nullptr);
-        setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);  // does overwrite
+        setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1); // does overwrite
         op::internal::GetThreadLocalContext().cacheHasFull_ = true;
     }
-    static void TearDownTestCase()
-    {}
+    static void TearDownTestCase() {}
 };
 
 TEST_F(KernelLaunchUT, KernelLaunchUTCase1)
@@ -70,7 +69,7 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase1)
     auto ws = OP_WORKSPACE(out.get());
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     op::DestroyOpArgContext(ctx);
     EXPECT_EQ(rc, ACL_SUCCESS);
@@ -94,20 +93,20 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase2)
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
     auto output =
-        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor *>(nullptr), static_cast<aclTensorList *>(nullptr));
+        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
 
     auto ws1 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws2 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
     auto ws3 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
-    aclTensorList *wsList = aclCreateTensorList(wsArr, 3);
+    const aclTensor* wsArr[] = {ws1.get(), ws2.get(), ws3.get()};
+    aclTensorList* wsList = aclCreateTensorList(wsArr, 3);
 
     auto wsArg = OP_WORKSPACE(wsList);
     auto ctx = op::MakeOpArgContext(input, output, attr, wsArg);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
 
     EXPECT_EQ(rc, ACL_SUCCESS);
@@ -126,8 +125,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase3)
     auto other = std::make_unique<aclTensor>(outShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *inputTensor[2] = {self.get(), other.get()};
-    aclTensorList *inputList = aclCreateTensorList(inputTensor, 2);
+    const aclTensor* inputTensor[2] = {self.get(), other.get()};
+    aclTensorList* inputList = aclCreateTensorList(inputTensor, 2);
 
     uint32_t opType = op::OpTypeDict::ToOpType("AddN");
     auto input = OP_INPUT(inputList);
@@ -136,7 +135,7 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase3)
     auto ws = OP_WORKSPACE(out.get());
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     delete inputList;
     op::DestroyOpArgContext(ctx);
@@ -153,8 +152,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase4)
     auto other = std::make_unique<aclTensor>(outShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
     auto out = std::make_unique<aclTensor>(idxShape, op::DataType::DT_INT32, op::Format::FORMAT_ND, nullptr);
 
-    const aclTensor *inputTensor[2] = {self.get(), other.get()};
-    aclTensorList *inputList = aclCreateTensorList(inputTensor, 2);
+    const aclTensor* inputTensor[2] = {self.get(), other.get()};
+    aclTensorList* inputList = aclCreateTensorList(inputTensor, 2);
 
     auto input = OP_INPUT(inputList);
     auto output = OP_OUTPUT(out.get());
@@ -172,7 +171,8 @@ TEST_F(KernelLaunchUT, MemSetTiling1)
 {
     op::internal::MemSetKernelContextHolder ctx;
 
-    op::internal::MemSetTensorInfo tensor{0, ge::DT_FLOAT, 0.0f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR, nullptr, nullptr};
+    op::internal::MemSetTensorInfo tensor{0,       ge::DT_FLOAT, 0.0f, 0, 100, 256, op::OpArgType::OPARG_ACLTENSOR,
+                                          nullptr, nullptr};
     std::vector<op::internal::MemSetTensorInfo> tensorInfo{tensor};
     ctx.UpdateComputeNodeInfo(tensorInfo);
 
@@ -205,7 +205,7 @@ TEST_F(KernelLaunchUT, KernelLaunchUT_Outshape)
     AxpyOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
     int dummyStream = 0;
-    void *stream = &dummyStream;
+    void* stream = &dummyStream;
     auto rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
     op::DestroyOpArgContext(ctx);
     EXPECT_EQ(rc, ACL_SUCCESS);
@@ -213,8 +213,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUT_Outshape)
 
 TEST_F(KernelLaunchUT, GetAclTensorCountTerst1)
 {
-    aclTensor *nullTensor = nullptr;
-    aclTensorList *nullTensorList = nullptr;
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
     auto input_arg = OP_INPUT(nullTensor, nullTensorList);
     auto ctx = op::MakeOpArgContext(input_arg);
 
@@ -225,7 +225,7 @@ TEST_F(KernelLaunchUT, GetAclTensorCountTerst1)
 
 TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)
 {
-    const char *p = std::getenv("ASCEND_OPP_PATH");
+    const char* p = std::getenv("ASCEND_OPP_PATH");
     EXPECT_NE(p, nullptr);
 
     op::internal::KeyAndDetail key;
@@ -235,18 +235,12 @@ TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)
     for (int i = 1; i <= 4; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(jsonPath,
-            sizeof(jsonPath),
-            sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json",
-            p,
-            i);
-        snprintf_s(binPath,
-            sizeof(binPath),
-            sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o",
-            p,
-            i);
+        snprintf_s(
+            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
+        snprintf_s(
+            binPath, sizeof(binPath), sizeof(binPath),
+            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
         op::internal::OpKernelBin kernel(
             9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = kernel.JsonLoad();
@@ -274,7 +268,7 @@ TEST_F(KernelLaunchUT, RtsArgTest)
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(1000, 2000);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     op::internal::LaunchArgInfo argInfo(false, false, ctx);
@@ -282,8 +276,8 @@ TEST_F(KernelLaunchUT, RtsArgTest)
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.numBlocks =  32;
+    launchCfg.funcHandle = (void*)0x12345678;
+    launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 0;
@@ -312,7 +306,7 @@ TEST_F(KernelLaunchUT, TestWithHandleBlockDimOffset1)
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(1000, 2000);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     op::internal::LaunchArgInfo argInfo(false, false, ctx);
@@ -320,8 +314,8 @@ TEST_F(KernelLaunchUT, TestWithHandleBlockDimOffset1)
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.numBlocks =  32;
+    launchCfg.funcHandle = (void*)0x12345678;
+    launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 10;
@@ -350,7 +344,7 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
 
     op::internal::ExpandableRtsArgBuffer buffer;
     buffer.Init(1000, 2000);
-    op::internal::TilingData *tilingData = buffer.GetTilingDataPtr();
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
     tilingData->data_size_ = 60;
 
     op::internal::LaunchArgInfo argInfo(false, false, ctx);
@@ -358,8 +352,8 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
     arg.FillArgs();
 
     op::internal::KernelLaunchConfig launchCfg;
-    launchCfg.funcHandle = (void *)0x12345678;
-    launchCfg.numBlocks =  32;
+    launchCfg.funcHandle = (void*)0x12345678;
+    launchCfg.numBlocks = 32;
     launchCfg.schemMode = 1;
     launchCfg.dynUBufSize = 0;
     launchCfg.blockDimOffset = 10;
@@ -372,19 +366,19 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
 
 class DoLaunchNormalTestAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim,
-        aclrtStream stream, aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
-        aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(
+        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
+        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("DoLaunchNormalTestAclrtStub rtsLaunchKernelWithHostArgs start");
         // check rts params
-        EXPECT_EQ(funcHandle, (void *)0x12341234);
+        EXPECT_EQ(funcHandle, (void*)0x12341234);
         EXPECT_EQ(blockDim, 17);
         EXPECT_EQ(stream, nullptr);
         EXPECT_EQ(argsSize, 72);
 
         // check ptr
-        void **ptrArgs = reinterpret_cast<void **>(hostArgs);
+        void** ptrArgs = reinterpret_cast<void**>(hostArgs);
         EXPECT_EQ(ptrArgs[0], input1);
         EXPECT_EQ(ptrArgs[1], input2);
         EXPECT_EQ(ptrArgs[2], output);
@@ -397,9 +391,9 @@ public:
         // check tiling data
         EXPECT_EQ(placeHolderArray[0].addrOffset, 24);
         EXPECT_EQ(placeHolderArray[0].dataOffset, 40);
-        int32_t *tilingVal = reinterpret_cast<int32_t *>(reinterpret_cast<char *>(hostArgs) + 40);
+        int32_t* tilingVal = reinterpret_cast<int32_t*>(reinterpret_cast<char*>(hostArgs) + 40);
         EXPECT_EQ(tilingVal[0], 8910);
-        EXPECT_EQ(tilingVal[1], 5525);//dfx info dump atomic index
+        EXPECT_EQ(tilingVal[1], 5525); // dfx info dump atomic index
         for (int i = 2; i < 8; i++) {
             EXPECT_EQ(tilingVal[i], 0);
         }
@@ -407,12 +401,12 @@ public:
         return RT_ERROR_NONE;
     }
 
-    void *input1;
-    void *input2;
-    void *output;
-    void *overflow;
+    void* input1;
+    void* input2;
+    void* output;
+    void* overflow;
 
-    void *argPtr;
+    void* argPtr;
     uint32_t argsSize;
 };
 
@@ -422,36 +416,18 @@ TEST_F(KernelLaunchUT, TestWithHostapi)
     int fakeData2 = 2;
     int fakeData3 = 3;
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor *input1 = aclCreateTensor(shape.data(),
-        shape.size(),
-        aclDataType::ACL_FLOAT16,
-        nullptr,
-        0,
-        aclFormat::ACL_FORMAT_ND,
-        shape.data(),
-        shape.size(),
-        &fakeData);
+    aclTensor* input1 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), &fakeData);
 
-    aclTensor *input2 = aclCreateTensor(shape.data(),
-        shape.size(),
-        aclDataType::ACL_FLOAT16,
-        nullptr,
-        0,
-        aclFormat::ACL_FORMAT_ND,
-        shape.data(),
-        shape.size(),
-        &fakeData2);
+    aclTensor* input2 = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), &fakeData2);
 
-    aclTensor *output = aclCreateTensor(shape.data(),
-        shape.size(),
-        aclDataType::ACL_FLOAT16,
-        nullptr,
-        0,
-        aclFormat::ACL_FORMAT_ND,
-        shape.data(),
-        shape.size(),
-        &fakeData3);
-    aclOpExecutor *executor = nullptr;
+    aclTensor* output = aclCreateTensor(
+        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
+        shape.size(), &fakeData3);
+    aclOpExecutor* executor = nullptr;
     size_t workspaceLen = 0U;
     auto ret = aclnnMulStubGetWorkspaceSize(input1, input2, output, &workspaceLen, &executor);
     EXPECT_EQ(ret, ACLNN_SUCCESS);
@@ -460,7 +436,7 @@ TEST_F(KernelLaunchUT, TestWithHostapi)
     aclrtStub.input1 = &fakeData;
     aclrtStub.input2 = &fakeData2;
     aclrtStub.output = &fakeData3;
-    aclrtStub.overflow = (void *)0x005;
+    aclrtStub.overflow = (void*)0x005;
     AclrtStub::GetInstance()->Install(&aclrtStub);
 
     aclrtStream stream = nullptr;

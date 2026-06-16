@@ -17,13 +17,13 @@
 #include "mockcpp/mockcpp.hpp"
 
 namespace {
-void SetSocVersion(const std::string &version)
+void SetSocVersion(const std::string& version)
 {
-    auto &soc = nnopbase::IndvSoc::GetInstance();
+    auto& soc = nnopbase::IndvSoc::GetInstance();
     soc.socVersion = version;
     soc.isInit = true;
 }
-}
+} // namespace
 
 class NnopbaseKernelLaunchUt : public testing::Test {
 protected:
@@ -34,9 +34,9 @@ protected:
 TEST_F(NnopbaseKernelLaunchUt, test)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    NnopbaseBinInfo *p = new NnopbaseBinInfo;
-    auto &binInfo = *p;
-    binInfo.binHandle = (void *)0x0002;
+    NnopbaseBinInfo* p = new NnopbaseBinInfo;
+    auto& binInfo = *p;
+    binInfo.binHandle = (void*)0x0002;
     binInfo.bin = new unsigned char[10];
     binInfo.binLen = 1;
 
@@ -63,9 +63,9 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     std::ofstream file("test.json");
     file << binJson.dump(4);
     file.close();
-    
+
     binInfo.binPath = "test.o";
-    static NnopbaseBinCollecter *gBinCollecter = nullptr;
+    static NnopbaseBinCollecter* gBinCollecter = nullptr;
     if (gBinCollecter == nullptr) {
         gBinCollecter = new NnopbaseBinCollecter;
         ASSERT_NE(gBinCollecter, nullptr);
@@ -74,7 +74,7 @@ TEST_F(NnopbaseKernelLaunchUt, test)
         ret = NnopbaseCollecterWork(gBinCollecter);
         ASSERT_EQ(ret, OK);
     }
-    NnopbaseExecutor *executor = new NnopbaseExecutor;
+    NnopbaseExecutor* executor = new NnopbaseExecutor;
     NnopbaseExecutorSetCollecter(executor, gBinCollecter);
     executor->collecter->useCoreTypeMagic = true;
     executor->collecter->oppPath = "/usr/local/Ascend/latest/opp";
@@ -83,9 +83,7 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     struct SocVersionGuard {
         std::string originalVersion;
-        ~SocVersionGuard() {
-            SetSocVersion(originalVersion);
-        }
+        ~SocVersionGuard() { SetSocVersion(originalVersion); }
     } socGuard{oriSocVersion};
     SetSocVersion(socVersion);
     EXPECT_EQ(NnopbaseKernelRegister(executor, &binInfo), OK);

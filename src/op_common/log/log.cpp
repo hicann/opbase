@@ -20,20 +20,14 @@
 
 namespace Ops {
 namespace Base {
-std::string ToString(ge::DataType type)
-{
-    return ge::TypeUtils::DataTypeToSerialString(type);
-}
+std::string ToString(ge::DataType type) { return ge::TypeUtils::DataTypeToSerialString(type); }
 
 /*
  * @brief: get format string from enum
  * @param [in] format: enum format
  * @return string: format string
  */
-std::string ToString(ge::Format format)
-{
-    return ge::TypeUtils::FormatToSerialString(format);
-}
+std::string ToString(ge::Format format) { return ge::TypeUtils::FormatToSerialString(format); }
 
 static std::vector<int64_t> ToVector(const gert::Shape& shape)
 {
@@ -75,10 +69,7 @@ std::string ToString(const std::vector<const gert::Shape*>& v)
     return oss.str();
 }
 
-std::string ToString(const gert::Shape& shape)
-{
-    return ToString(ToVector(shape));
-}
+std::string ToString(const gert::Shape& shape) { return ToString(ToVector(shape)); }
 
 const static std::string g_msg = R"(
 {

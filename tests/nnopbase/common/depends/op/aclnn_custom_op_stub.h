@@ -16,15 +16,11 @@
 extern "C" {
 #endif
 
-aclnnStatus aclnnCustomOpGetWorkspaceSize(const aclTensor *x1,
-    const aclTensor *x2,
-    const aclTensor *x3,
-    const aclTensor *out,
-    uint64_t *workspaceSize,
-    aclOpExecutor **executor);
+aclnnStatus aclnnCustomOpGetWorkspaceSize(
+    const aclTensor* x1, const aclTensor* x2, const aclTensor* x3, const aclTensor* out, uint64_t* workspaceSize,
+    aclOpExecutor** executor);
 
-aclnnStatus aclnnCustomOp(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor,
-    const aclrtStream stream);
+aclnnStatus aclnnCustomOp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
 
 #ifdef __cplusplus
 }

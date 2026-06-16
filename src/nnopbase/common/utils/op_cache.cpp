@@ -31,7 +31,7 @@ using namespace std;
 namespace op {
 namespace internal {
 constexpr int64_t SLEEP_ONE_SECOND = 1000000;
-constexpr int64_t CACHE_DESTRUCT_MAX_WAIT_TIME = 60;  // 1 min
+constexpr int64_t CACHE_DESTRUCT_MAX_WAIT_TIME = 60; // 1 min
 using char_t = char;
 
 class OpExecCacheManager {
@@ -43,27 +43,23 @@ public:
     void InitCache();
     void ClearCacheManually();
 
-    OpExecCache *GetOpExecCache(uint64_t hash);
-    OpExecCache *GetOpExecCache(OpCacheKey &key);
-    
+    OpExecCache* GetOpExecCache(uint64_t hash);
+    OpExecCache* GetOpExecCache(OpCacheKey& key);
+
     size_t GetCacheSizeLimit();
 
-    bool AddOpExecCache(OpExecCache *exec);
-    void RemoveOpExecCache(OpExecCache *exec);
+    bool AddOpExecCache(OpExecCache* exec);
+    void RemoveOpExecCache(OpExecCache* exec);
 
-    void ShrinkCache(const size_t num, ListHead *shrinkList);
+    void ShrinkCache(const size_t num, ListHead* shrinkList);
 
     void Start();
 
-    void SubmitGcTask(ListHead *c);
+    void SubmitGcTask(ListHead* c);
 
-    void IncreaseUseCount() {
-        useCount_++;
-    }
+    void IncreaseUseCount() { useCount_++; }
 
-    void DecreaseUseCount() {
-        useCount_--;
-    }
+    void DecreaseUseCount() { useCount_--; }
 
 private:
     void WaitCacheCompleteUse();
@@ -71,13 +67,13 @@ private:
 
     size_t cacheLimit_;
     std::mutex lock_;
-    std::unordered_map<uint64_t, OpExecCache *> cache_;
+    std::unordered_map<uint64_t, OpExecCache*> cache_;
     OpCacheContainer<OpCacheKey, OpCacheValue, OpCacheKeyHash, OpCacheKeyEqual> cache2_;
     // for gc
     bool gcInitialize_{false};
     std::atomic<bool> threadStop_{false};
     std::thread consumer_;
-    LockFreeQueue<ListHead *> gcQueue_;
+    LockFreeQueue<ListHead*> gcQueue_;
     std::atomic<int64_t> useCount_{0};
 };
 
@@ -91,16 +87,18 @@ std::atomic<bool> g_enableOpCacheCount{true};
 
 class OpCacheThreadLocalData {
 public:
-    char *hashBuf;
-    uint64_t &hashOffset;
-    unordered_map<const aclTensor *, uint64_t> tensorLabelMap;
+    char* hashBuf;
+    uint64_t& hashOffset;
+    unordered_map<const aclTensor*, uint64_t> tensorLabelMap;
     uint64_t tensorLabelNum;
     std::vector<int64_t> tensorLabelList;
 
-    OpThreadLocalContext &threadLocalContext;
+    OpThreadLocalContext& threadLocalContext;
 
     OpCacheThreadLocalData()
-        : hashBuf(g_hashBuf), hashOffset(g_hashOffset), tensorLabelNum(0),
+        : hashBuf(g_hashBuf),
+          hashOffset(g_hashOffset),
+          tensorLabelNum(0),
           threadLocalContext(op::internal::GetThreadLocalContext())
     {}
 };
@@ -159,7 +157,7 @@ extern "C" {
 #endif
 void ResetCacheThreadLocal()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.cacheHashKey_ = nullptr;
     tlsData->threadLocalContext.cacheHashKeyLen_ = 0;
     tlsData->threadLocalContext.hashKey_ = 0;
@@ -174,13 +172,13 @@ void ResetCacheThreadLocal()
 
 void UnInitPTACacheThreadLocal()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.usePTAHash_ = false;
 }
 
 void InitPTACacheThreadLocal()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.cacheHashKey_ = nullptr;
     tlsData->threadLocalContext.cacheHashKeyLen_ = 0;
     tlsData->threadLocalContext.hashKey_ = 0;
@@ -193,11 +191,11 @@ void InitPTACacheThreadLocal()
     tlsData->tensorLabelList.clear();
 }
 
-void AddTensorAddrToCachedList(void *addr)
+void AddTensorAddrToCachedList(void* addr)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
-    auto &tlsCachedTensorList = tlsData->threadLocalContext.cachedTensorList_;
-    auto &tlsCachedTensorListSize = tlsData->threadLocalContext.cachedTensorListSize_;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
+    auto& tlsCachedTensorList = tlsData->threadLocalContext.cachedTensorList_;
+    auto& tlsCachedTensorListSize = tlsData->threadLocalContext.cachedTensorListSize_;
     if (tlsCachedTensorListSize >= tlsCachedTensorList.size()) {
         tlsCachedTensorList.push_back(addr);
     } else {
@@ -208,13 +206,13 @@ void AddTensorAddrToCachedList(void *addr)
 
 void SetPTAHashKey(uint64_t hash)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.hashKey_ = hash;
 };
 
-void SetPTACacheHashKey(uint8_t *key, size_t len)
+void SetPTACacheHashKey(uint8_t* key, size_t len)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.cacheHashKey_ = key;
     tlsData->threadLocalContext.cacheHashKeyLen_ = len;
 }
@@ -223,14 +221,11 @@ void SetPTACacheHashKey(uint8_t *key, size_t len)
 }
 #endif
 
-void *GetCacheBuf()
-{
-    return static_cast<void *>(g_cacheBuf);
-}
+void* GetCacheBuf() { return static_cast<void*>(g_cacheBuf); }
 
 void InitExecutorCacheThreadLocal()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (!tlsData->threadLocalContext.usePTAHash_) {
         tlsData->threadLocalContext.cacheHashKey_ = nullptr;
         tlsData->threadLocalContext.cacheHashKeyLen_ = 0;
@@ -244,10 +239,10 @@ void InitExecutorCacheThreadLocal()
     tlsData->tensorLabelList.clear();
 }
 
-static void AddAclTensorToCachedList(const aclTensor *tensor, OpCacheThreadLocalData *tlsData )
+static void AddAclTensorToCachedList(const aclTensor* tensor, OpCacheThreadLocalData* tlsData)
 {
-    auto &tlsCachedStorageList = tlsData->threadLocalContext.cachedStorageList_;
-    auto &tlsCachedStorageListSize = tlsData->threadLocalContext.cachedStorageListSize_;
+    auto& tlsCachedStorageList = tlsData->threadLocalContext.cachedStorageList_;
+    auto& tlsCachedStorageListSize = tlsData->threadLocalContext.cachedStorageListSize_;
     if (tlsCachedStorageListSize >= tlsCachedStorageList.size()) {
         tlsCachedStorageList.push_back(tensor->GetStorage());
     } else {
@@ -255,8 +250,8 @@ static void AddAclTensorToCachedList(const aclTensor *tensor, OpCacheThreadLocal
     }
     tlsCachedStorageListSize++;
 
-    auto &tlsCachedTensorList = tlsData->threadLocalContext.cachedTensorList_;
-    auto &tlsCachedTensorListSize = tlsData->threadLocalContext.cachedTensorListSize_;
+    auto& tlsCachedTensorList = tlsData->threadLocalContext.cachedTensorList_;
+    auto& tlsCachedTensorListSize = tlsData->threadLocalContext.cachedTensorListSize_;
     if (tlsCachedTensorListSize >= tlsCachedTensorList.size()) {
         tlsCachedTensorList.push_back(tensor->GetStorageAddr());
     } else {
@@ -274,15 +269,9 @@ static void AddAclTensorToCachedList(const aclTensor *tensor, OpCacheThreadLocal
     }
 }
 
-inline uint64_t Rotl64(uint64_t x, int8_t r)
-{
-    return (x << r) | (x >> (ROTL_CONSTANT - r));
-}
+inline uint64_t Rotl64(uint64_t x, int8_t r) { return (x << r) | (x >> (ROTL_CONSTANT - r)); }
 
-inline uint64_t GetBlock64(const uint64_t* p, int i)
-{
-    return p[i];
-}
+inline uint64_t GetBlock64(const uint64_t* p, int i) { return p[i]; }
 
 inline uint64_t Fmix64(uint64_t k)
 {
@@ -299,7 +288,7 @@ inline uint64_t Fmix64(uint64_t k)
 
 inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed = 0xdeadb0d7)
 {
-    const uint8_t *data = PtrCastTo<const uint8_t>(key);
+    const uint8_t* data = PtrCastTo<const uint8_t>(key);
     // the length of each block is 16 bytes
     const int nblocks = len / 16;
     uint64_t h1 = seed;
@@ -310,7 +299,7 @@ inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed =
     const uint64_t c1 = 0x87c37b91114253d5LLU;
     const uint64_t c2 = 0x4cf5ad432745937fLLU;
 
-    const uint64_t *blocks = PtrCastTo<const uint64_t>(data);
+    const uint64_t* blocks = PtrCastTo<const uint64_t>(data);
 
     for (int i = 0; i < nblocks; i++) {
         int evenNum = 2;
@@ -319,7 +308,7 @@ inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed =
         uint64_t k2 = GetBlock64(blocks, i * evenNum + oddNum);
 
         k1 *= c1;
-        k1  = Rotl64(k1, K1_SHIFT);
+        k1 = Rotl64(k1, K1_SHIFT);
         k1 *= c2;
         h1 ^= k1;
 
@@ -329,7 +318,7 @@ inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed =
         h1 = h1 * MUL_NUM + 0x52dce729;
 
         k2 *= c2;
-        k2  = Rotl64(k2, K2_SHIFT);
+        k2 = Rotl64(k2, K2_SHIFT);
         k2 *= c1;
         h2 ^= k2;
 
@@ -340,7 +329,7 @@ inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed =
     }
 
     // the length of each block is 16 bytes
-    const uint8_t *tail = PtrCastTo<const uint8_t>(data + nblocks * 16);
+    const uint8_t* tail = PtrCastTo<const uint8_t>(data + nblocks * 16);
     uint64_t k1 = 0;
     uint64_t k2 = 0;
     // because the size of a block is 16, different offsets are calculated for tail blocks
@@ -417,43 +406,44 @@ inline uint64_t MurmurHash(const void* key, const int len, const uint32_t seed =
     return h2;
 }
 
-static inline bool CheckHashBufCapacity(uint64_t &hashOffset, size_t addSize) {
+static inline bool CheckHashBufCapacity(uint64_t& hashOffset, size_t addSize)
+{
     if (hashOffset + addSize > K_HASH_BUF_SIZE) {
         hashOffset = K_INVALID_HASH_OFFSET;
         OP_LOGW(
-            "Hash buffer size is overflow, cur size: %lu, add size: %zu, capacity: %lu",
-            hashOffset, addSize, K_HASH_BUF_SIZE);
+            "Hash buffer size is overflow, cur size: %lu, add size: %zu, capacity: %lu", hashOffset, addSize,
+            K_HASH_BUF_SIZE);
         return false;
     }
     return true;
 }
 
-static inline void OpCacheAddSeparator(char *hashBuf, uint64_t &hashOffset)
+static inline void OpCacheAddSeparator(char* hashBuf, uint64_t& hashOffset)
 {
     hashBuf[hashOffset] = ',';
     hashOffset += 1;
 }
 
-static inline void OpCacheAdd1Byte(const void *buf, char *hashBuf, uint64_t &hashOffset)
+static inline void OpCacheAdd1Byte(const void* buf, char* hashBuf, uint64_t& hashOffset)
 {
     *PtrCastTo<uint8_t>(hashBuf + hashOffset) = *PtrCastTo<uint8_t>(buf);
     hashOffset += sizeof(uint8_t);
 }
 
-static inline void OpCacheAdd4Byte(const void *buf, char *hashBuf, uint64_t &hashOffset)
+static inline void OpCacheAdd4Byte(const void* buf, char* hashBuf, uint64_t& hashOffset)
 {
     *PtrCastTo<uint32_t>(hashBuf + hashOffset) = *PtrCastTo<uint32_t>(buf);
     hashOffset += sizeof(uint32_t);
 }
 
-static inline void OpCacheAdd8Byte(const void *buf, char *hashBuf, uint64_t &hashOffset)
+static inline void OpCacheAdd8Byte(const void* buf, char* hashBuf, uint64_t& hashOffset)
 {
     *PtrCastTo<uint64_t>(hashBuf + hashOffset) = *PtrCastTo<uint64_t>(buf);
     hashOffset += sizeof(uint64_t);
 }
 
 template <typename T>
-void AddParamToBufV2(const T *addr, uint64_t size, char *hashBuf, uint64_t &hashOffset)
+void AddParamToBufV2(const T* addr, uint64_t size, char* hashBuf, uint64_t& hashOffset)
 {
     if (hashOffset + size * sizeof(T) > K_HASH_BUF_SIZE) {
         hashOffset = K_INVALID_HASH_OFFSET;
@@ -465,17 +455,17 @@ void AddParamToBufV2(const T *addr, uint64_t size, char *hashBuf, uint64_t &hash
     hashOffset += size * sizeof(T);
 };
 
-void SetOpCacheKey(OpCacheKey &key)
+void SetOpCacheKey(OpCacheKey& key)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (tlsData->threadLocalContext.usePTAHash_) {
         key.buf = tlsData->threadLocalContext.cacheHashKey_;
         key.len = tlsData->threadLocalContext.cacheHashKeyLen_;
         return;
     }
-    char *hashBuf = tlsData->hashBuf;
-    uint64_t &hashOffset = tlsData->hashOffset;
-    auto &tensorLabelList = tlsData->tensorLabelList;
+    char* hashBuf = tlsData->hashBuf;
+    uint64_t& hashOffset = tlsData->hashOffset;
+    auto& tensorLabelList = tlsData->tensorLabelList;
     if (CheckHashBufCapacity(hashOffset, sizeof(int64_t) * tensorLabelList.size()) == true) {
         for (size_t i = 0; i < tensorLabelList.size(); i++) {
             OpCacheAdd8Byte(&tensorLabelList[i], hashBuf, hashOffset);
@@ -492,8 +482,9 @@ void SetOpCacheKey(OpCacheKey &key)
     key.len = static_cast<size_t>(hashOffset);
 }
 
-void AddOpConfigInfoToBuf() {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+void AddOpConfigInfoToBuf()
+{
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (CheckHashBufCapacity(tlsData->hashOffset, sizeof(ThreadCoreNum) + sizeof(uint8_t))) {
         ThreadCoreNum coreNum(
             tlsData->threadLocalContext.opConfigInfo_.aicNum_, tlsData->threadLocalContext.opConfigInfo_.aivNum_);
@@ -504,7 +495,7 @@ void AddOpConfigInfoToBuf() {
     }
 }
 
-static void AddSeperator(OpCacheThreadLocalData *tlsData)
+static void AddSeperator(OpCacheThreadLocalData* tlsData)
 {
     if (tlsData->hashOffset + 1 > K_HASH_BUF_SIZE) {
         tlsData->hashOffset = K_INVALID_HASH_OFFSET;
@@ -516,23 +507,23 @@ static void AddSeperator(OpCacheThreadLocalData *tlsData)
 
 void AddSeperator()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     AddSeperator(tlsData);
 }
 
-static void AddParamToBuf(const aclTensor *tensor, OpCacheThreadLocalData *tlsData)
+static void AddParamToBuf(const aclTensor* tensor, OpCacheThreadLocalData* tlsData)
 {
     if (tensor == nullptr) {
         AddSeperator(tlsData);
         return;
     }
-    char *hashBuf = tlsData->hashBuf;
-    uint64_t &hashOffset = tlsData->hashOffset;
+    char* hashBuf = tlsData->hashBuf;
+    uint64_t& hashOffset = tlsData->hashOffset;
     AddAclTensorToCachedList(tensor, tlsData);
 
-    const op::Shape &viewShape = tensor->GetViewShape();
-    const op::Strides &strides = tensor->GetViewStrides();
-    const op::Shape &storageShape = tensor->GetStorageShape();
+    const op::Shape& viewShape = tensor->GetViewShape();
+    const op::Strides& strides = tensor->GetViewStrides();
+    const op::Shape& storageShape = tensor->GetStorageShape();
     // view shape + separator + strides + separator + storage shape + separator
     size_t shapeStridesInfoSize = viewShape.GetDimNum() * sizeof(int64_t) + sizeof(uint8_t) +
                                   strides.size() * sizeof(int64_t) + sizeof(uint8_t) +
@@ -571,27 +562,27 @@ static void AddParamToBuf(const aclTensor *tensor, OpCacheThreadLocalData *tlsDa
     OpCacheAdd4Byte(&viewFormat, hashBuf, hashOffset);
 }
 
-void AddParamToBuf(aclTensor *tensor)
+void AddParamToBuf(aclTensor* tensor)
 {
-    const aclTensor *constTensor = const_cast<const aclTensor *>(tensor);
+    const aclTensor* constTensor = const_cast<const aclTensor*>(tensor);
     AddParamToBuf(constTensor);
 }
 
-void AddParamToBuf(const aclTensor *tensor)
+void AddParamToBuf(const aclTensor* tensor)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     AddParamToBuf(tensor, tlsData);
 };
 
 void AddParamToBuf(const aclScalar* scalar)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (scalar == nullptr) {
         AddSeperator(tlsData);
         return;
     }
-    char *hashBuf = tlsData->hashBuf;
-    uint64_t &hashOffset = tlsData->hashOffset;
+    char* hashBuf = tlsData->hashBuf;
+    uint64_t& hashOffset = tlsData->hashOffset;
 
     const size_t addSize = scalar->Size() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t);
     if (CheckHashBufCapacity(hashOffset, addSize) == false) {
@@ -609,14 +600,15 @@ void AddParamToBuf(const aclScalar* scalar)
     OpCacheAddSeparator(hashBuf, hashOffset);
 };
 
-void AddParamToBuf(aclScalar *scalar)
+void AddParamToBuf(aclScalar* scalar)
 {
-    const aclScalar *constScalar = scalar;
+    const aclScalar* constScalar = scalar;
     AddParamToBuf(constScalar);
 }
 
 template <typename T>
-static void OpCacheAddArray(const T *addr, size_t counter, char *hashBuf, uint64_t &hashOffset) {
+static void OpCacheAddArray(const T* addr, size_t counter, char* hashBuf, uint64_t& hashOffset)
+{
     if (CheckHashBufCapacity(hashOffset, counter * sizeof(T) + sizeof(uint64_t)) == false) {
         return;
     }
@@ -627,7 +619,8 @@ static void OpCacheAddArray(const T *addr, size_t counter, char *hashBuf, uint64
     OpCacheAdd8Byte(&counter, hashBuf, hashOffset);
 }
 
-static inline void OpCacheAddCounter(const size_t counter, char *hashBuf, uint64_t &hashOffset) {
+static inline void OpCacheAddCounter(const size_t counter, char* hashBuf, uint64_t& hashOffset)
+{
     if (CheckHashBufCapacity(hashOffset, sizeof(uint64_t)) == false) {
         return;
     }
@@ -636,7 +629,7 @@ static inline void OpCacheAddCounter(const size_t counter, char *hashBuf, uint64
 
 void AddParamToBuf(const aclIntArray* value)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (value == nullptr) {
         AddSeperator(tlsData);
         return;
@@ -644,9 +637,9 @@ void AddParamToBuf(const aclIntArray* value)
     OpCacheAddArray(value->GetData(), value->Size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(const aclBoolArray *value)
+void AddParamToBuf(const aclBoolArray* value)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (value == nullptr) {
         AddSeperator(tlsData);
         return;
@@ -654,9 +647,9 @@ void AddParamToBuf(const aclBoolArray *value)
     OpCacheAddArray(value->GetData(), value->Size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(const aclFloatArray *value)
+void AddParamToBuf(const aclFloatArray* value)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (value == nullptr) {
         AddSeperator(tlsData);
         return;
@@ -664,9 +657,9 @@ void AddParamToBuf(const aclFloatArray *value)
     OpCacheAddArray(value->GetData(), value->Size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(const aclFp16Array *value)
+void AddParamToBuf(const aclFp16Array* value)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (value == nullptr) {
         AddSeperator(tlsData);
         return;
@@ -674,61 +667,61 @@ void AddParamToBuf(const aclFp16Array *value)
     OpCacheAddArray(value->GetData(), value->Size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(aclTensorList *tensors)
+void AddParamToBuf(aclTensorList* tensors)
 {
-    const aclTensorList *constTensors = const_cast<const aclTensorList *>(tensors);
+    const aclTensorList* constTensors = const_cast<const aclTensorList*>(tensors);
     AddParamToBuf(constTensors);
 }
 
-void AddParamToBuf(const aclTensorList *tensors)
+void AddParamToBuf(const aclTensorList* tensors)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (tensors == nullptr) {
         AddSeperator(tlsData);
         return;
     }
     for (uint64_t i = 0; i < tensors->Size(); i++) {
-        const aclTensor *t = (*tensors)[i];
+        const aclTensor* t = (*tensors)[i];
         AddParamToBuf(t, tlsData);
     }
     OpCacheAddCounter(tensors->Size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(aclScalarList *scalars)
+void AddParamToBuf(aclScalarList* scalars)
 {
-    const aclScalarList *constScalars = const_cast<const aclScalarList *>(scalars);
+    const aclScalarList* constScalars = const_cast<const aclScalarList*>(scalars);
     AddParamToBuf(constScalars);
 }
 
-void AddParamToBuf(const aclScalarList *scalars)
+void AddParamToBuf(const aclScalarList* scalars)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (scalars == nullptr) {
         AddSeperator(tlsData);
         return;
     }
     for (uint64_t i = 0; i < scalars->Size(); i++) {
-        const aclScalar *t = (*scalars)[i];
+        const aclScalar* t = (*scalars)[i];
         AddParamToBuf(t);
     }
     OpCacheAddCounter(scalars->Size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(const std::string &s)
+void AddParamToBuf(const std::string& s)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     AddParamToBufV2(s.c_str(), s.size(), tlsData->hashBuf, tlsData->hashOffset);
 };
 
 void AddParamToBuf(const aclDataType dtype)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     AddParamToBufV2(&dtype, 1, tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(const char *c)
+void AddParamToBuf(const char* c)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (c == nullptr) {
         AddSeperator(tlsData);
         return;
@@ -737,59 +730,41 @@ void AddParamToBuf(const char *c)
     OpCacheAddCounter(strlen(c), tlsData->hashBuf, tlsData->hashOffset);
 };
 
-void AddParamToBuf(char *c)
+void AddParamToBuf(char* c)
 {
-    const char *constPtr = const_cast<const char *>(c);
+    const char* constPtr = const_cast<const char*>(c);
     AddParamToBuf(constPtr);
 };
 
-void AddParamToBuf(){};
+void AddParamToBuf() {};
 
-std::size_t OpCacheKeyHash::operator()(const OpCacheKey &key) const
-{
-    return MurmurHash(key.buf, key.len);
-}
+std::size_t OpCacheKeyHash::operator()(const OpCacheKey& key) const { return MurmurHash(key.buf, key.len); }
 
-bool OpCacheKeyEqual::operator()(const OpCacheKey &lhs, const OpCacheKey &rhs) const
-{
-    return lhs == rhs;
-}
+bool OpCacheKeyEqual::operator()(const OpCacheKey& lhs, const OpCacheKey& rhs) const { return lhs == rhs; }
 
-OpExecCache *GetOpExecCache(uint64_t hash)
-{
-    return g_opExecCacheManager.GetOpExecCache(hash);
-}
+OpExecCache* GetOpExecCache(uint64_t hash) { return g_opExecCacheManager.GetOpExecCache(hash); }
 
-OpExecCache *GetOpExecCache(OpCacheKey &key)
-{
-    return g_opExecCacheManager.GetOpExecCache(key);
-}
+OpExecCache* GetOpExecCache(OpCacheKey& key) { return g_opExecCacheManager.GetOpExecCache(key); }
 
-void RemoveExecCache(OpExecCache *exec)
-{
-    g_opExecCacheManager.RemoveOpExecCache(exec);
-}
+void RemoveExecCache(OpExecCache* exec) { g_opExecCacheManager.RemoveOpExecCache(exec); }
 
-bool AddOpExecCache(OpExecCache *exec)
-{
-    return g_opExecCacheManager.AddOpExecCache(exec);
-}
+bool AddOpExecCache(OpExecCache* exec) { return g_opExecCacheManager.AddOpExecCache(exec); }
 
-void *GetOpExecCacheManager()
+void* GetOpExecCacheManager()
 {
     OP_LOGI("Get op exec cache manager.");
     g_opExecCacheManager.IncreaseUseCount();
     return PtrCastTo<void>(&g_opExecCacheManager);
 }
 
-void ReleaseOpExecCacheManager(void *ptr)
+void ReleaseOpExecCacheManager(void* ptr)
 {
     if (ptr == nullptr) {
         OP_LOGI("Release op exec cache manager, but get nullptr.");
         return;
     }
     OP_LOGI("Release op exec cache manager.");
-    OpExecCacheManager *manager = PtrCastTo<OpExecCacheManager>(ptr);
+    OpExecCacheManager* manager = PtrCastTo<OpExecCacheManager>(ptr);
     manager->DecreaseUseCount();
 }
 
@@ -805,12 +780,9 @@ void ReinitOpCacheManager()
     g_opExecCacheManager.InitCache();
 }
 
-OpExecCacheWrap *CreateCacheWrap(OpExecCache *opExecCache)
-{
-    return new OpExecCacheWrap(opExecCache);
-}
+OpExecCacheWrap* CreateCacheWrap(OpExecCache* opExecCache) { return new OpExecCacheWrap(opExecCache); }
 
-OpCacheContext &GetOpCacheContext()
+OpCacheContext& GetOpCacheContext()
 {
     static thread_local OpCacheContext ctx;
     return ctx;
@@ -827,8 +799,8 @@ void OpExecCache::OldCacheClear()
     if (shrinkList_.Empty()) {
         return;
     }
-    ListHead *curNode = &shrinkList_;
-    ListHead *nextNode = curNode->next_;
+    ListHead* curNode = &shrinkList_;
+    ListHead* nextNode = curNode->next_;
     while (nextNode != &shrinkList_) {
         curNode = nextNode;
         nextNode = curNode->next_;
@@ -837,7 +809,7 @@ void OpExecCache::OldCacheClear()
     shrinkList_.next_ = &shrinkList_;
 }
 
-bool GetFromCache(aclOpExecutor **executor, uint64_t *workspaceSize)
+bool GetFromCache(aclOpExecutor** executor, uint64_t* workspaceSize)
 {
     OpCacheKey key;
     SetOpCacheKey(key);
@@ -851,7 +823,7 @@ bool GetFromCache(aclOpExecutor **executor, uint64_t *workspaceSize)
     return false;
 }
 
-OpCacheKey::OpCacheKey(const OpCacheKey &key)
+OpCacheKey::OpCacheKey(const OpCacheKey& key)
 {
     buf = key.buf;
     len = key.len;
@@ -867,16 +839,15 @@ ge::AscendString OpCacheKey::ToString()
     return ge::AscendString((ss.str()).c_str());
 }
 
-bool operator==(const OpCacheKey &lhs, const OpCacheKey &rhs)
+bool operator==(const OpCacheKey& lhs, const OpCacheKey& rhs)
 {
-    auto &opCacheValue = static_cast<const OpCacheValue &>(rhs);
-    OpExecCache *cache = opCacheValue.cache_;
+    auto& opCacheValue = static_cast<const OpCacheValue&>(rhs);
+    OpExecCache* cache = opCacheValue.cache_;
     if (cache == nullptr) {
         return false;
     }
     OpCacheKey key = cache->GetOpCacheKey();
-    return lhs.len == key.len &&
-           (memcmp(PtrCastTo<char>(lhs.buf), PtrCastTo<char>(key.buf), lhs.len) == 0);
+    return lhs.len == key.len && (memcmp(PtrCastTo<char>(lhs.buf), PtrCastTo<char>(key.buf), lhs.len) == 0);
 }
 
 OpExecCache::OpExecCache()
@@ -890,7 +861,7 @@ OpExecCache::~OpExecCache()
     OP_LOGD("destruct OpExecCache %p", this);
     OldCacheClear();
     if (hasExclusiveMem_) {
-        delete[] static_cast<char *>(cacheBuf_);
+        delete[] static_cast<char*>(cacheBuf_);
     }
     for (auto it : cacheTensorInfoLists_) {
         op::internal::DestoryTensorsCached(it);
@@ -903,7 +874,7 @@ OpExecCache::~OpExecCache()
 
 void OpExecCache::InitOpCacheKey()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (tlsData->threadLocalContext.cacheHashKeyLen_ != 0) {
         key_.len = tlsData->threadLocalContext.cacheHashKeyLen_;
         key_.buf = new uint8_t[key_.len];
@@ -916,9 +887,9 @@ void OpExecCache::InitOpCacheKey()
 
 void OpExecCache::InitCacheData()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
-    auto &tlsCachedStorageList = tlsData->threadLocalContext.cachedStorageList_;
-    auto &tlsCachedStorageListSize = tlsData->threadLocalContext.cachedStorageListSize_;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
+    auto& tlsCachedStorageList = tlsData->threadLocalContext.cachedStorageList_;
+    auto& tlsCachedStorageListSize = tlsData->threadLocalContext.cachedStorageListSize_;
     cachedStorageList_.assign(tlsCachedStorageList.begin(), tlsCachedStorageList.begin() + tlsCachedStorageListSize);
     hashKey_ = tlsData->threadLocalContext.hashKey_;
     InitOpCacheKey();
@@ -929,7 +900,7 @@ void OpExecCache::InitCacheData()
     }
 }
 
-aclnnStatus OpExecCache::RecordAddrRule(const aclTensor *t, AddrRule &rule)
+aclnnStatus OpExecCache::RecordAddrRule(const aclTensor* t, AddrRule& rule)
 {
     if (t->IsFromWorkspace()) {
         rule.isWorkspace = true;
@@ -965,7 +936,7 @@ aclnnStatus OpExecCache::RecordAddrRule(const aclTensor *t, AddrRule &rule)
     return ACLNN_SUCCESS;
 }
 
-void *OpExecCache::AddLaunchTensor(const aclTensor *t, size_t dataLen)
+void* OpExecCache::AddLaunchTensor(const aclTensor* t, size_t dataLen)
 {
     if (t->IsFromWorkspace()) {
         addrUpdateRelation_[cacheOffset_] = AddrRule(true, t->GetWorkspaceOffset(), 0, 0);
@@ -1000,7 +971,7 @@ void *OpExecCache::AddLaunchTensor(const aclTensor *t, size_t dataLen)
     return AddLaunchData(dataLen);
 }
 
-void *OpExecCache::AddLaunchData(size_t dataLen)
+void* OpExecCache::AddLaunchData(size_t dataLen)
 {
     // if cache buf not enough, abandon cache.
     if (cacheOffset_ + dataLen > cacheCap_) {
@@ -1011,52 +982,37 @@ void *OpExecCache::AddLaunchData(size_t dataLen)
         }
         return nullptr;
     }
-    void *buf = op::internal::PtrShift(cacheBuf_, cacheOffset_);
+    void* buf = op::internal::PtrShift(cacheBuf_, cacheOffset_);
     cacheOffset_ += dataLen;
     return buf;
 }
 
-void OpExecCache::SetCacheBuf(void *buf)
-{
-    cacheBuf_ = buf;
-}
+void OpExecCache::SetCacheBuf(void* buf) { cacheBuf_ = buf; }
 
-void OpExecCache::UpdateTensorAddr(void *workspaceAddr, const std::vector<void *> &tensors)
+void OpExecCache::UpdateTensorAddr(void* workspaceAddr, const std::vector<void*>& tensors)
 {
     for (auto it = addrUpdateRelation_.begin(); it != addrUpdateRelation_.end(); ++it) {
-        void *buf = op::internal::PtrShift(cacheBuf_, it->first);
-        void *newAddr;
+        void* buf = op::internal::PtrShift(cacheBuf_, it->first);
+        void* newAddr;
         if (it->second.isWorkspace) {
             newAddr = op::internal::PtrShift(workspaceAddr, it->second.workspaceOffset);
         } else {
             newAddr = op::internal::PtrShift(tensors[it->second.l2TensorInx], it->second.l2TensorOffset);
         }
-        void **p = op::internal::PtrCastTo<void *>(buf);
+        void** p = op::internal::PtrCastTo<void*>(buf);
         *p = newAddr;
     }
 }
 
-void OpExecCache::SetBlockDim(uint32_t blockDim)
-{
-    numBlocks_.push_back(blockDim);
-}
+void OpExecCache::SetBlockDim(uint32_t blockDim) { numBlocks_.push_back(blockDim); }
 
-void OpExecCache::SetNumBlocks(uint32_t numBlocks)
-{
-    numBlocks_.push_back(numBlocks);
-}
+void OpExecCache::SetNumBlocks(uint32_t numBlocks) { numBlocks_.push_back(numBlocks); }
 
-void OpExecCache::SetCacheTensorInfo(void *infoLists)
-{
-    cacheTensorInfoLists_.push_back(infoLists);
-}
+void OpExecCache::SetCacheTensorInfo(void* infoLists) { cacheTensorInfoLists_.push_back(infoLists); }
 
-void *OpExecCache::GetCacheTensorInfo(int index)
-{
-    return cacheTensorInfoLists_[index];
-}
+void* OpExecCache::GetCacheTensorInfo(int index) { return cacheTensorInfoLists_[index]; }
 
-void OpExecCache::AddTensorRelation(const aclTensor *tensorOut, const aclTensor *tensorMiddle)
+void OpExecCache::AddTensorRelation(const aclTensor* tensorOut, const aclTensor* tensorMiddle)
 {
     if (IsOpCacheValid()) {
         auto storageOut = tensorOut->GetStorage();
@@ -1065,12 +1021,9 @@ void OpExecCache::AddTensorRelation(const aclTensor *tensorOut, const aclTensor 
     }
 }
 
-std::unordered_map<const aclStorage *, const aclStorage *> OpExecCache::GetStorageRelation()
-{
-    return storageRelation_;
-}
+std::unordered_map<const aclStorage*, const aclStorage*> OpExecCache::GetStorageRelation() { return storageRelation_; }
 
-void OpExecCache::NewLaunchCache(size_t *offset, size_t *cap, R runner)
+void OpExecCache::NewLaunchCache(size_t* offset, size_t* cap, R runner)
 {
     taskQueue_.push_back({cacheOffset_, runner});
     *offset = cacheOffset_;
@@ -1093,39 +1046,24 @@ void OpExecCache::Finalize()
         cacheSize = op::internal::AlignSize(cacheOffset_, K_CACHE_SIZE_ALIGN);
     }
     auto newCacheBuf = new char[cacheSize];
-    OP_CHECK(memcpy_s(static_cast<void *>(newCacheBuf), cacheSize, cacheBuf_, cacheSize) == EOK,
+    OP_CHECK(memcpy_s(static_cast<void*>(newCacheBuf), cacheSize, cacheBuf_, cacheSize) == EOK,
              OP_LOGW("Failed to memcpy in op cache."),
              ;);
-    cacheBuf_ = static_cast<void *>(newCacheBuf);
+    cacheBuf_ = static_cast<void*>(newCacheBuf);
     hasExclusiveMem_ = true;
     cachedStorageList_.clear();
     storageRelation_.clear();
 }
 
-void OpExecCache::SetWorkspaceSize(uint64_t val)
-{
-    workspaceSize_ = val;
-}
+void OpExecCache::SetWorkspaceSize(uint64_t val) { workspaceSize_ = val; }
 
-uint64_t OpExecCache::GetWorkspaceSize() const
-{
-    return workspaceSize_;
-}
+uint64_t OpExecCache::GetWorkspaceSize() const { return workspaceSize_; }
 
-void OpExecCacheDfx::SetTaskInfo(const TaskInfo &taskInfo)
-{
-    taskInfo_.push_back(taskInfo);
-}
+void OpExecCacheDfx::SetTaskInfo(const TaskInfo& taskInfo) { taskInfo_.push_back(taskInfo); }
 
-uint64_t OpExecCache::GetHash() const
-{
-    return hashKey_;
-}
+uint64_t OpExecCache::GetHash() const { return hashKey_; }
 
-OpCacheKey OpExecCache::GetOpCacheKey() const
-{
-    return key_;
-}
+OpCacheKey OpExecCache::GetOpCacheKey() const { return key_; }
 
 void OpExecCache::MarkOpCacheInvalid()
 {
@@ -1155,46 +1093,43 @@ aclnnStatus OpExecCache::DoSummaryProfiling(int index)
     if (!op::internal::opProfilingSwitch.additionInfoFlag) {
         return ACLNN_SUCCESS;
     }
-    void *tensorInfoLists = cacheTensorInfoLists_[index];
+    void* tensorInfoLists = cacheTensorInfoLists_[index];
     return DoReportAdditionInfo(
         tensorInfoLists, opExecCacheDfx_->GetTaskInfo(index), opExecCacheDfx_->GetProfilingInfoId(index));
 }
 
 void OpExecCache::RestoreThreadLocal(int index)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.numBlocks_ = numBlocks_[index];
     tlsData->threadLocalContext.profilingInfoId_ = opExecCacheDfx_->GetProfilingInfoId(index);
 }
 
-aclnnStatus OpExecCache::Run(void *workspaceAddr, const aclrtStream stream, const std::vector<void *> &tensors)
+aclnnStatus OpExecCache::Run(void* workspaceAddr, const aclrtStream stream, const std::vector<void*>& tensors)
 {
     int index = 0;
     UpdateTensorAddr(workspaceAddr, tensors);
-    for (Task &t : taskQueue_) {
+    for (Task& t : taskQueue_) {
         RestoreThreadLocal(index);
         {
             OpDfxGuard kernelLaunchGuard(
                 opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_, DfxProfilingType::DfxProfilingKernelLaunch);
             aclnnStatus result = std::get<1>(t)(stream, op::internal::PtrShift(cacheBuf_, std::get<0>(t)));
-            OP_CHECK(result == ACLNN_SUCCESS,
-                     OP_LOGE(result, "OpExecCache run fail."),
-                     return result);
+            OP_CHECK(result == ACLNN_SUCCESS, OP_LOGE(result, "OpExecCache run fail."), return result);
         }
         if (IsExceptionDumpEnable()) {
             DoExceptionDump(
-                cacheTensorInfoLists_[index], workspaceAddr, tensors, opExecCacheDfx_->GetExceptionDumpInfo(index), stream);
+                cacheTensorInfoLists_[index], workspaceAddr, tensors, opExecCacheDfx_->GetExceptionDumpInfo(index),
+                stream);
         }
         if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
             DoSummaryProfiling(index);
         }
-        if (GetThreadLocalContext().cacheOpInfoSwitch_)
-        {
-            void *tensorInfoLists = cacheTensorInfoLists_[index];
+        if (GetThreadLocalContext().cacheOpInfoSwitch_) {
+            void* tensorInfoLists = cacheTensorInfoLists_[index];
             TaskInfo taskInfo = opExecCacheDfx_->GetTaskInfo(index);
-            ReportCacheOpInfoFromCache(taskInfo,
-                tensorInfoLists,
-                g_opCacheTlsData.threadLocalContext.numBlocks_,
+            ReportCacheOpInfoFromCache(
+                taskInfo, tensorInfoLists, g_opCacheTlsData.threadLocalContext.numBlocks_,
                 opExecCacheDfx_->GetProfilingInfoId(index));
         }
         index++;
@@ -1204,8 +1139,8 @@ aclnnStatus OpExecCache::Run(void *workspaceAddr, const aclrtStream stream, cons
 
 bool OpExecCache::CanUse()
 {
-    const char *current;
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    const char* current;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (tlsData->threadLocalContext.usePTAHash_) {
         current = tlsData->threadLocalContext.cacheApi_;
     } else {
@@ -1234,7 +1169,7 @@ OpCacheValue::~OpCacheValue()
     }
 }
 
-OpCacheValue::OpCacheValue(const OpCacheValue &value) : OpCacheKey(value), cache_(value.cache_)
+OpCacheValue::OpCacheValue(const OpCacheValue& value) : OpCacheKey(value), cache_(value.cache_)
 {
     ListHead::next_ = this;
     ListHead::prev_ = this;
@@ -1242,7 +1177,7 @@ OpCacheValue::OpCacheValue(const OpCacheValue &value) : OpCacheKey(value), cache
     HlistNode::pprev_ = nullptr;
 }
 
-OpCacheValue::OpCacheValue(OpCacheValue &&value) : OpCacheKey(value), cache_(value.cache_)
+OpCacheValue::OpCacheValue(OpCacheValue&& value) : OpCacheKey(value), cache_(value.cache_)
 {
     ListHead::next_ = this;
     ListHead::prev_ = this;
@@ -1252,7 +1187,7 @@ OpCacheValue::OpCacheValue(OpCacheValue &&value) : OpCacheKey(value), cache_(val
     value.cache_ = nullptr;
 }
 
-OpCacheValue &OpCacheValue::operator=(const OpCacheValue &value)
+OpCacheValue& OpCacheValue::operator=(const OpCacheValue& value)
 {
     cache_ = value.cache_;
     OpCacheKey::buf = value.OpCacheKey::buf;
@@ -1260,7 +1195,7 @@ OpCacheValue &OpCacheValue::operator=(const OpCacheValue &value)
     return *this;
 }
 
-OpCacheValue &OpCacheValue::operator=(OpCacheValue &&value)
+OpCacheValue& OpCacheValue::operator=(OpCacheValue&& value)
 {
     cache_ = value.cache_;
     OpCacheKey::buf = value.OpCacheKey::buf;
@@ -1269,10 +1204,7 @@ OpCacheValue &OpCacheValue::operator=(OpCacheValue &&value)
     return *this;
 }
 
-OpExecCacheManager::OpExecCacheManager() : cacheLimit_(GetCacheSizeLimit())
-{
-    cache2_.init(cacheLimit_);
-}
+OpExecCacheManager::OpExecCacheManager() : cacheLimit_(GetCacheSizeLimit()) { cache2_.init(cacheLimit_); }
 
 OpExecCacheManager::~OpExecCacheManager()
 {
@@ -1285,10 +1217,7 @@ OpExecCacheManager::~OpExecCacheManager()
     }
 }
 
-void OpExecCacheManager::InitCache()
-{
-    cache2_.init(cacheLimit_);
-}
+void OpExecCacheManager::InitCache() { cache2_.init(cacheLimit_); }
 
 void OpExecCacheManager::ClearCacheManually()
 {
@@ -1307,7 +1236,7 @@ void OpExecCacheManager::WaitCacheCompleteUse()
         return;
     }
     int64_t waitTime = 0;
-    while(true) {
+    while (true) {
         waitTime++;
         if (useCount_.load() <= 0 || waitTime >= CACHE_DESTRUCT_MAX_WAIT_TIME) {
             break;
@@ -1325,7 +1254,7 @@ void OpExecCacheManager::DeleteCache1()
     }
 }
 
-OpExecCache *OpExecCacheManager::GetOpExecCache(uint64_t hash)
+OpExecCache* OpExecCacheManager::GetOpExecCache(uint64_t hash)
 {
     std::lock_guard<std::mutex> guard(lock_);
     auto it = cache_.find(hash);
@@ -1339,14 +1268,14 @@ OpExecCache *OpExecCacheManager::GetOpExecCache(uint64_t hash)
     return cache;
 }
 
-OpExecCache *OpExecCacheManager::GetOpExecCache(OpCacheKey &key)
+OpExecCache* OpExecCacheManager::GetOpExecCache(OpCacheKey& key)
 {
     std::lock_guard<std::mutex> guard(lock_);
     auto it = cache2_.find(key);
     if (it == cache2_.end()) {
         return nullptr;
     }
-    OpCacheValue &value = *it;
+    OpCacheValue& value = *it;
     if (!value.cache_->CanUse()) {
         return nullptr;
     }
@@ -1356,7 +1285,7 @@ OpExecCache *OpExecCacheManager::GetOpExecCache(OpCacheKey &key)
 
 size_t OpExecCacheManager::GetCacheSizeLimit()
 {
-    const char_t *cacheLimit = nullptr;
+    const char_t* cacheLimit = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ACLNN_CACHE_LIMIT, cacheLimit);
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
     size_t c = 1;
@@ -1366,7 +1295,7 @@ size_t OpExecCacheManager::GetCacheSizeLimit()
     if (cacheLimit) {
         try {
             c = std::stoull(cacheLimit);
-        } catch (const std::exception &e) {
+        } catch (const std::exception& e) {
             OP_LOGD("Env variable ACLNN_CACHE_LIMIT[%s] is invalid! must be a number!", cacheLimit);
         }
     }
@@ -1375,7 +1304,7 @@ size_t OpExecCacheManager::GetCacheSizeLimit()
     return c;
 }
 
-bool OpExecCacheManager::AddOpExecCache(OpExecCache *exec)
+bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
 {
     if (!exec->IsOpCacheValid()) {
         delete exec;
@@ -1415,7 +1344,7 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache *exec)
     return false;
 }
 
-void OpExecCacheManager::RemoveOpExecCache(OpExecCache *exec)
+void OpExecCacheManager::RemoveOpExecCache(OpExecCache* exec)
 {
     if (exec == nullptr) {
         return;
@@ -1429,7 +1358,7 @@ void OpExecCacheManager::RemoveOpExecCache(OpExecCache *exec)
         }
         OpCacheKey key = exec->GetOpCacheKey();
         if (key.buf && key.len && cache2_.find(key) != cache2_.end()) {
-            OpCacheValue *cacheVal = cache2_.find(key).operator->();
+            OpCacheValue* cacheVal = cache2_.find(key).operator->();
             cache2_.erase(*cacheVal);
             cacheVal->cache_ = nullptr;
             delete cacheVal;
@@ -1438,12 +1367,12 @@ void OpExecCacheManager::RemoveOpExecCache(OpExecCache *exec)
     }
 }
 
-void OpExecCacheManager::ShrinkCache(const size_t num, ListHead *shrinkList)
+void OpExecCacheManager::ShrinkCache(const size_t num, ListHead* shrinkList)
 {
     OP_LOGI("op cache size %zu before shrink", cache2_.size());
     for (size_t i = 0; i < num; i++) {
         if (cache2_.rbegin() != cache2_.rend()) {
-            OpCacheValue *value = cache2_.rbegin().operator->();
+            OpCacheValue* value = cache2_.rbegin().operator->();
             cache2_.erase(*value);
             value->ListHead::Add(shrinkList);
             if (value->cache_ != nullptr && value->cache_->GetOpCacheKey().buf != nullptr) {
@@ -1462,11 +1391,11 @@ void OpExecCacheManager::Start()
 {
     auto f = [this]() {
         OP_LOGI("start op cache gc thread");
-        ListHead *task = nullptr;
+        ListHead* task = nullptr;
         while (true) {
             this->gcQueue_.Dequeue(task);
             if (task != nullptr) {
-                OpCacheValue *value = reinterpret_cast<OpCacheValue *>(task);
+                OpCacheValue* value = reinterpret_cast<OpCacheValue*>(task);
                 delete value;
                 task = nullptr;
                 continue;
@@ -1482,7 +1411,7 @@ void OpExecCacheManager::Start()
     consumer_ = std::move(consumer);
 };
 
-void OpExecCacheManager::SubmitGcTask(ListHead *c)
+void OpExecCacheManager::SubmitGcTask(ListHead* c)
 {
     if (!gcInitialize_) {
         gcInitialize_ = true;
@@ -1493,30 +1422,30 @@ void OpExecCacheManager::SubmitGcTask(ListHead *c)
     }
 }
 
-OpExecCacheWrap::OpExecCacheWrap(OpExecCache *cache) : opExecCache_(cache)
+OpExecCacheWrap::OpExecCacheWrap(OpExecCache* cache) : opExecCache_(cache)
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
-    auto &tlsCachedTensorList = tlsData->threadLocalContext.cachedTensorList_;
-    auto &tlsCachedTensorListSize = tlsData->threadLocalContext.cachedTensorListSize_;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
+    auto& tlsCachedTensorList = tlsData->threadLocalContext.cachedTensorList_;
+    auto& tlsCachedTensorListSize = tlsData->threadLocalContext.cachedTensorListSize_;
     cachedTensorList_.assign(tlsCachedTensorList.begin(), tlsCachedTensorList.begin() + tlsCachedTensorListSize);
     opLogInfo_ = tlsData->threadLocalContext.logInfo_;
     hugeMemPoolIndex_ = tlsData->threadLocalContext.poolIndex_;
     opExecCacheManager_ = GetOpExecCacheManager();
-    OP_LOGI("Op exec cache get device ptr list: %s. Hugemem trace: huge mem pool index: %d",
-        ReportAddr().c_str(),
+    OP_LOGI(
+        "Op exec cache get device ptr list: %s. Hugemem trace: huge mem pool index: %d", ReportAddr().c_str(),
         hugeMemPoolIndex_);
 }
 
 OpExecCacheWrap::~OpExecCacheWrap()
 {
-    OpCacheThreadLocalData *tlsData = &g_opCacheTlsData;
+    OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     tlsData->threadLocalContext.Init();
     tlsData->threadLocalContext.poolIndex_ = hugeMemPoolIndex_;
     ReleaseOpExecCacheManager(opExecCacheManager_);
     OP_LOGI("Hugemem trace: huge mem pool index: %d", hugeMemPoolIndex_);
 }
 
-aclnnStatus OpExecCacheWrap::Run(void *workspaceAddr, const aclrtStream stream)
+aclnnStatus OpExecCacheWrap::Run(void* workspaceAddr, const aclrtStream stream)
 {
     return opExecCache_->Run(workspaceAddr, stream, cachedTensorList_);
 }
@@ -1524,26 +1453,20 @@ aclnnStatus OpExecCacheWrap::Run(void *workspaceAddr, const aclrtStream stream)
 std::string OpExecCacheWrap::ReportAddr()
 {
     std::ostringstream oss;
-    for (void *ptr : cachedTensorList_) {
+    for (void* ptr : cachedTensorList_) {
         oss << ptr;
         oss << ", ";
     }
     return oss.str();
 }
 
-void OpCacheContext::SetOpCache(OpExecCache *cache)
-{
-    cache_ = cache;
-}
+void OpCacheContext::SetOpCache(OpExecCache* cache) { cache_ = cache; }
 
-OpExecCache *OpCacheContext::GetOpCache()
-{
-    return cache_;
-}
+OpExecCache* OpCacheContext::GetOpCache() { return cache_; }
 
-static const char *GetEnvOfDisableL2Cache()
+static const char* GetEnvOfDisableL2Cache()
 {
-    const char *value = nullptr;
+    const char* value = nullptr;
     MM_SYS_GET_ENV(MM_ENV_DISABLE_L2_CACHE, value);
     return value;
 }
@@ -1552,18 +1475,18 @@ bool CheckCacheable()
 {
     bool cacheDisable =
         (op::internal::IsDumpEnable() || op::internal::IsExceptionDumpEnable() ||
-            op::internal::IsOverflowDumpEnable() ||
-            (op::internal::GetOpProfilingRecordArgFlag() || internal::opProfilingSwitch.level2ProfilingFlag));
+         op::internal::IsOverflowDumpEnable() ||
+         (op::internal::GetOpProfilingRecordArgFlag() || internal::opProfilingSwitch.level2ProfilingFlag));
     if (cacheDisable) {
         g_opCacheTlsData.threadLocalContext.cacheHasFull_ = true;
         return false;
     }
-    static const char *pathVar = GetEnvOfDisableL2Cache();
+    static const char* pathVar = GetEnvOfDisableL2Cache();
     if (pathVar != nullptr) {
         g_opCacheTlsData.threadLocalContext.cacheHasFull_ = true;
         return false;
     }
     return true;
 }
-}  // namespace internal
-}  // namespace op
+} // namespace internal
+} // namespace op

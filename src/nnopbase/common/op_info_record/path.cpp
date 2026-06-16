@@ -21,18 +21,15 @@ constexpr char FILE_EXTENSION_CHAR = '.';
 constexpr mmMode_t DEFAULT_DIR_MODE = M_IRUSR | M_IWUSR | M_IXUSR;
 } // namespace
 
-Path &Path::operator = (const std::string &path)
+Path& Path::operator=(const std::string& path)
 {
     path_ = path;
     return *this;
 }
 
-Path &Path::operator += (const std::string &path)
-{
-    return Append(path);
-}
+Path& Path::operator+=(const std::string& path) { return Append(path); }
 
-bool Path::operator == (const Path &path) const
+bool Path::operator==(const Path& path) const
 {
     if (strcmp(path_.c_str(), path.GetCString()) == 0) {
         return true;
@@ -40,13 +37,13 @@ bool Path::operator == (const Path &path) const
     return false;
 }
 
-Path &Path::Assign(const std::string &path)
+Path& Path::Assign(const std::string& path)
 {
     path_ = path;
     return *this;
 }
 
-Path &Path::Append(const std::string &path)
+Path& Path::Append(const std::string& path)
 {
     AddSeperator();
     AppendPath(path);
@@ -54,14 +51,14 @@ Path &Path::Append(const std::string &path)
     return *this;
 }
 
-Path &Path::Concat(const std::string &path)
+Path& Path::Concat(const std::string& path)
 {
     AddSeperator();
     AppendPath(path);
     return *this;
 }
 
-Path &Path::AddExtension(const std::string &extension)
+Path& Path::AddExtension(const std::string& extension)
 {
     std::string ext = aclnnOpInfoRecord::Utils::Trim(extension);
     if (path_.empty() || ext.empty() || GetExtension() == ext) {
@@ -88,25 +85,13 @@ std::string Path::GetFileName() const
     return pos != std::string::npos ? path_.substr(pos + 1) : path_;
 }
 
-bool Path::Empty() const
-{
-    return path_.empty();
-}
+bool Path::Empty() const { return path_.empty(); }
 
-bool Path::Exist() const
-{
-    return Asccess(F_OK);
-}
+bool Path::Exist() const { return Asccess(F_OK); }
 
-bool Path::Asccess(mmMode_t mode) const
-{
-    return !path_.empty() && mmAccess2(path_.c_str(), mode) == EN_OK;
-}
+bool Path::Asccess(mmMode_t mode) const { return !path_.empty() && mmAccess2(path_.c_str(), mode) == EN_OK; }
 
-bool Path::IsDirectory() const
-{
-    return mmIsDir(path_.c_str()) == EN_OK;
-}
+bool Path::IsDirectory() const { return mmIsDir(path_.c_str()) == EN_OK; }
 
 bool Path::RealPath()
 {
@@ -137,8 +122,8 @@ Path Path::ParentPath() const
     }
 
     const size_t pos = path_.find_last_of(DIRECTORY_SEPARATOR);
-    std::string parentPath = pos != std::string::npos ?
-        (pos == 0 ? std::string(&DIRECTORY_SEPARATOR, 1) : path_.substr(0, pos)) : "";
+    std::string parentPath =
+        pos != std::string::npos ? (pos == 0 ? std::string(&DIRECTORY_SEPARATOR, 1) : path_.substr(0, pos)) : "";
     return Path(parentPath);
 }
 
@@ -166,25 +151,18 @@ bool Path::CreateDirectory(bool recursion) const
     return true;
 }
 
-std::string Path::GetString() const
-{
-    return path_;
-}
+std::string Path::GetString() const { return path_; }
 
-const char *Path::GetCString() const
-{
-    return path_.c_str();
-}
+const char* Path::GetCString() const { return path_.c_str(); }
 
-void Path::AppendPath(const std::string &path)
+void Path::AppendPath(const std::string& path)
 {
     std::string newPath = aclnnOpInfoRecord::Utils::Trim(path);
-    (void)newPath.erase(newPath.begin(),
-        std::find_if(newPath.begin(), newPath.end(), [](uint8_t ch) { return ch != DIRECTORY_SEPARATOR; }));
-    (void)newPath.erase(std::find_if(newPath.rbegin(), newPath.rend(),
-        [](uint8_t ch) {
-            return ch != DIRECTORY_SEPARATOR;
-        }).base(),
+    (void)newPath.erase(newPath.begin(), std::find_if(newPath.begin(), newPath.end(), [](uint8_t ch) {
+                            return ch != DIRECTORY_SEPARATOR;
+                        }));
+    (void)newPath.erase(
+        std::find_if(newPath.rbegin(), newPath.rend(), [](uint8_t ch) { return ch != DIRECTORY_SEPARATOR; }).base(),
         newPath.end());
     path_ += newPath;
 }

@@ -37,26 +37,21 @@ namespace op {
  */
 struct Float4E2M1 {
     struct FromBitsTag {};
-    static constexpr FromBitsTag FromBits()
-    {
-        return FromBitsTag();
-    }
+    static constexpr FromBitsTag FromBits() { return FromBitsTag(); }
 
     uint8_t value;
 
     // ============= E2M1 format constants =============
-    static constexpr uint8_t HIGHEST_VALUE = 0x07;      // 0 11 1 = 6.0 (max value)
-    static constexpr uint8_t LOWEST_VALUE = 0x0F;       // 1 11 1 = -6.0 (min value)
+    static constexpr uint8_t HIGHEST_VALUE = 0x07;        // 0 11 1 = 6.0 (max value)
+    static constexpr uint8_t LOWEST_VALUE = 0x0F;         // 1 11 1 = -6.0 (min value)
     static constexpr uint8_t MIN_POS_NORMAL_VALUE = 0x02; // 0 01 0 = 1.0 (min positive normal)
-    static constexpr uint8_t BITS_MASK = 0x0F;          // 4-bit effective mask
-    static constexpr uint8_t EPSILON_VALUE = 0x01;      // 0 00 1 = 0.5 (epsilon)
+    static constexpr uint8_t BITS_MASK = 0x0F;            // 4-bit effective mask
+    static constexpr uint8_t EPSILON_VALUE = 0x01;        // 0 00 1 = 0.5 (epsilon)
 
     // Default constructor - initialize to zero
-    constexpr Float4E2M1() : value(0)
-    {}
+    constexpr Float4E2M1() : value(0) {}
 
-    constexpr Float4E2M1(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK)
-    {}
+    constexpr Float4E2M1(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits & BITS_MASK) {}
 
     Float4E2M1(float v);
 
@@ -66,7 +61,7 @@ struct Float4E2M1 {
     static constexpr Float4E2M1 Epsilon()
     {
         // 2^-1 = 0.5 (the difference between 1.0 and next representable value)
-        return Float4E2M1(EPSILON_VALUE, FromBits());  // 0 00 1 = denorm 0.5
+        return Float4E2M1(EPSILON_VALUE, FromBits()); // 0 00 1 = denorm 0.5
     }
 
     static constexpr Float4E2M1 Highest()
@@ -102,7 +97,7 @@ private:
     static Float4E2M1 FloatToFloat4E2M1(float f);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Float4E2M1 &dt)
+inline std::ostream& operator<<(std::ostream& os, const Float4E2M1& dt)
 {
     os << static_cast<float>(dt);
     return os;
@@ -112,26 +107,26 @@ inline std::ostream &operator<<(std::ostream &os, const Float4E2M1 &dt)
 
 namespace std {
 
-inline bool isinf(const op::Float4E2M1 &a [[maybe_unused]])
+inline bool isinf(const op::Float4E2M1& a [[maybe_unused]])
 {
-    return false;  // E2M1 has no infinity
+    return false; // E2M1 has no infinity
 }
 
-inline bool isnan(const op::Float4E2M1 &a [[maybe_unused]])
+inline bool isnan(const op::Float4E2M1& a [[maybe_unused]])
 {
-    return false;  // OCP MX E2M1 has no NaN
+    return false; // OCP MX E2M1 has no NaN
 }
 
-inline bool isfinite(const op::Float4E2M1 &a [[maybe_unused]])
+inline bool isfinite(const op::Float4E2M1& a [[maybe_unused]])
 {
-    return true;  // All bit patterns are valid finite numbers
+    return true; // All bit patterns are valid finite numbers
 }
 
-template<>
+template <>
 class numeric_limits<op::Float4E2M1> {
 public:
     static constexpr bool has_infinity = false;
-    static constexpr bool has_quiet_NaN = false;  // OCP MX E2M1 has no NaN
+    static constexpr bool has_quiet_NaN = false; // OCP MX E2M1 has no NaN
     static constexpr bool has_signaling_NaN = false;
     static constexpr bool is_bounded = true;
     static constexpr bool is_exact = false;
@@ -143,49 +138,31 @@ public:
     static constexpr int digits = 1;
     static constexpr int digits10 = 0;
     static constexpr int max_digits10 = 1;
-    static constexpr int min_exponent = -2;  // 2^(-2) for denorm
+    static constexpr int min_exponent = -2; // 2^(-2) for denorm
     static constexpr int min_exponent10 = 0;
-    static constexpr int max_exponent = 2;   // 2^2 for normal
+    static constexpr int max_exponent = 2; // 2^2 for normal
     static constexpr int max_exponent10 = 0;
     static constexpr int radix = 2;
-    static constexpr float round_error()
-    {
-        return 0.5f;
-    }
+    static constexpr float round_error() { return 0.5f; }
     static constexpr float denorm_min()
     {
-        return 0.5f;  // 2^0 * (1/2) = 0.5 (man=1, exp=0)
+        return 0.5f; // 2^0 * (1/2) = 0.5 (man=1, exp=0)
     }
 
-    static constexpr op::Float4E2M1 min()
-    {
-        return op::Float4E2M1::MinPositiveNormal();
-    }
-    static constexpr op::Float4E2M1 lowest()
-    {
-        return op::Float4E2M1::Lowest();
-    }
-    static constexpr op::Float4E2M1 max()
-    {
-        return op::Float4E2M1::Highest();
-    }
-    static constexpr op::Float4E2M1 epsilon()
-    {
-        return op::Float4E2M1::Epsilon();
-    }
+    static constexpr op::Float4E2M1 min() { return op::Float4E2M1::MinPositiveNormal(); }
+    static constexpr op::Float4E2M1 lowest() { return op::Float4E2M1::Lowest(); }
+    static constexpr op::Float4E2M1 max() { return op::Float4E2M1::Highest(); }
+    static constexpr op::Float4E2M1 epsilon() { return op::Float4E2M1::Epsilon(); }
     static constexpr op::Float4E2M1 infinity()
     {
-        return op::Float4E2M1::Highest();  // No infinity, use max
+        return op::Float4E2M1::Highest(); // No infinity, use max
     }
     static constexpr op::Float4E2M1 quiet_NaN()
     {
         // OCP MX E2M1 has no NaN, return zero as fallback
         return op::Float4E2M1(0x00, op::Float4E2M1::FromBits());
     }
-    static constexpr op::Float4E2M1 signaling_NaN()
-    {
-        return quiet_NaN();
-    }
+    static constexpr op::Float4E2M1 signaling_NaN() { return quiet_NaN(); }
 };
 
 } // namespace std

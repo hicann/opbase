@@ -187,7 +187,7 @@ REG_FORMAT_ERROR_MSG(g_errorInfoJson.c_str(), g_errorInfoJson.length());
 
 constexpr size_t LIMIT_PREDEFINED_MESSAGE = 1024U;
 
-void ReportErrorMessageInner(const std::string &code, const char *fmt, ...)
+void ReportErrorMessageInner(const std::string& code, const char* fmt, ...)
 {
     std::vector<char> buf(LIMIT_PREDEFINED_MESSAGE, '\0');
 
@@ -195,17 +195,18 @@ void ReportErrorMessageInner(const std::string &code, const char *fmt, ...)
     va_start(argList, fmt);
     auto ret = vsnprintf_s(buf.data(), LIMIT_PREDEFINED_MESSAGE, LIMIT_PREDEFINED_MESSAGE - 1U, fmt, argList);
     if (ret == -1) {
-        OP_LOGW("Construct report error message fail, maybe the length of error message exceed limits: %zu",
-                LIMIT_PREDEFINED_MESSAGE);
+        OP_LOGW(
+            "Construct report error message fail, maybe the length of error message exceed limits: %zu",
+            LIMIT_PREDEFINED_MESSAGE);
     }
     va_end(argList);
 
-    const std::vector<const char *> msgKey = {"message"};
-    const std::vector<const char *> msgvalue = {buf.data()};
+    const std::vector<const char*> msgKey = {"message"};
+    const std::vector<const char*> msgvalue = {buf.data()};
     REPORT_PREDEFINED_ERR_MSG(code.c_str(), msgKey, msgvalue);
 }
 
-void DlogRecordInner(int32_t moduleId, int32_t level, const char *fmt, ...)
+void DlogRecordInner(int32_t moduleId, int32_t level, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -213,7 +214,4 @@ void DlogRecordInner(int32_t moduleId, int32_t level, const char *fmt, ...)
     va_end(args);
 }
 
-int32_t CheckLogLevelInner(int32_t moduleId, int32_t level)
-{
-    return CheckLogLevel(moduleId, level);
-}
+int32_t CheckLogLevelInner(int32_t moduleId, int32_t level) { return CheckLogLevel(moduleId, level); }

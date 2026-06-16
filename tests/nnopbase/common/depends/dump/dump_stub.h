@@ -19,7 +19,7 @@
 
 namespace Adx {
 class DumpStub {
-  public:
+public:
     virtual ~DumpStub() = default;
     static DumpStub* GetInstance()
     {
@@ -32,62 +32,54 @@ class DumpStub {
         return instance_.get();
     }
 
-    virtual int32_t AdumpDumpTensorV2(const std::string &opType, const std::string &opName,
-                                    const std::vector<Adx::TensorInfoV2> &tensors, aclrtStream stream)
+    virtual int32_t AdumpDumpTensorV2(
+        const std::string& opType, const std::string& opName, const std::vector<Adx::TensorInfoV2>& tensors,
+        aclrtStream stream)
     {
         return 0;
     }
 
-    virtual int32_t AdumpAddExceptionOperatorInfoV2(const OperatorInfoV2 &opInfo)
-    {
-        return 0;
-    }
+    virtual int32_t AdumpAddExceptionOperatorInfoV2(const OperatorInfoV2& opInfo) { return 0; }
 
-    virtual void *AdumpGetSizeInfoAddr(uint32_t space, uint32_t &atomicIndex)
+    virtual void* AdumpGetSizeInfoAddr(uint32_t space, uint32_t& atomicIndex)
     {
         atomicIndex = 1;
-        return (void *)inputAddr_;
+        return (void*)inputAddr_;
     }
 
-    virtual void *AdumpGetDFXInfoAddrForDynamic(uint32_t space, uint64_t &atomicIndex)
+    virtual void* AdumpGetDFXInfoAddrForDynamic(uint32_t space, uint64_t& atomicIndex)
     {
         atomicIndex = 5525;
-        return (void *)dfxAddr_;
+        return (void*)dfxAddr_;
     }
 
-    void Install(DumpStub* instance)
-    {
-        fake_instance_ = instance;
-    }
+    void Install(DumpStub* instance) { fake_instance_ = instance; }
 
-    void UnInstall() {
-        fake_instance_ = nullptr;
-    }
+    void UnInstall() { fake_instance_ = nullptr; }
 
-    virtual uint64_t AdumpGetDumpSwitch(DumpType type) {
-        return 1;
-    }
+    virtual uint64_t AdumpGetDumpSwitch(DumpType type) { return 1; }
 
     virtual void AdumpPrintWorkSpace(
-        const void *workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char *opType) {
+        const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType)
+    {
         return;
     }
 
-    virtual void AdumpPrintAndGetTimeStampInfo(const void *workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
-        const char *opType, std::vector<MsprofAicTimeStampInfo> &timeStampInfo) {
+    virtual void AdumpPrintAndGetTimeStampInfo(
+        const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
+        std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
+    {
         return;
     }
 
-    virtual bool AdumpIsDumpEnable(DumpType type) {
-        return false;
-    }
+    virtual bool AdumpIsDumpEnable(DumpType type) { return false; }
 
-  private:
+private:
     thread_local static std::shared_ptr<DumpStub> instance_;
     thread_local static DumpStub* fake_instance_;
     char inputAddr_[1000] = {0};
     char dfxAddr_[5000] = {0};
 };
-} // Adx
+} // namespace Adx
 
 #endif
