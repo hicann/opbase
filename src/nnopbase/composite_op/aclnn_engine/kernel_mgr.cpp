@@ -10,6 +10,7 @@
 
 #include <fstream>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -515,9 +516,7 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json& jsonObj)
     const std::string realJsonPath = RealPath(jsonPath_);
     const std::string& openPath = realJsonPath.empty() ? jsonPath_ : realJsonPath;
     std::ifstream f(openPath);
-    char errBuf[256];
-    std::string errMsg = "[Errno " + std::to_string(errno) + "] " +
-        std::string(strerror_r(errno, errBuf, sizeof(errBuf)));
+    std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
     OP_CHECK(
         f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), errMsg.c_str()), return ACLNN_ERR_INNER);
     try {

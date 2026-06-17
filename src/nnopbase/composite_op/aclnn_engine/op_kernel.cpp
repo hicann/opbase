@@ -14,6 +14,7 @@
 #include <mutex>
 #include <string>
 #include <cerrno>
+#include <system_error>
 
 #include "acl/acl_base.h"
 #include "acl/acl_rt.h"
@@ -1425,9 +1426,7 @@ aclnnStatus OpKernel::GetOpDescJson(bool debug)
 
     ifstream f(configJsonPath_);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
-    char errBuf[256];
-    std::string errMsg = "[Errno " + std::to_string(errno) + "] " +
-        std::string(strerror_r(errno, errBuf, sizeof(errBuf)));
+    std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
     OP_CHECK(
         f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), errMsg.c_str()),
         return ACLNN_ERR_INNER);
