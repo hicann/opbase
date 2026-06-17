@@ -117,13 +117,13 @@ public:
     {
         CHECK_COND(InitOpFunctions(opType) == ACLNN_SUCCESS, ACLNN_SUCCESS, "InitOpFunctions failed");
         if (opInferShapeFuncs_[opType] == nullptr || opInferShapeFuncs_[opType]->infer_shape == nullptr) {
-            OP_LOGE_FOR_EXECUTION_ERROR("The inferShape function does not exist");
+            OP_LOGE_FOR_EXECUTION_INFERSHAPE_ERROR("The inferShape function does not exist");
             return ACLNN_ERR_INNER;
         }
         gert::InferShapeContext* ctx = opRunCtx_.UpdateInferShapeCtx(opType, inputs, outputs, attrs);
         auto ret = opInferShapeFuncs_[opType]->infer_shape(ctx);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute inferShape");
+            OP_LOGE_FOR_EXECUTION_INFERSHAPE_ERROR("Failed to execute inferShape");
             return ACLNN_ERR_INNER;
         }
         return ACLNN_SUCCESS;
@@ -155,14 +155,14 @@ public:
         OP_CHECK(tilingParseCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Tiling parse ctx is NULL"), return nullptr);
         InitOpFunctions(opType);
         if (opTilingFuncs_[opType] == nullptr || opTilingFuncs_[opType]->tiling == nullptr) {
-            OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+            OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
             return nullptr;
         }
         auto ctx = opRunCtx_.UpdateTilingCtx(opType, tilingParseCtx, inputs, outputs, attrs);
         OP_CHECK(ctx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "opRunCtx_.UpdateTilingCtx failed."), return nullptr);
         auto ret = opTilingFuncs_[opType]->tiling(ctx);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling");
+            OP_LOGE_FOR_EXECUTION_TILING_ERROR("Failed to execute tiling");
             return nullptr;
         }
         return opRunCtx_.tilingCtx_.GetTilingResult();
@@ -207,14 +207,14 @@ public:
             InitOpFunctions(opType) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "InitOpFunctions failed"),
             return nullptr);
         if (opTilingFuncs_[opType] == nullptr || opTilingFuncs_[opType]->tiling == nullptr) {
-            OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+            OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
             return nullptr;
         }
         auto ctx = opRunCtx_.UpdateTilingCtx4MemSetV2(tilingParseCtx, inputs, outputs, attrs);
         OP_CHECK(ctx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx4MemSetV2 failed."), return nullptr);
         auto ret = opTilingFuncs_[opType]->tiling(ctx);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling");
+            OP_LOGE_FOR_EXECUTION_TILING_ERROR("Failed to execute tiling");
             return nullptr;
         }
         return opRunCtx_.memSetTilingCtx_.GetTilingResult();

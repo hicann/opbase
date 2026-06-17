@@ -79,7 +79,7 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
     auto ret = GetOppKernelPath(oppRealPath);
     OP_CHECK(
         ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load static bin json", "ASCEND_OPP_PATH"),
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading static bin json", "ASCEND_OPP_PATH"),
         return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string configJsonPath = oppRealPath;
     auto& knlLib = OpKernelLib::GetInstance();
@@ -104,7 +104,7 @@ aclnnStatus KernelMgr::LoadDebugStaticBinJson()
     auto ret = GetOppKernelPath(oppRealPath);
     OP_CHECK(
         ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load debug static bin json", "ASCEND_OPP_PATH"),
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading debug static bin json", "ASCEND_OPP_PATH"),
         return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string debugConfigJsonPath = oppRealPath;
     auto& knlLib = OpKernelLib::GetInstance();
@@ -515,8 +515,11 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json& jsonObj)
     const std::string realJsonPath = RealPath(jsonPath_);
     const std::string& openPath = realJsonPath.empty() ? jsonPath_ : realJsonPath;
     std::ifstream f(openPath);
+    char errBuf[256];
+    std::string errMsg = "[Errno " + std::to_string(errno) + "] " +
+        std::string(strerror_r(errno, errBuf, sizeof(errBuf)));
     OP_CHECK(
-        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), strerror(errno)), return ACLNN_ERR_INNER);
+        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), errMsg.c_str()), return ACLNN_ERR_INNER);
     try {
         jsonObj = json::parse(f);
     } catch (nlohmann::json::exception& e) {

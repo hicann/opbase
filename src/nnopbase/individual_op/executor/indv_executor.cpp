@@ -883,13 +883,13 @@ static aclnnStatus NnopbaseExecutorDoTiling(NnopbaseExecutor* executor)
 
     auto tiling = executor->regInfo->tiling;
     if (tiling == nullptr) {
-        OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+        OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
         return ACLNN_ERR_INNER_TILING_ERROR;
     }
     ge::graphStatus ret =
         executor->regInfo->tiling(op::internal::PtrCastTo<gert::TilingContext>(executor->contextExt.context));
     if (ret != ge::GRAPH_SUCCESS) {
-        OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling function");
+        OP_LOGE_FOR_EXECUTION_TILING_ERROR("Failed to execute tiling function");
         return ACLNN_ERR_INNER_TILING_ERROR;
     }
     if (executor->tilingId != nullptr) {

@@ -67,7 +67,7 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
             opTilingFuncs_[opType] = defaultFuncs;
             OP_LOGI("Op %s use auto tiling func", opTypeStr), return);
 
-        OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+        OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
         ret = ACLNN_ERR_PARAM_NULLPTR;
     };
 

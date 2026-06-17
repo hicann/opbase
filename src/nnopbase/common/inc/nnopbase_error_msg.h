@@ -64,18 +64,18 @@
         REPORT_PREDEFINED_ERR_MSG("EZ1006", msgKey, msgValue);                               \
     } while (false)
 
-#define OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(paraName, dim, reason)                    \
-    do {                                                                                          \
-        std::string opName = op::internal::GetLogApiInfo();                                       \
-        std::string msg = std::string("Input parameter ") + paraName + " of operator " + opName + \
-                          " has incorrect shape dim " + dim + ". Reason: " + reason + ".";        \
-        const std::vector<const char*> msgKey = {"paraName", "opName", "dim", "reason"};          \
-        const std::vector<const char*> msgValue = {paraName, opName.c_str(), dim, reason};        \
-        OP_LOGE_WITHOUT_REPORT("EZ1007", "%s", msg.c_str());                                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ1007", msgKey, msgValue);                                    \
+#define OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(paraName, dim, reason)                           \
+    do {                                                                                                 \
+        std::string opName = op::internal::GetLogApiInfo();                                              \
+        std::string msg = std::string("Shape ") + paraName + " of the tensor of operator " + opName +    \
+                          " has incorrect dimension " + dim + ". Reason: " + reason + ".";               \
+        const std::vector<const char*> msgKey = {"paraName", "opName", "dim", "reason"};                 \
+        const std::vector<const char*> msgValue = {paraName, opName.c_str(), dim, reason};               \
+        OP_LOGE_WITHOUT_REPORT("EZ1007", "%s", msg.c_str());                                             \
+        REPORT_PREDEFINED_ERR_MSG("EZ1007", msgKey, msgValue);                                           \
     } while (false)
 
-#define OP_LOGE_FOR_EXECUTION_ERROR(reason)                                                     \
+#define OP_LOGE_FOR_EXECUTION_TILING_ERROR(reason)                                              \
     do {                                                                                        \
         std::string opName = op::internal::GetLogApiInfo();                                     \
         std::string msg = "Failed to execute operator " + opName + ". Reason: " + reason + "."; \
@@ -151,5 +151,15 @@
         const std::vector<const char*> msgValue = {opName.c_str()};                                                   \
         OP_LOGE_WITHOUT_REPORT("EZ1013", "%s", msg.c_str());                                                          \
         REPORT_PREDEFINED_ERR_MSG("EZ1013", msgKey, msgValue);                                                        \
+    } while (false)
+
+#define OP_LOGE_FOR_EXECUTION_INFERSHAPE_ERROR(reason)                                          \
+    do {                                                                                        \
+        std::string opName = op::internal::GetLogApiInfo();                                     \
+        std::string msg = "Failed to execute operator " + opName + ". Reason: " + reason + "."; \
+        const std::vector<const char*> msgKey = {"opName", "reason"};                           \
+        const std::vector<const char*> msgValue = {opName.c_str(), reason};                     \
+        OP_LOGE_WITHOUT_REPORT("EZ1014", "%s", msg.c_str());                                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ1014", msgKey, msgValue);                                  \
     } while (false)
 #endif // OP_API_OP_API_COMMON_INC_NNOPBASE_ERROR_MSG_H

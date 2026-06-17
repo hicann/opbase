@@ -1425,8 +1425,11 @@ aclnnStatus OpKernel::GetOpDescJson(bool debug)
 
     ifstream f(configJsonPath_);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
+    char errBuf[256];
+    std::string errMsg = "[Errno " + std::to_string(errno) + "] " +
+        std::string(strerror_r(errno, errBuf, sizeof(errBuf)));
     OP_CHECK(
-        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), strerror(errno)),
+        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), errMsg.c_str()),
         return ACLNN_ERR_INNER);
 #endif
     try {

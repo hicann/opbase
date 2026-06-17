@@ -155,7 +155,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo)
 {
     if (tilingFuncs == nullptr) {
-        OP_LOGE_FOR_EXECUTION_ERROR("The tiling function does not exist");
+        OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
         return ACLNN_ERR_RUNTIME_ERROR;
     }
     if (!opJson.contains("compileInfo")) {
