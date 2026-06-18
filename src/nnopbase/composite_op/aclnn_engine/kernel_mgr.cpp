@@ -10,6 +10,7 @@
  
 #include <fstream>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -78,9 +79,10 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
 {
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load static bin json", "ASCEND_OPP_PATH"),
-             return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS && !oppRealPath.empty(),
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading static bin json", "ASCEND_OPP_PATH"),
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string configJsonPath = oppRealPath;
     auto &knlLib = OpKernelLib::GetInstance();
     configJsonPath.append(STATIC_CONFIG_JSON_PATH);
@@ -102,9 +104,10 @@ aclnnStatus KernelMgr::LoadDebugStaticBinJson()
 {
     string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load debug static bin json", "ASCEND_OPP_PATH"),
-             return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
+    OP_CHECK(
+        ret == ACLNN_SUCCESS && !oppRealPath.empty(),
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading debug static bin json", "ASCEND_OPP_PATH"),
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     string debugConfigJsonPath = oppRealPath;
     auto &knlLib = OpKernelLib::GetInstance();
     debugConfigJsonPath.append(DEBUG_CONFIG_JSON_PATH);
@@ -510,9 +513,9 @@ aclnnStatus OpKernelBin::GetBinJson(nlohmann::json &jsonObj)
     const std::string realJsonPath = RealPath(jsonPath_);
     const std::string &openPath = realJsonPath.empty() ? jsonPath_ : realJsonPath;
     std::ifstream f(openPath);
-    OP_CHECK(f.is_open(),
-        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), strerror(errno)),
-        return ACLNN_ERR_INNER);
+    std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
+    OP_CHECK(
+        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(openPath.c_str(), errMsg.c_str()), return ACLNN_ERR_INNER);
     try {
         jsonObj = json::parse(f);
     } catch (nlohmann::json::exception &e) {

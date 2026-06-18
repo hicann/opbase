@@ -659,7 +659,7 @@ public:
                     }
                 }
                 if (res == nullptr) {
-                    OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling");
+                    OP_LOGE_FOR_EXECUTION_TILING_ERROR("Failed to execute tiling");
                     return ACLNN_ERR_INNER_NULLPTR;
                 }
 
@@ -846,7 +846,7 @@ public:
             outputs,
             attrs);
         if (res == nullptr) {
-            OP_LOGE_FOR_EXECUTION_ERROR("Failed to execute tiling");
+            OP_LOGE_FOR_EXECUTION_TILING_ERROR("Failed to execute tiling");
             return ACLNN_ERR_INNER_NULLPTR;
         }
         num = res->workspaceSize_->GetSize();

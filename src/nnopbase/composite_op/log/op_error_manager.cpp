@@ -107,7 +107,7 @@ static const std::string g_errorInfoJson = R"(
         "errClass": "Nnopbase Errors",
         "errTitle": "Invalid_Argument_Tensor_Input_Shape",
         "ErrCode": "EZ1007",
-        "ErrMessage": "Input parameter %s of operator %s has incorrect shape dim %s. Reason: %s.",
+        "ErrMessage": "Shape %s of the tensor of operator %s has incorrect dimension %s. Reason: %s.",
         "Arglist": "paraName, opName, dim, reason",
         "suggestion": {
             "Possible Cause": "N/A",
@@ -122,7 +122,7 @@ static const std::string g_errorInfoJson = R"(
         "Arglist": "opName, reason",
         "suggestion": {
             "Possible Cause": "N/A",
-            "Solution": "1.If the tiling or inferShape function does not exist, check whether the tiling or inferShape function is registered successfully. 2.If the tiling or inferShape function fails to be executed, check the implementation logic of the tiling or inferShape function."
+            "Solution": "1.If the tiling function does not exist, check whether the tiling function is registered successfully. 2.If the tiling function fails to be executed, check the implementation logic of the tiling function."
         }
     },
     {
@@ -178,6 +178,17 @@ static const std::string g_errorInfoJson = R"(
         "suggestion": {
             "Possible Cause": "1.The operator package of the corresponding SoC version is not correctly installed. 2.If the operator is a custom operator, the environment variable ASCEND_CUSTOM_OPP_PATH of the custom operator may not be configured or be incorrectly configured. 3.If the operator is a built-in operator, the environment variable ASCEND_OPP_PATH of the built-in operator may not be configured or be incorrectly configured.",
             "Solution": "1.Install the operator package of the corresponding SoC version correctly. 2.Set ASCEND_CUSTOM_OPP_PATH to the actual installation path of the custom operator package. 3.Set ASCEND_OPP_PATH to the actual installation path of the built-in operator package."
+        }
+    },
+    {
+        "errClass": "Nnopbase Errors",
+        "errTitle": "Execution_Error",
+        "ErrCode": "EZ1014",
+        "ErrMessage": "Failed to execute operator %s. Reason: %s.",
+        "Arglist": "opName, reason",
+        "suggestion": {
+            "Possible Cause": "N/A",
+            "Solution": "1.If the inferShape function does not exist, check whether the inferShape function is registered successfully. 2.If the inferShape function fails to be executed, check the implementation logic of the inferShape function."
         }
     }
     ]
