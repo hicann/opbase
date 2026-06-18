@@ -556,8 +556,9 @@ void ReduceOpTiling::DoReduceTiling(ReduceTilingKey& key)
 template <class Pattern>
 void ReduceOpTiling::ComputeCacheLineBlock(const uint64_t* shape)
 {
-    uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);	 
-    uint64_t cacheSize = compileInfo_->cacheLineSize / dSize;
+    uint64_t cacheSize = compileInfo_->cacheLineSize / ge::GetSizeByDataType(opInput_.inputDtype);
+    // 尾轴为A的场景，按照最小字节数的UBBlock元素个数对齐
+    uint64_t dSize = (Pattern::TailA ? opDag_.minInputBytes : ge::GetSizeByDataType(opInput_.inputDtype));
     uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
     uint64_t cacheLineShape = 1UL;
     uint64_t cacheLineStep = 1UL;
@@ -652,8 +653,7 @@ void ReduceOpTiling::ComputeUnitA(const uint64_t* shape)
     uint64_t maxInnerA = Pattern::ID == PATTERN_A ? basicBlock_ * Ratio() / opDag_.maxInputBytes : maxCacheA;
     uint64_t stepLen = Pattern::ID == PATTERN_A ? A_STEP_LEN : 1; // 纯A的步长为4, 减少循环次数
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
-    uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);	 
-    uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
+    uint64_t ubBlockSize = compileInfo_->ubBlockSize / opDag_.minInputBytes;
     uint64_t step = 1;
     int32_t iA;
     for (iA = basicSplitA ? axisInCacheLine : axisInCacheLine - 1; iA > -1; iA -= AXES_STEP) {
@@ -785,9 +785,8 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
     }
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
     uint64_t maxInnerA = resultBlock_ / opDag_.maxInputBytes;
-    uint64_t dSize = ge::GetSizeByDataType(opInput_.inputDtype);	 
-    uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;	 
-    uint64_t cacheSize = compileInfo_->cacheLineSize / dSize;
+    uint64_t ubBlockSize = compileInfo_->ubBlockSize / opDag_.minInputBytes;
+    uint64_t cacheSize = compileInfo_->cacheLineSize / opDag_.minInputBytes;
     uint64_t innerR = unitR_.inner;
     uint64_t step = 1;
     int32_t iA;
@@ -798,8 +797,8 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
         uint64_t maxStep = (iA == unitA_.idx ? unitA_.step : 1UL);
         for (; s <= axisLen; s++) {
             uint64_t tmpS = s > sliceShape_[iA] ? FloorAlign(s, sliceShape_[iA]) : s; // 非连续与sliceShape对齐
-            if (iA == Pattern::Dim - 1 && tmpS != sliceShape_[iA]) {
-                tmpS = FloorAlign(tmpS, ubBlockSize);
+            if (iA == Pattern::Dim - 1) {
+                tmpS = CeilAlign(tmpS, ubBlockSize);
             }
             uint64_t tmpInnerA = innerA * tmpS;
             uint64_t tmpOuterA =

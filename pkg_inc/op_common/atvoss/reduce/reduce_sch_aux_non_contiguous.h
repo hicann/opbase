@@ -34,6 +34,7 @@ struct ReduceSchAuxNonContiguous : public ReduceSchAuxBase<LoopInfo, ReduceSch, 
 public:
     constexpr static int32_t Dim = AuxBase::Dim;
     constexpr static uint64_t UB_BLOCK = AuxBase::UB_BLOCK;
+    constexpr static uint64_t MIN_DTYPE_BYTES = AuxBase::MIN_DTYPE_BYTES;
 
 public:
     uint64_t loopAAxisSliceStep_ = 0;
@@ -501,7 +502,7 @@ public:
     template <class T, class V>
     __aicore__ inline void CalculateViewRAMode(V& view)
     {
-        uint64_t alignedValue = (view.isBlockAligned == 1 ? (UB_BLOCK / sizeof(T)) : 1UL);
+        uint64_t alignedValue = (view.isBlockAligned == 1 ? (UB_BLOCK / MIN_DTYPE_BYTES) : 1UL);
         int64_t value = Ops::Base::CeilAlign(view.axis[0].repeat, alignedValue);
         view.axis[0].dstStride = 1;
         // 因A轴循环会重新触发shape计算，所以A轴的shape不需要统一到ubFactorA,但是R轴shape需要统一到ubFactorR
