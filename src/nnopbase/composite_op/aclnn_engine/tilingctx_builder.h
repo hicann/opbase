@@ -54,11 +54,10 @@ public:
                      OP_LOGW("Failed to memcpy in workspace addr."),
                      ;);
         }
-        OP_CHECK(
-            memcpy_s(PtrShift(p, wsNum * sizeof(size_t)), sz, res->tilingData_->data_, res->tilingData_->data_size_) ==
-                EOK,
-            OP_LOGW("Failed to memcpy in tiling data."),
-            ;);
+        OP_CHECK(memcpy_s(PtrShift(p, wsNum * sizeof(size_t)), sz, res->tilingData_->data_,
+                          res->tilingData_->data_size_) == EOK,
+                 OP_LOGW("Failed to memcpy in tiling data."),
+                 ;);
         rawTilingData_ = PtrShift(p, res->workspaceSize_->GetSize() * sizeof(size_t));
         rawTilingDataLen_ = res->tilingData_->data_size_;
 
@@ -134,13 +133,12 @@ public:
     {
         gert::TilingContext* ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);
         if (op::internal::GetOpProfilingRecordArgFlag()) {
-            OP_LOGI(
-                "Call ExeOptInfoStat, option %d %s. kernel info %d %s.",
-                tilingParseCtx->GetCompileOptions().deterministic,
-                tilingParseCtx->GetCompileOptions().impl_mode.c_str(), tilingParseCtx->GetOpKernelInfo()->bin_type,
-                tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
-            aclnnOpInfoRecord::OpInfoSerialize(
-                ctx, tilingParseCtx->GetCompileOptions(), tilingParseCtx->GetOpKernelInfo());
+            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s.",
+                    tilingParseCtx->GetCompileOptions().deterministic,
+                    tilingParseCtx->GetCompileOptions().impl_mode.c_str(), tilingParseCtx->GetOpKernelInfo()->bin_type,
+                    tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
+            aclnnOpInfoRecord::OpInfoSerialize(ctx, tilingParseCtx->GetCompileOptions(),
+                                               tilingParseCtx->GetOpKernelInfo());
         }
         return ctx;
     };
@@ -161,11 +159,9 @@ public:
         *tilingOutput_.scheduleMode_ = res.scheduleMode_;
         *tilingOutput_.dynUBufSize_ = res.dynUBufSize_;
         OP_LOGD("Call GetTilingResFromCache, scheduleMode_ %u.", *tilingOutput_.scheduleMode_);
-        OP_CHECK(
-            (memcpy_s(
-                 tilingOutput_.tilingData_->data_, tilingOutput_.tilingData_->capacity_, res.rawTilingData_,
-                 res.rawTilingDataLen_) == EOK),
-            OP_LOGW("Failed to memcpy in tiling data use."), return nullptr);
+        OP_CHECK((memcpy_s(tilingOutput_.tilingData_->data_, tilingOutput_.tilingData_->capacity_, res.rawTilingData_,
+                           res.rawTilingDataLen_) == EOK),
+                 OP_LOGW("Failed to memcpy in tiling data use."), return nullptr);
         tilingOutput_.tilingData_->data_size_ = res.rawTilingDataLen_;
         if (res.workspaceNum_ > 0) {
             tilingOutput_.workspaceSize_->SetSize(res.workspaceNum_);

@@ -65,12 +65,11 @@ public:
     void* opExecCacheManager_{nullptr};
 };
 
-aclnnStatus DoReportAdditionInfo(
-    void* infoLists, const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId);
+aclnnStatus DoReportAdditionInfo(void* infoLists, const TaskInfo& taskInfo,
+                                 const op::internal::ProfilingInfoId& profilingInfoId);
 
-void DoExceptionDump(
-    void* infoLists, void* workspaceAddr, const std::vector<void*>& tensors, const ExceptionDumpInfo& dumpInfo,
-    const aclrtStream stream);
+void DoExceptionDump(void* infoLists, void* workspaceAddr, const std::vector<void*>& tensors,
+                     const ExceptionDumpInfo& dumpInfo, const aclrtStream stream);
 
 class OpCacheContext {
 public:

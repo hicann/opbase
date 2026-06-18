@@ -29,9 +29,8 @@ template <typename T>
     v.push_back(t);
 }
 
-[[maybe_unused]] static void AddToListAndIdx(
-    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensor* t,
-    int32_t& currentIdx)
+[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs,
+                                             bool genPlaceholder, aclTensor* t, int32_t& currentIdx)
 {
     if (t == nullptr && !(genPlaceholder)) {
         return;
@@ -44,9 +43,9 @@ template <typename T>
     }
 }
 
-[[maybe_unused]] static void AddToListAndIdx(
-    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensor* t,
-    int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
+[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs,
+                                             bool genPlaceholder, aclTensor* t, int32_t& currentIdx,
+                                             std::vector<int32_t>& tensorOffset)
 {
     if (t == nullptr && !(genPlaceholder)) {
         return;
@@ -61,9 +60,8 @@ template <typename T>
     }
 }
 
-[[maybe_unused]] static void AddToListAndIdx(
-    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensorList* t,
-    int32_t& currentIdx)
+[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs,
+                                             bool genPlaceholder, aclTensorList* t, int32_t& currentIdx)
 {
     if (t == nullptr) {
         return;
@@ -73,9 +71,9 @@ template <typename T>
     }
 }
 
-[[maybe_unused]] static void AddToListAndIdx(
-    std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs, bool genPlaceholder, aclTensorList* t,
-    int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
+[[maybe_unused]] static void AddToListAndIdx(std::vector<const aclTensor*>& v, std::vector<uint32_t>& idxs,
+                                             bool genPlaceholder, aclTensorList* t, int32_t& currentIdx,
+                                             std::vector<int32_t>& tensorOffset)
 {
     if (t == nullptr) {
         return;

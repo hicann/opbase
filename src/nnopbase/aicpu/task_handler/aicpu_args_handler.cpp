@@ -181,9 +181,8 @@ aclnnStatus GetAttrValueFromGe(const GeAttrValue& geAttrValue, domi::tensorflow:
 
 using AttrValueMap = google::protobuf::Map<std::string, domi::tensorflow::AttrValue>;
 
-aclnnStatus ParseAttr(
-    const FVector<const aclTensor*>& inputs, const AicpuAttrs& attrs, const std::string& opType,
-    domi::tensorflow::NodeDef& nodeDef)
+aclnnStatus ParseAttr(const FVector<const aclTensor*>& inputs, const AicpuAttrs& attrs, const std::string& opType,
+                      domi::tensorflow::NodeDef& nodeDef)
 {
     nodeDef.set_op(opType);
 
@@ -218,8 +217,8 @@ aclnnStatus SerializeNodedefToBuffer(const domi::tensorflow::NodeDef& nodeDef, u
 }
 
 // for KernelRunParam
-aclnnStatus SetTensorDataInfo(
-    const aclTensor& aclTensor, aicpu::FWKAdapter::TensorDataInfo& tensorDataInfo, const bool isRef)
+aclnnStatus SetTensorDataInfo(const aclTensor& aclTensor, aicpu::FWKAdapter::TensorDataInfo& tensorDataInfo,
+                              const bool isRef)
 {
     const auto dataType = aclTensor.GetDataType();
     uint32_t tfDataType = static_cast<uint32_t>(ConvertGeDataType2TfDataType(dataType, isRef));
@@ -234,9 +233,8 @@ aclnnStatus SetTensorDataInfo(
     return OK;
 }
 
-aclnnStatus BuildKernelRunParam(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuTaskSpace* space,
-    aicpu::FWKAdapter::KernelRunParam& kernelRunParam)
+aclnnStatus BuildKernelRunParam(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                                const AicpuTaskSpace* space, aicpu::FWKAdapter::KernelRunParam& kernelRunParam)
 {
     AICPU_ASSERT_NOTNULL_RETVAL(space);
     for (size_t i = 0; i < inputs.size(); i++) {
@@ -295,14 +293,13 @@ aclnnStatus UpdateProtoTensor(const aclTensor* aclTensor, aicpuops::Tensor* tens
     aicpuShape->set_data_format(aclTensor->GetOriginalFormat());
     aicpuShape->set_unknown_rank(true); // 默认动态
     tensor->set_tensor_type(aclTensor->GetDataType());
-    OP_LOGD(
-        "aclTensor format is %s, dtype is %s", op::ToString(aclTensor->GetOriginalFormat()).GetString(),
-        op::ToString(aclTensor->GetDataType()).GetString());
+    OP_LOGD("aclTensor format is %s, dtype is %s", op::ToString(aclTensor->GetOriginalFormat()).GetString(),
+            op::ToString(aclTensor->GetDataType()).GetString());
     return OK;
 }
 
-aclnnStatus GetAttrValueFromGeAttrValue(
-    const std::string& opType, const GeAttrValue& geAttrValue, aicpuops::AttrValue& attrValue)
+aclnnStatus GetAttrValueFromGeAttrValue(const std::string& opType, const GeAttrValue& geAttrValue,
+                                        aicpuops::AttrValue& attrValue)
 {
     const GeAttrValue::ValueType geValueType = geAttrValue.GetValueType();
     switch (geValueType) {
@@ -404,9 +401,8 @@ aclnnStatus GetAttrValueFromGeAttrValue(
     return OK;
 }
 using CCAttrValueMap = google::protobuf::Map<string, aicpuops::AttrValue>;
-aclnnStatus BuildAicpuNodeDef(
-    const std::string& opType, const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
-    const AicpuAttrs& attrs, aicpuops::NodeDef& nodeDef)
+aclnnStatus BuildAicpuNodeDef(const std::string& opType, const FVector<const aclTensor*>& inputs,
+                              const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs, aicpuops::NodeDef& nodeDef)
 {
     nodeDef.set_op(opType);
     for (auto input : inputs) {
@@ -423,12 +419,11 @@ aclnnStatus BuildAicpuNodeDef(
         const std::string& attrName = iter->first;
         aicpuops::AttrValue attrValue;
         const GeAttrValue::ValueType geValueType = (iter->second).GetValueType();
-        OP_LOGD(
-            "Get attr:[%s] value from op [%s], geValueType is [%d].", attrName.c_str(), opType.c_str(), geValueType);
+        OP_LOGD("Get attr:[%s] value from op [%s], geValueType is [%d].", attrName.c_str(), opType.c_str(),
+                geValueType);
         if (GetAttrValueFromGeAttrValue(opType, iter->second, attrValue) != OK) {
-            OP_LOGE(
-                ACLNN_ERR_INNER, "GetAttrValueFromGe attrName[%s] for op[%s] failed.", attrName.c_str(),
-                opType.c_str());
+            OP_LOGE(ACLNN_ERR_INNER, "GetAttrValueFromGe attrName[%s] for op[%s] failed.", attrName.c_str(),
+                    opType.c_str());
             return ACLNN_ERR_INNER;
         }
         auto proto_attrs = nodeDef.mutable_attrs();
@@ -459,16 +454,16 @@ aclnnStatus SerializeNodeDefToBuffer(const aicpuops::NodeDef& nodeDef, const std
 void AicpuArgsHandler::GetDeviceCacheAddr(void*& deviceAddr, aclOpExecutor* executor, const uint64_t deviceCacheOffset)
 {
     if (deviceCache_ == nullptr) {
-        deviceCache_ =
-            op::internal::ValueToPtr(op::internal::PtrToValue(executor->GetWorkspaceAddr()) + deviceCacheOffset);
+        deviceCache_ = op::internal::ValueToPtr(op::internal::PtrToValue(executor->GetWorkspaceAddr()) +
+                                                deviceCacheOffset);
     }
     deviceAddr = op::internal::ValueToPtr(op::internal::PtrToValue(deviceCache_) + deviceCacheSize_);
     OP_LOGD("alloc deviceCache_ success. deviceCacheSize_:%lu", static_cast<uint64_t>(deviceCacheSize_));
 }
 
-aclnnStatus AicpuArgsHandler::UpdateIoAddr(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const aclrtStream stream,
-    aclOpExecutor* executor, const uint64_t deviceExtMemSize, const uint64_t deviceCacheOffset)
+aclnnStatus AicpuArgsHandler::UpdateIoAddr(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                                           const aclrtStream stream, aclOpExecutor* executor,
+                                           const uint64_t deviceExtMemSize, const uint64_t deviceCacheOffset)
 {
     uint64_t* ioAddrs = reinterpret_cast<uint64_t*>(hostBuffer_.get() + ioAddrOffset_);
     for (size_t i = 0U; i < inputs.size(); i++) {
@@ -478,8 +473,8 @@ aclnnStatus AicpuArgsHandler::UpdateIoAddr(
             continue;
         }
         if ((inputs[i]->GetPlacement() == op::TensorPlacement::kOnHost)) {
-            auto hostTensorSize =
-                GetSizeInBytes(inputs[i]->GetOriginalShape().GetShapeSize(), inputs[i]->GetDataType());
+            auto hostTensorSize = GetSizeInBytes(inputs[i]->GetOriginalShape().GetShapeSize(),
+                                                 inputs[i]->GetDataType());
             AICPU_ASSERT_TRUE_RETVAL(hostTensorSize >= 0);
             const size_t alignSize = RoundUp(static_cast<uint64_t>(hostTensorSize), GetInputAddrAlignBytes());
             if (hostInputSize_ + alignSize <= kMaxTotalHostLen) {
@@ -492,9 +487,9 @@ aclnnStatus AicpuArgsHandler::UpdateIoAddr(
                 // AICPU_ASSERT_RTOK_RETVAL(rtMemcpyAsync(deviceAddr, deviceCacheRsvSize - deviceCacheSize_,
                 // inputs[i]->GetData(),
                 //                                        hostTensorSize, RT_MEMCPY_HOST_TO_DEVICE_EX, stream));
-                AICPU_ASSERT_RTOK_RETVAL(aclrtMemcpyAsync(
-                    deviceAddr, deviceCacheRsvSize - deviceCacheSize_, inputs[i]->GetData(), hostTensorSize,
-                    ACL_MEMCPY_HOST_TO_BUF_TO_DEVICE, stream));
+                AICPU_ASSERT_RTOK_RETVAL(aclrtMemcpyAsync(deviceAddr, deviceCacheRsvSize - deviceCacheSize_,
+                                                          inputs[i]->GetData(), hostTensorSize,
+                                                          ACL_MEMCPY_HOST_TO_BUF_TO_DEVICE, stream));
                 *ioAddrs = op::internal::PtrToValue(deviceAddr);
                 deviceCacheSize_ += alignSize;
             }
@@ -506,8 +501,8 @@ aclnnStatus AicpuArgsHandler::UpdateIoAddr(
 
     for (size_t i = 0U; i < outputs.size(); i++) {
         if ((outputs[i]->GetPlacement() != op::TensorPlacement::kOnDeviceHbm)) {
-            OP_LOGE(
-                ACLNN_ERR_INNER, "output[%zu] placement is [%d] not device placement.", i, outputs[i]->GetPlacement());
+            OP_LOGE(ACLNN_ERR_INNER, "output[%zu] placement is [%d] not device placement.", i,
+                    outputs[i]->GetPlacement());
             return ACLNN_ERR_INNER;
         }
         *ioAddrs = op::internal::PtrToValue(outputs[i]->GetData());
@@ -591,9 +586,8 @@ aclnnStatus AicpuCCArgsHandler::SetOffsetArgs()
     return OK;
 }
 
-aclnnStatus AicpuCCArgsHandler::GenCCArgs(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs,
-    std::string& taskInfo) const
+aclnnStatus AicpuCCArgsHandler::GenCCArgs(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                                          const AicpuAttrs& attrs, std::string& taskInfo) const
 {
     uint32_t paramLenth = static_cast<uint32_t>(sizeof(aicpu::AicpuParamHead));
     size_t inputSize = inputs.size();
@@ -631,8 +625,8 @@ aclnnStatus AicpuCCArgsHandler::GenCCArgs(
     return OK;
 }
 
-aclnnStatus AicpuCCArgsHandler::BuildCCArgs(
-    const std::string& argData, const std::string& kernelName, const std::string& soName, const size_t extInfoSize)
+aclnnStatus AicpuCCArgsHandler::BuildCCArgs(const std::string& argData, const std::string& kernelName,
+                                            const std::string& soName, const size_t extInfoSize)
 {
     const size_t argSize = argData.size();
     const size_t kernelNameSize = kernelName.size() + 1;
@@ -667,9 +661,9 @@ void AicpuCCArgsHandler::UpdateDeviceExtInfoAddr(void* deviceExtInfoAddr)
     aicpuParamHead->extInfoAddr = PtrToValue(deviceExtInfoAddr);
 }
 
-aclnnStatus AicpuTfArgsHandler::GenTfArgs(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs,
-    STR_FWK_OP_KERNEL& fwkOpKernel, std::string& taskInfo) const
+aclnnStatus AicpuTfArgsHandler::GenTfArgs(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                                          const AicpuAttrs& attrs, STR_FWK_OP_KERNEL& fwkOpKernel,
+                                          std::string& taskInfo) const
 {
     // Step1 : define the task api struct.
     fwkOpKernel.fwkKernelType = FMK_KERNEL_TYPE_TF;
@@ -709,8 +703,8 @@ aclnnStatus AicpuTfArgsHandler::SetOffsetArgs()
 {
     ResetHostInputInfo();
     STR_FWK_OP_KERNEL fwkOpKernel = {};
-    auto workspace_baseAddrOffset =
-        PtrToValue(&(fwkOpKernel.fwkKernelBase.fwk_kernel.workspaceBaseAddr)) - PtrToValue(&fwkOpKernel);
+    auto workspace_baseAddrOffset = PtrToValue(&(fwkOpKernel.fwkKernelBase.fwk_kernel.workspaceBaseAddr)) -
+                                    PtrToValue(&fwkOpKernel);
     auto ioAddrOffset = PtrToValue(&(fwkOpKernel.fwkKernelBase.fwk_kernel.inputOutputAddr)) - PtrToValue(&fwkOpKernel);
     args_.hostInputInfoNum = 2U; // workspace & ioAddr
     hostInputInfo_.emplace_back(aclrtPlaceHolderInfo(
@@ -719,8 +713,8 @@ aclnnStatus AicpuTfArgsHandler::SetOffsetArgs()
         aclrtPlaceHolderInfo({static_cast<uint32_t>(ioAddrOffset), static_cast<uint32_t>(ioAddrOffset_)}));
 
     if (!needDeviceExt_) {
-        auto extInfoAddrOffset =
-            PtrToValue(&(fwkOpKernel.fwkKernelBase.fwk_kernel.extInfoAddr)) - PtrToValue(&fwkOpKernel);
+        auto extInfoAddrOffset = PtrToValue(&(fwkOpKernel.fwkKernelBase.fwk_kernel.extInfoAddr)) -
+                                 PtrToValue(&fwkOpKernel);
         args_.hostInputInfoNum += 1U;
         hostInputInfo_.emplace_back(
             aclrtPlaceHolderInfo({static_cast<uint32_t>(extInfoAddrOffset), static_cast<uint32_t>(extInfoOffset_)}));
@@ -729,8 +723,8 @@ aclnnStatus AicpuTfArgsHandler::SetOffsetArgs()
     return OK;
 }
 
-aclnnStatus AicpuTfArgsHandler::BuildTfArgs(
-    STR_FWK_OP_KERNEL& fwkOpKernel, const std::string& taskInfo, const size_t extInfoSize)
+aclnnStatus AicpuTfArgsHandler::BuildTfArgs(STR_FWK_OP_KERNEL& fwkOpKernel, const std::string& taskInfo,
+                                            const size_t extInfoSize)
 {
     const size_t argSize = sizeof(STR_FWK_OP_KERNEL);
     const size_t taskInfoSize = taskInfo.size();

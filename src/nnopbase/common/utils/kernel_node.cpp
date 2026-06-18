@@ -11,27 +11,27 @@
 #include "kernel_node.h"
 
 namespace op::mem {
-KernelNode::KernelNode(uint32_t opType)
-    : opType_(opType), topoId_(0), originalId_(0) {}
+KernelNode::KernelNode(uint32_t opType) : opType_(opType), topoId_(0), originalId_(0) {}
 
 KernelNode::KernelNode(uint32_t opType, uint32_t originalId)
-    : opType_(opType), topoId_(originalId), originalId_(originalId) {}
+    : opType_(opType), topoId_(originalId), originalId_(originalId)
+{}
 
 KernelNode::~KernelNode()
 {
-    for (auto &input : inputs_) {
+    for (auto& input : inputs_) {
         if (input != nullptr) {
             delete input;
             input = nullptr;
         }
     }
-    for (auto &output : outputs_) {
+    for (auto& output : outputs_) {
         if (output != nullptr) {
             delete output;
             output = nullptr;
         }
     }
-    for (auto &wsp : workspace_) {
+    for (auto& wsp : workspace_) {
         if (wsp != nullptr) {
             delete wsp;
             wsp = nullptr;
@@ -39,59 +39,53 @@ KernelNode::~KernelNode()
     }
 }
 
-void KernelNode::SetOriginalId(int64_t originalId)
-{
-    originalId_ = originalId;
-}
+void KernelNode::SetOriginalId(int64_t originalId) { originalId_ = originalId; }
 
-void KernelNode::AddInput(KernelTensor *input)
+void KernelNode::AddInput(KernelTensor* input)
 {
     input->SetOwnerNode(this);
     inputs_.emplace_back(input);
 }
 
-void KernelNode::AddOutput(KernelTensor *output)
+void KernelNode::AddOutput(KernelTensor* output)
 {
     output->SetOwnerNode(this);
     outputs_.emplace_back(output);
 }
 
-void KernelNode::AddWorkspace(KernelTensor *workspace)
+void KernelNode::AddWorkspace(KernelTensor* workspace)
 {
     workspace->SetOwnerNode(this);
     workspace_.emplace_back(workspace);
 }
 
-void KernelNode::SetInputs(op::FVector<KernelTensor *, BASIC_NUM> &inputs)
+void KernelNode::SetInputs(op::FVector<KernelTensor*, BASIC_NUM>& inputs)
 {
     inputs_ = std::move(inputs);
-    for (const auto &input : inputs_) {
+    for (const auto& input : inputs_) {
         input->SetOwnerNode(this);
     }
 }
 
-void KernelNode::SetOutputs(op::FVector<KernelTensor *, BASIC_NUM> &outputs)
+void KernelNode::SetOutputs(op::FVector<KernelTensor*, BASIC_NUM>& outputs)
 {
     outputs_ = std::move(outputs);
-    for (const auto &output : outputs_) {
+    for (const auto& output : outputs_) {
         output->SetOwnerNode(this);
     }
 }
 
-void KernelNode::SetWorkspace(op::FVector<KernelTensor *, BASIC_NUM> &workspace)
+void KernelNode::SetWorkspace(op::FVector<KernelTensor*, BASIC_NUM>& workspace)
 {
     workspace_ = std::move(workspace);
-    for (const auto &wsp : workspace_) {
+    for (const auto& wsp : workspace_) {
         wsp->SetOwnerNode(this);
     }
 }
 
-const op::FVector<KernelTensor *, BASIC_NUM> &KernelNode::GetInputs() const
-{
-    return inputs_;
-}
+const op::FVector<KernelTensor*, BASIC_NUM>& KernelNode::GetInputs() const { return inputs_; }
 
-KernelTensor *KernelNode::GetInput(uint32_t index) const
+KernelTensor* KernelNode::GetInput(uint32_t index) const
 {
     if (index >= inputs_.size()) {
         return nullptr;
@@ -99,7 +93,7 @@ KernelTensor *KernelNode::GetInput(uint32_t index) const
     return inputs_[index];
 }
 
-KernelTensor *KernelNode::GetOutput(uint32_t index) const
+KernelTensor* KernelNode::GetOutput(uint32_t index) const
 {
     if (index >= outputs_.size()) {
         return nullptr;
@@ -107,7 +101,7 @@ KernelTensor *KernelNode::GetOutput(uint32_t index) const
     return outputs_[index];
 }
 
-KernelTensor *KernelNode::GetWorkspace(uint32_t index) const
+KernelTensor* KernelNode::GetWorkspace(uint32_t index) const
 {
     if (index >= workspace_.size()) {
         return nullptr;
@@ -115,8 +109,5 @@ KernelTensor *KernelNode::GetWorkspace(uint32_t index) const
     return workspace_[index];
 }
 
-KernelGraph *KernelNode::GetOwnerGraph() const
-{
-    return ownerGraph_;
-}
+KernelGraph* KernelNode::GetOwnerGraph() const { return ownerGraph_; }
 } // namespace op::mem

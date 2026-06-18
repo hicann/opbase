@@ -16,8 +16,8 @@
 #include "op_dfx_internal.h"
 
 namespace nnopbase {
-static const std::set<ge::Format> FormatsLikeND{
-    ge::FORMAT_NCL, ge::FORMAT_NCDHW, ge::FORMAT_DHWCN, ge::FORMAT_NHWC, ge::FORMAT_NCHW};
+static const std::set<ge::Format> FormatsLikeND{ge::FORMAT_NCL, ge::FORMAT_NCDHW, ge::FORMAT_DHWCN, ge::FORMAT_NHWC,
+                                                ge::FORMAT_NCHW};
 
 template <typename T, typename S>
 void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType, std::vector<uint8_t>& scalarValue)
@@ -26,14 +26,15 @@ void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType
     if (dataType == ge::DataType::DT_FLOAT) {
         if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-                (op::internal::PtrCastTo<bool>(scalarValue.data()))[i] =
-                    (std::abs(op::internal::PtrCastTo<bool>(tensor->MutableTensorData().GetAddr())[i]) >=
-                     std::numeric_limits<float>::epsilon());
+                (op::internal::PtrCastTo<bool>(
+                    scalarValue.data()))[i] = (std::abs(op::internal::PtrCastTo<bool>(tensor->MutableTensorData()
+                                                                                          .GetAddr())[i]) >=
+                                               std::numeric_limits<float>::epsilon());
             }
         } else {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-                op::internal::PtrCastTo<T>(scalarValue.data())[i] =
-                    static_cast<T>(op::internal::PtrCastTo<float>(tensor->MutableTensorData().GetAddr())[i]);
+                op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(
+                    op::internal::PtrCastTo<float>(tensor->MutableTensorData().GetAddr())[i]);
             }
         }
         tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
@@ -43,10 +44,11 @@ void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType
     if (dataType == ge::DataType::DT_FLOAT16) {
         if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-                op::internal::PtrCastTo<bool>(scalarValue.data())[i] =
-                    (std::abs(
-                         op::fp16_t(op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData().GetAddr())[i])
-                             .toFloat()) >= std::numeric_limits<float>::epsilon());
+                op::internal::PtrCastTo<bool>(
+                    scalarValue
+                        .data())[i] = (std::abs(op::fp16_t(op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData()
+                                                                                                 .GetAddr())[i])
+                                                    .toFloat()) >= std::numeric_limits<float>::epsilon());
             }
         } else {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
@@ -61,9 +63,9 @@ void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType
     if constexpr (!(std::is_same<std::complex<float>, T>::value) && !(std::is_same<std::complex<double>, T>::value)) {
         if (dataType == ge::DataType::DT_BF16) {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-                op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(op::bfloat16(
-                    op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData().GetAddr())[i],
-                    op::bfloat16::from_bits()));
+                op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(
+                    op::bfloat16(op::internal::PtrCastTo<uint16_t>(tensor->MutableTensorData().GetAddr())[i],
+                                 op::bfloat16::from_bits()));
             }
             tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
             return;
@@ -73,8 +75,9 @@ void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType
     if (dataType == ge::DataType::DT_COMPLEX64) {
         if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-                (op::internal::PtrCastTo<std::complex<double>>(scalarValue.data()))[i] =
-                    (op::internal::PtrCastTo<std::complex<float>>(tensor->MutableTensorData().GetAddr()))[i];
+                (op::internal::PtrCastTo<std::complex<double>>(
+                    scalarValue.data()))[i] = (op::internal::PtrCastTo<std::complex<float>>(tensor->MutableTensorData()
+                                                                                                .GetAddr()))[i];
             }
         }
         tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
@@ -84,8 +87,9 @@ void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType
     if (dataType == ge::DataType::DT_COMPLEX128) {
         if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
             for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-                (op::internal::PtrCastTo<std::complex<float>>(scalarValue.data()))[i] =
-                    (op::internal::PtrCastTo<std::complex<double>>(tensor->MutableTensorData().GetAddr()))[i];
+                (op::internal::PtrCastTo<std::complex<float>>(
+                    scalarValue.data()))[i] = (op::internal::PtrCastTo<std::complex<double>>(tensor->MutableTensorData()
+                                                                                                 .GetAddr()))[i];
             }
             tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
         }
@@ -93,15 +97,15 @@ void NnopbaseExecutorConvertTensorType(GertTensor* tensor, ge::DataType dataType
     }
 
     for (int64_t i = 0; i < tensor->GetShapeSize(); i++) {
-        op::internal::PtrCastTo<T>(scalarValue.data())[i] =
-            static_cast<T>(op::internal::PtrCastTo<S>(tensor->MutableTensorData().GetAddr())[i]);
+        op::internal::PtrCastTo<T>(scalarValue.data())[i] = static_cast<T>(
+            op::internal::PtrCastTo<S>(tensor->MutableTensorData().GetAddr())[i]);
     }
 
     tensor->MutableTensorData().SetAddr(scalarValue.data(), nullptr);
 }
 
-static std::map<
-    ge::DataType, std::map<ge::DataType, std::function<void(GertTensor*, ge::DataType, std::vector<uint8_t>&)>>>
+static std::map<ge::DataType,
+                std::map<ge::DataType, std::function<void(GertTensor*, ge::DataType, std::vector<uint8_t>&)>>>
     g_nnopbaseConvertMap{
         {ge::DataType::DT_INT8,
          {{ge::DataType::DT_INT16, NnopbaseExecutorConvertTensorType<int8_t, int16_t>},
@@ -305,8 +309,8 @@ aclnnStatus NnopbaseSaveTensor(NnopbaseExecutor* executor, const aclTensor* in_t
     }
     rt2Tensor->MutableTensorData().SetPlacement(in_tensor->GetPlacement());
     rt2Tensor->SetSize(op::CalcShapeBytes(in_tensor->Numel(), in_tensor->GetDataType()));
-    NNOPBASE_ASSERT_TRUE_RETVAL(
-        rt2Tensor->MutableTensorData().SetAddr(in_tensor->GetData(), nullptr) == ge::GRAPH_SUCCESS);
+    NNOPBASE_ASSERT_TRUE_RETVAL(rt2Tensor->MutableTensorData().SetAddr(in_tensor->GetData(), nullptr) ==
+                                ge::GRAPH_SUCCESS);
     const auto& viewStrides = in_tensor->GetViewStrides();
     auto& geStride = rt2Tensor->MutableStride();
     geStride.SetDimNum(viewStrides.size());
@@ -316,8 +320,8 @@ aclnnStatus NnopbaseSaveTensor(NnopbaseExecutor* executor, const aclTensor* in_t
     rt2Tensor->SetOffset(in_tensor->GetViewOffset());
     return OK;
 }
-aclnnStatus NnopbaseExecutorSaveTensor(
-    NnopbaseExecutor* executor, NnopbaseTensors* inputs, const aclTensor* in_tensor, NnopbaseTensor* tensor)
+aclnnStatus NnopbaseExecutorSaveTensor(NnopbaseExecutor* executor, NnopbaseTensors* inputs, const aclTensor* in_tensor,
+                                       NnopbaseTensor* tensor)
 {
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSaveTensor(executor, in_tensor, tensor));
     if (tensor->rt2Tensor.GetPlacement() != gert::kOnDeviceHbm) {
@@ -327,21 +331,19 @@ aclnnStatus NnopbaseExecutorSaveTensor(
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorConvertScalarTensorType(
-    NnopbaseTensors* tensors, ge::DataType dataType, const uint32_t index, const int32_t scalarIndex)
+aclnnStatus NnopbaseExecutorConvertScalarTensorType(NnopbaseTensors* tensors, ge::DataType dataType,
+                                                    const uint32_t index, const int32_t scalarIndex)
 {
     auto scalarTensor = &tensors->extTensors[tensors->paramDescs.instances[scalarIndex].startIndex];
     GertTensor* scalarRt2Tensor = &scalarTensor->rt2Tensor;
     const ge::DataType scalarDataType = scalarRt2Tensor->GetDataType();
     if (dataType != scalarDataType) {
         const auto& funcMap = nnopbase::g_nnopbaseConvertMap.find(dataType);
-        CHECK_COND(
-            (funcMap != nnopbase::g_nnopbaseConvertMap.end()), ACLNN_ERR_PARAM_INVALID, "Not supported data type[%s].",
-            op::ToString(dataType).GetString());
+        CHECK_COND((funcMap != nnopbase::g_nnopbaseConvertMap.end()), ACLNN_ERR_PARAM_INVALID,
+                   "Not supported data type[%s].", op::ToString(dataType).GetString());
         const auto& func = funcMap->second.find(scalarDataType);
-        CHECK_COND(
-            (func != funcMap->second.end()), ACLNN_ERR_PARAM_INVALID, "Not supported data type[%s].",
-            op::ToString(scalarDataType).GetString());
+        CHECK_COND((func != funcMap->second.end()), ACLNN_ERR_PARAM_INVALID, "Not supported data type[%s].",
+                   op::ToString(scalarDataType).GetString());
 
         (func->second)(scalarRt2Tensor, scalarDataType, tensors->paramDescs.instances[index].scalarValue);
         scalarRt2Tensor->SetDataType(dataType);
@@ -370,9 +372,8 @@ void NnopbaseGetRealIndex(const NnopbaseParamDesc& paramDescs, size_t* realIndex
     }
 }
 
-aclnnStatus NnopbaseExecutorAddTensor(
-    NnopbaseExecutor* executor, const aclTensor* tensor, const uint32_t index, const bool isInput,
-    const bool ignoreCont)
+aclnnStatus NnopbaseExecutorAddTensor(NnopbaseExecutor* executor, const aclTensor* tensor, const uint32_t index,
+                                      const bool isInput, const bool ignoreCont)
 {
     NnopbaseTensors* tensors = isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
     tensors->paramDescs.instances[index].isInput = isInput;
@@ -409,12 +410,10 @@ aclnnStatus NnopbaseExecutorAddTensor(
 
 aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors* tensors, const uint32_t index)
 {
-    CHECK_COND(
-        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID, "Failed to add tensor[%u], expect index is [%u].",
-        index, tensors->expectIndex);
-    CHECK_COND(
-        index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
-        "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
+    CHECK_COND(index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID,
+               "Failed to add tensor[%u], expect index is [%u].", index, tensors->expectIndex);
+    CHECK_COND(index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
+               "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
     uint32_t startIndex = index;
     if (tensors->hasDynamic) {
         uint32_t count = 0;
@@ -436,9 +435,9 @@ aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors* tensors, const u
     return OK;
 }
 
-static aclnnStatus NnopbaseCheckAndSaveTensor(
-    NnopbaseExecutor* executor, const aclTensorList* tensorList, const size_t startIndex, const uint32_t index,
-    const NnopbaseTensorIoOptions& options)
+static aclnnStatus NnopbaseCheckAndSaveTensor(NnopbaseExecutor* executor, const aclTensorList* tensorList,
+                                              const size_t startIndex, const uint32_t index,
+                                              const NnopbaseTensorIoOptions& options)
 {
     NnopbaseTensors* tensors = options.isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
     bool isEmpty = true;
@@ -450,9 +449,8 @@ static aclnnStatus NnopbaseCheckAndSaveTensor(
                 NnopbaseCheckContiguous(tensors, (*tensorList)[i], startIndex + i, index);
             }
             isEmpty = isEmpty && ((*tensorList)[i]->IsEmpty());
-            NNOPBASE_ASSERT_OK_RETVAL(
-                nnopbase::NnopbaseExecutorSaveTensor(
-                    executor, tensors, (*tensorList)[i], &tensors->extTensors[startIndex + i]));
+            NNOPBASE_ASSERT_OK_RETVAL(nnopbase::NnopbaseExecutorSaveTensor(executor, tensors, (*tensorList)[i],
+                                                                           &tensors->extTensors[startIndex + i]));
             if (!flag) {
                 dataType = (*tensorList)[i]->GetDataType();
                 flag = true;
@@ -472,9 +470,8 @@ static aclnnStatus NnopbaseCheckAndSaveTensor(
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorAddDynamicTensors(
-    NnopbaseExecutor* executor, const aclTensorList* tensorList, const uint32_t index, const bool isInput,
-    const bool ignoreCont)
+aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor* executor, const aclTensorList* tensorList,
+                                              const uint32_t index, const bool isInput, const bool ignoreCont)
 {
     NnopbaseTensors* tensors = isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
     if ((tensorList == nullptr) || (tensorList->Size() == 0U)) {
@@ -485,16 +482,13 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(
     } else {
         OP_LOGI("Dynamic output[%u] size is %lu", index, tensorList->Size());
     }
-    CHECK_COND(
-        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID,
-        "Failed to add dynamic tensor[%u], expect index is [%u].", index, tensors->expectIndex);
-    CHECK_COND(
-        index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
-        "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
-    CHECK_COND(
-        tensorList->Size() <= NNOPBASE_DYNAMIC_PARAM_DEF_NUM, ACLNN_ERR_PARAM_INVALID,
-        "Size of tensorList in dynamic input[%zu] is %llu, which exceeds limit: %d", index, tensorList->Size(),
-        NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
+    CHECK_COND(index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID,
+               "Failed to add dynamic tensor[%u], expect index is [%u].", index, tensors->expectIndex);
+    CHECK_COND(index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
+               "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
+    CHECK_COND(tensorList->Size() <= NNOPBASE_DYNAMIC_PARAM_DEF_NUM, ACLNN_ERR_PARAM_INVALID,
+               "Size of tensorList in dynamic input[%zu] is %llu, which exceeds limit: %d", index, tensorList->Size(),
+               NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
 
     uint32_t count = 0U;
     for (uint32_t i = tensors->expectIndex; i < index; i++) {
@@ -522,19 +516,17 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(
     return OK;
 }
 
-aclnnStatus NnopbaseExecutorAddAttr(
-    NnopbaseExecutor* executor, const void* const attrAddr, const size_t attrLen, const size_t index,
-    const size_t elementSize, const NnopbaseAttrDtype dtype)
+aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor* executor, const void* const attrAddr, const size_t attrLen,
+                                    const size_t index, const size_t elementSize, const NnopbaseAttrDtype dtype)
 {
     NnopbaseAttrs& opAttrs = executor->attrs;
     if (index >= opAttrs.num) {
-        OP_LOGE_FOR_INVALID_ARGUMENT_INDEX_OUT_OF_RANGE(
-            std::to_string(index).c_str(), "index", std::to_string(opAttrs.num).c_str());
+        OP_LOGE_FOR_INVALID_ARGUMENT_INDEX_OUT_OF_RANGE(std::to_string(index).c_str(), "index",
+                                                        std::to_string(opAttrs.num).c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
-    CHECK_COND(
-        attrAddr != nullptr, ACLNN_ERR_INNER_NULLPTR,
-        "Failed to add attr[%zu], please check the value of input attr[%zu].", index, index);
+    CHECK_COND(attrAddr != nullptr, ACLNN_ERR_INNER_NULLPTR,
+               "Failed to add attr[%zu], please check the value of input attr[%zu].", index, index);
     opAttrs.attrs[index].addr.addr = attrAddr;
     opAttrs.attrs[index].addr.size = attrLen;
     opAttrs.attrs[index].addr.elementSize = elementSize;
@@ -548,8 +540,8 @@ aclnnStatus NnopbaseExecutorAddAttr(
 
     if ((op::internal::PtrCastTo<NnopbaseExecutor>(executor)->matchArgsV2) &&
         (g_nnopbaseSysCfgParams.enableArgsCache) && !op::internal::GetOpProfilingRecordArgFlag()) {
-        NnopbaseUChar* key =
-            op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data()) + executor->ownArgs.keyLen;
+        NnopbaseUChar* key = op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data()) +
+                             executor->ownArgs.keyLen;
         // 第0个属性和输入中间用占位符隔开
         if (index == 0) {
             key = Indv::CacheKeyBuilder::AppendPlaceHolder(&executor->ownArgs, key);
@@ -557,8 +549,8 @@ aclnnStatus NnopbaseExecutorAddAttr(
         if (executor->ownArgs.remainKeyLen < attrLen) {
             size_t multiples = attrLen / NNOPBASE_MAX_ARGS_KEY_LEN + 1;
             executor->ownArgs.remainKeyLen += multiples * NNOPBASE_MAX_ARGS_KEY_LEN;
-            executor->ownArgs.inputKey.resize(
-                executor->ownArgs.inputKey.size() + multiples * NNOPBASE_MAX_ARGS_KEY_LEN);
+            executor->ownArgs.inputKey.resize(executor->ownArgs.inputKey.size() +
+                                              multiples * NNOPBASE_MAX_ARGS_KEY_LEN);
             key = op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data() + executor->ownArgs.keyLen);
         }
         key = NnopbaseAppendBinary(key, attrLen, attrAddr, attrLen);

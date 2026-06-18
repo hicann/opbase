@@ -94,8 +94,8 @@ aclError aclrtFree(void* devPtr)
 }
 
 EXTERN_C
-aclError aclrtMemcpyAsync(
-    void* dst, size_t destMax, const void* src, size_t count, aclrtMemcpyKind kind, aclrtStream stream)
+aclError aclrtMemcpyAsync(void* dst, size_t destMax, const void* src, size_t count, aclrtMemcpyKind kind,
+                          aclrtStream stream)
 {
     return ACL_SUCCESS;
 }
@@ -170,12 +170,12 @@ aclError aclrtStreamWaitEvent(aclrtStream stream, aclrtEvent event) { return ACL
 EXTERN_C
 aclError aclrtResetEvent(aclrtEvent event, aclrtStream stream) { return ACL_SUCCESS; }
 
-aclError aclrtLaunchKernelWithHostArgs(
-    aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-    size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                       aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                       aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
 {
-    return AclrtStub::GetInstance()->aclrtLaunchKernelWithHostArgs(
-        funcHandle, blockDim, stream, cfg, hostArgs, argsSize, placeHolderArray, placeHolderNum);
+    return AclrtStub::GetInstance()->aclrtLaunchKernelWithHostArgs(funcHandle, blockDim, stream, cfg, hostArgs,
+                                                                   argsSize, placeHolderArray, placeHolderNum);
 }
 
 aclError aclrtBinaryGetFunctionByEntry(aclrtBinHandle binHandle, uint64_t funcEntry, aclrtFuncHandle* funcHandle)
@@ -188,8 +188,8 @@ aclError aclrtBinaryGetFunction(const aclrtBinHandle binHandle, const char* kern
     return AclrtStub::GetInstance()->aclrtBinaryGetFunction(binHandle, kernelName, funcHandle);
 }
 
-aclError aclrtBinaryLoadFromData(
-    const void* data, size_t length, const aclrtBinaryLoadOptions* options, aclrtBinHandle* binHandle)
+aclError aclrtBinaryLoadFromData(const void* data, size_t length, const aclrtBinaryLoadOptions* options,
+                                 aclrtBinHandle* binHandle)
 {
     return AclrtStub::GetInstance()->aclrtBinaryLoadFromData(data, length, options, binHandle);
 }
@@ -199,8 +199,8 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions* op
     return AclrtStub::GetInstance()->aclrtBinaryLoadFromFile(binPath, options, binHandle);
 }
 
-aclError aclrtRegisterCpuFunc(
-    const aclrtBinHandle handle, const char* funcName, const char* kernelName, aclrtFuncHandle* funcHandle)
+aclError aclrtRegisterCpuFunc(const aclrtBinHandle handle, const char* funcName, const char* kernelName,
+                              aclrtFuncHandle* funcHandle)
 {
     return AclrtStub::GetInstance()->aclrtRegisterCpuFunc(handle, funcName, kernelName, funcHandle);
 }

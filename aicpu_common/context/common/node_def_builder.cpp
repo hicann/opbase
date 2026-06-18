@@ -178,8 +178,8 @@ NodeDefBuilder& NodeDefBuilder::Attr(std::string name, const std::vector<int64_t
     return *this;
 }
 
-NodeDefBuilder& NodeDefBuilder::Attr(
-    std::string name, const std::vector<std::vector<int64_t>>& shape_lists, std::string type)
+NodeDefBuilder& NodeDefBuilder::Attr(std::string name, const std::vector<std::vector<int64_t>>& shape_lists,
+                                     std::string type)
 {
     if (type == "shape_list") {
         auto shapeItems = CpuKernelUtils::CreateAttrValue();

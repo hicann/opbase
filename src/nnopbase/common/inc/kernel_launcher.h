@@ -28,49 +28,38 @@
 namespace op {
 
 class KernelLauncher : public op::Object {
-
 public:
-    KernelLauncher(uint32_t opType, op::CoreType coreType, const aclOpExecutor *executor,
-        const op::internal::ProfilingInfoId &profilingInfoId)
+    KernelLauncher(uint32_t opType, op::CoreType coreType, const aclOpExecutor* executor,
+                   const op::internal::ProfilingInfoId& profilingInfoId)
         : opType_(opType), coreType_(coreType), executor_(executor), profilingInfoId_(profilingInfoId)
     {
         opLogInfo_ = op::internal::GetThreadLocalContext().logInfo_;
     }
-    ~KernelLauncher() override
-    {}
+    ~KernelLauncher() override {}
     virtual aclnnStatus Launch() = 0;
-    virtual internal::OpKernelBin *GetBin() = 0;
-    virtual bool CheckRepeatable([[maybe_unused]] const std::unordered_map<const aclStorage *, const aclStorage *> &,
-        [[maybe_unused]] const std::vector<const aclStorage *> &) = 0;
-    uint32_t GetOpType() const
-    {
-        return opType_;
-    }
-    void SetOpType(uint32_t type)
-    {
-        opType_ = type;
-    }
-    void UpdateThreadLocal()
-    {
-        op::internal::GetThreadLocalContext().logInfo_.l0Name = opLogInfo_.l0Name;
-    }
+    virtual internal::OpKernelBin* GetBin() = 0;
+    virtual bool CheckRepeatable([[maybe_unused]] const std::unordered_map<const aclStorage*, const aclStorage*>&,
+                                 [[maybe_unused]] const std::vector<const aclStorage*>&) = 0;
+    uint32_t GetOpType() const { return opType_; }
+    void SetOpType(uint32_t type) { opType_ = type; }
+    void UpdateThreadLocal() { op::internal::GetThreadLocalContext().logInfo_.l0Name = opLogInfo_.l0Name; }
 
 protected:
     uint32_t opType_;
     op::CoreType coreType_;
-    const aclOpExecutor *executor_;
+    const aclOpExecutor* executor_;
     op::internal::ProfilingInfoId profilingInfoId_;
     op::internal::OpLogInfo opLogInfo_;
 };
 
 class LauncherRepeatableChecker {
 public:
-    LauncherRepeatableChecker(const std::unordered_map<const aclStorage *, const aclStorage *> &relation,
-        const std::vector<const aclStorage *> &oriStorage)
+    LauncherRepeatableChecker(const std::unordered_map<const aclStorage*, const aclStorage*>& relation,
+                              const std::vector<const aclStorage*>& oriStorage)
         : relation_(relation), oriStorage_(oriStorage)
     {}
 
-    void CheckLaunchArg(const aclTensor *arg)
+    void CheckLaunchArg(const aclTensor* arg)
     {
         if (!canRepeatable_ || arg == nullptr || arg->IsFromWorkspace() || arg->GetPlacement() != gert::kOnDeviceHbm) {
             return;
@@ -96,7 +85,7 @@ public:
         }
     }
 
-    void CheckLaunchArg(const aclTensorList *arg)
+    void CheckLaunchArg(const aclTensorList* arg)
     {
         if (!canRepeatable_ || arg == nullptr) {
             return;
@@ -106,24 +95,24 @@ public:
         }
     }
 
-    void CheckLaunchArg(OpArg &arg)
+    void CheckLaunchArg(OpArg& arg)
     {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
-            CheckLaunchArg(reinterpret_cast<aclTensor *>(arg->pointer));
+            CheckLaunchArg(reinterpret_cast<aclTensor*>(arg->pointer));
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            CheckLaunchArg(reinterpret_cast<aclTensorList *>(arg->pointer));
+            CheckLaunchArg(reinterpret_cast<aclTensorList*>(arg->pointer));
         }
     }
 
-    bool CheckLauncherRepeatable(OpArgContext *args)
+    bool CheckLauncherRepeatable(OpArgContext* args)
     {
         if (args->ContainsOpArgType(OpArgDef::OP_INPUT_ARG)) {
-            args->GetOpArg(OpArgDef::OP_INPUT_ARG)->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg &elem) {
+            args->GetOpArg(OpArgDef::OP_INPUT_ARG)->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg& elem) {
                 this->CheckLaunchArg(elem);
             });
         }
         if (args->ContainsOpArgType(OpArgDef::OP_OUTPUT_ARG)) {
-            args->GetOpArg(OpArgDef::OP_OUTPUT_ARG)->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg &elem) {
+            args->GetOpArg(OpArgDef::OP_OUTPUT_ARG)->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg& elem) {
                 this->CheckLaunchArg(elem);
             });
         }
@@ -132,23 +121,23 @@ public:
         }
         if (args->ContainsOpArgType(OpArgDef::OP_WORKSPACE_ARG)) {
             args->GetOpArg(OpArgDef::OP_WORKSPACE_ARG)
-                ->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg &elem) { this->CheckLaunchArg(elem); });
+                ->VisitByNoReturn([this]([[maybe_unused]] size_t idx, OpArg& elem) { this->CheckLaunchArg(elem); });
         }
         return canRepeatable_;
     }
 
 private:
-    const std::unordered_map<const aclStorage *, const aclStorage *> &relation_;
-    const std::vector<const aclStorage *> &oriStorage_;
+    const std::unordered_map<const aclStorage*, const aclStorage*>& relation_;
+    const std::vector<const aclStorage*>& oriStorage_;
     bool canRepeatable_{true};
 };
 
 class AiCoreKernelLauncher : public KernelLauncher {
 public:
-    AiCoreKernelLauncher(uint32_t opType, op::CoreType coreType, const op::internal::ProfilingInfoId &profilingId,
-        const aclOpExecutor *executor,
-        // use rvalue to force using OpInput/OpOutput... template to generate op args.
-        OpArgContext *args)
+    AiCoreKernelLauncher(uint32_t opType, op::CoreType coreType, const op::internal::ProfilingInfoId& profilingId,
+                         const aclOpExecutor* executor,
+                         // use rvalue to force using OpInput/OpOutput... template to generate op args.
+                         OpArgContext* args)
         : KernelLauncher(opType, coreType, executor, profilingId), args_(args)
     {}
 
@@ -164,17 +153,14 @@ public:
         }
     }
 
-    void SaveLaunchCtx(op::internal::LauncherContext &&ctx)
-    {
-        launchCtx_ = std::move(ctx);
-    }
+    void SaveLaunchCtx(op::internal::LauncherContext&& ctx) { launchCtx_ = std::move(ctx); }
 
     aclnnStatus Launch() override
     {
         internal::GetLauncherCtx() = std::move(launchCtx_);
         bool isRepeatable = executor_->IsRepeatable();
         internal::GetLauncherCtx().SetLauncherRepeatable(isRepeatable);
-        auto &threadLocalCtx = op::internal::GetThreadLocalContext();
+        auto& threadLocalCtx = op::internal::GetThreadLocalContext();
         // 1. Restore thread local, put these codes at the begining
         threadLocalCtx.logInfo_.l0Name = opLogInfo_.l0Name;
         threadLocalCtx.profilingInfoId_ = profilingInfoId_;
@@ -200,8 +186,8 @@ public:
                 (status == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE)) {
                 OP_LOGI("No need to perform overflow check in the capture scenario.");
             } else {
-                (void)op::internal::OverflowDumpProcess(
-                    args_, const_cast<aclOpExecutor*>(executor_), executor_->GetStream(), opLogInfo_);
+                (void)op::internal::OverflowDumpProcess(args_, const_cast<aclOpExecutor*>(executor_),
+                                                        executor_->GetStream(), opLogInfo_);
                 internal::GetLauncherCtx().ClearTilingCache();
             }
         }
@@ -213,21 +199,21 @@ public:
         return res;
     }
 
-    op::internal::OpKernelBin *GetBin() override
+    op::internal::OpKernelBin* GetBin() override
     {
-        internal::OpKernel *opKernel = op::internal::gKernelMgr.GetKernel(opType_);
+        internal::OpKernel* opKernel = op::internal::gKernelMgr.GetKernel(opType_);
         if (opKernel == nullptr) {
             return nullptr;
         }
 
         // TODO: if not op input or output arg, compile will fail.
         // Use ContainsOpArgType to check input/output existence if absence of input/output is allowed.
-        return opKernel->SelectBin(
-            *args_->GetOpArg(op::OP_INPUT_ARG), *args_->GetOpArg(op::OP_OUTPUT_ARG), *args_->GetOpArg(op::OP_ATTR_ARG));
+        return opKernel->SelectBin(*args_->GetOpArg(op::OP_INPUT_ARG), *args_->GetOpArg(op::OP_OUTPUT_ARG),
+                                   *args_->GetOpArg(op::OP_ATTR_ARG));
     }
 
-    bool CheckRepeatable(const std::unordered_map<const aclStorage *, const aclStorage *> &relation,
-        const std::vector<const aclStorage *> &oriStorage) override
+    bool CheckRepeatable(const std::unordered_map<const aclStorage*, const aclStorage*>& relation,
+                         const std::vector<const aclStorage*>& oriStorage) override
     {
         LauncherRepeatableChecker checker(relation, oriStorage);
         return checker.CheckLauncherRepeatable(args_);
@@ -236,11 +222,11 @@ public:
 private:
     // tuple of op args of different types.
     // std::tuple<T...> args_;
-    OpArgContext *args_{nullptr};
+    OpArgContext* args_{nullptr};
     op::internal::LauncherContext launchCtx_;
-    uint8_t reserved_field_[32];  // Reserved field
+    uint8_t reserved_field_[32]; // Reserved field
 };
 
-}  // namespace op
+} // namespace op
 
 #endif

@@ -81,8 +81,8 @@ uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json
 
         uint32_t ret = std::min(cubeNum, vectorNum);
         if (ret == 0) {
-            OP_LOGW(
-                "MIX op wrong coreNum. ratio: %u:%u, cube:%u, vector:%u", cubeRatio, vectorRatio, cubeNum, vectorNum);
+            OP_LOGW("MIX op wrong coreNum. ratio: %u:%u, cube:%u, vector:%u", cubeRatio, vectorRatio, cubeNum,
+                    vectorNum);
             return 1;
         }
 
@@ -92,9 +92,8 @@ uint32_t CalcMixCoreNum(uint32_t cubeCoreNum, uint32_t vectorCoreNum, const Json
     }
 }
 
-void UpdateThradLocalPlatformInfo(
-    fe::PlatFormInfos* platformInfo, const uint32_t& coreNum, const uint32_t& cubeCoreNum,
-    const uint32_t& vectorCoreNum)
+void UpdateThradLocalPlatformInfo(fe::PlatFormInfos* platformInfo, const uint32_t& coreNum, const uint32_t& cubeCoreNum,
+                                  const uint32_t& vectorCoreNum)
 {
     thread_local static uint32_t cubeCoreNumLast = -1;
     thread_local static uint32_t vectorCoreNumLast = -1;
@@ -149,10 +148,11 @@ void SetCoreNum(const Json& opJson, fe::PlatFormInfos* platformInfo, uint32_t& c
     UpdateThradLocalPlatformInfo(platformInfo, coreNum, cubeCoreNum, vectorCoreNum);
 }
 
-aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
-    uint32_t opType, const gert::OpImplKernelRegistry::OpImplFunctions* tilingFuncs, const Json& opJson,
-    fe::PlatFormInfos* platformInfo, const aclnnOpInfoRecord::OpCompilerOption& compileOptions,
-    const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo)
+aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(uint32_t opType,
+                                                      const gert::OpImplKernelRegistry::OpImplFunctions* tilingFuncs,
+                                                      const Json& opJson, fe::PlatFormInfos* platformInfo,
+                                                      const aclnnOpInfoRecord::OpCompilerOption& compileOptions,
+                                                      const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo)
 {
     if (tilingFuncs == nullptr) {
         OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
@@ -186,8 +186,8 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
     tilingParseCtxValue_[kPlatformInfo].data.pointer = tilingParseInfo_.platformInfo_;
     tilingParseCtxValue_[kOpType].data.pointer = const_cast<char*>(tilingParseInfo_.opType_);
 
-    std::size_t tilingParseCtxSize =
-        sizeof(AsyncAnyValue*) * static_cast<int>(kParseOutputNum) + sizeof(KernelRunContext);
+    std::size_t tilingParseCtxSize = sizeof(AsyncAnyValue*) * static_cast<int>(kParseOutputNum) +
+                                     sizeof(KernelRunContext);
     tilingParseCtx_ = static_cast<KernelRunContext*>(malloc(tilingParseCtxSize));
     CHECK_COND(tilingParseCtx_ != nullptr, ACLNN_ERR_INNER, "malloc failed. [%zu]", tilingParseCtxSize);
 
@@ -248,16 +248,15 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(
      */
     int32_t deterministicLevel = DETERMINISTIC_LEVEL_NONE;
     if (GetThreadLocalContext().opConfigInfo_.isDeterministicOn_) {
-        deterministicLevel =
-            (consistency == STRONG_CONSISTENCY_ON) ? DETERMINISTIC_LEVEL_HIGH : DETERMINISTIC_LEVEL_NORMAL;
+        deterministicLevel = (consistency == STRONG_CONSISTENCY_ON) ? DETERMINISTIC_LEVEL_HIGH :
+                                                                      DETERMINISTIC_LEVEL_NORMAL;
     }
     int32_t* deterministicLevelDataInplace = reinterpret_cast<int32_t*>(DeterministicLevel_.data.inplace);
     *deterministicLevelDataInplace = deterministicLevel;
     OP_LOGD("Get deterministic level success, level = %d, strong consistency = %lld", deterministicLevel, consistency);
 
-    OP_CHECK(
-        tilingFuncs->tiling_parse != nullptr, OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
-        return ACLNN_SUCCESS);
+    OP_CHECK(tilingFuncs->tiling_parse != nullptr, OP_LOGW("Op [%s] has no tiling parse function", opTypeStr_.c_str()),
+             return ACLNN_SUCCESS);
 
     auto rc = tilingFuncs->tiling_parse(PtrCastTo<gert::KernelContext>(tilingParseCtx_));
     CHECK_COND(rc == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Op [%s] tiling compile info parse failed", opTypeStr_.c_str());

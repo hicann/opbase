@@ -21,20 +21,20 @@
 
 namespace op {
 namespace internal {
-#define AICPU_ASSERT(exp)                                         \
-    do {                                                          \
-        if (!(exp)) {                                             \
-            OP_LOGE(ACLNN_ERR_INNER, "Assert %s failed", #exp);   \
-            return;                                               \
-        }                                                         \
+#define AICPU_ASSERT(exp)                                       \
+    do {                                                        \
+        if (!(exp)) {                                           \
+            OP_LOGE(ACLNN_ERR_INNER, "Assert %s failed", #exp); \
+            return;                                             \
+        }                                                       \
     } while (false)
 
-#define AICPU_ASSERT_RETVAL(exp, ret)                             \
-    do {                                                          \
-        if (!(exp)) {                                             \
-            OP_LOGE(ret, "Assert %s failed", #exp);               \
-            return (ret);                                         \
-        }                                                         \
+#define AICPU_ASSERT_RETVAL(exp, ret)               \
+    do {                                            \
+        if (!(exp)) {                               \
+            OP_LOGE(ret, "Assert %s failed", #exp); \
+            return (ret);                           \
+        }                                           \
     } while (false)
 
 #define AICPU_ASSERT_OK_RETVAL(v) AICPU_ASSERT_RETVAL(((v) == OK), (v))

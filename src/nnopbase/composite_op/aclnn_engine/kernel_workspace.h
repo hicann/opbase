@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_KERNEL_WORKSPACE_H
 #define OP_API_OP_API_COMMON_INC_OPDEV_INTERNAL_KERNEL_WORKSPACE_H
 #include "kernel_arg.h"
@@ -16,17 +16,11 @@
 
 namespace op {
 namespace internal {
-aclnnStatus UpdateWorkspace(aclOpExecutor *executor,
-                            const size_t *workspaceSize,
-                            size_t workspaceNum,
-                            aclTensorList **workspace);
+aclnnStatus UpdateWorkspace(aclOpExecutor* executor, const size_t* workspaceSize, size_t workspaceNum,
+                            aclTensorList** workspace);
 
-aclnnStatus GetWorkspace(uint32_t optype,
-                         aclTensorList **workspace,
-                         aclOpExecutor *executor,
-                         OpArgList &inputs,
-                         OpArgList &outputs,
-                         OpArgList &attrs);
-}
-}
+aclnnStatus GetWorkspace(uint32_t optype, aclTensorList** workspace, aclOpExecutor* executor, OpArgList& inputs,
+                         OpArgList& outputs, OpArgList& attrs);
+} // namespace internal
+} // namespace op
 #endif

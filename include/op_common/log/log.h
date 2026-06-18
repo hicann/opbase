@@ -83,16 +83,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
     return opInfo;
 }
 
-#define OP_LOGE_LIBOPAPI_REPORT(opName, fmt, ...)                                      \
-    do {                                                                               \
-        if (CheckLogLevel(static_cast<int>(OP), DLOG_ERROR) == 1) {                    \
-            DlogRecord(                                                                \
-                static_cast<int>(OP), DLOG_ERROR,                                      \
-                "[%s:%d][%s]"                                                          \
-                "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
-                __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
-                Ops::Base::GetSafeStr(Ops::Base::GetOpInfo(opName)), ##__VA_ARGS__);   \
-        }                                                                              \
+#define OP_LOGE_LIBOPAPI_REPORT(opName, fmt, ...)                                             \
+    do {                                                                                      \
+        if (CheckLogLevel(static_cast<int>(OP), DLOG_ERROR) == 1) {                           \
+            DlogRecord(static_cast<int>(OP), DLOG_ERROR,                                      \
+                       "[%s:%d][%s]"                                                          \
+                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
+                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
+                       Ops::Base::GetSafeStr(Ops::Base::GetOpInfo(opName)), ##__VA_ARGS__);   \
+        }                                                                                     \
     } while (0)
 
 // ============================================================================
@@ -118,8 +117,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_entityName_.c_str(), "The %sth input of %s has incorrect shape [%s]. It should be [%s].",            \
             index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()); \
         const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_shape", "correct_shape"};              \
-        const std::vector<const char*> msgvalue = {                                                                    \
-            index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()}; \
+        const std::vector<const char*> msgvalue = {index_str.c_str(), _safe_entityName_.c_str(),                       \
+                                                   _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()};        \
         REPORT_PREDEFINED_ERR_MSG("EZ0001", msgKey, msgvalue);                                                         \
     } while (0)
 
@@ -132,21 +131,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage:Attribute [attrName] of [entityName] has incorrect value [incorrectVal]. It should be
  * [correctVal].
  */
-#define OP_LOGE_WITH_INVALID_ATTR(entityName, attrName, incorrectVal, correctVal)                         \
-    do {                                                                                                  \
-        std::string _safe_entityName_(entityName);                                                        \
-        std::string _safe_attrName_(attrName);                                                            \
-        std::string _safe_incorrectVal_(incorrectVal);                                                    \
-        std::string _safe_correctVal_(correctVal);                                                        \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
-            _safe_entityName_.c_str(), "Attribute %s of %s has incorrect value %s. It should be %s.",     \
-            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectVal_.c_str(),              \
-            _safe_correctVal_.c_str());                                                                   \
-        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_val", "correct_val"}; \
-        const std::vector<const char*> msgvalue = {                                                       \
-            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectVal_.c_str(),              \
-            _safe_correctVal_.c_str()};                                                                   \
-        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                            \
+#define OP_LOGE_WITH_INVALID_ATTR(entityName, attrName, incorrectVal, correctVal)                                \
+    do {                                                                                                         \
+        std::string _safe_entityName_(entityName);                                                               \
+        std::string _safe_attrName_(attrName);                                                                   \
+        std::string _safe_incorrectVal_(incorrectVal);                                                           \
+        std::string _safe_correctVal_(correctVal);                                                               \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                       \
+                                "Attribute %s of %s has incorrect value %s. It should be %s.",                   \
+                                _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectVal_.c_str(), \
+                                _safe_correctVal_.c_str());                                                      \
+        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_val", "correct_val"};        \
+        const std::vector<const char*> msgvalue = {_safe_attrName_.c_str(), _safe_entityName_.c_str(),           \
+                                                   _safe_incorrectVal_.c_str(), _safe_correctVal_.c_str()};      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0002", msgKey, msgvalue);                                                   \
     } while (0)
 
 /**
@@ -158,21 +156,19 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage:Attribute [attrName] of [entityName] has incorrect size [incorrectSize]. It should be
  * [correctSize].
  */
-#define OP_LOGE_WITH_INVALID_ATTR_SIZE(entityName, attrName, incorrectSize, correctSize)                    \
-    do {                                                                                                    \
-        std::string _safe_entityName_(entityName);                                                          \
-        std::string _safe_attrName_(attrName);                                                              \
-        std::string _safe_incorrectSize_(incorrectSize);                                                    \
-        std::string _safe_correctSize_(correctSize);                                                        \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                            \
-            _safe_entityName_.c_str(), "Attribute %s of %s has incorrect size %s. It should be %s.",        \
-            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
-            _safe_correctSize_.c_str());                                                                    \
-        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_size", "correct_size"}; \
-        const std::vector<const char*> msgvalue = {                                                         \
-            _safe_attrName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
-            _safe_correctSize_.c_str()};                                                                    \
-        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                              \
+#define OP_LOGE_WITH_INVALID_ATTR_SIZE(entityName, attrName, incorrectSize, correctSize)                               \
+    do {                                                                                                               \
+        std::string _safe_entityName_(entityName);                                                                     \
+        std::string _safe_attrName_(attrName);                                                                         \
+        std::string _safe_incorrectSize_(incorrectSize);                                                               \
+        std::string _safe_correctSize_(correctSize);                                                                   \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                             \
+                                "Attribute %s of %s has incorrect size %s. It should be %s.", _safe_attrName_.c_str(), \
+                                _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str());  \
+        const std::vector<const char*> msgKey = {"attr_name", "op_name", "incorrect_size", "correct_size"};            \
+        const std::vector<const char*> msgvalue = {_safe_attrName_.c_str(), _safe_entityName_.c_str(),                 \
+                                                   _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()};          \
+        REPORT_PREDEFINED_ERR_MSG("EZ0003", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
@@ -181,16 +177,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * paramName:string
  * errMessage:Parameter [paramName] of [entityName] is required, but it is empty.
  */
-#define OP_LOGE_WITH_INVALID_INPUT(entityName, paramName)                                                            \
-    do {                                                                                                             \
-        std::string _safe_entityName_(entityName);                                                                   \
-        std::string _safe_paramName_(paramName);                                                                     \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                     \
-            _safe_entityName_.c_str(), "Parameter %s of %s is required, but it is empty.", _safe_paramName_.c_str(), \
-            _safe_entityName_.c_str());                                                                              \
-        const std::vector<const char*> msgKey = {"param_name", "op_name"};                                           \
-        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str()};             \
-        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                                                       \
+#define OP_LOGE_WITH_INVALID_INPUT(entityName, paramName)                                                      \
+    do {                                                                                                       \
+        std::string _safe_entityName_(entityName);                                                             \
+        std::string _safe_paramName_(paramName);                                                               \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(), "Parameter %s of %s is required, but it is empty.", \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str());                          \
+        const std::vector<const char*> msgKey = {"param_name", "op_name"};                                     \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str()};       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0004", msgKey, msgvalue);                                                 \
     } while (0)
 
 /**
@@ -212,8 +207,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_entityName_.c_str(), "The %sth input of %s has incorrect shape size %s. It should be %s.",         \
             index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()); \
         const std::vector<const char*> msgKey = {"index", "op_name", "incorrect_size", "correct_size"};              \
-        const std::vector<const char*> msgvalue = {                                                                  \
-            index_str.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()}; \
+        const std::vector<const char*> msgvalue = {index_str.c_str(), _safe_entityName_.c_str(),                     \
+                                                   _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()};        \
         REPORT_PREDEFINED_ERR_MSG("EZ0005", msgKey, msgvalue);                                                       \
     } while (0)
 
@@ -232,14 +227,13 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_paramName_(paramName);                                                                  \
         std::string _safe_dataFormat_(dataFormat);                                                                \
         std::string _safe_expectedFormatList_(expectedFormatList);                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                  \
-            _safe_entityName_.c_str(), "Input parameter %s of %s has incorrect format %s. It should be %s.",      \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataFormat_.c_str(),                       \
-            _safe_expectedFormatList_.c_str());                                                                   \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                        \
+                                "Input parameter %s of %s has incorrect format %s. It should be %s.",             \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataFormat_.c_str(),   \
+                                _safe_expectedFormatList_.c_str());                                               \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "data_format", "expected_format_list"}; \
-        const std::vector<const char*> msgvalue = {                                                               \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataFormat_.c_str(),                       \
-            _safe_expectedFormatList_.c_str()};                                                                   \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),           \
+                                                   _safe_dataFormat_.c_str(), _safe_expectedFormatList_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0006", msgKey, msgvalue);                                                    \
     } while (0)
 
@@ -258,14 +252,13 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_paramName_(paramName);                                                                \
         std::string _safe_dataDtype_(dataDtype);                                                                \
         std::string _safe_expectedDtypeList_(expectedDtypeList);                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                \
-            _safe_entityName_.c_str(), "Input parameter %s of %s has incorrect dtype %s. It should be %s.",     \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataDtype_.c_str(),                      \
-            _safe_expectedDtypeList_.c_str());                                                                  \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                      \
+                                "Input parameter %s of %s has incorrect dtype %s. It should be %s.",            \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataDtype_.c_str(),  \
+                                _safe_expectedDtypeList_.c_str());                                              \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "data_dtype", "expected_dtype_list"}; \
-        const std::vector<const char*> msgvalue = {                                                             \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_dataDtype_.c_str(),                      \
-            _safe_expectedDtypeList_.c_str()};                                                                  \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),         \
+                                                   _safe_dataDtype_.c_str(), _safe_expectedDtypeList_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0007", msgKey, msgvalue);                                                  \
     } while (0)
 
@@ -284,21 +277,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect shape [incorrectShape]. It should
  * be [correctShape].
  */
-#define OP_LOGE_FOR_INVALID_SHAPE(entityName, paramName, incorrectShape, correctShape)                         \
-    do {                                                                                                       \
-        std::string _safe_entityName_(entityName);                                                             \
-        std::string _safe_paramName_(paramName);                                                               \
-        std::string _safe_incorrectShape_(incorrectShape);                                                     \
-        std::string _safe_correctShape_(correctShape);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape %s. It should be %s.",          \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),                \
-            _safe_correctShape_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "correct_shape"}; \
-        const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),                \
-            _safe_correctShape_.c_str()};                                                                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_SHAPE(entityName, paramName, incorrectShape, correctShape)                              \
+    do {                                                                                                            \
+        std::string _safe_entityName_(entityName);                                                                  \
+        std::string _safe_paramName_(paramName);                                                                    \
+        std::string _safe_incorrectShape_(incorrectShape);                                                          \
+        std::string _safe_correctShape_(correctShape);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
+                                "Parameter %s of %s has incorrect shape %s. It should be %s.",                      \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(), \
+                                _safe_correctShape_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "correct_shape"};      \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),             \
+                                                   _safe_incorrectShape_.c_str(), _safe_correctShape_.c_str()};     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0008", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -310,21 +302,19 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: Parameter [paramName] of [entityName] has incorrect shape [incorrectShape]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(entityName, paramName, incorrectShape, reason)            \
-    do {                                                                                                \
-        std::string _safe_entityName_(entityName);                                                      \
-        std::string _safe_paramName_(paramName);                                                        \
-        std::string _safe_incorrectShape_(incorrectShape);                                              \
-        std::string _safe_reason_(reason);                                                              \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape %s. Reason: %s.",        \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),         \
-            _safe_reason_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),         \
-            _safe_reason_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                          \
+#define OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(entityName, paramName, incorrectShape, reason)                         \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                                     \
+        std::string _safe_incorrectShape_(incorrectShape);                                                           \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape %s. Reason: %s.", \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShape_.c_str(),  \
+                                _safe_reason_.c_str());                                                              \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_shape", "reason"};              \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectShape_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0009", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -337,21 +327,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have incorrect shapes [incorrectShapes]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(entityName, paramNames, incorrectShapes, reason)           \
-    do {                                                                                                  \
-        std::string _safe_entityName_(entityName);                                                        \
-        std::string _safe_paramNames_(paramNames);                                                        \
-        std::string _safe_incorrectShapes_(incorrectShapes);                                              \
-        std::string _safe_reason_(reason);                                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
-            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect shapes %s. Reason: %s.",       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShapes_.c_str(),         \
-            _safe_reason_.c_str());                                                                       \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_shapes", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShapes_.c_str(),         \
-            _safe_reason_.c_str()};                                                                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                            \
+#define OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(entityName, paramNames, incorrectShapes, reason)                       \
+    do {                                                                                                              \
+        std::string _safe_entityName_(entityName);                                                                    \
+        std::string _safe_paramNames_(paramNames);                                                                    \
+        std::string _safe_incorrectShapes_(incorrectShapes);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                            \
+                                "Parameters %s of %s have incorrect shapes %s. Reason: %s.",                          \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectShapes_.c_str(), \
+                                _safe_reason_.c_str());                                                               \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_shapes", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectShapes_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0010", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -364,21 +353,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect shape dim [incorrectDim]. It should
  * be [correctDim].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIM(entityName, paramName, incorrectDim, correctDim)                      \
-    do {                                                                                                   \
-        std::string _safe_entityName_(entityName);                                                         \
-        std::string _safe_paramName_(paramName);                                                           \
-        std::string _safe_incorrectDim_(incorrectDim);                                                     \
-        std::string _safe_correctDim_(correctDim);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                           \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape dim %s. It should be %s.",  \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(),              \
-            _safe_correctDim_.c_str());                                                                    \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "correct_dim"}; \
-        const std::vector<const char*> msgvalue = {                                                        \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(),              \
-            _safe_correctDim_.c_str()};                                                                    \
-        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                             \
+#define OP_LOGE_FOR_INVALID_SHAPEDIM(entityName, paramName, incorrectDim, correctDim)                             \
+    do {                                                                                                          \
+        std::string _safe_entityName_(entityName);                                                                \
+        std::string _safe_paramName_(paramName);                                                                  \
+        std::string _safe_incorrectDim_(incorrectDim);                                                            \
+        std::string _safe_correctDim_(correctDim);                                                                \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                        \
+                                "Parameter %s of %s has incorrect shape dim %s. It should be %s.",                \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(), \
+                                _safe_correctDim_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "correct_dim"};        \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),           \
+                                                   _safe_incorrectDim_.c_str(), _safe_correctDim_.c_str()};       \
+        REPORT_PREDEFINED_ERR_MSG("EZ0011", msgKey, msgvalue);                                                    \
     } while (0)
 
 /**
@@ -400,8 +388,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape dim %s. Reason: %s.",                  \
             _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()); \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dim", "reason"};                 \
-        const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDim_.c_str(), _safe_reason_.c_str()}; \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),               \
+                                                   _safe_incorrectDim_.c_str(), _safe_reason_.c_str()};               \
         REPORT_PREDEFINED_ERR_MSG("EZ0012", msgKey, msgvalue);                                                        \
     } while (0)
 
@@ -415,21 +403,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have incorrect shape dims [incorrectDims]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(entityName, paramNames, incorrectDims, reason)        \
-    do {                                                                                                \
-        std::string _safe_entityName_(entityName);                                                      \
-        std::string _safe_paramNames_(paramNames);                                                      \
-        std::string _safe_incorrectDims_(incorrectDims);                                                \
-        std::string _safe_reason_(reason);                                                              \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
-            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect shape dims %s. Reason: %s.", \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDims_.c_str(),         \
-            _safe_reason_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dims", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDims_.c_str(),         \
-            _safe_reason_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                          \
+#define OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(entityName, paramNames, incorrectDims, reason)                    \
+    do {                                                                                                            \
+        std::string _safe_entityName_(entityName);                                                                  \
+        std::string _safe_paramNames_(paramNames);                                                                  \
+        std::string _safe_incorrectDims_(incorrectDims);                                                            \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
+                                "Parameters %s of %s have incorrect shape dims %s. Reason: %s.",                    \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDims_.c_str(), \
+                                _safe_reason_.c_str());                                                             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dims", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),            \
+                                                   _safe_incorrectDims_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0013", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -442,21 +429,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect shape size [incorrectSize]. It
  * should be [correctSize].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZE(entityName, paramName, incorrectSize, correctSize)                     \
-    do {                                                                                                     \
-        std::string _safe_entityName_(entityName);                                                           \
-        std::string _safe_paramName_(paramName);                                                             \
-        std::string _safe_incorrectSize_(incorrectSize);                                                     \
-        std::string _safe_correctSize_(correctSize);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                             \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape size %s. It should be %s.",   \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
-            _safe_correctSize_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
-        const std::vector<const char*> msgvalue = {                                                          \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
-            _safe_correctSize_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                               \
+#define OP_LOGE_FOR_INVALID_SHAPESIZE(entityName, paramName, incorrectSize, correctSize)                           \
+    do {                                                                                                           \
+        std::string _safe_entityName_(entityName);                                                                 \
+        std::string _safe_paramName_(paramName);                                                                   \
+        std::string _safe_incorrectSize_(incorrectSize);                                                           \
+        std::string _safe_correctSize_(correctSize);                                                               \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                         \
+                                "Parameter %s of %s has incorrect shape size %s. It should be %s.",                \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), \
+                                _safe_correctSize_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"};       \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),            \
+                                                   _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()};      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0014", msgKey, msgvalue);                                                     \
     } while (0)
 
 /**
@@ -479,8 +465,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             _safe_entityName_.c_str(), "Parameter %s of %s has incorrect shape size %s. Reason: %s.",                  \
             _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()); \
         const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "reason"};                 \
-        const std::vector<const char*> msgvalue = {                                                                    \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()}; \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),                \
+                                                   _safe_incorrectSize_.c_str(), _safe_reason_.c_str()};               \
         REPORT_PREDEFINED_ERR_MSG("EZ0015", msgKey, msgvalue);                                                         \
     } while (0)
 
@@ -494,21 +480,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have incorrect shape sizes [incorrectSizes]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(entityName, paramNames, incorrectSizes, reason)       \
-    do {                                                                                                 \
-        std::string _safe_entityName_(entityName);                                                       \
-        std::string _safe_paramNames_(paramNames);                                                       \
-        std::string _safe_incorrectSizes_(incorrectSizes);                                               \
-        std::string _safe_reason_(reason);                                                               \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                         \
-            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect shape sizes %s. Reason: %s.", \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSizes_.c_str(),         \
-            _safe_reason_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_sizes", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                      \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSizes_.c_str(),         \
-            _safe_reason_.c_str()};                                                                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                           \
+#define OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(entityName, paramNames, incorrectSizes, reason)                   \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramNames_(paramNames);                                                                   \
+        std::string _safe_incorrectSizes_(incorrectSizes);                                                           \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                           \
+                                "Parameters %s of %s have incorrect shape sizes %s. Reason: %s.",                    \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSizes_.c_str(), \
+                                _safe_reason_.c_str());                                                              \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_sizes", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),             \
+                                                   _safe_incorrectSizes_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0016", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -521,21 +506,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect format [incorrectFormat]. It should
  * be [correctFormat].
  */
-#define OP_LOGE_FOR_INVALID_FORMAT(entityName, paramName, incorrectFormat, correctFormat)                        \
-    do {                                                                                                         \
-        std::string _safe_entityName_(entityName);                                                               \
-        std::string _safe_paramName_(paramName);                                                                 \
-        std::string _safe_incorrectFormat_(incorrectFormat);                                                     \
-        std::string _safe_correctFormat_(correctFormat);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect format %s. It should be %s.",           \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),                 \
-            _safe_correctFormat_.c_str());                                                                       \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "correct_format"}; \
-        const std::vector<const char*> msgvalue = {                                                              \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),                 \
-            _safe_correctFormat_.c_str()};                                                                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                   \
+#define OP_LOGE_FOR_INVALID_FORMAT(entityName, paramName, incorrectFormat, correctFormat)                            \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                                     \
+        std::string _safe_incorrectFormat_(incorrectFormat);                                                         \
+        std::string _safe_correctFormat_(correctFormat);                                                             \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                           \
+                                "Parameter %s of %s has incorrect format %s. It should be %s.",                      \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(), \
+                                _safe_correctFormat_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "correct_format"};     \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectFormat_.c_str(), _safe_correctFormat_.c_str()};    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0017", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -547,21 +531,19 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: Parameter [paramName] of [entityName] has incorrect format [incorrectFormat]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_FORMAT_WITH_REASON(entityName, paramName, incorrectFormat, reason)           \
-    do {                                                                                                 \
-        std::string _safe_entityName_(entityName);                                                       \
-        std::string _safe_paramName_(paramName);                                                         \
-        std::string _safe_incorrectFormat_(incorrectFormat);                                             \
-        std::string _safe_reason_(reason);                                                               \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                         \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect format %s. Reason: %s.",        \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),         \
-            _safe_reason_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                      \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),         \
-            _safe_reason_.c_str()};                                                                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0035", msgKey, msgvalue);                                           \
+#define OP_LOGE_FOR_INVALID_FORMAT_WITH_REASON(entityName, paramName, incorrectFormat, reason)                        \
+    do {                                                                                                              \
+        std::string _safe_entityName_(entityName);                                                                    \
+        std::string _safe_paramName_(paramName);                                                                      \
+        std::string _safe_incorrectFormat_(incorrectFormat);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(), "Parameter %s of %s has incorrect format %s. Reason: %s.", \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormat_.c_str(),  \
+                                _safe_reason_.c_str());                                                               \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_format", "reason"};              \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),               \
+                                                   _safe_incorrectFormat_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0035", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -574,21 +556,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have incorrect formats [incorrectFormats]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(entityName, paramNames, incorrectFormats, reason)          \
-    do {                                                                                                   \
-        std::string _safe_entityName_(entityName);                                                         \
-        std::string _safe_paramNames_(paramNames);                                                         \
-        std::string _safe_incorrectFormats_(incorrectFormats);                                             \
-        std::string _safe_reason_(reason);                                                                 \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                           \
-            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect formats %s. Reason: %s.",       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormats_.c_str(),         \
-            _safe_reason_.c_str());                                                                        \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_formats", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                        \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormats_.c_str(),         \
-            _safe_reason_.c_str()};                                                                        \
-        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                             \
+#define OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(entityName, paramNames, incorrectFormats, reason)                      \
+    do {                                                                                                               \
+        std::string _safe_entityName_(entityName);                                                                     \
+        std::string _safe_paramNames_(paramNames);                                                                     \
+        std::string _safe_incorrectFormats_(incorrectFormats);                                                         \
+        std::string _safe_reason_(reason);                                                                             \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                             \
+                                "Parameters %s of %s have incorrect formats %s. Reason: %s.",                          \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectFormats_.c_str(), \
+                                _safe_reason_.c_str());                                                                \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_formats", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),               \
+                                                   _safe_incorrectFormats_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0018", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
@@ -601,21 +582,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect dtype [incorrectDtype]. It should
  * be [correctDtype].
  */
-#define OP_LOGE_FOR_INVALID_DTYPE(entityName, paramName, incorrectDtype, correctDtype)                         \
-    do {                                                                                                       \
-        std::string _safe_entityName_(entityName);                                                             \
-        std::string _safe_paramName_(paramName);                                                               \
-        std::string _safe_incorrectDtype_(incorrectDtype);                                                     \
-        std::string _safe_correctDtype_(correctDtype);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect dtype %s. It should be %s.",          \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),                \
-            _safe_correctDtype_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "correct_dtype"}; \
-        const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),                \
-            _safe_correctDtype_.c_str()};                                                                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0019", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_DTYPE(entityName, paramName, incorrectDtype, correctDtype)                              \
+    do {                                                                                                            \
+        std::string _safe_entityName_(entityName);                                                                  \
+        std::string _safe_paramName_(paramName);                                                                    \
+        std::string _safe_incorrectDtype_(incorrectDtype);                                                          \
+        std::string _safe_correctDtype_(correctDtype);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
+                                "Parameter %s of %s has incorrect dtype %s. It should be %s.",                      \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(), \
+                                _safe_correctDtype_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "correct_dtype"};      \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),             \
+                                                   _safe_incorrectDtype_.c_str(), _safe_correctDtype_.c_str()};     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0019", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -627,21 +607,19 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: Parameter [paramName] of [entityName] has incorrect dtype [incorrectDtype]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(entityName, paramName, incorrectDtype, reason)            \
-    do {                                                                                                \
-        std::string _safe_entityName_(entityName);                                                      \
-        std::string _safe_paramName_(paramName);                                                        \
-        std::string _safe_incorrectDtype_(incorrectDtype);                                              \
-        std::string _safe_reason_(reason);                                                              \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect dtype %s. Reason: %s.",        \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),         \
-            _safe_reason_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),         \
-            _safe_reason_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                          \
+#define OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(entityName, paramName, incorrectDtype, reason)                         \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                                     \
+        std::string _safe_incorrectDtype_(incorrectDtype);                                                           \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(), "Parameter %s of %s has incorrect dtype %s. Reason: %s.", \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtype_.c_str(),  \
+                                _safe_reason_.c_str());                                                              \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_dtype", "reason"};              \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectDtype_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0020", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -654,21 +632,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have incorrect dtypes [incorrectDtypes]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(entityName, paramNames, incorrectDtypes, reason)           \
-    do {                                                                                                  \
-        std::string _safe_entityName_(entityName);                                                        \
-        std::string _safe_paramNames_(paramNames);                                                        \
-        std::string _safe_incorrectDtypes_(incorrectDtypes);                                              \
-        std::string _safe_reason_(reason);                                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
-            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect dtypes %s. Reason: %s.",       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtypes_.c_str(),         \
-            _safe_reason_.c_str());                                                                       \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dtypes", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtypes_.c_str(),         \
-            _safe_reason_.c_str()};                                                                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                            \
+#define OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(entityName, paramNames, incorrectDtypes, reason)                       \
+    do {                                                                                                              \
+        std::string _safe_entityName_(entityName);                                                                    \
+        std::string _safe_paramNames_(paramNames);                                                                    \
+        std::string _safe_incorrectDtypes_(incorrectDtypes);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                            \
+                                "Parameters %s of %s have incorrect dtypes %s. Reason: %s.",                          \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectDtypes_.c_str(), \
+                                _safe_reason_.c_str());                                                               \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_dtypes", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectDtypes_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0021", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -681,20 +658,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has invalid tensor num [incorrectNum]. It should
  * be [correctNum].
  */
-#define OP_LOGE_FOR_INVALID_TENSORNUM(entityName, paramName, incorrectNum, correctNum)                                \
-    do {                                                                                                              \
-        std::string _safe_entityName_(entityName);                                                                    \
-        std::string _safe_paramName_(paramName);                                                                      \
-        std::string _safe_correctNum_(correctNum);                                                                    \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                      \
-            _safe_entityName_.c_str(), "Parameter %s of %s has invalid tensor num %ld. It should be %s.",             \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), static_cast<int64_t>(incorrectNum),                  \
-            _safe_correctNum_.c_str());                                                                               \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_num", "correct_num"};            \
-        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                             \
-        const std::vector<const char*> msgvalue = {                                                                   \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), incorrectNumStr.c_str(), _safe_correctNum_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                                        \
+#define OP_LOGE_FOR_INVALID_TENSORNUM(entityName, paramName, incorrectNum, correctNum)                     \
+    do {                                                                                                   \
+        std::string _safe_entityName_(entityName);                                                         \
+        std::string _safe_paramName_(paramName);                                                           \
+        std::string _safe_correctNum_(correctNum);                                                         \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                 \
+                                "Parameter %s of %s has invalid tensor num %ld. It should be %s.",         \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(),                       \
+                                static_cast<int64_t>(incorrectNum), _safe_correctNum_.c_str());            \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_num", "correct_num"}; \
+        std::string incorrectNumStr = std::to_string(static_cast<int64_t>(incorrectNum));                  \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),    \
+                                                   incorrectNumStr.c_str(), _safe_correctNum_.c_str()};    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0022", msgKey, msgvalue);                                             \
     } while (0)
 
 /**
@@ -707,21 +684,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have invalid tensor nums [incorrectNums]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(entityName, paramNames, incorrectNums, reason)       \
-    do {                                                                                                \
-        std::string _safe_entityName_(entityName);                                                      \
-        std::string _safe_paramNames_(paramNames);                                                      \
-        std::string _safe_incorrectNums_(incorrectNums);                                                \
-        std::string _safe_reason_(reason);                                                              \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
-            _safe_entityName_.c_str(), "Parameters %s of %s have invalid tensor nums %s. Reason: %s.",  \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectNums_.c_str(),         \
-            _safe_reason_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_nums", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectNums_.c_str(),         \
-            _safe_reason_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                          \
+#define OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(entityName, paramNames, incorrectNums, reason)                   \
+    do {                                                                                                            \
+        std::string _safe_entityName_(entityName);                                                                  \
+        std::string _safe_paramNames_(paramNames);                                                                  \
+        std::string _safe_incorrectNums_(incorrectNums);                                                            \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
+                                "Parameters %s of %s have invalid tensor nums %s. Reason: %s.",                     \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectNums_.c_str(), \
+                                _safe_reason_.c_str());                                                             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_nums", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),            \
+                                                   _safe_incorrectNums_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0023", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -734,21 +710,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect value [incorrectValue]. It should
  * be [correctValue].
  */
-#define OP_LOGE_FOR_INVALID_VALUE(entityName, paramName, incorrectValue, correctValue)                         \
-    do {                                                                                                       \
-        std::string _safe_entityName_(entityName);                                                             \
-        std::string _safe_paramName_(paramName);                                                               \
-        std::string _safe_incorrectValue_(incorrectValue);                                                     \
-        std::string _safe_correctValue_(correctValue);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect value %s. It should be %s.",          \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),                \
-            _safe_correctValue_.c_str());                                                                      \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "correct_value"}; \
-        const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),                \
-            _safe_correctValue_.c_str()};                                                                      \
-        REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_VALUE(entityName, paramName, incorrectValue, correctValue)                              \
+    do {                                                                                                            \
+        std::string _safe_entityName_(entityName);                                                                  \
+        std::string _safe_paramName_(paramName);                                                                    \
+        std::string _safe_incorrectValue_(incorrectValue);                                                          \
+        std::string _safe_correctValue_(correctValue);                                                              \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
+                                "Parameter %s of %s has incorrect value %s. It should be %s.",                      \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(), \
+                                _safe_correctValue_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "correct_value"};      \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),             \
+                                                   _safe_incorrectValue_.c_str(), _safe_correctValue_.c_str()};     \
+        REPORT_PREDEFINED_ERR_MSG("EZ0024", msgKey, msgvalue);                                                      \
     } while (0)
 
 /**
@@ -761,21 +736,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has invalid list size [incorrectSize]. It should
  * be [correctSize].
  */
-#define OP_LOGE_FOR_INVALID_LISTSIZE(entityName, paramName, incorrectSize, correctSize)                      \
-    do {                                                                                                     \
-        std::string _safe_entityName_(entityName);                                                           \
-        std::string _safe_paramName_(paramName);                                                             \
-        std::string _safe_incorrectSize_(incorrectSize);                                                     \
-        std::string _safe_correctSize_(correctSize);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                             \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect element nums %s. It should be %s.", \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
-            _safe_correctSize_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"}; \
-        const std::vector<const char*> msgvalue = {                                                          \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),               \
-            _safe_correctSize_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0025", msgKey, msgvalue);                                               \
+#define OP_LOGE_FOR_INVALID_LISTSIZE(entityName, paramName, incorrectSize, correctSize)                            \
+    do {                                                                                                           \
+        std::string _safe_entityName_(entityName);                                                                 \
+        std::string _safe_paramName_(paramName);                                                                   \
+        std::string _safe_incorrectSize_(incorrectSize);                                                           \
+        std::string _safe_correctSize_(correctSize);                                                               \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                         \
+                                "Parameter %s of %s has incorrect element nums %s. It should be %s.",              \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), \
+                                _safe_correctSize_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_size", "correct_size"};       \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),            \
+                                                   _safe_incorrectSize_.c_str(), _safe_correctSize_.c_str()};      \
+        REPORT_PREDEFINED_ERR_MSG("EZ0025", msgKey, msgvalue);                                                     \
     } while (0)
 
 /**
@@ -787,21 +761,19 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: Parameter [paramName] of [entityName] has incorrect value [incorrectValue]. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(entityName, paramName, incorrectValue, reason)            \
-    do {                                                                                                \
-        std::string _safe_entityName_(entityName);                                                      \
-        std::string _safe_paramName_(paramName);                                                        \
-        std::string _safe_incorrectValue_(incorrectValue);                                              \
-        std::string _safe_reason_(reason);                                                              \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect value %s. Reason: %s.",        \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),         \
-            _safe_reason_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),         \
-            _safe_reason_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0026", msgKey, msgvalue);                                          \
+#define OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(entityName, paramName, incorrectValue, reason)                         \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                                     \
+        std::string _safe_incorrectValue_(incorrectValue);                                                           \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(), "Parameter %s of %s has incorrect value %s. Reason: %s.", \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValue_.c_str(),  \
+                                _safe_reason_.c_str());                                                              \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_value", "reason"};              \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectValue_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0026", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -814,21 +786,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameters [paramNames] of [entityName] have incorrect values [incorrectValues]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(entityName, paramNames, incorrectValues, reason)           \
-    do {                                                                                                  \
-        std::string _safe_entityName_(entityName);                                                        \
-        std::string _safe_paramNames_(paramNames);                                                        \
-        std::string _safe_incorrectValues_(incorrectValues);                                              \
-        std::string _safe_reason_(reason);                                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
-            _safe_entityName_.c_str(), "Parameters %s of %s have incorrect values %s. Reason: %s.",       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValues_.c_str(),         \
-            _safe_reason_.c_str());                                                                       \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_values", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                       \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValues_.c_str(),         \
-            _safe_reason_.c_str()};                                                                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                            \
+#define OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(entityName, paramNames, incorrectValues, reason)                       \
+    do {                                                                                                              \
+        std::string _safe_entityName_(entityName);                                                                    \
+        std::string _safe_paramNames_(paramNames);                                                                    \
+        std::string _safe_incorrectValues_(incorrectValues);                                                          \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                            \
+                                "Parameters %s of %s have incorrect values %s. Reason: %s.",                          \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectValues_.c_str(), \
+                                _safe_reason_.c_str());                                                               \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_values", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectValues_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0027", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -840,21 +811,20 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has incorrect stride [incorrectStride],
  *             it should be [correctStride].
  */
-#define OP_LOGE_FOR_INVALID_STRIDE(entityName, paramName, incorrectStride, correctStride)                        \
-    do {                                                                                                         \
-        std::string _safe_entityName_(entityName);                                                               \
-        std::string _safe_paramName_(paramName);                                                                 \
-        std::string _safe_incorrectStride_(incorrectStride);                                                     \
-        std::string _safe_correctStride_(correctStride);                                                         \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                                 \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect stride %s, it should be %s.",           \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectStride_.c_str(),                 \
-            _safe_correctStride_.c_str());                                                                       \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_stride", "correct_stride"}; \
-        const std::vector<const char*> msgvalue = {                                                              \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectStride_.c_str(),                 \
-            _safe_correctStride_.c_str()};                                                                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ0028", msgKey, msgvalue);                                                   \
+#define OP_LOGE_FOR_INVALID_STRIDE(entityName, paramName, incorrectStride, correctStride)                            \
+    do {                                                                                                             \
+        std::string _safe_entityName_(entityName);                                                                   \
+        std::string _safe_paramName_(paramName);                                                                     \
+        std::string _safe_incorrectStride_(incorrectStride);                                                         \
+        std::string _safe_correctStride_(correctStride);                                                             \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                           \
+                                "Parameter %s of %s has incorrect stride %s, it should be %s.",                      \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectStride_.c_str(), \
+                                _safe_correctStride_.c_str());                                                       \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "incorrect_stride", "correct_stride"};     \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),              \
+                                                   _safe_incorrectStride_.c_str(), _safe_correctStride_.c_str()};    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0028", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -863,17 +833,16 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: Input path [filePath] is invalid. Reason: [reason].
  */
-#define OP_LOGE_FOR_FILE_PATH(opName, filePath, reason)                                              \
-    do {                                                                                             \
-        std::string _safe_opName_(opName);                                                           \
-        std::string _safe_filePath_(filePath);                                                       \
-        std::string _safe_reason_(reason);                                                           \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                     \
-            _safe_opName_.c_str(), "Input path %s is invalid. Reason: %s.", _safe_filePath_.c_str(), \
-            _safe_reason_.c_str());                                                                  \
-        const std::vector<const char*> msgKey = {"file_path", "reason"};                             \
-        const std::vector<const char*> msgvalue = {_safe_filePath_.c_str(), _safe_reason_.c_str()};  \
-        REPORT_PREDEFINED_ERR_MSG("EZ0029", msgKey, msgvalue);                                       \
+#define OP_LOGE_FOR_FILE_PATH(opName, filePath, reason)                                             \
+    do {                                                                                            \
+        std::string _safe_opName_(opName);                                                          \
+        std::string _safe_filePath_(filePath);                                                      \
+        std::string _safe_reason_(reason);                                                          \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_opName_.c_str(), "Input path %s is invalid. Reason: %s.",     \
+                                _safe_filePath_.c_str(), _safe_reason_.c_str());                    \
+        const std::vector<const char*> msgKey = {"file_path", "reason"};                            \
+        const std::vector<const char*> msgvalue = {_safe_filePath_.c_str(), _safe_reason_.c_str()}; \
+        REPORT_PREDEFINED_ERR_MSG("EZ0029", msgKey, msgvalue);                                      \
     } while (0)
 
 /**
@@ -882,17 +851,16 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * reason:string - Reason for the error
  * errMessage: Failed to open file [filePath]. Reason: [reason].
  */
-#define OP_LOGE_FOR_FILE_OPEN(opName, filePath, reason)                                             \
-    do {                                                                                            \
-        std::string _safe_opName_(opName);                                                          \
-        std::string _safe_filePath_(filePath);                                                      \
-        std::string _safe_reason_(reason);                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                    \
-            _safe_opName_.c_str(), "Failed to open file %s. Reason: %s.", _safe_filePath_.c_str(),  \
-            _safe_reason_.c_str());                                                                 \
-        const std::vector<const char*> msgKey = {"file_path", "reason"};                            \
-        const std::vector<const char*> msgvalue = {_safe_filePath_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0030", msgKey, msgvalue);                                      \
+#define OP_LOGE_FOR_FILE_OPEN(opName, filePath, reason)                                                                \
+    do {                                                                                                               \
+        std::string _safe_opName_(opName);                                                                             \
+        std::string _safe_filePath_(filePath);                                                                         \
+        std::string _safe_reason_(reason);                                                                             \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_opName_.c_str(), "Failed to open file %s. Reason: %s.", _safe_filePath_.c_str(), \
+                                _safe_reason_.c_str());                                                                \
+        const std::vector<const char*> msgKey = {"file_path", "reason"};                                               \
+        const std::vector<const char*> msgvalue = {_safe_filePath_.c_str(), _safe_reason_.c_str()};                    \
+        REPORT_PREDEFINED_ERR_MSG("EZ0030", msgKey, msgvalue);                                                         \
     } while (0)
 
 /**
@@ -906,9 +874,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
         std::string _safe_opName_(opName);                                                          \
         std::string _safe_fileName_(fileName);                                                      \
         std::string _safe_reason_(reason);                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                    \
-            _safe_opName_.c_str(), "Failed to parse file %s. Reason: %s.", _safe_fileName_.c_str(), \
-            _safe_reason_.c_str());                                                                 \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_opName_.c_str(), "Failed to parse file %s. Reason: %s.",      \
+                                _safe_fileName_.c_str(), _safe_reason_.c_str());                    \
         const std::vector<const char*> msgKey = {"file_name", "reason"};                            \
         const std::vector<const char*> msgvalue = {_safe_fileName_.c_str(), _safe_reason_.c_str()}; \
         REPORT_PREDEFINED_ERR_MSG("EZ0031", msgKey, msgvalue);                                      \
@@ -935,8 +902,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Value %s of configuration item %s in configuration file %s is invalid, it should be %s.",    \
             _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(), _safe_expect_.c_str()); \
         const std::vector<const char*> msgKey = {"value", "item", "config_file", "expect"};               \
-        const std::vector<const char*> msgvalue = {                                                       \
-            _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(), _safe_expect_.c_str()}; \
+        const std::vector<const char*> msgvalue = {_safe_value_.c_str(), _safe_item_.c_str(),             \
+                                                   _safe_configFile_.c_str(), _safe_expect_.c_str()};     \
         REPORT_PREDEFINED_ERR_MSG("EZ0032", msgKey, msgvalue);                                            \
     } while (0)
 
@@ -949,21 +916,21 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Value [value] of configuration item [item] in
  *             configuration file [configFile] is invalid. Reason: [reason].
  */
-#define OP_LOGE_FOR_INVALID_CONFIG_WITH_REASON(opName, configFile, item, value, reason)                   \
-    do {                                                                                                  \
-        std::string _safe_opName_(opName);                                                                \
-        std::string _safe_configFile_(configFile);                                                        \
-        std::string _safe_item_(item);                                                                    \
-        std::string _safe_value_(value);                                                                  \
-        std::string _safe_reason_(reason);                                                                \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                          \
-            _safe_opName_.c_str(),                                                                        \
-            "Value %s of configuration item %s in configuration file %s is invalid. Reason: %s.",         \
-            _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str()); \
-        const std::vector<const char*> msgKey = {"value", "item", "config_file", "reason"};               \
-        const std::vector<const char*> msgvalue = {                                                       \
-            _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0033", msgKey, msgvalue);                                            \
+#define OP_LOGE_FOR_INVALID_CONFIG_WITH_REASON(opName, configFile, item, value, reason)                               \
+    do {                                                                                                              \
+        std::string _safe_opName_(opName);                                                                            \
+        std::string _safe_configFile_(configFile);                                                                    \
+        std::string _safe_item_(item);                                                                                \
+        std::string _safe_value_(value);                                                                              \
+        std::string _safe_reason_(reason);                                                                            \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_opName_.c_str(),                                                                \
+                                "Value %s of configuration item %s in configuration file %s is invalid. Reason: %s.", \
+                                _safe_value_.c_str(), _safe_item_.c_str(), _safe_configFile_.c_str(),                 \
+                                _safe_reason_.c_str());                                                               \
+        const std::vector<const char*> msgKey = {"value", "item", "config_file", "reason"};                           \
+        const std::vector<const char*> msgvalue = {_safe_value_.c_str(), _safe_item_.c_str(),                         \
+                                                   _safe_configFile_.c_str(), _safe_reason_.c_str()};                 \
+        REPORT_PREDEFINED_ERR_MSG("EZ0033", msgKey, msgvalue);                                                        \
     } while (0)
 
 /**
@@ -987,8 +954,8 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             "Values %s of configuration items %s in configuration file %s are invalid. Reason: %s.",        \
             _safe_values_.c_str(), _safe_items_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str()); \
         const std::vector<const char*> msgKey = {"values", "items", "config_file", "reason"};               \
-        const std::vector<const char*> msgvalue = {                                                         \
-            _safe_values_.c_str(), _safe_items_.c_str(), _safe_configFile_.c_str(), _safe_reason_.c_str()}; \
+        const std::vector<const char*> msgvalue = {_safe_values_.c_str(), _safe_items_.c_str(),             \
+                                                   _safe_configFile_.c_str(), _safe_reason_.c_str()};       \
         REPORT_PREDEFINED_ERR_MSG("EZ0034", msgKey, msgvalue);                                              \
     } while (0)
 
@@ -997,16 +964,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * node_name:string - graph node name
  * reason:string - Reason for the error
  */
-#define OP_LOGE_FOR_INVALID_GRAPH_NODE(nodeName, reason)                                            \
-    do {                                                                                            \
-        std::string _safe_nodeName_(nodeName);                                                      \
-        std::string _safe_reason_(reason);                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                    \
-            _safe_nodeName_.c_str(), "The input graph contains an invalid node %s. Reason: %s.",    \
-            _safe_nodeName_.c_str(), _safe_reason_.c_str());                                        \
-        const std::vector<const char*> msgKey = {"node_name", "reason"};                            \
-        const std::vector<const char*> msgvalue = {_safe_nodeName_.c_str(), _safe_reason_.c_str()}; \
-        REPORT_PREDEFINED_ERR_MSG("EZ0036", msgKey, msgvalue);                                      \
+#define OP_LOGE_FOR_INVALID_GRAPH_NODE(nodeName, reason)                                                             \
+    do {                                                                                                             \
+        std::string _safe_nodeName_(nodeName);                                                                       \
+        std::string _safe_reason_(reason);                                                                           \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_nodeName_.c_str(), "The input graph contains an invalid node %s. Reason: %s.", \
+                                _safe_nodeName_.c_str(), _safe_reason_.c_str());                                     \
+        const std::vector<const char*> msgKey = {"node_name", "reason"};                                             \
+        const std::vector<const char*> msgvalue = {_safe_nodeName_.c_str(), _safe_reason_.c_str()};                  \
+        REPORT_PREDEFINED_ERR_MSG("EZ0036", msgKey, msgvalue);                                                       \
     } while (0)
 
 /**
@@ -1016,18 +982,17 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] is invalid. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_ARGUMENT_WITH_REASON(entityName, paramName, reason)                                \
-    do {                                                                                                       \
-        std::string _safe_entityName_(entityName);                                                             \
-        std::string _safe_paramName_(paramName);                                                               \
-        std::string _safe_reason_(reason);                                                                     \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                               \
-            _safe_entityName_.c_str(), "Parameter %s of %s is invalid. Reason: %s.", _safe_paramName_.c_str(), \
-            _safe_entityName_.c_str(), _safe_reason_.c_str());                                                 \
-        const std::vector<const char*> msgKey = {"param_name", "op_name", "reason"};                           \
-        const std::vector<const char*> msgvalue = {                                                            \
-            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str()};                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ0037", msgKey, msgvalue);                                                 \
+#define OP_LOGE_FOR_INVALID_ARGUMENT_WITH_REASON(entityName, paramName, reason)                              \
+    do {                                                                                                     \
+        std::string _safe_entityName_(entityName);                                                           \
+        std::string _safe_paramName_(paramName);                                                             \
+        std::string _safe_reason_(reason);                                                                   \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(), "Parameter %s of %s is invalid. Reason: %s.",     \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"param_name", "op_name", "reason"};                         \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),      \
+                                                   _safe_reason_.c_str()};                                   \
+        REPORT_PREDEFINED_ERR_MSG("EZ0037", msgKey, msgvalue);                                               \
     } while (0)
 
 /**
@@ -1040,46 +1005,43 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has invalid list size [incorrectSize]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)          \
-    do {                                                                                                \
-        std::string _safe_entityName_(entityName);                                                      \
-        std::string _safe_paramNames_(paramNames);                                                      \
-        std::string _safe_incorrectSize_(incorrectSize);                                                \
-        std::string _safe_reason_(reason);                                                              \
-        OP_LOGE_LIBOPAPI_REPORT(                                                                        \
-            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect element nums %s. Reason: %s.", \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),         \
-            _safe_reason_.c_str());                                                                     \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_size", "reason"}; \
-        const std::vector<const char*> msgvalue = {                                                     \
-            _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(),         \
-            _safe_reason_.c_str()};                                                                     \
-        REPORT_PREDEFINED_ERR_MSG("EZ0038", msgKey, msgvalue);                                          \
+#define OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)                      \
+    do {                                                                                                            \
+        std::string _safe_entityName_(entityName);                                                                  \
+        std::string _safe_paramNames_(paramNames);                                                                  \
+        std::string _safe_incorrectSize_(incorrectSize);                                                            \
+        std::string _safe_reason_(reason);                                                                          \
+        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
+                                "Parameter %s of %s has incorrect element nums %s. Reason: %s.",                    \
+                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), \
+                                _safe_reason_.c_str());                                                             \
+        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_size", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),            \
+                                                   _safe_incorrectSize_.c_str(), _safe_reason_.c_str()};            \
+        REPORT_PREDEFINED_ERR_MSG("EZ0038", msgKey, msgvalue);                                                      \
     } while (0)
 
 #ifndef OP_LOG_LIBOPAPI_ONLY
-#define OpLogSub(moduleId, level, opInfo, fmt, ...)                                                                   \
-    do {                                                                                                              \
-        if (CheckLogLevel(static_cast<int>(moduleId), level) == 1) {                                                  \
-            DlogRecord(                                                                                               \
-                static_cast<int>(moduleId), level,                                                                    \
-                "[%s:%d][%s]"                                                                                         \
-                "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                                                 \
-                __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), Ops::Base::GetSafeStr(opInfo), \
-                ##__VA_ARGS__);                                                                                       \
-        }                                                                                                             \
+#define OpLogSub(moduleId, level, opInfo, fmt, ...)                                           \
+    do {                                                                                      \
+        if (CheckLogLevel(static_cast<int>(moduleId), level) == 1) {                          \
+            DlogRecord(static_cast<int>(moduleId), level,                                     \
+                       "[%s:%d][%s]"                                                          \
+                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
+                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
+                       Ops::Base::GetSafeStr(opInfo), ##__VA_ARGS__);                         \
+        }                                                                                     \
     } while (0)
 
-#define OpLogErrSub(moduleId, level, opInfo, fmt, ...)                                                                \
-    do {                                                                                                              \
-        if (CheckLogLevel(static_cast<int>(moduleId), level) == 1) {                                                  \
-            DlogRecord(                                                                                               \
-                static_cast<int>(moduleId), level,                                                                    \
-                "[%s:%d][%s]"                                                                                         \
-                "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                                                 \
-                __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), Ops::Base::GetSafeStr(opInfo), \
-                ##__VA_ARGS__);                                                                                       \
-        }                                                                                                             \
+#define OpLogErrSub(moduleId, level, opInfo, fmt, ...)                                        \
+    do {                                                                                      \
+        if (CheckLogLevel(static_cast<int>(moduleId), level) == 1) {                          \
+            DlogRecord(static_cast<int>(moduleId), level,                                     \
+                       "[%s:%d][%s]"                                                          \
+                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
+                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
+                       Ops::Base::GetSafeStr(opInfo), ##__VA_ARGS__);                         \
+        }                                                                                     \
     } while (0)
 
 #define D_OP_LOGI(opName, fmt, ...) OpLogSub(OP, DLOG_INFO, opName, fmt, ##__VA_ARGS__)

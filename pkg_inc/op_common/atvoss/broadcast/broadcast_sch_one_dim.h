@@ -41,19 +41,17 @@ public:
     template <class... Args>
     __aicore__ inline void Init(TPipe* pipe, Args... args)
     {
-        static_assert(
-            inputNums + outputNums == sizeof...(Args), "BroadcastOneDimSch.Init args num should match DAG holders.");
+        static_assert(inputNums + outputNums == sizeof...(Args),
+                      "BroadcastOneDimSch.Init args num should match DAG holders.");
         pipePtr = pipe;
         InitInputArgs<0>(args...); // 调用入参分析,input,output
         this->template SetScalar<0>(0);
-        RUN_LOG(
-            "BufferNum: %d, Mte2Num: %d, Mte3Num: %d, BufLevel: %d", ElemDag::BufferNum, ElemDag::Mte2Num,
-            ElemDag::Mte3Num, ElemDag::BufLevel);
-        RUN_LOG(
-            "TilingData ubFormer: %d, ubTail: %d, blockFormer: %d, blockTail: %d, blockNum: %d, ubSplitAxis: %d, "
-            "scalarFlag: %d",
-            tilingData->ubFormer, tilingData->ubTail, tilingData->blockFormer, tilingData->blockTail,
-            tilingData->blockNum, tilingData->ubSplitAxis, tilingData->scalarFlag);
+        RUN_LOG("BufferNum: %d, Mte2Num: %d, Mte3Num: %d, BufLevel: %d", ElemDag::BufferNum, ElemDag::Mte2Num,
+                ElemDag::Mte3Num, ElemDag::BufLevel);
+        RUN_LOG("TilingData ubFormer: %d, ubTail: %d, blockFormer: %d, blockTail: %d, blockNum: %d, ubSplitAxis: %d, "
+                "scalarFlag: %d",
+                tilingData->ubFormer, tilingData->ubTail, tilingData->blockFormer, tilingData->blockTail,
+                tilingData->blockNum, tilingData->ubSplitAxis, tilingData->scalarFlag);
         pipePtr->InitBuffer(buf, tilingData->ubFormer * ElemDag::MaxDtypeBytes * ElemDag::BufferNum);
         tensorPool = buf.Get<uint8_t>();
         blockEleLen = tilingData->ubFormer;
@@ -131,8 +129,8 @@ protected:
 
     template <int target, template <typename...> typename Holders, typename Holder, typename... HolderTs>
     struct GetHolderByPos<target, Holders<Holder, HolderTs...>> {
-        using Type = __aux::Condition<
-            target == Holder::Pos, Holder, typename GetHolderByPos<target, Holders<HolderTs...>>::Type>;
+        using Type = __aux::Condition<target == Holder::Pos, Holder,
+                                      typename GetHolderByPos<target, Holders<HolderTs...>>::Type>;
     };
 
     // 初始化输出
@@ -185,14 +183,13 @@ protected:
         using input = typename Op::InHolders::template At<0>;
         using inputType = typename Op::template FunInArgType<0>;
         if constexpr (std::is_same<typename input::DType, uint1_t>::value) {
-            static_assert(
-                std::is_same<inputType, uint8_t>::value, "CopyIn data type is inconsistent with in holder data type.");
+            static_assert(std::is_same<inputType, uint8_t>::value,
+                          "CopyIn data type is inconsistent with in holder data type.");
             offset = offset / ONE_BYTE_LENGTH;
             tileLength = tileLength / ONE_BYTE_LENGTH;
         } else {
-            static_assert(
-                std::is_same<typename input::DType, inputType>::value,
-                "CopyIn data type is inconsistent with in holder data type.");
+            static_assert(std::is_same<typename input::DType, inputType>::value,
+                          "CopyIn data type is inconsistent with in holder data type.");
         }
 
         // Prepare input args
@@ -212,18 +209,16 @@ protected:
 
                 GetTensor<TPosition::VECCALC>(bufId);
                 if constexpr (std::is_same_v<inputType, double>) {
-                    Vec::Duplicate(
-                        inTensor.template ReinterpretCast<int64_t>(), *reinterpret_cast<const int64_t*>(&scalar),
-                        tileLength);
+                    Vec::Duplicate(inTensor.template ReinterpretCast<int64_t>(),
+                                   *reinterpret_cast<const int64_t*>(&scalar), tileLength);
                 } else {
                     Vec::Duplicate(inTensor, scalar, tileLength);
                 }
                 ReleaseTensor<TPosition::VECCALC>(bufId);
             }
         } else {
-            globalTensor.SetGlobalBuffer(
-                reinterpret_cast<__gm__ inputType*>(
-                    inGm[input::Pos].GetPhyAddr(CalcBlockOffset<inputType>() + offset * sizeof(inputType))));
+            globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(
+                inGm[input::Pos].GetPhyAddr(CalcBlockOffset<inputType>() + offset * sizeof(inputType))));
             // Set getBuf
             GetTensor<TPosition::VECIN>(bufId);
             // Run copyIn
@@ -250,15 +245,13 @@ protected:
         using inputType = typename Op::template FunInArgType<0>;
         static_assert(Placeholder::IsOutHolder<output>::Value, "output args should be out holder");
         if constexpr (std::is_same<typename output::DType, uint1_t>::value) {
-            static_assert(
-                std::is_same<inputType, uint8_t>::value,
-                "CopyOut data type is inconsistent with out holder data type.");
+            static_assert(std::is_same<inputType, uint8_t>::value,
+                          "CopyOut data type is inconsistent with out holder data type.");
             offset = offset / ONE_BYTE_LENGTH;
             tileLength = tileLength / ONE_BYTE_LENGTH;
         } else {
-            static_assert(
-                std::is_same<typename output::DType, inputType>::value,
-                "CopyOut data type is inconsistent with Op data type.");
+            static_assert(std::is_same<typename output::DType, inputType>::value,
+                          "CopyOut data type is inconsistent with Op data type.");
         }
 
         // Prepare input args
@@ -337,10 +330,9 @@ protected:
     template <typename ScalarType, typename scalarValue>
     __aicore__ inline constexpr ScalarType GetScalar()
     {
-        static_assert(
-            !(Placeholder::IsVar<scalarValue>::Value && Placeholder::IsInHolder<scalarValue>::Value &&
-              Placeholder::IsConstValue<scalarValue>::Value),
-            "The input parameter type is not FunBind, Var, Const or Holder.");
+        static_assert(!(Placeholder::IsVar<scalarValue>::Value && Placeholder::IsInHolder<scalarValue>::Value &&
+                        Placeholder::IsConstValue<scalarValue>::Value),
+                      "The input parameter type is not FunBind, Var, Const or Holder.");
         if constexpr (Placeholder::IsVar<scalarValue>::Value) {
             ScalarType scalar = scalars.template Get<scalarValue::Pos>();
             return scalar;
@@ -371,8 +363,8 @@ protected:
                 if constexpr (!isDuplicate) {
                     GetTensor<TPosition::VECCALC>(bufId);
                 }
-                LocalTensor<TensorType> inputTensor =
-                    tensorPool[bufId * blockLen].template ReinterpretCast<TensorType>();
+                LocalTensor<TensorType> inputTensor = tensorPool[bufId * blockLen]
+                                                          .template ReinterpretCast<TensorType>();
 #ifndef __CCE_KT_TEST__
                 inputTensor.SetBufferLen(blockEleLen);
 #endif
@@ -413,8 +405,8 @@ protected:
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(
-        LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outTensor, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -422,13 +414,13 @@ protected:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(
-            outTensor, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(outTensor, inputs, tileLength,
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(
-        OutputType& outScalar, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(OutputType& outScalar, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outScalar, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -436,8 +428,8 @@ protected:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(OutputType& outScalar, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(
-            outScalar, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(outScalar, inputs, tileLength,
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Op, size_t... I>
@@ -541,12 +533,10 @@ protected:
         // Run current func
         using Op = typename ElemDag::FunList::template At<pos>;
         using Func = typename Op::Fun;
-        RUN_LOG(
-            "RUN.Func[%s]: ArgsSize: %ld, PingPong:%ld, GmOffset:%ld, TileLength:%ld\n", PRINT_TYPE(Func),
-            Op::Args::Size, pingPong, offset, tileLength);
-        if constexpr (
-            __aux::IsSameTemplateType<Func, Vec::CopyIn>::Value ||
-            __aux::IsSameTemplateType<Func, Vec::CopyInBrc>::Value) {
+        RUN_LOG("RUN.Func[%s]: ArgsSize: %ld, PingPong:%ld, GmOffset:%ld, TileLength:%ld\n", PRINT_TYPE(Func),
+                Op::Args::Size, pingPong, offset, tileLength);
+        if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value ||
+                      __aux::IsSameTemplateType<Func, Vec::CopyInBrc>::Value) {
             CopyIn<Op, pos>(offset, tileLength, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyOut>::Value) {
             CopyOut<Op, pos>(offset, tileLength, pingPong);

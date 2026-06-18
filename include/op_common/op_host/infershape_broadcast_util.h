@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 /*!
  * \file infershape_broadcast_util.h
  * \brief
@@ -32,7 +31,7 @@ OPBASE_API ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context
 OPBASE_API bool BroadcastShape(const gert::Shape* in1Shape, const gert::Shape* in2Shape, gert::Shape* outShape);
 
 OPBASE_API bool BroadcastShape(const std::vector<const gert::Shape*>& inShapes, gert::Shape* outShape);
-}  // namespace Base
+} // namespace Base
 } // namespace Ops
 
-#endif  // OP_COMMON_OP_HOST_INFERSHAPE_BROADCAST_UTIL_H
+#endif // OP_COMMON_OP_HOST_INFERSHAPE_BROADCAST_UTIL_H

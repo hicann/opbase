@@ -232,17 +232,17 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
     EXPECT_NE(rc2, ACL_SUCCESS);
     const size_t* pws = nullptr;
     size_t num;
-    auto rc3 = op::internal::gKernelMgr.GetWorkspace(
-        opType, pws, num, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    auto rc3 = op::internal::gKernelMgr.GetWorkspace(opType, pws, num, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
+                                                     *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+                                                     *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_NE(rc3, ACL_SUCCESS);
 
     uint32_t opType1 = op::OpTypeDict::ToOpType("Axpy1");
     auto rc = op::internal::gKernelMgr.Run(opType1, stream, ctx);
     EXPECT_NE(rc, ACL_SUCCESS);
-    auto rc1 = op::internal::gKernelMgr.GetWorkspace(
-        opType1, pws, num, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    auto rc1 = op::internal::gKernelMgr.GetWorkspace(opType1, pws, num, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
+                                                     *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+                                                     *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_NE(rc1, ACL_SUCCESS);
     op::DestroyOpArgContext(ctx);
 }
@@ -270,14 +270,12 @@ TEST_F(KernelLaunchNewRtsUT, SetMemSetFlagFromJsonTest)
     for (int i = 1; i <= 4; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(
-            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
-        snprintf_s(
-            binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
-        op::internal::OpKernelBin kernel(
-            9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
+        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
+        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
+        op::internal::OpKernelBin kernel(9999, jsonPath, jsonPath, binPath, key, hashKey,
+                                         op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = kernel.JsonLoad();
         EXPECT_EQ(rc, ACLNN_SUCCESS);
     }

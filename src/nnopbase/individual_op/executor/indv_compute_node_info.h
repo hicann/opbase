@@ -46,9 +46,9 @@ static inline size_t NnopbaseComputeNodeCalcLen(NnopbaseExecutor* executor)
     return size;
 }
 
-static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(
-    const size_t irNum, const size_t irIndex, NnopbaseAnchorInstanceInfo* nodeExtInstStart,
-    const uint32_t instanceStart, const uint32_t instantiationNum)
+static inline aclnnStatus NnopbaseComputeNodeSetInstInfo(const size_t irNum, const size_t irIndex,
+                                                         NnopbaseAnchorInstanceInfo* nodeExtInstStart,
+                                                         const uint32_t instanceStart, const uint32_t instantiationNum)
 {
     NNOPBASE_ASSERT_TRUE_RETVAL(irIndex < irNum);
     NnopbaseAnchorInstanceInfo* inst = nodeExtInstStart + irIndex;

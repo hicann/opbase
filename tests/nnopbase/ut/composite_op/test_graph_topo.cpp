@@ -41,9 +41,8 @@ void PrintSingleTensor(KernelTensor* kt, int64_t start, int64_t end)
     if (iter != tensor_type_map.end()) {
         type = iter->second;
     }
-    printf(
-        "Node %ld, index %zu, type %s [Start %ld -> End %ld].\n", kt->GetOwnerNode()->GetOriginalId(), kt->GetIndex(),
-        type.c_str(), start, end);
+    printf("Node %ld, index %zu, type %s [Start %ld -> End %ld].\n", kt->GetOwnerNode()->GetOriginalId(),
+           kt->GetIndex(), type.c_str(), start, end);
 }
 
 void PrintTensors(const char* name, const op::FVector<TensorResult, DEFAULT_TENSOR_NUM>& tensor_results)
@@ -63,9 +62,8 @@ void PrintTensors(const char* name, const op::FVector<KernelTensor*, DEFAULT_TEN
     }
 }
 
-KernelNode* AddNode(
-    int64_t original_id, size_t input_size, size_t output_size, size_t workspace_size = 0,
-    bool is_output_from_workspace = true)
+KernelNode* AddNode(int64_t original_id, size_t input_size, size_t output_size, size_t workspace_size = 0,
+                    bool is_output_from_workspace = true)
 {
     static auto ue = CREATE_EXECUTOR();
     KernelNode* node = new KernelNode(0, original_id);
@@ -163,9 +161,8 @@ TEST_F(memory_allocator_ut, TestCase1)
     for (auto node : kernel_graph->GetKernelNodes()) {
         for (auto output : node->GetOutputs()) {
             tensors.push_back(output);
-            printf(
-                "node %zu : output number %zu, peer_in number %zu, output tensor size %zu\n", node->GetTopoId(),
-                node->GetOutputs().size(), output->GetPeerTensors().size(), output->GetSize());
+            printf("node %zu : output number %zu, peer_in number %zu, output tensor size %zu\n", node->GetTopoId(),
+                   node->GetOutputs().size(), output->GetPeerTensors().size(), output->GetSize());
         }
     }
 
@@ -190,7 +187,7 @@ KernelGraph* CreateGraph1(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& expected)
     // kernel graph construction
 
     //            /--------\
-  // a--->b--->c--->e--->f
+    // a--->b--->c--->e--->f
     //  \    \---d---/
     //   -------/
     KernelGraphUtils::Link(a, b, 0, 0);
@@ -214,8 +211,8 @@ KernelGraph* CreateGraph1(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& expected)
     return kernel_graph;
 }
 
-KernelGraph* CreateGraph1WithTensorResult(
-    op::FVector<TensorResult, DEFAULT_TENSOR_NUM>& expected_tensors, SortType sort_type)
+KernelGraph* CreateGraph1WithTensorResult(op::FVector<TensorResult, DEFAULT_TENSOR_NUM>& expected_tensors,
+                                          SortType sort_type)
 {
     // kernel node construction
     KernelNode* a = AddNode(4, 1, 1);
@@ -229,7 +226,7 @@ KernelGraph* CreateGraph1WithTensorResult(
     // kernel graph construction
 
     //            /-->f-->\
-  // a--->b--->c--->e--->g
+    // a--->b--->c--->e--->g
     //  \    \---d---/
     //   -------/
     // sequence after dfs sort: a, b, c, d, e, f, g
@@ -280,7 +277,7 @@ KernelGraph* CreateGraph2(op::FVector<TensorResult, DEFAULT_TENSOR_NUM>& expecte
     // kernel graph construction
     // b has two outputs and one workspace
     //       /-------------\
-  // a--->b--->c--->d--->e--->f
+    // a--->b--->c--->d--->e--->f
     // g--->h--->i---/
     KernelGraphUtils::Link(a, b, 0, 0);
     KernelGraphUtils::Link(b, c, 0, 0);
@@ -330,7 +327,7 @@ KernelGraph* CreateGraphWithCycle()
     // kernel graph construction
     // b has two outputs and one workspace
     //       /<-----g------\
-  // a--->b--->c--->d--->e--->f
+    // a--->b--->c--->d--->e--->f
 
     KernelGraphUtils::Link(a, b, 0, 0);
     KernelGraphUtils::Link(b, c, 0, 0);
@@ -362,7 +359,7 @@ KernelGraph* CreateGraphWithCycle2()
     // kernel graph construction
     // b has two outputs and one workspace
     //       /<-----g------\
-  // a--->b--->c--->d--->e--->f
+    // a--->b--->c--->d--->e--->f
 
     KernelGraphUtils::Link(a, b, 0, 0);
     KernelGraphUtils::Link(b, c, 0, 0);
@@ -380,8 +377,8 @@ KernelGraph* CreateGraphWithCycle2()
     return kernel_graph;
 }
 
-bool CheckResult(
-    KernelGraph* graph, op::FVector<TensorResult, DEFAULT_TENSOR_NUM>& expected, bool check_time_cost = false)
+bool CheckResult(KernelGraph* graph, op::FVector<TensorResult, DEFAULT_TENSOR_NUM>& expected,
+                 bool check_time_cost = false)
 {
     printf("############################Check Result############################\n");
     if (check_time_cost) {
@@ -416,18 +413,16 @@ bool CheckResult(
         }
 
         if (expected[i].expected_end != real[i]->GetLifeTimeEnd()) {
-            printf(
-                "\nCompare end of node %zu tensor %zu Failed. [expected %ld], [real %ld]\n",
-                expected[i].kt->GetOwnerNode()->GetOriginalId(), real[i]->GetIndex(), expected[i].expected_end,
-                real[i]->GetLifeTimeEnd());
+            printf("\nCompare end of node %zu tensor %zu Failed. [expected %ld], [real %ld]\n",
+                   expected[i].kt->GetOwnerNode()->GetOriginalId(), real[i]->GetIndex(), expected[i].expected_end,
+                   real[i]->GetLifeTimeEnd());
             return false;
         }
 
         if (expected[i].expected_start != real[i]->GetLifeTimeStart()) {
-            printf(
-                "\nCompare start of node %zu tensor %zu Failed. [expected %ld], [real %ld]\n",
-                expected[i].kt->GetOwnerNode()->GetOriginalId(), real[i]->GetIndex(), expected[i].expected_start,
-                real[i]->GetLifeTimeStart());
+            printf("\nCompare start of node %zu tensor %zu Failed. [expected %ld], [real %ld]\n",
+                   expected[i].kt->GetOwnerNode()->GetOriginalId(), real[i]->GetIndex(), expected[i].expected_start,
+                   real[i]->GetLifeTimeStart());
             return false;
         }
     }

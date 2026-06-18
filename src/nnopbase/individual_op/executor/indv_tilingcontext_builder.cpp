@@ -38,9 +38,8 @@ uint32_t NnopbaseGetKernelRunContextValuesInitNum(NnopbaseExecutor* executor)
                    static_cast<uint32_t>(kInputsAppendEnd) + static_cast<uint32_t>(gert::TilingContext::kOutputNum);
 
     if (executor->ownArgs.inputs.hasDynamic || executor->ownArgs.outputs.hasDynamic) {
-        num +=
-            (executor->ownArgs.inputs.dynamicNum * NNOPBASE_DYNAMIC_PARAM_DEF_NUM +
-             executor->ownArgs.outputs.dynamicNum * NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
+        num += (executor->ownArgs.inputs.dynamicNum * NNOPBASE_DYNAMIC_PARAM_DEF_NUM +
+                executor->ownArgs.outputs.dynamicNum * NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
     }
     return num;
 }
@@ -93,12 +92,10 @@ aclnnStatus NnopbaseExecutorPlatFormInfosInit(void)
     g_nnopbasePlatformMgr.memsetInfos = std::make_unique<fe::PlatFormInfos>();
     int32_t deviceId = -1;
     NNOPBASE_ASSERT_RTOK_RETVAL(aclrtGetDevice(&deviceId));
-    NNOPBASE_ASSERT_RTOK_RETVAL(
-        fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(
-            deviceId, *g_nnopbasePlatformMgr.infos, true));
-    NNOPBASE_ASSERT_RTOK_RETVAL(
-        fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(
-            deviceId, *g_nnopbasePlatformMgr.memsetInfos, true));
+    NNOPBASE_ASSERT_RTOK_RETVAL(fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(
+        deviceId, *g_nnopbasePlatformMgr.infos, true));
+    NNOPBASE_ASSERT_RTOK_RETVAL(fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(
+        deviceId, *g_nnopbasePlatformMgr.memsetInfos, true));
     if (nnopbase::IndvSoc::GetInstance().IsCouplingArch()) {
         g_nnopbasePlatformMgr.infos->SetCoreNumByCoreType("AiCore");
     } else {
@@ -272,8 +269,8 @@ aclnnStatus NnopbaseInitContext(NnopbaseKernelRunContextExt* contextExt, const u
     context->compute_node_info = contextExt->nodeExt.node;
     context->kernel_extend_info = nullptr;
     context->output_start = nullptr;
-    auto value = op::internal::PtrCastTo<NnopbaseAsyncAnyValue>(
-        op::internal::PtrCastTo<NnopbaseUChar>(context) + NnopbaseKernelRunContextOffset(num));
+    auto value = op::internal::PtrCastTo<NnopbaseAsyncAnyValue>(op::internal::PtrCastTo<NnopbaseUChar>(context) +
+                                                                NnopbaseKernelRunContextOffset(num));
     for (uint32_t i = 0; i < num; i++) {
         context->values[i] = value + i;
     }
@@ -297,9 +294,9 @@ void NnopbaseTilingContextDeInit(NnopbaseExecutor* executor)
     NnopbaseComputeNodeInfoDeInit(&executor->contextExt.nodeExt);
 }
 
-aclnnStatus NnopbaseMemsetTilingContextInit(
-    const std::vector<NnopbaseInitValueInfo>& initValues, std::shared_ptr<MemsetOpInfo>& memsetInfo,
-    const NnopbaseParamDesc& outputParamDescs)
+aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueInfo>& initValues,
+                                            std::shared_ptr<MemsetOpInfo>& memsetInfo,
+                                            const NnopbaseParamDesc& outputParamDescs)
 {
     NnopbaseKernelRunContextExt* contextExt = &memsetInfo->contextExt;
     const uint32_t num = static_cast<uint32_t>(initValues.size()) + static_cast<uint32_t>(kInputsAppendEnd) +
@@ -314,8 +311,8 @@ aclnnStatus NnopbaseMemsetTilingContextInit(
     node->irInputsNum = count;
     node->inputsNum = count + 1; // input[0] is not used for workspace checking
 
-    nodeExt->inputTdStart =
-        op::internal::PtrCastTo<NnopbaseCompileTimeTensorDesc>(nodeExt->instStart + node->irInputsNum);
+    nodeExt->inputTdStart = op::internal::PtrCastTo<NnopbaseCompileTimeTensorDesc>(nodeExt->instStart +
+                                                                                   node->irInputsNum);
     nodeExt->outputTdStart = nodeExt->inputTdStart + node->inputsNum;
     nodeExt->attrStart = op::internal::PtrCastTo<NnopbaseRuntimeAttrsDef>(nodeExt->outputTdStart + node->outputsNum);
     nodeExt->outputInstStart = op::internal::PtrCastTo<NnopbaseAnchorInstanceInfo>(
@@ -324,8 +321,8 @@ aclnnStatus NnopbaseMemsetTilingContextInit(
     const NnopbaseParamDesc* const desc = &outputParamDescs;
     for (size_t i = 0U; i < count; i++) {
         const uint32_t startIndex = desc->instances[initValues[i].irIndex].startIndex;
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseComputeNodeSetInstInfo(
-            nodeExt->node->irInputsNum, i, nodeExt->instStart, startIndex, desc->instances[i].num));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseComputeNodeSetInstInfo(nodeExt->node->irInputsNum, i, nodeExt->instStart,
+                                                                 startIndex, desc->instances[i].num));
     }
 
     // 4 for tiling compile info parsed struct,platform,tilingfunc,deterministic
@@ -365,8 +362,8 @@ void NnopbaseBuildMemsetInputs(NnopbaseExecutor* executor)
             td->SetStorageFormat(storageFormat.GetStorageFormat());
             td->SetOriginFormat(storageFormat.GetOriginFormat());
             td->SetExpandDimsType(storageFormat.GetExpandDimsType());
-            *op::internal::PtrCastTo<uint64_t>(values[i + 1]->data.inplace) =
-                executor->args->binInfo->initValues[i].tensorDataSize;
+            *op::internal::PtrCastTo<uint64_t>(
+                values[i + 1]->data.inplace) = executor->args->binInfo->initValues[i].tensorDataSize;
         }
         values[i + 1]->deleter = nullptr;
     }
@@ -444,8 +441,9 @@ aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor* executor)
         NnopbaseAsyncAnyValue** values = contextExt->context->values;
         uint32_t index = executor->args->binInfo->initValues.size() + 1U; // 1 is for workspace
         /* kInputsCompileInfo. */
-        values[index]->data.pointer =
-            executor->args->binInfo->memsetInfo->tilingParseContext->values[kCompileInfoStruct]->data.pointer;
+        values[index]->data.pointer = executor->args->binInfo->memsetInfo->tilingParseContext
+                                          ->values[kCompileInfoStruct]
+                                          ->data.pointer;
         values[index]->deleter = nullptr;
         index++;
         /* kInputsPlatformInfo. */
@@ -500,10 +498,9 @@ static aclnnStatus NnopbaseSetMemsetTilingContext(std::shared_ptr<MemsetOpInfo>&
     auto tilingParseContextValue = std::make_unique<NnopbaseAsyncAnyValue[]>(kParseOutputNum);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tilingParseContextValue);
     auto ret = memset_s(tilingParseContextValue.get(), tilingParseSize, 0, tilingParseSize);
-    CHECK_COND(
-        ret == EOK, ACLNN_ERR_INNER,
-        "Failed to execute memset_s, ret = %d, tilingParseContextValue addr is %p, tilingParseSize is %zu.", ret,
-        tilingParseContextValue.get(), tilingParseSize);
+    CHECK_COND(ret == EOK, ACLNN_ERR_INNER,
+               "Failed to execute memset_s, ret = %d, tilingParseContextValue addr is %p, tilingParseSize is %zu.", ret,
+               tilingParseContextValue.get(), tilingParseSize);
 
     tilingParseContextValue[kCompileInfo].data.pointer = const_cast<NnopbaseChar*>(memsetInfo->compileInfo.c_str());
     tilingParseContextValue[kPlatformInfo].data.pointer = static_cast<void*>(g_nnopbasePlatformMgr.memsetInfos.get());
@@ -512,15 +509,14 @@ static aclnnStatus NnopbaseSetMemsetTilingContext(std::shared_ptr<MemsetOpInfo>&
     tilingParseContextValue[kPlatformInfo].deleter = nullptr;
     tilingParseContextValue[kOpType].deleter = nullptr;
 
-    std::size_t tilingParseCtxSize =
-        sizeof(NnopbaseAsyncAnyValue*) * static_cast<int32_t>(kParseOutputNum) + sizeof(NnopbaseKernelRunContext);
+    std::size_t tilingParseCtxSize = sizeof(NnopbaseAsyncAnyValue*) * static_cast<int32_t>(kParseOutputNum) +
+                                     sizeof(NnopbaseKernelRunContext);
     auto tilingParseContext = std::make_unique<uint8_t[]>(tilingParseCtxSize);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tilingParseContext);
     ret = memset_s(tilingParseContext.get(), tilingParseCtxSize, 0, tilingParseCtxSize);
-    CHECK_COND(
-        ret == EOK, ACLNN_ERR_INNER,
-        "Failed to execute memset_s, ret = %d, tilingParseContext addr is %p, tilingParseCtxSize is %zu.", ret,
-        tilingParseContext.get(), tilingParseCtxSize);
+    CHECK_COND(ret == EOK, ACLNN_ERR_INNER,
+               "Failed to execute memset_s, ret = %d, tilingParseContext addr is %p, tilingParseCtxSize is %zu.", ret,
+               tilingParseContext.get(), tilingParseCtxSize);
     memsetInfo->tilingParseContext = op::internal::PtrCastTo<NnopbaseKernelRunContext>(tilingParseContext.release());
     memsetInfo->tilingParseContext->compute_node_info = memsetInfo->contextExt.nodeExt.node;
 
@@ -528,8 +524,8 @@ static aclnnStatus NnopbaseSetMemsetTilingContext(std::shared_ptr<MemsetOpInfo>&
     // 3 is kCompileInfo, kPlatformInfo and kOpType
     memsetInfo->tilingParseContext->input_size = 3;
     memsetInfo->tilingParseContext->output_size = 1;
-    memsetInfo->tilingParseContext->output_start =
-        memsetInfo->tilingParseContext->values + memsetInfo->tilingParseContext->input_size;
+    memsetInfo->tilingParseContext->output_start = memsetInfo->tilingParseContext->values +
+                                                   memsetInfo->tilingParseContext->input_size;
     memsetInfo->tilingParseContext->values[kCompileInfo] = &tilingParseContextValue[kCompileInfo];
     memsetInfo->tilingParseContext->values[kPlatformInfo] = &tilingParseContextValue[kPlatformInfo];
     memsetInfo->tilingParseContext->values[kOpType] = &tilingParseContextValue[kOpType];
@@ -554,15 +550,13 @@ aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo>& 
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->tiling_parse);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->tiling);
-    CHECK_COND(
-        NnopbaseSetMemsetTilingContext(memsetInfo, opImpl->compile_info_creator()) == OK, ACLNN_ERR_INNER,
-        "Failed to set tilingContext for MemSet operator.");
+    CHECK_COND(NnopbaseSetMemsetTilingContext(memsetInfo, opImpl->compile_info_creator()) == OK, ACLNN_ERR_INNER,
+               "Failed to set tilingContext for MemSet operator.");
 
     memsetInfo->tilingFunc = reinterpret_cast<TilingFun>(opImpl->tiling);
     auto ret = opImpl->tiling_parse(op::internal::PtrCastTo<gert::KernelContext>(memsetInfo->tilingParseContext));
-    CHECK_COND(
-        (ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR,
-        "Failed to execute tiling parse function of MemSet operator, ret is %u.", ret);
+    CHECK_COND((ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR,
+               "Failed to execute tiling parse function of MemSet operator, ret is %u.", ret);
     return OK;
 }
 

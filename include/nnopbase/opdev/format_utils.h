@@ -54,8 +54,8 @@ inline bool HasC0Format(int32_t format)
 
 inline Format GetFormatFromSub(int32_t primaryFormat, int32_t subFormat)
 {
-    return static_cast<Format>(
-        (static_cast<uint32_t>(primaryFormat) & 0xffU) | ((static_cast<uint32_t>(subFormat) & 0xffffU) << 8U));
+    return static_cast<Format>((static_cast<uint32_t>(primaryFormat) & 0xffU) |
+                               ((static_cast<uint32_t>(subFormat) & 0xffffU) << 8U));
 }
 
 inline Format ToOpFormat(aclFormat format)
@@ -69,26 +69,25 @@ inline Format ToOpFormat(aclFormat format)
 
 inline aclFormat ToAclFormat(Format format)
 {
-    static const std::vector<Format> CAN_CONVERT_TO_ACL_FORMAT_LIST = {
-        Format::FORMAT_NCHW,
-        Format::FORMAT_NHWC,
-        Format::FORMAT_ND,
-        Format::FORMAT_NC1HWC0,
-        Format::FORMAT_FRACTAL_Z,
-        Format::FORMAT_NC1HWC0_C04,
-        Format::FORMAT_HWCN,
-        Format::FORMAT_NDHWC,
-        Format::FORMAT_FRACTAL_NZ,
-        Format::FORMAT_NCDHW,
-        Format::FORMAT_NDC1HWC0,
-        Format::FORMAT_FRACTAL_Z_3D,
-        Format::FORMAT_NC,
-        Format::FORMAT_NCL,
-        Format::FORMAT_FRACTAL_NZ_C0_16,
-        Format::FORMAT_FRACTAL_NZ_C0_32,
-        Format::FORMAT_FRACTAL_NZ_C0_2,
-        Format::FORMAT_FRACTAL_NZ_C0_4,
-        Format::FORMAT_FRACTAL_NZ_C0_8};
+    static const std::vector<Format> CAN_CONVERT_TO_ACL_FORMAT_LIST = {Format::FORMAT_NCHW,
+                                                                       Format::FORMAT_NHWC,
+                                                                       Format::FORMAT_ND,
+                                                                       Format::FORMAT_NC1HWC0,
+                                                                       Format::FORMAT_FRACTAL_Z,
+                                                                       Format::FORMAT_NC1HWC0_C04,
+                                                                       Format::FORMAT_HWCN,
+                                                                       Format::FORMAT_NDHWC,
+                                                                       Format::FORMAT_FRACTAL_NZ,
+                                                                       Format::FORMAT_NCDHW,
+                                                                       Format::FORMAT_NDC1HWC0,
+                                                                       Format::FORMAT_FRACTAL_Z_3D,
+                                                                       Format::FORMAT_NC,
+                                                                       Format::FORMAT_NCL,
+                                                                       Format::FORMAT_FRACTAL_NZ_C0_16,
+                                                                       Format::FORMAT_FRACTAL_NZ_C0_32,
+                                                                       Format::FORMAT_FRACTAL_NZ_C0_2,
+                                                                       Format::FORMAT_FRACTAL_NZ_C0_4,
+                                                                       Format::FORMAT_FRACTAL_NZ_C0_8};
     auto iter = std::find(CAN_CONVERT_TO_ACL_FORMAT_LIST.begin(), CAN_CONVERT_TO_ACL_FORMAT_LIST.end(), format);
     if (iter == CAN_CONVERT_TO_ACL_FORMAT_LIST.end()) {
         return aclFormat::ACL_FORMAT_UNDEFINED;

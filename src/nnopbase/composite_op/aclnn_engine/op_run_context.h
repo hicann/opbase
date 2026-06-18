@@ -33,72 +33,62 @@
 namespace op::internal {
 class OpRunContext {
 public:
-    gert::InferShapeContext* UpdateInferShapeCtx(
-        uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
+    gert::InferShapeContext* UpdateInferShapeCtx(uint32_t opType, OpArgList& inputs, OpArgList& outputs,
+                                                 OpArgList& attrs)
     {
         const char* opTypeStr = OpTypeDict::ToString(opType).GetString();
-        OP_CHECK(
-            kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed."), return nullptr);
+        OP_CHECK(kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed."), return nullptr);
         kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
-        OP_CHECK(
-            inferShapeCtx_.UpdateInferShapeContext(&kernelCtx_) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateInferShapeContext failed."), return nullptr);
+        OP_CHECK(inferShapeCtx_.UpdateInferShapeContext(&kernelCtx_) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateInferShapeContext failed."), return nullptr);
         return inferShapeCtx_.GetInferShapeContext();
     }
 
-    gert::TilingContext* UpdateTilingCtx(
-        uint32_t opType, const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs, OpArgList& outputs,
-        OpArgList& attrs)
+    gert::TilingContext* UpdateTilingCtx(uint32_t opType, const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs,
+                                         OpArgList& outputs, OpArgList& attrs)
     {
         const char* opTypeStr = OpTypeDict::ToString(opType).GetString();
-        OP_CHECK(
-            kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
+        OP_CHECK(kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
         kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
-        OP_CHECK(
-            tilingCtx_.UpdateTilingCtx(&kernelCtx_, tilingParseCtx) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
+        OP_CHECK(tilingCtx_.UpdateTilingCtx(&kernelCtx_, tilingParseCtx) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
         return tilingCtx_.GetTilingCtx(tilingParseCtx);
     }
 
     gert::TilingContext* UpdateTilingCtx(uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         const char* opTypeStr = OpTypeDict::ToString(opType).GetString();
-        OP_CHECK(
-            kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
+        OP_CHECK(kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
         kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
-        OP_CHECK(
-            tilingCtx_.UpdateTilingCtx(&kernelCtx_) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
+        OP_CHECK(tilingCtx_.UpdateTilingCtx(&kernelCtx_) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
         return tilingCtx_.GetTilingCtx();
     }
 
-    gert::TilingContext* UpdateTilingCtx(
-        uint32_t opType, const nlohmann::json& opJson, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
+    gert::TilingContext* UpdateTilingCtx(uint32_t opType, const nlohmann::json& opJson, OpArgList& inputs,
+                                         OpArgList& outputs, OpArgList& attrs)
     {
         const char* opTypeStr = OpTypeDict::ToString(opType).GetString();
-        OP_CHECK(
-            kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
+        OP_CHECK(kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
         kernelCtx_.UpdateKernelExtendInfo(opTypeStr, opTypeStr);
-        OP_CHECK(
-            tilingCtx_.UpdateTilingCtx(&kernelCtx_, opJson) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
+        OP_CHECK(tilingCtx_.UpdateTilingCtx(&kernelCtx_, opJson) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
         return tilingCtx_.GetTilingCtx();
     }
 
-    gert::TilingContext* UpdateTilingCtx4MemSetV2(
-        const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
+    gert::TilingContext* UpdateTilingCtx4MemSetV2(const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs,
+                                                  OpArgList& outputs, OpArgList& attrs)
     {
         OP_CHECK(
             memSetV2kernelCtx_.UpdateComputeNodeInfo(MEMSET_V2_NAME.c_str(), inputs, outputs, attrs) == ACLNN_SUCCESS,
             OP_LOGE(ACLNN_ERR_INNER, "UpdateComputeNodeInfo failed"), return nullptr);
         memSetV2kernelCtx_.UpdateKernelExtendInfo(MEMSET_V2_NAME.c_str(), MEMSET_V2_NAME.c_str());
-        OP_CHECK(
-            memSetTilingCtx_.UpdateTilingCtx(&memSetV2kernelCtx_, tilingParseCtx) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
+        OP_CHECK(memSetTilingCtx_.UpdateTilingCtx(&memSetV2kernelCtx_, tilingParseCtx) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "UpdateTilingCtx failed"), return nullptr);
         return memSetTilingCtx_.GetTilingCtx(tilingParseCtx);
     }
 
@@ -129,14 +119,13 @@ public:
         return ACLNN_SUCCESS;
     }
 
-    static aclnnStatus GenSimplifiedKey(
-        uint32_t opType, char* simplifiedKey, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
+    static aclnnStatus GenSimplifiedKey(uint32_t opType, char* simplifiedKey, OpArgList& inputs, OpArgList& outputs,
+                                        OpArgList& attrs)
     {
         InitOpFunctions(opType);
         if (opTilingFuncs_[opType] == nullptr || opTilingFuncs_[opType]->gen_simplifiedkey == nullptr) {
-            OP_LOGE(
-                ACLNN_ERR_INNER, "Op has no gen_simplifiedkey func, opType: %s",
-                op::OpTypeDict::ToString(opType).GetString());
+            OP_LOGE(ACLNN_ERR_INNER, "Op has no gen_simplifiedkey func, opType: %s",
+                    op::OpTypeDict::ToString(opType).GetString());
             return ACLNN_ERR_INNER;
         }
         auto ctx = opRunCtx_.UpdateTilingCtx(opType, inputs, outputs, attrs);
@@ -148,9 +137,8 @@ public:
         return ACLNN_SUCCESS;
     }
 
-    static const TilingCtxOutput* Tiling(
-        uint32_t opType, const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs, OpArgList& outputs,
-        OpArgList& attrs)
+    static const TilingCtxOutput* Tiling(uint32_t opType, const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs,
+                                         OpArgList& outputs, OpArgList& attrs)
     {
         OP_CHECK(tilingParseCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Tiling parse ctx is NULL"), return nullptr);
         InitOpFunctions(opType);
@@ -173,13 +161,12 @@ public:
         return opRunCtx_.tilingCtx_.GetTilingResFromCache(res);
     }
 
-    static const TilingCtxOutput* Tiling4MemSet(
-        const TilingParseCtxHolder* tilingParseCtx, const std::vector<MemSetTensorInfo>& memsetTensorInfo)
+    static const TilingCtxOutput* Tiling4MemSet(const TilingParseCtxHolder* tilingParseCtx,
+                                                const std::vector<MemSetTensorInfo>& memsetTensorInfo)
     {
         static uint32_t opType = OpTypeDict::ToOpType("MemSet");
-        OP_CHECK(
-            InitOpFunctions(opType) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "InitOpFunctions failed"),
-            return nullptr);
+        OP_CHECK(InitOpFunctions(opType) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "InitOpFunctions failed"),
+                 return nullptr);
         if (opTilingFuncs_[opType] == nullptr || opTilingFuncs_[opType]->tiling == nullptr) {
             OP_LOGE(ACLNN_ERR_INNER, "Memset Op has no Tiling func");
             return nullptr;
@@ -198,14 +185,12 @@ public:
         return opRunCtx_.memSetTilingCtx_.GetTilingResult();
     }
 
-    static const TilingCtxOutput* Tiling4MemSetV2(
-        uint32_t opType, const TilingParseCtxHolder* tilingParseCtx, OpArgList& inputs, OpArgList& outputs,
-        OpArgList& attrs)
+    static const TilingCtxOutput* Tiling4MemSetV2(uint32_t opType, const TilingParseCtxHolder* tilingParseCtx,
+                                                  OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         OP_CHECK(tilingParseCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Tiling parse ctx is NULL"), return nullptr);
-        OP_CHECK(
-            InitOpFunctions(opType) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "InitOpFunctions failed"),
-            return nullptr);
+        OP_CHECK(InitOpFunctions(opType) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "InitOpFunctions failed"),
+                 return nullptr);
         if (opTilingFuncs_[opType] == nullptr || opTilingFuncs_[opType]->tiling == nullptr) {
             OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
             return nullptr;
@@ -225,15 +210,15 @@ public:
         return opTilingFuncs_[opType];
     };
 
-    static const TilingCtxOutput* GetStaticTilingCtxOutput(
-        uint32_t opType, int64_t staticBlockDim, bool atomicCleanFlag, uint8_t scheduleMode,
-        uint32_t staticKernelDynUBufSize, FVector<size_t>& staticWorkspaceSize, OpArgList& inputs, OpArgList& outputs,
-        OpArgList& attrs)
+    static const TilingCtxOutput* GetStaticTilingCtxOutput(uint32_t opType, int64_t staticBlockDim,
+                                                           bool atomicCleanFlag, uint8_t scheduleMode,
+                                                           uint32_t staticKernelDynUBufSize,
+                                                           FVector<size_t>& staticWorkspaceSize, OpArgList& inputs,
+                                                           OpArgList& outputs, OpArgList& attrs)
     {
         const char* opTypeStr = OpTypeDict::ToString(opType).GetString();
-        OP_CHECK(
-            opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "failed to UpdateComputeNodeInfo"), return nullptr);
+        OP_CHECK(opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER, "failed to UpdateComputeNodeInfo"), return nullptr);
         auto ret = const_cast<TilingCtxOutput*>(opRunCtx_.tilingCtx_.GetTilingResult());
         *ret->numBlocks_ = staticBlockDim;
         OP_LOGD("numBlocks is %ld", *ret->numBlocks_);
@@ -254,17 +239,16 @@ public:
         return ret;
     }
 
-    static void RecordOpInfo(
-        uint32_t opType, const nlohmann::json& opJson, const aclnnOpInfoRecord::OpKernelInfo& kernelInfo,
-        const std::string& implMode, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
+    static void RecordOpInfo(uint32_t opType, const nlohmann::json& opJson,
+                             const aclnnOpInfoRecord::OpKernelInfo& kernelInfo, const std::string& implMode,
+                             OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         if (op::internal::GetOpProfilingRecordArgFlag()) {
             gert::TilingContext* ctx = opRunCtx_.UpdateTilingCtx(opType, opJson, inputs, outputs, attrs);
             bool isDeterministicOn = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_;
             auto opts = aclnnOpInfoRecord::OpCompilerOption(implMode, isDeterministicOn);
-            OP_LOGI(
-                "Call ExeOptInfoStat, option %d %s. kernel info %d %s, deterministic is %d.", opts.deterministic,
-                opts.impl_mode.c_str(), kernelInfo.bin_type, kernelInfo.bin_info.c_str(), isDeterministicOn);
+            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s, deterministic is %d.", opts.deterministic,
+                    opts.impl_mode.c_str(), kernelInfo.bin_type, kernelInfo.bin_info.c_str(), isDeterministicOn);
             aclnnOpInfoRecord::OpInfoSerialize(ctx, opts, &kernelInfo);
         }
     }

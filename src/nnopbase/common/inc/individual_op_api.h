@@ -66,38 +66,37 @@ enum NnopbaseHcclServerType {
 };
 
 VISIBILITY_EXPORT aclnnStatus NnopbaseCreateExecutorSpace(void** space);
-VISIBILITY_EXPORT void* NnopbaseGetExecutor(
-    void* space, const char* opType, char* inputsDesc, uint32_t inputNum, char* outputsDesc, uint32_t outputNum,
-    char* attrsDesc, uint32_t attrsNum);
+VISIBILITY_EXPORT void* NnopbaseGetExecutor(void* space, const char* opType, char* inputsDesc, uint32_t inputNum,
+                                            char* outputsDesc, uint32_t outputNum, char* attrsDesc, uint32_t attrsNum);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddInput(void* executor, const aclTensor* tensor, const uint32_t index);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddIntArrayInput(void* executor, const aclIntArray* array, const uint32_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddBoolArrayInput(void* executor, const aclBoolArray* array, const uint32_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddFloatArrayInput(void* executor, const aclFloatArray* array, const uint32_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddIgnoreContinuesInput(void* executor, const aclTensor* tensor, const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddBoolArrayInput(void* executor, const aclBoolArray* array,
+                                                        const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddFloatArrayInput(void* executor, const aclFloatArray* array,
+                                                         const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddIgnoreContinuesInput(void* executor, const aclTensor* tensor,
+                                                              const uint32_t index);
 VISIBILITY_EXPORT aclnnStatus NnopbaseGetAttrAddr(void* executor, const size_t index, void** attrAddr, size_t* attrLen);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddOutput(void* executor, const aclTensor* tensor, const uint32_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddDynamicInput(void* executor, const aclTensorList* tensorList, const uint32_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddIgnoreContiguousDynamicInput(void* executor, const aclTensorList* tensorList, const uint32_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddDynamicOutput(void* executor, const aclTensorList* tensorList, const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddDynamicInput(void* executor, const aclTensorList* tensorList,
+                                                      const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddIgnoreContiguousDynamicInput(void* executor, const aclTensorList* tensorList,
+                                                                      const uint32_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddDynamicOutput(void* executor, const aclTensorList* tensorList,
+                                                       const uint32_t index);
 
 // 属性添加接口
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddAttr(void* executor, void* attrAddr, const size_t attrLen, const size_t index);
-VISIBILITY_EXPORT aclnnStatus NnopbaseAddAttrWithDtype(
-    void* executor, void* attrAddr, const size_t attrLen, const size_t index, const NnopbaseAttrDtype dtype);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddAttrWithDtype(void* executor, void* attrAddr, const size_t attrLen,
+                                                       const size_t index, const NnopbaseAttrDtype dtype);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddIntArrayAttr(void* executor, const aclIntArray* array, const size_t index);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddBoolArrayAttr(void* executor, const aclBoolArray* array, const size_t index);
 VISIBILITY_EXPORT aclnnStatus NnopbaseAddFloatArrayAttr(void* executor, const aclFloatArray* array, const size_t index);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddArrayAttr(void* executor, void* array, const size_t len, const size_t elementSize, const size_t index);
-VISIBILITY_EXPORT aclnnStatus NnopbaseAddArrayAttrWithDtype(
-    void* executor, void* array, const size_t len, const size_t elementSize, const size_t index,
-    const NnopbaseAttrDtype dtype);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddArrayAttr(void* executor, void* array, const size_t len,
+                                                   const size_t elementSize, const size_t index);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddArrayAttrWithDtype(void* executor, void* array, const size_t len,
+                                                            const size_t elementSize, const size_t index,
+                                                            const NnopbaseAttrDtype dtype);
 
 // profiling上报接口
 VISIBILITY_EXPORT uint64_t NnopbaseMsprofSysTime();
@@ -107,18 +106,18 @@ VISIBILITY_EXPORT void NnopbaseReportLaunchInfo(const uint64_t beginTime, const 
 VISIBILITY_EXPORT aclnnStatus NnopbaseReportAicpuAdditionInfo(const uint64_t timeStamp, const char* const opType);
 
 VISIBILITY_EXPORT aclnnStatus NnopbaseRunForWorkspace(void* executor, uint64_t* workspaceLen);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseRunWithWorkspace(void* executor, aclrtStream stream, void* workspace, uint64_t workspaceLen);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddSupportList(void* executor, OpSupportList* list, uint32_t* socSupportList, size_t socSupportListLen);
+VISIBILITY_EXPORT aclnnStatus NnopbaseRunWithWorkspace(void* executor, aclrtStream stream, void* workspace,
+                                                       uint64_t workspaceLen);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddSupportList(void* executor, OpSupportList* list, uint32_t* socSupportList,
+                                                     size_t socSupportListLen);
 VISIBILITY_EXPORT void NnopbaseAddOpTypeId(void* executor, const uint32_t opTypeId);
 
 // 获取非连续相关接口
 VISIBILITY_EXPORT aclnnStatus NnopbaseGetUnContiguousTensors(void* executor, const aclTensorList** inTensors);
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetUnContExecutor(void* executor, aclOpExecutor* inExe, const size_t inWsSize);
 VISIBILITY_EXPORT aclnnStatus NnopbaseGetUnContExecutor(void* executor, aclOpExecutor** inExe, size_t* inWsSize);
-VISIBILITY_EXPORT aclnnStatus NnopbaseGetRefUnContiguousTensors(
-    void* executor, const aclTensorList** unContTensors, const aclTensorList** contTensors);
+VISIBILITY_EXPORT aclnnStatus NnopbaseGetRefUnContiguousTensors(void* executor, const aclTensorList** unContTensors,
+                                                                const aclTensorList** contTensors);
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetRef(void* executor, const size_t inputIrIdx, const size_t outputIrIdx);
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetViewCopyExecutor(void* executor, aclOpExecutor* exe);
 VISIBILITY_EXPORT aclnnStatus NnopbaseGetViewCopyExecutor(void* executor, aclOpExecutor** exe);
@@ -127,46 +126,48 @@ VISIBILITY_EXPORT aclnnStatus NnopbaseReleaseRefContiguousTensors(void* executor
 VISIBILITY_EXPORT void NnopbaseGetTilingData(void* executor, void** tilingData, uint64_t* dataLen);
 VISIBILITY_EXPORT void NnopbaseGetInputTensorAddr(void* executor, size_t index, void** addr);
 VISIBILITY_EXPORT void NnopbaseGetOutputTensorAddr(void* executor, size_t index, void** addr);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseGetInputTensorCount(const void* const executor, const size_t irIndex, uint32_t* const count);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseGetOutputTensorCount(const void* const executor, const size_t irIndex, uint32_t* const count);
-VISIBILITY_EXPORT aclnnStatus NnopbaseGetDynamicInputTensorAddrs(
-    const void* const executor, const size_t irIndex, void** const addrs, const size_t addrSize, uint32_t* const count);
-VISIBILITY_EXPORT aclnnStatus NnopbaseGetDynamicOutputTensorAddrs(
-    const void* const executor, const size_t irIndex, void** const addrs, const size_t addrSize, uint32_t* const count);
+VISIBILITY_EXPORT aclnnStatus NnopbaseGetInputTensorCount(const void* const executor, const size_t irIndex,
+                                                          uint32_t* const count);
+VISIBILITY_EXPORT aclnnStatus NnopbaseGetOutputTensorCount(const void* const executor, const size_t irIndex,
+                                                           uint32_t* const count);
+VISIBILITY_EXPORT aclnnStatus NnopbaseGetDynamicInputTensorAddrs(const void* const executor, const size_t irIndex,
+                                                                 void** const addrs, const size_t addrSize,
+                                                                 uint32_t* const count);
+VISIBILITY_EXPORT aclnnStatus NnopbaseGetDynamicOutputTensorAddrs(const void* const executor, const size_t irIndex,
+                                                                  void** const addrs, const size_t addrSize,
+                                                                  uint32_t* const count);
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetInputTensorAddr(void* executor, const size_t index, const void* const addr);
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetOutputTensorAddr(void* executor, const size_t index, const void* const addr);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseSetDynamicInputTensorAddr(void* executor, size_t irIndex, const size_t relativeIndex, const void* const addr);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseSetDynamicOutputTensorAddr(void* executor, size_t irIndex, const size_t relativeIndex, const void* const addr);
+VISIBILITY_EXPORT aclnnStatus NnopbaseSetDynamicInputTensorAddr(void* executor, size_t irIndex,
+                                                                const size_t relativeIndex, const void* const addr);
+VISIBILITY_EXPORT aclnnStatus NnopbaseSetDynamicOutputTensorAddr(void* executor, size_t irIndex,
+                                                                 const size_t relativeIndex, const void* const addr);
 VISIBILITY_EXPORT void NnopbaseSetUserHandle(void* executor, void* handle);
 VISIBILITY_EXPORT void* NnopbaseGetUserHandle(void* executor);
-VISIBILITY_EXPORT aclnnStatus NnopbaseAddScalarInput(
-    void* executor, const aclScalar* scalar, const uint32_t index, const int32_t srcIndex, const ge::DataType dtype);
-VISIBILITY_EXPORT aclnnStatus NnopbaseAddScalarListInput(
-    void* executor, const aclScalarList* scalarList, const uint32_t index, const int32_t srcIndex,
-    const ge::DataType dtype);
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddParamName(void* executor, const uint32_t index, const char* name, const bool isInput);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddScalarInput(void* executor, const aclScalar* scalar, const uint32_t index,
+                                                     const int32_t srcIndex, const ge::DataType dtype);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddScalarListInput(void* executor, const aclScalarList* scalarList,
+                                                         const uint32_t index, const int32_t srcIndex,
+                                                         const ge::DataType dtype);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddParamName(void* executor, const uint32_t index, const char* name,
+                                                   const bool isInput);
 
 VISIBILITY_EXPORT void NnopbaseSetMatchArgsFlag(void* executor);
 VISIBILITY_EXPORT bool NnopbaseMatchArgs(void* executor, uint64_t* workspaceLen);
 VISIBILITY_EXPORT const char* NnopbaseGetSocName();
-VISIBILITY_EXPORT aclnnStatus
-NnopbaseAddSocNameList(void* executor, OpSupportList* list, const char* const* socNameList, size_t socNameListLen);
+VISIBILITY_EXPORT aclnnStatus NnopbaseAddSocNameList(void* executor, OpSupportList* list,
+                                                     const char* const* socNameList, size_t socNameListLen);
 VISIBILITY_EXPORT bool NnopbaseSupportTensorV2();
 
 // for mc2 op
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetMc2(void* const executor);
 VISIBILITY_EXPORT aclnnStatus NnopbaseSetHcomGroup(void* const executor, char* const group);
 VISIBILITY_EXPORT void NnopbaseSetHcclServerType(void* executor, NnopbaseHcclServerType sType);
-VISIBILITY_EXPORT void NnopbaseSetHcclServerTypeList(
-    void* executor, NnopbaseHcclServerType* hcclServerTypeList, const uint32_t* socSupportList,
-    size_t socSupportListLen);
-VISIBILITY_EXPORT aclnnStatus NnopbaseSetHcclServerTypeBySocName(
-    void* executor, NnopbaseHcclServerType* hcclServerTypeList, const char* const* socNameList, size_t socNameListLen);
+VISIBILITY_EXPORT void NnopbaseSetHcclServerTypeList(void* executor, NnopbaseHcclServerType* hcclServerTypeList,
+                                                     const uint32_t* socSupportList, size_t socSupportListLen);
+VISIBILITY_EXPORT aclnnStatus NnopbaseSetHcclServerTypeBySocName(void* executor,
+                                                                 NnopbaseHcclServerType* hcclServerTypeList,
+                                                                 const char* const* socNameList, size_t socNameListLen);
 
 VISIBILITY_EXPORT void NnopbaseSetZeroEleOutputLaunchFlag(void* executor);
 VISIBILITY_EXPORT void* NnopbaseGetApiFunc(const char* funcName);

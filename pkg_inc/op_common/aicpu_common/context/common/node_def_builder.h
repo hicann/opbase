@@ -18,67 +18,66 @@
 
 namespace aicpu {
 class NodeDefBuilder {
+public:
+    struct InputOutputNode {
+        std::string node;
+        aicpu::DataType d_type;
+        std::vector<int64_t> dims;
+        void* data;
+        aicpu::Format format;
+    };
 
-  public:
-  	struct InputOutputNode{
-  		std::string node;
-		aicpu::DataType d_type;
-  		std::vector<int64_t> dims;
-  		void *data;
-		aicpu::Format format;
-  	};
+    static std::shared_ptr<NodeDef> CreateNodeDef();
 
-	static std::shared_ptr<NodeDef> CreateNodeDef();
+    NodeDefBuilder(NodeDef* nodeDef, std::string name, std::string opName);
 
-	NodeDefBuilder(NodeDef *nodeDef, std::string name, std::string opName);
+    NodeDefBuilder& Input(const InputOutputNode& input);
 
-	NodeDefBuilder& Input(const InputOutputNode& input);
+    NodeDefBuilder& Output(const InputOutputNode& output);
 
-	NodeDefBuilder& Output(const InputOutputNode& output);
+    NodeDefBuilder& Attr(std::string name, int32_t value);
 
-	NodeDefBuilder& Attr(std::string name, int32_t value);
+    NodeDefBuilder& Attr(std::string name, int64_t value);
 
-	NodeDefBuilder& Attr(std::string name, int64_t value);
+    NodeDefBuilder& Attr(std::string name, float value);
 
-	NodeDefBuilder& Attr(std::string name, float value);
+    NodeDefBuilder& Attr(std::string name, double value);
 
-	NodeDefBuilder& Attr(std::string name, double value);
+    NodeDefBuilder& Attr(std::string name, bool value);
 
-	NodeDefBuilder& Attr(std::string name, bool value);
+    NodeDefBuilder& Attr(std::string name, aicpu::DataType value);
 
-	NodeDefBuilder& Attr(std::string name, aicpu::DataType value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<bool>& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<bool> &value);
+    NodeDefBuilder& Attr(std::string name, const std::string& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::string &value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<std::string>& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<std::string> &value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<int64_t>& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<int64_t> &value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<std::vector<int64_t>>& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<std::vector<int64_t>> &value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<float>& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<float> &value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<aicpu::DataType>& value);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<aicpu::DataType> &value);
+    NodeDefBuilder& Attr(std::string name, const std::vector<int64_t>& dims, std::string type);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<int64_t> &dims, std::string type);
+    NodeDefBuilder& Attr(std::string name, const std::vector<std::vector<int64_t>>& shape_lists, std::string type);
 
-	NodeDefBuilder& Attr(std::string name, const std::vector<std::vector<int64_t>> &shape_lists, std::string type);
+    NodeDefBuilder& Attr(std::string name, aicpu::Tensor* tensor);
 
-	NodeDefBuilder& Attr(std::string name, aicpu::Tensor *tensor);
+    NodeDefBuilder& Attr(std::string name, std::vector<aicpu::Tensor*>& tensors);
 
-	NodeDefBuilder& Attr(std::string name, std::vector<aicpu::Tensor *> &tensors);
+private:
+    void BuildNodeFromInputOutputNode(const InputOutputNode& node, bool isInput);
 
-  private:
-  	void BuildNodeFromInputOutputNode(const InputOutputNode& node, bool isInput);
+    NodeDef* node_def_;
 
-    NodeDef *node_def_;
-
-  	std::string name_;
+    std::string name_;
 
     std::string op_name_;
 };
-}
+} // namespace aicpu
 
 #endif

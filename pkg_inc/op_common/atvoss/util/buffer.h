@@ -79,8 +79,8 @@ struct BufferWrapper {
  */
 template <int N, uint32_t T, uint32_t Offset = 0, uint32_t Where = BUF_PING, typename Es = Elems<>>
 struct GenerateBufferWrappers {
-    using Type = typename GenerateBufferWrappers<N - 1, T, Offset, Where, Es>::Type::template Append<
-        BufferWrapper<N - 1 + Offset, T, Where>>;
+    using Type = typename GenerateBufferWrappers<N - 1, T, Offset, Where,
+                                                 Es>::Type::template Append<BufferWrapper<N - 1 + Offset, T, Where>>;
 };
 
 template <uint32_t T, uint32_t Offset, uint32_t Where, typename Es>
@@ -115,20 +115,19 @@ template <typename T, typename... Ts>
 struct CombineBufferWrapper<T, Ts...> {
     constexpr static uint32_t BufferId = static_cast<uint32_t>(T::BufferId) << (BUF_COMBINE_SHIFT * sizeof...(Ts)) |
                                          CombineBufferWrapper<Ts...>::BufferId;
-    constexpr static uint32_t BufferType =
-        T::BufferType << (BUF_COMBINE_SHIFT * sizeof...(Ts)) | CombineBufferWrapper<Ts...>::BufferType;
-    constexpr static uint32_t PingPong =
-        T::PingPong << (BUF_COMBINE_SHIFT * sizeof...(Ts)) | CombineBufferWrapper<Ts...>::PingPong;
+    constexpr static uint32_t BufferType = T::BufferType << (BUF_COMBINE_SHIFT * sizeof...(Ts)) |
+                                           CombineBufferWrapper<Ts...>::BufferType;
+    constexpr static uint32_t PingPong = T::PingPong << (BUF_COMBINE_SHIFT * sizeof...(Ts)) |
+                                         CombineBufferWrapper<Ts...>::PingPong;
     ;
 };
 
 // Combined buffer wrapper template
 template <typename... Ts>
-struct CombinedBufferWrappers : BufferWrapper<
-                                    static_cast<int>(
-                                        static_cast<uint32_t>(sizeof...(Ts)) << (BUF_COMBINE_SHIFT * BUF_COMBINED_MAX) |
-                                        CombineBufferWrapper<Ts...>::BufferId),
-                                    CombineBufferWrapper<Ts...>::BufferType, CombineBufferWrapper<Ts...>::PingPong> {};
+struct CombinedBufferWrappers
+    : BufferWrapper<static_cast<int>(static_cast<uint32_t>(sizeof...(Ts)) << (BUF_COMBINE_SHIFT * BUF_COMBINED_MAX) |
+                                     CombineBufferWrapper<Ts...>::BufferId),
+                    CombineBufferWrapper<Ts...>::BufferType, CombineBufferWrapper<Ts...>::PingPong> {};
 
 // 根据BufferType进行ID偏移计算Pong的BufferID
 static constexpr int32_t CalcPongBufferId(int32_t bufferId, uint32_t bufferType, uint32_t pingPong, int pongOffset)
@@ -147,9 +146,9 @@ static constexpr int32_t CalcPongBufferId(int32_t bufferId, uint32_t bufferType,
             const int32_t idNext = static_cast<int32_t>(static_cast<uint32_t>(bufferId) >> BUF_COMBINE_SHIFT);
             const uint32_t typeNext = bufferType >> BUF_COMBINE_SHIFT;
             const uint32_t ppNext = pingPong >> BUF_COMBINE_SHIFT;
-            return static_cast<int32_t>(
-                static_cast<uint32_t>(CalcPongBufferId(idNext, typeNext, ppNext, pongOffset)) << BUF_COMBINE_SHIFT |
-                currentId);
+            return static_cast<int32_t>(static_cast<uint32_t>(CalcPongBufferId(idNext, typeNext, ppNext, pongOffset))
+                                            << BUF_COMBINE_SHIFT |
+                                        currentId);
         }
     } else {
         // pure buffer wrapper
@@ -194,14 +193,14 @@ using MakeIntegerSequence = typename MakeIntegerSequenceAux<N>::Type;
 
 template <int BufferId, uint32_t N, int pos>
 struct DecodeBufferIdWithPos {
-    constexpr static int Value =
-        static_cast<int>(static_cast<uint32_t>(BufferId) >> (BUF_COMBINE_SHIFT * (N - 1 - pos)) & BUF_COMBINE_MASK);
+    constexpr static int Value = static_cast<int>(
+        static_cast<uint32_t>(BufferId) >> (BUF_COMBINE_SHIFT * (N - 1 - pos)) & BUF_COMBINE_MASK);
 };
 
 template <int BufferId>
 struct CombinedBufferCount {
-    const static uint32_t tmp =
-        static_cast<uint32_t>(BufferId) >> (BUF_COMBINE_SHIFT * BUF_COMBINED_MAX) & BUF_COMBINE_MASK;
+    const static uint32_t tmp = static_cast<uint32_t>(BufferId) >> (BUF_COMBINE_SHIFT * BUF_COMBINED_MAX) &
+                                BUF_COMBINE_MASK;
     constexpr static uint32_t Value = (tmp == 0 || tmp > BUF_COMBINED_MAX) ? 1 : tmp;
 };
 
@@ -220,20 +219,18 @@ struct DecodeBufferId {
 };
 
 // 内存释放辅助类
-template <
-    typename inFuns, typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType,
-    bool cache_brc = false, uint32_t Where = BUF_PING>
+template <typename inFuns, typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType,
+          bool cache_brc = false, uint32_t Where = BUF_PING>
 struct ReleaseBufferByTypeAux {};
 
-template <
-    typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType, bool cache_brc, uint32_t Where>
+template <typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType, bool cache_brc,
+          uint32_t Where>
 struct ReleaseBufferByTypeAux<Elems<>, FunList, ToReleaseEs, currentNodePos, BufferType, cache_brc, Where> {
     using Type = Elems<>;
 };
 
-template <
-    typename F, typename... Fs, typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType,
-    bool cache_brc, uint32_t Where>
+template <typename F, typename... Fs, typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType,
+          bool cache_brc, uint32_t Where>
 struct ReleaseBufferByTypeAux<Elems<F, Fs...>, FunList, ToReleaseEs, currentNodePos, BufferType, cache_brc, Where> {
 protected:
     // 在ToReleaseEs中找到指定节点F
@@ -248,32 +245,31 @@ protected:
         constexpr static bool Value = BufferType == T::BufferType && T::PingPong == Where;
     };
 
-    constexpr static bool isCacheBrcNode =
-        cache_brc && (Vec::IsCopyInBrcOp<typename F::Fun>::Value || Vec::IsVecBrcOp<typename F::Fun>::Value);
-    constexpr static bool ableToRelease =
-        !isCacheBrcNode && __aux::InputIsAbleToFreeAux<FunList, currentNodePos + 1, F>();
+    constexpr static bool isCacheBrcNode = cache_brc && (Vec::IsCopyInBrcOp<typename F::Fun>::Value ||
+                                                         Vec::IsVecBrcOp<typename F::Fun>::Value);
+    constexpr static bool ableToRelease = !isCacheBrcNode &&
+                                          __aux::InputIsAbleToFreeAux<FunList, currentNodePos + 1, F>();
     // 找到指定的mapping列表
     using mappings = typename ToReleaseEs::template Filter<BindEqual>;
     static_assert(mappings::Size == 1, "mapping::Size == 1");
     // 在mapping映射的内存列表中找到指定类型的内存
     using mapping = typename mappings::template At<0>;
     using buffers = typename mapping::Buffers::template Filter<BufferTypeEqual>;
-    using left = typename ReleaseBufferByTypeAux<
-        Elems<Fs...>, FunList, ToReleaseEs, currentNodePos, BufferType, cache_brc, Where>::Type;
+    using left = typename ReleaseBufferByTypeAux<Elems<Fs...>, FunList, ToReleaseEs, currentNodePos, BufferType,
+                                                 cache_brc, Where>::Type;
 
 public:
     using Type = typename __aux::Condition<ableToRelease, buffers, Elems<>>::template Union<left>;
 };
 
 // 释放指定类型的Buffer
-template <
-    typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType, bool cache_brc = false,
-    uint32_t Where = BUF_PING>
+template <typename FunList, typename ToReleaseEs, int currentNodePos, uint32_t BufferType, bool cache_brc = false,
+          uint32_t Where = BUF_PING>
 struct ReleaseUnusedBufferByType {
     using fun = typename FunList::template At<currentNodePos>;
     using inFuns = typename fun::InNonScalarFuns;
-    using Type = typename ReleaseBufferByTypeAux<
-        inFuns, FunList, ToReleaseEs, currentNodePos, BufferType, cache_brc, Where>::Type;
+    using Type = typename ReleaseBufferByTypeAux<inFuns, FunList, ToReleaseEs, currentNodePos, BufferType, cache_brc,
+                                                 Where>::Type;
 };
 
 // 从ToReleaseEs中删除已释放节点 辅助类
@@ -294,10 +290,10 @@ protected:
         constexpr static bool Value = __aux::IsSameType<F, typename T::Bind>::Value;
     };
 
-    constexpr static bool isCacheBrcNode =
-        cache_brc && (Vec::IsCopyInBrcOp<typename F::Fun>::Value || Vec::IsVecBrcOp<typename F::Fun>::Value);
-    constexpr static bool ableToRelease =
-        !isCacheBrcNode && __aux::InputIsAbleToFreeAux<FunList, currentNodePos + 1, F>();
+    constexpr static bool isCacheBrcNode = cache_brc && (Vec::IsCopyInBrcOp<typename F::Fun>::Value ||
+                                                         Vec::IsVecBrcOp<typename F::Fun>::Value);
+    constexpr static bool ableToRelease = !isCacheBrcNode &&
+                                          __aux::InputIsAbleToFreeAux<FunList, currentNodePos + 1, F>();
     // 找到指定的mapping列表
     using mappings = typename ToReleaseEs::template Filter<BindEqual>;
     // same input Bind to one VEC-API scenario will be 0.
@@ -373,8 +369,8 @@ private:
     using BufLists = BufListListDecoder<BufListList>;
     // pop front
     using usedTmpEs = __aux::Condition<MemLvl == MemLevel::LEVEL_2 || cache, Elems<>, typename BufLists::TmpEs>;
-    using usedPongMte3Es =
-        __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>, typename BufLists::PongMte3Es>;
+    using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>,
+                                            typename BufLists::PongMte3Es>;
     using usedPersistMte2Es = __aux::Condition<!cache, Elems<>, typename BufLists::PersistMte2Es>;
     using usedMte2Es = __aux::Condition<cache, Elems<>, typename BufLists::Mte2Es>;
     using mte2 = typename PriorityGetFront<usedPersistMte2Es, usedMte2Es, usedTmpEs, usedPongMte3Es>::Type;
@@ -385,9 +381,8 @@ private:
     using PersistMte2EsNext = typename BufLists::PersistMte2Es::template PopFront<mte2>::Type;
 
 public:
-    using Type = Elems<
-        PersistMte2EsNext, Mte2EsNext, typename BufLists::PersistMte3Es, typename BufLists::Mte3Es,
-        typename BufLists::PersistTmpEs, TmpEsNext, PongMte3EsNext, mte2>;
+    using Type = Elems<PersistMte2EsNext, Mte2EsNext, typename BufLists::PersistMte3Es, typename BufLists::Mte3Es,
+                       typename BufLists::PersistTmpEs, TmpEsNext, PongMte3EsNext, mte2>;
 };
 
 // 分配Temp内存
@@ -396,8 +391,8 @@ struct AllocTempBuffer {
 private:
     using BufLists = BufListListDecoder<BufListList>;
     // pop front
-    using usedPongMte3Es =
-        __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>, typename BufLists::PongMte3Es>;
+    using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>,
+                                            typename BufLists::PongMte3Es>;
     using usedMte2Es = __aux::Condition<MemLvl == MemLevel::LEVEL_2 || cache, Elems<>, typename BufLists::Mte2Es>;
     using usedPersistTmpEs = __aux::Condition<!cache, Elems<>, typename BufLists::PersistTmpEs>;
     using usedTmpEs = __aux::Condition<cache, Elems<>, typename BufLists::TmpEs>;
@@ -409,9 +404,8 @@ private:
     using PersistTmpEsNext = typename BufLists::PersistTmpEs::template PopFront<tmp>::Type;
 
 public:
-    using Type = Elems<
-        typename BufLists::PersistMte2Es, Mte2EsNext, typename BufLists::PersistMte3Es, typename BufLists::Mte3Es,
-        PersistTmpEsNext, TmpEsNext, PongMte3EsNext, tmp>;
+    using Type = Elems<typename BufLists::PersistMte2Es, Mte2EsNext, typename BufLists::PersistMte3Es,
+                       typename BufLists::Mte3Es, PersistTmpEsNext, TmpEsNext, PongMte3EsNext, tmp>;
 };
 
 // 分配Mte3内存
@@ -421,8 +415,8 @@ private:
     using BufLists = BufListListDecoder<BufListList>;
     // pop front
     using usedTmpEs = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>, typename BufLists::TmpEs>;
-    using usedPongMte3Es =
-        __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>, typename BufLists::PongMte3Es>;
+    using usedPongMte3Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>,
+                                            typename BufLists::PongMte3Es>;
     using usedMte2Es = __aux::Condition<MemLvl != MemLevel::LEVEL_0 || cache, Elems<>, typename BufLists::Mte2Es>;
     using usedPersistMte3Es = __aux::Condition<!cache, Elems<>, typename BufLists::PersistMte3Es>;
     using usedMte3Es = __aux::Condition<cache, Elems<>, typename BufLists::Mte3Es>;
@@ -435,9 +429,8 @@ private:
     using PersistMte3EsNext = typename BufLists::PersistMte3Es::template PopFront<mte3>::Type;
 
 public:
-    using Type = Elems<
-        typename BufLists::PersistMte2Es, Mte2EsNext, PersistMte3EsNext, Mte3EsNext, typename BufLists::PersistTmpEs,
-        TmpEsNext, PongMte3EsNext, mte3>;
+    using Type = Elems<typename BufLists::PersistMte2Es, Mte2EsNext, PersistMte3EsNext, Mte3EsNext,
+                       typename BufLists::PersistTmpEs, TmpEsNext, PongMte3EsNext, mte3>;
 };
 
 // 释放并更新内存队列
@@ -461,8 +454,8 @@ private:
     using ToReleaseEsNext = typename ReleaseUnusedInput<FunList, ToReleaseEs, funPos, cache_brc>::Type;
 
 public:
-    using Type = Elems<
-        PersistMte2Es, Mte2EsNext, PersistMte3Es, Mte3EsNext, PersistTmpEs, TmpEsNext, PongMte3EsNext, ToReleaseEsNext>;
+    using Type = Elems<PersistMte2Es, Mte2EsNext, PersistMte3Es, Mte3EsNext, PersistTmpEs, TmpEsNext, PongMte3EsNext,
+                       ToReleaseEsNext>;
 };
 
 /*
@@ -481,15 +474,14 @@ public:
  * 返回值：
  *   1. std::array<int, N2>: 完整的计算图PingPong BufferId列表
  */
-template <
-    typename FunList, typename BufListList, int PongOffset, MemLevel MemLvl = MemLevel::LEVEL_2, bool use_nddma = true,
-    bool cache_brc = false, typename AllocEs = Elems<>, typename ToReleaseEs = Elems<>,
+template <typename FunList, typename BufListList, int PongOffset, MemLevel MemLvl = MemLevel::LEVEL_2,
+          bool use_nddma = true, bool cache_brc = false, typename AllocEs = Elems<>, typename ToReleaseEs = Elems<>,
 #ifdef __ATP_UT__
-    int scalarIdx = 50,
+          int scalarIdx = 50,
 #else
-    int scalarIdx = 0,
+          int scalarIdx = 0,
 #endif
-    int funPos = 0>
+          int funPos = 0>
 __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
 {
     if constexpr (funPos < FunList::Size) {
@@ -497,9 +489,8 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
         if constexpr (fun::IsScalarOp) {
             using AllocEsNext = typename AllocEs::template Append<BufferWrapper<scalarIdx, BUF_TYPE_SCALAR>>;
             // next
-            return GenerateBufferIdOrder<
-                FunList, BufListList, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEs, scalarIdx + 1,
-                funPos + 1>();
+            return GenerateBufferIdOrder<FunList, BufListList, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                         ToReleaseEs, scalarIdx + 1, funPos + 1>();
         } else if constexpr (Vec::IsCopyInBrcOp<typename fun::Fun>::Value && !use_nddma) {
             // use copyIn + ubBrc to implement nddma.
             using NextEs0 = typename AllocMte2<FunList, BufListList, MemLvl, cache_brc>::Type;
@@ -512,9 +503,8 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
                 using AllocEsNext = typename AllocEs::template Append<CombinedBufferWrappers<mte3, mte2>>;
                 using ToReleaseEsNext = typename ToReleaseEs::template Append<Mapping<fun, Elems<mte3, mte2>>>;
                 // next
-                return GenerateBufferIdOrder<
-                    FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext, scalarIdx,
-                    funPos + 1>();
+                return GenerateBufferIdOrder<FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                             ToReleaseEsNext, scalarIdx, funPos + 1>();
             } else {
                 using NextEs = typename AllocTempBuffer<FunList, NextEs0, MemLvl, cache_brc>::Type;
                 using tmp = typename NextEs::template At<BUF_ALLOCATED_IDX>;
@@ -522,9 +512,8 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
                 using AllocEsNext = typename AllocEs::template Append<CombinedBufferWrappers<tmp, mte2>>;
                 using ToReleaseEsNext = typename ToReleaseEs::template Append<Mapping<fun, Elems<tmp, mte2>>>;
                 // next
-                return GenerateBufferIdOrder<
-                    FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext, scalarIdx,
-                    funPos + 1>();
+                return GenerateBufferIdOrder<FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                             ToReleaseEsNext, scalarIdx, funPos + 1>();
             }
         } else if constexpr (Vec::IsCopyInOp<typename fun::Fun>::Value) {
             // activate cache when CopyInBrc = NDDMA
@@ -536,9 +525,8 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
             using AllocEsNext = typename AllocEs::template Append<mte2>;
             using ToReleaseEsNext = typename ToReleaseEs::template Append<Mapping<fun, Elems<mte2>>>;
             // next
-            return GenerateBufferIdOrder<
-                FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext, scalarIdx,
-                funPos + 1>();
+            return GenerateBufferIdOrder<FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                         ToReleaseEsNext, scalarIdx, funPos + 1>();
         } else if constexpr (Vec::IsCopyOutOp<typename fun::Fun>::Value) {
             using NextEs = typename ReleaseAndUpdateEs<FunList, BufListList, ToReleaseEs, cache_brc, funPos>::Type;
             // release and update
@@ -546,9 +534,8 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
             // fill -1 when no buffer is needed.
             using AllocEsNext = typename AllocEs::template Append<BufferWrapper<-1, BUF_TYPE_PLACEHOLDER>>;
             // next
-            return GenerateBufferIdOrder<
-                FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext, scalarIdx,
-                funPos + 1>();
+            return GenerateBufferIdOrder<FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                         ToReleaseEsNext, scalarIdx, funPos + 1>();
         } else {
             if constexpr (__aux::IsConnectOutput<FunList, funPos + 1, fun>()) {
                 // activate cache when current Node is VecBrc
@@ -560,12 +547,11 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
                 using AllocEsNext = typename AllocEs::template Append<mte3>;
                 // release and update
                 using NextEs = typename ReleaseAndUpdateEs<FunList, NextEs0, ToReleaseEs, cache_brc, funPos>::Type;
-                using ToReleaseEsNext =
-                    typename NextEs::template At<BUF_TO_RELEASE_IDX>::template Append<Mapping<fun, Elems<mte3>>>;
+                using ToReleaseEsNext = typename NextEs::template At<BUF_TO_RELEASE_IDX>::template Append<
+                    Mapping<fun, Elems<mte3>>>;
                 // next
-                return GenerateBufferIdOrder<
-                    FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext, scalarIdx,
-                    funPos + 1>();
+                return GenerateBufferIdOrder<FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                             ToReleaseEsNext, scalarIdx, funPos + 1>();
             } else {
                 // activate cache when current Node is VecBrc
                 using NextEs0 = typename AllocTempBuffer<
@@ -576,12 +562,11 @@ __aicore__ static constexpr const int32_t* const* GenerateBufferIdOrder()
                 using AllocEsNext = typename AllocEs::template Append<tmp>;
                 // release and update
                 using NextEs = typename ReleaseAndUpdateEs<FunList, NextEs0, ToReleaseEs, cache_brc, funPos>::Type;
-                using ToReleaseEsNext =
-                    typename NextEs::template At<BUF_TO_RELEASE_IDX>::template Append<Mapping<fun, Elems<tmp>>>;
+                using ToReleaseEsNext = typename NextEs::template At<BUF_TO_RELEASE_IDX>::template Append<
+                    Mapping<fun, Elems<tmp>>>;
                 // next
-                return GenerateBufferIdOrder<
-                    FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext, ToReleaseEsNext, scalarIdx,
-                    funPos + 1>();
+                return GenerateBufferIdOrder<FunList, NextEs, PongOffset, MemLvl, use_nddma, cache_brc, AllocEsNext,
+                                             ToReleaseEsNext, scalarIdx, funPos + 1>();
             }
         }
     } else {

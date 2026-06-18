@@ -71,20 +71,17 @@ struct TensorsCached {
     Tensor* tensor_{nullptr};
 };
 
-int32_t RestoreTensorInfo(
-    void* cacheTensorInfoLists, FVector<const TensorsCached*>& inTensors, FVector<const TensorsCached*>& outTensors);
+int32_t RestoreTensorInfo(void* cacheTensorInfoLists, FVector<const TensorsCached*>& inTensors,
+                          FVector<const TensorsCached*>& outTensors);
 
-void PrepareTensorDataFromCache(
-    const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo, MsprofGeTensorType type,
-    uint32_t tensorNum, uint32_t baseIndex);
+void PrepareTensorDataFromCache(const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo,
+                                MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex);
 
-void PrepareTensorInfoFromCache(
-    const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo, uint64_t summaryId,
-    MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex);
+void PrepareTensorInfoFromCache(const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo,
+                                uint64_t summaryId, MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex);
 
-void ReportAdditionInfo(
-    FVector<const TensorsCached*>& inTensors, FVector<const TensorsCached*>& outTensors, const TaskInfo& taskInfo,
-    const op::internal::ProfilingInfoId& profilingInfoId);
+void ReportAdditionInfo(FVector<const TensorsCached*>& inTensors, FVector<const TensorsCached*>& outTensors,
+                        const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId);
 
 int32_t RestoreDumpTensorAddr(TensorsCached* tensorCached, void* workspaceAddr, const std::vector<void*>& tensors);
 
@@ -154,8 +151,8 @@ void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo&
     cache->opExecCacheDfx_->SetExceptionDumpInfo(exceptionDumpInfo);
 }
 
-int32_t RestoreTensorInfo(
-    void* infoLists, FVector<const TensorsCached*>& inTensors, FVector<const TensorsCached*>& outTensors)
+int32_t RestoreTensorInfo(void* infoLists, FVector<const TensorsCached*>& inTensors,
+                          FVector<const TensorsCached*>& outTensors)
 {
     CHECK_RET(infoLists != nullptr, -1);
     std::vector<TensorsCached*>* cacheTensorInfoLists = (std::vector<TensorsCached*>*)infoLists;
@@ -172,9 +169,8 @@ int32_t RestoreTensorInfo(
     return 0;
 }
 
-void PrepareTensorDataFromCache(
-    const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo, MsprofGeTensorType type,
-    uint32_t tensorNum, uint32_t baseIndex)
+void PrepareTensorDataFromCache(const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo,
+                                MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex)
 {
     for (size_t i = 0; i < tensorNum; i++) {
         MsrofTensorData& tensorData = tensorInfo.tensorData[i];
@@ -192,44 +188,40 @@ void PrepareTensorDataFromCache(
     }
 }
 
-void PrepareTensorInfoFromCache(
-    const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo, uint64_t summaryId,
-    MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex)
+void PrepareTensorInfoFromCache(const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo,
+                                uint64_t summaryId, MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex)
 {
     tensorInfo.opName = summaryId;
     tensorInfo.tensorNum = tensorNum;
     PrepareTensorDataFromCache(tensors, tensorInfo, type, tensorNum, baseIndex);
 }
 
-static void ReportCachedTensorAdditionInfo(
-    const FVector<const TensorsCached*>& tensors, MsprofAdditionalInfo& additionInfo, uint64_t summaryItemId,
-    MsprofGeTensorType type)
+static void ReportCachedTensorAdditionInfo(const FVector<const TensorsCached*>& tensors,
+                                           MsprofAdditionalInfo& additionInfo, uint64_t summaryItemId,
+                                           MsprofGeTensorType type)
 {
     MsprofTensorInfo tensorInfo;
     uint32_t loop = tensors.size() / MSPROF_GE_TENSOR_DATA_NUM;
     uint32_t tail = tensors.size() % MSPROF_GE_TENSOR_DATA_NUM;
     for (uint32_t i = 0; i < loop; i++) {
-        PrepareTensorInfoFromCache(
-            tensors, tensorInfo, summaryItemId, type, MSPROF_GE_TENSOR_DATA_NUM, i * MSPROF_GE_TENSOR_DATA_NUM);
-        OP_CHECK(
-            memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo, sizeof(MsprofTensorInfo)) ==
-                EOK,
-            OP_LOGW("Failed to memcpy tensor additional info."), return);
+        PrepareTensorInfoFromCache(tensors, tensorInfo, summaryItemId, type, MSPROF_GE_TENSOR_DATA_NUM,
+                                   i * MSPROF_GE_TENSOR_DATA_NUM);
+        OP_CHECK(memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo,
+                          sizeof(MsprofTensorInfo)) == EOK,
+                 OP_LOGW("Failed to memcpy tensor additional info."), return);
         MsprofReportAdditionalInfo(true, (void*)(&additionInfo), sizeof(MsprofAdditionalInfo));
     }
     if (tail != 0) {
         PrepareTensorInfoFromCache(tensors, tensorInfo, summaryItemId, type, tail, loop * MSPROF_GE_TENSOR_DATA_NUM);
-        OP_CHECK(
-            memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo, sizeof(MsprofTensorInfo)) ==
-                EOK,
-            OP_LOGW("Failed to memcpy tensor tail additional info."), return);
+        OP_CHECK(memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo,
+                          sizeof(MsprofTensorInfo)) == EOK,
+                 OP_LOGW("Failed to memcpy tensor tail additional info."), return);
         MsprofReportAdditionalInfo(true, (void*)(&additionInfo), sizeof(MsprofAdditionalInfo));
     }
 }
 
-void ReportAdditionInfo(
-    FVector<const TensorsCached*>& inTensors, FVector<const TensorsCached*>& outTensors, const TaskInfo& taskInfo,
-    const op::internal::ProfilingInfoId& profilingInfoId)
+void ReportAdditionInfo(FVector<const TensorsCached*>& inTensors, FVector<const TensorsCached*>& outTensors,
+                        const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId)
 {
     OP_LOGD("Entering function ReportAdditionInfo in cache input TaskInfo");
     if (MSPROF_ADDTIONAL_INFO_DATA_LENGTH != sizeof(MsprofTensorInfo)) {
@@ -242,14 +234,14 @@ void ReportAdditionInfo(
     PrepareBasicInfo(compactInfo, taskInfo, profilingInfoId.kernelLauncherId_, profilingInfoId.summaryItemId_);
     PrepareAdditionInfo(additionInfo);
 
-    ReportCachedTensorAdditionInfo(
-        inTensors, additionInfo, profilingInfoId.summaryItemId_, MSPROF_GE_TENSOR_TYPE_INPUT);
-    ReportCachedTensorAdditionInfo(
-        outTensors, additionInfo, profilingInfoId.summaryItemId_, MSPROF_GE_TENSOR_TYPE_OUTPUT);
+    ReportCachedTensorAdditionInfo(inTensors, additionInfo, profilingInfoId.summaryItemId_,
+                                   MSPROF_GE_TENSOR_TYPE_INPUT);
+    ReportCachedTensorAdditionInfo(outTensors, additionInfo, profilingInfoId.summaryItemId_,
+                                   MSPROF_GE_TENSOR_TYPE_OUTPUT);
 }
 
-aclnnStatus DoReportAdditionInfo(
-    void* infoLists, const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId)
+aclnnStatus DoReportAdditionInfo(void* infoLists, const TaskInfo& taskInfo,
+                                 const op::internal::ProfilingInfoId& profilingInfoId)
 {
     op::FVector<const TensorsCached*> inTensors;
     op::FVector<const TensorsCached*> outTensors;
@@ -259,9 +251,8 @@ aclnnStatus DoReportAdditionInfo(
     return ACLNN_SUCCESS;
 }
 
-static void ReportCacheOpInfoTensorFromCache(
-    uint8_t* dest, uint64_t& destOffset, const uint32_t& totalSize, const FVector<const TensorsCached*>& tensors,
-    MsprofGeTensorType type)
+static void ReportCacheOpInfoTensorFromCache(uint8_t* dest, uint64_t& destOffset, const uint32_t& totalSize,
+                                             const FVector<const TensorsCached*>& tensors, MsprofGeTensorType type)
 {
     for (size_t i = 0; i < tensors.size(); i++) {
         // MsrofTensorData: tensorType/format/dataType/shape
@@ -277,30 +268,27 @@ static void ReportCacheOpInfoTensorFromCache(
         for (size_t j = dim; j < MSPROF_GE_TENSOR_DATA_SHAPE_LEN; j++) {
             msTensor.shape[j] = 0;
         }
-        OP_CHECK(
-            memcpy_s(dest + destOffset, totalSize - destOffset, &msTensor, sizeof(MsrofTensorData)) == EOK,
-            OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
-            throw std::runtime_error("aclGraph profiling memcpy runtime error."));
+        OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &msTensor, sizeof(MsrofTensorData)) == EOK,
+                 OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+                 throw std::runtime_error("aclGraph profiling memcpy runtime error."));
         destOffset += sizeof(MsrofTensorData);
-        OP_LOGI(
-            "tensorIndex %zu, tensorType %u, format %u, dataType %u, shape(%u, %u, %u, %u, %u, %u, %u, %u)", i,
-            msTensor.tensorType, msTensor.format, msTensor.dataType, msTensor.shape[0], msTensor.shape[1],
-            msTensor.shape[2], msTensor.shape[3], msTensor.shape[4], msTensor.shape[5], msTensor.shape[6],
-            msTensor.shape[7]);
+        OP_LOGI("tensorIndex %zu, tensorType %u, format %u, dataType %u, shape(%u, %u, %u, %u, %u, %u, %u, %u)", i,
+                msTensor.tensorType, msTensor.format, msTensor.dataType, msTensor.shape[0], msTensor.shape[1],
+                msTensor.shape[2], msTensor.shape[3], msTensor.shape[4], msTensor.shape[5], msTensor.shape[6],
+                msTensor.shape[7]);
     }
 }
 
-void ReportCacheOpInfoFromCache(
-    const TaskInfo& taskInfo, void* tensorInfoLists, const uint32_t& numBlocks, const ProfilingInfoId& profilingInfoId)
+void ReportCacheOpInfoFromCache(const TaskInfo& taskInfo, void* tensorInfoLists, const uint32_t& numBlocks,
+                                const ProfilingInfoId& profilingInfoId)
 {
     OP_LOGI("Entering function ReportCacheOpInfoFromCache.");
     CacheOpInfoBasic cacheOpInfoBasic;
     // tensorNum
     op::FVector<const TensorsCached*> inTensors;
     op::FVector<const TensorsCached*> outTensors;
-    OP_CHECK_NO_RETURN(
-        RestoreTensorInfo(tensorInfoLists, inTensors, outTensors) == ACLNN_SUCCESS,
-        OP_LOGW("RestoreTensorInfo not ok."));
+    OP_CHECK_NO_RETURN(RestoreTensorInfo(tensorInfoLists, inTensors, outTensors) == ACLNN_SUCCESS,
+                       OP_LOGW("RestoreTensorInfo not ok."));
     uint32_t tensorNum = inTensors.size() + outTensors.size();
     size_t totalSize = sizeof(CacheOpInfoBasic) + (sizeof(MsrofTensorData) * tensorNum);
     void* infoPtr = op::internal::Allocate(totalSize);
@@ -321,22 +309,22 @@ void ReportCacheOpInfoFromCache(
     }
     cacheOpInfoBasic.numBlocks = currBlockDim;
     OP_LOGI("numBlocks is %u after calculation", currBlockDim);
-    cacheOpInfoBasic.opFlag =
-        (static_cast<uint32_t>(taskInfo.execMode) & static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ? 1 : 0;
+    cacheOpInfoBasic.opFlag = (static_cast<uint32_t>(taskInfo.execMode) &
+                               static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ?
+                                  1 :
+                                  0;
     cacheOpInfoBasic.tensorNum = tensorNum;
-    OP_CHECK(
-        memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
-        OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
-        throw std::runtime_error("aclGraph profiling memcpy runtime error."));
+    OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
+             OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+             throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI(
-        "taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
-        cacheOpInfoBasic.taskType, cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.attrId,
-        cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag, cacheOpInfoBasic.tensorNum);
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
+            cacheOpInfoBasic.taskType, cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.attrId,
+            cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag, cacheOpInfoBasic.tensorNum);
     ReportCacheOpInfoTensorFromCache(dest, destOffset, totalSize, inTensors, MSPROF_GE_TENSOR_TYPE_INPUT);
     ReportCacheOpInfoTensorFromCache(dest, destOffset, totalSize, outTensors, MSPROF_GE_TENSOR_TYPE_OUTPUT);
-    OP_CHECK_NO_RETURN(
-        aclrtCacheLastTaskOpInfo(infoPtr, totalSize) == ACL_SUCCESS, OP_LOGW("aclrtCacheLastTaskOpInfo failed"));
+    OP_CHECK_NO_RETURN(aclrtCacheLastTaskOpInfo(infoPtr, totalSize) == ACL_SUCCESS,
+                       OP_LOGW("aclrtCacheLastTaskOpInfo failed"));
     op::internal::DeAllocate(infoPtr);
 }
 
@@ -354,9 +342,8 @@ int32_t RestoreDumpTensorAddr(TensorsCached* tensorCached, void* workspaceAddr, 
         newAddr = PtrShift(workspaceAddr, tensorCached->addrRule_.workspaceOffset);
     } else {
         if (static_cast<size_t>(tensorCached->addrRule_.l2TensorInx) >= tensors.size()) {
-            OP_LOGW(
-                "RestoreDumpTensorAddr cannot find L2 tensor, current idx %d, L2 tensor size %lu",
-                tensorCached->addrRule_.l2TensorInx, tensors.size());
+            OP_LOGW("RestoreDumpTensorAddr cannot find L2 tensor, current idx %d, L2 tensor size %lu",
+                    tensorCached->addrRule_.l2TensorInx, tensors.size());
             return -1;
         }
         newAddr = PtrShift(tensors[tensorCached->addrRule_.l2TensorInx], tensorCached->addrRule_.l2TensorOffset);
@@ -365,9 +352,8 @@ int32_t RestoreDumpTensorAddr(TensorsCached* tensorCached, void* workspaceAddr, 
     return 0;
 }
 
-void DoExceptionDump(
-    void* infoLists, void* workspaceAddr, const std::vector<void*>& tensors, const ExceptionDumpInfo& dumpInfo,
-    const aclrtStream stream)
+void DoExceptionDump(void* infoLists, void* workspaceAddr, const std::vector<void*>& tensors,
+                     const ExceptionDumpInfo& dumpInfo, const aclrtStream stream)
 {
     // memset dont need to dump
     if (dumpInfo.IsEmpty()) {

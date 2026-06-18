@@ -42,9 +42,8 @@ struct OpKernelInfo {
  * @param [in] ctx: TilingContext
  * @return int32_t: 0 == SUCCESS, others is FAILED
  */
-int32_t OpInfoSerialize(
-    const gert::TilingContext* ctx, const aclnnOpInfoRecord::OpCompilerOption& opt,
-    const aclnnOpInfoRecord::OpKernelInfo* kernelInfo = nullptr);
+int32_t OpInfoSerialize(const gert::TilingContext* ctx, const aclnnOpInfoRecord::OpCompilerOption& opt,
+                        const aclnnOpInfoRecord::OpKernelInfo* kernelInfo = nullptr);
 
 int32_t OpInfoDump(void);
 

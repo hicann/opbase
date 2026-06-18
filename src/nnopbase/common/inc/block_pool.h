@@ -224,13 +224,12 @@ private:
     static const uint16_t SYS_TAG = 0xfeed;
     OpSpinlock guard_;
 
-    const std::array<BlockDesc, MAX_STORE> StoreIndex = {
-        BlockDesc(BLOCK_BASE_SIZE, 32768),      // 64B 2MB
-        BlockDesc(BLOCK_BASE_SIZE * 4, 16384),  // 256B 4MB
-        BlockDesc(BLOCK_BASE_SIZE * 16, 32768), // 1KB 32MB
-        BlockDesc(BLOCK_BASE_SIZE * 64, 8192),  // 4KB 32MB
-        BlockDesc(BLOCK_BASE_SIZE * 256, 2048), // 16KB 32MB
-        BlockDesc(BLOCK_MAX_SIZE, 512)};        // 64KB 32MB
+    const std::array<BlockDesc, MAX_STORE> StoreIndex = {BlockDesc(BLOCK_BASE_SIZE, 32768),      // 64B 2MB
+                                                         BlockDesc(BLOCK_BASE_SIZE * 4, 16384),  // 256B 4MB
+                                                         BlockDesc(BLOCK_BASE_SIZE * 16, 32768), // 1KB 32MB
+                                                         BlockDesc(BLOCK_BASE_SIZE * 64, 8192),  // 4KB 32MB
+                                                         BlockDesc(BLOCK_BASE_SIZE * 256, 2048), // 16KB 32MB
+                                                         BlockDesc(BLOCK_MAX_SIZE, 512)};        // 64KB 32MB
 
     using StoreArray = std::array<BlockStore, MAX_STORE>;
     StoreArray blockStoreArray_;
@@ -277,9 +276,8 @@ public:
         size_t count = activeCacheCount_.fetch_add(1, std::memory_order_relaxed) + 1;
         if (count > kMaxCacheInstances) {
             cacheDisabled_ = true;
-            OP_LOGW(
-                "Thread count [%zu] is more than max cache limit [%zu], thread block cache is disabled.", count,
-                kMaxCacheInstances);
+            OP_LOGW("Thread count [%zu] is more than max cache limit [%zu], thread block cache is disabled.", count,
+                    kMaxCacheInstances);
         }
     }
 
@@ -379,9 +377,8 @@ private:
 
         int idx = GetBlockCacheIndex(head);
         if (idx < 0 || idx > BlockPool::MAX_STORE) {
-            OP_LOGW(
-                "invalid block to free, idx %d tag %u blockIdx %d cacheExt %lu", idx, head->userTag_, head->blockIdx_,
-                head->cacheExt_);
+            OP_LOGW("invalid block to free, idx %d tag %u blockIdx %d cacheExt %lu", idx, head->userTag_,
+                    head->blockIdx_, head->cacheExt_);
             return;
         }
 

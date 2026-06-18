@@ -28,18 +28,15 @@ inline int64_t GetTid()
 const char KERNEL_MODULE[] = "AICPU";
 #define KERNEL_LOG_DEBUG(fmt, ...) ((void)0)
 #define KERNEL_LOG_INFO(fmt, ...) ((void)0)
-#define KERNEL_LOG_WARN(fmt, ...)                                                                                      \
-    printf(                                                                                                            \
-        "[WARN] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, __FILE__, __FUNCTION__, __LINE__, aicpu::GetTid(), \
-        ##__VA_ARGS__)
-#define KERNEL_LOG_ERROR(fmt, ...)                                                                     \
-    printf(                                                                                            \
-        "[ERROR] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, __FILE__, __FUNCTION__, __LINE__, \
-        aicpu::GetTid(), ##__VA_ARGS__)
-#define KERNEL_LOG_EVENT(fmt, ...)                                                                     \
-    printf(                                                                                            \
-        "[EVENT] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, __FILE__, __FUNCTION__, __LINE__, \
-        aicpu::GetTid(), ##__VA_ARGS__)
+#define KERNEL_LOG_WARN(fmt, ...)                                                                        \
+    printf("[WARN] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, __FILE__, __FUNCTION__, __LINE__, \
+           aicpu::GetTid(), ##__VA_ARGS__)
+#define KERNEL_LOG_ERROR(fmt, ...)                                                                        \
+    printf("[ERROR] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, __FILE__, __FUNCTION__, __LINE__, \
+           aicpu::GetTid(), ##__VA_ARGS__)
+#define KERNEL_LOG_EVENT(fmt, ...)                                                                        \
+    printf("[EVENT] [%s][%s][%s:%d][tid:%ld]:" fmt "\n", KERNEL_MODULE, __FILE__, __FUNCTION__, __LINE__, \
+           aicpu::GetTid(), ##__VA_ARGS__)
 #else
 #define KERNEL_LOG_DEBUG(fmt, ...)                                                            \
     do {                                                                                      \
@@ -69,13 +66,12 @@ const char KERNEL_MODULE[] = "AICPU";
         }                                                                                     \
     } while (0)
 
-#define KERNEL_LOG_EVENT(fmt, ...)                                                                        \
-    do {                                                                                                  \
-        if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {                                    \
-            dlog_info(                                                                                    \
-                static_cast<int32_t>(static_cast<uint32_t>(AICPU) | static_cast<uint32_t>(RUN_LOG_MASK)), \
-                "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(), ##__VA_ARGS__);                           \
-        }                                                                                                 \
+#define KERNEL_LOG_EVENT(fmt, ...)                                                                              \
+    do {                                                                                                        \
+        if ((&CheckLogLevel != nullptr) && (&DlogRecord != nullptr)) {                                          \
+            dlog_info(static_cast<int32_t>(static_cast<uint32_t>(AICPU) | static_cast<uint32_t>(RUN_LOG_MASK)), \
+                      "[%s][tid:%ld]" fmt, __func__, aicpu::GetTid(), ##__VA_ARGS__);                           \
+        }                                                                                                       \
     } while (0)
 #endif
 

@@ -224,11 +224,10 @@ void OpKernelBin::DumpWorkspaceData(aclrtStream stream, OpArgContext* args) cons
     OP_CHECK(tensors != nullptr && tensors->Size() > 0, OP_LOGW("workspace at least has one."), return);
     const aclTensor* firstWorkspace = (*tensors)[0];
 
-    Adx::AdumpPrintWorkSpace(
-        firstWorkspace->GetData(), kernelDfxBufSize_, stream, op::OpTypeDict::ToString(opType_).GetString());
-    OP_LOGI(
-        "AdumpPrintWorkspace for %p, %lu, %s", firstWorkspace->GetData(), kernelDfxBufSize_,
-        op::OpTypeDict::ToString(opType_).GetString());
+    Adx::AdumpPrintWorkSpace(firstWorkspace->GetData(), kernelDfxBufSize_, stream,
+                             op::OpTypeDict::ToString(opType_).GetString());
+    OP_LOGI("AdumpPrintWorkspace for %p, %lu, %s", firstWorkspace->GetData(), kernelDfxBufSize_,
+            op::OpTypeDict::ToString(opType_).GetString());
 }
 
 static void PrintHex(const uint8_t* p, size_t num, std::stringstream& ss)

@@ -15,8 +15,8 @@ namespace Adx {
 thread_local std::shared_ptr<DumpStub> DumpStub::instance_;
 thread_local DumpStub* DumpStub::fake_instance_;
 
-int32_t AdumpDumpTensorV2(
-    const std::string& opType, const std::string& opName, const std::vector<TensorInfoV2>& tensors, aclrtStream stream)
+int32_t AdumpDumpTensorV2(const std::string& opType, const std::string& opName,
+                          const std::vector<TensorInfoV2>& tensors, aclrtStream stream)
 {
     return DumpStub::GetInstance()->AdumpDumpTensorV2(opType, opName, tensors, stream);
 }
@@ -35,8 +35,8 @@ void* AdumpGetDFXInfoAddrForDynamic(uint32_t space, uint64_t& atomicIndex)
     return DumpStub::GetInstance()->AdumpGetDFXInfoAddrForDynamic(space, atomicIndex);
 }
 uint64_t AdumpGetDumpSwitch(DumpType type) { return DumpStub::GetInstance()->AdumpGetDumpSwitch(type); }
-void AdumpPrintWorkSpace(
-    const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType)
+void AdumpPrintWorkSpace(const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
+                         const char* opType)
 {
     auto dumpStub = DumpStub::GetInstance();
     dumpStub->AdumpPrintWorkSpace(workSpaceAddr, dumpWorkSpaceSize, stream, opType);
@@ -44,9 +44,8 @@ void AdumpPrintWorkSpace(
 
 bool AdumpIsDumpEnable(DumpType type) { return DumpStub::GetInstance()->AdumpIsDumpEnable(type); }
 
-void AdumpPrintAndGetTimeStampInfo(
-    const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
-    std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
+void AdumpPrintAndGetTimeStampInfo(const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
+                                   const char* opType, std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
 {
     auto dumpStub = DumpStub::GetInstance();
     dumpStub->AdumpPrintAndGetTimeStampInfo(workSpaceAddr, dumpWorkSpaceSize, stream, opType, timeStampInfo);

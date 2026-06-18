@@ -31,8 +31,8 @@ MemsetV2ArgContext::MemsetV2ArgContext()
     }
 }
 
-void MemsetV2ArgContext::AddOneMemSetTensor(
-    const aclTensor *tensor, op::DataType dtype, int64_t valueInt, float valueFloat)
+void MemsetV2ArgContext::AddOneMemSetTensor(const aclTensor* tensor, op::DataType dtype, int64_t valueInt,
+                                            float valueFloat)
 {
     memsetInputs_.emplace_back(tensor);
     if (dtype == op::DataType::DT_INT32 || dtype == op::DataType::DT_UINT32) {
@@ -42,9 +42,9 @@ void MemsetV2ArgContext::AddOneMemSetTensor(
     }
 }
 
-aclnnStatus MemsetV2ArgContext::Init(const std::vector<MemSetTensorInfo> &memsetTensorInfo)
+aclnnStatus MemsetV2ArgContext::Init(const std::vector<MemSetTensorInfo>& memsetTensorInfo)
 {
-    for (const auto &elem : memsetTensorInfo) {
+    for (const auto& elem : memsetTensorInfo) {
         if (elem.argType_ == OpArgType::OPARG_ACLTENSOR) {
             if (elem.tensor_ == nullptr) {
                 OP_LOGW("elem idx [%zu] tensor is nullptr.", elem.argIdx_);
@@ -57,7 +57,7 @@ aclnnStatus MemsetV2ArgContext::Init(const std::vector<MemSetTensorInfo> &memset
                 continue;
             }
             for (size_t i = 0; i < elem.tensorList_->Size(); i++) {
-                const aclTensor *tensor = (*elem.tensorList_)[i];
+                const aclTensor* tensor = (*elem.tensorList_)[i];
                 if (tensor == nullptr) {
                     OP_LOGW("elem idx [%zu] tensorlist[%zu] is nullptr.", elem.argIdx_, i);
                     continue;
@@ -68,20 +68,17 @@ aclnnStatus MemsetV2ArgContext::Init(const std::vector<MemSetTensorInfo> &memset
     }
     OP_CHECK(!memsetInputs_.empty(), OP_LOGW("no arg need to memset"), return ACLNN_SUCCESS);
 
-    aclOpExecutor *executor = op::internal::GetThreadLocalContext().executor_;
+    aclOpExecutor* executor = op::internal::GetThreadLocalContext().executor_;
     CHECK_COND(executor != nullptr, ACLNN_ERR_INNER_NULLPTR, "executor is nullptr");
     memsetTensors_ = executor->AllocTensorList(memsetInputs_.data(), memsetInputs_.size());
     intAttrArray_ = executor->AllocIntArray(memsetIntAttrs_.data(), memsetIntAttrs_.size());
     floatAttrArray_ = executor->AllocFloatArray(memsetFloatAttrs_.data(), memsetFloatAttrs_.size());
     CHECK_COND((memsetTensors_ != nullptr && intAttrArray_ != nullptr && floatAttrArray_ != nullptr),
-        ACLNN_ERR_INNER_NULLPTR,
-        "Create memsetv2 args failed");
+               ACLNN_ERR_INNER_NULLPTR, "Create memsetv2 args failed");
 
-    const aclTensor *memsetV2WsTensor = memsetInputs_[0];
-    memsetV2OpArgCtx_ = GetOpArgContext(OP_INPUT(memsetTensors_),
-        OP_OUTPUT(memsetTensors_),
-        OP_WORKSPACE(memsetV2WsTensor),
-        OP_ATTR(intAttrArray_, floatAttrArray_));
+    const aclTensor* memsetV2WsTensor = memsetInputs_[0];
+    memsetV2OpArgCtx_ = GetOpArgContext(OP_INPUT(memsetTensors_), OP_OUTPUT(memsetTensors_),
+                                        OP_WORKSPACE(memsetV2WsTensor), OP_ATTR(intAttrArray_, floatAttrArray_));
     CHECK_COND(memsetV2OpArgCtx_ != nullptr, ACLNN_ERR_INNER_NULLPTR, "Create memsetv2 arg ctx failed");
     return ACLNN_SUCCESS;
 }
@@ -95,14 +92,11 @@ MemsetV2ArgContext::~MemsetV2ArgContext()
     }
 }
 
-OpArgContext *MemsetV2ArgContext::GetMemsetV2OpArgContext()
-{
-    return memsetV2OpArgCtx_;
-}
+OpArgContext* MemsetV2ArgContext::GetMemsetV2OpArgContext() { return memsetV2OpArgCtx_; }
 
 class MemSetOpKernel : public OpKernel {
 public:
-    OpKernelBin *SelectBin(MemsetVersion memsetVersion, size_t num)
+    OpKernelBin* SelectBin(MemsetVersion memsetVersion, size_t num)
     {
         if (bins_.size() == 0) {
             return nullptr;
@@ -110,14 +104,13 @@ public:
 
         if (memsetVersion == MemsetVersion::MEMSET_V1_ASCENDC || memsetVersion == MemsetVersion::MEMSET_V2) {
             OP_CHECK(bins_.begin()->second->JsonLoad() == ACLNN_SUCCESS,
-                OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "json load failed."),
-                return nullptr);
+                     OP_LOGE(ACLNN_ERR_INNER_LOAD_JSON_FAILED, "json load failed."), return nullptr);
             return bins_.begin()->second.get();
         }
 
-        for (auto &elem : bins_) {
+        for (auto& elem : bins_) {
             elem.second->JsonLoad();
-            auto &opJson = elem.second->binJson_.GetVar();
+            auto& opJson = elem.second->binJson_.GetVar();
             if (!opJson.contains("supportInfo") || !(opJson["supportInfo"].contains("attrs")) ||
                 opJson["supportInfo"]["attrs"].size() < 1 || !opJson["supportInfo"]["attrs"][0].contains("value")) {
                 OP_LOGW("json parse error. does not contain supportInfo or attrs.");
@@ -132,21 +125,22 @@ public:
     }
 };
 
-static inline uint32_t GetMemsetOpId(MemsetVersion memsetVersion) {
+static inline uint32_t GetMemsetOpId(MemsetVersion memsetVersion)
+{
     if (memsetVersion == MemsetVersion::MEMSET_V2) {
         return OpTypeDict::ToOpType(MEMSET_V2_NAME);
     }
     return OpTypeDict::ToOpType(MEMSET_V1_NAME);
 }
 
-aclnnStatus SelectMemsetOpBin(MemsetVersion memsetVersion, size_t inputNum, OpKernelBin *&opBin)
+aclnnStatus SelectMemsetOpBin(MemsetVersion memsetVersion, size_t inputNum, OpKernelBin*& opBin)
 {
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
     uint32_t opid = GetMemsetOpId(memsetVersion);
 #else
     static uint32_t opid = GetMemsetOpId(memsetVersion);
 #endif
-    MemSetOpKernel *kernel = static_cast<MemSetOpKernel *>(gKernelMgr.GetKernel(opid));
+    MemSetOpKernel* kernel = static_cast<MemSetOpKernel*>(gKernelMgr.GetKernel(opid));
     if (kernel == nullptr) {
         return ACLNN_ERR_INNER;
     }

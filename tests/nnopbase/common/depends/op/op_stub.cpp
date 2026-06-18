@@ -77,8 +77,8 @@ void TilingParamBn(BNInferenceDParam& param, size_t dimNum, int64_t* dims, int b
                          hwc0 / hwCount;
 }
 
-int TilingBnStub(
-    unsigned char* buf, int len, GertTensor* tensor, int64_t* batchsz, uint64_t* tilingKey, uint32_t* blockDim)
+int TilingBnStub(unsigned char* buf, int len, GertTensor* tensor, int64_t* batchsz, uint64_t* tilingKey,
+                 uint32_t* blockDim)
 {
     BNInferenceDParam* param;
     int64_t dims[20];
@@ -113,8 +113,8 @@ unsigned int TilingForBn(gert::TilingContext* context_)
     if (context->input_size > 0) {
         tensor = (GertTensor*)context->values[0]->data.pointer;
     }
-    tilingData->SetDataSize(TilingBnStub(
-        (unsigned char*)tilingData->GetData(), tilingData->GetCapacity(), tensor, &batchsz, tilingKey, blockDim));
+    tilingData->SetDataSize(TilingBnStub((unsigned char*)tilingData->GetData(), tilingData->GetCapacity(), tensor,
+                                         &batchsz, tilingKey, blockDim));
     uint32_t* aicpuBlockDim = (uint32_t*)(context->output_start[8]->data.inplace);
     *aicpuBlockDim = 2U;
     *atomicClean = false;

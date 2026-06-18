@@ -142,8 +142,8 @@ const std::map<std::string, std::function<nlohmann::json(const gert::RuntimeAttr
     {"listBool", ListBoolAttrsToJson},
 };
 
-std::vector<std::pair<std::string, std::string>> GetBuiltinIrFromJson(
-    const nlohmann::json& supportInfoJsonConfig, bool isInput)
+std::vector<std::pair<std::string, std::string>> GetBuiltinIrFromJson(const nlohmann::json& supportInfoJsonConfig,
+                                                                      bool isInput)
 {
     std::vector<std::pair<std::string, std::string>> irDesc;
     std::string keyword = isInput ? "inputs" : "outputs";
@@ -159,15 +159,13 @@ std::vector<std::pair<std::string, std::string>> GetBuiltinIrFromJson(
             if (ele.is_array()) {
                 std::string paramType = ele[0].contains("paramType") ? ele[0]["paramType"] : "";
                 irDesc.push_back({ele[0]["name"], paramType});
-                OP_LOGD(
-                    "The %zuth element %s in supportInfo is {name : %s, paramType: %s}", i, keyword.c_str(),
-                    ele[0]["name"].get<std::string>().c_str(), paramType.c_str());
+                OP_LOGD("The %zuth element %s in supportInfo is {name : %s, paramType: %s}", i, keyword.c_str(),
+                        ele[0]["name"].get<std::string>().c_str(), paramType.c_str());
             } else {
                 std::string paramType = ele.contains("paramType") ? ele["paramType"] : "";
                 irDesc.push_back({ele["name"], paramType});
-                OP_LOGD(
-                    "The %zuth element %s in supportInfo is {name : %s, paramType: %s}", i, keyword.c_str(),
-                    ele["name"].get<std::string>().c_str(), paramType.c_str());
+                OP_LOGD("The %zuth element %s in supportInfo is {name : %s, paramType: %s}", i, keyword.c_str(),
+                        ele["name"].get<std::string>().c_str(), paramType.c_str());
             }
         }
     } catch (const nlohmann::json::exception& e) {
@@ -207,9 +205,8 @@ struct OpIrDesc {
     bool isInput = true;
 };
 
-nlohmann::json TensorToJson(
-    const OpIrDesc& opIrDesc, const gert::CompileTimeTensorDesc* cpTdInfo, const size_t instanceLoc,
-    const gert::TilingContext* ctx)
+nlohmann::json TensorToJson(const OpIrDesc& opIrDesc, const gert::CompileTimeTensorDesc* cpTdInfo,
+                            const size_t instanceLoc, const gert::TilingContext* ctx)
 {
     auto opShape = opIrDesc.isInput ? ctx->GetInputShape(instanceLoc) : ctx->GetOutputShape(instanceLoc);
     if (cpTdInfo == nullptr || opShape == nullptr) {
@@ -252,9 +249,8 @@ nlohmann::json TensorToJson(
     j["is_view"] = isView;
     auto stride = opIrDesc.isInput ? ctx->GetInputStride(instanceLoc) : ctx->GetOutputStride(instanceLoc);
     if (stride == nullptr) {
-        OP_LOGW(
-            "Stride is nullptr! Detail: IsInput is %d, tensor instanceLoc is %zu.",
-            static_cast<int32_t>(opIrDesc.isInput), instanceLoc);
+        OP_LOGW("Stride is nullptr! Detail: IsInput is %d, tensor instanceLoc is %zu.",
+                static_cast<int32_t>(opIrDesc.isInput), instanceLoc);
         return j;
     }
     if (isView) {
@@ -274,18 +270,16 @@ nlohmann::json TransInputInstanceToJson(const gert::TilingContext* ctx, size_t& 
     const std::string irName = opIrDesc.irName;
     const auto computeNodeInfo = ctx->GetComputeNodeInfo();
     const auto inputInstanceInfo = computeNodeInfo->GetInputInstanceInfo(irLoc);
-    OP_LOGD(
-        "ctx:%p, instanceLoc:%zu, irLoc:%zu, irName:%s, irType:%s, computeNodeInfo:%p, inputInstanceInfo:%p", ctx,
-        instanceLoc, irLoc, irName.c_str(), irType.c_str(), computeNodeInfo, inputInstanceInfo);
+    OP_LOGD("ctx:%p, instanceLoc:%zu, irLoc:%zu, irName:%s, irType:%s, computeNodeInfo:%p, inputInstanceInfo:%p", ctx,
+            instanceLoc, irLoc, irName.c_str(), irType.c_str(), computeNodeInfo, inputInstanceInfo);
     if (inputInstanceInfo != nullptr) {
-        OP_LOGD(
-            "instanceNum:%zu, inputTdInfo:%p, inputShape:%p", inputInstanceInfo->GetInstanceNum(),
-            computeNodeInfo->GetInputTdInfo(instanceLoc), ctx->GetInputShape(instanceLoc));
+        OP_LOGD("instanceNum:%zu, inputTdInfo:%p, inputShape:%p", inputInstanceInfo->GetInstanceNum(),
+                computeNodeInfo->GetInputTdInfo(instanceLoc), ctx->GetInputShape(instanceLoc));
     }
     if (irName.empty() || irType.empty() || irType.compare(REQUIRED_STR) == 0 || irType.compare(OPTIONAL_STR) == 0) {
         if (inputInstanceInfo != nullptr && inputInstanceInfo->GetInstanceNum() != 0) {
-            nlohmann::json tmpJ =
-                TensorToJson(opIrDesc, computeNodeInfo->GetInputTdInfo(instanceLoc), instanceLoc, ctx);
+            nlohmann::json tmpJ = TensorToJson(opIrDesc, computeNodeInfo->GetInputTdInfo(instanceLoc), instanceLoc,
+                                               ctx);
             instanceLoc += inputInstanceInfo->GetInstanceNum();
             return tmpJ;
         }
@@ -315,20 +309,18 @@ const gert::OpImplKernelRegistry::OpImplFunctionsV2* GetOppImplement(const std::
 {
     // Start by searching in the default library kOpp.
     auto& registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    OP_CHECK(
-        registry != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Cannot get registry from gert with opp version."),
-        return nullptr);
+    OP_CHECK(registry != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Cannot get registry from gert with opp version."),
+             return nullptr);
     const gert::OpImplKernelRegistry::OpImplFunctionsV2* opImplFunc = registry->GetOpImpl(nodeType.c_str());
     if (opImplFunc != nullptr) {
         return opImplFunc;
     }
     // Finally, search from Library kOppKernel.
     OP_LOGW("Start searching %s from opp kernel version registry.", nodeType.c_str());
-    auto& kernelRegistry =
-        gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(gert::OppImplVersionTag::kOppKernel);
-    OP_CHECK(
-        kernelRegistry != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Cannot get registry from gert with opp kernel version."),
-        return nullptr);
+    auto& kernelRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(
+        gert::OppImplVersionTag::kOppKernel);
+    OP_CHECK(kernelRegistry != nullptr,
+             OP_LOGE(ACLNN_ERR_INNER, "Cannot get registry from gert with opp kernel version."), return nullptr);
     return kernelRegistry->GetOpImpl(nodeType.c_str());
 }
 
@@ -364,9 +356,8 @@ nlohmann::json TransOutputInstanceToJson(const gert::TilingContext* ctx, size_t&
     return nullptr;
 }
 
-aclnnStatus ConstructInputOutputJson(
-    const gert::TilingContext* ctx, const nlohmann::json& supportInfoJsonConfig,
-    const gert::ComputeNodeInfo* computeNodeInfo, nlohmann::json& j)
+aclnnStatus ConstructInputOutputJson(const gert::TilingContext* ctx, const nlohmann::json& supportInfoJsonConfig,
+                                     const gert::ComputeNodeInfo* computeNodeInfo, nlohmann::json& j)
 {
     auto opImplFunc = GetOppImplement(computeNodeInfo->GetNodeType());
     OP_CHECK(
@@ -380,11 +371,10 @@ aclnnStatus ConstructInputOutputJson(
         const OpIrDesc opIrDesc{inputIr[irLoc].first, irLoc, inputIr[irLoc].second, true};
         nlohmann::json tmpJ = TransInputInstanceToJson(ctx, inputInstanceLoc, opIrDesc);
         if (!tmpJ.is_null()) {
-            OP_LOGD(
-                "Check Tensor irLoc: %zu, inputInstanceLoc % zu"
-                " is InputDataDepend? %d, is TilingInputDataDepend %d.",
-                irLoc, inputInstanceLoc, opImplFunc->IsInputDataDependency(irLoc),
-                opImplFunc->IsTilingInputDataDependency(irLoc));
+            OP_LOGD("Check Tensor irLoc: %zu, inputInstanceLoc % zu"
+                    " is InputDataDepend? %d, is TilingInputDataDepend %d.",
+                    irLoc, inputInstanceLoc, opImplFunc->IsInputDataDependency(irLoc),
+                    opImplFunc->IsTilingInputDataDependency(irLoc));
             if (tmpJ.is_object() &&
                 (opImplFunc->IsInputDataDependency(irLoc) || opImplFunc->IsTilingInputDataDependency(irLoc)) &&
                 inputInstanceLoc >= 1) {
@@ -393,12 +383,11 @@ aclnnStatus ConstructInputOutputJson(
                 const void* tensorAddr = nullptr;
                 size_t inputSize = 0U;
                 if (ctx->InputIsView(inputInstanceLoc - 1)) {
-                    const gert::TensorV2* tensor =
-                        reinterpret_cast<const gert::TensorV2*>(ctx->GetInputTensor(inputInstanceLoc - 1));
+                    const gert::TensorV2* tensor = reinterpret_cast<const gert::TensorV2*>(
+                        ctx->GetInputTensor(inputInstanceLoc - 1));
                     if (tensor == nullptr) {
-                        OP_LOGW(
-                            "ValueDepend Tensor irLoc: %zu, inputInstanceLoc: %zu is nullptr!", irLoc,
-                            inputInstanceLoc - 1);
+                        OP_LOGW("ValueDepend Tensor irLoc: %zu, inputInstanceLoc: %zu is nullptr!", irLoc,
+                                inputInstanceLoc - 1);
                         return ACLNN_ERR_INNER;
                     }
                     dType = tensor->GetDataType();
@@ -407,9 +396,8 @@ aclnnStatus ConstructInputOutputJson(
                 } else {
                     const gert::Tensor* tensor = ctx->GetInputTensor(inputInstanceLoc - 1);
                     if (tensor == nullptr) {
-                        OP_LOGW(
-                            "ValueDepend Tensor irLoc: %zu, inputInstanceLoc: %zu is nullptr!", irLoc,
-                            inputInstanceLoc - 1);
+                        OP_LOGW("ValueDepend Tensor irLoc: %zu, inputInstanceLoc: %zu is nullptr!", irLoc,
+                                inputInstanceLoc - 1);
                         return ACLNN_ERR_INNER;
                     }
                     dType = tensor->GetDataType();
@@ -418,9 +406,8 @@ aclnnStatus ConstructInputOutputJson(
                 }
                 const auto funcIter = BIN_TO_JSON.find(dType);
                 if (funcIter == BIN_TO_JSON.cend()) {
-                    OP_LOGE(
-                        ACLNN_ERR_INNER, "[%s]Not support type[%s] in const data translate!",
-                        computeNodeInfo->GetNodeType(), ge::TypeUtils::DataTypeToSerialString(dType).c_str());
+                    OP_LOGE(ACLNN_ERR_INNER, "[%s]Not support type[%s] in const data translate!",
+                            computeNodeInfo->GetNodeType(), ge::TypeUtils::DataTypeToSerialString(dType).c_str());
                     return ACLNN_ERR_INNER;
                 }
                 if (tensorAddr == nullptr) {
@@ -457,17 +444,15 @@ nlohmann::json AttrsToJson(const gert::ComputeNodeInfo* computeNodeInfo, const n
     auto irAttrNameTypes = GetBuiltinAttrFromJson(supportInfoJsonConfig);
     // The inconsistency between the RuntimeAttrs quantity and the prototype library quantity is not verified.
     size_t recordAttrLen = std::min(irAttrNameTypes.size(), srcAttrs->GetAttrNum());
-    OP_LOGD(
-        "[%s]RuntimeAttrs size[%zu];irAttrNameTypes size[%zu].", computeNodeInfo->GetNodeType(), srcAttrs->GetAttrNum(),
-        irAttrNameTypes.size());
+    OP_LOGD("[%s]RuntimeAttrs size[%zu];irAttrNameTypes size[%zu].", computeNodeInfo->GetNodeType(),
+            srcAttrs->GetAttrNum(), irAttrNameTypes.size());
 
     std::vector<nlohmann::json> attrs;
     for (size_t idx = 0UL; idx < recordAttrLen; idx++) {
         const auto funcIter = ATTRS_TO_JSON.find(irAttrNameTypes[idx].second);
         if (funcIter == ATTRS_TO_JSON.cend()) {
-            OP_LOGE(
-                ACLNN_ERR_INNER, "[%s]Not support type in attrs[%s][%zu]!", computeNodeInfo->GetNodeType(),
-                irAttrNameTypes[idx].second.c_str(), idx);
+            OP_LOGE(ACLNN_ERR_INNER, "[%s]Not support type in attrs[%s][%zu]!", computeNodeInfo->GetNodeType(),
+                    irAttrNameTypes[idx].second.c_str(), idx);
             return nullJ;
         }
         nlohmann::json tmpJ = funcIter->second(srcAttrs, idx);
@@ -516,43 +501,36 @@ void AddExtraInfoToOpJson(nlohmann::json& opJson, const nlohmann::json& attrs)
         auto actualGroupName = it.second;
         nlohmann::json topoInfoJson;
         HcclComm commHandle;
-        OP_CHECK(
-            nnopbase::IndvHcclWrapper::GetInstance().HcomGetCommHandleByGroup(actualGroupName.c_str(), &commHandle) ==
-                OK,
-            OP_LOGE(
-                ACLNN_ERR_INNER, "Call HcomGetCommHandleByGroup failed during dumping topo info of attr %s.",
-                attrName.c_str()),
-            return);
+        OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcomGetCommHandleByGroup(actualGroupName.c_str(),
+                                                                                   &commHandle) == OK,
+                 OP_LOGE(ACLNN_ERR_INNER, "Call HcomGetCommHandleByGroup failed during dumping topo info of attr %s.",
+                         attrName.c_str()),
+                 return);
         uint32_t topoType = 0U;
         uint32_t netLayerNum = 0U;
         uint32_t gRankSize = 0U;
         uint32_t* netLayer = nullptr;
         OP_CHECK(
             nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetLayers(commHandle, &netLayer, &netLayerNum) == OK,
-            OP_LOGE(
-                ACLNN_ERR_INNER, "Call HcclRankGraphGetLayers failed during dumping topo info of attr %s.",
-                attrName.c_str()),
+            OP_LOGE(ACLNN_ERR_INNER, "Call HcclRankGraphGetLayers failed during dumping topo info of attr %s.",
+                    attrName.c_str()),
             return);
         nlohmann::json topoLevelDescs = nlohmann::json::array();
         for (uint32_t j = 0U; j < MAX_HCCL_NET_LAYER_NUM; j++) {
             nlohmann::json topoLevelDesc;
             if (j < netLayerNum) {
-                OP_CHECK(
-                    nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetRankSizeByLayer(
-                        commHandle, netLayer[j], &gRankSize) == OK,
-                    OP_LOGE(
-                        ACLNN_ERR_INNER,
-                        "Call HcclRankGraphGetRankSizeByLayer failed during dumping topo info of attr %s.",
-                        attrName.c_str()),
-                    return);
-                OP_CHECK(
-                    nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetTopoTypeByLayer(
-                        commHandle, netLayer[j], &topoType) == OK,
-                    OP_LOGE(
-                        ACLNN_ERR_INNER,
-                        "Call HcclRankGraphGetTopoTypeByLayer failed during dumping topo info of attr %s.",
-                        attrName.c_str()),
-                    return);
+                OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetRankSizeByLayer(
+                             commHandle, netLayer[j], &gRankSize) == OK,
+                         OP_LOGE(ACLNN_ERR_INNER,
+                                 "Call HcclRankGraphGetRankSizeByLayer failed during dumping topo info of attr %s.",
+                                 attrName.c_str()),
+                         return);
+                OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclRankGraphGetTopoTypeByLayer(
+                             commHandle, netLayer[j], &topoType) == OK,
+                         OP_LOGE(ACLNN_ERR_INNER,
+                                 "Call HcclRankGraphGetTopoTypeByLayer failed during dumping topo info of attr %s.",
+                                 attrName.c_str()),
+                         return);
                 topoLevelDesc["comm_sets"] = static_cast<uint32_t>(topoType);
                 topoLevelDesc["rank_size"] = gRankSize;
             } else {
@@ -566,17 +544,14 @@ void AddExtraInfoToOpJson(nlohmann::json& opJson, const nlohmann::json& attrs)
         void* buffer = nullptr;
         OP_CHECK(
             nnopbase::IndvHcclWrapper::GetInstance().HcclGetHcclBuffer(commHandle, &buffer, &localWindowSize) == OK,
-            OP_LOGE(
-                ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.",
-                attrName.c_str()),
+            OP_LOGE(ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.",
+                    attrName.c_str()),
             return);
         uint32_t rankSize = 0U;
-        OP_CHECK(
-            nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankSize(commHandle, &rankSize) == OK,
-            OP_LOGE(
-                ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.",
-                attrName.c_str()),
-            return);
+        OP_CHECK(nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankSize(commHandle, &rankSize) == OK,
+                 OP_LOGE(ACLNN_ERR_INNER, "Call HcclGetHcclBuffer failed during dumping topo info of attr %s.",
+                         attrName.c_str()),
+                 return);
         topoInfoJson["topo_level_descs"] = topoLevelDescs;
         topoInfoJson["local_window_size"] = localWindowSize / 2; // cclBufferSize需要做除2处理
         topoInfoJson["rank_size"] = rankSize;
@@ -590,9 +565,9 @@ void AddExtraInfoToOpJson(nlohmann::json& opJson, const nlohmann::json& attrs)
 }
 } // namespace
 
-nlohmann::json TilingContextToJson(
-    const gert::TilingContext* ctx, const std::map<std::string, std::string>& iniConfigMap,
-    const nlohmann::json& supportInfoJsonConfig, bool isMc2)
+nlohmann::json TilingContextToJson(const gert::TilingContext* ctx,
+                                   const std::map<std::string, std::string>& iniConfigMap,
+                                   const nlohmann::json& supportInfoJsonConfig, bool isMc2)
 {
     const auto computeNodeInfo = ctx->GetComputeNodeInfo();
     nlohmann::json nullJ(nullptr);

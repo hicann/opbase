@@ -16,10 +16,10 @@
 
 namespace aicpu {
 using NotifyWaitFunc = void (*)(void* notify_param, const uint32_t param_len);
-using RegEventCbFunc =
-    bool (*)(const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb);
-using RegEventCbWithTimesFunc = bool (*)(
-    const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb, const int32_t times);
+using RegEventCbFunc = bool (*)(const uint32_t event_id, const uint32_t sub_event_id,
+                                const std::function<void(void*)>& cb);
+using RegEventCbWithTimesFunc = bool (*)(const uint32_t event_id, const uint32_t sub_event_id,
+                                         const std::function<void(void*)>& cb, const int32_t times);
 using UnregEventCbFunc = void (*)(const uint32_t event_id, const uint32_t sub_event_id);
 
 template <typename TI, typename TO>
@@ -36,9 +36,8 @@ public:
 
     bool RegEventCb(const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb);
 
-    bool RegEventCb(
-        const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb,
-        const int32_t times);
+    bool RegEventCb(const uint32_t event_id, const uint32_t sub_event_id, const std::function<void(void*)>& cb,
+                    const int32_t times);
 
     void UnregEventCb(const uint32_t event_id, const uint32_t sub_event_id);
 

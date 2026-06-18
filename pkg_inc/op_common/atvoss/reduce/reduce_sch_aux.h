@@ -21,11 +21,10 @@ namespace Ops {
 namespace Base {
 namespace ReduceOpTmpl {
 template <auto LoopInfo, class ReduceSch, bool IsStageOne, class OpDag = void>
-struct ReduceSchAux
-    : public ReduceSchAuxBase<
-          LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>> {
-    using AuxBase =
-        ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>;
+struct ReduceSchAux : public ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
+                                              ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>> {
+    using AuxBase = ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
+                                     ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>;
     using InDType = typename AuxBase::InDType;
 
 public:
@@ -40,12 +39,10 @@ public:
     } iterAddr_[Dim];
 
 public:
-    __aicore__ inline ReduceSchAux(
-        ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output, GlobalTensor<uint8_t>* workspace,
-        const ReduceOpTilingData* tiling)
-        : ReduceSchAuxBase<
-              LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>(
-              sch, input, output, workspace, tiling)
+    __aicore__ inline ReduceSchAux(ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output,
+                                   GlobalTensor<uint8_t>* workspace, const ReduceOpTilingData* tiling)
+        : ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
+                           ReduceSchAux<LoopInfo, ReduceSch, IsStageOne, OpDag>>(sch, input, output, workspace, tiling)
     {
         for (uint64_t i = 0; i < Dim; i++) {
             iterAddr_[i].stride = this->tiling_->shape[i];
@@ -93,11 +90,10 @@ public:
                 this->loopAAxisStep_ = Ops::Base::CeilDiv(this->tiling_->shape[aAxis], this->ubFactorA_);
             }
         }
-        RUN_LOG(
-            "loopAStartIndex:%ld, loopAEndIndex:%ld, loopAAxisStep:%ld, ubFactorA:%ld, loopRStartIndex:%ld, "
-            "loopREndIndex:%ld, loopRAxisStep:%ld, ubFactorR:%ld\n",
-            this->loopAStartIndex_, this->loopAEndIndex_, this->loopAAxisStep_, this->ubFactorA_,
-            this->loopRStartIndex_, this->loopREndIndex_, this->loopRAxisStep_, this->ubFactorR_);
+        RUN_LOG("loopAStartIndex:%ld, loopAEndIndex:%ld, loopAAxisStep:%ld, ubFactorA:%ld, loopRStartIndex:%ld, "
+                "loopREndIndex:%ld, loopRAxisStep:%ld, ubFactorR:%ld\n",
+                this->loopAStartIndex_, this->loopAEndIndex_, this->loopAAxisStep_, this->ubFactorA_,
+                this->loopRStartIndex_, this->loopREndIndex_, this->loopRAxisStep_, this->ubFactorR_);
     }
 
     template <int32_t LoopAIdx>
@@ -291,8 +287,8 @@ public:
             for (int32_t i = 1; i < Dim; i++) {
                 view.axisSize = i + 1;
                 view.axis[i].start = iterAddr_[axis - 1].start;
-                view.axis[i].repeat =
-                    GetRepeatStride<LoopInfo>(axis - 1, iterAddr_, this->tiling_, view.axis[i].srcStride);
+                view.axis[i].repeat = GetRepeatStride<LoopInfo>(axis - 1, iterAddr_, this->tiling_,
+                                                                view.axis[i].srcStride);
                 view.axis[i].idx = axis - 1;
                 view.axis[i].isAxisA = IsAxisA<AuxBase::Pattern::FirstA>(view.axis[i].idx);
                 if (view.axis[i].idx <= 0) {

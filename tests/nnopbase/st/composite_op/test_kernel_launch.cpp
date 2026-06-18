@@ -92,8 +92,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase2)
     SortOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
-    auto output =
-        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
+    auto output = OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr),
+                            static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
 
     auto ws1 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
@@ -235,14 +235,12 @@ TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)
     for (int i = 1; i <= 4; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(
-            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
-        snprintf_s(
-            binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
-        op::internal::OpKernelBin kernel(
-            9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
+        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
+        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
+        op::internal::OpKernelBin kernel(9999, jsonPath, jsonPath, binPath, key, hashKey,
+                                         op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = kernel.JsonLoad();
         EXPECT_EQ(rc, ACLNN_SUCCESS);
         kernel.GetTaskInfo(0);
@@ -366,9 +364,9 @@ TEST_F(KernelLaunchUT, TestWithFlagBlockDimOffset1)
 
 class DoLaunchNormalTestAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("DoLaunchNormalTestAclrtStub rtsLaunchKernelWithHostArgs start");
         // check rts params
@@ -416,17 +414,14 @@ TEST_F(KernelLaunchUT, TestWithHostapi)
     int fakeData2 = 2;
     int fakeData3 = 3;
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* input1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), &fakeData);
+    aclTensor* input1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), &fakeData);
 
-    aclTensor* input2 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), &fakeData2);
+    aclTensor* input2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), &fakeData2);
 
-    aclTensor* output = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), &fakeData3);
+    aclTensor* output = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), &fakeData3);
     aclOpExecutor* executor = nullptr;
     size_t workspaceLen = 0U;
     auto ret = aclnnMulStubGetWorkspaceSize(input1, input2, output, &workspaceLen, &executor);

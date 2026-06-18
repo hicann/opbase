@@ -78,8 +78,8 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase0)
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Axpy");
     op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
-    auto ctx = op::MakeOpArgContext(
-        OP_INPUT(self.get(), other.get()), OP_OUTPUT(out.get()), OP_ATTR(alpha), OP_WORKSPACE(out.get()));
+    auto ctx = op::MakeOpArgContext(OP_INPUT(self.get(), other.get()), OP_OUTPUT(out.get()), OP_ATTR(alpha),
+                                    OP_WORKSPACE(out.get()));
     auto launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
 
     auto rc = launcher->Launch();
@@ -327,19 +327,19 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUT_Outshape2)
     auto outshape2 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_INT64, op::Format::FORMAT_ND, nullptr);
     auto outshape_arg2 = OP_OUTSHAPE(outshape2.get(), 0);
     auto ctx2 = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg2, attr_arg);
-    op::internal::RefreshOutputShape(
-        0, *ctx2->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG), *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
+    op::internal::RefreshOutputShape(0, *ctx2->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG),
+                                     *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
     auto outshape3 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto outshape_arg3 = OP_OUTSHAPE(outshape3.get(), 0);
     auto ctx3 = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg3, attr_arg);
-    op::internal::RefreshOutputShape(
-        0, *ctx3->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG), *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
-    auto outshape4 =
-        std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
+    op::internal::RefreshOutputShape(0, *ctx3->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG),
+                                     *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
+    auto outshape4 = std::make_unique<aclTensor>(outShapeShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                                 nullptr);
     auto outshape_arg4 = OP_OUTSHAPE(outshape4.get(), 0);
     auto ctx4 = op::MakeOpArgContext(input_arg, output_arg, ws_arg, outshape_arg4, attr_arg);
-    op::internal::RefreshOutputShape(
-        0, *ctx4->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG), *ctx4->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
+    op::internal::RefreshOutputShape(0, *ctx4->GetOpArg(op::OpArgDef::OP_OUTSHAPE_ARG),
+                                     *ctx4->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG));
 
     auto bad_input_arg = OP_INPUT(self.get(), other.get(), value);
     auto ctx5 = op::MakeOpArgContext(bad_input_arg, output_arg, ws_arg, outshape_arg4, attr_arg);
@@ -375,14 +375,12 @@ TEST_F(KernelLaunchNewRtsUT, SetMemSetFlagFromJsonTest)
     for (int i = 1; i <= 4; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(
-            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
-        snprintf_s(
-            binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
-        op::internal::OpKernelBin kernel(
-            9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
+        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.json", p, i);
+        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%d.o", p, i);
+        op::internal::OpKernelBin kernel(9999, jsonPath, jsonPath, binPath, key, hashKey,
+                                         op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = kernel.JsonLoad();
         EXPECT_EQ(rc, ACLNN_SUCCESS);
     }

@@ -49,12 +49,10 @@ public:
     {
         ResetComputeNodeInfo(opType, input.count, output.count);
         UpdateCompileDescOffset(input.count);
-        CHECK_RET_CODE(
-            input.VisitBy([this](size_t idx, OpArg& arg) { return UpdateInputArg(idx, arg); }),
-            "UpdateInputArg failed.");
-        CHECK_RET_CODE(
-            output.VisitBy([this](size_t idx, OpArg& arg) { return UpdateOutputArg(idx, arg); }),
-            "UpdateInputArg failed.");
+        CHECK_RET_CODE(input.VisitBy([this](size_t idx, OpArg& arg) { return UpdateInputArg(idx, arg); }),
+                       "UpdateInputArg failed.");
+        CHECK_RET_CODE(output.VisitBy([this](size_t idx, OpArg& arg) { return UpdateOutputArg(idx, arg); }),
+                       "UpdateInputArg failed.");
         FinalizeComputeNodeInfo(attr.count);
         void* attrPtr = attrDataStart_;
         CHECK_RET_CODE(
@@ -301,10 +299,10 @@ private:
             case OpArgType::OPARG_BOOL_LIST:
                 return UpdateAttrArg(idx, reinterpret_cast<aclBoolArray*>(arg->pointer), attrPtr);
             default:
-                std::string argTypeRange =
-                    "[OPARG_ACLSCALAR(2), OPARG_STRING(3), OPARG_BOOL(4), OPARG_INT(5), "
-                    "OPARG_UINT(6), OPARG_FLOAT(7), OPARG_DOUBLE(8), OPARG_DATATYPE(9), "
-                    "OPARG_INT_LIST(10), OPARG_FLOAT_LIST(12), OPARG_BOOL_LIST(13), OPARG_IMPLMODE(14)]";
+                std::string
+                    argTypeRange = "[OPARG_ACLSCALAR(2), OPARG_STRING(3), OPARG_BOOL(4), OPARG_INT(5), "
+                                   "OPARG_UINT(6), OPARG_FLOAT(7), OPARG_DOUBLE(8), OPARG_DATATYPE(9), "
+                                   "OPARG_INT_LIST(10), OPARG_FLOAT_LIST(12), OPARG_BOOL_LIST(13), OPARG_IMPLMODE(14)]";
                 auto typeStr = OpArgTypeToStr(arg.type);
                 OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(typeStr.GetString(), argTypeRange.c_str());
                 return ACLNN_ERR_INNER;

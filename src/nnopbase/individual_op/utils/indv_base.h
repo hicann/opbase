@@ -38,8 +38,8 @@ static constexpr uint32_t NNOPBASE_STATIC_VEB_KEY_LEN = 512U;
 
 constexpr size_t NNOPBASE_BLOCK_NUM = 75U;
 static constexpr size_t NNOPBASE_NORM_MAX_WORKSPACE_NUMS = 20U;
-static constexpr size_t NNOPBASE_WORKSPACE_STRUCT_SIZE =
-    sizeof(gert::ContinuousVector) + NNOPBASE_NORM_MAX_WORKSPACE_NUMS * sizeof(size_t);
+static constexpr size_t NNOPBASE_WORKSPACE_STRUCT_SIZE = sizeof(gert::ContinuousVector) +
+                                                         NNOPBASE_NORM_MAX_WORKSPACE_NUMS * sizeof(size_t);
 
 // 1字节在16进制占2位
 static constexpr size_t NNOPBASE_BYTE_FOR_HEX = 2U;

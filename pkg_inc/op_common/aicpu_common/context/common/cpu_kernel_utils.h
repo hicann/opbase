@@ -98,9 +98,8 @@ public:
      * @param work: process of per unit work
      * @return uint32_t: 0->sucess other->failed
      */
-    static uint32_t ParallelFor(
-        const CpuKernelContext& ctx, int64_t total, int64_t per_unit_size,
-        const std::function<void(int64_t, int64_t)>& work);
+    static uint32_t ParallelFor(const CpuKernelContext& ctx, int64_t total, int64_t per_unit_size,
+                                const std::function<void(int64_t, int64_t)>& work);
 
     /*
      * Get CPU number

@@ -32,9 +32,8 @@ public:
         return instance_.get();
     }
 
-    virtual int32_t AdumpDumpTensorV2(
-        const std::string& opType, const std::string& opName, const std::vector<Adx::TensorInfoV2>& tensors,
-        aclrtStream stream)
+    virtual int32_t AdumpDumpTensorV2(const std::string& opType, const std::string& opName,
+                                      const std::vector<Adx::TensorInfoV2>& tensors, aclrtStream stream)
     {
         return 0;
     }
@@ -59,15 +58,15 @@ public:
 
     virtual uint64_t AdumpGetDumpSwitch(DumpType type) { return 1; }
 
-    virtual void AdumpPrintWorkSpace(
-        const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType)
+    virtual void AdumpPrintWorkSpace(const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
+                                     const char* opType)
     {
         return;
     }
 
-    virtual void AdumpPrintAndGetTimeStampInfo(
-        const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream, const char* opType,
-        std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
+    virtual void AdumpPrintAndGetTimeStampInfo(const void* workSpaceAddr, const size_t dumpWorkSpaceSize,
+                                               aclrtStream stream, const char* opType,
+                                               std::vector<MsprofAicTimeStampInfo>& timeStampInfo)
     {
         return;
     }

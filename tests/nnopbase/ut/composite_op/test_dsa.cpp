@@ -32,9 +32,8 @@ protected:
     static void TearDownTestCase() {}
 };
 
-aclTensor* DSARandomNormal(
-    const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* mean, const aclScalar* std,
-    aclOpExecutor* executor)
+aclTensor* DSARandomNormal(const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* mean,
+                           const aclScalar* std, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomNormal, outShape, seed, offset, mean, std);
     op::Shape shape;
@@ -45,9 +44,8 @@ aclTensor* DSARandomNormal(
     return out;
 }
 
-aclTensor* DSARandomNormal(
-    const aclTensor* count, const aclTensor* seed, const aclTensor* offset, const aclTensor* mean, const aclTensor* std,
-    aclOpExecutor* executor)
+aclTensor* DSARandomNormal(const aclTensor* count, const aclTensor* seed, const aclTensor* offset,
+                           const aclTensor* mean, const aclTensor* std, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomNormal, count, seed, offset, mean, std);
     auto out = executor->AllocTensor(count->GetViewShape(), mean->GetDataType(), op::Format::FORMAT_ND);
@@ -55,9 +53,8 @@ aclTensor* DSARandomNormal(
     return out;
 }
 
-aclTensor* DSARandomNormal(
-    const aclTensor* count, uint64_t seed, const aclTensor* offset, const aclScalar* mean, const aclTensor* std,
-    aclOpExecutor* executor)
+aclTensor* DSARandomNormal(const aclTensor* count, uint64_t seed, const aclTensor* offset, const aclScalar* mean,
+                           const aclTensor* std, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomNormal, count, seed, offset, mean, std);
     auto out = executor->AllocTensor(count->GetViewShape(), mean->GetDataType(), op::Format::FORMAT_ND);
@@ -65,34 +62,31 @@ aclTensor* DSARandomNormal(
     return out;
 }
 
-aclTensor* DSARandomTruncatedNormal(
-    const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* mean, const aclScalar* std,
-    aclOpExecutor* executor)
+aclTensor* DSARandomTruncatedNormal(const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* mean,
+                                    const aclScalar* std, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomTruncatedNormal, outShape, seed, offset, mean, std);
     op::Shape shape;
     op::ToShape(outShape->GetData(), outShape->Size(), shape);
     auto out = executor->AllocTensor(shape, mean->GetDataType(), op::Format::FORMAT_ND);
     auto count = static_cast<uint64_t>(shape.GetShapeSize());
-    ADD_TO_LAUNCHER_LIST_DSA(
-        DSARandomTruncatedNormal, OP_INPUT(count, seed, offset, mean, std), OP_OUTPUT(out), OP_ATTR(0));
+    ADD_TO_LAUNCHER_LIST_DSA(DSARandomTruncatedNormal, OP_INPUT(count, seed, offset, mean, std), OP_OUTPUT(out),
+                             OP_ATTR(0));
     return out;
 }
 
-aclTensor* DSARandomTruncatedNormal(
-    const aclTensor* count, const aclTensor* seed, const aclTensor* offset, const aclTensor* mean, const aclTensor* std,
-    aclOpExecutor* executor)
+aclTensor* DSARandomTruncatedNormal(const aclTensor* count, const aclTensor* seed, const aclTensor* offset,
+                                    const aclTensor* mean, const aclTensor* std, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomTruncatedNormal, count, seed, offset, mean, std);
     auto out = executor->AllocTensor(count->GetViewShape(), mean->GetDataType(), op::Format::FORMAT_ND);
-    ADD_TO_LAUNCHER_LIST_DSA(
-        DSARandomTruncatedNormal, OP_INPUT(count, seed, offset, mean, std), OP_OUTPUT(out), OP_ATTR(0));
+    ADD_TO_LAUNCHER_LIST_DSA(DSARandomTruncatedNormal, OP_INPUT(count, seed, offset, mean, std), OP_OUTPUT(out),
+                             OP_ATTR(0));
     return out;
 }
 
-aclTensor* DSARandomUniform(
-    const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* low, const aclScalar* high,
-    aclOpExecutor* executor)
+aclTensor* DSARandomUniform(const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* low,
+                            const aclScalar* high, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomUniform, outShape, seed, offset, low, high);
     op::Shape shape;
@@ -103,9 +97,8 @@ aclTensor* DSARandomUniform(
     return out;
 }
 
-aclTensor* DSARandomUniform(
-    const aclTensor* count, const aclTensor* seed, const aclTensor* offset, const aclTensor* low, const aclTensor* high,
-    aclOpExecutor* executor)
+aclTensor* DSARandomUniform(const aclTensor* count, const aclTensor* seed, const aclTensor* offset,
+                            const aclTensor* low, const aclTensor* high, aclOpExecutor* executor)
 {
     L0_DFX(DSARandomUniform, count, seed, offset, low, high);
     auto out = executor->AllocTensor(count->GetViewShape(), low->GetDataType(), op::Format::FORMAT_ND);
@@ -113,8 +106,8 @@ aclTensor* DSARandomUniform(
     return out;
 }
 
-aclTensor* DSAGenBitMask(
-    const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* dropout, aclOpExecutor* executor)
+aclTensor* DSAGenBitMask(const aclIntArray* outShape, uint64_t seed, uint64_t offset, const aclScalar* dropout,
+                         aclOpExecutor* executor)
 {
     L0_DFX(DSAGenBitMask, outShape, seed, offset, dropout);
     op::Shape shape;
@@ -125,9 +118,8 @@ aclTensor* DSAGenBitMask(
     return out;
 }
 
-aclTensor* DSAGenBitMask(
-    const aclTensor* count, const aclTensor* seed, const aclTensor* offset, const aclTensor* dropout,
-    aclOpExecutor* executor)
+aclTensor* DSAGenBitMask(const aclTensor* count, const aclTensor* seed, const aclTensor* offset,
+                         const aclTensor* dropout, aclOpExecutor* executor)
 {
     L0_DFX(DSAGenBitMask, count, seed, offset, dropout);
     auto out = executor->AllocTensor(dropout->GetViewShape(), dropout->GetDataType(), op::Format::FORMAT_ND);
@@ -256,8 +248,8 @@ TEST_F(DSAUt, DSARandomNormalTestCase0)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<float> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -311,8 +303,8 @@ TEST_F(DSAUt, DSARandomNormalTestCase1)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<float> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -366,8 +358,8 @@ TEST_F(DSAUt, DSARandomNormalTestCase2)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<op::fp16_t> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 200, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 200,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -421,8 +413,8 @@ TEST_F(DSAUt, DSARandomNormalTestCase3)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<float> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -475,8 +467,8 @@ TEST_F(DSAUt, DSARandomTruncatedNormalTestCase0)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
     delete executor;
     std::vector<float> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -530,8 +522,8 @@ TEST_F(DSAUt, DSARandomTruncatedNormalTestCase1)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<float> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -585,8 +577,8 @@ TEST_F(DSAUt, DSARandomTruncatedNormalTestCase2)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<op::fp16_t> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 200, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 200,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -639,8 +631,8 @@ TEST_F(DSAUt, DSARandomUniformTestCase0)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<int32_t> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -694,8 +686,8 @@ TEST_F(DSAUt, DSARandomUniformTestCase1)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<float> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 400,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -749,8 +741,8 @@ TEST_F(DSAUt, DSARandomUniformTestCase2)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<op::fp16_t> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 200, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 200,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -804,8 +796,8 @@ TEST_F(DSAUt, DSARandomUniformTestCase3)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<int64_t> resultData(100, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 800, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 800,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -857,8 +849,8 @@ TEST_F(DSAUt, DSAGenBitMaskTestCase0)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<uint32_t> resultData(1, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 4, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 4,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -911,8 +903,8 @@ TEST_F(DSAUt, DSAGenBitMaskTestCase1)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<uint32_t> resultData(1, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 4, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 4,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 
@@ -965,8 +957,8 @@ TEST_F(DSAUt, DSAGenBitMaskTestCase2)
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 
     std::vector<uint32_t> resultData(2, 0);
-    rc = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 8, ACL_MEMCPY_DEVICE_TO_HOST);
+    rc = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outputPtr, 8,
+                     ACL_MEMCPY_DEVICE_TO_HOST);
     ASSERT_EQ(rc, ACLNN_SUCCESS);
 }
 

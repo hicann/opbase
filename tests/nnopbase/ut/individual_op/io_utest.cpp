@@ -179,8 +179,8 @@ TEST_F(NnopbaseExecutorIOTest, ExecutorIoCachesMixedInputSkipOptionalInput)
     ret = NnopbaseExecutorInitIoCaches(&(executor->ownArgs.inputs), inputDesc, num);
     ASSERT_EQ(ret, OK);
     op::Shape shape({1, 1, 1, 1, 1});
-    aclTensor* tensor =
-        new aclTensor(shape, shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+    aclTensor* tensor = new aclTensor(shape, shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                      op::Format::FORMAT_ND);
     ASSERT_EQ(NnopbaseExecutorUpdateTensorsIndex(&(executor->ownArgs.inputs), 1), OK);
     ASSERT_EQ(NnopbaseExecutorAddTensor(executor, tensor, 1, true, false), OK);
 

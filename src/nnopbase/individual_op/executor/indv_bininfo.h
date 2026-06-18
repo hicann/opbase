@@ -212,8 +212,8 @@ typedef struct {
 aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, NnopbaseBinInfo* binInfo);
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo* binInfo);
 
-aclnnStatus NnopbaseReadKernelJsonFile(
-    NnopbaseBinInfo* binInfo, const std::string& oppPath, const std::string& socVersion);
+aclnnStatus NnopbaseReadKernelJsonFile(NnopbaseBinInfo* binInfo, const std::string& oppPath,
+                                       const std::string& socVersion);
 aclnnStatus NnopbaseReadBinFile(const NnopbaseChar* const binPath, const NnopbaseUChar** bin, uint32_t* binLen);
 aclnnStatus NnopbaseKernelUnRegister(void** handle);
 aclnnStatus NnopbaseReadJsonConfig(const std::string& binaryInfoPath, nlohmann::json& binaryInfoConfig);
@@ -225,9 +225,9 @@ aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo* binInfo, const std::string& o
 aclnnStatus NnopbaseLoadMemsetJson(std::shared_ptr<MemsetOpInfo>& memsetInfo);
 aclnnStatus NnopbaseGetBinPath(const std::string& jsonPath, std::string& binPath);
 aclnnStatus NnopbaseGetMemsetBinInfo(std::shared_ptr<MemsetOpInfo>& memsetInfo);
-aclnnStatus NnopbaseReadMemsetJsonInfo(
-    const std::string& memsetBasePath, nlohmann::json& memsetJsonInfo, std::shared_ptr<MemsetOpInfo>& memsetInfo,
-    const size_t initNum, const bool loadFuncHandleByTilingKey);
+aclnnStatus NnopbaseReadMemsetJsonInfo(const std::string& memsetBasePath, nlohmann::json& memsetJsonInfo,
+                                       std::shared_ptr<MemsetOpInfo>& memsetInfo, const size_t initNum,
+                                       const bool loadFuncHandleByTilingKey);
 aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<MemsetOpBinInfo>& binInfo, bool loadFuncHandleByTilingKey);
 
 // getFunction Handle from binInfo
@@ -235,13 +235,12 @@ aclnnStatus GetFuncHandleByEntry(void* binHandle, uint64_t funcEntry, aclrtFuncH
 aclnnStatus GetFuncHandleByKernelName(void* binHandle, const char* kernelName, aclrtFuncHandle* funcHandle);
 static const std::map<std::string, NnopbaseTaskRation> TASK_RATION_MAP = {
     {"1:0", kRation10}, {"0:1", kRation01}, {"1:1", kRation11}, {"1:2", kRation12}};
-static const std::map<std::string, CoreType> g_nnopbaseKernelTypeMap = {
-    {"MIX", kMix},
-    {"AiCore", kAicore},
-    {"VectorCore", kVectorcore},
-    {"MIX_AICORE", kMixAiCore},
-    {"MIX_VECTOR_CORE", kMixAiv},
-    {"MIX_AIC", kMix}};
+static const std::map<std::string, CoreType> g_nnopbaseKernelTypeMap = {{"MIX", kMix},
+                                                                        {"AiCore", kAicore},
+                                                                        {"VectorCore", kVectorcore},
+                                                                        {"MIX_AICORE", kMixAiCore},
+                                                                        {"MIX_VECTOR_CORE", kMixAiv},
+                                                                        {"MIX_AIC", kMix}};
 
 static inline void NnopbaseMemsetInfoDestroy(std::shared_ptr<MemsetOpInfo>& memsetInfo)
 {
@@ -304,8 +303,8 @@ static inline void NnopbaseBinInfoInit(NnopbaseBinInfo* binInfo)
     binInfo->initValues.clear();
 }
 
-static inline aclnnStatus NnopbaseBinInfoSetOpBinInfoKey(
-    NnopbaseBinInfo* binInfo, const NnopbaseUChar* const verbose, const uint32_t len)
+static inline aclnnStatus NnopbaseBinInfoSetOpBinInfoKey(NnopbaseBinInfo* binInfo, const NnopbaseUChar* const verbose,
+                                                         const uint32_t len)
 {
     NNOPBASE_ASSERT_TRUE_RETVAL(len > 0U);
     binInfo->binInfoKey.verbose = std::vector<NnopbaseUChar>(len, '\0');

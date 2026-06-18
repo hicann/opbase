@@ -70,14 +70,14 @@ aclnnStatus LoadOppResource()
     OP_LOGI("Entering func: LoadOppResource.");
     string oppPath;
     auto ret = GetBuiltinOppPath(oppPath);
-    OP_CHECK(
-        ret, OP_LOGI("Leaving func: LoadOppResource, ASCEND_OPP_PATH not config."), return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(ret, OP_LOGI("Leaving func: LoadOppResource, ASCEND_OPP_PATH not config."),
+             return ACLNN_ERR_PARAM_INVALID);
     auto loadRet = LoadOpProto(oppPath);
-    OP_CHECK(
-        loadRet == ACLNN_SUCCESS, OP_LOGI("Leaving func: LoadOppResource with status: %d", loadRet), return loadRet);
+    OP_CHECK(loadRet == ACLNN_SUCCESS, OP_LOGI("Leaving func: LoadOppResource with status: %d", loadRet),
+             return loadRet);
     loadRet = LoadOpTiling(oppPath, ResourceHandlersManager::GetInstance().resourceHandlers_);
-    OP_CHECK(
-        loadRet == ACLNN_SUCCESS, OP_LOGI("Leaving func: LoadOppResource with status: %d", loadRet), return loadRet);
+    OP_CHECK(loadRet == ACLNN_SUCCESS, OP_LOGI("Leaving func: LoadOppResource with status: %d", loadRet),
+             return loadRet);
     return ACLNN_SUCCESS;
 }
 
@@ -93,8 +93,8 @@ void LoadAllOppPackage()
     static std::once_flag loadFlag;
     std::call_once(loadFlag, [&]() {
         OP_LOGI("Start to load all OPP package.");
-        OP_CHECK_NO_RETURN(
-            gert::OppPackageUtils::LoadAllOppPackage() == ge::GRAPH_SUCCESS, OP_LOGW("LoadAllOppPackage failed."));
+        OP_CHECK_NO_RETURN(gert::OppPackageUtils::LoadAllOppPackage() == ge::GRAPH_SUCCESS,
+                           OP_LOGW("LoadAllOppPackage failed."));
         OP_LOGI("Load OPP package completed.");
     });
 }

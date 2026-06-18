@@ -77,9 +77,9 @@ static std::atomic<std::uint64_t> gKernelId(10000U);
 
 uint64_t AicpuExtInfoHandler::GenerateKernelId() { return gKernelId++; }
 
-aclnnStatus AicpuExtInfoHandler::AppendExtInfoShape(
-    const FVector<const aclTensor*>& tensors, aicpu::FWKAdapter::FWKTaskExtInfoType type, std::string& taskExtInfo,
-    bool isTf) const
+aclnnStatus AicpuExtInfoHandler::AppendExtInfoShape(const FVector<const aclTensor*>& tensors,
+                                                    aicpu::FWKAdapter::FWKTaskExtInfoType type,
+                                                    std::string& taskExtInfo, bool isTf) const
 {
     const size_t shapeNum = tensors.size();
     const size_t len = sizeof(AicpuExtInfo) + sizeof(AicpuShapeAndType) * shapeNum;
@@ -168,8 +168,8 @@ aclnnStatus AicpuExtInfoHandler::AppendExtShapeType(std::string& taskExtInfo) co
     return OK;
 }
 
-aclnnStatus AicpuExtInfoHandler::GenTfExtBuffer(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, std::string& taskExtInfo) const
+aclnnStatus AicpuExtInfoHandler::GenTfExtBuffer(const FVector<const aclTensor*>& inputs,
+                                                const FVector<aclTensor*>& outputs, std::string& taskExtInfo) const
 {
     // WARNING: OP NAME MUST BE THE FIRST EXTEND INFO FOR RUNTIME!!!
     AICPU_ASSERT_OK_RETVAL(AppendExtOpName(taskExtInfo));
@@ -184,8 +184,8 @@ aclnnStatus AicpuExtInfoHandler::GenTfExtBuffer(
     return OK;
 }
 
-aclnnStatus AicpuExtInfoHandler::GenCCExtBuffer(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, std::string& taskExtInfo) const
+aclnnStatus AicpuExtInfoHandler::GenCCExtBuffer(const FVector<const aclTensor*>& inputs,
+                                                const FVector<aclTensor*>& outputs, std::string& taskExtInfo) const
 {
     // WARNING: OP NAME MUST BE THE FIRST EXTEND INFO FOR RUNTIME!!!
     AICPU_ASSERT_OK_RETVAL(AppendExtOpName(taskExtInfo));
@@ -232,9 +232,8 @@ aclnnStatus AicpuExtInfoHandler::Parse(const std::string& extInfo, uint8_t* host
                 AICPU_ASSERT_OK_RETVAL(ParseExtOutputShape(aicpuExtInfo));
                 break;
             default:
-                OP_LOGD(
-                    "Node[%s] ignore infoType=%d, infoLen=%u.", nodeName_.c_str(), aicpuExtInfo.infoType,
-                    aicpuExtInfo.infoLen);
+                OP_LOGD("Node[%s] ignore infoType=%d, infoLen=%u.", nodeName_.c_str(), aicpuExtInfo.infoType,
+                        aicpuExtInfo.infoLen);
                 break;
         }
         offset += sizeof(AicpuExtInfo);
@@ -303,13 +302,12 @@ aclnnStatus AicpuExtInfoHandler::UpdateShape(const gert::Shape& shape, AicpuShap
     return OK;
 }
 
-aclnnStatus AicpuExtInfoHandler::GetExtInfoDeviceBuffer(
-    const aclOpExecutor* executor, const uint64_t deviceExtMemSize, uint64_t& deviceCacheOffset)
+aclnnStatus AicpuExtInfoHandler::GetExtInfoDeviceBuffer(const aclOpExecutor* executor, const uint64_t deviceExtMemSize,
+                                                        uint64_t& deviceCacheOffset)
 {
     if (deviceExtMemSize > executor->workspaceDeviceAicpuMem_) {
-        OP_LOGE(
-            ACLNN_ERR_INNER, "deviceExtMemSize:%lu is too big, workspaceDeviceAicpuMem_:%lu", deviceExtMemSize,
-            executor->workspaceDeviceAicpuMem_);
+        OP_LOGE(ACLNN_ERR_INNER, "deviceExtMemSize:%lu is too big, workspaceDeviceAicpuMem_:%lu", deviceExtMemSize,
+                executor->workspaceDeviceAicpuMem_);
         return ACLNN_ERR_INNER;
     }
 
@@ -319,9 +317,8 @@ aclnnStatus AicpuExtInfoHandler::GetExtInfoDeviceBuffer(
     return OK;
 }
 
-aclnnStatus AicpuExtInfoHandler::CopyH2D(
-    const aclrtStream stream, const aclOpExecutor* executor, const uint64_t deviceExtMemSize,
-    uint64_t& deviceCacheOffset)
+aclnnStatus AicpuExtInfoHandler::CopyH2D(const aclrtStream stream, const aclOpExecutor* executor,
+                                         const uint64_t deviceExtMemSize, uint64_t& deviceCacheOffset)
 {
     if ((unknownType_ == ge::DEPEND_SHAPE_RANGE) && (extInfoLen_ > 0)) {
         AICPU_ASSERT_NOTNULL_RETVAL(extInfo_);
@@ -329,8 +326,8 @@ aclnnStatus AicpuExtInfoHandler::CopyH2D(
             return ACLNN_ERR_INNER;
         }
         if (deviceExtInfo_ != nullptr) {
-            AICPU_ASSERT_RTOK_RETVAL(aclrtMemcpyAsync(
-                deviceExtInfo_, extInfoLen_, extInfo_, extInfoLen_, ACL_MEMCPY_HOST_TO_BUF_TO_DEVICE, stream));
+            AICPU_ASSERT_RTOK_RETVAL(aclrtMemcpyAsync(deviceExtInfo_, extInfoLen_, extInfo_, extInfoLen_,
+                                                      ACL_MEMCPY_HOST_TO_BUF_TO_DEVICE, stream));
         }
     }
     return OK;
@@ -342,22 +339,22 @@ aclnnStatus AicpuExtInfoHandler::CopyOutputShapeD2H()
         AICPU_ASSERT_NOTNULL_RETVAL(deviceExtInfo_);
         auto outputShapeDeviceAddr = ValueToPtr(PtrToValue(deviceExtInfo_) + outputShapeOffset_);
         const size_t hostLen = outputShape_.size() * sizeof(AicpuShapeAndType);
-        AICPU_ASSERT_RTOK_RETVAL(aclrtMemcpy(
-            outputShape_.data(), hostLen, outputShapeDeviceAddr, outputShapeLen_, ACL_MEMCPY_DEVICE_TO_HOST));
+        AICPU_ASSERT_RTOK_RETVAL(aclrtMemcpy(outputShape_.data(), hostLen, outputShapeDeviceAddr, outputShapeLen_,
+                                             ACL_MEMCPY_DEVICE_TO_HOST));
     }
     return OK;
 }
 
-aclnnStatus AicpuExtInfoHandler::GetOutputShapeAndType(
-    const uint32_t outputIndex, gert::Shape& shape, ge::DataType& dataType) const
+aclnnStatus AicpuExtInfoHandler::GetOutputShapeAndType(const uint32_t outputIndex, gert::Shape& shape,
+                                                       ge::DataType& dataType) const
 {
     AICPU_ASSERT_TRUE_RETVAL(outputIndex < outputNum_);
     GetShapeAndType(outputShape_[static_cast<size_t>(outputIndex)], shape, dataType);
     return OK;
 }
 
-void AicpuExtInfoHandler::GetShapeAndType(
-    const AicpuShapeAndType& shapeAndType, gert::Shape& shape, ge::DataType& dataType)
+void AicpuExtInfoHandler::GetShapeAndType(const AicpuShapeAndType& shapeAndType, gert::Shape& shape,
+                                          ge::DataType& dataType)
 {
     shape.SetDimNum(0U);
     for (uint32_t i = 0U; i < aicpu::FWKAdapter::kMaxShapeDims; ++i) {
@@ -380,18 +377,18 @@ aclnnStatus AicpuExtInfoHandler::UpdateOutputShapeFromExtInfo(const FVector<aclT
         AICPU_ASSERT_OK_RETVAL(GetOutputShapeAndType(i, const_cast<gert::Shape&>(outputs[i]->GetStorageShape()), type));
         AICPU_ASSERT_OK_RETVAL(
             GetOutputShapeAndType(i, const_cast<gert::Shape&>(outputs[i]->GetOriginalShape()), type));
-        OP_LOGI(
-            "output[%zu], ViewShape is %s, StorageShape is %s, OriginalShape is %s.", i,
-            op::ToString(outputs[i]->GetViewShape()).GetString(),
-            op::ToString(outputs[i]->GetStorageShape()).GetString(),
-            op::ToString(outputs[i]->GetOriginalShape()).GetString());
+        OP_LOGI("output[%zu], ViewShape is %s, StorageShape is %s, OriginalShape is %s.", i,
+                op::ToString(outputs[i]->GetViewShape()).GetString(),
+                op::ToString(outputs[i]->GetStorageShape()).GetString(),
+                op::ToString(outputs[i]->GetOriginalShape()).GetString());
     }
     return OK;
 }
 
-aclnnStatus AicpuExtInfoHandler::UpdateInputAndOutputShape(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, aclrtStream stream,
-    const aclOpExecutor* executor, const uint64_t deviceExtMemSize, uint64_t& deviceCacheOffset)
+aclnnStatus AicpuExtInfoHandler::UpdateInputAndOutputShape(const FVector<const aclTensor*>& inputs,
+                                                           const FVector<aclTensor*>& outputs, aclrtStream stream,
+                                                           const aclOpExecutor* executor,
+                                                           const uint64_t deviceExtMemSize, uint64_t& deviceCacheOffset)
 {
     for (size_t i = 0U; i < inputs.size(); ++i) {
         if (inputs[i] == nullptr) {

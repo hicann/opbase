@@ -17,16 +17,13 @@ namespace op {
 namespace internal {
 
 std::unordered_map<std::string, op::DataType> NonFiniteCheckOpKernel::dtypeMap_ = {
-    {"float32",  op::DataType::DT_FLOAT},
-    {"float16",  op::DataType::DT_FLOAT16},
-    {"bfloat16", op::DataType::DT_BF16}
-};
+    {"float32", op::DataType::DT_FLOAT}, {"float16", op::DataType::DT_FLOAT16}, {"bfloat16", op::DataType::DT_BF16}};
 
-thread_local std::unordered_map<op::DataType, OpKernelBin *> NonFiniteCheckOpKernel::dtype2KernelBin_;
+thread_local std::unordered_map<op::DataType, OpKernelBin*> NonFiniteCheckOpKernel::dtype2KernelBin_;
 
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
-aclnnStatus NonFiniteCheckOp::RunNonfiniteCheckOp(
-    [[maybe_unused]]NonFiniteCheckOpContext &nonFiniteCheckOpCtx, bool &dump)
+aclnnStatus NonFiniteCheckOp::RunNonfiniteCheckOp([[maybe_unused]] NonFiniteCheckOpContext& nonFiniteCheckOpCtx,
+                                                  bool& dump)
 {
     dump = true;
     return ACLNN_SUCCESS;

@@ -20,9 +20,9 @@
 namespace Ops {
 namespace Base {
 template <class ElemDag, size_t N>
-__aicore__ inline void GetUbBroadcastShapeInfo(
-    const int64_t (&oriShape)[N], int64_t inputUblength[2], uint32_t (&ubFormershape)[N], uint32_t (&ubTailshape)[N],
-    const BroadcastBaseTilingData<ElemDag>* tilingData)
+__aicore__ inline void GetUbBroadcastShapeInfo(const int64_t (&oriShape)[N], int64_t inputUblength[2],
+                                               uint32_t (&ubFormershape)[N], uint32_t (&ubTailshape)[N],
+                                               const BroadcastBaseTilingData<ElemDag>* tilingData)
 {
     int64_t ubFormerLength = 1;
     int64_t ubTailLength = 1;

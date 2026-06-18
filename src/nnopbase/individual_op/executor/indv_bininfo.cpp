@@ -122,8 +122,8 @@ aclnnStatus GetFuncHandleByKernelName(void* binHandle, const char* kernelName, a
     return OK;
 }
 
-static void NnopbaseSetInitValueInfo(
-    const size_t index, const nlohmann::json& param, std::vector<NnopbaseInitValueInfo>& initValues)
+static void NnopbaseSetInitValueInfo(const size_t index, const nlohmann::json& param,
+                                     std::vector<NnopbaseInitValueInfo>& initValues)
 {
     NnopbaseInitValueInfo info = {index, op::DataType::DT_FLOAT, 0, 0, 0};
     if (param["dtype"] == "float16") {
@@ -161,9 +161,8 @@ static void NnopbaseSetInitValueInfo(
         return;
     }
     initValues.emplace_back(info);
-    OP_LOGI(
-        "Get init_value dtype is %s, floatValue is %f, intValue is %ld", param["dtype"].get<std::string>().c_str(),
-        info.floatValue, info.intValue);
+    OP_LOGI("Get init_value dtype is %s, floatValue is %f, intValue is %ld", param["dtype"].get<std::string>().c_str(),
+            info.floatValue, info.intValue);
 }
 
 static void NnopbaseGetInitValue(nlohmann::json& opJson, NnopbaseBinInfo* binInfo)
@@ -272,9 +271,8 @@ static aclnnStatus NnopbaseUpdateBinConfigJsonInfo(nlohmann::json& opJsonInfo, N
         const auto& iterTaskRation = TASK_RATION_MAP.find(taskRation);
         NNOPBASE_ASSERT_TRUE_RETVAL(iterTaskRation != TASK_RATION_MAP.end());
         binInfo->tilingKeyInfo[tilingKey].taskRation = iterTaskRation->second;
-        OP_LOGI(
-            "Get multiKernelType is [%u], tilingKey is [%lu], kernelType is [%s], taskRation is [%s]",
-            binInfo->multiKernelType, tilingKey, kernelType.c_str(), taskRation.c_str());
+        OP_LOGI("Get multiKernelType is [%u], tilingKey is [%lu], kernelType is [%s], taskRation is [%s]",
+                binInfo->multiKernelType, tilingKey, kernelType.c_str(), taskRation.c_str());
     } catch (const nlohmann::json::exception& e) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to read kernel json file, reason %s.", e.what());
         return ACLNN_ERR_PARAM_INVALID;
@@ -325,9 +323,8 @@ aclnnStatus NnopbaseLoadMemsetJson(std::shared_ptr<MemsetOpInfo>& memsetInfo)
 
         memsetInfo->binInfo->binFileName = jsonInfo["binFileName"].get<std::string>();
         memsetInfo->binInfo->kernelName = jsonInfo["kernelName"].get<std::string>();
-        OP_LOGI(
-            "Get MemSet binFileName is %s, kernelName is %s.", memsetInfo->binInfo->binFileName.c_str(),
-            memsetInfo->binInfo->kernelName.c_str());
+        OP_LOGI("Get MemSet binFileName is %s, kernelName is %s.", memsetInfo->binInfo->binFileName.c_str(),
+                memsetInfo->binInfo->kernelName.c_str());
 
         const uint32_t opParaSize = jsonInfo["opParaSize"].get<uint32_t>();
         // 8byte对齐
@@ -346,9 +343,8 @@ aclnnStatus NnopbaseLoadMemsetJson(std::shared_ptr<MemsetOpInfo>& memsetInfo)
         memsetInfo->binInfo->coreType = iterKernelType->second;
         OP_LOGI("Memset op magic is %u, coreType is %s.", memsetInfo->binInfo->magic, coreType.c_str());
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Failed to read kernel json of operator MemSet %s, errmsg:%s.",
-            memsetInfo->memSetJsonPath.c_str(), e.what());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to read kernel json of operator MemSet %s, errmsg:%s.",
+                memsetInfo->memSetJsonPath.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
 
@@ -362,11 +358,10 @@ aclnnStatus NnopbaseGetBinPath(const std::string& jsonPath, std::string& binPath
         binPath = jsonPath.substr(0U, pos + 1U) + "o";
         OP_LOGD("Kernel file path is %s.", binPath.c_str());
     } else {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Failed to get kernel file from json file path %s,"
-            " path of json file must end with .json suffix.",
-            jsonPath.c_str());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Failed to get kernel file from json file path %s,"
+                " path of json file must end with .json suffix.",
+                jsonPath.c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -375,14 +370,12 @@ aclnnStatus NnopbaseGetBinPath(const std::string& jsonPath, std::string& binPath
 aclnnStatus NnopbaseGetMemsetBinInfo(std::shared_ptr<MemsetOpInfo>& memsetInfo)
 {
     std::string binPath;
-    CHECK_COND(
-        NnopbaseGetBinPath(memsetInfo->memSetJsonPath, binPath) == OK, ACLNN_ERR_PARAM_INVALID,
-        "Failed to get binary file of MemSet operator.");
+    CHECK_COND(NnopbaseGetBinPath(memsetInfo->memSetJsonPath, binPath) == OK, ACLNN_ERR_PARAM_INVALID,
+               "Failed to get binary file of MemSet operator.");
     NnopbaseChar kernelPath[NNOPBASE_FILE_PATH_MAX_LEN] = {};
     if (mmRealPath(binPath.c_str(), kernelPath, NNOPBASE_FILE_PATH_MAX_LEN) != EN_OK) {
-        OP_LOGW(
-            "Failed to get kernel path of MemSet operator, relative kernel path is %s, errmsg:%s.", binPath.c_str(),
-            NnopbaseGetmmErrorMsg());
+        OP_LOGW("Failed to get kernel path of MemSet operator, relative kernel path is %s, errmsg:%s.", binPath.c_str(),
+                NnopbaseGetmmErrorMsg());
         return ACLNN_ERR_PARAM_INVALID;
     }
 
@@ -395,9 +388,9 @@ aclnnStatus NnopbaseGetMemsetBinInfo(std::shared_ptr<MemsetOpInfo>& memsetInfo)
     return OK;
 }
 
-aclnnStatus NnopbaseReadMemsetJsonInfo(
-    const std::string& memsetBasePath, nlohmann::json& memsetJsonInfo, std::shared_ptr<MemsetOpInfo>& memsetInfo,
-    const size_t initNum, const bool loadFuncHandleByTilingKey)
+aclnnStatus NnopbaseReadMemsetJsonInfo(const std::string& memsetBasePath, nlohmann::json& memsetJsonInfo,
+                                       std::shared_ptr<MemsetOpInfo>& memsetInfo, const size_t initNum,
+                                       const bool loadFuncHandleByTilingKey)
 {
     std::string opJsonPath;
     bool findJsonPath = false;
@@ -419,9 +412,8 @@ aclnnStatus NnopbaseReadMemsetJsonInfo(
             break;
         }
     }
-    CHECK_COND(
-        findJsonPath == true, ACLNN_ERR_PARAM_INVALID, "Cannot find memset operator json path, base path is %s.",
-        memsetBasePath.c_str());
+    CHECK_COND(findJsonPath == true, ACLNN_ERR_PARAM_INVALID, "Cannot find memset operator json path, base path is %s.",
+               memsetBasePath.c_str());
     auto pos = opJsonPath.find('/'); // '/'一定存在
     memsetInfo->memSetJsonPath = memsetBasePath + "/" + opJsonPath.substr(pos + 1);
     OP_LOGI("InitValue size is %zu, jsonPath is %s", initNum, memsetInfo->memSetJsonPath.c_str());
@@ -433,30 +425,29 @@ aclnnStatus NnopbaseReadMemsetJsonInfo(
 aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo* binInfo, const std::string& oppPath, const std::string& socVersion)
 {
     std::string memsetBasePath = oppPath + MEMSET_BINARY_JSON_COMMON_DIR + socVersion + "/ops_math";
-    const std::string memsetOpJsonPathV2 =
-        oppPath + MEMSET_DESC_JSON_COMMON_DIR + socVersion + "/ops_math" + INDV_MEMSET_ASC_FILE_NAME;
-    const std::string memsetOpJsonPathV1 =
-        oppPath + MEMSET_DESC_JSON_COMMON_DIR + socVersion + "/ops_legacy" + INDV_MEMSET_TBE_FILE_NAME;
+    const std::string memsetOpJsonPathV2 = oppPath + MEMSET_DESC_JSON_COMMON_DIR + socVersion + "/ops_math" +
+                                           INDV_MEMSET_ASC_FILE_NAME;
+    const std::string memsetOpJsonPathV1 = oppPath + MEMSET_DESC_JSON_COMMON_DIR + socVersion + "/ops_legacy" +
+                                           INDV_MEMSET_TBE_FILE_NAME;
     nlohmann::json memsetJsonInfo;
     bool loadFuncHandleByTilingKey = true;
     if (NnopbaseReadJsonConfig(memsetOpJsonPathV2, memsetJsonInfo) != OK) {
         OP_LOGW("Failed to read %s, trying another path %s.", memsetOpJsonPathV2.c_str(), memsetOpJsonPathV1.c_str());
         memsetBasePath = oppPath + MEMSET_BINARY_JSON_COMMON_DIR + socVersion + "/ops_legacy";
         loadFuncHandleByTilingKey = false;
-        CHECK_COND(
-            NnopbaseReadJsonConfig(memsetOpJsonPathV1, memsetJsonInfo) == OK, ACLNN_ERR_PARAM_INVALID,
-            "Failed to read %s.", memsetOpJsonPathV1.c_str());
+        CHECK_COND(NnopbaseReadJsonConfig(memsetOpJsonPathV1, memsetJsonInfo) == OK, ACLNN_ERR_PARAM_INVALID,
+                   "Failed to read %s.", memsetOpJsonPathV1.c_str());
     }
     binInfo->memsetInfo = std::make_shared<MemsetOpInfo>();
     NNOPBASE_ASSERT_NOTNULL_RETVAL(binInfo->memsetInfo);
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadMemsetJsonInfo(
-        memsetBasePath, memsetJsonInfo, binInfo->memsetInfo, binInfo->initValues.size(), loadFuncHandleByTilingKey));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadMemsetJsonInfo(memsetBasePath, memsetJsonInfo, binInfo->memsetInfo,
+                                                         binInfo->initValues.size(), loadFuncHandleByTilingKey));
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseRegisterMemsetBin(binInfo->memsetInfo->binInfo, loadFuncHandleByTilingKey));
     return OK;
 }
 
-aclnnStatus NnopbaseReadKernelJsonFile(
-    NnopbaseBinInfo* binInfo, const std::string& oppPath, const std::string& socVersion)
+aclnnStatus NnopbaseReadKernelJsonFile(NnopbaseBinInfo* binInfo, const std::string& oppPath,
+                                       const std::string& socVersion)
 {
     std::string dirPath;
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetKernelJsonPath(binInfo->binPath, dirPath));
@@ -513,11 +504,10 @@ aclnnStatus NnopbaseGetKernelJsonPath(const std::string& binPath, std::string& j
     if (pos != std::string::npos) {
         jsonPath = binPath.substr(0U, pos + 1U) + "json";
     } else {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Failed to get json file from kernel file path %s,"
-            " path of kernel file must end with .o suffix.",
-            binPath.c_str());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Failed to get json file from kernel file path %s,"
+                " path of kernel file must end with .o suffix.",
+                binPath.c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;

@@ -16,8 +16,8 @@
 
 uint32_t fe::PlatformInfoManager::InitializePlatformInfo() { return 0U; }
 
-uint32_t fe::PlatformInfoManager::GetPlatformInfos(
-    const std::string SoCVersion, fe::PlatFormInfos& platform_info, fe::OptionalInfos& opti_compilation_info)
+uint32_t fe::PlatformInfoManager::GetPlatformInfos(const std::string SoCVersion, fe::PlatFormInfos& platform_info,
+                                                   fe::OptionalInfos& opti_compilation_info)
 {
     // platform_info.Init();
     return 0;
@@ -119,8 +119,8 @@ bool fe::PlatFormInfos::GetPlatformResWithLock(const std::string& label, std::ma
     return true;
 }
 
-uint32_t fe::PlatformInfoManager::GetPlatformInfoWithOutSocVersion(
-    fe::PlatFormInfos& platform_info, fe::OptionalInfos& opti_compilation_info)
+uint32_t fe::PlatformInfoManager::GetPlatformInfoWithOutSocVersion(fe::PlatFormInfos& platform_info,
+                                                                   fe::OptionalInfos& opti_compilation_info)
 {
     return 0U;
 }

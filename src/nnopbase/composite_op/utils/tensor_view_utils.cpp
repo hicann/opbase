@@ -70,8 +70,8 @@ bool Validate(const aclTensor* tensor)
     return true;
 }
 
-inline StrideShapePairs BuildStrideShapePairs(
-    const op::Shape& viewShape, const op::Strides& viewStrides, bool& mayTranspose, bool& mayBroadcast)
+inline StrideShapePairs BuildStrideShapePairs(const op::Shape& viewShape, const op::Strides& viewStrides,
+                                              bool& mayTranspose, bool& mayBroadcast)
 {
     StrideShapePairs strideShapePairs;
     strideShapePairs.reserve(viewStrides.size());

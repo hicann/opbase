@@ -26,18 +26,17 @@
 extern "C" {
 #endif
 
-aclTensor* aclCreateTensor(
-    const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride, int64_t offset,
-    aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorData)
+aclTensor* aclCreateTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
+                           int64_t offset, aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum,
+                           void* tensorData)
 {
     if ((viewDims == nullptr && viewDimsNum > 0) || (storageDims == nullptr && storageDimsNum > 0)) {
         return nullptr;
     }
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(
-            viewDims, viewDimsNum, dataType, stride, offset, format, storageDims, storageDimsNum, tensorData);
-        return tensor;, OP_LOGE(ACLNN_ERR_INNER, "aclCreateTensor error."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(viewDims, viewDimsNum, dataType, stride, offset, format, storageDims,
+                                         storageDimsNum, tensorData);
+                  return tensor;, OP_LOGE(ACLNN_ERR_INNER, "aclCreateTensor error."); delete tensor; return nullptr;);
 }
 
 aclScalar* aclCreateScalar(void* value, aclDataType dataType)
@@ -46,49 +45,43 @@ aclScalar* aclCreateScalar(void* value, aclDataType dataType)
         return nullptr;
     }
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value, op::ToOpDataType(dataType)); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclCreateScalar error."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value, op::ToOpDataType(dataType)); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclCreateScalar error."); delete scalar; return nullptr;);
 }
 
 aclIntArray* aclCreateIntArray(const int64_t* value, uint64_t size)
 {
     aclIntArray* intArray = nullptr;
-    ADD_TRY_CATCH(
-        intArray = new aclIntArray(value, size); return intArray;, OP_LOGE(ACLNN_ERR_INNER, "aclCreateIntArray error.");
-        delete intArray; return nullptr;);
+    ADD_TRY_CATCH(intArray = new aclIntArray(value, size); return intArray;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclCreateIntArray error."); delete intArray; return nullptr;);
 }
 
 aclFloatArray* aclCreateFloatArray(const float* value, uint64_t size)
 {
     aclFloatArray* floatArray = nullptr;
-    ADD_TRY_CATCH(
-        floatArray = new aclFloatArray(value, size); return floatArray;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclCreateFloatArray error."); delete floatArray; return nullptr;);
+    ADD_TRY_CATCH(floatArray = new aclFloatArray(value, size); return floatArray;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclCreateFloatArray error."); delete floatArray; return nullptr;);
 }
 
 aclBoolArray* aclCreateBoolArray(const bool* value, uint64_t size)
 {
     aclBoolArray* boolArray = nullptr;
-    ADD_TRY_CATCH(
-        boolArray = new aclBoolArray(value, size); return boolArray;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclCreateBoolArray error."); delete boolArray; return nullptr;);
+    ADD_TRY_CATCH(boolArray = new aclBoolArray(value, size); return boolArray;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclCreateBoolArray error."); delete boolArray; return nullptr;);
 }
 
 aclTensorList* aclCreateTensorList(const aclTensor* const* value, uint64_t size)
 {
     aclTensorList* tensorList = nullptr;
-    ADD_TRY_CATCH(
-        tensorList = new aclTensorList(value, size); return tensorList;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclCreateTensorList error."); delete tensorList; return nullptr;);
+    ADD_TRY_CATCH(tensorList = new aclTensorList(value, size); return tensorList;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclCreateTensorList error."); delete tensorList; return nullptr;);
 }
 
 aclScalarList* aclCreateScalarList(const aclScalar* const* value, uint64_t size)
 {
     aclScalarList* scalarList = nullptr;
-    ADD_TRY_CATCH(
-        scalarList = new aclScalarList(value, size); return scalarList;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclCreateScalarList error."); delete scalarList; return nullptr;);
+    ADD_TRY_CATCH(scalarList = new aclScalarList(value, size); return scalarList;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclCreateScalarList error."); delete scalarList; return nullptr;);
 }
 
 aclnnStatus aclDestroyTensor(const aclTensor* tensor)
@@ -282,20 +275,20 @@ aclnnStatus aclGetScalarListSize(const aclScalarList* scalarList, uint64_t* size
     return OK;
 }
 
-aclnnStatus aclInitTensor(
-    aclTensor* tensor, const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
-    int64_t offset, aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorDataAddr)
+aclnnStatus aclInitTensor(aclTensor* tensor, const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType,
+                          const int64_t* stride, int64_t offset, aclFormat format, const int64_t* storageDims,
+                          uint64_t storageDimsNum, void* tensorDataAddr)
 {
     if (tensor == nullptr) {
         return ACLNN_ERR_PARAM_NULLPTR;
     }
-    tensor->InitTensor(
-        viewDims, viewDimsNum, dataType, stride, offset, format, storageDims, storageDimsNum, tensorDataAddr);
+    tensor->InitTensor(viewDims, viewDimsNum, dataType, stride, offset, format, storageDims, storageDimsNum,
+                       tensorDataAddr);
     return OK;
 }
 
-aclnnStatus aclSetInputTensorAddr(
-    aclOpExecutor* executor, [[maybe_unused]] const size_t index, aclTensor* tensor, void* addr)
+aclnnStatus aclSetInputTensorAddr(aclOpExecutor* executor, [[maybe_unused]] const size_t index, aclTensor* tensor,
+                                  void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
@@ -303,8 +296,8 @@ aclnnStatus aclSetInputTensorAddr(
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t realIndex = index;
-        NnopbaseGetRealIndex(
-            (op::internal::PtrCastTo<NnopbaseExecutor>(executor))->args->inputs.paramDescs, &realIndex);
+        NnopbaseGetRealIndex((op::internal::PtrCastTo<NnopbaseExecutor>(executor))->args->inputs.paramDescs,
+                             &realIndex);
         return NnopbaseSetInputTensorAddr(executor, realIndex, tensor->GetData());
     }
     return OK;
@@ -315,8 +308,8 @@ aclnnStatus AclSetInputTensorAddr(aclOpExecutor* executor, const size_t index, a
     return aclSetInputTensorAddr(executor, index, tensor, addr);
 }
 
-aclnnStatus aclSetOutputTensorAddr(
-    aclOpExecutor* executor, [[maybe_unused]] const size_t index, aclTensor* tensor, void* addr)
+aclnnStatus aclSetOutputTensorAddr(aclOpExecutor* executor, [[maybe_unused]] const size_t index, aclTensor* tensor,
+                                   void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
@@ -333,16 +326,15 @@ aclnnStatus AclSetOutputTensorAddr(aclOpExecutor* executor, const size_t index, 
     return aclSetOutputTensorAddr(executor, index, tensor, addr);
 }
 
-aclnnStatus aclSetDynamicInputTensorAddr(
-    aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex, aclTensorList* tensors, void* addr)
+aclnnStatus aclSetDynamicInputTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
+                                         aclTensorList* tensors, void* addr)
 {
     OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_COND(
-        (relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
-        "Set dynamic input tensor addr failed. "
-        "relativeIndex[%zu] is out of tensors size[%lu].",
-        relativeIndex, tensors->Size());
+    CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
+               "Set dynamic input tensor addr failed. "
+               "relativeIndex[%zu] is out of tensors size[%lu].",
+               relativeIndex, tensors->Size());
 
     auto tensor = (*tensors)[relativeIndex];
     CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -351,29 +343,28 @@ aclnnStatus aclSetDynamicInputTensorAddr(
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t tensorIrIndex = irIndex;
-        NnopbaseGetRealIndex(
-            (op::internal::PtrCastTo<NnopbaseExecutor>(executor))->args->inputs.paramDescs, &tensorIrIndex);
+        NnopbaseGetRealIndex((op::internal::PtrCastTo<NnopbaseExecutor>(executor))->args->inputs.paramDescs,
+                             &tensorIrIndex);
         return NnopbaseSetDynamicInputTensorAddr(executor, tensorIrIndex, relativeIndex, tensor->GetData());
     }
     return OK;
 }
 
-aclnnStatus AclSetDynamicInputTensorAddr(
-    aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex, aclTensorList* tensors, void* addr)
+aclnnStatus AclSetDynamicInputTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
+                                         aclTensorList* tensors, void* addr)
 {
     return aclSetDynamicInputTensorAddr(executor, irIndex, relativeIndex, tensors, addr);
 }
 
-aclnnStatus aclSetDynamicOutputTensorAddr(
-    aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex, aclTensorList* tensors, void* addr)
+aclnnStatus aclSetDynamicOutputTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
+                                          aclTensorList* tensors, void* addr)
 {
     OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_COND(
-        (relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
-        "Set dynamic output tensor addr failed. "
-        "relativeIndex[%zu] is out of tensors size[%lu].",
-        relativeIndex, tensors->Size());
+    CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
+               "Set dynamic output tensor addr failed. "
+               "relativeIndex[%zu] is out of tensors size[%lu].",
+               relativeIndex, tensors->Size());
     auto tensor = (*tensors)[relativeIndex];
 
     CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -386,14 +377,14 @@ aclnnStatus aclSetDynamicOutputTensorAddr(
     return OK;
 }
 
-aclnnStatus AclSetDynamicOutputTensorAddr(
-    aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex, aclTensorList* tensors, void* addr)
+aclnnStatus AclSetDynamicOutputTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
+                                          aclTensorList* tensors, void* addr)
 {
     return aclSetDynamicOutputTensorAddr(executor, irIndex, relativeIndex, tensors, addr);
 }
 
-aclnnStatus aclSetTensorAddr(
-    aclOpExecutor* executor, [[maybe_unused]] const size_t index, aclTensor* tensor, void* addr)
+aclnnStatus aclSetTensorAddr(aclOpExecutor* executor, [[maybe_unused]] const size_t index, aclTensor* tensor,
+                             void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
     tensor->SetStorageAddr(addr);
@@ -416,16 +407,15 @@ aclnnStatus AclSetTensorAddr(aclOpExecutor* executor, const size_t index, aclTen
     return aclSetTensorAddr(executor, index, tensor, addr);
 }
 
-aclnnStatus aclSetDynamicTensorAddr(
-    aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex, aclTensorList* tensors, void* addr)
+aclnnStatus aclSetDynamicTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
+                                    aclTensorList* tensors, void* addr)
 {
     OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_COND(
-        (relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
-        "Set dynamic tensor addr failed. "
-        "relativeIndex[%zu] is out of tensors size[%lu].",
-        relativeIndex, tensors->Size());
+    CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
+               "Set dynamic tensor addr failed. "
+               "relativeIndex[%zu] is out of tensors size[%lu].",
+               relativeIndex, tensors->Size());
 
     auto tensor = (*tensors)[relativeIndex];
     tensor->SetStorageAddr(addr);
@@ -442,8 +432,8 @@ aclnnStatus aclSetDynamicTensorAddr(
     return OK;
 }
 
-aclnnStatus AclSetDynamicTensorAddr(
-    aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex, aclTensorList* tensors, void* addr)
+aclnnStatus AclSetDynamicTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
+                                    aclTensorList* tensors, void* addr)
 {
     return aclSetDynamicTensorAddr(executor, irIndex, relativeIndex, tensors, addr);
 }
@@ -452,9 +442,8 @@ aclnnStatus aclSetAclOpExecutorRepeatable(aclOpExecutor* executor)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
-    OP_LOGI(
-        "executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
-        executor->GetMagicNumber());
+    OP_LOGI("executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
+            executor->GetMagicNumber());
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetRepeatable(executor);
     } else if (executor->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
@@ -467,9 +456,8 @@ aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor* executor)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
-    OP_LOGI(
-        "executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
-        executor->GetMagicNumber());
+    OP_LOGI("executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
+            executor->GetMagicNumber());
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseResetExecutor(executor);
     } else if (executor->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
@@ -507,9 +495,8 @@ aclnnStatus aclnnReselectStaticKernel()
     return OK;
 }
 
-aclnnStatus aclDumpOpTensors(
-    const char* opType, const char* opName, aclTensor** tensors, size_t inputTensorNum, size_t outputTensorNum,
-    aclrtStream stream)
+aclnnStatus aclDumpOpTensors(const char* opType, const char* opName, aclTensor** tensors, size_t inputTensorNum,
+                             size_t outputTensorNum, aclrtStream stream)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(opType, ACLNN_ERR_PARAM_NULLPTR);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(opName, ACLNN_ERR_PARAM_NULLPTR);

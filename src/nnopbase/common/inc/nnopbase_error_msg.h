@@ -64,15 +64,15 @@
         REPORT_PREDEFINED_ERR_MSG("EZ1006", msgKey, msgValue);                               \
     } while (false)
 
-#define OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(paraName, dim, reason)                           \
-    do {                                                                                                 \
-        std::string opName = op::internal::GetLogApiInfo();                                              \
-        std::string msg = std::string("Shape ") + paraName + " of the tensor of operator " + opName +    \
-                          " has incorrect dimension " + dim + ". Reason: " + reason + ".";               \
-        const std::vector<const char*> msgKey = {"paraName", "opName", "dim", "reason"};                 \
-        const std::vector<const char*> msgValue = {paraName, opName.c_str(), dim, reason};               \
-        OP_LOGE_WITHOUT_REPORT("EZ1007", "%s", msg.c_str());                                             \
-        REPORT_PREDEFINED_ERR_MSG("EZ1007", msgKey, msgValue);                                           \
+#define OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(paraName, dim, reason)                        \
+    do {                                                                                              \
+        std::string opName = op::internal::GetLogApiInfo();                                           \
+        std::string msg = std::string("Shape ") + paraName + " of the tensor of operator " + opName + \
+                          " has incorrect dimension " + dim + ". Reason: " + reason + ".";            \
+        const std::vector<const char*> msgKey = {"paraName", "opName", "dim", "reason"};              \
+        const std::vector<const char*> msgValue = {paraName, opName.c_str(), dim, reason};            \
+        OP_LOGE_WITHOUT_REPORT("EZ1007", "%s", msg.c_str());                                          \
+        REPORT_PREDEFINED_ERR_MSG("EZ1007", msgKey, msgValue);                                        \
     } while (false)
 
 #define OP_LOGE_FOR_EXECUTION_TILING_ERROR(reason)                                              \
@@ -95,14 +95,14 @@
         REPORT_PREDEFINED_ERR_MSG("EZ1009", msgKey, msgValue);                                  \
     } while (false)
 
-#define OP_LOGE_FOR_INVALID_ARGUMENT_WITHOUT_SOLUTION(value, paraName, reason)                                     \
-    do {                                                                                                           \
-        std::string msg =                                                                                          \
-            std::string("Value ") + value + " for parameter " + paraName + " is invalid. Reason: " + reason + "."; \
-        const std::vector<const char*> msgKey = {"value", "paraName", "reason"};                                   \
-        const std::vector<const char*> msgValue = {value, paraName, reason};                                       \
-        OP_LOGE_WITHOUT_REPORT("EZ1010", "%s", msg.c_str());                                                       \
-        REPORT_PREDEFINED_ERR_MSG("EZ1010", msgKey, msgValue);                                                     \
+#define OP_LOGE_FOR_INVALID_ARGUMENT_WITHOUT_SOLUTION(value, paraName, reason)           \
+    do {                                                                                 \
+        std::string msg = std::string("Value ") + value + " for parameter " + paraName + \
+                          " is invalid. Reason: " + reason + ".";                        \
+        const std::vector<const char*> msgKey = {"value", "paraName", "reason"};         \
+        const std::vector<const char*> msgValue = {value, paraName, reason};             \
+        OP_LOGE_WITHOUT_REPORT("EZ1010", "%s", msg.c_str());                             \
+        REPORT_PREDEFINED_ERR_MSG("EZ1010", msgKey, msgValue);                           \
     } while (false)
 
 #define OP_LOGE_FOR_INVALID_ARGUMENT_NULL_POINTER(functionName, paraName)                                           \
@@ -142,15 +142,15 @@
         }                                                                                                     \
     } while (false)
 
-#define OP_LOGE_FOR_CONFIG_FILE_NOT_EXIST_IN_DYNAMIC_SHAPE()                                                          \
-    do {                                                                                                              \
-        std::string opName = op::internal::GetLogApiInfo();                                                           \
-        std::string msg =                                                                                             \
-            "In the dynamic shape scenario, the JSON configuration file of operator " + opName + " cannot be found."; \
-        const std::vector<const char*> msgKey = {"opName"};                                                           \
-        const std::vector<const char*> msgValue = {opName.c_str()};                                                   \
-        OP_LOGE_WITHOUT_REPORT("EZ1013", "%s", msg.c_str());                                                          \
-        REPORT_PREDEFINED_ERR_MSG("EZ1013", msgKey, msgValue);                                                        \
+#define OP_LOGE_FOR_CONFIG_FILE_NOT_EXIST_IN_DYNAMIC_SHAPE()                                                   \
+    do {                                                                                                       \
+        std::string opName = op::internal::GetLogApiInfo();                                                    \
+        std::string msg = "In the dynamic shape scenario, the JSON configuration file of operator " + opName + \
+                          " cannot be found.";                                                                 \
+        const std::vector<const char*> msgKey = {"opName"};                                                    \
+        const std::vector<const char*> msgValue = {opName.c_str()};                                            \
+        OP_LOGE_WITHOUT_REPORT("EZ1013", "%s", msg.c_str());                                                   \
+        REPORT_PREDEFINED_ERR_MSG("EZ1013", msgKey, msgValue);                                                 \
     } while (false)
 
 #define OP_LOGE_FOR_EXECUTION_INFERSHAPE_ERROR(reason)                                          \

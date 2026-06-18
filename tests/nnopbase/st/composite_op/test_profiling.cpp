@@ -72,9 +72,8 @@ TEST_F(ProfilingUt, l2_phase_one_api_profiling)
     aclTensor* inTensor = 0;
     aclTensor* outTensor = 0;
     {
-        op::OpDfxGuard opDfxGuard(
-            __FILE__, __LINE__, op::LevelTwo, __func__, "DFX_IN(in)", "DFX_OUT(out)", std::make_tuple(inTensor),
-            std::make_tuple(outTensor));
+        op::OpDfxGuard opDfxGuard(__FILE__, __LINE__, op::LevelTwo, __func__, "DFX_IN(in)", "DFX_OUT(out)",
+                                  std::make_tuple(inTensor), std::make_tuple(outTensor));
     }
     EXPECT_TRUE(profiling_called);
 }
@@ -120,17 +119,16 @@ TEST_F(ProfilingUt, kernel_launch_profiling)
     void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor* tensor = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                              aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                              deviceDataA);
     ;
-    auto ctx = op::MakeOpArgContext(
-        OP_INPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor),
-        OP_OUTPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor));
+    auto ctx = op::MakeOpArgContext(OP_INPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor),
+                                    OP_OUTPUT(tensor, tensor, tensor, tensor, tensor, tensor, tensor));
     {
-        op::internal::ReportAdditionInfo(
-            *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-            MSPROF_GE_TASK_TYPE_AI_CORE, 100001);
+        op::internal::ReportAdditionInfo(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+                                         *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), MSPROF_GE_TASK_TYPE_AI_CORE,
+                                         100001);
         op::OpDfxGuard opDfxGuard(100001, op::DfxProfilingKernelLaunch);
         op::internal::TaskInfo info;
         info.type = MSPROF_GE_TASK_TYPE_AI_CORE;

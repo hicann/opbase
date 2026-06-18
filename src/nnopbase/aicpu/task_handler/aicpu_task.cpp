@@ -37,16 +37,15 @@ constexpr uint32_t RT_KERNEL_DEFAULT_IN_AICPU = 0U;
 */
 const std::set<std::string> tfCompatibleOps = {
     "ResizeBilinear", "ResizeNearestNeighbor", "Roll", "Max", "Min", "Mean", "Prod", "Sum"};
-const std::set<std::string> aicpuCompatibleOps = {
-    "CacheVerification",
-    "AicpuPathwayVerification",
-    "FaultInjection",
-    "DataCompare",
-    "VoltageRegulator",
-    "Floor",
-    "Pad",
-    "ReduceSum",
-    "Sigmoid"};
+const std::set<std::string> aicpuCompatibleOps = {"CacheVerification",
+                                                  "AicpuPathwayVerification",
+                                                  "FaultInjection",
+                                                  "DataCompare",
+                                                  "VoltageRegulator",
+                                                  "Floor",
+                                                  "Pad",
+                                                  "ReduceSum",
+                                                  "Sigmoid"};
 
 void GetConstVec(const op::FVector<aclTensor*>& in, op::FVector<const aclTensor*>& out)
 {
@@ -65,12 +64,12 @@ void GetValidInputVec(const op::FVector<const aclTensor*>& in, op::FVector<const
 }
 } // namespace
 
-aclnnStatus AicpuTfTask::Init(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs)
+aclnnStatus AicpuTfTask::Init(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                              const AicpuAttrs& attrs)
 {
     launchId_ = MsprofGetHashId(opType_.c_str(), opType_.size());
-    summaryItemId_ = GenSummaryItemId(
-        GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name, opType_.c_str());
+    summaryItemId_ = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
+                                      GetThreadLocalContext().logInfo_.l0Name, opType_.c_str());
     // ge::MakeUnique
     extInfoHandle_ = std::make_unique<AicpuExtInfoHandler>(opType_, inputs.size(), outputs.size(), unknownType_);
     AICPU_ASSERT_NOTNULL_RETVAL(extInfoHandle_);
@@ -122,9 +121,9 @@ aclnnStatus AicpuTfTask::LaunchKernelByNewInterface(aclrtStream stream)
     AICPU_ASSERT_NOTNULL_RETVAL(lauchKernelAttr);
     aclrtLaunchKernelCfg kernelLaunchCfg = {lauchKernelAttr.get(), 0U};
     const auto& aicpuArg = argsHandle_->GetArgsEx();
-    AICPU_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(
-        funcHandle_, 1U, stream, &kernelLaunchCfg, aicpuArg.args, aicpuArg.argsSize, aicpuArg.hostInputInfoPtr,
-        aicpuArg.hostInputInfoNum));
+    AICPU_ASSERT_OK_RETVAL(aclrtLaunchKernelWithHostArgs(funcHandle_, 1U, stream, &kernelLaunchCfg, aicpuArg.args,
+                                                         aicpuArg.argsSize, aicpuArg.hostInputInfoPtr,
+                                                         aicpuArg.hostInputInfoNum));
 
     return OK;
 }
@@ -158,8 +157,8 @@ aclnnStatus AicpuTfTask::Run(aclOpExecutor* executor, aclrtStream stream)
             rtsLaunchArgs.soNameAddrOffset = args.soNameAddrOffset;
             rtsLaunchArgs.kernelNameAddrOffset = args.kernelNameAddrOffset;
 
-            AICPU_ASSERT_RTOK_RETVAL(rtAicpuKernelLaunchExWithArgs(
-                KERNEL_TYPE_FWK, opType_.c_str(), 1U, &rtsLaunchArgs, nullptr, stream, RT_KERNEL_DEFAULT_IN_AICPU));
+            AICPU_ASSERT_RTOK_RETVAL(rtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_FWK, opType_.c_str(), 1U, &rtsLaunchArgs,
+                                                                   nullptr, stream, RT_KERNEL_DEFAULT_IN_AICPU));
         }
     }
     RecordAicpuTime(kLaunchEnd);
@@ -187,9 +186,8 @@ aclnnStatus AicpuTfTask::Run(aclOpExecutor* executor, aclrtStream stream)
 aclnnStatus AicpuCCTask::GetKernelNameAndSoName(std::string& kernelSoName)
 {
     if (JsonLoadManger::FindAndGetInCustomRegistry(opType_, kernelSoName, functionName_)) {
-        OP_LOGI(
-            "The Operator %s found in custom registry: kernel so name is %s, function name is %s.", opType_.c_str(),
-            kernelSoName.c_str(), functionName_.c_str());
+        OP_LOGI("The Operator %s found in custom registry: kernel so name is %s, function name is %s.", opType_.c_str(),
+                kernelSoName.c_str(), functionName_.c_str());
         std::string kernelSoPath = "";
         AICPU_ASSERT_OK_RETVAL(JsonLoadManger::LoadAicpuCustBinaryFromJson(opType_, kernelSoName, kernelSoPath));
         aicpuBinHandle_ = JsonLoadManger::GetAicpuCustBinaryHandle(kernelSoPath);
@@ -208,8 +206,8 @@ aclnnStatus AicpuCCTask::GetKernelNameAndSoName(std::string& kernelSoName)
         aicpuBinHandle_ = JsonLoadManger::GetAicpuBinaryHandle();
         AICPU_ASSERT_NOTNULL_RETVAL(aicpuBinHandle_);
         if ((aicpuCompatibleOps.find(opType_) != aicpuCompatibleOps.end()) || !JsonLoadManger::IsSupportedNewLaunch()) {
-            OP_LOGI(
-                "Cannot find the '%s' opType function by name. Try compatible with the old process.", opType_.c_str());
+            OP_LOGI("Cannot find the '%s' opType function by name. Try compatible with the old process.",
+                    opType_.c_str());
             useNewLaunchInterface_ = false;
         } else {
             useNewLaunchInterface_ = true;
@@ -219,17 +217,16 @@ aclnnStatus AicpuCCTask::GetKernelNameAndSoName(std::string& kernelSoName)
     return OK;
 }
 
-aclnnStatus AicpuCCTask::Init(
-    const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs)
+aclnnStatus AicpuCCTask::Init(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                              const AicpuAttrs& attrs)
 {
     OP_LOGI("Start AicpuCCTask::Init, opType[%s]", opType_.c_str());
     // Only check if custom operators exist; If present, parse it. if not, continue with the original process
     // unaffected.
     (void)JsonLoadManger::CustJsonLoadAndParse();
     launchId_ = MsprofGetHashId(opType_.c_str(), opType_.size());
-    summaryItemId_ = GenSummaryItemId(
-        op::internal::GetThreadLocalContext().logInfo_.l2ApiName, op::internal::GetThreadLocalContext().logInfo_.l0Name,
-        opType_.c_str());
+    summaryItemId_ = GenSummaryItemId(op::internal::GetThreadLocalContext().logInfo_.l2ApiName,
+                                      op::internal::GetThreadLocalContext().logInfo_.l0Name, opType_.c_str());
 
     extInfoHandle_ = std::make_unique<AicpuExtInfoHandler>(opType_, inputs.size(), outputs.size(), unknownType_);
     AICPU_ASSERT_NOTNULL_RETVAL(extInfoHandle_);
@@ -273,9 +270,9 @@ aclnnStatus AicpuCCTask::LaunchKernelByNewInterface(aclrtStream stream)
     AICPU_ASSERT_NOTNULL_RETVAL(lauchKernelAttr);
     aclrtLaunchKernelCfg kernelLaunchCfg = {lauchKernelAttr.get(), 0U};
     const auto& aicpuArg = argsHandle_->GetArgsEx();
-    AICPU_ASSERT_RTOK_RETVAL(aclrtLaunchKernelWithHostArgs(
-        funcHandle_, 1U, stream, &kernelLaunchCfg, aicpuArg.args, aicpuArg.argsSize, aicpuArg.hostInputInfoPtr,
-        aicpuArg.hostInputInfoNum));
+    AICPU_ASSERT_RTOK_RETVAL(aclrtLaunchKernelWithHostArgs(funcHandle_, 1U, stream, &kernelLaunchCfg, aicpuArg.args,
+                                                           aicpuArg.argsSize, aicpuArg.hostInputInfoPtr,
+                                                           aicpuArg.hostInputInfoNum));
 
     return OK;
 }
@@ -343,9 +340,8 @@ aclnnStatus AicpuCCTask::Run(aclOpExecutor* executor, aclrtStream stream)
     return OK;
 }
 
-aclnnStatus CreatAicpuKernelLauncher(
-    uint32_t opType, op::internal::AicpuTaskSpace& space, aclOpExecutor* executor,
-    const FVector<std::string>& attrNames, op::OpArgContext* args)
+aclnnStatus CreatAicpuKernelLauncher(uint32_t opType, op::internal::AicpuTaskSpace& space, aclOpExecutor* executor,
+                                     const FVector<std::string>& attrNames, op::OpArgContext* args)
 {
     CHECK_RET(args != nullptr, ACLNN_ERR_PARAM_INVALID);
     auto task = space.GetOrCreateTask(executor, attrNames, args);
@@ -354,9 +350,8 @@ aclnnStatus CreatAicpuKernelLauncher(
     auto* launcher = new op::internal::AiCpuKernelLauncher{opType, op::AI_CPU, executor, profilingInfoId, task, args};
     executor->AbandonCache();
     executor->AddToKernelLauncherList(launcher);
-    op::internal::BuildGraph(
-        executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-        *args->GetOpArg(op::OP_WORKSPACE_ARG));
+    op::internal::BuildGraph(executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
+                             *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG));
     return ACLNN_SUCCESS;
 }
 } // namespace internal

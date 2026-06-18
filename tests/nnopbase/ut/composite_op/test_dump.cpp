@@ -76,9 +76,9 @@ TEST_F(DumpUt, dump_l2)
     void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor* tensor = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                              aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                              deviceDataA);
     ;
     std::vector<const aclTensor*> in;
     op::internal::OpLogInfo info;
@@ -154,20 +154,20 @@ TEST_F(DumpUt, TraitsAclTensorAndIdxTest)
 
     int32_t currentIdx = -1;
     // not support for placeholders, not support core sync
-    op::internal::TraitsAclTensorAndIdx(
-        aclInTensors, inTensorsIdxList, *ctx->GetOpArg(op::OP_INPUT_ARG), false, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclInTensors, inTensorsIdxList, *ctx->GetOpArg(op::OP_INPUT_ARG), false,
+                                        currentIdx);
     EXPECT_EQ(inTensorsIdxList.size(), 3);
     EXPECT_EQ(inTensorsIdxList[0], 0);
     EXPECT_EQ(inTensorsIdxList[1], 1);
     EXPECT_EQ(inTensorsIdxList[2], 2);
 
-    op::internal::TraitsAclTensorAndIdx(
-        aclOutTensors, outTensorsIdxList, *ctx->GetOpArg(op::OP_OUTPUT_ARG), false, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclOutTensors, outTensorsIdxList, *ctx->GetOpArg(op::OP_OUTPUT_ARG), false,
+                                        currentIdx);
     EXPECT_EQ(outTensorsIdxList.size(), 1);
     EXPECT_EQ(outTensorsIdxList[0], 3);
 
-    op::internal::TraitsAclTensorAndIdx(
-        aclWorkSpaceTensors, workSpaceTensorsIdxList, *ctx->GetOpArg(op::OP_WORKSPACE_ARG), false, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclWorkSpaceTensors, workSpaceTensorsIdxList,
+                                        *ctx->GetOpArg(op::OP_WORKSPACE_ARG), false, currentIdx);
     EXPECT_EQ(workSpaceTensorsIdxList.size(), 2);
     EXPECT_EQ(workSpaceTensorsIdxList[0], 4);
     EXPECT_EQ(workSpaceTensorsIdxList[1], 5);
@@ -180,20 +180,20 @@ TEST_F(DumpUt, TraitsAclTensorAndIdxTest)
     aclInTensors.clear();
     aclOutTensors.clear();
     aclWorkSpaceTensors.clear();
-    op::internal::TraitsAclTensorAndIdx(
-        aclInTensors, inTensorsIdxList, *ctx->GetOpArg(op::OP_INPUT_ARG), true, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclInTensors, inTensorsIdxList, *ctx->GetOpArg(op::OP_INPUT_ARG), true,
+                                        currentIdx);
     EXPECT_EQ(inTensorsIdxList.size(), 3);
     EXPECT_EQ(inTensorsIdxList[0], 0);
     EXPECT_EQ(inTensorsIdxList[1], 2);
     EXPECT_EQ(inTensorsIdxList[2], 4);
 
-    op::internal::TraitsAclTensorAndIdx(
-        aclOutTensors, outTensorsIdxList, *ctx->GetOpArg(op::OP_OUTPUT_ARG), true, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclOutTensors, outTensorsIdxList, *ctx->GetOpArg(op::OP_OUTPUT_ARG), true,
+                                        currentIdx);
     EXPECT_EQ(outTensorsIdxList.size(), 1);
     EXPECT_EQ(outTensorsIdxList[0], 6);
 
-    op::internal::TraitsAclTensorAndIdx(
-        aclWorkSpaceTensors, workSpaceTensorsIdxList, *ctx->GetOpArg(op::OP_WORKSPACE_ARG), true, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclWorkSpaceTensors, workSpaceTensorsIdxList,
+                                        *ctx->GetOpArg(op::OP_WORKSPACE_ARG), true, currentIdx);
     EXPECT_EQ(workSpaceTensorsIdxList.size(), 2);
     EXPECT_EQ(workSpaceTensorsIdxList[0], 7);
     EXPECT_EQ(workSpaceTensorsIdxList[1], 9);
@@ -206,20 +206,20 @@ TEST_F(DumpUt, TraitsAclTensorAndIdxTest)
     aclInTensors.clear();
     aclOutTensors.clear();
     aclWorkSpaceTensors.clear();
-    op::internal::TraitsAclTensorAndIdx(
-        aclInTensors, inTensorsIdxList, *ctx->GetOpArg(op::OP_INPUT_ARG), true, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclInTensors, inTensorsIdxList, *ctx->GetOpArg(op::OP_INPUT_ARG), true,
+                                        currentIdx);
     EXPECT_EQ(inTensorsIdxList.size(), 3);
     EXPECT_EQ(inTensorsIdxList[0], 1);
     EXPECT_EQ(inTensorsIdxList[1], 3);
     EXPECT_EQ(inTensorsIdxList[2], 5);
 
-    op::internal::TraitsAclTensorAndIdx(
-        aclOutTensors, outTensorsIdxList, *ctx->GetOpArg(op::OP_OUTPUT_ARG), true, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclOutTensors, outTensorsIdxList, *ctx->GetOpArg(op::OP_OUTPUT_ARG), true,
+                                        currentIdx);
     EXPECT_EQ(outTensorsIdxList.size(), 1);
     EXPECT_EQ(outTensorsIdxList[0], 7);
 
-    op::internal::TraitsAclTensorAndIdx(
-        aclWorkSpaceTensors, workSpaceTensorsIdxList, *ctx->GetOpArg(op::OP_WORKSPACE_ARG), true, currentIdx);
+    op::internal::TraitsAclTensorAndIdx(aclWorkSpaceTensors, workSpaceTensorsIdxList,
+                                        *ctx->GetOpArg(op::OP_WORKSPACE_ARG), true, currentIdx);
     EXPECT_EQ(workSpaceTensorsIdxList.size(), 2);
     EXPECT_EQ(workSpaceTensorsIdxList[0], 8);
     EXPECT_EQ(workSpaceTensorsIdxList[1], 10);
@@ -248,8 +248,8 @@ TEST_F(DumpUt, overflow_dump_saturation)
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
-    auto output =
-        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
+    auto output = OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr),
+                            static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
 
     auto ws1 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);

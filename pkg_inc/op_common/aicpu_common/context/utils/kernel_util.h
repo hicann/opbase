@@ -376,9 +376,8 @@ uint32_t NormalCheck(CpuKernelContext& ctx, const uint32_t inputs_num, const uin
  * @param attr_names names of attrs
  * @return status code
  */
-uint32_t NormalCheck(
-    CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num,
-    const std::vector<std::string>& attr_names);
+uint32_t NormalCheck(CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num,
+                     const std::vector<std::string>& attr_names);
 
 bool IsScalar(const std::vector<int64_t>& shape);
 
@@ -454,17 +453,17 @@ uint64_t CalFileSize(const std::string& file_path);
 uint64_t AlignedTo(const uint64_t size, const uint64_t alignment);
 
 template <typename T>
-typename std::enable_if<
-    !(std::is_same<T, float>::value || std::is_same<T, double>::value || std::is_same<T, Eigen::half>::value),
-    bool>::type
+typename std::enable_if<!(std::is_same<T, float>::value || std::is_same<T, double>::value ||
+                          std::is_same<T, Eigen::half>::value),
+                        bool>::type
 IsValueEqual(T a, T b)
 {
     return a == b;
 }
 
 template <typename T>
-typename std::enable_if<std::is_same<T, float>::value || std::is_same<T, double>::value, bool>::type IsValueEqual(
-    T a, T b)
+typename std::enable_if<std::is_same<T, float>::value || std::is_same<T, double>::value, bool>::type IsValueEqual(T a,
+                                                                                                                  T b)
 {
     constexpr T epsilon = std::is_same<T, float>::value ? 1e-5f : 1e-9;
     return std::abs(a - b) <= epsilon * std::max(std::abs(a), std::abs(b));

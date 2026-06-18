@@ -17,8 +17,8 @@
 namespace nnopbase {
 class IndvPath {
 public:
-    static void GetChildDirs(
-        std::string& baseDir, std::vector<std::string>& childDirs, uint32_t depth, uint32_t maxDepth);
+    static void GetChildDirs(std::string& baseDir, std::vector<std::string>& childDirs, uint32_t depth,
+                             uint32_t maxDepth);
 };
 } // namespace nnopbase
 #endif

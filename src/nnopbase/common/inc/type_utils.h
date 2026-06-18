@@ -117,34 +117,32 @@ inline constexpr typename std::enable_if<IsCustomFloat<T>::value, bool>::type Is
 
 template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
-LessThanLowest(
-    const T& x, [[maybe_unused]] std::false_type limitIsUnsigned, [[maybe_unused]] std::false_type xIsUnsigned)
+LessThanLowest(const T& x, [[maybe_unused]] std::false_type limitIsUnsigned,
+               [[maybe_unused]] std::false_type xIsUnsigned)
 {
     return static_cast<double>(x) < static_cast<double>(std::numeric_limits<Limit>::lowest());
 }
 
 template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
-LessThanLowest(
-    [[maybe_unused]] const T& x, [[maybe_unused]] std::false_type limitIsUnsigned,
-    [[maybe_unused]] std::true_type xIsUnsigned)
+LessThanLowest([[maybe_unused]] const T& x, [[maybe_unused]] std::false_type limitIsUnsigned,
+               [[maybe_unused]] std::true_type xIsUnsigned)
 {
     return false;
 }
 
 template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
-LessThanLowest(
-    const T& x, [[maybe_unused]] std::true_type limitIsUnsigned, [[maybe_unused]] std::false_type xIsUnsigned)
+LessThanLowest(const T& x, [[maybe_unused]] std::true_type limitIsUnsigned,
+               [[maybe_unused]] std::false_type xIsUnsigned)
 {
     return static_cast<double>(x) < 0.0;
 }
 
 template <typename Limit, typename T>
 inline constexpr typename std::enable_if<!IsCustomFloat<T>::value && !IsCustomFloat<Limit>::value, bool>::type
-LessThanLowest(
-    [[maybe_unused]] const T& x, [[maybe_unused]] std::true_type limitIsUnsigned,
-    [[maybe_unused]] std::true_type xIsUnsigned)
+LessThanLowest([[maybe_unused]] const T& x, [[maybe_unused]] std::true_type limitIsUnsigned,
+               [[maybe_unused]] std::true_type xIsUnsigned)
 {
     return false;
 }

@@ -411,9 +411,9 @@ constexpr DagMaxAliveInfo MaxAliveNode(DagMaxAliveInfo info)
         using func = typename FunList::template At<start>;
 
         // 依赖节点： 输入 + 输出
-        using inOutNodes = Condition<
-            (Vec::IsCopyOutOp<typename func::Fun>::Value || func::IsScalarOp), typename func::InNonScalarFuns,
-            typename func::InNonScalarFuns::template Append<typename func::RealBindType>>;
+        using inOutNodes = Condition<(Vec::IsCopyOutOp<typename func::Fun>::Value || func::IsScalarOp),
+                                     typename func::InNonScalarFuns,
+                                     typename func::InNonScalarFuns::template Append<typename func::RealBindType>>;
         // Union当前存活节点，刨去永久存活节点
         using aliveNodes = typename Acc::template Union<inOutNodes>::Unique::template Remove<RsvList>;
         // 存活节点中CopyInBrc节点
@@ -425,18 +425,18 @@ constexpr DagMaxAliveInfo MaxAliveNode(DagMaxAliveInfo info)
 
         constexpr uint32_t funcTmpSize = Vec::IsCopyInBrcOp<typename func::Fun>::Value ? 0 : func::Fun::TempSize;
         // alive node size considering CopyInBrc as CopyIn + VecBrc
-        constexpr uint32_t aliveNodeSize =
-            static_cast<uint32_t>(aliveNodes::Size - copyInBrcNodes::Size + 2 * copyInBrcNodes::Size + funcTmpSize);
-        constexpr uint32_t tempCalcNodeWithCopyBrcSize =
-            static_cast<uint32_t>(tempCalcNodesWithCopyBrc::Size + funcTmpSize);
+        constexpr uint32_t aliveNodeSize = static_cast<uint32_t>(aliveNodes::Size - copyInBrcNodes::Size +
+                                                                 2 * copyInBrcNodes::Size + funcTmpSize);
+        constexpr uint32_t tempCalcNodeWithCopyBrcSize = static_cast<uint32_t>(tempCalcNodesWithCopyBrc::Size +
+                                                                               funcTmpSize);
         info.aliveNode = Max<uint32_t>(aliveNodeSize, info.aliveNode);
         info.tempCalcNode = Max<uint32_t>(tempCalcNodeWithCopyBrcSize, info.tempCalcNode);
 
         if constexpr (Vec::IsCopyInBrcOp<typename func::Fun>::Value) {
-            info.aliveNodeNoCopyBrcTmpBuf =
-                Max<uint32_t>(static_cast<uint32_t>(aliveNodes::Size), info.aliveNodeNoCopyBrcTmpBuf);
-            info.tempCalcNodeNoCopyBrcTmpBuf =
-                Max<uint32_t>(static_cast<uint32_t>(tempCalcNodes::Size), info.tempCalcNodeNoCopyBrcTmpBuf);
+            info.aliveNodeNoCopyBrcTmpBuf = Max<uint32_t>(static_cast<uint32_t>(aliveNodes::Size),
+                                                          info.aliveNodeNoCopyBrcTmpBuf);
+            info.tempCalcNodeNoCopyBrcTmpBuf = Max<uint32_t>(static_cast<uint32_t>(tempCalcNodes::Size),
+                                                             info.tempCalcNodeNoCopyBrcTmpBuf);
         } else {
             constexpr uint32_t tempCalcNodeSize = static_cast<uint32_t>(tempCalcNodes::Size + func::Fun::TempSize);
             constexpr uint32_t aliveNodeSizeNddma = static_cast<uint32_t>(aliveNodes::Size + func::Fun::TempSize);

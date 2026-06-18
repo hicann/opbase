@@ -43,11 +43,10 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
         const char* opTypeStr = opTypeAscendStr.GetString();
         gert::OppImplVersionTag oppVersionTag = GetOppImplVersion();
         auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(oppVersionTag);
-        OP_CHECK(
-            spaceRegistry != nullptr,
-            OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "SpaceRegistry is nullptr, op type is %s", opTypeStr),
-            ret = ACLNN_ERR_INNER_NULLPTR;
-            return);
+        OP_CHECK(spaceRegistry != nullptr,
+                 OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "SpaceRegistry is nullptr, op type is %s", opTypeStr),
+                 ret = ACLNN_ERR_INNER_NULLPTR;
+                 return);
 
         auto funcs = spaceRegistry->GetOpImpl(opTypeStr);
         // ops infershape func
@@ -56,16 +55,14 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
             OP_LOGW("Op %s has no infer shape function, is funcs nullptr: %d", opTypeStr, funcs == nullptr);
         }
         // ops has tiling func
-        OP_CHECK(
-            funcs == nullptr || funcs->tiling_parse == nullptr || funcs->tiling == nullptr,
-            opTilingFuncs_[opType] = funcs;
-            OP_LOGI("Op %s has tiling and tiling parse funcs", opTypeStr), return);
+        OP_CHECK(funcs == nullptr || funcs->tiling_parse == nullptr || funcs->tiling == nullptr,
+                 opTilingFuncs_[opType] = funcs;
+                 OP_LOGI("Op %s has tiling and tiling parse funcs", opTypeStr), return);
         // ops use auto tiling func
         auto defaultFuncs = spaceRegistry->GetOpImpl("DefaultImpl");
-        OP_CHECK(
-            defaultFuncs == nullptr || defaultFuncs->tiling_parse == nullptr || defaultFuncs->tiling == nullptr,
-            opTilingFuncs_[opType] = defaultFuncs;
-            OP_LOGI("Op %s use auto tiling func", opTypeStr), return);
+        OP_CHECK(defaultFuncs == nullptr || defaultFuncs->tiling_parse == nullptr || defaultFuncs->tiling == nullptr,
+                 opTilingFuncs_[opType] = defaultFuncs;
+                 OP_LOGI("Op %s use auto tiling func", opTypeStr), return);
 
         OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
         ret = ACLNN_ERR_PARAM_NULLPTR;
@@ -82,8 +79,8 @@ aclnnStatus SocContext::SetupPlatformInfo()
     int32_t deviceId;
     auto ret = aclrtGetDevice(&deviceId);
     CHECK_COND(ret == ACL_SUCCESS, ACLNN_ERR_INNER, "aclrtGetDevice failed, %d", ret);
-    auto getPlatformRet =
-        fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId, platformInfo_, true);
+    auto getPlatformRet = fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId, platformInfo_,
+                                                                                                true);
     if (getPlatformRet != 0) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Call PlatformInfoManager::GeInstance().GetPlatformInstanceByDevice failed.");
         return ACLNN_ERR_INNER;

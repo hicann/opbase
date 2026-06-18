@@ -82,10 +82,10 @@ public:
     RecordOpArgCallbacker() {};
     ~RecordOpArgCallbacker() {};
 
-    static int32_t RecordOpArgCallback(
-        uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size);
-    static int32_t RecordOpArgDump(
-        uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size);
+    static int32_t RecordOpArgCallback(uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig,
+                                       [[maybe_unused]] int32_t size);
+    static int32_t RecordOpArgDump(uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig,
+                                   [[maybe_unused]] int32_t size);
 };
 
 class DevPtrGuard {
@@ -167,8 +167,8 @@ static void TraitsAclTensor(std::vector<const aclTensor*>& result, const std::tu
 {
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensor,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddToList(result, args) :
                   void()),
              ...);
@@ -176,8 +176,8 @@ static void TraitsAclTensor(std::vector<const aclTensor*>& result, const std::tu
         t);
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensorList,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddToList(result, args) :
                   void()),
              ...);
@@ -190,8 +190,8 @@ static void TraitsAclTensor(FVector<const aclTensor*>& result, const std::tuple<
 {
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensor,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddToList(result, args) :
                   void()),
              ...);
@@ -199,8 +199,8 @@ static void TraitsAclTensor(FVector<const aclTensor*>& result, const std::tuple<
         t);
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensorList,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddToList(result, args) :
                   void()),
              ...);
@@ -230,9 +230,8 @@ static void TraitsAclTensor(FVector<const aclTensor*>& result, const std::tuple<
     });
 }
 
-[[maybe_unused]] static void TraitsAclTensorAndIdx(
-    std::vector<const aclTensor*>& result, std::vector<uint32_t>& idxs, OpArgList& opArgList, bool genPlaceholder,
-    int32_t& currentIdx)
+[[maybe_unused]] static void TraitsAclTensorAndIdx(std::vector<const aclTensor*>& result, std::vector<uint32_t>& idxs,
+                                                   OpArgList& opArgList, bool genPlaceholder, int32_t& currentIdx)
 {
     opArgList.VisitByNoReturn([&result, &idxs, genPlaceholder, &currentIdx]([[maybe_unused]] size_t idx, OpArg& arg) {
         if (arg.type == OpArgType::OPARG_ACLTENSOR) {
@@ -243,9 +242,9 @@ static void TraitsAclTensor(FVector<const aclTensor*>& result, const std::tuple<
     });
 }
 
-[[maybe_unused]] static void TraitsAclTensorAndIdx(
-    std::vector<const aclTensor*>& result, std::vector<uint32_t>& idxs, OpArgList& opArgList, bool genPlaceholder,
-    bool hasDevPtrArg, int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
+[[maybe_unused]] static void TraitsAclTensorAndIdx(std::vector<const aclTensor*>& result, std::vector<uint32_t>& idxs,
+                                                   OpArgList& opArgList, bool genPlaceholder, bool hasDevPtrArg,
+                                                   int32_t& currentIdx, std::vector<int32_t>& tensorOffset)
 {
     opArgList.VisitByNoReturn([&result, &idxs, genPlaceholder, hasDevPtrArg, &currentIdx, &tensorOffset](
                                   [[maybe_unused]] size_t idx, OpArg& arg) {
@@ -253,12 +252,11 @@ static void TraitsAclTensor(FVector<const aclTensor*>& result, const std::tuple<
             AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensor*>(arg->pointer), currentIdx);
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
             if (hasDevPtrArg) {
-                AddToListAndIdx(
-                    result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer), currentIdx,
-                    tensorOffset);
+                AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer),
+                                currentIdx, tensorOffset);
             } else {
-                AddToListAndIdx(
-                    result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer), currentIdx);
+                AddToListAndIdx(result, idxs, genPlaceholder, reinterpret_cast<aclTensorList*>(arg->pointer),
+                                currentIdx);
             }
         }
     });

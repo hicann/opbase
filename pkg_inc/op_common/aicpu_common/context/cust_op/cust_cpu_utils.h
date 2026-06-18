@@ -11,30 +11,30 @@
 #define AICPU_CUST_CPU_UTILS_H
 #include "cpu_context.h"
 namespace aicpu {
-#define CUST_KERNEL_LOG_DEBUG(ctx, fmt, ...) \
-    CustCpuKernelUtils::CustLogDebug(        \
-        ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CUST_KERNEL_LOG_INFO(ctx, fmt, ...) \
-    CustCpuKernelUtils::CustLogInfo(        \
-        ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CUST_KERNEL_LOG_WARNING(ctx, fmt, ...) \
-    CustCpuKernelUtils::CustLogWarning(        \
-        ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CUST_KERNEL_LOG_ERROR(ctx, fmt, ...) \
-    CustCpuKernelUtils::CustLogError(        \
-        ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CUST_KERNEL_LOG_DEBUG(ctx, fmt, ...)                                                                 \
+    CustCpuKernelUtils::CustLogDebug(ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, \
+                                     ##__VA_ARGS__)
+#define CUST_KERNEL_LOG_INFO(ctx, fmt, ...)                                                                 \
+    CustCpuKernelUtils::CustLogInfo(ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, \
+                                    ##__VA_ARGS__)
+#define CUST_KERNEL_LOG_WARNING(ctx, fmt, ...)                                                                 \
+    CustCpuKernelUtils::CustLogWarning(ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, \
+                                       ##__VA_ARGS__)
+#define CUST_KERNEL_LOG_ERROR(ctx, fmt, ...)                                                                 \
+    CustCpuKernelUtils::CustLogError(ctx, "[%s:%d][%s:%d]:" fmt, __FILE__, __LINE__, __FUNCTION__, __LINE__, \
+                                     ##__VA_ARGS__)
 
 class CustCpuKernelUtils {
 public:
-    static void CustLogDebug(aicpu::CpuKernelContext &ctx, const char *fmt, ...);
-    static void CustLogWarning(aicpu::CpuKernelContext &ctx, const char *fmt, ...);
-    static void CustLogInfo(aicpu::CpuKernelContext &ctx, const char *fmt, ...);
-    static void CustLogError(aicpu::CpuKernelContext &ctx, const char *fmt, ...);
-    static void DumpCustomLog(int32_t module_id, int32_t level, const char *fmt, ...);
+    static void CustLogDebug(aicpu::CpuKernelContext& ctx, const char* fmt, ...);
+    static void CustLogWarning(aicpu::CpuKernelContext& ctx, const char* fmt, ...);
+    static void CustLogInfo(aicpu::CpuKernelContext& ctx, const char* fmt, ...);
+    static void CustLogError(aicpu::CpuKernelContext& ctx, const char* fmt, ...);
+    static void DumpCustomLog(int32_t module_id, int32_t level, const char* fmt, ...);
 
 private:
-    static void WriteCustLog(aicpu::CpuKernelContext &ctx, uint32_t level, const char *fmt, va_list v);
-    static void SafeWrite(aicpu::CpuKernelContext &ctx, char *msg, size_t len);
+    static void WriteCustLog(aicpu::CpuKernelContext& ctx, uint32_t level, const char* fmt, va_list v);
+    static void SafeWrite(aicpu::CpuKernelContext& ctx, char* msg, size_t len);
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

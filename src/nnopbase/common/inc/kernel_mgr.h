@@ -80,8 +80,8 @@ public:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus GetWorkspace(
-        uint32_t opType, size_t const*& size, size_t& num, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
+    aclnnStatus GetWorkspace(uint32_t opType, size_t const*& size, size_t& num, OpArgList& inputs, OpArgList& outputs,
+                             OpArgList& attrs)
     {
         OP_LOGI("Begin GetWorkspace, opType: %u", opType);
         aclnnStatus ret = AclOpKernelInit(opType);
@@ -133,12 +133,11 @@ private:
 
     aclnnStatus ParseDynamicKernelInStaticLib(const string& configFileName);
     aclnnStatus ParseDynamicKernelConfig(const std::vector<std::string>& configFileNames);
-    aclnnStatus ParseDynamicKernelConfig(
-        const std::string& configDir, const std::string& binJsonDir, const std::string& configFileName,
-        const std::string& opsRepoName, bool debug);
-    aclnnStatus ParseDynamicKernelConfig(
-        const std::vector<std::string>& configDir, const std::vector<std::string>& binJsonDir,
-        const std::vector<std::string>& configFileNames);
+    aclnnStatus ParseDynamicKernelConfig(const std::string& configDir, const std::string& binJsonDir,
+                                         const std::string& configFileName, const std::string& opsRepoName, bool debug);
+    aclnnStatus ParseDynamicKernelConfig(const std::vector<std::string>& configDir,
+                                         const std::vector<std::string>& binJsonDir,
+                                         const std::vector<std::string>& configFileNames);
 
     aclnnStatus ParseDynamicKernels(uint32_t opType);
     aclnnStatus ParseStaticKernels(uint32_t opType);

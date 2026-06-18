@@ -25,8 +25,8 @@ template <typename T>
 class ReduceTensorEmpty {
 public:
     template <class... Args>
-    __aicore__ inline explicit ReduceTensorEmpty(
-        const ReduceOpTilingData* tilingData, GlobalTensor<uint8_t>* output, TPipe* pipeIn, Args... args)
+    __aicore__ inline explicit ReduceTensorEmpty(const ReduceOpTilingData* tilingData, GlobalTensor<uint8_t>* output,
+                                                 TPipe* pipeIn, Args... args)
     {
         tiling_ = tilingData;
         bufferSize_ = tiling_->basicBlock == 0 ? bufferSize_ : tiling_->basicBlock;

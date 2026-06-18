@@ -256,8 +256,8 @@ uint64_t AicpuTaskSpace::CalcHostInputDataSize(const FVector<const aclTensor*>& 
     return totalSize;
 }
 
-uint64_t AicpuTaskSpace::CalcDeviceCacheSize(
-    const FVector<const aclTensor*>& inputs, std::unique_ptr<AicpuTask>& aicpuTask) const
+uint64_t AicpuTaskSpace::CalcDeviceCacheSize(const FVector<const aclTensor*>& inputs,
+                                             std::unique_ptr<AicpuTask>& aicpuTask) const
 {
     uint64_t cacheSize = 0;
     if (unknownType_ == ge::DEPEND_SHAPE_RANGE) {
@@ -271,8 +271,8 @@ uint64_t AicpuTaskSpace::CalcDeviceCacheSize(
     return cacheSize;
 }
 
-size_t AicpuTaskSpace::GenTaskKey(
-    uint8_t inputKey[], size_t& keyLen, op::OpArgContext* args, const FVector<const aclTensor*>& inputs) const
+size_t AicpuTaskSpace::GenTaskKey(uint8_t inputKey[], size_t& keyLen, op::OpArgContext* args,
+                                  const FVector<const aclTensor*>& inputs) const
 {
     keyLen = 0U;
     uint8_t* key = &inputKey[0];
@@ -293,8 +293,8 @@ size_t AicpuTaskSpace::GenTaskKey(
     return seed;
 }
 
-AicpuTask* AicpuTaskSpace::FindTask(
-    aclOpExecutor* executor, op::OpArgContext* args, const FVector<const aclTensor*>& inputs)
+AicpuTask* AicpuTaskSpace::FindTask(aclOpExecutor* executor, op::OpArgContext* args,
+                                    const FVector<const aclTensor*>& inputs)
 {
     const std::lock_guard<std::mutex> lk(mutex_);
     RecordAicpuTime(kFindTaskStart);
@@ -323,9 +323,8 @@ AicpuTask* AicpuTaskSpace::FindTask(
                 }
                 RecordAicpuTime(kFindTaskEnd);
                 task->isVisit_ = true;
-                OP_LOGI(
-                    "Find %s task success, no need create, cache_size=%lu.", opType_.c_str(),
-                    executor->workspaceDeviceAicpuMem_);
+                OP_LOGI("Find %s task success, no need create, cache_size=%lu.", opType_.c_str(),
+                        executor->workspaceDeviceAicpuMem_);
                 return task.get();
             }
         }
@@ -335,8 +334,8 @@ AicpuTask* AicpuTaskSpace::FindTask(
     return nullptr;
 }
 
-AicpuTask* AicpuTaskSpace::GetOrCreateTask(
-    aclOpExecutor* executor, const FVector<std::string>& attrNames, op::OpArgContext* args)
+AicpuTask* AicpuTaskSpace::GetOrCreateTask(aclOpExecutor* executor, const FVector<std::string>& attrNames,
+                                           op::OpArgContext* args)
 {
     gAicpuTimeStamp.isEnable = EnableAicpuTimeStamp();
     FVector<const aclTensor*> inputs;
@@ -395,8 +394,8 @@ aclnnStatus AicpuTask::SetIoTensors(aclOpExecutor* executor, op::OpArgContext* a
     outputs_.clear();
     CreateTensorList(executor, *args->GetOpArg(op::OP_INPUT_ARG), inputs_);
     CreateTensorList(executor, *args->GetOpArg(op::OP_OUTPUT_ARG), outputs_);
-    return extInfoHandle_->UpdateInputAndOutputShape(
-        inputs_, outputs_, executor->GetStream(), executor, deviceExtMemSize_, deviceCacheOffset_);
+    return extInfoHandle_->UpdateInputAndOutputShape(inputs_, outputs_, executor->GetStream(), executor,
+                                                     deviceExtMemSize_, deviceCacheOffset_);
 }
 } // namespace internal
 } // namespace op

@@ -29,8 +29,8 @@ static OpInfoRecordRegister* Instance()
     static OpInfoRecordRegister instance;
     return &instance;
 }
-void OpInfoRecordRegister::ExeOptInfoStat(
-    const gert::TilingContext* ctx, const OpCompilerOption& opt, const OpKernelInfo* kernelInfo) const
+void OpInfoRecordRegister::ExeOptInfoStat(const gert::TilingContext* ctx, const OpCompilerOption& opt,
+                                          const OpKernelInfo* kernelInfo) const
 {
     return;
 }

@@ -47,8 +47,8 @@ struct TTypes {
     // Scalar tensor (implemented as a rank-0 tensor) of scalar type T.
     typedef Eigen::TensorMap<Eigen::TensorFixedSize<T, Eigen::Sizes<>, Eigen::RowMajor, IndexType>, Eigen::Aligned>
         Scalar;
-    typedef Eigen::TensorMap<
-        Eigen::TensorFixedSize<const T, Eigen::Sizes<>, Eigen::RowMajor, IndexType>, Eigen::Aligned>
+    typedef Eigen::TensorMap<Eigen::TensorFixedSize<const T, Eigen::Sizes<>, Eigen::RowMajor, IndexType>,
+                             Eigen::Aligned>
         ConstScalar;
 
     // Unaligned Scalar tensor of scalar type T.

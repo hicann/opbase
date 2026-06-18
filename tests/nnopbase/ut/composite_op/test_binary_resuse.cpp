@@ -56,28 +56,20 @@ static OP_RESOURCES GenerateFakeOpResource()
     static std::string opBinJson = " ";
     static std::string opBinData = "123";
     std::vector<std::tuple<const uint8_t*, const uint8_t*>> binInfo;
-    binInfo.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(opDescJson.c_str()),
-            reinterpret_cast<const uint8_t*>(opDescJson.c_str() + opDescJson.size())));
-    binInfo.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(opBinJson.c_str()),
-            reinterpret_cast<const uint8_t*>(opBinJson.c_str() + opBinJson.size())));
-    binInfo.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(opBinData.c_str()),
-            reinterpret_cast<const uint8_t*>(opBinData.c_str() + opBinData.size())));
+    binInfo.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(opDescJson.c_str()),
+                                         reinterpret_cast<const uint8_t*>(opDescJson.c_str() + opDescJson.size())));
+    binInfo.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(opBinJson.c_str()),
+                                         reinterpret_cast<const uint8_t*>(opBinJson.c_str() + opBinJson.size())));
+    binInfo.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(opBinData.c_str()),
+                                         reinterpret_cast<const uint8_t*>(opBinData.c_str() + opBinData.size())));
 
     static std::string rk = "456";
     std::vector<std::tuple<const uint8_t*, const uint8_t*>> runtimeKb;
-    runtimeKb.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(rk.c_str()), reinterpret_cast<const uint8_t*>(rk.c_str() + rk.size())));
+    runtimeKb.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(rk.c_str()),
+                                           reinterpret_cast<const uint8_t*>(rk.c_str() + rk.size())));
 
-    return {
-        {"fake2", std::make_tuple(tilingFuncs, binInfo, runtimeKb)},
-        {"x", std::make_tuple(tilingFuncs, binInfo, runtimeKb)}};
+    return {{"fake2", std::make_tuple(tilingFuncs, binInfo, runtimeKb)},
+            {"x", std::make_tuple(tilingFuncs, binInfo, runtimeKb)}};
 }
 
 static OP_SOC_RESOURCES GenerateFakeOpSocResource(std::string& socVersion)
@@ -89,31 +81,23 @@ static OP_SOC_RESOURCES GenerateFakeOpSocResource(std::string& socVersion)
     static std::string opBinJson = " ";
     static std::string opBinData = "123";
     std::vector<std::tuple<const uint8_t*, const uint8_t*>> binInfo;
-    binInfo.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(opDescJson.c_str()),
-            reinterpret_cast<const uint8_t*>(opDescJson.c_str() + opDescJson.size())));
-    binInfo.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(opBinJson.c_str()),
-            reinterpret_cast<const uint8_t*>(opBinJson.c_str() + opBinJson.size())));
-    binInfo.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(opBinData.c_str()),
-            reinterpret_cast<const uint8_t*>(opBinData.c_str() + opBinData.size())));
+    binInfo.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(opDescJson.c_str()),
+                                         reinterpret_cast<const uint8_t*>(opDescJson.c_str() + opDescJson.size())));
+    binInfo.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(opBinJson.c_str()),
+                                         reinterpret_cast<const uint8_t*>(opBinJson.c_str() + opBinJson.size())));
+    binInfo.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(opBinData.c_str()),
+                                         reinterpret_cast<const uint8_t*>(opBinData.c_str() + opBinData.size())));
 
     std::map<ge::AscendString, std::vector<std::tuple<const uint8_t*, const uint8_t*>>> binMap;
     binMap[socVersion.c_str()] = binInfo;
 
     static std::string rk = "456";
     std::vector<std::tuple<const uint8_t*, const uint8_t*>> runtimeKb;
-    runtimeKb.emplace_back(
-        std::make_tuple(
-            reinterpret_cast<const uint8_t*>(rk.c_str()), reinterpret_cast<const uint8_t*>(rk.c_str() + rk.size())));
+    runtimeKb.emplace_back(std::make_tuple(reinterpret_cast<const uint8_t*>(rk.c_str()),
+                                           reinterpret_cast<const uint8_t*>(rk.c_str() + rk.size())));
 
-    return {
-        {"fake3", std::make_tuple(tilingFuncs, binMap, runtimeKb)},
-        {"x", std::make_tuple(tilingFuncs, binMap, runtimeKb)}};
+    return {{"fake3", std::make_tuple(tilingFuncs, binMap, runtimeKb)},
+            {"x", std::make_tuple(tilingFuncs, binMap, runtimeKb)}};
 }
 
 class TestBinaryReuse : public testing::Test {
@@ -218,9 +202,8 @@ protected:
         delete launcher;                                                                                   \
     } while (0)
 
-    void CreateRunAndCheck(
-        bool withBias, const string& jsonPath, const string& binPath, bool dtypeCorrect = true,
-        bool formatCorrect = true)
+    void CreateRunAndCheck(bool withBias, const string& jsonPath, const string& binPath, bool dtypeCorrect = true,
+                           bool formatCorrect = true)
     {
         int64_t multiStride1 = 2;
         int64_t multiStride2 = 2;
@@ -254,25 +237,23 @@ protected:
         if (!formatCorrect) {
             inputAFormat = aclFormat::ACL_FORMAT_NCHW;
         }
-        aclTensor* a = aclCreateTensor(
-            shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, inputAFormat, storageShapeA.data(),
-            storageShapeA.size(), deviceDataA);
-        aclTensor* b = aclCreateTensor(
-            shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_FRACTAL_Z,
-            storageShapeB.data(), storageShapeB.size(), deviceDataB);
+        aclTensor* a = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, inputAFormat,
+                                       storageShapeA.data(), storageShapeA.size(), deviceDataA);
+        aclTensor* b = aclCreateTensor(shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0,
+                                       aclFormat::ACL_FORMAT_FRACTAL_Z, storageShapeB.data(), storageShapeB.size(),
+                                       deviceDataB);
         aclTensor* bias = nullptr;
         if (withBias) {
-            bias = aclCreateTensor(
-                shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_ND,
-                storageShapeB.data(), storageShapeB.size(), deviceDataB);
+            bias = aclCreateTensor(shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_ND,
+                                   storageShapeB.data(), storageShapeB.size(), deviceDataB);
         }
 
         if (!dtypeCorrect) {
             dtypeResult = aclDataType::ACL_FLOAT;
         }
-        aclTensor* result = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtypeResult, stridesResult.data(), 0, aclFormat::ACL_FORMAT_NC1HWC0,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
+        aclTensor* result = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtypeResult, stridesResult.data(),
+                                            0, aclFormat::ACL_FORMAT_NC1HWC0, storageShapeResult.data(),
+                                            storageShapeResult.size(), deviceDataResult);
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("Conv2D");
@@ -324,9 +305,8 @@ protected:
         LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(tensorList), OP_OUTPUT(result));
     }
 
-    void CreateTransData(
-        ge::Format inputFormat, ge::DataType inputDt, ge::Format outputFormat, ge::DataType outputDt,
-        const string& filePrefix, bool is_soc_910b = false)
+    void CreateTransData(ge::Format inputFormat, ge::DataType inputDt, ge::Format outputFormat, ge::DataType outputDt,
+                         const string& filePrefix, bool is_soc_910b = false)
     {
         gert::Shape shapeInput = {2, 1, 16, 16};
         if (inputFormat == ge::FORMAT_FRACTAL_Z) {
@@ -346,42 +326,40 @@ protected:
             }
         }
         auto unique_executor = CREATE_EXECUTOR();
-        aclTensor* tensorIn =
-            unique_executor->AllocTensor(shapeInput, shapeInput, inputDt, inputFormat, ge::FORMAT_NCHW);
+        aclTensor* tensorIn = unique_executor->AllocTensor(shapeInput, shapeInput, inputDt, inputFormat,
+                                                           ge::FORMAT_NCHW);
 
-        aclTensor* tensorOut =
-            unique_executor->AllocTensor(shapeResult, shapeResult, outputDt, outputFormat, ge::FORMAT_NCHW);
+        aclTensor* tensorOut = unique_executor->AllocTensor(shapeResult, shapeResult, outputDt, outputFormat,
+                                                            ge::FORMAT_NCHW);
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("TransData");
         LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(tensorIn), OP_OUTPUT(tensorOut));
     }
 
-    void CreateMatMul(
-        ge::Format inputFormat, ge::DataType inputDt, ge::Format outputFormat, ge::DataType outputDt,
-        const string& filePrefix, bool has_attr = false, bool transposeX1 = true, bool transposeX2 = true)
+    void CreateMatMul(ge::Format inputFormat, ge::DataType inputDt, ge::Format outputFormat, ge::DataType outputDt,
+                      const string& filePrefix, bool has_attr = false, bool transposeX1 = true, bool transposeX2 = true)
     {
         auto unique_executor = CREATE_EXECUTOR();
 
         gert::Shape inputShape({2, 1, 32, 16});
-        aclTensor* tensorIn1 =
-            unique_executor->AllocTensor(inputShape, inputShape, inputDt, inputFormat, ge::FORMAT_ND);
+        aclTensor* tensorIn1 = unique_executor->AllocTensor(inputShape, inputShape, inputDt, inputFormat,
+                                                            ge::FORMAT_ND);
 
-        aclTensor* tensorIn2 =
-            unique_executor->AllocTensor(inputShape, inputShape, inputDt, inputFormat, ge::FORMAT_ND);
+        aclTensor* tensorIn2 = unique_executor->AllocTensor(inputShape, inputShape, inputDt, inputFormat,
+                                                            ge::FORMAT_ND);
 
-        aclTensor* tensorOut =
-            unique_executor->AllocTensor(inputShape, inputShape, outputDt, outputFormat, ge::FORMAT_ND);
+        aclTensor* tensorOut = unique_executor->AllocTensor(inputShape, inputShape, outputDt, outputFormat,
+                                                            ge::FORMAT_ND);
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("MatMul");
         if (has_attr) {
-            LAUNCH_AND_CHECK(
-                opType, AI_CORE, profilingId, filePrefix, OP_INPUT(tensorIn1, tensorIn2), OP_OUTPUT(tensorOut),
-                OP_ATTR(transposeX1, transposeX2));
+            LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(tensorIn1, tensorIn2),
+                             OP_OUTPUT(tensorOut), OP_ATTR(transposeX1, transposeX2));
         } else {
-            LAUNCH_AND_CHECK(
-                opType, AI_CORE, profilingId, filePrefix, OP_INPUT(tensorIn1, tensorIn2), OP_OUTPUT(tensorOut));
+            LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(tensorIn1, tensorIn2),
+                             OP_OUTPUT(tensorOut));
         }
     }
 
@@ -421,9 +399,8 @@ protected:
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("LayerNormBetaGammaBackpropV2");
 
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(output0, output1),
-            OP_ATTR(std::forward<ATTRS>(attrs)...));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1),
+                         OP_OUTPUT(output0, output1), OP_ATTR(std::forward<ATTRS>(attrs)...));
     }
 
     void CreateConcatD(aclDataType dtype, aclFormat format, const string& filePrefix)
@@ -449,15 +426,14 @@ protected:
 
         aclTensor* tensors[20] = {nullptr};
         for (auto& tensor : tensors) {
-            tensor = aclCreateTensor(
-                shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, format, storageShapeA.data(),
-                storageShapeA.size(), deviceDataA);
+            tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, format,
+                                     storageShapeA.data(), storageShapeA.size(), deviceDataA);
         }
 
         aclTensorList* tensorList = aclCreateTensorList(reinterpret_cast<const aclTensor**>(&tensors), 3);
-        aclTensor* result = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtypeResult, stridesResult.data(), 0, format,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
+        aclTensor* result = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtypeResult, stridesResult.data(),
+                                            0, format, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("ConcatD");
@@ -470,8 +446,8 @@ protected:
     }
 
     template <typename... ATTRS>
-    void CreateSingleInAndout(
-        const string& op_type, op::DataType dtype, op::Format format, const string& filePrefix, ATTRS&&... opAttrs)
+    void CreateSingleInAndout(const string& op_type, op::DataType dtype, op::Format format, const string& filePrefix,
+                              ATTRS&&... opAttrs)
     {
         auto unique_executor = CREATE_EXECUTOR();
 
@@ -480,15 +456,14 @@ protected:
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType(op_type);
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input), OP_OUTPUT(output),
-            OP_ATTR(std::forward<ATTRS>(opAttrs)...));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input), OP_OUTPUT(output),
+                         OP_ATTR(std::forward<ATTRS>(opAttrs)...));
     }
 
     template <typename... ATTRS>
-    void CreateSingleInAndoutWithShape(
-        const string& op_type, op::DataType dtypeIn, op::DataType dtypeOut, op::Format format, const op::Shape& shapeIn,
-        const op::Shape& shapeOut, const string& filePrefix, ATTRS&&... opAttrs)
+    void CreateSingleInAndoutWithShape(const string& op_type, op::DataType dtypeIn, op::DataType dtypeOut,
+                                       op::Format format, const op::Shape& shapeIn, const op::Shape& shapeOut,
+                                       const string& filePrefix, ATTRS&&... opAttrs)
     {
         auto unique_executor = CREATE_EXECUTOR();
 
@@ -497,9 +472,8 @@ protected:
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType(op_type);
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input), OP_OUTPUT(output),
-            OP_ATTR(std::forward<ATTRS>(opAttrs)...));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input), OP_OUTPUT(output),
+                         OP_ATTR(std::forward<ATTRS>(opAttrs)...));
     }
 
     template <typename... ATTRS>
@@ -510,8 +484,8 @@ protected:
         LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_ATTR(std::forward<ATTRS>(opAttrs)...));
     }
 
-    void CreateTopKV2(
-        const string& op_type, aclDataType dtype0, aclDataType dtype1, aclFormat format, const string& filePrefix)
+    void CreateTopKV2(const string& op_type, aclDataType dtype0, aclDataType dtype1, aclFormat format,
+                      const string& filePrefix)
     {
         int64_t multiStride1 = 2;
         int64_t multiStrideResult = 2;
@@ -529,24 +503,23 @@ protected:
         vector<int32_t> dataA(GetShapeSize(storageShapeA) * 2, 2);
         void* deviceDataResult = nullptr;
 
-        aclTensor* input0 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
-        aclTensor* input1 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype1, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
-        aclTensor* result0 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
-        aclTensor* result1 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype1, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
+        aclTensor* input0 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0,
+                                            format, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* input1 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype1, stridesResult.data(), 0,
+                                            format, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* result0 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0,
+                                             format, storageShapeResult.data(), storageShapeResult.size(),
+                                             deviceDataResult);
+        aclTensor* result1 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype1, stridesResult.data(), 0,
+                                             format, storageShapeResult.data(), storageShapeResult.size(),
+                                             deviceDataResult);
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType(op_type);
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(result0, result1),
-            OP_ATTR(true, 0, true));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1),
+                         OP_OUTPUT(result0, result1), OP_ATTR(true, 0, true));
         delete input0;
         delete input1;
         delete result0;
@@ -554,9 +527,8 @@ protected:
     }
 
     template <typename... ATTRS>
-    void CreateTwoInAndSingleout(
-        const string& op_type, ge::DataType dtype0, ge::DataType dtype1, ge::Format format, const string& filePrefix,
-        ATTRS&&... attrs)
+    void CreateTwoInAndSingleout(const string& op_type, ge::DataType dtype0, ge::DataType dtype1, ge::Format format,
+                                 const string& filePrefix, ATTRS&&... attrs)
     {
         auto unique_executor = CREATE_EXECUTOR();
 
@@ -567,9 +539,8 @@ protected:
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType(op_type);
 
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(output0),
-            OP_ATTR(std::forward<ATTRS>(attrs)...));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(output0),
+                         OP_ATTR(std::forward<ATTRS>(attrs)...));
     }
 
     void TestStaticBinaryAdd(const string& filePrefix)
@@ -655,9 +626,8 @@ protected:
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("Conv2D");
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(output0),
-            OP_ATTR(stridesIntArray, paddingsIntArray, dilationsIntArray, groups, dataFormat, offset_x));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(output0),
+                         OP_ATTR(stridesIntArray, paddingsIntArray, dilationsIntArray, groups, dataFormat, offset_x));
 
         auto input = OP_INPUT(input0, input1);
         auto output = OP_OUTPUT(output0);
@@ -688,9 +658,8 @@ protected:
         EXPECT_EQ(rc, ACL_SUCCESS);
     }
 
-    void CreateNLLLoss(
-        const string& op_type, aclDataType dtype0, aclDataType dtype1, aclFormat format, size_t input_num,
-        const string& filePrefix, const std::string& attr)
+    void CreateNLLLoss(const string& op_type, aclDataType dtype0, aclDataType dtype1, aclFormat format,
+                       size_t input_num, const string& filePrefix, const std::string& attr)
     {
         int64_t multiStride1 = 2;
         int64_t multiStrideResult = 2;
@@ -708,33 +677,31 @@ protected:
         vector<int32_t> dataA(GetShapeSize(storageShapeA) * 2, 2);
         void* deviceDataResult = nullptr;
 
-        aclTensor* input0 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
-        aclTensor* input1 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype1, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
+        aclTensor* input0 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0,
+                                            format, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* input1 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype1, stridesResult.data(), 0,
+                                            format, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
 
-        aclTensor* result0 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
-        aclTensor* result1 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0, format, storageShapeResult.data(),
-            storageShapeResult.size(), deviceDataResult);
+        aclTensor* result0 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0,
+                                             format, storageShapeResult.data(), storageShapeResult.size(),
+                                             deviceDataResult);
+        aclTensor* result1 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0,
+                                             format, storageShapeResult.data(), storageShapeResult.size(),
+                                             deviceDataResult);
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType(op_type);
         if (input_num > 2) {
-            aclTensor* input2 = aclCreateTensor(
-                shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0, format,
-                storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-            LAUNCH_AND_CHECK(
-                opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1, input2), OP_OUTPUT(result0, result1),
-                OP_ATTR(attr.c_str()));
+            aclTensor* input2 = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtype0, stridesResult.data(), 0,
+                                                format, storageShapeResult.data(), storageShapeResult.size(),
+                                                deviceDataResult);
+            LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1, input2),
+                             OP_OUTPUT(result0, result1), OP_ATTR(attr.c_str()));
             delete input2;
         } else {
-            LAUNCH_AND_CHECK(
-                opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1), OP_OUTPUT(result0, result1),
-                OP_ATTR(attr.c_str()));
+            LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1),
+                             OP_OUTPUT(result0, result1), OP_ATTR(attr.c_str()));
         }
 
         delete input0;
@@ -762,25 +729,24 @@ protected:
         vector<int32_t> dataA(GetShapeSize(storageShapeA) * 2, 2);
         void* deviceDataResult = nullptr;
 
-        aclTensor* input0 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_INT32, stridesResult.data(), 0, ACL_FORMAT_NCHW,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-        aclTensor* input1 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(), 0, ACL_FORMAT_FRACTAL_Z,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-        aclTensor* input2 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(), 0, ACL_FORMAT_NC1HWC0,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-        aclTensor* result = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(), 0, ACL_FORMAT_NC1HWC0,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
+        aclTensor* input0 = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_INT32, stridesResult.data(), 0,
+                                            ACL_FORMAT_NCHW, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* input1 = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(),
+                                            0, ACL_FORMAT_FRACTAL_Z, storageShapeResult.data(),
+                                            storageShapeResult.size(), deviceDataResult);
+        aclTensor* input2 = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(),
+                                            0, ACL_FORMAT_NC1HWC0, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* result = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(),
+                                            0, ACL_FORMAT_NC1HWC0, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("Conv2DBackpropInput");
 
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1, input2), OP_OUTPUT(result),
-            OP_ATTR(std::forward<ATTRS>(opAttrs)...));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1, input2), OP_OUTPUT(result),
+                         OP_ATTR(std::forward<ATTRS>(opAttrs)...));
 
         delete input0;
         delete input1;
@@ -806,18 +772,18 @@ protected:
         vector<int32_t> dataA(GetShapeSize(storageShapeA) * 2, 2);
         void* deviceDataResult = nullptr;
 
-        aclTensor* input0 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(), 0, ACL_FORMAT_NC1HWC0,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-        aclTensor* input1 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_INT32, stridesResult.data(), 0, ACL_FORMAT_NCHW,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-        aclTensor* input2 = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(), 0, ACL_FORMAT_NC1HWC0,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
-        aclTensor* result = aclCreateTensor(
-            shapeResult.data(), shapeResult.size(), ACL_FLOAT, stridesResult.data(), 0, ACL_FORMAT_FRACTAL_Z,
-            storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
+        aclTensor* input0 = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(),
+                                            0, ACL_FORMAT_NC1HWC0, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* input1 = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_INT32, stridesResult.data(), 0,
+                                            ACL_FORMAT_NCHW, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* input2 = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_FLOAT16, stridesResult.data(),
+                                            0, ACL_FORMAT_NC1HWC0, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
+        aclTensor* result = aclCreateTensor(shapeResult.data(), shapeResult.size(), ACL_FLOAT, stridesResult.data(), 0,
+                                            ACL_FORMAT_FRACTAL_Z, storageShapeResult.data(), storageShapeResult.size(),
+                                            deviceDataResult);
 
         const char* nchw = "NCHW";
         std::string nchwStr("NCHW");
@@ -829,9 +795,8 @@ protected:
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("Conv2DBackpropFilter");
 
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1, input2), OP_OUTPUT(result),
-            OP_ATTR(&strides, &pads, &dilations, value, nchw));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, OP_INPUT(input0, input1, input2), OP_OUTPUT(result),
+                         OP_ATTR(&strides, &pads, &dilations, value, nchw));
 
         delete input0;
         delete input1;
@@ -903,18 +868,15 @@ TEST_F(TestBinaryReuse, testAddnBinaryReuseWithoutAcltensorList)
     void* deviceDataB = nullptr;
     void* deviceDataResult = nullptr;
 
-    aclTensor* a = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
-    aclTensor* b = aclCreateTensor(
-        shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeB.data(),
-        storageShapeB.size(), deviceDataB);
-    aclTensor* c = aclCreateTensor(
-        shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeB.data(),
-        storageShapeB.size(), deviceDataB);
-    aclTensor* result = aclCreateTensor(
-        shapeResult.data(), shapeResult.size(), dtypeResult, stridesResult.data(), 0, aclFormat::ACL_FORMAT_ND,
-        storageShapeResult.data(), storageShapeResult.size(), deviceDataResult);
+    aclTensor* a = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND,
+                                   storageShapeA.data(), storageShapeA.size(), deviceDataA);
+    aclTensor* b = aclCreateTensor(shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_ND,
+                                   storageShapeB.data(), storageShapeB.size(), deviceDataB);
+    aclTensor* c = aclCreateTensor(shapeB.data(), shapeB.size(), dtype2, stridesB.data(), 0, aclFormat::ACL_FORMAT_ND,
+                                   storageShapeB.data(), storageShapeB.size(), deviceDataB);
+    aclTensor* result = aclCreateTensor(shapeResult.data(), shapeResult.size(), dtypeResult, stridesResult.data(), 0,
+                                        aclFormat::ACL_FORMAT_ND, storageShapeResult.data(), storageShapeResult.size(),
+                                        deviceDataResult);
 
     auto inputs = OP_INPUT(a, b, c);
     auto outputs = OP_OUTPUT(result);
@@ -1409,8 +1371,8 @@ TEST_F(TestBinaryReuse, ReduceAllFloat16AndFLoat32UseHighPrecision)
 
 TEST_F(TestBinaryReuse, TestStaticBinaryAdd)
 {
-    string filePrefix =
-        "static_kernel/ai_core/static_kernel_202307261051/TestStaticAdd/TestStaticAdd_high_performance_0";
+    string
+        filePrefix = "static_kernel/ai_core/static_kernel_202307261051/TestStaticAdd/TestStaticAdd_high_performance_0";
     TestStaticBinaryAdd(filePrefix);
 }
 
@@ -1423,25 +1385,25 @@ TEST_F(TestBinaryReuse, TopKV2)
 TEST_F(TestBinaryReuse, NLLLoss)
 {
     string filePrefix = "kernel/ascend910/nll_loss/NLLLoss_cb871abe297529940e37590528e15ab2_high_performance";
-    CreateNLLLoss(
-        "NLLLoss", aclDataType::ACL_FLOAT, aclDataType::ACL_INT32, aclFormat::ACL_FORMAT_NCHW, 2, filePrefix, "mean");
+    CreateNLLLoss("NLLLoss", aclDataType::ACL_FLOAT, aclDataType::ACL_INT32, aclFormat::ACL_FORMAT_NCHW, 2, filePrefix,
+                  "mean");
 
     filePrefix = "kernel/ascend910/nll_loss/NLLLoss_193d89f5bc0a57ed7aa7da64cb1464e6_high_performance";
-    CreateNLLLoss(
-        "NLLLoss", aclDataType::ACL_FLOAT, aclDataType::ACL_INT32, aclFormat::ACL_FORMAT_NCHW, 3, filePrefix, "none");
+    CreateNLLLoss("NLLLoss", aclDataType::ACL_FLOAT, aclDataType::ACL_INT32, aclFormat::ACL_FORMAT_NCHW, 3, filePrefix,
+                  "none");
 }
 
 TEST_F(TestBinaryReuse, Conv2DBackpropFilter)
 {
-    string filePrefix =
-        "kernel/ascend910/conv2d_backprop_filter/Conv2DBackpropFilter_NC1HWC0_FRACTALZ_FP16_FP32_NCHW_all";
+    string
+        filePrefix = "kernel/ascend910/conv2d_backprop_filter/Conv2DBackpropFilter_NC1HWC0_FRACTALZ_FP16_FP32_NCHW_all";
     CreateConv2DBackpropFilter(filePrefix);
 }
 
 TEST_F(TestBinaryReuse, LpNormUpdate)
 {
-    string filePrefix =
-        "kernel/ascend910/lp_norm_update/LpNormUpdate_8e56095e46d7eb72c220743f32c6de6c_high_performance";
+    string
+        filePrefix = "kernel/ascend910/lp_norm_update/LpNormUpdate_8e56095e46d7eb72c220743f32c6de6c_high_performance";
     CreateSingleInAndout("LpNormUpdate", ge::DT_FLOAT, ge::FORMAT_NCHW, filePrefix, 0, 0.0);
 
     filePrefix = "kernel/ascend910/lp_norm_update/LpNormUpdate_0f8e56e6ec4f4f861ce1e4d6e60f6c4a_high_performance";
@@ -1494,8 +1456,8 @@ TEST_F(TestBinaryReuse, Renorm)
 
 TEST_F(TestBinaryReuse, SimplifiedKeyTest)
 {
-    string filePrefix =
-        "kernel/ascend910/simplifiedkeytest/Simplifiedkeytest_8bed43affdbf596d834d2a0a046ee716_high_performance";
+    string filePrefix = "kernel/ascend910/simplifiedkeytest/"
+                        "Simplifiedkeytest_8bed43affdbf596d834d2a0a046ee716_high_performance";
     CreateSingleInAndout("Simplifiedkeytest", ge::DT_FLOAT16, ge::FORMAT_ND, "", 1.0);
 }
 
@@ -1547,37 +1509,36 @@ TEST_F(TestBinaryReuse, LayerNormBetaGammaBackpropV2)
 TEST_F(TestBinaryReuse, TestNonZero)
 {
     string filePrefix = "kernel/ascend910/non_zero/NonZero_edb06daebcc6f079a6dee9a7ed831ea9_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2}, {2, 3, 4, 5}, filePrefix,
+                                  true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_6e5a6cd9de928cb056e28cda78fe447e_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3}, {2, 3, 4, 5},
+                                  filePrefix, true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_1267d067bf644ff538330671fcfcfd9f_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4}, {2, 3, 4, 5},
+                                  filePrefix, true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_27a478f4fafa16a7537521a403837911_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5}, {2, 3, 4, 5},
+                                  filePrefix, true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_91d091fdf3121283326bbfe670fa793b_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6}, {2, 3, 4, 5},
+                                  filePrefix, true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_811ba726116e13ff3bd4608c72e11076_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6, 7}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6, 7},
+                                  {2, 3, 4, 5}, filePrefix, true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_d399326088830ff05042304adc992e13_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6, 7, 8}, {2, 3, 4, 5}, filePrefix, true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6, 7, 8},
+                                  {2, 3, 4, 5}, filePrefix, true);
 
     filePrefix = "kernel/ascend910/non_zero/NonZero_e06011186220d191c725cbb04059b324_high_performance";
-    CreateSingleInAndoutWithShape(
-        "NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6, 7, 8, 9}, {2, 3, 4, 5}, filePrefix,
-        true);
+    CreateSingleInAndoutWithShape("NonZero", ge::DT_BOOL, ge::DT_INT32, ge::FORMAT_NCHW, {2, 3, 4, 5, 6, 7, 8, 9},
+                                  {2, 3, 4, 5}, filePrefix, true);
 }
 // TEST_F(TestBinaryReuse, RenormAbnormalCase) {
 //   string filePrefix = "kernel/ascend910/renorm/Renorm_49ebb7bc1057f23132a146629c814876_high_performance";

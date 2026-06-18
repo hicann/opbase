@@ -26,10 +26,9 @@ namespace Base {
 template <typename T>
 uint32_t GetAivCoreNum(const T* context)
 {
-    static_assert(
-        std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
-            std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
-        "context should be gert::TilingParseContext or gert::TilingContext");
+    static_assert(std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
+                      std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
+                  "context should be gert::TilingParseContext or gert::TilingContext");
 
     OP_CHECK_IF(context == nullptr, OP_LOGE("GetAivCoreNum", "context is nullptr"), return 0);
     auto platformInfoPtr = context->GetPlatformInfo();
@@ -41,10 +40,9 @@ uint32_t GetAivCoreNum(const T* context)
 template <typename T>
 uint32_t GetAicCoreNum(const T* context)
 {
-    static_assert(
-        std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
-            std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
-        "context should be gert::TilingParseContext or gert::TilingContext");
+    static_assert(std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
+                      std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
+                  "context should be gert::TilingParseContext or gert::TilingContext");
 
     OP_CHECK_IF(context == nullptr, OP_LOGE("GetAicCoreNum", "context is nullptr"), return 0);
     auto platformInfoPtr = context->GetPlatformInfo();
@@ -56,10 +54,9 @@ uint32_t GetAicCoreNum(const T* context)
 template <typename T>
 uint32_t GetUbSize(const T* context)
 {
-    static_assert(
-        std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
-            std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
-        "context should be gert::TilingParseContext or gert::TilingContext");
+    static_assert(std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
+                      std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
+                  "context should be gert::TilingParseContext or gert::TilingContext");
 
     OP_CHECK_IF(context == nullptr, OP_LOGE("GetUbSize", "context is nullptr"), return 0);
     auto platformInfoPtr = context->GetPlatformInfo();
@@ -134,10 +131,9 @@ uint32_t GetNddmaDcacheSize([[maybe_unused]] const T* context)
 template <typename T>
 uint32_t GetWorkspaceSize(const T* context)
 {
-    static_assert(
-        std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
-            std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
-        "context should be gert::TilingParseContext or gert::TilingContext");
+    static_assert(std::is_same<typename std::remove_const<T>::type, gert::TilingParseContext>::value ||
+                      std::is_same<typename std::remove_const<T>::type, gert::TilingContext>::value,
+                  "context should be gert::TilingParseContext or gert::TilingContext");
 
     OP_CHECK_IF(context == nullptr, OP_LOGE("GetWorkspaceSize", "context is nullptr"), return 0);
     auto platformInfoPtr = context->GetPlatformInfo();

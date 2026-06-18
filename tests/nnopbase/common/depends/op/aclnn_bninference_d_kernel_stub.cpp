@@ -34,21 +34,21 @@ OpSupportList supportList = {opSocSupportList, 2};
 extern "C" {
 #endif
 
-aclnnStatus aclnnBninferenceDKernel(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnBninferenceDKernel(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    const aclrtStream stream)
 {
     return NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceSize);
 }
 
-aclnnStatus aclnnBninferenceDKernelNoOutput(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnBninferenceDKernelNoOutput(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                            const aclrtStream stream)
 {
     return NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceSize);
 }
 
-aclnnStatus aclnnBninferenceDKernelGetWorkspaceSize(
-    const aclTensor* x1, const aclTensor* x2, const aclTensor* x3, const aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnBninferenceDKernelGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2, const aclTensor* x3,
+                                                    const aclTensor* out, uint64_t* workspaceSize,
+                                                    aclOpExecutor** executor)
 {
     uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000, __func__, false};
@@ -66,9 +66,9 @@ aclnnStatus aclnnBninferenceDKernelGetWorkspaceSize(
     if (!executorSpace) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCreateExecutorSpace(&executorSpace));
     }
-    void* nnopExecutor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* nnopExecutor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char),
+                                             outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                                             sizeof(attrDesc) / sizeof(char));
     NNOPBASE_ASSERT_NOTNULL_RETVAL(nnopExecutor);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     *executor = reinterpret_cast<aclOpExecutor*>(nnopExecutor);
@@ -84,9 +84,9 @@ aclnnStatus aclnnBninferenceDKernelGetWorkspaceSize(
     return ret;
 }
 
-aclnnStatus aclnnBninferenceDKernelNoOutputGetWorkspaceSize(
-    const aclTensor* x1, const aclTensor* x2, const aclTensor* x3, const aclTensor* x4, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnBninferenceDKernelNoOutputGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2,
+                                                            const aclTensor* x3, const aclTensor* x4,
+                                                            uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     static void* executorSpace = nullptr;
     const char* opType = "bninference_d_kernel";
@@ -101,9 +101,9 @@ aclnnStatus aclnnBninferenceDKernelNoOutputGetWorkspaceSize(
     if (!executorSpace) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCreateExecutorSpace(&executorSpace));
     }
-    void* nnopExecutor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* nnopExecutor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char),
+                                             outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                                             sizeof(attrDesc) / sizeof(char));
     NNOPBASE_ASSERT_NOTNULL_RETVAL(nnopExecutor);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NNOPBASE_ASSERT_TRUE_RETVAL(!((NnopbaseExecutor*)nnopExecutor)->isOutEmpty); // 校验无output算子，不设置为空tensor
@@ -115,8 +115,8 @@ aclnnStatus aclnnBninferenceDKernelNoOutputGetWorkspaceSize(
     return NnopbaseRunForWorkspace(*executor, workspaceSize);
 }
 
-aclnnStatus aclnnBninferenceDKernelRefGetWorkspaceSize(
-    const aclTensor* x1Ref, const aclTensor* x2, const aclTensor* x3, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnBninferenceDKernelRefGetWorkspaceSize(const aclTensor* x1Ref, const aclTensor* x2, const aclTensor* x3,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000, __func__, false};
@@ -134,9 +134,9 @@ aclnnStatus aclnnBninferenceDKernelRefGetWorkspaceSize(
     if (!executorSpace) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCreateExecutorSpace(&executorSpace));
     }
-    void* nnopExecutor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* nnopExecutor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char),
+                                             outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                                             sizeof(attrDesc) / sizeof(char));
     NNOPBASE_ASSERT_NOTNULL_RETVAL(nnopExecutor);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     *executor = reinterpret_cast<aclOpExecutor*>(nnopExecutor);
@@ -179,8 +179,8 @@ aclnnStatus aclnnBninferenceDKernelRefGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnBninferenceDKernelRef(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnBninferenceDKernelRef(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       const aclrtStream stream)
 {
     uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000, __func__, false};

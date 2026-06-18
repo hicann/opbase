@@ -65,9 +65,9 @@ TEST_F(SelectBinUt, SelectBinTest)
     uint32_t opType = op::OpTypeDict::ToOpType("AddN");
     auto opKernel = op::internal::gKernelMgr.GetKernel(opType);
     EXPECT_NE(opKernel, nullptr);
-    auto bin = opKernel->SelectBin(
-        *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    auto bin = opKernel->SelectBin(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+                                   *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+                                   *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
 
     EXPECT_NE(bin, nullptr);
     delete inputList;

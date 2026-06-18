@@ -50,8 +50,8 @@ aclnnStatus AddKernelNodeToGraph(void* kn, void* graph)
     return ACL_SUCCESS;
 }
 
-void* BuildKernelNodeImpl(
-    uint32_t opType, FVector<aclTensor*>& aclInputs, FVector<aclTensor*>& aclOutputs, FVector<aclTensor*>& aclWorkspace)
+void* BuildKernelNodeImpl(uint32_t opType, FVector<aclTensor*>& aclInputs, FVector<aclTensor*>& aclOutputs,
+                          FVector<aclTensor*>& aclWorkspace)
 {
     // KernelNode， KernelTensor derived from Object, so new will get memory from pool without nullptr.
     KernelNode* kn = new KernelNode(opType);
@@ -151,8 +151,8 @@ aclnnStatus BuildGraph(void* graph, uint32_t opType, OpArgList& inputs, OpArgLis
     return ACL_SUCCESS;
 }
 
-aclnnStatus BuildGraph(
-    void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace, OpArgList& outputshape)
+aclnnStatus BuildGraph(void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace,
+                       OpArgList& outputshape)
 {
     FVector<aclTensor*> inputsList;
     FVector<aclTensor*> outputsList;

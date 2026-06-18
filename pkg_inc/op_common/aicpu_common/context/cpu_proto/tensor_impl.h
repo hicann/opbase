@@ -17,103 +17,101 @@
 
 namespace aicpu {
 class TensorImpl {
-  friend class CpuKernelUtils;
+    friend class CpuKernelUtils;
 
- public:
-  TensorImpl(
-      aicpuops::Tensor *tensor,
-      std::function<void(aicpuops::Tensor *)> delFunc =
-          [](const aicpuops::Tensor *p) {
-            (void)p;
-          })
-      : tensor_(tensor, delFunc) {}
+public:
+    TensorImpl(
+        aicpuops::Tensor* tensor,
+        std::function<void(aicpuops::Tensor*)> delFunc = [](const aicpuops::Tensor* p) { (void)p; })
+        : tensor_(tensor, delFunc)
+    {}
 
-  ~TensorImpl() = default;
-  TensorImpl(const TensorImpl &) = delete;
-  TensorImpl(TensorImpl &&) = delete;
-  TensorImpl &operator=(const TensorImpl &) = delete;
-  TensorImpl &operator=(TensorImpl &&) = delete;
+    ~TensorImpl() = default;
+    TensorImpl(const TensorImpl&) = delete;
+    TensorImpl(TensorImpl&&) = delete;
+    TensorImpl& operator=(const TensorImpl&) = delete;
+    TensorImpl& operator=(TensorImpl&&) = delete;
 
-  /*
-   * set tensor shape value to tensor.
-   * @param shape: tensor shape value need to set to tensor
-   * @return bool: true->success, false->failed
-   */
-  bool SetTensorShape(const TensorShape *shape);
+    /*
+     * set tensor shape value to tensor.
+     * @param shape: tensor shape value need to set to tensor
+     * @return bool: true->success, false->failed
+     */
+    bool SetTensorShape(const TensorShape* shape);
 
-  /*
-   * get tensor shape value of tensor.
-   * @return std::shared_ptr<TensorShape>: tensor shape value of tensor
-   */
-  std::shared_ptr<TensorShape> GetTensorShape() const;
+    /*
+     * get tensor shape value of tensor.
+     * @return std::shared_ptr<TensorShape>: tensor shape value of tensor
+     */
+    std::shared_ptr<TensorShape> GetTensorShape() const;
 
-  /*
-   * set data type value to tensor.
-   * @param type: data type value need to set to tensor
-   */
-  void SetDataType(DataType type);
+    /*
+     * set data type value to tensor.
+     * @param type: data type value need to set to tensor
+     */
+    void SetDataType(DataType type);
 
-  /*
-   * get data type value of tensor.
-   * @return DataType: data type value of tensor
-   */
-  DataType GetDataType() const;
+    /*
+     * get data type value of tensor.
+     * @return DataType: data type value of tensor
+     */
+    DataType GetDataType() const;
 
-  /*
-   * set data ptr to tensor.
-   * @param addr: tensor data ptr
-   */
-  void SetData(void *addr);
+    /*
+     * set data ptr to tensor.
+     * @param addr: tensor data ptr
+     */
+    void SetData(void* addr);
 
-  /*
-   * get data ptr of tensor.
-   * @return void *: tensor data ptr
-   */
-  void *GetData() const;
+    /*
+     * get data ptr of tensor.
+     * @return void *: tensor data ptr
+     */
+    void* GetData() const;
 
-  /*
-   * set data size to tensor.
-   * @param size: tensor data size
-   */
-  void SetDataSize(uint64_t size);
+    /*
+     * set data size to tensor.
+     * @param size: tensor data size
+     */
+    void SetDataSize(uint64_t size);
 
-  /*
-   * get data size of tensor.
-   * @return uint64_t: tensor data size
-   */
-  uint64_t GetDataSize() const;
+    /*
+     * get data size of tensor.
+     * @return uint64_t: tensor data size
+     */
+    uint64_t GetDataSize() const;
 
-  /*
-   * get name of tensor.
-   * @return std::string: tensor name
-   */
-  std::string GetName() const;
+    /*
+     * get name of tensor.
+     * @return std::string: tensor name
+     */
+    std::string GetName() const;
 
-  /*
-   * set name of tensor.
-   * @param name: tensor name
-   */
-  void SetName(const std::string &name);
+    /*
+     * set name of tensor.
+     * @param name: tensor name
+     */
+    void SetName(const std::string& name);
 
-  /*
-   * calculate data size by tensor shape.
-   * @return success->not less than 0, failed->less than 0
-   */
-  int64_t CalcDataSizeByShape() const;
+    /*
+     * calculate data size by tensor shape.
+     * @return success->not less than 0, failed->less than 0
+     */
+    int64_t CalcDataSizeByShape() const;
 
-  /*
-   * get data elements number.
-   * @return success->not less than 0, unknown->less than 0
-   */
-  int64_t NumElements() const;
+    /*
+     * get data elements number.
+     * @return success->not less than 0, unknown->less than 0
+     */
+    int64_t NumElements() const;
 
-  /*
-   * get tensor proto.
-   */
-  aicpuops::Tensor *GetProto() const;
+    /*
+     * get tensor proto.
+     */
+    aicpuops::Tensor* GetProto() const;
 
- private:
-  std::shared_ptr<aicpuops::Tensor> tensor_{nullptr};
+private:
+    std::shared_ptr<aicpuops::Tensor> tensor_{nullptr};
 };
-}  // namespace aicpu
-#endif  // AICPU_CONTEXT_CPU_PROTO_TENSOR_IMPL_H
+} // namespace aicpu
+#endif // AICPU_CONTEXT_CPU_PROTO_TENSOR_IMPL_H

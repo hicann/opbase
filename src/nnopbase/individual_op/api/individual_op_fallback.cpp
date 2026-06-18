@@ -40,9 +40,9 @@ aclTensor* NnopbaseConvertTensor(const gert::Tensor* tensor)
     for (int64_t i = shape.size() - NNOPBASE_STRIDES_NUM; i >= 0; i--) {
         strides[i] = shape[i + 1] * strides[i + 1];
     }
-    return aclCreateTensor(
-        shape.data(), shape.size(), op::ToAclDataType(tensor->GetDataType()), strides.data(), 0,
-        op::ToAclFormat(tensor->GetStorageFormat()), shape.data(), shape.size(), const_cast<void*>(tensor->GetAddr()));
+    return aclCreateTensor(shape.data(), shape.size(), op::ToAclDataType(tensor->GetDataType()), strides.data(), 0,
+                           op::ToAclFormat(tensor->GetStorageFormat()), shape.data(), shape.size(),
+                           const_cast<void*>(tensor->GetAddr()));
 }
 
 aclTensorList* NnopbaseConvertTensorList(std::vector<const gert::Tensor*>& tensorList)
@@ -59,52 +59,47 @@ aclTensorList* NnopbaseConvertTensorList(std::vector<const gert::Tensor*>& tenso
 aclIntArray* NnopbaseCovertIntArray(const gert::Tensor* tensor)
 {
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
-    OP_CHECK(
-        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
-        return nullptr);
+    OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."), return nullptr);
     return aclCreateIntArray(static_cast<const int64_t*>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
 
 aclBoolArray* NnopbaseCovertBoolArray(const gert::Tensor* tensor)
 {
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
-    OP_CHECK(
-        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
-        return nullptr);
+    OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."), return nullptr);
     return aclCreateBoolArray(static_cast<const bool*>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
 
 aclFloatArray* NnopbaseCovertFloatArray(const gert::Tensor* tensor)
 {
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
-    OP_CHECK(
-        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
-        return nullptr);
+    OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."), return nullptr);
     return aclCreateFloatArray(static_cast<const float*>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
 
 aclScalar* NnopbaseConvertScalar(const gert::Tensor* tensor)
 {
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
-    OP_CHECK(
-        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
-        return nullptr);
+    OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."), return nullptr);
     return aclCreateScalar(const_cast<void*>(tensor->GetAddr()), op::ToAclDataType(tensor->GetDataType()));
 }
 
 aclScalarList* NnopbaseConvertScalarList(const gert::Tensor* tensor)
 {
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
-    OP_CHECK(
-        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
-        return nullptr);
+    OP_CHECK(tensor->GetPlacement() == gert::kOnHost,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."), return nullptr);
     op::FVector<aclScalar*> tmp;
     aclDataType dataType = op::ToAclDataType(tensor->GetDataType());
     const size_t typeSize = op::TypeSize(tensor->GetDataType());
     void* addr = const_cast<void*>(tensor->GetAddr());
     for (int64_t i = 0; i < tensor->GetStorageShape().GetShapeSize(); i++) {
-        aclScalar* scalar =
-            aclCreateScalar(op::internal::PtrCastTo<void>(static_cast<uint8_t*>(addr) + typeSize * i), dataType);
+        aclScalar* scalar = aclCreateScalar(op::internal::PtrCastTo<void>(static_cast<uint8_t*>(addr) + typeSize * i),
+                                            dataType);
         tmp.push_back(scalar);
     }
     return aclCreateScalarList(tmp.data(), tmp.size());

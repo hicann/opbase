@@ -97,12 +97,10 @@ ge::graphStatus GetConstInputData(gert::TilingContext* context, int32_t idx, std
     auto axesInput = context->GetInputTensor(idx);
     OP_CHECK_NULL_WITH_CONTEXT(context, axesInput);
     auto size = axesInput->GetShapeSize();
-    OP_CHECK_IF(
-        (size >= static_cast<int64_t>(MAX_DIM)),
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-            context->GetNodeName(), "axes", std::to_string(size).c_str(),
-            "axes dim size is over max dim, cannot support"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((size >= static_cast<int64_t>(MAX_DIM)),
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context->GetNodeName(), "axes", std::to_string(size).c_str(),
+                                                          "axes dim size is over max dim, cannot support"),
+                return ge::GRAPH_FAILED);
 
     if (size == 0) {
         return ge::GRAPH_SUCCESS;
@@ -179,8 +177,8 @@ OPBASE_API ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t i
  * @param dimStrides
  *  return value, operator input dimStrides
  */
-OPBASE_API ge::graphStatus GetInputStride(
-    const gert::TilingContext* context, int32_t idx, std::vector<int64_t>& dimStrides);
+OPBASE_API ge::graphStatus GetInputStride(const gert::TilingContext* context, int32_t idx,
+                                          std::vector<int64_t>& dimStrides);
 
 /*
  * \brief get input dtype with input idx
@@ -225,8 +223,8 @@ OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpI
  * @param outIdx
  *  reduce operator reduce output idx
  */
-OPBASE_API ge::graphStatus GetInputParam(
-    gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx, int32_t axesIdx, int32_t outIdx);
+OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
+                                         int32_t axesIdx, int32_t outIdx);
 } // namespace ReduceOpTmpl
 
 class OPBASE_API ReduceOpTiling {
@@ -241,9 +239,8 @@ public:
      * @param tilingData
      *  reduec op tilingData struct, if nullptr, template will get from tiling context
      */
-    ReduceOpTiling(
-        gert::TilingContext* context, ReduceOpCompileInfo* compileInfo = nullptr,
-        ReduceOpTilingData* tilingData = nullptr)
+    ReduceOpTiling(gert::TilingContext* context, ReduceOpCompileInfo* compileInfo = nullptr,
+                   ReduceOpTilingData* tilingData = nullptr)
         : context_(context), compileInfo_(compileInfo), tilingData_(tilingData) {};
 
     virtual ~ReduceOpTiling() {}
@@ -259,15 +256,14 @@ public:
     template <class OpDag = void>
     ge::graphStatus DoTiling(ReduceOpInputParam& opInput, ReduceTilingKey& key)
     {
-        OP_CHECK_IF(
-            (ParamCheck(opInput) != ge::GRAPH_SUCCESS),
-            OP_LOGE(context_->GetNodeName(), "Do tiling param check failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((ParamCheck(opInput) != ge::GRAPH_SUCCESS),
+                    OP_LOGE(context_->GetNodeName(), "Do tiling param check failed"), return ge::GRAPH_FAILED);
 
         PreProcessInput<OpDag>(opInput);
 
-        OP_CHECK_IF(
-            (PreProcessOptionalParam() != ge::GRAPH_SUCCESS),
-            OP_LOGE(context_->GetNodeName(), "Do tiling preprocess optional param failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((PreProcessOptionalParam() != ge::GRAPH_SUCCESS),
+                    OP_LOGE(context_->GetNodeName(), "Do tiling preprocess optional param failed"),
+                    return ge::GRAPH_FAILED);
 
         DoReduceTiling(key);
 
@@ -339,8 +335,8 @@ protected:
     ge::graphStatus CalcBasicBlock(const uint64_t* shape);
 
     template <class Pattern>
-    uint64_t TryGetReduceBlock(
-        const uint64_t* shape, uint64_t preInputBufferNum, uint64_t preRestBufferNum, uint64_t postBufferNum);
+    uint64_t TryGetReduceBlock(const uint64_t* shape, uint64_t preInputBufferNum, uint64_t preRestBufferNum,
+                               uint64_t postBufferNum);
 
     template <class Pattern>
     bool IsEmtpyTensor(const uint64_t* shape);
@@ -415,17 +411,16 @@ protected:
  *  operator compute graph
  */
 template <class OpDag = void>
-OPBASE_API ge::graphStatus Tiling4ReduceOp(
-    gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key)
+OPBASE_API ge::graphStatus Tiling4ReduceOp(gert::TilingContext* context, ReduceOpInputParam& opInput,
+                                           ReduceTilingKey& key)
 {
     ReduceOpTiling tiling(context, nullptr, nullptr);
     return tiling.DoTiling<OpDag>(opInput, key);
 }
 
 template <class OpDag = void>
-OPBASE_API ge::graphStatus Tiling4ReduceOp(
-    gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key,
-    const ReduceOpCompileInfo* compileInfo)
+OPBASE_API ge::graphStatus Tiling4ReduceOp(gert::TilingContext* context, ReduceOpInputParam& opInput,
+                                           ReduceTilingKey& key, const ReduceOpCompileInfo* compileInfo)
 {
     (void)compileInfo;
     ReduceOpTiling tiling(context, nullptr, nullptr);
@@ -433,17 +428,17 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(
 }
 
 template <class OpDag = void>
-OPBASE_API ge::graphStatus Tiling4ReduceOp(
-    gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key, ReduceOpTilingData* tilingData)
+OPBASE_API ge::graphStatus Tiling4ReduceOp(gert::TilingContext* context, ReduceOpInputParam& opInput,
+                                           ReduceTilingKey& key, ReduceOpTilingData* tilingData)
 {
     ReduceOpTiling tiling(context, nullptr, tilingData);
     return tiling.DoTiling<OpDag>(opInput, key);
 }
 
 template <class OpDag = void>
-OPBASE_API ge::graphStatus Tiling4ReduceOp(
-    gert::TilingContext* context, ReduceOpInputParam& opInput, ReduceTilingKey& key,
-    const ReduceOpCompileInfo* compileInfo, ReduceOpTilingData* tilingData)
+OPBASE_API ge::graphStatus Tiling4ReduceOp(gert::TilingContext* context, ReduceOpInputParam& opInput,
+                                           ReduceTilingKey& key, const ReduceOpCompileInfo* compileInfo,
+                                           ReduceOpTilingData* tilingData)
 {
     (void)compileInfo;
     ReduceOpTiling tiling(context, nullptr, tilingData);
@@ -452,8 +447,7 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(
 } // namespace Base
 } // namespace Ops
 
-#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                   \
-    result = GET_TPL_TILING_KEY(                                                              \
-        reduceTilingKey.isContiguous, reduceTilingKey.patternID, reduceTilingKey.loopARCount, \
-        reduceTilingKey.loopInnerARCount, __VA_ARGS__)
+#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                                           \
+    result = GET_TPL_TILING_KEY(reduceTilingKey.isContiguous, reduceTilingKey.patternID, reduceTilingKey.loopARCount, \
+                                reduceTilingKey.loopInnerARCount, __VA_ARGS__)
 #endif

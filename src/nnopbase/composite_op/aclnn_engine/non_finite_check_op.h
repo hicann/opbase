@@ -68,19 +68,18 @@ private:
 
 class NonFiniteCheckOpKernelBin : public OpKernelBin {
 public:
-    aclnnStatus CreateWorkSpace(
-        aclOpExecutor* executor, OpArgList& inputArgList, OpArgList& outputArgList, aclTensor*& workspaceTensor)
+    aclnnStatus CreateWorkSpace(aclOpExecutor* executor, OpArgList& inputArgList, OpArgList& outputArgList,
+                                aclTensor*& workspaceTensor)
     {
         const size_t* workspaceSize = nullptr;
         size_t workspaceNum = 0;
         OpArgList dummyArgList;
         auto ret = GetWorkspace(workspaceSize, workspaceNum, inputArgList, outputArgList, dummyArgList);
-        OP_CHECK(
-            (ret == ACLNN_SUCCESS && workspaceNum == 1),
-            OP_LOGW("GetWorkspace ret: %d, invalid workspace num %zu", ret, workspaceNum), return ACLNN_ERR_INNER);
+        OP_CHECK((ret == ACLNN_SUCCESS && workspaceNum == 1),
+                 OP_LOGW("GetWorkspace ret: %d, invalid workspace num %zu", ret, workspaceNum), return ACLNN_ERR_INNER);
 
-        workspaceTensor =
-            executor->AllocTensor({static_cast<int64_t>(workspaceSize[0])}, op::DataType::DT_INT8, ge::FORMAT_ND);
+        workspaceTensor = executor->AllocTensor({static_cast<int64_t>(workspaceSize[0])}, op::DataType::DT_INT8,
+                                                ge::FORMAT_ND);
         if (!workspaceTensor) {
             OP_LOGW("failed to init non finite check workspace tensor");
             return ACLNN_ERR_INNER;
@@ -98,8 +97,8 @@ public:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus Launch(
-        aclrtStream stream, OpArgContext* args, OpArgList& tilingInputArgList, OpArgContext* nonFiniteCheckOpArgs)
+    aclnnStatus Launch(aclrtStream stream, OpArgContext* args, OpArgList& tilingInputArgList,
+                       OpArgContext* nonFiniteCheckOpArgs)
     {
         aclnnStatus ret = BinLoad();
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("BinLoad failed, ret: %d", ret), return ret);
@@ -122,9 +121,8 @@ public:
                 OpArgList dummyArgList;
                 res = OpRunContextMgr::Tiling(
                     opType_,
-                    tilingParseCtxHolder_[ThreadCoreNum(
-                                              GetThreadLocalContext().opConfigInfo_.aicNum_,
-                                              GetThreadLocalContext().opConfigInfo_.aivNum_)]
+                    tilingParseCtxHolder_[ThreadCoreNum(GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                        GetThreadLocalContext().opConfigInfo_.aivNum_)]
                         .get(),
                     tilingInputArgList, *nonFiniteCheckOpArgs->GetOpArg(op::OP_OUTPUT_ARG), dummyArgList);
             }
@@ -133,9 +131,9 @@ public:
 
         uint64_t summaryId = 0;
         if (opProfilingSwitch.kernelLaunchFlag) {
-            summaryId = GenSummaryItemId(
-                GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
-                op::OpTypeDict::ToString(opType_).GetString());
+            summaryId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
+                                         GetThreadLocalContext().logInfo_.l0Name,
+                                         op::OpTypeDict::ToString(opType_).GetString());
         }
         {
             OpDfxGuard kernelLaunchGuard(summaryId, DfxProfilingKernelLaunch);
@@ -251,9 +249,8 @@ public:
         std::unordered_map<op::DataType, std::vector<aclTensor*>> dtype2Tensors;
         CollectNonFiniteCheckTensor(dtype2Tensors, nonFiniteCheckOpCtx.opArgCtx_);
         for (auto& dtypeTensorPair : dtype2Tensors) {
-            OP_LOGI(
-                "there are %zu tensors with type %s to be checked", dtypeTensorPair.second.size(),
-                op::ToString(dtypeTensorPair.first).GetString());
+            OP_LOGI("there are %zu tensors with type %s to be checked", dtypeTensorPair.second.size(),
+                    op::ToString(dtypeTensorPair.first).GetString());
             if (dtypeTensorPair.second.size() == 0) {
                 OP_LOGW("Tensor number is zero!!!");
                 continue;
@@ -272,8 +269,8 @@ public:
             ret = LaunchNonFiniteCheckOp(nonFiniteCheckOpCtx, dtypeTensorPair.second, outputAddr, wsAddr);
             DevPtrGuard outputGuard(outputAddr);
             DevPtrGuard wsGuard(wsAddr);
-            OP_CHECK(
-                ret == ACLNN_SUCCESS, OP_LOGW("failed to launch non finite check op bin, ret: %d", ret), return ret);
+            OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("failed to launch non finite check op bin, ret: %d", ret),
+                     return ret);
 
             auto rc = aclrtSynchronizeStream(nonFiniteCheckOpCtx.stream_);
             OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtSynchronizeStream failed, ret %d", ret), return ACLNN_ERR_INNER);
@@ -308,16 +305,16 @@ private:
         return dtype == op::DataType::DT_FLOAT || dtype == op::DataType::DT_BF16 || dtype == op::DataType::DT_FLOAT16;
     }
 
-    static void CollectNonFiniteCheckTensor(
-        std::unordered_map<op::DataType, std::vector<aclTensor*>>& dtype2Tensors, aclTensor* tensor)
+    static void CollectNonFiniteCheckTensor(std::unordered_map<op::DataType, std::vector<aclTensor*>>& dtype2Tensors,
+                                            aclTensor* tensor)
     {
         if (tensor && !tensor->IsEmpty() && IsNeedNonFiniteCheck(tensor)) {
             dtype2Tensors[tensor->GetDataType()].emplace_back(tensor);
         }
     }
 
-    static void CollectNonFiniteCheckTensor(
-        std::unordered_map<op::DataType, std::vector<aclTensor*>>& dtype2Tensors, aclTensorList* tensorList)
+    static void CollectNonFiniteCheckTensor(std::unordered_map<op::DataType, std::vector<aclTensor*>>& dtype2Tensors,
+                                            aclTensorList* tensorList)
     {
         if (tensorList) {
             for (uint64_t i = 0; i < tensorList->Size(); i++) {
@@ -328,8 +325,8 @@ private:
         }
     }
 
-    static void CollectNonFiniteCheckTensor(
-        std::unordered_map<op::DataType, std::vector<aclTensor*>>& dtype2Tensors, OpArgContext* args)
+    static void CollectNonFiniteCheckTensor(std::unordered_map<op::DataType, std::vector<aclTensor*>>& dtype2Tensors,
+                                            OpArgContext* args)
     {
         if (args->ContainsOpArgType(op::OP_OUTPUT_ARG)) {
             OpArgList* outputs = args->GetOpArg(op::OP_OUTPUT_ARG);
@@ -347,30 +344,30 @@ private:
         }
     }
 
-    static aclnnStatus PrepareNonFiniteCheckOpArgs(
-        NonFiniteCheckOpContext& nonFiniteCheckOpCtx, std::vector<aclTensor*>& checkTensors,
-        OpArgList& tilingInputArgList, OpArgContext& nonFiniteCheckOpArgCtx, OpArg*& nonFiniteCheckOpArg)
+    static aclnnStatus PrepareNonFiniteCheckOpArgs(NonFiniteCheckOpContext& nonFiniteCheckOpCtx,
+                                                   std::vector<aclTensor*>& checkTensors, OpArgList& tilingInputArgList,
+                                                   OpArgContext& nonFiniteCheckOpArgCtx, OpArg*& nonFiniteCheckOpArg)
     {
         NonFiniteCheckTensorList tensorList;
         aclnnStatus ret = tensorList.Init(checkTensors);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("failed to init non finite check tensorlist, ret: %d", ret), return ret);
 
         aclTensor* inputTensor = tensorList.ToTensor(nonFiniteCheckOpCtx.executor_);
-        OP_CHECK(
-            inputTensor != nullptr, OP_LOGW("failed to init non finite check input tensor"), return ACLNN_ERR_INNER);
+        OP_CHECK(inputTensor != nullptr, OP_LOGW("failed to init non finite check input tensor"),
+                 return ACLNN_ERR_INNER);
 
-        aclTensor* outputTensor =
-            nonFiniteCheckOpCtx.executor_->AllocTensor({1}, op::DataType::DT_FLOAT, ge::FORMAT_ND);
-        OP_CHECK(
-            outputTensor != nullptr, OP_LOGW("failed to init non finite check output tensor"), return ACLNN_ERR_INNER);
+        aclTensor* outputTensor = nonFiniteCheckOpCtx.executor_->AllocTensor({1}, op::DataType::DT_FLOAT,
+                                                                             ge::FORMAT_ND);
+        OP_CHECK(outputTensor != nullptr, OP_LOGW("failed to init non finite check output tensor"),
+                 return ACLNN_ERR_INNER);
         void* outputAddr = nullptr;
         aclrtMallocAttrValue moduleIdValue;
         moduleIdValue.moduleId = kModelId;
         aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
         aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
         auto rc = aclrtMallocWithCfg(&outputAddr, sizeof(float), ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg);
-        OP_CHECK(
-            rc == ACL_SUCCESS, OP_LOGW("failed to call aclrtMallocWithCfg, return: %d", rc), return ACLNN_ERR_INNER);
+        OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("failed to call aclrtMallocWithCfg, return: %d", rc),
+                 return ACLNN_ERR_INNER);
         outputTensor->SetStorageAddr(outputAddr);
 
         OpArg outputArg;
@@ -379,40 +376,37 @@ private:
         OpArgList outputArgList(&outputArg, 1);
 
         aclTensor* workspaceTensor = nullptr;
-        ret = nonFiniteCheckOpCtx.bin_->CreateWorkSpace(
-            nonFiniteCheckOpCtx.executor_, tilingInputArgList, outputArgList, workspaceTensor);
+        ret = nonFiniteCheckOpCtx.bin_->CreateWorkSpace(nonFiniteCheckOpCtx.executor_, tilingInputArgList,
+                                                        outputArgList, workspaceTensor);
         if (ret != ACLNN_SUCCESS || !workspaceTensor) {
             OP_LOGW("failed to init non finite check workspace tensor");
             aclrtFree(outputAddr);
             return ACLNN_ERR_INNER;
         }
 
-        OpArgContextInit(
-            nonFiniteCheckOpArgCtx, nonFiniteCheckOpArg, OP_INPUT(inputTensor), OP_OUTPUT(outputTensor),
-            OP_WORKSPACE(workspaceTensor));
+        OpArgContextInit(nonFiniteCheckOpArgCtx, nonFiniteCheckOpArg, OP_INPUT(inputTensor), OP_OUTPUT(outputTensor),
+                         OP_WORKSPACE(workspaceTensor));
         return ACLNN_SUCCESS;
     }
 
-    static aclnnStatus LaunchNonFiniteCheckOp(
-        NonFiniteCheckOpContext& nonFiniteCheckOpCtx, std::vector<aclTensor*>& checkTensors, void*& outputAddr,
-        void*& wsAddr)
+    static aclnnStatus LaunchNonFiniteCheckOp(NonFiniteCheckOpContext& nonFiniteCheckOpCtx,
+                                              std::vector<aclTensor*>& checkTensors, void*& outputAddr, void*& wsAddr)
     {
         OpArgContext nonFiniteCheckOpArgCtx;
         OpArg tempOpArg[3];
         OpArg* nonFiniteCheckOpArg = tempOpArg;
 
-        aclTensorList* tilingInputTensor =
-            nonFiniteCheckOpCtx.executor_->AllocTensorList(checkTensors.data(), checkTensors.size());
-        OP_CHECK(
-            tilingInputTensor != nullptr, OP_LOGW("failed to init non finite check tiling input tensorlist"),
-            return ACLNN_ERR_INNER);
+        aclTensorList* tilingInputTensor = nonFiniteCheckOpCtx.executor_->AllocTensorList(checkTensors.data(),
+                                                                                          checkTensors.size());
+        OP_CHECK(tilingInputTensor != nullptr, OP_LOGW("failed to init non finite check tiling input tensorlist"),
+                 return ACLNN_ERR_INNER);
         OpArg tilingInputArg;
         tilingInputArg.type = OpArgType::OPARG_ACLTENSOR_LIST;
         tilingInputArg->pointer = tilingInputTensor;
         OpArgList tilingInputArgList(&tilingInputArg, 1);
 
-        auto ret = PrepareNonFiniteCheckOpArgs(
-            nonFiniteCheckOpCtx, checkTensors, tilingInputArgList, nonFiniteCheckOpArgCtx, nonFiniteCheckOpArg);
+        auto ret = PrepareNonFiniteCheckOpArgs(nonFiniteCheckOpCtx, checkTensors, tilingInputArgList,
+                                               nonFiniteCheckOpArgCtx, nonFiniteCheckOpArg);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("failed to prepare non finite check op args, ret: %d", ret), return ret);
 
         OpArgList& output = *nonFiniteCheckOpArgCtx.GetOpArg(OpArgDef::OP_OUTPUT_ARG);
@@ -422,8 +416,8 @@ private:
         OpArgList& workspace = *nonFiniteCheckOpArgCtx.GetOpArg(OpArgDef::OP_WORKSPACE_ARG);
         aclTensor* wsTensor = reinterpret_cast<aclTensor*>(workspace[0]->pointer);
         wsAddr = wsTensor->GetStorageAddr();
-        return nonFiniteCheckOpCtx.bin_->Launch(
-            nonFiniteCheckOpCtx.stream_, nonFiniteCheckOpCtx.opArgCtx_, tilingInputArgList, &nonFiniteCheckOpArgCtx);
+        return nonFiniteCheckOpCtx.bin_->Launch(nonFiniteCheckOpCtx.stream_, nonFiniteCheckOpCtx.opArgCtx_,
+                                                tilingInputArgList, &nonFiniteCheckOpArgCtx);
     }
 };
 

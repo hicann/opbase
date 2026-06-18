@@ -32,8 +32,8 @@ constexpr uint16_t NNOPBASE_MODEL_ID = 61; // OP model
 namespace {
 void FillTensorInfo(Adx::TensorInfoV2& info, gert::TensorV2* rtTensor)
 {
-    info.tensorSize =
-        static_cast<size_t>(op::CalcShapeBytes(rtTensor->GetStorageShape().GetShapeSize(), rtTensor->GetDataType()));
+    info.tensorSize = static_cast<size_t>(
+        op::CalcShapeBytes(rtTensor->GetStorageShape().GetShapeSize(), rtTensor->GetDataType()));
     info.format = rtTensor->GetStorageFormat();
     info.dataType = rtTensor->GetDataType();
     info.tensorAddr = static_cast<int64_t*>(rtTensor->GetAddr());
@@ -81,8 +81,8 @@ void NnopbaseGetTilingDataAndKey(NnopbaseExecutor* const executor, uint64_t& til
     }
 }
 
-void NnopbaseGetWorkspaceInfo(
-    NnopbaseExecutor* const executor, std::string& workspaceBytes, std::string& workspaceAddrs)
+void NnopbaseGetWorkspaceInfo(NnopbaseExecutor* const executor, std::string& workspaceBytes,
+                              std::string& workspaceAddrs)
 {
     const auto workspacesSizes = NnopbaseGetWorkspacesSizesFromArgs(executor->args);
     std::stringstream workspaceAddrStr;
@@ -94,9 +94,8 @@ void NnopbaseGetWorkspaceInfo(
     workspaceAddrs = workspaceAddrStr.str();
 }
 
-void NnopbasePrepareDumpTensor(
-    NnopbaseTensors& tensors, const Adx::TensorType ioType, const NnopbaseChar* const opType,
-    std::vector<Adx::TensorInfoV2>& dumpTensors)
+void NnopbasePrepareDumpTensor(NnopbaseTensors& tensors, const Adx::TensorType ioType, const NnopbaseChar* const opType,
+                               std::vector<Adx::TensorInfoV2>& dumpTensors)
 {
     for (size_t i = 0U; i < tensors.num; i++) {
         OP_LOGI("Start to parse op %s index %zu to dump.", opType, i);
@@ -115,8 +114,8 @@ void NnopbasePrepareDumpTensor(
     }
 }
 
-inline void NnopbasePrepareOutputShapeDumpTensor(
-    NnopbaseExecutor* const executor, gert::TensorV2* outputShapeTensor, std::vector<Adx::TensorInfoV2>& dumpTensors)
+inline void NnopbasePrepareOutputShapeDumpTensor(NnopbaseExecutor* const executor, gert::TensorV2* outputShapeTensor,
+                                                 std::vector<Adx::TensorInfoV2>& dumpTensors)
 {
     Adx::TensorInfoV2 info;
     *outputShapeTensor = {
@@ -124,9 +123,8 @@ inline void NnopbasePrepareOutputShapeDumpTensor(
         {ge::FORMAT_ND, ge::FORMAT_ND, {}}, // format
         gert::kOnDeviceHbm,                 // placement
         ge::DT_INT64,                       // data type
-        op::internal::PtrCastTo<void>(
-            op::internal::PtrCastTo<uint8_t>(executor->workspaces.workspaces[0]) +
-            (executor->workspaces.length - executor->args->outputs.outPutShapeSize))};
+        op::internal::PtrCastTo<void>(op::internal::PtrCastTo<uint8_t>(executor->workspaces.workspaces[0]) +
+                                      (executor->workspaces.length - executor->args->outputs.outPutShapeSize))};
     FillTensorInfo(info, outputShapeTensor);
     info.type = Adx::TensorType::OUTPUT;
     info.addrType = Adx::AddressType::TRADITIONAL;
@@ -134,8 +132,8 @@ inline void NnopbasePrepareOutputShapeDumpTensor(
     dumpTensors.push_back(info);
 }
 
-inline void NnopbaseDumpTensors(
-    NnopbaseExecutor* executor, Adx::TensorType ioType, aclrtStream stream, NnopbaseChar* opType)
+inline void NnopbaseDumpTensors(NnopbaseExecutor* executor, Adx::TensorType ioType, aclrtStream stream,
+                                NnopbaseChar* opType)
 {
     auto& tensors = ioType == Adx::TensorType::INPUT ? executor->args->inputs : executor->args->outputs;
     OP_LOGI("Start to dump, op type %s.", opType);
@@ -197,8 +195,8 @@ void NnopbaseCheckOverflowAndDump(NnopbaseExecutor* const executor, aclrtStream 
 {
     aclrtFloatOverflowMode overflowMode = ACL_RT_OVERFLOW_MODE_SATURATION;
     NNOPBASE_ASSERT_RTOK(aclrtGetDeviceSatMode(&overflowMode));
-    NNOPBASE_ASSERT_TRUE(
-        (overflowMode == ACL_RT_OVERFLOW_MODE_SATURATION) || (overflowMode == ACL_RT_OVERFLOW_MODE_INFNAN));
+    NNOPBASE_ASSERT_TRUE((overflowMode == ACL_RT_OVERFLOW_MODE_SATURATION) ||
+                         (overflowMode == ACL_RT_OVERFLOW_MODE_INFNAN));
     OP_LOGD("Start to test op %s overflow, mode is %d.", executor->opType, overflowMode);
 
     bool isOverflow = false;
@@ -235,8 +233,8 @@ aclnnStatus NnopbaseDumpWorkspaceData(NnopbaseExecutor* executor, aclrtStream st
         const auto addrBase = executor->workspaces.workspaces[0]; // 开dump时一定有workspace
         if (op::internal::opProfilingSwitch.timeStampFlag && executor->args->binInfo->dfxInfo.isTimeStampEnable) {
             std::vector<MsprofAicTimeStampInfo> timeStampInfo;
-            Adx::AdumpPrintAndGetTimeStampInfo(
-                addrBase, executor->args->binInfo->debugBufSize, stream, executor->opType, timeStampInfo);
+            Adx::AdumpPrintAndGetTimeStampInfo(addrBase, executor->args->binInfo->debugBufSize, stream,
+                                               executor->opType, timeStampInfo);
             NnopbaseReportTimeStampInfo(timeStampInfo);
         } else {
             Adx::AdumpPrintWorkSpace(addrBase, executor->args->binInfo->debugBufSize, stream, executor->opType);
@@ -266,9 +264,8 @@ aclnnStatus NnopbasePrepareWorkspaceDumpTensor(NnopbaseExecutor* executor, std::
         executor->workspaces.workspaceTensor[i].SetStorageFormat(ge::FORMAT_ND);
         executor->workspaces.workspaceTensor[i].SetPlacement(gert::kOnDeviceHbm);
         executor->workspaces.workspaceTensor[i].SetSize(static_cast<int64_t>(workspacesSizes->GetData()[i]));
-        NNOPBASE_ASSERT_TRUE_RETVAL(
-            executor->workspaces.workspaceTensor[i].MutableTensorData().SetAddr(
-                executor->workspaces.workspaces[i], nullptr) == ge::GRAPH_SUCCESS);
+        NNOPBASE_ASSERT_TRUE_RETVAL(executor->workspaces.workspaceTensor[i].MutableTensorData().SetAddr(
+                                        executor->workspaces.workspaces[i], nullptr) == ge::GRAPH_SUCCESS);
         Adx::TensorInfoV2 info;
         FillTensorInfo(info, &executor->workspaces.workspaceTensor[i]);
         info.type = Adx::TensorType::WORKSPACE;
@@ -305,8 +302,8 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor* const executor, a
         const std::string l2Name(executor->opType);
         const std::string l0Name(executor->opType);
         const uint32_t numBlocks = NnopbaseExecutorGetNumBlocks(executor);
-        const std::string& magic =
-            nnopbase::GetMagicFormBin(executor->collecter->useCoreTypeMagic, executor->args->binInfo);
+        const std::string& magic = nnopbase::GetMagicFormBin(executor->collecter->useCoreTypeMagic,
+                                                             executor->args->binInfo);
         std::string devFunc;
         std::string kernelInfo;
         NnopbaseGetKernelInfoFromBin(executor->args->binInfo, kernelInfo, devFunc);
@@ -318,28 +315,27 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor* const executor, a
         NnopbaseGetWorkspaceInfo(executor, workspaceBytes, workspaceAddrs);
         const std::string& allAttrs = nnopbase::ToStr(executor->attrs);
 
-        Adx::OperatorInfoV2 opInfo =
-            op::internal::OperatorInfoBuilder(l2Name, l0Name)
-                .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
-                .TensorInfo(dumpInTensors)
-                .TensorInfo(dumpOutTensors)
-                .TensorInfo(dumpWorkSpaceTensors)
-                .AdditionInfo("block_dim", std::to_string(numBlocks))
-                .AdditionInfo("workspace_bytes", workspaceBytes)
-                .AdditionInfo("workspace_addrs", workspaceAddrs)
-                .AdditionInfo("all_attrs", allAttrs)
-                .AdditionInfo("dev_func", devFunc)
-                .AdditionInfo("tvm_magic", magic)
-                .AdditionInfo("kernel_info", kernelInfo)
-                .AdditionInfo("tiling_key", std::to_string(tilingKey))
-                .AdditionInfo("tiling_data", tilingData)
-                .DeviceInfo("args before execute", executor->argsExt.args, executor->argsExt.argsSize)
-                .Build();
+        Adx::OperatorInfoV2 opInfo = op::internal::OperatorInfoBuilder(l2Name, l0Name)
+                                         .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
+                                         .TensorInfo(dumpInTensors)
+                                         .TensorInfo(dumpOutTensors)
+                                         .TensorInfo(dumpWorkSpaceTensors)
+                                         .AdditionInfo("block_dim", std::to_string(numBlocks))
+                                         .AdditionInfo("workspace_bytes", workspaceBytes)
+                                         .AdditionInfo("workspace_addrs", workspaceAddrs)
+                                         .AdditionInfo("all_attrs", allAttrs)
+                                         .AdditionInfo("dev_func", devFunc)
+                                         .AdditionInfo("tvm_magic", magic)
+                                         .AdditionInfo("kernel_info", kernelInfo)
+                                         .AdditionInfo("tiling_key", std::to_string(tilingKey))
+                                         .AdditionInfo("tiling_data", tilingData)
+                                         .DeviceInfo("args before execute", executor->argsExt.args,
+                                                     executor->argsExt.argsSize)
+                                         .Build();
         auto res = AdumpAddExceptionOperatorInfoV2(opInfo);
-        OP_LOGI(
-            "AdumpAddExceptionOperatorInfo L2 = %s, L0 = %s, device_id = %d, task_id = %u, stream_id = %u, "
-            "res = %d.",
-            l2Name.c_str(), l0Name.c_str(), deviceId, taskId, streamId, res);
+        OP_LOGI("AdumpAddExceptionOperatorInfo L2 = %s, L0 = %s, device_id = %d, task_id = %u, stream_id = %u, "
+                "res = %d.",
+                l2Name.c_str(), l0Name.c_str(), deviceId, taskId, streamId, res);
     }
     return OK;
 }
@@ -413,8 +409,8 @@ static uint64_t* NnopbaseAddWorkspaceExceptionInfo(NnopbaseExecutor* const execu
 
 static bool NnopbaseNeedL0ExceptionDump(void)
 {
-    static const bool ret =
-        (nnopbase::IndvSoc::GetInstance().SupportL0ExceptionDump() && op::internal::IsArgExceptionDumpEnable());
+    static const bool ret = (nnopbase::IndvSoc::GetInstance().SupportL0ExceptionDump() &&
+                             op::internal::IsArgExceptionDumpEnable());
     return ret;
 }
 

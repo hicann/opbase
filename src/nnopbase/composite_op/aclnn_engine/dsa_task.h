@@ -63,8 +63,8 @@ protected:
             GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
                 GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
                 GetThreadLocalContext().logInfo_.l0Name);
-            OpDfxGuard kernelLaunchGuard(
-                GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
+            OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
+                                         DfxProfilingKernelLaunch);
             OP_LOGI("funcType is %d", randomNumTaskInfo_.randomNumFuncParaInfo.funcType);
             auto ret = aclrtRandomNumAsync(&randomNumTaskInfo_, stream, nullptr);
             if (ret != ACL_SUCCESS) {
@@ -73,14 +73,13 @@ protected:
             }
         }
         if (op::internal::opProfilingSwitch.kernelLaunchFlag && op::internal::opProfilingSwitch.additionInfoFlag) {
-            op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                GenKernelLauncherId(op::internal::GetThreadLocalContext().logInfo_.l0Name);
+            op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
+                op::internal::GetThreadLocalContext().logInfo_.l0Name);
             GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
                 GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
                 GetThreadLocalContext().logInfo_.l0Name);
-            op::internal::ReportAdditionInfo(
-                inputList, outputList, MSPROF_GE_TASK_TYPE_DSA,
-                GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+            op::internal::ReportAdditionInfo(inputList, outputList, MSPROF_GE_TASK_TYPE_DSA,
+                                             GetThreadLocalContext().profilingInfoId_.summaryItemId_);
         }
         GetCacheOpInfoSwitch(stream);
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
@@ -138,17 +137,15 @@ private:
         } else if (idx == idxMean) {
             workspaceHolder_[IDX_PARAM0] = PtrToValue(arg->GetData());
             void* dataAddr = arg->GetData();
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.valueOrAddr, sizeof(void*),
-                &dataAddr, sizeof(void*));
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.valueOrAddr, sizeof(void*),
+                     &dataAddr, sizeof(void*));
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.size = sizeof(void*);
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.isAddr = true;
         } else if (idx == idxStd) {
             workspaceHolder_[IDX_PARAM1] = PtrToValue(arg->GetData());
             void* dataAddr = arg->GetData();
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.valueOrAddr, sizeof(void*),
-                &dataAddr, sizeof(void*));
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.valueOrAddr, sizeof(void*),
+                     &dataAddr, sizeof(void*));
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.size = sizeof(void*);
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.isAddr = true;
         }
@@ -182,9 +179,8 @@ private:
                 return ACLNN_ERR_INNER;
             }
 
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.valueOrAddr, arg->Size(),
-                arg->GetData(), arg->Size());
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.valueOrAddr, arg->Size(),
+                     arg->GetData(), arg->Size());
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.size = arg->Size();
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.mean.isAddr = false;
         } else if (idx == idxStd) {
@@ -194,9 +190,8 @@ private:
                 return ACLNN_ERR_INNER;
             }
 
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.valueOrAddr, arg->Size(),
-                arg->GetData(), arg->Size());
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.valueOrAddr, arg->Size(),
+                     arg->GetData(), arg->Size());
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.size = arg->Size();
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.normalDisInfo.stddev.isAddr = false;
         }
@@ -221,9 +216,8 @@ private:
 
     aclnnStatus VisitInputArgs(OpArgList& argList)
     {
-        CHECK_COND(
-            argList.count == DSA_TASK_INPUT_NUM, ACLNN_ERR_INNER,
-            "DSARandomNormal or DSARandomTruncatedNormal input arg num must be 5.");
+        CHECK_COND(argList.count == DSA_TASK_INPUT_NUM, ACLNN_ERR_INNER,
+                   "DSARandomNormal or DSARandomTruncatedNormal input arg num must be 5.");
         return argList.VisitBy([this](size_t idx, OpArg& arg) -> aclnnStatus { return VisitInputArg(idx, arg); });
     }
 };
@@ -280,17 +274,15 @@ private:
         } else if (idx == idxMin) {
             workspaceHolder_[IDX_PARAM0] = PtrToValue(arg->GetData());
             void* dataAddr = arg->GetData();
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.valueOrAddr, sizeof(void*),
-                &dataAddr, sizeof(void*));
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.valueOrAddr, sizeof(void*),
+                     &dataAddr, sizeof(void*));
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.size = sizeof(void*);
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.isAddr = true;
         } else if (idx == idxMax) {
             workspaceHolder_[IDX_PARAM1] = PtrToValue(arg->GetData());
             void* dataAddr = arg->GetData();
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.valueOrAddr, sizeof(void*),
-                &dataAddr, sizeof(void*));
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.valueOrAddr, sizeof(void*),
+                     &dataAddr, sizeof(void*));
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.size = sizeof(void*);
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.isAddr = true;
         }
@@ -325,9 +317,8 @@ private:
                 OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
                 return ACLNN_ERR_INNER;
             }
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.valueOrAddr, arg->Size(),
-                arg->GetData(), arg->Size());
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.valueOrAddr, arg->Size(),
+                     arg->GetData(), arg->Size());
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.size = arg->Size();
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.isAddr = false;
         } else if (idx == idxMax) {
@@ -336,9 +327,8 @@ private:
                 OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
                 return ACLNN_ERR_INNER;
             }
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.valueOrAddr, arg->Size(),
-                arg->GetData(), arg->Size());
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.valueOrAddr, arg->Size(),
+                     arg->GetData(), arg->Size());
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.size = arg->Size();
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.isAddr = false;
         }
@@ -364,8 +354,8 @@ private:
 
     aclnnStatus VisitInputArgs(OpArgList& argList)
     {
-        CHECK_COND(
-            argList.count == DSA_TASK_INPUT_NUM, ACLNN_ERR_INNER, "DSARandomUniformTask input arg num must be 5.");
+        CHECK_COND(argList.count == DSA_TASK_INPUT_NUM, ACLNN_ERR_INNER,
+                   "DSARandomUniformTask input arg num must be 5.");
         return argList.VisitBy([this](size_t idx, OpArg& arg) -> aclnnStatus { return VisitInputArg(idx, arg); });
     }
 };
@@ -413,9 +403,8 @@ private:
         } else if (idx == idxDropoutRatio) {
             workspaceHolder_[IDX_PARAM0] = PtrToValue(arg->GetData());
             void* dataAddr = arg->GetData();
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.valueOrAddr,
-                sizeof(void*), &dataAddr, sizeof(void*));
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.valueOrAddr,
+                     sizeof(void*), &dataAddr, sizeof(void*));
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.size = sizeof(void*);
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.isAddr = true;
         }
@@ -450,9 +439,8 @@ private:
                 OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
                 return ACLNN_ERR_INNER;
             }
-            memcpy_s(
-                randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.valueOrAddr,
-                arg->Size(), arg->GetData(), arg->Size());
+            memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.valueOrAddr,
+                     arg->Size(), arg->GetData(), arg->Size());
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.size = arg->Size();
             randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.isAddr = false;
 
@@ -479,9 +467,8 @@ private:
 
     aclnnStatus VisitInputArgs(OpArgList& argList)
     {
-        CHECK_COND(
-            argList.count == DSA_GENBIT_TASK_INPUT_NUM, ACLNN_ERR_INNER,
-            "DSARandomUniformTask input arg num must be 4.");
+        CHECK_COND(argList.count == DSA_GENBIT_TASK_INPUT_NUM, ACLNN_ERR_INNER,
+                   "DSARandomUniformTask input arg num must be 4.");
         return argList.VisitBy([this](size_t idx, OpArg& arg) -> aclnnStatus { return VisitInputArg(idx, arg); });
     }
 
@@ -501,9 +488,8 @@ private:
 template <typename C>
 class DSAKernelLauncher : public KernelLauncher {
 public:
-    DSAKernelLauncher(
-        uint32_t opType, CoreType coreType, const ProfilingInfoId& profilingId, const aclOpExecutor* executor,
-        const C& task, OpArgContext* opArgCtx)
+    DSAKernelLauncher(uint32_t opType, CoreType coreType, const ProfilingInfoId& profilingId,
+                      const aclOpExecutor* executor, const C& task, OpArgContext* opArgCtx)
         : KernelLauncher(opType, coreType, executor, profilingId), args_(opArgCtx), task_(task)
     {}
 
@@ -530,9 +516,8 @@ public:
 
     internal::OpKernelBin* GetBin() override { return nullptr; }
 
-    bool CheckRepeatable(
-        [[maybe_unused]] const std::unordered_map<const aclStorage*, const aclStorage*>& relation,
-        [[maybe_unused]] const std::vector<const aclStorage*>& oriStorage) override
+    bool CheckRepeatable([[maybe_unused]] const std::unordered_map<const aclStorage*, const aclStorage*>& relation,
+                         [[maybe_unused]] const std::vector<const aclStorage*>& oriStorage) override
     {
         return false;
     }

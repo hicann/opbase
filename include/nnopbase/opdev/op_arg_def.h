@@ -518,16 +518,16 @@ inline void AppendOpArg([[maybe_unused]] size_t idx, op::OpImplMode value, OpArg
     currArg++;
 }
 
-inline void AppendOpArg(
-    [[maybe_unused]] size_t idx, std::vector<std::tuple<void*, const aclTensor*>>& value, OpArg*& currArg)
+inline void AppendOpArg([[maybe_unused]] size_t idx, std::vector<std::tuple<void*, const aclTensor*>>& value,
+                        OpArg*& currArg)
 {
     currArg->type = OpArgType::OPARG_MEMSET_WORKSPACE;
     currArg->value = OpArgValue(&value);
     currArg++;
 }
 
-inline void AppendOpArg(
-    [[maybe_unused]] size_t idx, const std::vector<std::tuple<void*, const aclTensor*>>& value, OpArg*& currArg)
+inline void AppendOpArg([[maybe_unused]] size_t idx, const std::vector<std::tuple<void*, const aclTensor*>>& value,
+                        OpArg*& currArg)
 {
     currArg->type = OpArgType::OPARG_MEMSET_WORKSPACE;
     currArg->value = OpArgValue(&value);

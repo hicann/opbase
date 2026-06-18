@@ -134,8 +134,8 @@ public:
     using ScalarOpNodes = typename FunList::template Filter<__aux::TypeIsScalarBind>;
 
     // Collect CopyInBrc & VecBrc Nodes.
-    using CopyBrcNodes = typename __aux::Condition<
-        supportBrc, typename FunList::template Filter<CheckCopyInBrc>, Elems<>>::Type::template Remove<ScalarOpNodes>;
+    using CopyBrcNodes = typename __aux::Condition<supportBrc, typename FunList::template Filter<CheckCopyInBrc>,
+                                                   Elems<>>::Type::template Remove<ScalarOpNodes>;
     using VecBrcNodes = typename __aux::Condition<supportBrc, typename FunList::template Filter<CheckVecBrc>, Elems<>>;
 
     // Input/Output GM size
@@ -289,8 +289,8 @@ public:
     {
         constexpr uint32_t allOutSize = OutList::Size;
         constexpr uint32_t persistMte3Size = GetPersistMte3Num<use_nddma, cache_brc>();
-        constexpr uint32_t mte2AsMte3Size =
-            CopyInNodesLinkCopyOut::Size - (use_nddma ? 0 : CopyBrcNodesLinkCopyOut::Size);
+        constexpr uint32_t mte2AsMte3Size = CopyInNodesLinkCopyOut::Size -
+                                            (use_nddma ? 0 : CopyBrcNodesLinkCopyOut::Size);
         return allOutSize - persistMte3Size - mte2AsMte3Size;
     }
 

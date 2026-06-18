@@ -19,9 +19,8 @@ namespace utils {
 aclnnStatus ThreadVarContainer::SetCurMc2RankIdInThread(HcclComm commHandle)
 {
     uint32_t rankId;
-    CHECK_COND(
-        nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankId(commHandle, &rankId) == OK, ACLNN_ERR_INNER,
-        "Failed to invode the HcclGetRankId function of the hccl module. HcclCom = %p", commHandle);
+    CHECK_COND(nnopbase::IndvHcclWrapper::GetInstance().HcclGetRankId(commHandle, &rankId) == OK, ACLNN_ERR_INNER,
+               "Failed to invode the HcclGetRankId function of the hccl module. HcclCom = %p", commHandle);
     mc2RankId = rankId;
     return OK;
 }

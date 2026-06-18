@@ -102,57 +102,47 @@ template <class R, class In1, class In2, class In3, int tempBufSize = 0, int fix
 struct ElemwiseTernaryOP : public FunBase<1, INPUT_SIZE3, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3> {};
 
 // 四输入
-template <
-    class R, class In1, class In2, class In3, class In4, int tempBufSize = 0, int fixedBuf = 0, bool isAdvanced = false>
+template <class R, class In1, class In2, class In3, class In4, int tempBufSize = 0, int fixedBuf = 0,
+          bool isAdvanced = false>
 struct ElemwiseQuaternaryOP : public FunBase<1, INPUT_SIZE4, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4> {
 };
 
 // 五输入
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, int tempBufSize = 0, int fixedBuf = 0,
-    bool isAdvanced = false>
+template <class R, class In1, class In2, class In3, class In4, class In5, int tempBufSize = 0, int fixedBuf = 0,
+          bool isAdvanced = false>
 struct ElemwiseQuinaryOP
     : public FunBase<1, INPUT_SIZE5, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5> {};
 
 // 六输入
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, class In6, int tempBufSize = 0, int fixedBuf = 0,
-    bool isAdvanced = false>
+template <class R, class In1, class In2, class In3, class In4, class In5, class In6, int tempBufSize = 0,
+          int fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise6OP
     : public FunBase<1, INPUT_SIZE6, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6> {};
 
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, int32_t tempBufSize = 0,
-    int32_t fixedBuf = 0, bool isAdvanced = false>
+template <class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, int32_t tempBufSize = 0,
+          int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise7OP
     : public FunBase<1, INPUT_SIZE7, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7> {};
 
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8,
-    int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
+template <class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8,
+          int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
 struct Elemwise8OP
     : public FunBase<1, INPUT_SIZE8, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8> {};
 
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
-    int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
-struct Elemwise9OP
-    : public FunBase<
-          1, INPUT_SIZE9, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8, In9> {};
+template <class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
+          int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
+struct Elemwise9OP : public FunBase<1, INPUT_SIZE9, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6,
+                                    In7, In8, In9> {};
 
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
-    class In10, int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
-struct Elemwise10OP
-    : public FunBase<
-          1, INPUT_SIZE10, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8, In9, In10> {};
+template <class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
+          class In10, int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
+struct Elemwise10OP : public FunBase<1, INPUT_SIZE10, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5,
+                                     In6, In7, In8, In9, In10> {};
 
-template <
-    class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
-    class In10, class In11, int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
-struct Elemwise11OP : public FunBase<
-                          1, INPUT_SIZE11, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5, In6, In7, In8,
-                          In9, In10, In11> {};
+template <class R, class In1, class In2, class In3, class In4, class In5, class In6, class In7, class In8, class In9,
+          class In10, class In11, int32_t tempBufSize = 0, int32_t fixedBuf = 0, bool isAdvanced = false>
+struct Elemwise11OP : public FunBase<1, INPUT_SIZE11, tempBufSize, fixedBuf, isAdvanced, R, In1, In2, In3, In4, In5,
+                                     In6, In7, In8, In9, In10, In11> {};
 
 template <class T>
 struct Duplicate : public ElemwiseUnaryOP<T, T> {
@@ -555,8 +545,8 @@ struct LeakyRelu : public ElemwiseBinaryOP<T, T, T> {
 
 template <class R, class T, int cmpMode>
 struct Compare : public ElemwiseBinaryOP<R, T, T> {
-    __aicore__ inline Compare(
-        LocalTensor<R>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local, uint32_t count)
+    __aicore__ inline Compare(LocalTensor<R>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local,
+                              uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Compare(dstLocal, src0Local, src1Local, static_cast<AscendC::CMPMODE>(cmpMode), count);
@@ -625,8 +615,8 @@ struct Ors : public ElemwiseBinaryOP<T, T, T> {
 
 template <class T>
 struct Power : public ElemwiseBinaryOP<T, T, T> {
-    __aicore__ inline Power(
-        LocalTensor<T>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local, uint32_t count)
+    __aicore__ inline Power(LocalTensor<T>& dstLocal, LocalTensor<T>& src0Local, LocalTensor<T>& src1Local,
+                            uint32_t count)
     {
 #ifdef __CCE_AICORE__
         static constexpr AscendC::PowerConfig config = {AscendC::PowerAlgo::DOUBLE_FLOAT_TECH};
@@ -653,27 +643,24 @@ struct Power : public ElemwiseBinaryOP<T, T, T> {
 
 template <class U, class T, int selMode>
 struct Select : public ElemwiseTernaryOP<T, U, T, T> {
-    __aicore__ inline Select(
-        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, const LocalTensor<T>& src0Local,
-        const LocalTensor<T>& src1Local, uint32_t count)
+    __aicore__ inline Select(const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask,
+                             const LocalTensor<T>& src0Local, const LocalTensor<T>& src1Local, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Select(dstLocal, selMask, src0Local, src1Local, static_cast<AscendC::SELMODE>(selMode), count);
 #endif
     }
 
-    __aicore__ inline Select(
-        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, const LocalTensor<T>& src0Local, T src1Scalar,
-        uint32_t count)
+    __aicore__ inline Select(const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask,
+                             const LocalTensor<T>& src0Local, T src1Scalar, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Select(dstLocal, selMask, src0Local, src1Scalar, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, count);
 #endif
     }
 
-    __aicore__ inline Select(
-        const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, T src0Scalar, const LocalTensor<T>& src1Local,
-        uint32_t count)
+    __aicore__ inline Select(const LocalTensor<T>& dstLocal, const LocalTensor<U>& selMask, T src0Scalar,
+                             const LocalTensor<T>& src1Local, uint32_t count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Select(dstLocal, selMask, src0Scalar, src1Local, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, count);
@@ -686,9 +673,8 @@ struct Select : public ElemwiseTernaryOP<T, U, T, T> {
  */
 template <class T>
 struct FusedMulAdd : public ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline FusedMulAdd(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2, const LocalTensor<T>& alpha,
-        int count)
+    __aicore__ inline FusedMulAdd(const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2,
+                                  const LocalTensor<T>& alpha, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::FusedMulAdd(src2, alpha, src1, count);
@@ -702,16 +688,16 @@ struct FusedMulAdd : public ElemwiseTernaryOP<T, T, T, T> {
  */
 template <class T>
 struct Axpy : public ElemwiseTernaryOP<T, T, T, T> {
-    __aicore__ inline Axpy(
-        const LocalTensor<T>& dst, const T& scalar, const LocalTensor<T>& src1, const LocalTensor<T>& src2, int count)
+    __aicore__ inline Axpy(const LocalTensor<T>& dst, const T& scalar, const LocalTensor<T>& src1,
+                           const LocalTensor<T>& src2, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Axpy(src1, src2, scalar, count);
         AscendC::Copy(dst, src1, count);
 #endif
     }
-    __aicore__ inline Axpy(
-        const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2, const T& scalar, int count)
+    __aicore__ inline Axpy(const LocalTensor<T>& dst, const LocalTensor<T>& src1, const LocalTensor<T>& src2,
+                           const T& scalar, int count)
     {
 #ifdef __CCE_AICORE__
         AscendC::Axpy(src1, src2, scalar, count);
@@ -736,10 +722,9 @@ static constexpr uint8_t NDDMA_DIM = 5;
 template <class T, int group = 0>
 struct CopyInBrc : public ElemwiseUnaryOP<T, T, 1> {
 #ifdef __DAV_C310__
-    __aicore__ inline CopyInBrc(
-        const AscendC::LocalTensor<T>& dst, const AscendC::GlobalTensor<T>& src,
-        const AscendC::MultiCopyParams<T, NDDMA_DIM>& params,
-        const AscendC::MultiCopyConfig& config = AscendC::kDefaultMultiCopyConfig)
+    __aicore__ inline CopyInBrc(const AscendC::LocalTensor<T>& dst, const AscendC::GlobalTensor<T>& src,
+                                const AscendC::MultiCopyParams<T, NDDMA_DIM>& params,
+                                const AscendC::MultiCopyConfig& config = AscendC::kDefaultMultiCopyConfig)
     {
         AscendC::DataCopy<T, NDDMA_DIM, config>(dst, src, params);
     }

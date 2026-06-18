@@ -14,28 +14,25 @@
 
 namespace aicpu {
 class ThreadCtx {
- public:
-  explicit ThreadCtx(DeviceType device) : device_(device) {}
+public:
+    explicit ThreadCtx(DeviceType device) : device_(device) {}
 
-  virtual ~ThreadCtx() = default;
+    virtual ~ThreadCtx() = default;
 
-  virtual uint32_t SetThreadCtxInfo(CtxType type, const std::string &key,
-                                    const std::string &value) const = 0;
+    virtual uint32_t SetThreadCtxInfo(CtxType type, const std::string& key, const std::string& value) const = 0;
 
-  virtual uint32_t GetThreadCtxInfo(CtxType type, const std::string &key,
-                                    std::string &value) const = 0;
+    virtual uint32_t GetThreadCtxInfo(CtxType type, const std::string& key, std::string& value) const = 0;
 
-  virtual uint32_t RemoveThreadCtxInfo(CtxType type,
-                                       const std::string &key) const = 0;
+    virtual uint32_t RemoveThreadCtxInfo(CtxType type, const std::string& key) const = 0;
 
- private:
-  ThreadCtx(const ThreadCtx &) = delete;
-  ThreadCtx(ThreadCtx &&) = delete;
-  ThreadCtx &operator=(const ThreadCtx &) = delete;
-  ThreadCtx &operator=(ThreadCtx &&) = delete;
+private:
+    ThreadCtx(const ThreadCtx&) = delete;
+    ThreadCtx(ThreadCtx&&) = delete;
+    ThreadCtx& operator=(const ThreadCtx&) = delete;
+    ThreadCtx& operator=(ThreadCtx&&) = delete;
 
- private:
-  DeviceType device_;  // device type, HOST/DEVICE
+private:
+    DeviceType device_; // device type, HOST/DEVICE
 };
-}  // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_THREAD_CTX_H_
+} // namespace aicpu
+#endif // AICPU_CONTEXT_COMMON_THREAD_CTX_H_

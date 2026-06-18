@@ -13,32 +13,31 @@
 
 namespace aicpu {
 class HostSharder : public Sharder {
- public:
-  explicit HostSharder(DeviceType device) : Sharder(device){};
+public:
+    explicit HostSharder(DeviceType device) : Sharder(device) {};
 
-  ~HostSharder() = default;
+    ~HostSharder() = default;
 
-  /*
-   * ParallelFor shards the "total" units of work.
-   * @param total: size of total work
-   * @param perUnitSize: expect size of per unit work
-   * @param work: process of per unit work
-   */
-  void ParallelFor(
-      int64_t total, int64_t per_unit_size,
-      const std::function<void(int64_t, int64_t)> &work) const override;
+    /*
+     * ParallelFor shards the "total" units of work.
+     * @param total: size of total work
+     * @param perUnitSize: expect size of per unit work
+     * @param work: process of per unit work
+     */
+    void ParallelFor(int64_t total, int64_t per_unit_size,
+                     const std::function<void(int64_t, int64_t)>& work) const override;
 
-  /*
-   * Get CPU number
-   * @return CPU number
-   */
-  uint32_t GetCPUNum() const override;
+    /*
+     * Get CPU number
+     * @return CPU number
+     */
+    uint32_t GetCPUNum() const override;
 
- private:
-  HostSharder(const HostSharder &) = delete;
-  HostSharder(HostSharder &&) = delete;
-  HostSharder &operator=(const HostSharder &) = delete;
-  HostSharder &operator=(HostSharder &&) = delete;
+private:
+    HostSharder(const HostSharder&) = delete;
+    HostSharder(HostSharder&&) = delete;
+    HostSharder& operator=(const HostSharder&) = delete;
+    HostSharder& operator=(HostSharder&&) = delete;
 };
-}  // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_HOST_SHARDER_H
+} // namespace aicpu
+#endif // AICPU_CONTEXT_COMMON_HOST_SHARDER_H

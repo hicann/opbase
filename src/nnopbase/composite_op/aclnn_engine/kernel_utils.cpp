@@ -29,9 +29,8 @@ gert::OppImplVersionTag GetOppImplVersion()
     string p = homePath;
     const std::string kernelPath = p + "/opp_latest";
     std::string oppKernelPath = RealPath(kernelPath);
-    OP_CHECK(
-        oppKernelPath.empty(), OP_LOGI("opp kernel path %s", oppKernelPath.c_str()),
-        return gert::OppImplVersionTag::kOppKernel);
+    OP_CHECK(oppKernelPath.empty(), OP_LOGI("opp kernel path %s", oppKernelPath.c_str()),
+             return gert::OppImplVersionTag::kOppKernel);
     return gert::OppImplVersionTag::kOpp;
 }
 

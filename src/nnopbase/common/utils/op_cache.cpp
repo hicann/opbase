@@ -410,9 +410,8 @@ static inline bool CheckHashBufCapacity(uint64_t& hashOffset, size_t addSize)
 {
     if (hashOffset + addSize > K_HASH_BUF_SIZE) {
         hashOffset = K_INVALID_HASH_OFFSET;
-        OP_LOGW(
-            "Hash buffer size is overflow, cur size: %lu, add size: %zu, capacity: %lu", hashOffset, addSize,
-            K_HASH_BUF_SIZE);
+        OP_LOGW("Hash buffer size is overflow, cur size: %lu, add size: %zu, capacity: %lu", hashOffset, addSize,
+                K_HASH_BUF_SIZE);
         return false;
     }
     return true;
@@ -486,8 +485,8 @@ void AddOpConfigInfoToBuf()
 {
     OpCacheThreadLocalData* tlsData = &g_opCacheTlsData;
     if (CheckHashBufCapacity(tlsData->hashOffset, sizeof(ThreadCoreNum) + sizeof(uint8_t))) {
-        ThreadCoreNum coreNum(
-            tlsData->threadLocalContext.opConfigInfo_.aicNum_, tlsData->threadLocalContext.opConfigInfo_.aivNum_);
+        ThreadCoreNum coreNum(tlsData->threadLocalContext.opConfigInfo_.aicNum_,
+                              tlsData->threadLocalContext.opConfigInfo_.aivNum_);
         *PtrCastTo<ThreadCoreNum>(tlsData->hashBuf + tlsData->hashOffset) = coreNum;
         tlsData->hashOffset += sizeof(ThreadCoreNum);
         bool deterministic = tlsData->threadLocalContext.opConfigInfo_.isDeterministicOn_;
@@ -966,8 +965,8 @@ void* OpExecCache::AddLaunchTensor(const aclTensor* t, size_t dataLen)
         return nullptr;
     }
     auto idx = std::distance(cachedStorageList_.begin(), it);
-    addrUpdateRelation_[cacheOffset_] =
-        AddrRule(false, 0, idx, op::CalcShapeBytes(t->GetViewOffset() + t->GetStorageOffset(), t->GetDataType(), true));
+    addrUpdateRelation_[cacheOffset_] = AddrRule(
+        false, 0, idx, op::CalcShapeBytes(t->GetViewOffset() + t->GetStorageOffset(), t->GetDataType(), true));
     return AddLaunchData(dataLen);
 }
 
@@ -1094,8 +1093,8 @@ aclnnStatus OpExecCache::DoSummaryProfiling(int index)
         return ACLNN_SUCCESS;
     }
     void* tensorInfoLists = cacheTensorInfoLists_[index];
-    return DoReportAdditionInfo(
-        tensorInfoLists, opExecCacheDfx_->GetTaskInfo(index), opExecCacheDfx_->GetProfilingInfoId(index));
+    return DoReportAdditionInfo(tensorInfoLists, opExecCacheDfx_->GetTaskInfo(index),
+                                opExecCacheDfx_->GetProfilingInfoId(index));
 }
 
 void OpExecCache::RestoreThreadLocal(int index)
@@ -1112,15 +1111,14 @@ aclnnStatus OpExecCache::Run(void* workspaceAddr, const aclrtStream stream, cons
     for (Task& t : taskQueue_) {
         RestoreThreadLocal(index);
         {
-            OpDfxGuard kernelLaunchGuard(
-                opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_, DfxProfilingType::DfxProfilingKernelLaunch);
+            OpDfxGuard kernelLaunchGuard(opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_,
+                                         DfxProfilingType::DfxProfilingKernelLaunch);
             aclnnStatus result = std::get<1>(t)(stream, op::internal::PtrShift(cacheBuf_, std::get<0>(t)));
             OP_CHECK(result == ACLNN_SUCCESS, OP_LOGE(result, "OpExecCache run fail."), return result);
         }
         if (IsExceptionDumpEnable()) {
-            DoExceptionDump(
-                cacheTensorInfoLists_[index], workspaceAddr, tensors, opExecCacheDfx_->GetExceptionDumpInfo(index),
-                stream);
+            DoExceptionDump(cacheTensorInfoLists_[index], workspaceAddr, tensors,
+                            opExecCacheDfx_->GetExceptionDumpInfo(index), stream);
         }
         if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
             DoSummaryProfiling(index);
@@ -1128,9 +1126,8 @@ aclnnStatus OpExecCache::Run(void* workspaceAddr, const aclrtStream stream, cons
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
             void* tensorInfoLists = cacheTensorInfoLists_[index];
             TaskInfo taskInfo = opExecCacheDfx_->GetTaskInfo(index);
-            ReportCacheOpInfoFromCache(
-                taskInfo, tensorInfoLists, g_opCacheTlsData.threadLocalContext.numBlocks_,
-                opExecCacheDfx_->GetProfilingInfoId(index));
+            ReportCacheOpInfoFromCache(taskInfo, tensorInfoLists, g_opCacheTlsData.threadLocalContext.numBlocks_,
+                                       opExecCacheDfx_->GetProfilingInfoId(index));
         }
         index++;
     }
@@ -1431,9 +1428,8 @@ OpExecCacheWrap::OpExecCacheWrap(OpExecCache* cache) : opExecCache_(cache)
     opLogInfo_ = tlsData->threadLocalContext.logInfo_;
     hugeMemPoolIndex_ = tlsData->threadLocalContext.poolIndex_;
     opExecCacheManager_ = GetOpExecCacheManager();
-    OP_LOGI(
-        "Op exec cache get device ptr list: %s. Hugemem trace: huge mem pool index: %d", ReportAddr().c_str(),
-        hugeMemPoolIndex_);
+    OP_LOGI("Op exec cache get device ptr list: %s. Hugemem trace: huge mem pool index: %d", ReportAddr().c_str(),
+            hugeMemPoolIndex_);
 }
 
 OpExecCacheWrap::~OpExecCacheWrap()
@@ -1473,10 +1469,10 @@ static const char* GetEnvOfDisableL2Cache()
 
 bool CheckCacheable()
 {
-    bool cacheDisable =
-        (op::internal::IsDumpEnable() || op::internal::IsExceptionDumpEnable() ||
-         op::internal::IsOverflowDumpEnable() ||
-         (op::internal::GetOpProfilingRecordArgFlag() || internal::opProfilingSwitch.level2ProfilingFlag));
+    bool cacheDisable = (op::internal::IsDumpEnable() || op::internal::IsExceptionDumpEnable() ||
+                         op::internal::IsOverflowDumpEnable() ||
+                         (op::internal::GetOpProfilingRecordArgFlag() ||
+                          internal::opProfilingSwitch.level2ProfilingFlag));
     if (cacheDisable) {
         g_opCacheTlsData.threadLocalContext.cacheHasFull_ = true;
         return false;

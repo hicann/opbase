@@ -46,9 +46,8 @@ ge::graphStatus ElewiseTiling(const ElewiseTilingParams& elewiseTilingParams, El
     OP_LOGD("ElewiseTiling", "Enter ElewiseTiling.");
     int64_t dim0 = 1;
     for (uint64_t i = 0; i < elewiseTilingParams.shape.GetDimNum(); i++) {
-        OP_CHECK_IF(
-            elewiseTilingParams.shape.GetDim(i) == 0, OP_LOGE("ElewiseTiling", "elewiseTiling dim can not be 0"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(elewiseTilingParams.shape.GetDim(i) == 0,
+                    OP_LOGE("ElewiseTiling", "elewiseTiling dim can not be 0"), return ge::GRAPH_FAILED);
         dim0 = dim0 * elewiseTilingParams.shape.GetDim(i);
     }
 
@@ -63,20 +62,19 @@ ge::graphStatus ElewiseTiling(const ElewiseTilingParams& elewiseTilingParams, El
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        elewiseTilingParams.coreNum == 0, OP_LOGE("ElewiseTiling", "coreNum can not be 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(elewiseTilingParams.coreNum == 0, OP_LOGE("ElewiseTiling", "coreNum can not be 0"),
+                return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        elewiseTilingParams.ubSize < computeParams.extraSize[0],
-        OP_LOGE("ElewiseTiling", "ubSize is smaller than extra size"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(elewiseTilingParams.ubSize < computeParams.extraSize[0],
+                OP_LOGE("ElewiseTiling", "ubSize is smaller than extra size"), return ge::GRAPH_FAILED);
 
-    int64_t coreNum =
-        (dim0 * computeParams.minDtypeBits + MIN_TILING_BITS_SIZE_PER_CORE - 1) / MIN_TILING_BITS_SIZE_PER_CORE;
+    int64_t coreNum = (dim0 * computeParams.minDtypeBits + MIN_TILING_BITS_SIZE_PER_CORE - 1) /
+                      MIN_TILING_BITS_SIZE_PER_CORE;
     if (coreNum > elewiseTilingParams.coreNum) {
         coreNum = elewiseTilingParams.coreNum;
     }
-    int64_t blockFormer =
-        ((dim0 + coreNum - 1) / coreNum + CACHE_LINE_BYTE_LENGTH - 1) / CACHE_LINE_BYTE_LENGTH * CACHE_LINE_BYTE_LENGTH;
+    int64_t blockFormer = ((dim0 + coreNum - 1) / coreNum + CACHE_LINE_BYTE_LENGTH - 1) / CACHE_LINE_BYTE_LENGTH *
+                          CACHE_LINE_BYTE_LENGTH;
     int64_t blockNum = (dim0 + blockFormer - 1) / blockFormer;
     int64_t blockTail = dim0 - (blockNum - 1) * blockFormer;
 
@@ -111,17 +109,15 @@ bool IsSameElewiseShape(const gert::Shape& shape1, const gert::Shape& shape2)
     }
 
     if (shape1.GetDimNum() != shape2.GetDimNum()) {
-        OP_LOGE(
-            "ElewiseTiling", "elewise shape dim num is not equal, shape1 is %zu, shape2 is %zu", shape1.GetDimNum(),
-            shape2.GetDimNum());
+        OP_LOGE("ElewiseTiling", "elewise shape dim num is not equal, shape1 is %zu, shape2 is %zu", shape1.GetDimNum(),
+                shape2.GetDimNum());
         return false;
     }
 
     for (size_t i = 0; i < shape1.GetDimNum(); i++) {
         if (shape1.GetDim(i) != shape2.GetDim(i)) {
-            OP_LOGE(
-                "ElewiseTiling", "elewise shape dim %zu not equal, shape1 is %ld, shape2 is %ld", i, shape1.GetDim(i),
-                shape2.GetDim(i));
+            OP_LOGE("ElewiseTiling", "elewise shape dim %zu not equal, shape1 is %ld, shape2 is %ld", i,
+                    shape1.GetDim(i), shape2.GetDim(i));
             return false;
         }
     }
@@ -142,8 +138,8 @@ ge::graphStatus ElewiseBaseTiling::GetPlatformInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-void ElewiseBaseTiling::AdaptEleBaseTilingData(
-    const ElewiseTilingData& elewiseTilingData, EleBaseTilingData& eleBaseTilingData)
+void ElewiseBaseTiling::AdaptEleBaseTilingData(const ElewiseTilingData& elewiseTilingData,
+                                               EleBaseTilingData& eleBaseTilingData)
 {
     OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData.");
     eleBaseTilingData.scheMode = GetScheMode();
@@ -159,8 +155,8 @@ void ElewiseBaseTiling::AdaptEleBaseTilingData(
     eleBaseTilingData.coreNum = static_cast<int32_t>(elewiseTilingData.coreNum);
 }
 
-void ElewiseBaseTiling::AdaptEleBaseTilingData16B(
-    const ElewiseTilingData& elewiseTilingData, EleBaseTilingData16B& eleBaseTilingData16B)
+void ElewiseBaseTiling::AdaptEleBaseTilingData16B(const ElewiseTilingData& elewiseTilingData,
+                                                  EleBaseTilingData16B& eleBaseTilingData16B)
 {
     OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData16B.");
 
@@ -176,9 +172,9 @@ ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData24B(const ElewiseTiling
     OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData24B.");
 
     Ele24BTilingData = context_->GetTilingData<EleBaseTilingData24B>();
-    OP_CHECK_IF(
-        (Ele24BTilingData == nullptr), OP_LOGD(context_->GetNodeName(), "Get Ele24BTilingData from GE context failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((Ele24BTilingData == nullptr),
+                OP_LOGD(context_->GetNodeName(), "Get Ele24BTilingData from GE context failed"),
+                return ge::GRAPH_FAILED);
 
     Ele24BTilingData->dim0 = elewiseTilingData.dim0;
     Ele24BTilingData->ubFormer = elewiseTilingData.ubFormer;
@@ -193,9 +189,9 @@ ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData32B(const ElewiseTiling
     OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData32B.");
 
     Ele32BTilingData = context_->GetTilingData<EleBaseTilingData32B>();
-    OP_CHECK_IF(
-        (Ele32BTilingData == nullptr), OP_LOGD(context_->GetNodeName(), "Get Ele32BTilingData from GE context failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((Ele32BTilingData == nullptr),
+                OP_LOGD(context_->GetNodeName(), "Get Ele32BTilingData from GE context failed"),
+                return ge::GRAPH_FAILED);
 
     Ele32BTilingData->dim0 = elewiseTilingData.dim0;
     Ele32BTilingData->ubFormer = elewiseTilingData.ubFormer;

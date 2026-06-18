@@ -367,9 +367,8 @@ TEST_F(OpArgDefUt, TestAllType)
 
     auto input_arg = OP_INPUT(&t1, nullTensor, nullTensorList, tensorList);
     auto output_arg = OP_OUTPUT(&t2);
-    auto attr_arg = OP_ATTR(
-        boolAttr, dtypeAttr, scalarAttr, intArrayAttr, stringAttr, stringPAttr, charPAttr, doubleAttr, floatAttr,
-        intAttr, uintAttr, int64Attr, uint64Attr);
+    auto attr_arg = OP_ATTR(boolAttr, dtypeAttr, scalarAttr, intArrayAttr, stringAttr, stringPAttr, charPAttr,
+                            doubleAttr, floatAttr, intAttr, uintAttr, int64Attr, uint64Attr);
     auto option_arg = OP_OPTION(implMode);
     auto outshape_arg = OP_OUTSHAPE({&outShapeTensor, 0});
 

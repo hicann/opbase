@@ -16,13 +16,11 @@
 class TensorViewUtilsTest : public ::testing::Test {
 public:
     TensorViewUtilsTest() : executor(nullptr) {}
-    aclTensor* CreateAclTensor(
-        std::vector<int64_t> view_shape, std::vector<int64_t> stride, int64_t offset,
-        std::vector<int64_t> storage_shape)
+    aclTensor* CreateAclTensor(std::vector<int64_t> view_shape, std::vector<int64_t> stride, int64_t offset,
+                               std::vector<int64_t> storage_shape)
     {
-        return aclCreateTensor(
-            view_shape.data(), view_shape.size(), ACL_FLOAT, stride.data(), offset, ACL_FORMAT_ND, storage_shape.data(),
-            storage_shape.size(), nullptr);
+        return aclCreateTensor(view_shape.data(), view_shape.size(), ACL_FLOAT, stride.data(), offset, ACL_FORMAT_ND,
+                               storage_shape.data(), storage_shape.size(), nullptr);
     }
 
 public:

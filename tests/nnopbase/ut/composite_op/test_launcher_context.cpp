@@ -62,8 +62,8 @@ TEST_F(LauncherCtxUT, LauncherCtxUTCase1)
     SortOpTypeId();
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
-    auto output =
-        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
+    auto output = OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr),
+                            static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
     auto ctx = op::MakeOpArgContext(input, output, attr);
 
@@ -76,9 +76,8 @@ TEST_F(LauncherCtxUT, LauncherCtxUTCase1)
     auto uniqueExecutor = CREATE_EXECUTOR();
     aclOpExecutor* executor = uniqueExecutor.get();
     aclTensorList* workspace = nullptr;
-    op::internal::GetWorkspace(
-        opType, &workspace, executor, *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    op::internal::GetWorkspace(opType, &workspace, executor, *ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+                               *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     op::DestroyOpArgContext(ctx);
 
     const op::internal::TilingResCache* tilingCache = nullptr;

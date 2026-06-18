@@ -11,8 +11,8 @@
 #include "indv_linux.h"
 
 namespace nnopbase {
-void IndvPath::GetChildDirs(
-    std::string& baseDir, std::vector<std::string>& childDirs, uint32_t depth, uint32_t maxDepth)
+void IndvPath::GetChildDirs(std::string& baseDir, std::vector<std::string>& childDirs, uint32_t depth,
+                            uint32_t maxDepth)
 {
     if (baseDir.empty() || depth > maxDepth) {
         return;

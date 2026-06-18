@@ -24,38 +24,36 @@
 namespace aicpu {
 
 class Notification {
- public:
-  Notification() : notified_(0) {}
-  ~Notification() {
-    std::unique_lock<std::mutex> l(mu_);
-  }
+public:
+    Notification() : notified_(0) {}
+    ~Notification() { std::unique_lock<std::mutex> l(mu_); }
 
-  void Notify() {
-    std::unique_lock<std::mutex> l(mu_);
-    if (!HasBeenNotified()) {
-      notified_.store(true, std::memory_order_release);
-      cv_.notify_all();
+    void Notify()
+    {
+        std::unique_lock<std::mutex> l(mu_);
+        if (!HasBeenNotified()) {
+            notified_.store(true, std::memory_order_release);
+            cv_.notify_all();
+        }
     }
-  }
 
-  void WaitForNotification() {
-    if (!HasBeenNotified()) {
-      std::unique_lock<std::mutex> l(mu_);
-      while (!HasBeenNotified()) {
-        cv_.wait(l);
-      }
+    void WaitForNotification()
+    {
+        if (!HasBeenNotified()) {
+            std::unique_lock<std::mutex> l(mu_);
+            while (!HasBeenNotified()) {
+                cv_.wait(l);
+            }
+        }
     }
-  }
 
-  bool HasBeenNotified() const {
-    return notified_.load(std::memory_order_acquire);
-  }
+    bool HasBeenNotified() const { return notified_.load(std::memory_order_acquire); }
 
- private:
-  std::mutex mu_;  // protects mutations of notified_
-  std::condition_variable cv_;  // signaled when notified_ becomes non-zero
-  std::atomic<bool> notified_;   // mutations under mu_
+private:
+    std::mutex mu_;              // protects mutations of notified_
+    std::condition_variable cv_; // signaled when notified_ becomes non-zero
+    std::atomic<bool> notified_; // mutations under mu_
 };
-    
+
 } // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_NOTIFICATION_H
+#endif // AICPU_CONTEXT_COMMON_NOTIFICATION_H

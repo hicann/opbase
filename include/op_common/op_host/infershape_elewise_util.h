@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 /*!
  * \file infershape_elewise_util.h
  * \brief
@@ -24,7 +23,7 @@ namespace Base {
 
 // Do infershape for OP which is single-input single-output and in-shape equal out-shape.
 OPBASE_API ge::graphStatus InferShape4Elewise(gert::InferShapeContext* context);
-}  // namespace Base
+} // namespace Base
 } // namespace Ops
 
-#endif  // OP_COMMON_OP_HOST_INFERSHAPE_ELEWISE_UTIL_H
+#endif // OP_COMMON_OP_HOST_INFERSHAPE_ELEWISE_UTIL_H

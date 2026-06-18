@@ -81,127 +81,122 @@ constexpr int64_t UNKNOWN_DIM_NUM = -2;
 constexpr int64_t CUSTOMIZED_SIMPLIFIED_KEY = 2;
 constexpr int64_t IGNORE_ATTR_SIMPLIFIED_KEY = 0;
 constexpr size_t MAX_CUSTOMIZED_SIMPLIFIED_KEY_LEN = 256;
-constexpr char const* ALL_PRECISION_MODE =
-    "high_performance,high_precision,enable_float_32_execution,enable_hi_float_32_execution";
+constexpr char const*
+    ALL_PRECISION_MODE = "high_performance,high_precision,enable_float_32_execution,enable_hi_float_32_execution";
 
 constexpr uint64_t OP_API_HASH_SEED = 0x9e3779b9U;
 constexpr uint32_t KERNEL_RATION_TWO = 2;
 
 } // namespace
 
-const std::map<std::string, TensorType> STR_2_TENSOR_TYPE{
-    {"required", TensorType::REQUIRED},
-    {"optional", TensorType::OPTIONAL},
-    {"dynamic", TensorType::DYNAMIC},
-    {"folded_with_desc", TensorType::DYNAMIC_FOLDED}};
+const std::map<std::string, TensorType> STR_2_TENSOR_TYPE{{"required", TensorType::REQUIRED},
+                                                          {"optional", TensorType::OPTIONAL},
+                                                          {"dynamic", TensorType::DYNAMIC},
+                                                          {"folded_with_desc", TensorType::DYNAMIC_FOLDED}};
 
-const std::map<std::string, ge::DataType> STR_2_DATA_TYPE{
-    {"float", ge::DT_FLOAT},
-    {"float32", ge::DT_FLOAT},
-    {"float16", ge::DT_FLOAT16},
-    {"bfloat16", ge::DT_BF16},
-    {"int8", ge::DT_INT8},
-    {"int16", ge::DT_INT16},
-    {"uint16", ge::DT_UINT16},
-    {"uint8", ge::DT_UINT8},
-    {"int32", ge::DT_INT32},
-    {"int64", ge::DT_INT64},
-    {"uint32", ge::DT_UINT32},
-    {"uint64", ge::DT_UINT64},
-    {"bool", ge::DT_BOOL},
-    {"double", ge::DT_DOUBLE},
-    {"string", ge::DT_STRING},
-    {"bf16", ge::DT_BF16},
-    {"int4", ge::DT_INT4},
-    {"uint1", ge::DT_UINT1},
-    {"int2", ge::DT_INT2},
-    {"uint2", ge::DT_UINT2},
-    {"complex32", ge::DT_COMPLEX32},
-    {"complex64", ge::DT_COMPLEX64},
-    {"complex128", ge::DT_COMPLEX128},
-    {"hifloat8", ge::DT_HIFLOAT8},
-    {"float8_e5m2", ge::DT_FLOAT8_E5M2},
-    {"float8_e4m3fn", ge::DT_FLOAT8_E4M3FN},
-    {"float8_e8m0", DataType::DT_FLOAT8_E8M0},
-    {"float6_e3m2", DataType::DT_FLOAT6_E3M2},
-    {"float6_e2m3", DataType::DT_FLOAT6_E2M3},
-    {"float4_e2m1", DataType::DT_FLOAT4_E2M1},
-    {"float4_e1m2", DataType::DT_FLOAT4_E1M2}};
+const std::map<std::string, ge::DataType> STR_2_DATA_TYPE{{"float", ge::DT_FLOAT},
+                                                          {"float32", ge::DT_FLOAT},
+                                                          {"float16", ge::DT_FLOAT16},
+                                                          {"bfloat16", ge::DT_BF16},
+                                                          {"int8", ge::DT_INT8},
+                                                          {"int16", ge::DT_INT16},
+                                                          {"uint16", ge::DT_UINT16},
+                                                          {"uint8", ge::DT_UINT8},
+                                                          {"int32", ge::DT_INT32},
+                                                          {"int64", ge::DT_INT64},
+                                                          {"uint32", ge::DT_UINT32},
+                                                          {"uint64", ge::DT_UINT64},
+                                                          {"bool", ge::DT_BOOL},
+                                                          {"double", ge::DT_DOUBLE},
+                                                          {"string", ge::DT_STRING},
+                                                          {"bf16", ge::DT_BF16},
+                                                          {"int4", ge::DT_INT4},
+                                                          {"uint1", ge::DT_UINT1},
+                                                          {"int2", ge::DT_INT2},
+                                                          {"uint2", ge::DT_UINT2},
+                                                          {"complex32", ge::DT_COMPLEX32},
+                                                          {"complex64", ge::DT_COMPLEX64},
+                                                          {"complex128", ge::DT_COMPLEX128},
+                                                          {"hifloat8", ge::DT_HIFLOAT8},
+                                                          {"float8_e5m2", ge::DT_FLOAT8_E5M2},
+                                                          {"float8_e4m3fn", ge::DT_FLOAT8_E4M3FN},
+                                                          {"float8_e8m0", DataType::DT_FLOAT8_E8M0},
+                                                          {"float6_e3m2", DataType::DT_FLOAT6_E3M2},
+                                                          {"float6_e2m3", DataType::DT_FLOAT6_E2M3},
+                                                          {"float4_e2m1", DataType::DT_FLOAT4_E2M1},
+                                                          {"float4_e1m2", DataType::DT_FLOAT4_E1M2}};
 
-const std::map<ge::DataType, std::string> DATA_TYPE_2_STR{
-    {ge::DT_FLOAT, "float"},
-    {ge::DT_FLOAT, "float32"},
-    {ge::DT_FLOAT16, "float16"},
-    {ge::DT_INT8, "int8"},
-    {ge::DT_INT16, "int16"},
-    {ge::DT_UINT16, "uint16"},
-    {ge::DT_UINT8, "uint8"},
-    {ge::DT_INT32, "int32"},
-    {ge::DT_INT64, "int64"},
-    {ge::DT_UINT32, "uint32"},
-    {ge::DT_UINT64, "uint64"},
-    {ge::DT_BOOL, "bool"},
-    {ge::DT_DOUBLE, "double"},
-    {ge::DT_STRING, "string"},
-    {ge::DT_BF16, "bf16"},
-    {ge::DT_INT4, "int4"},
-    {ge::DT_UINT1, "uint1"},
-    {ge::DT_INT2, "int2"},
-    {ge::DT_UINT2, "uint2"},
-    {ge::DT_COMPLEX32, "complex32"},
-    {ge::DT_COMPLEX64, "complex64"},
-    {ge::DT_COMPLEX128, "complex128"},
-    {ge::DT_HIFLOAT8, "hifloat8"},
-    {ge::DT_FLOAT8_E5M2, "float8_e5m2"},
-    {ge::DT_FLOAT8_E4M3FN, "float8_e4m3fn"},
-    {DataType::DT_FLOAT8_E8M0, "float8_e8m0"},
-    {DataType::DT_FLOAT6_E3M2, "float6_e3m2"},
-    {DataType::DT_FLOAT6_E2M3, "float6_e2m3"},
-    {DataType::DT_FLOAT4_E2M1, "float4_e2m1"},
-    {DataType::DT_FLOAT4_E1M2, "float4_e1m2"}};
+const std::map<ge::DataType, std::string> DATA_TYPE_2_STR{{ge::DT_FLOAT, "float"},
+                                                          {ge::DT_FLOAT, "float32"},
+                                                          {ge::DT_FLOAT16, "float16"},
+                                                          {ge::DT_INT8, "int8"},
+                                                          {ge::DT_INT16, "int16"},
+                                                          {ge::DT_UINT16, "uint16"},
+                                                          {ge::DT_UINT8, "uint8"},
+                                                          {ge::DT_INT32, "int32"},
+                                                          {ge::DT_INT64, "int64"},
+                                                          {ge::DT_UINT32, "uint32"},
+                                                          {ge::DT_UINT64, "uint64"},
+                                                          {ge::DT_BOOL, "bool"},
+                                                          {ge::DT_DOUBLE, "double"},
+                                                          {ge::DT_STRING, "string"},
+                                                          {ge::DT_BF16, "bf16"},
+                                                          {ge::DT_INT4, "int4"},
+                                                          {ge::DT_UINT1, "uint1"},
+                                                          {ge::DT_INT2, "int2"},
+                                                          {ge::DT_UINT2, "uint2"},
+                                                          {ge::DT_COMPLEX32, "complex32"},
+                                                          {ge::DT_COMPLEX64, "complex64"},
+                                                          {ge::DT_COMPLEX128, "complex128"},
+                                                          {ge::DT_HIFLOAT8, "hifloat8"},
+                                                          {ge::DT_FLOAT8_E5M2, "float8_e5m2"},
+                                                          {ge::DT_FLOAT8_E4M3FN, "float8_e4m3fn"},
+                                                          {DataType::DT_FLOAT8_E8M0, "float8_e8m0"},
+                                                          {DataType::DT_FLOAT6_E3M2, "float6_e3m2"},
+                                                          {DataType::DT_FLOAT6_E2M3, "float6_e2m3"},
+                                                          {DataType::DT_FLOAT4_E2M1, "float4_e2m1"},
+                                                          {DataType::DT_FLOAT4_E1M2, "float4_e1m2"}};
 
-const std::map<std::string, ge::Format> STR_2_FORMAT{
-    {"ND", ge::FORMAT_ND},
-    {"ALL", ge::FORMAT_ND},
-    {"NCHW", ge::FORMAT_NCHW},
-    {"NHWC", ge::FORMAT_NHWC},
-    {"HWCN", ge::FORMAT_HWCN},
-    {"NDHWC", ge::FORMAT_NDHWC},
-    {"NCDHW", ge::FORMAT_NCDHW},
-    {"DHWCN", ge::FORMAT_DHWCN},
-    {"NDC1HWC0", ge::FORMAT_NDC1HWC0},
-    {"FRACTAL_NZ", ge::FORMAT_FRACTAL_NZ},
-    {"NC1HWC0", ge::FORMAT_NC1HWC0},
-    {"FRACTAL_Z", ge::FORMAT_FRACTAL_Z},
-    {"C1HWNCoC0", ge::FORMAT_C1HWNCoC0},
-    {"FRACTAL_Z_C04", ge::FORMAT_FRACTAL_Z_C04},
-    {"FRACTAL_Z_3D", ge::FORMAT_FRACTAL_Z_3D},
-    {"FRACTAL_NZ_C0_16", ge::FORMAT_FRACTAL_NZ_C0_16},
-    {"FRACTAL_NZ_C0_32", ge::FORMAT_FRACTAL_NZ_C0_32},
-    {"FRACTAL_NZ_C0_2", ge::FORMAT_FRACTAL_NZ_C0_2},
-    {"FRACTAL_NZ_C0_4", ge::FORMAT_FRACTAL_NZ_C0_4},
-    {"FRACTAL_NZ_C0_8", ge::FORMAT_FRACTAL_NZ_C0_8}};
+const std::map<std::string, ge::Format> STR_2_FORMAT{{"ND", ge::FORMAT_ND},
+                                                     {"ALL", ge::FORMAT_ND},
+                                                     {"NCHW", ge::FORMAT_NCHW},
+                                                     {"NHWC", ge::FORMAT_NHWC},
+                                                     {"HWCN", ge::FORMAT_HWCN},
+                                                     {"NDHWC", ge::FORMAT_NDHWC},
+                                                     {"NCDHW", ge::FORMAT_NCDHW},
+                                                     {"DHWCN", ge::FORMAT_DHWCN},
+                                                     {"NDC1HWC0", ge::FORMAT_NDC1HWC0},
+                                                     {"FRACTAL_NZ", ge::FORMAT_FRACTAL_NZ},
+                                                     {"NC1HWC0", ge::FORMAT_NC1HWC0},
+                                                     {"FRACTAL_Z", ge::FORMAT_FRACTAL_Z},
+                                                     {"C1HWNCoC0", ge::FORMAT_C1HWNCoC0},
+                                                     {"FRACTAL_Z_C04", ge::FORMAT_FRACTAL_Z_C04},
+                                                     {"FRACTAL_Z_3D", ge::FORMAT_FRACTAL_Z_3D},
+                                                     {"FRACTAL_NZ_C0_16", ge::FORMAT_FRACTAL_NZ_C0_16},
+                                                     {"FRACTAL_NZ_C0_32", ge::FORMAT_FRACTAL_NZ_C0_32},
+                                                     {"FRACTAL_NZ_C0_2", ge::FORMAT_FRACTAL_NZ_C0_2},
+                                                     {"FRACTAL_NZ_C0_4", ge::FORMAT_FRACTAL_NZ_C0_4},
+                                                     {"FRACTAL_NZ_C0_8", ge::FORMAT_FRACTAL_NZ_C0_8}};
 
-const std::map<ge::Format, std::string> FORMAT_2_STR{
-    {ge::FORMAT_ND, "ND"},
-    {ge::FORMAT_NCHW, "NCHW"},
-    {ge::FORMAT_NHWC, "NHWC"},
-    {ge::FORMAT_HWCN, "HWCN"},
-    {ge::FORMAT_NCDHW, "NCDHW"},
-    {ge::FORMAT_NDHWC, "NDHWC"},
-    {ge::FORMAT_DHWCN, "DHWCN"},
-    {ge::FORMAT_NDC1HWC0, "NDC1HWC0"},
-    {ge::FORMAT_FRACTAL_NZ, "FRACTAL_NZ"},
-    {ge::FORMAT_NC1HWC0, "NC1HWC0"},
-    {ge::FORMAT_FRACTAL_Z, "FRACTAL_Z"},
-    {ge::FORMAT_C1HWNCoC0, "C1HWNCoC0"},
-    {ge::FORMAT_FRACTAL_Z_C04, "FRACTAL_Z_C04"},
-    {ge::FORMAT_FRACTAL_Z_3D, "FRACTAL_Z_3D"},
-    {ge::FORMAT_FRACTAL_NZ_C0_16, "FRACTAL_NZ_C0_16"},
-    {ge::FORMAT_FRACTAL_NZ_C0_32, "FRACTAL_NZ_C0_32"},
-    {ge::FORMAT_FRACTAL_NZ_C0_2, "FRACTAL_NZ_C0_2"},
-    {ge::FORMAT_FRACTAL_NZ_C0_4, "FRACTAL_NZ_C0_4"},
-    {ge::FORMAT_FRACTAL_NZ_C0_8, "FRACTAL_NZ_C0_8"}};
+const std::map<ge::Format, std::string> FORMAT_2_STR{{ge::FORMAT_ND, "ND"},
+                                                     {ge::FORMAT_NCHW, "NCHW"},
+                                                     {ge::FORMAT_NHWC, "NHWC"},
+                                                     {ge::FORMAT_HWCN, "HWCN"},
+                                                     {ge::FORMAT_NCDHW, "NCDHW"},
+                                                     {ge::FORMAT_NDHWC, "NDHWC"},
+                                                     {ge::FORMAT_DHWCN, "DHWCN"},
+                                                     {ge::FORMAT_NDC1HWC0, "NDC1HWC0"},
+                                                     {ge::FORMAT_FRACTAL_NZ, "FRACTAL_NZ"},
+                                                     {ge::FORMAT_NC1HWC0, "NC1HWC0"},
+                                                     {ge::FORMAT_FRACTAL_Z, "FRACTAL_Z"},
+                                                     {ge::FORMAT_C1HWNCoC0, "C1HWNCoC0"},
+                                                     {ge::FORMAT_FRACTAL_Z_C04, "FRACTAL_Z_C04"},
+                                                     {ge::FORMAT_FRACTAL_Z_3D, "FRACTAL_Z_3D"},
+                                                     {ge::FORMAT_FRACTAL_NZ_C0_16, "FRACTAL_NZ_C0_16"},
+                                                     {ge::FORMAT_FRACTAL_NZ_C0_32, "FRACTAL_NZ_C0_32"},
+                                                     {ge::FORMAT_FRACTAL_NZ_C0_2, "FRACTAL_NZ_C0_2"},
+                                                     {ge::FORMAT_FRACTAL_NZ_C0_4, "FRACTAL_NZ_C0_4"},
+                                                     {ge::FORMAT_FRACTAL_NZ_C0_8, "FRACTAL_NZ_C0_8"}};
 
 thread_local int OpKernelBin::currDevId_;
 thread_local std::vector<MemSetTensorInfo> OpKernelBin::memSetValueCtx_;
@@ -332,8 +327,8 @@ aclnnStatus OpKernelBin::BinLoad()
 aclnnStatus OpKernelBin::GetBinData()
 {
     std::tuple<nlohmann::json, nnopbase::Binary> binInfo;
-    auto ret =
-        nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDescByPath(relativeJsonPath_.c_str(), binInfo);
+    auto ret = nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDescByPath(relativeJsonPath_.c_str(),
+                                                                                      binInfo);
     if (ret == ACLNN_SUCCESS) {
         auto f = [&binInfo](std::string& binData) -> aclnnStatus {
             auto& binary = std::get<1>(binInfo);
@@ -384,9 +379,8 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle& binHandle)
         const auto& str = opJson["magic"].get<std::string>();
         if (str == "RT_DEV_BINARY_MAGIC_ELF_AICUBE") {
             magic = ACL_RT_BINARY_MAGIC_ELF_CUBE_CORE;
-        } else if (
-            str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
-            str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
+        } else if (str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
+                   str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
             magic = ACL_RT_BINARY_MAGIC_ELF_VECTOR_CORE;
         }
     }
@@ -396,10 +390,9 @@ aclnnStatus OpKernelBin::BinLoadImpl(aclrtBinHandle& binHandle)
     magicLoadOption.value.magic = magic;
     aclrtBinaryLoadOptions loadOptions = {&magicLoadOption, 1};
 
-    CHECK_COND(
-        aclrtBinaryLoadFromData(binData_.GetVar().c_str(), binData_.GetVar().size(), &loadOptions, &binHandle) ==
-            ACL_SUCCESS,
-        ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryLoadFromData failed, bin path: %s", binPath_.c_str());
+    CHECK_COND(aclrtBinaryLoadFromData(binData_.GetVar().c_str(), binData_.GetVar().size(), &loadOptions, &binHandle) ==
+                   ACL_SUCCESS,
+               ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryLoadFromData failed, bin path: %s", binPath_.c_str());
 
     OP_LOGD("Register Kernel succ on dev[%d], binHandle: %p, bin path: %s", currDevId_, binHandle, binPath_.c_str());
     return OK;
@@ -411,10 +404,10 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
     if (isLaunchWithTilingKey) {
         auto f = [this, tilingKey](aclrtFuncHandle& hdl) -> aclnnStatus {
             aclrtBinHandle binHandle = binHandle_[currDevId_].GetVar();
-            CHECK_COND(
-                aclrtBinaryGetFunctionByEntry(binHandle, tilingKey, &hdl) == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR,
-                "aclrtBinaryGetFunctionByEntry failed, kernel name: %s, tiling key: %lu",
-                op::OpTypeDict::ToString(opType_).GetString(), tilingKey);
+            CHECK_COND(aclrtBinaryGetFunctionByEntry(binHandle, tilingKey, &hdl) == ACL_SUCCESS,
+                       ACLNN_ERR_RUNTIME_ERROR,
+                       "aclrtBinaryGetFunctionByEntry failed, kernel name: %s, tiling key: %lu",
+                       op::OpTypeDict::ToString(opType_).GetString(), tilingKey);
             OP_LOGI("Get function handle by tiling key [%lu] successfully, function handle: %p", tilingKey, hdl);
             return ACLNN_SUCCESS;
         };
@@ -429,12 +422,11 @@ aclnnStatus OpKernelBin::InitFunctionHandle(bool isLaunchWithTilingKey, uint64_t
             return ACLNN_ERR_INNER_JSON_VALUE_NOT_FOUND;
         }
         kernelNameOfNoFatBin_ = opJson["kernelName"].get<std::string>();
-        CHECK_COND(
-            aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
-            ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryGetFunction failed, kernel name: %s", kernelNameOfNoFatBin_.c_str());
-        OP_LOGI(
-            "Get function handle by kernel name [%s] successfully, function handle: %p", kernelNameOfNoFatBin_.c_str(),
-            hdl);
+        CHECK_COND(aclrtBinaryGetFunction(binHandle, kernelNameOfNoFatBin_.c_str(), &hdl) == ACL_SUCCESS,
+                   ACLNN_ERR_RUNTIME_ERROR, "aclrtBinaryGetFunction failed, kernel name: %s",
+                   kernelNameOfNoFatBin_.c_str());
+        OP_LOGI("Get function handle by kernel name [%s] successfully, function handle: %p",
+                kernelNameOfNoFatBin_.c_str(), hdl);
         return ACLNN_SUCCESS;
     };
     return funcHandleWithKernelName_[currDevId_].InitVar(f);
@@ -444,11 +436,11 @@ void GetTaskInfoMultiKernelInfo(TaskInfo& info, const nlohmann::json& elem)
 {
     const string kernelType = elem["kernelType"].get<std::string>();
     const string taskRation = elem["taskRation"].get<std::string>();
-    const uint32_t crossCoreSync =
-        (elem["crossCoreSync"].is_number_integer()) ? (elem["crossCoreSync"].get<uint32_t>()) : 0;
-    OP_LOGI(
-        "get info from json, kernelType is: %s, taskRation is: %s, crossCoreSync is: %u", kernelType.c_str(),
-        taskRation.c_str(), crossCoreSync);
+    const uint32_t crossCoreSync = (elem["crossCoreSync"].is_number_integer()) ?
+                                       (elem["crossCoreSync"].get<uint32_t>()) :
+                                       0;
+    OP_LOGI("get info from json, kernelType is: %s, taskRation is: %s, crossCoreSync is: %u", kernelType.c_str(),
+            taskRation.c_str(), crossCoreSync);
     if (taskRation == "1:0" || taskRation == "0:1") {
         if (crossCoreSync == 1) {
             info.type = (taskRation == "0:1") ? MSPROF_GE_TASK_TYPE_MIX_AIV : MSPROF_GE_TASK_TYPE_MIX_AIC;
@@ -487,9 +479,8 @@ MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json& opJson)
         OP_LOGI("get task type, kernel magic: %s", str.c_str());
         if (str == "RT_DEV_BINARY_MAGIC_ELF_AICUBE") {
             taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
-        } else if (
-            str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
-            str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
+        } else if (str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
+                   str == "FFTS_BINARY_MAGIC_ELF_MIX_AIV") {
             taskType = MSPROF_GE_TASK_TYPE_AIV;
         }
         if (opJson.contains("taskRation")) {
@@ -505,8 +496,8 @@ MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json& opJson)
     return taskType;
 }
 
-void OpKernelBin::GetTaskRationForSingleBinMutilKernel(
-    TaskInfo& info, const nlohmann::json& opJson, uint64_t tilingkey, MsprofGeTaskType taskType)
+void OpKernelBin::GetTaskRationForSingleBinMutilKernel(TaskInfo& info, const nlohmann::json& opJson, uint64_t tilingkey,
+                                                       MsprofGeTaskType taskType)
 {
     OP_LOGI("single-bin multi-kernel");
     if (!opJson.contains("kernelList")) {
@@ -638,20 +629,17 @@ void OpKernelBin::SetMemSetFlagFromJson()
             int64_t valuei = 0;
             float32_t valuef = 0;
             if (!elem.contains("dtype") || !elem.contains("init_value")) {
-                memSetValue_.emplace_back(
-                    MemSetTensorInfo{
-                        i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
+                memSetValue_.emplace_back(MemSetTensorInfo{i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR,
+                                                           nullptr, nullptr, nullptr});
                 OP_LOGW("not contain dtype, index: %zu", i);
                 continue;
             }
             GetParamtersValue(elem, dtype, valuei, valuef);
 
-            memSetValue_.emplace_back(
-                MemSetTensorInfo{
-                    i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR, nullptr, nullptr, nullptr});
-            OP_LOGD(
-                "memSetValue_ emplace: [index: %zu, dtype: %s, valuef: %f, valuei: %ld]", i,
-                op::ToString(dtype).GetString(), valuef, valuei);
+            memSetValue_.emplace_back(MemSetTensorInfo{i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR,
+                                                       nullptr, nullptr, nullptr});
+            OP_LOGD("memSetValue_ emplace: [index: %zu, dtype: %s, valuef: %f, valuei: %ld]", i,
+                    op::ToString(dtype).GetString(), valuef, valuei);
         }
     }
 }
@@ -662,8 +650,8 @@ uint64_t OpKernelBin::GetAttrId(OpArgContext* args)
     if (GetThreadLocalContext().cacheOpInfoSwitch_ && opKernel_ != nullptr) {
         std::string attrStrId;
         if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
-            op::internal::ReportAttrInfo(
-                *args->GetOpArg(op::OP_ATTR_ARG), attrStrId, static_cast<OpKernel*>(opKernel_)->attrInfos_);
+            op::internal::ReportAttrInfo(*args->GetOpArg(op::OP_ATTR_ARG), attrStrId,
+                                         static_cast<OpKernel*>(opKernel_)->attrInfos_);
             OP_LOGI("attrStrId is %s after add attr value", attrStrId.c_str());
         }
         OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
@@ -676,16 +664,16 @@ uint64_t OpKernelBin::GetAttrId(OpArgContext* args)
     return aclGraphAttrId;
 }
 
-void ParseImplModeByJson(
-    const nlohmann::json& singleBinJson, const std::string& jsonPath, FVector<OpImplMode>& implModes)
+void ParseImplModeByJson(const nlohmann::json& singleBinJson, const std::string& jsonPath,
+                         FVector<OpImplMode>& implModes)
 {
     auto iter = singleBinJson.find(IMPL_MODE);
     if (iter != singleBinJson.end()) {
         if (*iter == ALL_PRECISION_MODE) {
             OP_LOGD("jsonPath %s support all op impl mode.", jsonPath.c_str());
-            implModes = {
-                OpImplMode::IMPL_MODE_HIGH_PERFORMANCE, OpImplMode::IMPL_MODE_HIGH_PRECISION,
-                OpImplMode::IMPL_MODE_ENABLE_FLOAT32_EXECUTION, OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION};
+            implModes = {OpImplMode::IMPL_MODE_HIGH_PERFORMANCE, OpImplMode::IMPL_MODE_HIGH_PRECISION,
+                         OpImplMode::IMPL_MODE_ENABLE_FLOAT32_EXECUTION,
+                         OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION};
         } else {
             OpImplMode mode = ToOpImplMode(*iter);
             if (mode != OpImplMode::IMPL_MODE_RESERVED) {
@@ -702,8 +690,8 @@ void ParseImplModeByJson(
     }
 }
 
-aclnnStatus OpKernel::ParseContext(
-    const nlohmann::json& singleBinJson, const std::string& jsonPath, KeyParams& keyParams)
+aclnnStatus OpKernel::ParseContext(const nlohmann::json& singleBinJson, const std::string& jsonPath,
+                                   KeyParams& keyParams)
 {
     // simp_key: "deterministic/overflow/precision_mode + inputs + outputs"
     /* 1. Generate context. */
@@ -764,9 +752,9 @@ aclnnStatus OpKernel::ParseContext(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AssembleKeyByTensor(
-    const nlohmann::json& inOrOuts, std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, std::string& key,
-    KeyParams& keyParams)
+aclnnStatus OpKernel::AssembleKeyByTensor(const nlohmann::json& inOrOuts,
+                                          std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, std::string& key,
+                                          KeyParams& keyParams)
 {
     size_t cnt = 0;
     for (auto& tensor : inOrOuts) {
@@ -837,9 +825,8 @@ void OpKernel::UpdateFormatType(std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorI
                 formatInfo.fmtType = FormatType::SUPPORT_ND;
             }
         }
-        OP_LOGD(
-            "Format Type of node %s is %d.", OpTypeDict::ToString(opType_).GetString(),
-            static_cast<int32_t>(formatInfo.fmtType));
+        OP_LOGD("Format Type of node %s is %d.", OpTypeDict::ToString(opType_).GetString(),
+                static_cast<int32_t>(formatInfo.fmtType));
     }
 }
 
@@ -960,9 +947,8 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json& singleBin
         back.deterministicFlag = (deterministicFlag != 0);
         back.implMode = ToString(implMode).GetString();
         AppendImplModeBm(implMode);
-        OP_LOGD(
-            "%s append simplified key %s deterministic(%u) implMode(%u)", opTypeStr_.c_str(), back.key.c_str(),
-            back.deterministicFlag, static_cast<uint32_t>(implMode));
+        OP_LOGD("%s append simplified key %s deterministic(%u) implMode(%u)", opTypeStr_.c_str(), back.key.c_str(),
+                back.deterministicFlag, static_cast<uint32_t>(implMode));
     }
     keyParams.genPlaceholder = IsGenInputPlaceholder(singleBinJson);
     keyParams.hasDevPtrArg = HasDevPtrArg(singleBinJson);
@@ -970,8 +956,8 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json& singleBin
 }
 
 /* Generate mapping of {simplified_key -> the path of json and bin} */
-aclnnStatus OpKernel::GenerateKeyByJson(
-    const nlohmann::json& singleBinJson, const std::string& jsonPath, KeyParams& keyParams)
+aclnnStatus OpKernel::GenerateKeyByJson(const nlohmann::json& singleBinJson, const std::string& jsonPath,
+                                        KeyParams& keyParams)
 {
     /* 1. Generate key by context. */
     ParseContext(singleBinJson, jsonPath, keyParams);
@@ -1124,8 +1110,8 @@ size_t OpKernel::HashBinary(const char* addr, uint32_t len) const
     return seed;
 }
 
-aclnnStatus OpKernel::HashAndInsert(
-    const string& binAndJsonDir, const string& binOrJsonPath, const size_t& pos, KeyParams& keyParams)
+aclnnStatus OpKernel::HashAndInsert(const string& binAndJsonDir, const string& binOrJsonPath, const size_t& pos,
+                                    KeyParams& keyParams)
 {
     bool enableDebug = false;
     op::internal::systemConfig.GetEnableDebugKernelFlag(enableDebug);
@@ -1145,9 +1131,8 @@ aclnnStatus OpKernel::HashAndInsert(
                 continue;
             }
             staticBins_.emplace(
-                hash, std::make_unique<OpKernelBin>(
-                          opType_, jsonPath, binOrJsonPath, binPath, key, hash, keyParams.binType,
-                          keyParams.genPlaceholder, false, this));
+                hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath, key, hash,
+                                                    keyParams.binType, keyParams.genPlaceholder, false, this));
             OP_LOGD("Static bin: key: %s, json: %s, bin: %s", key.key.c_str(), jsonPath.c_str(), binPath.c_str());
             continue;
         }
@@ -1159,28 +1144,25 @@ aclnnStatus OpKernel::HashAndInsert(
         auto binsIter = bins_.find(hash);
         if (binsIter != bins_.end()) {
             if (key.key != binsIter->second->GetKeyAndDetail().key) {
-                OP_LOGE(
-                    ACLNN_ERR_INNER, "Two bin [%s & %s] has same hash but their integral key is diff[%s, %s].",
-                    binOrJsonPath.c_str(), binsIter->second->jsonPath_.c_str(),
-                    GetReadableKey(key.key, keyParams.len).c_str(),
-                    GetReadableKey(binsIter->second->GetKeyAndDetail().key, keyParams.len).c_str());
+                OP_LOGE(ACLNN_ERR_INNER, "Two bin [%s & %s] has same hash but their integral key is diff[%s, %s].",
+                        binOrJsonPath.c_str(), binsIter->second->jsonPath_.c_str(),
+                        GetReadableKey(key.key, keyParams.len).c_str(),
+                        GetReadableKey(binsIter->second->GetKeyAndDetail().key, keyParams.len).c_str());
                 return ACLNN_ERR_INNER;
             } else {
                 if (enableDebug) {
                     binsIter->second->SetJsonPath(jsonPath);
                     binsIter->second->SetBinPath(binPath);
                 } else {
-                    OP_LOGW(
-                        "Two different bin [%s & %s] has same integral key %s.", binOrJsonPath.c_str(),
-                        binsIter->second->jsonPath_.c_str(), GetReadableKey(key.key, keyParams.len).c_str());
+                    OP_LOGW("Two different bin [%s & %s] has same integral key %s.", binOrJsonPath.c_str(),
+                            binsIter->second->jsonPath_.c_str(), GetReadableKey(key.key, keyParams.len).c_str());
                     continue;
                 }
             }
         } else {
-            bins_.emplace(
-                hash, std::make_unique<OpKernelBin>(
-                          opType_, jsonPath, binOrJsonPath, binPath, key, hash, keyParams.binType,
-                          keyParams.genPlaceholder, keyParams.hasDevPtrArg, this));
+            bins_.emplace(hash, std::make_unique<OpKernelBin>(opType_, jsonPath, binOrJsonPath, binPath, key, hash,
+                                                              keyParams.binType, keyParams.genPlaceholder,
+                                                              keyParams.hasDevPtrArg, this));
         }
     }
     return ACLNN_SUCCESS;
@@ -1191,9 +1173,8 @@ void HandleAttrValue(const nlohmann::json& value, AttrInfo& attrInfo)
     OP_LOGD("Check attr [%s].", attrInfo.attrName.c_str());
     if (attrInfo.values == nullptr) {
         if (value.is_number_float()) {
-            OP_LOGD(
-                "Float attr [%s], value: [%f, %u].", attrInfo.attrName.c_str(), value.get<float>(),
-                value.get<uint32_t>());
+            OP_LOGD("Float attr [%s], value: [%f, %u].", attrInfo.attrName.c_str(), value.get<float>(),
+                    value.get<uint32_t>());
             attrInfo.values = std::make_unique<uint8_t[]>(sizeof(float));
             attrInfo.realSize = sizeof(float);
 
@@ -1220,9 +1201,8 @@ void HandleAttrValue(const nlohmann::json& value, AttrInfo& attrInfo)
                 OP_LOGD("Do not support list list int attr [%s].", attrInfo.attrName.c_str());
                 return;
             }
-            OP_LOGD(
-                "List Int attr [%s], value: [%s].", attrInfo.attrName.c_str(),
-                op::ToString(value.get<FVector<int64_t, MAX_DIM_NUM>>()).GetString());
+            OP_LOGD("List Int attr [%s], value: [%s].", attrInfo.attrName.c_str(),
+                    op::ToString(value.get<FVector<int64_t, MAX_DIM_NUM>>()).GetString());
             attrInfo.values = std::make_unique<uint8_t[]>(1);
             attrInfo.realSize = 1;
             attrInfo.values[0] = value.size();
@@ -1419,17 +1399,16 @@ aclnnStatus OpKernel::GetOpDescJson(bool debug)
 {
     if (!debug) {
         auto ret = nnopbase::OpBinaryResourceManager::GetInstance().GetOpBinaryDesc(opTypeStr_.c_str(), configJson_);
-        OP_CHECK(
-            ret != ACLNN_SUCCESS, OP_LOGI("Get builtin op desc info [%s]", opTypeStr_.c_str()), return ACLNN_SUCCESS);
+        OP_CHECK(ret != ACLNN_SUCCESS, OP_LOGI("Get builtin op desc info [%s]", opTypeStr_.c_str()),
+                 return ACLNN_SUCCESS);
         OP_LOGW("No builtin op desc info [%s]", opTypeStr_.c_str());
     }
 
     ifstream f(configJsonPath_);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
     std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
-    OP_CHECK(
-        f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), errMsg.c_str()),
-        return ACLNN_ERR_INNER);
+    OP_CHECK(f.is_open(), OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(configJsonPath_.c_str(), errMsg.c_str()),
+             return ACLNN_ERR_INNER);
 #endif
     try {
         configJson_ = nlohmann::json::parse(f);
@@ -1552,24 +1531,22 @@ aclnnStatus OpKernel::AppendStaticBin(const nlohmann::json& opJson, const string
         keyParams.keys.emplace_back();
         keyParams.keys.back().key = binPath;
 
-        CHECK_COND(
-            HashAndInsert(binAndJsonDir, binPath, pos, keyParams) == ACLNN_SUCCESS, ACLNN_ERR_INNER_KEY_CONFLICT,
-            "HashAndInsert failed");
+        CHECK_COND(HashAndInsert(binAndJsonDir, binPath, pos, keyParams) == ACLNN_SUCCESS, ACLNN_ERR_INNER_KEY_CONFLICT,
+                   "HashAndInsert failed");
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendTensor(
-    const aclTensor* tensor, FVector<const aclTensor*>& tensors, [[maybe_unused]] FVector<int64_t>& dynamicIndex,
-    [[maybe_unused]] FVector<int64_t>& dynamicCount) const
+aclnnStatus OpKernel::AppendTensor(const aclTensor* tensor, FVector<const aclTensor*>& tensors,
+                                   [[maybe_unused]] FVector<int64_t>& dynamicIndex,
+                                   [[maybe_unused]] FVector<int64_t>& dynamicCount) const
 {
     tensors.emplace_back(tensor);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendTensor(
-    const aclTensorList* tensorList, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
-    FVector<int64_t>& dynamicCount) const
+aclnnStatus OpKernel::AppendTensor(const aclTensorList* tensorList, FVector<const aclTensor*>& tensors,
+                                   FVector<int64_t>& dynamicIndex, FVector<int64_t>& dynamicCount) const
 {
     dynamicIndex.emplace_back(static_cast<int64_t>(tensors.size()));
     dynamicCount.emplace_back(tensorList->Size());
@@ -1581,9 +1558,8 @@ aclnnStatus OpKernel::AppendTensor(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus OpKernel::AppendTensor(
-    OpArg& opArg, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
-    FVector<int64_t>& dynamicCount) const
+aclnnStatus OpKernel::AppendTensor(OpArg& opArg, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
+                                   FVector<int64_t>& dynamicCount) const
 {
     if (opArg.type == OpArgType::OPARG_ACLTENSOR) {
         return AppendTensor(reinterpret_cast<aclTensor*>(opArg->pointer), tensors, dynamicIndex, dynamicCount);
@@ -1619,15 +1595,15 @@ void OpKernelBin::ReportOpAttrInfo(OpArgContext* args, uint64_t summaryId)
 
     std::string attrStr;
     if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
-        op::internal::ReportAttrInfo(
-            *args->GetOpArg(op::OP_ATTR_ARG), attrStr, static_cast<OpKernel*>(opKernel_)->attrInfos_);
+        op::internal::ReportAttrInfo(*args->GetOpArg(op::OP_ATTR_ARG), attrStr,
+                                     static_cast<OpKernel*>(opKernel_)->attrInfos_);
         OP_LOGI("attrStr is %s after add attr value", attrStr.c_str());
     }
     OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
     input.VisitByNoReturn([&attrStr](size_t idx, OpArg& elem) { SummaryAttrArg(idx, elem, attrStr); });
     OP_LOGI("attrStr is %s after add input tensor", attrStr.c_str());
-    attrStr +=
-        std::string("IsStaticKernel:") + (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));
+    attrStr += std::string("IsStaticKernel:") +
+               (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));
     ReportAttrInfo(attrStr, summaryId);
 }
 

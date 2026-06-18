@@ -39,9 +39,9 @@ inline void NnopbaseRegTypeInfo(NnopbaseDfxId& dfxId)
     return;
 }
 
-inline void NnopbaseBuildNodeBasicInfo(
-    const uint32_t numBlocks, const std::pair<uint64_t, uint64_t>& opNameAndTypeHash, const uint32_t taskType,
-    MsprofCompactInfo& nodeBasicInfo, const uint64_t timeStamp)
+inline void NnopbaseBuildNodeBasicInfo(const uint32_t numBlocks, const std::pair<uint64_t, uint64_t>& opNameAndTypeHash,
+                                       const uint32_t taskType, MsprofCompactInfo& nodeBasicInfo,
+                                       const uint64_t timeStamp)
 {
     auto& profNodeBasicInfo = nodeBasicInfo.data.nodeBasicInfo;
     profNodeBasicInfo.opName = opNameAndTypeHash.first;
@@ -54,8 +54,8 @@ inline void NnopbaseBuildNodeBasicInfo(
     nodeBasicInfo.threadId = static_cast<uint32_t>(mmGetTid());
 }
 
-inline void NnopbaseBuildTensor(
-    const MsprofGeTensorType tensor_type, const NnopbaseTensors& tensors, const size_t idx, MsrofTensorData& tensorData)
+inline void NnopbaseBuildTensor(const MsprofGeTensorType tensor_type, const NnopbaseTensors& tensors, const size_t idx,
+                                MsrofTensorData& tensorData)
 {
     tensorData.tensorType = tensor_type;
     if (!tensors.extTensors[idx].isNull) {
@@ -77,8 +77,8 @@ inline void NnopbaseBuildTensor(
     }
 }
 
-inline void NnopbaseBuildTensorData(
-    const NnopbaseExecutor* const executor, const size_t index, MsrofTensorData& tensorData)
+inline void NnopbaseBuildTensorData(const NnopbaseExecutor* const executor, const size_t index,
+                                    MsrofTensorData& tensorData)
 {
     const size_t inputSize = executor->args->inputs.num;
     if (index < inputSize) {
@@ -94,9 +94,8 @@ inline void NnopbaseBuildCacheTensorInfo(const NnopbaseExecutor* const executor,
         NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_INPUT, executor->args->inputs, i, opInfo->tensorData[i]);
     }
     for (uint32_t i = 0U; i < executor->args->outputs.num; ++i) {
-        NnopbaseBuildTensor(
-            MSPROF_GE_TENSOR_TYPE_OUTPUT, executor->args->outputs, i,
-            opInfo->tensorData[i + executor->args->inputs.num]);
+        NnopbaseBuildTensor(MSPROF_GE_TENSOR_TYPE_OUTPUT, executor->args->outputs, i,
+                            opInfo->tensorData[i + executor->args->inputs.num]);
     }
 }
 
@@ -114,8 +113,8 @@ inline void NnopbaseBuildCacheAttrInfo(NnopbaseExecutor* const executor, op::int
     }
 }
 
-aclnnStatus NnopbaseGetTilingKeyInfo(
-    NnopbaseExecutor* const opExecutor, NnopbaseTaskRation& taskRation, CoreType& coreType, uint32_t& ration)
+aclnnStatus NnopbaseGetTilingKeyInfo(NnopbaseExecutor* const opExecutor, NnopbaseTaskRation& taskRation,
+                                     CoreType& coreType, uint32_t& ration)
 {
     static const std::map<NnopbaseTaskRation, uint32_t> RATION_MAP{
         {kRation01, 0U}, {kRation10, 0U}, {kRation11, 1U}, {kRation12, 2U}}; // ration is 2.
@@ -125,9 +124,8 @@ aclnnStatus NnopbaseGetTilingKeyInfo(
         coreType = opExecutor->args->binInfo->tilingKeyInfo[tilingKey].coreType;
         taskRation = opExecutor->args->binInfo->tilingKeyInfo[tilingKey].taskRation;
         const auto& iter = RATION_MAP.find(taskRation);
-        CHECK_COND(
-            (iter != RATION_MAP.end()), ACLNN_ERR_PARAM_INVALID, "Op %s taskRation %d is not supported!",
-            opExecutor->opType, taskRation);
+        CHECK_COND((iter != RATION_MAP.end()), ACLNN_ERR_PARAM_INVALID, "Op %s taskRation %d is not supported!",
+                   opExecutor->opType, taskRation);
         ration = iter->second;
     } else {
         OP_LOGW("%s cannot find tilingKey %lu from tilingKeyInfo.", opExecutor->opType, tilingKey);
@@ -150,8 +148,8 @@ static void NnopbaseEncodeMixOpNumBlocks(NnopbaseExecutor* const executor, uint3
     }
 }
 
-void NnopbaseReportCacheOpInfo(
-    NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType, aclrtStream stream)
+void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
+                               aclrtStream stream)
 {
     aclrtStreamAttrValue value = {};
     value.cacheOpInfoSwitch = 0;
@@ -176,8 +174,8 @@ void NnopbaseReportCacheOpInfo(
     }
     size_t totalSize = sizeof(op::internal::CacheOpInfoBasic) + sizeof(MsrofTensorData) * totalNum;
     void* buffer = malloc(totalSize);
-    OP_CHECK(
-        buffer != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to malloc buffer, strerror[%s]", strerror(errno)), return);
+    OP_CHECK(buffer != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to malloc buffer, strerror[%s]", strerror(errno)),
+             return);
     (void)memset_s(buffer, totalSize, 0, totalSize);
     op::internal::CacheOpInfoBasic* opInfo = static_cast<op::internal::CacheOpInfoBasic*>(buffer);
 
@@ -198,15 +196,14 @@ void NnopbaseReportCacheOpInfo(
     if (ret != ACL_SUCCESS) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to report operator info cache, ret is [%d]", ret);
     }
-    OP_LOGI(
-        "Report op [%s] info cache successfully, task type[%u], numBlocks[%u], attrId[%llu] size[%zu]",
-        executor->opType, taskType, numBlocks, opInfo->attrId, totalSize);
+    OP_LOGI("Report op [%s] info cache successfully, task type[%u], numBlocks[%u], attrId[%llu] size[%zu]",
+            executor->opType, taskType, numBlocks, opInfo->attrId, totalSize);
     free(buffer);
 }
 
-static void NnopbaseBuildSingleProfTensorInfo(
-    NnopbaseExecutor* const executor, const size_t index, const uint32_t tensorNum, MsprofAdditionalInfo& tensorInfo,
-    const uint64_t timeStamp)
+static void NnopbaseBuildSingleProfTensorInfo(NnopbaseExecutor* const executor, const size_t index,
+                                              const uint32_t tensorNum, MsprofAdditionalInfo& tensorInfo,
+                                              const uint64_t timeStamp)
 {
     tensorInfo.type = MSPROF_REPORT_NODE_TENSOR_INFO_TYPE;
     tensorInfo.level = static_cast<uint16_t>(MSPROF_REPORT_NODE_LEVEL);
@@ -232,18 +229,18 @@ void NnopbaseReportTensorInfo(NnopbaseExecutor* const executor, const uint64_t t
     const size_t index = totalNum / static_cast<size_t>(MSPROF_GE_TENSOR_DATA_NUM);
     for (size_t j = 0UL; j < index; ++j) {
         MsprofAdditionalInfo tensorInfo{};
-        NnopbaseBuildSingleProfTensorInfo(
-            executor, j, static_cast<uint32_t>(MSPROF_GE_TENSOR_DATA_NUM), tensorInfo, timeStamp);
-        (void)MsprofReportAdditionalInfo(
-            static_cast<uint32_t>(true), &tensorInfo, static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
+        NnopbaseBuildSingleProfTensorInfo(executor, j, static_cast<uint32_t>(MSPROF_GE_TENSOR_DATA_NUM), tensorInfo,
+                                          timeStamp);
+        (void)MsprofReportAdditionalInfo(static_cast<uint32_t>(true), &tensorInfo,
+                                         static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
     }
 
     const size_t remainIndex = totalNum % static_cast<size_t>(MSPROF_GE_TENSOR_DATA_NUM);
     if (remainIndex > 0UL) {
         MsprofAdditionalInfo tensorInfo{};
         NnopbaseBuildSingleProfTensorInfo(executor, index, static_cast<uint32_t>(remainIndex), tensorInfo, timeStamp);
-        MsprofReportAdditionalInfo(
-            static_cast<uint32_t>(true), &tensorInfo, static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
+        MsprofReportAdditionalInfo(static_cast<uint32_t>(true), &tensorInfo,
+                                   static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
     }
     return;
 }
@@ -261,22 +258,21 @@ void NnopbaseReportContextIdInfo(const NnopbaseExecutor* const executor, const u
     contextIdInfo->ctxIdNum = 1U;
     contextIdInfo->ctxIds[0] = 0U;
     contextIdInfo->opName = executor->itemId;
-    (void)MsprofReportAdditionalInfo(
-        static_cast<uint32_t>(true), &info, static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
+    (void)MsprofReportAdditionalInfo(static_cast<uint32_t>(true), &info,
+                                     static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
     OP_LOGD("OP [%s] has reported contextid info.", executor->opType);
     return;
 }
 
-void NnopbaseReportContextIdInfoByRation(
-    NnopbaseExecutor* const opExecutor, const uint64_t timeStamp, uint32_t& numBlocks, uint32_t& taskType)
+void NnopbaseReportContextIdInfoByRation(NnopbaseExecutor* const opExecutor, const uint64_t timeStamp,
+                                         uint32_t& numBlocks, uint32_t& taskType)
 {
     uint32_t ration = 2U;
     if (opExecutor->args->binInfo->multiKernelType == 1) {
         NnopbaseTaskRation taskRation;
         CoreType kernelType;
-        OP_CHECK(
-            NnopbaseGetTilingKeyInfo(opExecutor, taskRation, kernelType, ration) == OK,
-            OP_LOGW("Failed to get tilingKey info."), return);
+        OP_CHECK(NnopbaseGetTilingKeyInfo(opExecutor, taskRation, kernelType, ration) == OK,
+                 OP_LOGW("Failed to get tilingKey info."), return);
         if ((taskRation == kRation01 || taskRation == kRation10)) {
             const uint64_t tilingKey = opExecutor->args->tilingInfo.tilingKey;
             if (opExecutor->args->binInfo->tilingKeyInfo[tilingKey].crossCoreSync) {
@@ -290,10 +286,9 @@ void NnopbaseReportContextIdInfoByRation(
             numBlocks = ((numBlocks & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
             NnopbaseReportContextIdInfo(opExecutor, timeStamp);
         }
-        OP_LOGI(
-            "Get op[%s] multiKernelType is [%u], tilingKey is [%lu], kernelType is [%d], taskRation is [%d].",
-            opExecutor->opType, opExecutor->args->binInfo->multiKernelType, opExecutor->args->tilingInfo.tilingKey,
-            kernelType, taskRation);
+        OP_LOGI("Get op[%s] multiKernelType is [%u], tilingKey is [%lu], kernelType is [%d], taskRation is [%d].",
+                opExecutor->opType, opExecutor->args->binInfo->multiKernelType, opExecutor->args->tilingInfo.tilingKey,
+                kernelType, taskRation);
     } else {
         // 针对mix算子，低16位为主加速器numBlocks，高16位为从加速器的ratio值
         numBlocks = ((numBlocks & 0xFFFFU) | (ration << NNOPBASE_BIT_OFFSET));
@@ -307,8 +302,8 @@ void NnopbaseReportAdditionInfo(void* const executor, uint32_t numBlocks, uint32
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
         NnopbaseExecutor* const opExecutor = (NnopbaseExecutor*)executor;
         if (opExecutor->args->binInfo->coreType == kMix) { // 310p没有mix类型coretype，不会走进来
-            OP_LOGI(
-                "Get soc version is %s, set mix op type.", nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str());
+            OP_LOGI("Get soc version is %s, set mix op type.",
+                    nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str());
             NnopbaseReportContextIdInfoByRation(opExecutor, timeStamp, numBlocks, taskType);
         }
         OP_LOGI("[Cann Profiling] node type is %s, taskType is %u", opExecutor->opType, taskType);
@@ -316,16 +311,16 @@ void NnopbaseReportAdditionInfo(void* const executor, uint32_t numBlocks, uint32
             const uint64_t typeHash = opExecutor->itemId;
             MsprofCompactInfo nodeBasicInfo{};
             NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
-            (void)MsprofReportCompactInfo(
-                static_cast<uint32_t>(true), &nodeBasicInfo, static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
+            (void)MsprofReportCompactInfo(static_cast<uint32_t>(true), &nodeBasicInfo,
+                                          static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
             NnopbaseReportTensorInfo(opExecutor, timeStamp);
         }
     }
     return;
 }
 
-void NnopbaseReportMemsetAdditionInfo(
-    const NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType, const uint64_t timeStamp)
+void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
+                                      const uint64_t timeStamp)
 {
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
         OP_LOGI("[Cann Profiling] node type is MemSet, taskType is %u", taskType);
@@ -333,8 +328,8 @@ void NnopbaseReportMemsetAdditionInfo(
             const uint64_t typeHash = executor->memsetItemId;
             MsprofCompactInfo nodeBasicInfo{};
             NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
-            (void)MsprofReportCompactInfo(
-                static_cast<uint32_t>(true), &nodeBasicInfo, static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
+            (void)MsprofReportCompactInfo(static_cast<uint32_t>(true), &nodeBasicInfo,
+                                          static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
         }
     }
     return;
@@ -400,10 +395,10 @@ aclnnStatus NnopbaseReportAicpuAdditionInfo(const uint64_t timeStamp, const char
             const size_t typeLen = strlen(opType);
             const uint64_t typeHash = MsprofGetHashId(opType, typeLen);
             MsprofCompactInfo nodeBasicInfo{};
-            NnopbaseBuildNodeBasicInfo(
-                numBlocks, {typeHash, typeHash}, static_cast<uint32_t>(taskType), nodeBasicInfo, timeStamp);
-            (void)MsprofReportCompactInfo(
-                static_cast<uint32_t>(true), &nodeBasicInfo, static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
+            NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, static_cast<uint32_t>(taskType), nodeBasicInfo,
+                                       timeStamp);
+            (void)MsprofReportCompactInfo(static_cast<uint32_t>(true), &nodeBasicInfo,
+                                          static_cast<uint32_t>(sizeof(MsprofCompactInfo)));
         }
     }
     return OK;
@@ -426,15 +421,14 @@ void NnopbaseReportTimeStampInfo(const std::vector<MsprofAicTimeStampInfo>& time
             additionInfo.dataLen = sizeToCopy;
             OP_CHECK(
                 memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &timeStampInfo[i], sizeToCopy) == EOK,
-                OP_LOGW(
-                    "Failed to memcpy timestamp additional info, data is %p, timeStampInfo is %p, dataLen is %u",
-                    additionInfo.data, &timeStampInfo[i], additionInfo.dataLen),
+                OP_LOGW("Failed to memcpy timestamp additional info, data is %p, timeStampInfo is %p, dataLen is %u",
+                        additionInfo.data, &timeStampInfo[i], additionInfo.dataLen),
                 return);
 
             OP_LOGI("Report dataLen is %u.", additionInfo.dataLen);
 
-            (void)MsprofReportAdditionalInfo(
-                static_cast<uint32_t>(true), &additionInfo, static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
+            (void)MsprofReportAdditionalInfo(static_cast<uint32_t>(true), &additionInfo,
+                                             static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
             j += (batchEnd - i);
         }
     }
@@ -453,8 +447,8 @@ std::string NnopbaseGetAttrVal(const NnopbaseAttrs& attrs)
     return attrStr;
 }
 
-static void NnopbaseBuildAttrInfo(
-    MsprofCompactInfo& compactInfo, const uint64_t itemId, const uint64_t id, const uint64_t timeStamp)
+static void NnopbaseBuildAttrInfo(MsprofCompactInfo& compactInfo, const uint64_t itemId, const uint64_t id,
+                                  const uint64_t timeStamp)
 {
     MsprofAttrInfo attrInfo;
     attrInfo.opName = itemId;
@@ -467,9 +461,8 @@ static void NnopbaseBuildAttrInfo(
     compactInfo.threadId = static_cast<uint32_t>(mmGetTid());
     compactInfo.dataLen = sizeof(MsprofAttrInfo);
     compactInfo.timeStamp = timeStamp;
-    OP_CHECK(
-        memcpy_s(compactInfo.data.info, MSPROF_COMPACT_INFO_DATA_LENGTH, &attrInfo, sizeof(MsprofAttrInfo)) == EOK,
-        OP_LOGW("Failed to memcpy attr info."), return);
+    OP_CHECK(memcpy_s(compactInfo.data.info, MSPROF_COMPACT_INFO_DATA_LENGTH, &attrInfo, sizeof(MsprofAttrInfo)) == EOK,
+             OP_LOGW("Failed to memcpy attr info."), return);
     return;
 }
 

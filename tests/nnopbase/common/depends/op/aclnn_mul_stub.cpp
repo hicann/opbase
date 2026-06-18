@@ -27,8 +27,8 @@ extern "C" {
 
 OP_TYPE_REGISTER(Mul);
 
-static const aclTensor* MulAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* addOut, aclOpExecutor* executor)
+static const aclTensor* MulAiCore(const aclTensor* self, const aclTensor* other, aclTensor* addOut,
+                                  aclOpExecutor* executor)
 {
     L0_DFX(MulAiCore, self, other, addOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Add算子加入任务队列
@@ -37,9 +37,8 @@ static const aclTensor* MulAiCore(
     return addOut;
 }
 
-aclnnStatus aclnnMulStubGetWorkspaceSize(
-    const aclTensor* intput1, const aclTensor* intput2, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnMulStubGetWorkspaceSize(const aclTensor* intput1, const aclTensor* intput2, aclTensor* out,
+                                         uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMulStub, DFX_IN(intput1, intput2), DFX_OUT(out));
     // 固定写法，创建OpExecutor

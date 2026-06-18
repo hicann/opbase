@@ -16,26 +16,25 @@
 extern "C" {
 #endif
 
-aclnnStatus aclnnBninferenceDKernelGetWorkspaceSize(
-    const aclTensor* x1, const aclTensor* x2, const aclTensor* x3, const aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+aclnnStatus aclnnBninferenceDKernelGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2, const aclTensor* x3,
+                                                    const aclTensor* out, uint64_t* workspaceSize,
+                                                    aclOpExecutor** executor);
 
-aclnnStatus aclnnBninferenceDKernel(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
+aclnnStatus aclnnBninferenceDKernel(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    const aclrtStream stream);
 
-aclnnStatus aclnnBninferenceDKernelNoOutputGetWorkspaceSize(
-    const aclTensor* x1, const aclTensor* x2, const aclTensor* x3, const aclTensor* x4, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+aclnnStatus aclnnBninferenceDKernelNoOutputGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2,
+                                                            const aclTensor* x3, const aclTensor* x4,
+                                                            uint64_t* workspaceSize, aclOpExecutor** executor);
 
-aclnnStatus aclnnBninferenceDKernelNoOutput(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
+aclnnStatus aclnnBninferenceDKernelNoOutput(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                            const aclrtStream stream);
 
-aclnnStatus aclnnBninferenceDKernelRefGetWorkspaceSize(
-    const aclTensor* x1Ref, const aclTensor* x2, const aclTensor* x3, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+aclnnStatus aclnnBninferenceDKernelRefGetWorkspaceSize(const aclTensor* x1Ref, const aclTensor* x2, const aclTensor* x3,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor);
 
-aclnnStatus aclnnBninferenceDKernelRef(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
+aclnnStatus aclnnBninferenceDKernelRef(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       const aclrtStream stream);
 
 #ifdef __cplusplus
 }

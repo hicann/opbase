@@ -46,9 +46,9 @@ struct NnopbaseKernelExtendInfo {
     const NnopbaseChar* kernelType;
 };
 
-aclnnStatus NnopbaseMemsetTilingContextInit(
-    const std::vector<NnopbaseInitValueInfo>& initValues, std::shared_ptr<MemsetOpInfo>& memsetInfo,
-    const NnopbaseParamDesc& outputParamDescs);
+aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueInfo>& initValues,
+                                            std::shared_ptr<MemsetOpInfo>& memsetInfo,
+                                            const NnopbaseParamDesc& outputParamDescs);
 aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo>& memsetInfo);
 aclnnStatus NnopbaseExecutorPlatFormInfosInit(void);

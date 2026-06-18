@@ -36,9 +36,8 @@ OpArgValue::OpArgValue(const std::string* value)
     uint8_t* addr = static_cast<uint8_t*>(op::internal::Allocate(len + 1));
     OP_CHECK(addr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to allocate memory."), throw std::bad_alloc());
     if (len > 0) {
-        OP_CHECK(
-            memcpy_s(addr, len, value->c_str(), len) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
-            throw std::runtime_error("OpArgValue::OpArgValue memcpy runtime error."));
+        OP_CHECK(memcpy_s(addr, len, value->c_str(), len) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
+                 throw std::runtime_error("OpArgValue::OpArgValue memcpy runtime error."));
     }
     addr[len] = '\0';
     deleter = &OpArgDeleter;
@@ -50,9 +49,8 @@ OpArgValue::OpArgValue(const std::string& value)
     uint8_t* addr = static_cast<uint8_t*>(op::internal::Allocate(len + 1));
     OP_CHECK(addr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to allocate memory."), throw std::bad_alloc());
     if (len > 0) {
-        OP_CHECK(
-            memcpy_s(addr, len, value.c_str(), len) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
-            throw std::runtime_error("OpArgValue::OpArgValue memcpy runtime error."));
+        OP_CHECK(memcpy_s(addr, len, value.c_str(), len) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
+                 throw std::runtime_error("OpArgValue::OpArgValue memcpy runtime error."));
     }
     addr[len] = '\0';
     deleter = &OpArgDeleter;
@@ -69,9 +67,8 @@ OpArgValue::OpArgValue(const char* value)
     uint8_t* addr = static_cast<uint8_t*>(op::internal::Allocate(len + 1));
     OP_CHECK(addr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to allocate memory."), throw std::bad_alloc());
     if (len > 0) {
-        OP_CHECK(
-            memcpy_s(addr, len, value, len) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
-            throw std::runtime_error("OpArgValue::OpArgValue memcpy runtime error."));
+        OP_CHECK(memcpy_s(addr, len, value, len) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy."),
+                 throw std::runtime_error("OpArgValue::OpArgValue memcpy runtime error."));
     }
     addr[len] = '\0';
     deleter = &OpArgDeleter;

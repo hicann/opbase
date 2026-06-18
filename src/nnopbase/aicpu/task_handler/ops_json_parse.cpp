@@ -123,14 +123,13 @@ aclnnStatus OpsJsonFile::StringToBool(const std::string& str, bool& result) cons
     return ACLNN_ERR_PARAM_INVALID;
 }
 
-bool OpsJsonFile::CheckAndGetUserDefine(
-    const json& buff, const string& opType, const string& fieldStr, bool& value) const
+bool OpsJsonFile::CheckAndGetUserDefine(const json& buff, const string& opType, const string& fieldStr,
+                                        bool& value) const
 {
     if (!buff.empty()) {
         if (StringToBool(buff.get<string>(), value) != ACLNN_SUCCESS) {
-            OP_LOGW(
-                "Invalid ops info %s[%s], should be False or True, op[%s].", fieldStr.c_str(),
-                buff.get<string>().c_str(), opType.c_str());
+            OP_LOGW("Invalid ops info %s[%s], should be False or True, op[%s].", fieldStr.c_str(),
+                    buff.get<string>().c_str(), opType.c_str());
             return false;
         }
     }

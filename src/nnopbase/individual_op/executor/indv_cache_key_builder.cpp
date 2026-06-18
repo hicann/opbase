@@ -215,8 +215,8 @@ NnopbaseUChar* CacheKeyBuilder::AppendMc2RankId(NnopbaseExecutorArgs* args, cons
     key = AppendPlaceHolder(args, key);
     EnsureCapacity(args, sizeof(uint32_t));
     key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
-    key =
-        op::internal::PtrCastTo<NnopbaseUChar>(NnopbaseAppendBinary(key, args->remainKeyLen, rankId, sizeof(uint32_t)));
+    key = op::internal::PtrCastTo<NnopbaseUChar>(
+        NnopbaseAppendBinary(key, args->remainKeyLen, rankId, sizeof(uint32_t)));
     args->keyLen += sizeof(uint32_t);
     args->remainKeyLen -= sizeof(uint32_t);
     return key;
@@ -232,8 +232,8 @@ void CacheKeyBuilder::AppendTensor(NnopbaseExecutorArgs* args, const aclTensor* 
     }
 }
 
-void CacheKeyBuilder::AppendValueDependTensor(
-    NnopbaseExecutorArgs* args, const void* addr, const uint64_t dim, const uint64_t dataLen, ge::DataType dType)
+void CacheKeyBuilder::AppendValueDependTensor(NnopbaseExecutorArgs* args, const void* addr, const uint64_t dim,
+                                              const uint64_t dataLen, ge::DataType dType)
 {
     const size_t shapeLen = BASE_BYTES + SHAPE_BYTES;
     if (args->remainKeyLen < shapeLen + dataLen) {
@@ -308,9 +308,8 @@ NnopbaseUChar* CacheKeyBuilder::AppendScalarInfo(NnopbaseExecutorArgs* args, con
     return key;
 }
 
-void CacheKeyBuilder::AppendScalar(
-    NnopbaseExecutorArgs* args, const aclScalar* scalar, const uint32_t index, const int32_t srcIndex,
-    const ge::DataType dtype)
+void CacheKeyBuilder::AppendScalar(NnopbaseExecutorArgs* args, const aclScalar* scalar, const uint32_t index,
+                                   const int32_t srcIndex, const ge::DataType dtype)
 {
     if (scalar == nullptr) {
         NnopbaseUChar* key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
@@ -319,21 +318,20 @@ void CacheKeyBuilder::AppendScalar(
         ge::DataType dataType = scalar->GetDataType();
         if (dtype != ge::DT_UNDEFINED) {
             dataType = dtype;
-        } else if (
-            (srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index) &&
-            static_cast<size_t>(srcIndex) < args->inputs.paramDescs.instances.size() &&
-            args->inputs.extTensors.size() >
-                args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex) {
-            dataType =
-                args->inputs.extTensors[args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex]
-                    .rt2Tensor.GetDataType();
+        } else if ((srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index) &&
+                   static_cast<size_t>(srcIndex) < args->inputs.paramDescs.instances.size() &&
+                   args->inputs.extTensors.size() >
+                       args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex) {
+            dataType = args->inputs
+                           .extTensors[args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex]
+                           .rt2Tensor.GetDataType();
         }
         (void)AppendScalarInfo(args, dataType);
     }
 }
 
-NnopbaseUChar* CacheKeyBuilder::AppendScalarListInfo(
-    NnopbaseExecutorArgs* args, const ge::DataType dtype, const uint64_t size)
+NnopbaseUChar* CacheKeyBuilder::AppendScalarListInfo(NnopbaseExecutorArgs* args, const ge::DataType dtype,
+                                                     const uint64_t size)
 {
     size_t len = BASE_BYTES + SHAPE_BYTES;
     EnsureCapacity(args, len);
@@ -347,9 +345,8 @@ NnopbaseUChar* CacheKeyBuilder::AppendScalarListInfo(
     return key;
 }
 
-void CacheKeyBuilder::AppendScalarList(
-    NnopbaseExecutorArgs* args, const aclScalarList* scalarList, const uint32_t index, const int32_t srcIndex,
-    const ge::DataType dtype)
+void CacheKeyBuilder::AppendScalarList(NnopbaseExecutorArgs* args, const aclScalarList* scalarList,
+                                       const uint32_t index, const int32_t srcIndex, const ge::DataType dtype)
 {
     NnopbaseUChar* key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
     if ((scalarList == nullptr) || (scalarList->Size() == 0U)) {
@@ -358,14 +355,13 @@ void CacheKeyBuilder::AppendScalarList(
         ge::DataType dataType = (*scalarList)[0]->GetDataType();
         if (dtype != ge::DT_UNDEFINED) {
             dataType = dtype;
-        } else if (
-            (srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index) &&
-            static_cast<size_t>(srcIndex) < args->inputs.paramDescs.instances.size() &&
-            args->inputs.extTensors.size() >
-                args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex) {
-            dataType =
-                args->inputs.extTensors[args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex]
-                    .rt2Tensor.GetDataType();
+        } else if ((srcIndex != -1) && (static_cast<uint32_t>(srcIndex) < index) &&
+                   static_cast<size_t>(srcIndex) < args->inputs.paramDescs.instances.size() &&
+                   args->inputs.extTensors.size() >
+                       args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex) {
+            dataType = args->inputs
+                           .extTensors[args->inputs.paramDescs.instances[static_cast<size_t>(srcIndex)].startIndex]
+                           .rt2Tensor.GetDataType();
         }
         (void)AppendScalarListInfo(args, dataType, scalarList->Size());
     }

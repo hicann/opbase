@@ -67,13 +67,11 @@ private:
         if constexpr (__aux::TypeIsFunBind<InArg>::Value) {
             using ArgFun = typename InArg::Fun;
             int argFunPos = GetFunOutputPos<Dag, InArg>();
-            RUN_LOG_BASE(
-                "%d[\"%d %s\"] --> %d[\"%d %s\"] \n", argFunPos, argFunPos, PRINT_TYPE(ArgFun), funcPos, funcPos,
-                PRINT_TYPE(Fun));
+            RUN_LOG_BASE("%d[\"%d %s\"] --> %d[\"%d %s\"] \n", argFunPos, argFunPos, PRINT_TYPE(ArgFun), funcPos,
+                         funcPos, PRINT_TYPE(Fun));
         } else {
-            RUN_LOG_BASE(
-                "%d[\"%s\"] --> %d[\"%d %s\"] \n", (funcPos + 1) * 1000 + pos, PRINT_TYPE(InArg), funcPos, funcPos,
-                PRINT_TYPE(Fun));
+            RUN_LOG_BASE("%d[\"%s\"] --> %d[\"%d %s\"] \n", (funcPos + 1) * 1000 + pos, PRINT_TYPE(InArg), funcPos,
+                         funcPos, PRINT_TYPE(Fun));
         }
         if constexpr (pos + 1 < Op::Args::Size) {
             PrintGraph<Dag, Op, pos + 1>();

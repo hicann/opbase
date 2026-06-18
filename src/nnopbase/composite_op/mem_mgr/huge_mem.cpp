@@ -169,10 +169,9 @@ public:
             if (baseArray_[currentArrayIndex_] == nullptr) {
                 void* block = op::internal::BlockPool::GetOneHugeBlock();
                 if (block == nullptr) {
-                    OP_LOGW(
-                        "Hugemem trace: current array index: %d, GetOneHugeBlock failed, use block cache to "
-                        "allocate memory!",
-                        currentArrayIndex_);
+                    OP_LOGW("Hugemem trace: current array index: %d, GetOneHugeBlock failed, use block cache to "
+                            "allocate memory!",
+                            currentArrayIndex_);
                     return op::internal::BlockCache::CacheAlloc(size);
                 }
                 int64_t* offset = static_cast<int64_t*>(block);

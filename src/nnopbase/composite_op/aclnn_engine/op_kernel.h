@@ -146,8 +146,8 @@ inline void CacheTensorForDfx(OpArg& tensor, FVector<const aclTensor*>& res)
     }
 }
 
-void ParseImplModeByJson(
-    const nlohmann::json& singleBinJson, const std::string& jsonPath, FVector<OpImplMode>& implModes);
+void ParseImplModeByJson(const nlohmann::json& singleBinJson, const std::string& jsonPath,
+                         FVector<OpImplMode>& implModes);
 
 class OpKernelBin {
 public:
@@ -160,10 +160,9 @@ public:
     void SetJsonPath(const std::string& jsonPath);
     void SetBinPath(const std::string& binPath);
 
-    OpKernelBin(
-        uint32_t optype, const std::string& jsonpath, const std::string& relativeJsonPath, const std::string& binpath,
-        const KeyAndDetail& keyAndDetail, size_t hash, BinType binType, bool genPlaceholder, bool hasDevPtrArg,
-        void* opKernel = nullptr)
+    OpKernelBin(uint32_t optype, const std::string& jsonpath, const std::string& relativeJsonPath,
+                const std::string& binpath, const KeyAndDetail& keyAndDetail, size_t hash, BinType binType,
+                bool genPlaceholder, bool hasDevPtrArg, void* opKernel = nullptr)
         : opType_(optype),
           binPath_(binpath),
           jsonPath_(jsonpath),
@@ -199,27 +198,22 @@ public:
         return ret;
     }
 
-    aclnnStatus DoLaunch(
-        const TilingCtxOutput* res, aclrtStream stream, bool isMemSet, OpArgContext* args,
-        std::vector<int32_t>& tensorOffset)
+    aclnnStatus DoLaunch(const TilingCtxOutput* res, aclrtStream stream, bool isMemSet, OpArgContext* args,
+                         std::vector<int32_t>& tensorOffset)
     {
-        OP_CHECK(
-            res != nullptr, OP_LOGE(ACLNN_ERR_INNER, "DoLaunch failed. TilingCtxOutput can't be nullptr."),
-            return ACLNN_ERR_INNER);
+        OP_CHECK(res != nullptr, OP_LOGE(ACLNN_ERR_INNER, "DoLaunch failed. TilingCtxOutput can't be nullptr."),
+                 return ACLNN_ERR_INNER);
         LaunchArgInfo argInfo(genPlaceholder_, hasDevPtrArg_, args);
-        OP_CHECK_NO_RETURN(
-            AppendAICErrorDFXInfo(argInfo, res->rtsArgBuffer_) == ACLNN_SUCCESS,
-            OP_LOGW("Append AIC Error DFX info failed!"));
+        OP_CHECK_NO_RETURN(AppendAICErrorDFXInfo(argInfo, res->rtsArgBuffer_) == ACLNN_SUCCESS,
+                           OP_LOGW("Append AIC Error DFX info failed!"));
         uint64_t tilingkey = *(res->tilingKey_);
         uint32_t numBlocks = *(res->numBlocks_);
         try {
-            bool hasFftsAddr =
-                ((interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end())) &&
-                 GetCurrentPlatformInfo().GetFftsPlusMode());
+            bool hasFftsAddr = ((interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end())) &&
+                                GetCurrentPlatformInfo().GetFftsPlusMode());
             RtsArg rtsArg(hasFftsAddr, argInfo, res->rtsArgBuffer_);
-            OP_CHECK(
-                rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"),
-                return ACLNN_ERR_INNER);
+            OP_CHECK(rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"),
+                     return ACLNN_ERR_INNER);
             tensorOffset = rtsArg.GetTensorOffset();
             if (!isMemSet) {
                 SetExceptionDumpInfo(numBlocks, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
@@ -263,8 +257,8 @@ public:
                 }
                 CacheTensorInfo(in, out);
                 if (isMemSet == false) {
-                    GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                        GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
+                    GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
+                        op::OpTypeDict::ToString(opType_).GetString());
                     GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
                         GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
                         op::OpTypeDict::ToString(opType_).GetString());
@@ -275,8 +269,8 @@ public:
                     GetThreadLocalContext().memSetProfilingInfoId_.summaryItemId_ = GenSummaryItemId(
                         GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
                         op::OpTypeDict::ToString(opType_).GetString());
-                    CacheDfxInfo(
-                        numBlocks, GetThreadLocalContext().memSetProfilingInfoId_, GetTaskInfo(tilingkey, args), true);
+                    CacheDfxInfo(numBlocks, GetThreadLocalContext().memSetProfilingInfoId_,
+                                 GetTaskInfo(tilingkey, args), true);
                 }
             }
 
@@ -307,17 +301,16 @@ public:
         }
         std::vector<int32_t> tensorOffset;
         {
-            OpDfxGuard kernelLaunchGuard(
-                GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
+            OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
+                                         DfxProfilingKernelLaunch);
             rc = DoLaunch(res, stream, false, args, tensorOffset);
         }
         if (IsPrintFEnable()) {
             DumpWorkspaceData(stream, args);
         }
         if (op::internal::IsExceptionDumpEnable()) {
-            op::internal::PrepareExceptionDumpInfo(
-                args, GetThreadLocalContext().logInfo_, genPlaceholder_, hasDevPtrArg_, interCoreSync_, tensorOffset,
-                stream);
+            op::internal::PrepareExceptionDumpInfo(args, GetThreadLocalContext().logInfo_, genPlaceholder_,
+                                                   hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
         }
         if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
             auto taskInfo = GetTaskInfo(*(res->tilingKey_), args);
@@ -325,12 +318,11 @@ public:
                 op::internal::ReportNodeContextIdInfo(GetThreadLocalContext().profilingInfoId_.summaryItemId_);
             }
             // only level1 profiling need to report addition info
-            op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
+            op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
+                op::OpTypeDict::ToString(opType_).GetString());
             if (op::internal::opProfilingSwitch.additionInfoFlag) {
-                op::internal::ReportAdditionInfo(
-                    *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG), taskInfo,
-                    GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
+                                                 taskInfo, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
             }
             ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
         }
@@ -353,35 +345,32 @@ public:
         tilingData->data_size_ = AlignSize(tilingData->data_size_, oomAlignCoef);
 
         // 同步 buffer 游标到 tilingData->data_size_
-        OP_CHECK(
-            buffer->UpdateTilingDataSize(tilingData->data_size_) == ACLNN_SUCCESS,
-            OP_LOGW("Failed to sync tiling host data cursor to %zu.", tilingData->data_size_), return ACLNN_ERR_INNER);
+        OP_CHECK(buffer->UpdateTilingDataSize(tilingData->data_size_) == ACLNN_SUCCESS,
+                 OP_LOGW("Failed to sync tiling host data cursor to %zu.", tilingData->data_size_),
+                 return ACLNN_ERR_INNER);
 
         // 通过 buffer 追加 tensor shape info
-        CHECK_RET_CODE(
-            args->GetOpArg(op::OP_INPUT_ARG)->VisitBy([this, buffer](size_t idx, OpArg& elem) {
-                return AppendTensorShapeInfo(idx, elem, buffer, op::OP_INPUT_ARG);
-            }),
-            "Append input tensor shape info failed.");
-        CHECK_RET_CODE(
-            args->GetOpArg(op::OP_OUTPUT_ARG)->VisitBy([this, buffer](size_t idx, OpArg& elem) {
-                return AppendTensorShapeInfo(idx, elem, buffer, op::OP_OUTPUT_ARG);
-            }),
-            "Append output tensor shape info failed.");
+        CHECK_RET_CODE(args->GetOpArg(op::OP_INPUT_ARG)->VisitBy([this, buffer](size_t idx, OpArg& elem) {
+            return AppendTensorShapeInfo(idx, elem, buffer, op::OP_INPUT_ARG);
+        }),
+                       "Append input tensor shape info failed.");
+        CHECK_RET_CODE(args->GetOpArg(op::OP_OUTPUT_ARG)->VisitBy([this, buffer](size_t idx, OpArg& elem) {
+            return AppendTensorShapeInfo(idx, elem, buffer, op::OP_OUTPUT_ARG);
+        }),
+                       "Append output tensor shape info failed.");
 
         if (args->ContainsOpArgType(op::OP_OUTSHAPE_ARG)) {
             CHECK_RET_CODE(
-                AppendTensorShapeInfo(
-                    0, PtrCastTo<aclTensor>((*args->GetOpArg(op::OP_OUTSHAPE_ARG))[0]->pointer), buffer, false),
+                AppendTensorShapeInfo(0, PtrCastTo<aclTensor>((*args->GetOpArg(op::OP_OUTSHAPE_ARG))[0]->pointer),
+                                      buffer, false),
                 "Append outshape info failed.");
         }
 
         if (args->ContainsOpArgType(op::OP_WORKSPACE_ARG)) {
-            CHECK_RET_CODE(
-                args->GetOpArg(op::OP_WORKSPACE_ARG)->VisitBy([this, buffer](size_t idx, OpArg& elem) {
-                    return AppendTensorShapeInfo(idx, elem, buffer, op::OP_WORKSPACE_ARG);
-                }),
-                "Append workspace shape info failed.");
+            CHECK_RET_CODE(args->GetOpArg(op::OP_WORKSPACE_ARG)->VisitBy([this, buffer](size_t idx, OpArg& elem) {
+                return AppendTensorShapeInfo(idx, elem, buffer, op::OP_WORKSPACE_ARG);
+            }),
+                           "Append workspace shape info failed.");
         }
         return ACLNN_SUCCESS;
     }
@@ -401,10 +390,9 @@ public:
         uint32_t dumpElemCount = argInfo.GetDFXInfoDumpElemCount();
         uint64_t dfxInfoDumpIndex = 0;
         void* dfxInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
-        OP_CHECK(
-            dfxInfoDumpAddr != nullptr,
-            OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount),
-            return ACLNN_ERR_INNER_NULLPTR);
+        OP_CHECK(dfxInfoDumpAddr != nullptr,
+                 OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount),
+                 return ACLNN_ERR_INNER_NULLPTR);
         aclnnStatus ret = AppendAICErrorDFXInfoToDump(allArg, argNum, dfxInfoDumpAddr, dumpElemCount);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to dump failed!"), return ret);
         argInfo.SetDFXInfoDumpAddr(dfxInfoDumpAddr);
@@ -414,11 +402,10 @@ public:
         argInfo.SetDFXInfoOffsetInTilingData(buffer->GetTilingDataPtr()->data_size_ - sizeof(uint64_t));
 
         uint32_t* atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
-        OP_LOGI(
-            "Dump addr: %p, space: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), print dfx info dump: %d",
-            dfxInfoDumpAddr, dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0],
-            atomicIndexU32Type[1],
-            op::internal::PrintAICErrorDFXInfo(dfxInfoDumpAddr, argNum, dumpElemCount * sizeof(uint64_t)));
+        OP_LOGI("Dump addr: %p, space: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), print dfx info dump: %d",
+                dfxInfoDumpAddr, dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0],
+                atomicIndexU32Type[1],
+                op::internal::PrintAICErrorDFXInfo(dfxInfoDumpAddr, argNum, dumpElemCount * sizeof(uint64_t)));
         return ACLNN_SUCCESS;
     }
 
@@ -432,13 +419,13 @@ public:
         uint32_t vectorCoreNum = GetThreadLocalContext().opConfigInfo_.aivNum_;
         uint32_t needCoreNum = *(res->numBlocks_);
         if ((cubeCoreNum + vectorCoreNum) == 0) {
-            OP_LOGW(
-                "The number of cubeCore is %u, The number of vectorCore is %u. Calculation failed.", cubeCoreNum,
-                vectorCoreNum);
+            OP_LOGW("The number of cubeCore is %u, The number of vectorCore is %u. Calculation failed.", cubeCoreNum,
+                    vectorCoreNum);
             return false;
         }
-        uint32_t needCubeCoreNum =
-            static_cast<uint32_t>(std::ceil(float(needCoreNum) / (cubeCoreNum + vectorCoreNum))) * cubeCoreNum;
+        uint32_t needCubeCoreNum = static_cast<uint32_t>(
+                                       std::ceil(float(needCoreNum) / (cubeCoreNum + vectorCoreNum))) *
+                                   cubeCoreNum;
         return needCoreNum > needCubeCoreNum;
     }
 
@@ -449,13 +436,12 @@ public:
         uint32_t totalNeedNum = *(res->numBlocks_);
 
         if ((cubeCoreNum + vectorCoreNum) == 0) {
-            OP_LOGW(
-                "The number of cubeCore is %u, The number of vectorCore is %u. Calculation failed.", cubeCoreNum,
-                vectorCoreNum);
+            OP_LOGW("The number of cubeCore is %u, The number of vectorCore is %u. Calculation failed.", cubeCoreNum,
+                    vectorCoreNum);
             return std::make_tuple(0, totalNeedNum);
         }
-        uint32_t cubeNeedCoreNum =
-            static_cast<uint32_t>(std::ceil(float(totalNeedNum) / (vectorCoreNum + cubeCoreNum)) * cubeCoreNum);
+        uint32_t cubeNeedCoreNum = static_cast<uint32_t>(
+            std::ceil(float(totalNeedNum) / (vectorCoreNum + cubeCoreNum)) * cubeCoreNum);
         uint32_t vectorNeedCoreNum = totalNeedNum - cubeNeedCoreNum;
         return std::make_tuple(cubeNeedCoreNum, vectorNeedCoreNum);
     }
@@ -488,9 +474,8 @@ public:
         }
 
         LaunchArgInfo argInfo(genPlaceholder_, hasDevPtrArg_, args);
-        OP_CHECK_NO_RETURN(
-            AppendAICErrorDFXInfo(argInfo, res->rtsArgBuffer_) == ACLNN_SUCCESS,
-            OP_LOGW("Append AIC Error DFX info failed!"));
+        OP_CHECK_NO_RETURN(AppendAICErrorDFXInfo(argInfo, res->rtsArgBuffer_) == ACLNN_SUCCESS,
+                           OP_LOGW("Append AIC Error DFX info failed!"));
         uint64_t tilingkey = *(res->tilingKey_);
         // get the coreNums of the AIC and AIV.
         auto needCoreNumTupleOut = NeedAicAndAivCoreNum(res);
@@ -498,19 +483,18 @@ public:
         uint32_t blockdimAiv = std::get<1>(needCoreNumTupleOut);
 
         try {
-            RtsArg rtsArg(
-                interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end()), argInfo, res->rtsArgBuffer_);
+            RtsArg rtsArg(interCoreSync_ || (mixKernel.find(tilingkey) != mixKernel.end()), argInfo,
+                          res->rtsArgBuffer_);
 
             CHECK_RET_CODE(InitFunctionHandle(isFatbin_, tilingkey), "Init function handle failed.");
 
             int32_t ret;
             std::vector<int32_t> tensorOffset;
             {
-                OpDfxGuard kernelLaunchGuard(
-                    GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
-                OP_CHECK(
-                    rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"),
-                    return ACLNN_ERR_INNER);
+                OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
+                                             DfxProfilingKernelLaunch);
+                OP_CHECK(rtsArg.FillArgs(IsAssertEnable()) == ACLNN_SUCCESS,
+                         OP_LOGE(ACLNN_ERR_INNER, "Fill rts arg fail"), return ACLNN_ERR_INNER);
                 tensorOffset = rtsArg.GetTensorOffset();
                 SetExceptionDumpInfo(blockdimAic, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
                 GetThreadLocalContext().numBlocks_ = blockdimAic;
@@ -548,19 +532,18 @@ public:
                 DumpWorkspaceData(stream, args);
             }
             if (op::internal::IsExceptionDumpEnable()) {
-                op::internal::PrepareExceptionDumpInfo(
-                    args, GetThreadLocalContext().logInfo_, genPlaceholder_, hasDevPtrArg_, interCoreSync_,
-                    tensorOffset, stream);
+                op::internal::PrepareExceptionDumpInfo(args, GetThreadLocalContext().logInfo_, genPlaceholder_,
+                                                       hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
             }
             if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
                 MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
                 // only level1 profiling need to report addition info
                 if (op::internal::opProfilingSwitch.additionInfoFlag) {
-                    op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                        GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
-                    op::internal::ReportAdditionInfo(
-                        *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
-                        GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                    op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
+                        op::OpTypeDict::ToString(opType_).GetString());
+                    op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG),
+                                                     *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
+                                                     GetThreadLocalContext().profilingInfoId_.summaryItemId_);
                 }
                 ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
             }
@@ -570,8 +553,8 @@ public:
                 ReportCacheOpInfo(taskInfo, args, opType_, attrId);
             }
             {
-                OpDfxGuard kernelLaunchGuard(
-                    GetThreadLocalContext().profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
+                OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
+                                             DfxProfilingKernelLaunch);
                 SetExceptionDumpInfo(blockdimAiv, tilingkey, res->tilingData_->data_, res->tilingData_->data_size_);
                 GetThreadLocalContext().numBlocks_ = blockdimAiv;
 
@@ -593,9 +576,8 @@ public:
                 }
 
                 if (op::internal::IsExceptionDumpEnable()) {
-                    op::internal::PrepareExceptionDumpInfo(
-                        args, GetThreadLocalContext().logInfo_, genPlaceholder_, hasDevPtrArg_, interCoreSync_,
-                        tensorOffset, stream);
+                    op::internal::PrepareExceptionDumpInfo(args, GetThreadLocalContext().logInfo_, genPlaceholder_,
+                                                           hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
                 }
 
                 ret = aclrtRecordEvent(eventB, secondStream);
@@ -614,11 +596,11 @@ public:
                 MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AIV;
                 // only level1 profiling need to report addition info
                 if (op::internal::opProfilingSwitch.additionInfoFlag) {
-                    op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ =
-                        GenKernelLauncherId(op::OpTypeDict::ToString(opType_).GetString());
-                    op::internal::ReportAdditionInfo(
-                        *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
-                        GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                    op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
+                        op::OpTypeDict::ToString(opType_).GetString());
+                    op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG),
+                                                     *args->GetOpArg(op::OP_OUTPUT_ARG), taskType,
+                                                     GetThreadLocalContext().profilingInfoId_.summaryItemId_);
                 }
                 ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
             }
@@ -643,8 +625,8 @@ public:
             {
                 if (op::internal::opProfilingSwitch.reportFlag) {
                     std::string tilingFuncName = op::OpTypeDict::ToString(opType_).GetString() + std::string("_Tiling");
-                    GetThreadLocalContext().profilingInfoId_.tilingProfilingId_ =
-                        CollectProfilingStr(tilingFuncName.c_str());
+                    GetThreadLocalContext().profilingInfoId_.tilingProfilingId_ = CollectProfilingStr(
+                        tilingFuncName.c_str());
                 }
                 OpDfxGuard tilingGuard(GetThreadLocalContext().profilingInfoId_.tilingProfilingId_, DFXProfilingTiling);
                 const TilingResCache* tilingCache = nullptr;
@@ -654,9 +636,8 @@ public:
                 } else {
                     res = OpRunContextMgr::Tiling(
                         opType_,
-                        tilingParseCtxHolder_[ThreadCoreNum(
-                                                  GetThreadLocalContext().opConfigInfo_.aicNum_,
-                                                  GetThreadLocalContext().opConfigInfo_.aivNum_)]
+                        tilingParseCtxHolder_[ThreadCoreNum(GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                            GetThreadLocalContext().opConfigInfo_.aivNum_)]
                             .get(),
                         *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
                         *args->GetOpArg(op::OP_ATTR_ARG));
@@ -674,9 +655,8 @@ public:
                 }
 
                 auto ws = PtrCastTo<gert::TypedContinuousVector<size_t>>(res->workspaceSize_);
-                OP_LOGD(
-                    "Tiling Key: %lu, len: %lu, numBlocks: %ld, Workspace Num: %zu.", *(res->tilingKey_),
-                    res->tilingData_->data_size_, *(res->numBlocks_), ws->GetSize());
+                OP_LOGD("Tiling Key: %lu, len: %lu, numBlocks: %ld, Workspace Num: %zu.", *(res->tilingKey_),
+                        res->tilingData_->data_size_, *(res->numBlocks_), ws->GetSize());
 #ifdef DEBUG
                 for (size_t i = 0; i < ws->GetSize(); i++) {
                     OP_LOGD("Workspace [%zu] size: %zu", i, (ws->GetData())[i]);
@@ -684,10 +664,10 @@ public:
 #endif
             }
         } else {
-            OpRunContextMgr::RecordOpInfo(
-                opType_, binJson_.GetVar(), aclnnOpInfoRecord::OpKernelInfo(binPath_, static_cast<int8_t>(binType_)),
-                staticImplMode_, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-                *args->GetOpArg(op::OP_ATTR_ARG));
+            OpRunContextMgr::RecordOpInfo(opType_, binJson_.GetVar(),
+                                          aclnnOpInfoRecord::OpKernelInfo(binPath_, static_cast<int8_t>(binType_)),
+                                          staticImplMode_, *args->GetOpArg(op::OP_INPUT_ARG),
+                                          *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_ATTR_ARG));
             res = OpRunContextMgr::GetStaticTilingCtxOutput(
                 opType_, staticBlockDim_, !memSetValue_.empty(), scheduleMode_, staticKernelDynUBufSize_,
                 staticWorkspaceSize_, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
@@ -720,15 +700,13 @@ public:
         CHECK_RET_CODE(BinLoad(), "BinLoad failed");
         CHECK_RET_CODE(InitTilingParseCtx(), "InitTilingParseCtx failed");
         auto res = OpRunContextMgr::Tiling4MemSet(
-            tilingParseCtxHolder_[ThreadCoreNum(
-                                      GetThreadLocalContext().opConfigInfo_.aicNum_,
-                                      GetThreadLocalContext().opConfigInfo_.aivNum_)]
+            tilingParseCtxHolder_[ThreadCoreNum(GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                GetThreadLocalContext().opConfigInfo_.aivNum_)]
                 .get(),
             memsetTensorInfo);
         CHECK_COND(res != nullptr, ACLNN_ERR_INNER_NULLPTR, "Tiling4MemSet Failed.");
-        OP_LOGD(
-            "Tiling Key: %lu, len: %lu, numBlocks: %ld", *(res->tilingKey_), res->tilingData_->data_size_,
-            *(res->numBlocks_));
+        OP_LOGD("Tiling Key: %lu, len: %lu, numBlocks: %ld", *(res->tilingKey_), res->tilingData_->data_size_,
+                *(res->numBlocks_));
         std::vector<std::tuple<void*, const aclTensor*>> tensor;
         for (const auto& elem : memsetTensorInfo) {
             OP_CHECK_NO_RETURN(elem.tensor_ != nullptr, OP_LOGW("elem idx [%zu] is nullptr.", elem.argIdx_));
@@ -739,8 +717,8 @@ public:
         GetThreadLocalContext().memSetProfilingInfoId_.kernelLauncherId_ = kernelLaunchId;
         uint64_t summaryId = 0;
         if (opProfilingSwitch.kernelLaunchFlag) {
-            summaryId = GenSummaryItemId(
-                GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name, "MemSet");
+            summaryId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
+                                         GetThreadLocalContext().logInfo_.l0Name, "MemSet");
         }
         aclnnStatus rc = ACLNN_ERR_INNER;
         OpArgContext tempCtx;
@@ -770,9 +748,8 @@ public:
         aclnnStatus rc = memsetV2ArgCtx.Init(memsetTensorInfo);
         CHECK_COND(rc == ACLNN_SUCCESS, ACLNN_ERR_INNER_NULLPTR, "Get memsetV2 arg context failed.");
         OpArgContext* memsetV2OpArgCtx = memsetV2ArgCtx.GetMemsetV2OpArgContext();
-        OP_CHECK(
-            !(rc == ACLNN_SUCCESS && memsetV2OpArgCtx == nullptr), OP_LOGW("There is no tensor to memset"),
-            return ACLNN_SUCCESS);
+        OP_CHECK(!(rc == ACLNN_SUCCESS && memsetV2OpArgCtx == nullptr), OP_LOGW("There is no tensor to memset"),
+                 return ACLNN_SUCCESS);
         auto& opTlsCtx = GetThreadLocalContext();
         // tiling
         if (op::internal::opProfilingSwitch.reportFlag) {
@@ -784,16 +761,14 @@ public:
             OpDfxGuard tilingGuard(opTlsCtx.profilingInfoId_.tilingProfilingId_, DFXProfilingTiling);
             res = OpRunContextMgr::Tiling4MemSetV2(
                 opType_,
-                tilingParseCtxHolder_[ThreadCoreNum(
-                                          GetThreadLocalContext().opConfigInfo_.aicNum_,
-                                          GetThreadLocalContext().opConfigInfo_.aivNum_)]
+                tilingParseCtxHolder_[ThreadCoreNum(GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                    GetThreadLocalContext().opConfigInfo_.aivNum_)]
                     .get(),
                 *memsetV2OpArgCtx->GetOpArg(op::OP_INPUT_ARG), *memsetV2OpArgCtx->GetOpArg(op::OP_OUTPUT_ARG),
                 *memsetV2OpArgCtx->GetOpArg(op::OP_ATTR_ARG));
             CHECK_COND(res != nullptr, ACLNN_ERR_INNER_NULLPTR, "MemSetV2 Tiling Failed.");
-            OP_LOGD(
-                "Tiling Key: %lu, len: %zu, numBlocks: %ld", *(res->tilingKey_), res->tilingData_->data_size_,
-                *(res->numBlocks_));
+            OP_LOGD("Tiling Key: %lu, len: %zu, numBlocks: %ld", *(res->tilingKey_), res->tilingData_->data_size_,
+                    *(res->numBlocks_));
         }
         // kernel launch
         static uint64_t kernelLaunchId = GenKernelLauncherId(MEMSET_V2_NAME.c_str());
@@ -837,9 +812,8 @@ public:
         OpDfxGuard tilingGuard(GetThreadLocalContext().profilingInfoId_.tilingProfilingId_, DFXProfilingTiling);
         auto res = OpRunContextMgr::Tiling(
             opType_,
-            tilingParseCtxHolder_[ThreadCoreNum(
-                                      GetThreadLocalContext().opConfigInfo_.aicNum_,
-                                      GetThreadLocalContext().opConfigInfo_.aivNum_)]
+            tilingParseCtxHolder_[ThreadCoreNum(GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                GetThreadLocalContext().opConfigInfo_.aivNum_)]
                 .get(),
             inputs, outputs, attrs);
         if (res == nullptr) {
@@ -868,8 +842,8 @@ public:
         static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
 #endif
         bool needAlign = (npuArch == NpuArch::DAV_2201 || npuArch == NpuArch::DAV_3510) ? false : true;
-        MemsetVersion memsetVersion =
-            (npuArch == NpuArch::DAV_3510) ? MemsetVersion::MEMSET_V1_ASCENDC : MemsetVersion::MEMSET_V1;
+        MemsetVersion memsetVersion = (npuArch == NpuArch::DAV_3510) ? MemsetVersion::MEMSET_V1_ASCENDC :
+                                                                       MemsetVersion::MEMSET_V1;
         CHECK_RET_CODE(SelectMemsetOpBin(memsetVersion, memSetValue_.size(), memsetBin), "Select MemSet op failed");
 
         // for multi thread
@@ -922,8 +896,8 @@ public:
 protected:
     aclnnStatus InitTilingParseCtx();
     TaskInfo GetTaskInfo(uint64_t tilingkey, OpArgContext* args = nullptr);
-    void GetTaskRationForSingleBinMutilKernel(
-        TaskInfo& info, const nlohmann::json& opJson, uint64_t tilingkey, MsprofGeTaskType taskType);
+    void GetTaskRationForSingleBinMutilKernel(TaskInfo& info, const nlohmann::json& opJson, uint64_t tilingkey,
+                                              MsprofGeTaskType taskType);
 
     uint32_t opType_;
     std::unordered_map<ThreadCoreNum, std::unique_ptr<TilingParseCtxHolder>, ThreadCoreNum::Hash> tilingParseCtxHolder_;
@@ -948,8 +922,8 @@ private:
             });
 
         if (args->ContainsOpArgType(op::OP_OUTSHAPE_ARG)) {
-            CollectMemSetTensor(
-                0, PtrCastTo<aclTensor>((*args->GetOpArg(op::OP_OUTSHAPE_ARG))[0]->pointer), inputNum, needAlign);
+            CollectMemSetTensor(0, PtrCastTo<aclTensor>((*args->GetOpArg(op::OP_OUTSHAPE_ARG))[0]->pointer), inputNum,
+                                needAlign);
         }
     }
 
@@ -968,9 +942,9 @@ private:
         for (auto& elem : memSetValueCtx_) {
             if (allIdx == elem.argIdx_) {
                 if (needAlign) {
-                    elem.tensorDataSize_ =
-                        OP_KERNEL_BLOCK_SIZE +
-                        AlignSize(tensor->Size() * ge::GetSizeByDataType(tensor->GetDataType()), OP_KERNEL_BLOCK_SIZE);
+                    elem.tensorDataSize_ = OP_KERNEL_BLOCK_SIZE +
+                                           AlignSize(tensor->Size() * ge::GetSizeByDataType(tensor->GetDataType()),
+                                                     OP_KERNEL_BLOCK_SIZE);
                 } else {
                     elem.tensorDataSize_ = tensor->Size() * ge::GetSizeByDataType(tensor->GetDataType());
                 }
@@ -978,10 +952,9 @@ private:
                 elem.tensorSize_ = tensor->Size();
                 elem.tensorData_ = tensor->GetData();
                 elem.tensor_ = tensor;
-                OP_LOGD(
-                    "MemsetArg %zu, shape size: %zu, data size: %zu, data type: %s, dev addr: %p, tensor: %p", allIdx,
-                    elem.tensorSize_, elem.tensorDataSize_, op::ToString(elem.dtype_).GetString(), elem.tensorData_,
-                    elem.tensor_);
+                OP_LOGD("MemsetArg %zu, shape size: %zu, data size: %zu, data type: %s, dev addr: %p, tensor: %p",
+                        allIdx, elem.tensorSize_, elem.tensorDataSize_, op::ToString(elem.dtype_).GetString(),
+                        elem.tensorData_, elem.tensor_);
                 break;
             }
         }
@@ -998,9 +971,8 @@ private:
             if (allIdx == elem.argIdx_) {
                 elem.argType_ = OpArgType::OPARG_ACLTENSOR_LIST;
                 elem.tensorList_ = tensorList;
-                OP_LOGD(
-                    "MemsetArg %zu, data type: %s, tensor list: %p", allIdx, op::ToString(elem.dtype_).GetString(),
-                    elem.tensorList_);
+                OP_LOGD("MemsetArg %zu, data type: %s, tensor list: %p", allIdx, op::ToString(elem.dtype_).GetString(),
+                        elem.tensorList_);
                 break;
             }
         }
@@ -1041,49 +1013,45 @@ private:
                static_cast<uint32_t>(npuArch) >= static_cast<uint32_t>(NpuArch::DAV_3510);
     }
 
-    aclnnStatus AppendTensorShapeInfo(
-        size_t idx, const aclTensor* tensor, ExpandableRtsArgBuffer* buffer, bool genPlaceholder) const
+    aclnnStatus AppendTensorShapeInfo(size_t idx, const aclTensor* tensor, ExpandableRtsArgBuffer* buffer,
+                                      bool genPlaceholder) const
     {
         if (tensor == nullptr && !genPlaceholder) {
             OP_LOGW("Append tiling tensor shape, tensor is NULL: [%zu].", idx);
             return ACLNN_SUCCESS;
         }
-        OP_CHECK(
-            buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
-            OP_LOGW("Failed to seek tiling host data for tensor shape info"), return ACLNN_ERR_INNER);
+        OP_CHECK(buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
+                 OP_LOGW("Failed to seek tiling host data for tensor shape info"), return ACLNN_ERR_INNER);
         uint64_t tensorSize = 0;
         if (tensor) {
             int64_t storageSize = CalcShapeBytes(tensor->Size(), tensor->GetDataType());
             if (tensor->GetViewOffset() > 0 && IsAscend950OrLater()) {
                 tensorSize = storageSize;
-                OP_LOGD(
-                    "Use unaligned tensor shape size for tensor with view offset, viewOffset: %ld, "
-                    "tensorSize: %lu.",
-                    tensor->GetViewOffset(), tensorSize);
+                OP_LOGD("Use unaligned tensor shape size for tensor with view offset, viewOffset: %ld, "
+                        "tensorSize: %lu.",
+                        tensor->GetViewOffset(), tensorSize);
             } else {
                 tensorSize = AlignSize(storageSize, OP_KERNEL_BLOCK_SIZE);
             }
         }
-        *PtrCastTo<uint64_t>(static_cast<uint8_t*>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) =
-            tensorSize;
+        *PtrCastTo<uint64_t>(static_cast<uint8_t*>(buffer->GetTilingHostDataCurEndAddr()) -
+                             sizeof(uint64_t)) = tensorSize;
         TilingData* tilingData = buffer->GetTilingDataPtr();
         tilingData->data_size_ = buffer->GetTilingHostDataSize();
         OP_LOGD("Append tiling tensor shape size %lu: [%zu].", tensorSize, idx);
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus AppendTensorShapeInfo(
-        size_t idx, const aclTensorList* tensor, ExpandableRtsArgBuffer* buffer, bool genPlaceholder,
-        bool hasDevPtrArg) const
+    aclnnStatus AppendTensorShapeInfo(size_t idx, const aclTensorList* tensor, ExpandableRtsArgBuffer* buffer,
+                                      bool genPlaceholder, bool hasDevPtrArg) const
     {
         if (tensor == nullptr) {
             OP_LOGW("Append tiling tensor shape, tensorlist is NULL: [%zu].", idx);
             return ACLNN_SUCCESS;
         }
         if (hasDevPtrArg) {
-            OP_CHECK(
-                buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
-                OP_LOGW("Failed to seek tiling host data for tensor list shape info"), return ACLNN_ERR_INNER);
+            OP_CHECK(buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
+                     OP_LOGW("Failed to seek tiling host data for tensor list shape info"), return ACLNN_ERR_INNER);
             size_t dataSize = PTR_OFFSET_SIZE;
             for (uint64_t i = 0; i < tensor->Size(); i++) {
                 dataSize += PRT_DIM_SIZE;
@@ -1091,8 +1059,8 @@ private:
                     dataSize += (*tensor)[i]->GetStorageShape().GetDimNum() * sizeof(int64_t);
                 }
             }
-            *PtrCastTo<uint64_t>(static_cast<uint8_t*>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) =
-                dataSize;
+            *PtrCastTo<uint64_t>(static_cast<uint8_t*>(buffer->GetTilingHostDataCurEndAddr()) -
+                                 sizeof(uint64_t)) = dataSize;
 
             TilingData* tilingData = buffer->GetTilingDataPtr();
             tilingData->data_size_ = buffer->GetTilingHostDataSize();
@@ -1108,8 +1076,8 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus AppendTensorShapeInfo(
-        size_t idx, const std::vector<std::tuple<void*, const aclTensor*>>& arg, ExpandableRtsArgBuffer* buffer) const
+    aclnnStatus AppendTensorShapeInfo(size_t idx, const std::vector<std::tuple<void*, const aclTensor*>>& arg,
+                                      ExpandableRtsArgBuffer* buffer) const
     {
         for (const auto& elem : arg) {
             aclnnStatus ret = AppendTensorShapeInfo(idx, std::get<1>(elem), buffer, false);
@@ -1128,8 +1096,8 @@ private:
         } else if (arg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
             bool genPlaceholder = (opArgDef == op::OP_INPUT_ARG) ? genPlaceholder_ : false;
             bool hasDevPtrArg = (opArgDef == op::OP_INPUT_ARG || opArgDef == op::OP_OUTPUT_ARG) ? hasDevPtrArg_ : false;
-            return AppendTensorShapeInfo(
-                idx, PtrCastTo<aclTensorList>(arg->pointer), buffer, genPlaceholder, hasDevPtrArg);
+            return AppendTensorShapeInfo(idx, PtrCastTo<aclTensorList>(arg->pointer), buffer, genPlaceholder,
+                                         hasDevPtrArg);
         } else if (arg.type == OpArgType::OPARG_MEMSET_WORKSPACE) {
             return AppendTensorShapeInfo(
                 idx, *PtrCastTo<std::vector<std::tuple<void*, const aclTensor*>>>(arg->pointer), buffer);
@@ -1138,9 +1106,8 @@ private:
     }
 
     // | tensor1 size | tensor2 size | ... | tensor1 dim num | each dim size | tensor2 dim | each dim size | ... |
-    aclnnStatus AppendTensorDfxInfo(
-        void* dfxInfoDumpAddr, size_t& sizeInfoOffset, size_t& shapeInfoOffset, bool isOutShapeTensor,
-        const aclTensor* tensor) const
+    aclnnStatus AppendTensorDfxInfo(void* dfxInfoDumpAddr, size_t& sizeInfoOffset, size_t& shapeInfoOffset,
+                                    bool isOutShapeTensor, const aclTensor* tensor) const
     {
         if ((tensor == nullptr && genPlaceholder_)) {
             *PtrCastTo<uint64_t>(PtrShift(dfxInfoDumpAddr, sizeInfoOffset)) = 0;
@@ -1182,57 +1149,47 @@ private:
         return ACLNN_SUCCESS;
     }
 
-    aclnnStatus AppendAICErrorDFXInfoToDump(
-        const std::vector<LaunchArgInfo::ArgAddr>& allArg, size_t argNum, void* const dfxInfoDumpAddr,
-        uint32_t dumpElemCount) const
+    aclnnStatus AppendAICErrorDFXInfoToDump(const std::vector<LaunchArgInfo::ArgAddr>& allArg, size_t argNum,
+                                            void* const dfxInfoDumpAddr, uint32_t dumpElemCount) const
     {
         size_t sizeInfoOffset = 0;
         size_t shapeInfoOffset = argNum * sizeof(uint64_t);
         for (size_t i = 0; i < argNum; i++) {
             aclnnStatus ret = ACLNN_SUCCESS;
             if (allArg[i].tag_ == LaunchArgInfo::ArgAddr::ArgTag::DEVICE_ARG) {
-                ret = AppendTensorDfxInfo(
-                    dfxInfoDumpAddr, sizeInfoOffset, shapeInfoOffset, allArg[i].isOutShapeTensor_,
-                    allArg[i].devAddr_.tensor);
+                ret = AppendTensorDfxInfo(dfxInfoDumpAddr, sizeInfoOffset, shapeInfoOffset, allArg[i].isOutShapeTensor_,
+                                          allArg[i].devAddr_.tensor);
             } else if (allArg[i].tag_ == LaunchArgInfo::ArgAddr::ArgTag::HOST_ARG) {
-                ret = AppendTensorDfxInfo(
-                    dfxInfoDumpAddr, sizeInfoOffset, shapeInfoOffset, allArg[i].isOutShapeTensor_,
-                    allArg[i].hostTensor_);
+                ret = AppendTensorDfxInfo(dfxInfoDumpAddr, sizeInfoOffset, shapeInfoOffset, allArg[i].isOutShapeTensor_,
+                                          allArg[i].hostTensor_);
             } else if (allArg[i].tag_ == LaunchArgInfo::ArgAddr::ArgTag::DEVICE_PTR_ARG) {
                 ret = AppendTensorDfxInfo(dfxInfoDumpAddr, sizeInfoOffset, allArg[i].devPtrAddr_.ptrListLen);
             } else {
-                OP_LOGW(
-                    "Append AIC Error DFX info: unknown ArgAddr tag [%u], index: %zu.",
-                    static_cast<uint32_t>(allArg[i].tag_), i);
+                OP_LOGW("Append AIC Error DFX info: unknown ArgAddr tag [%u], index: %zu.",
+                        static_cast<uint32_t>(allArg[i].tag_), i);
             }
-            OP_CHECK(
-                ret == ACLNN_SUCCESS,
-                OP_LOGW(
-                    "Append AIC Error DFX info failed, index: %zu, tensor tag: %u.", i,
-                    static_cast<uint32_t>(allArg[i].tag_)),
-                return ret);
+            OP_CHECK(ret == ACLNN_SUCCESS,
+                     OP_LOGW("Append AIC Error DFX info failed, index: %zu, tensor tag: %u.", i,
+                             static_cast<uint32_t>(allArg[i].tag_)),
+                     return ret);
         }
-        OP_CHECK(
-            shapeInfoOffset == dumpElemCount * sizeof(uint64_t),
-            OP_LOGW(
-                "The data size [%zu] filled in dump is not equal to the expected size [%u * sizeof(uint64_t)]",
-                shapeInfoOffset, dumpElemCount),
-            return ACLNN_ERR_INNER);
+        OP_CHECK(shapeInfoOffset == dumpElemCount * sizeof(uint64_t),
+                 OP_LOGW("The data size [%zu] filled in dump is not equal to the expected size [%u * sizeof(uint64_t)]",
+                         shapeInfoOffset, dumpElemCount),
+                 return ACLNN_ERR_INNER);
         return ACLNN_SUCCESS;
     }
 
     aclnnStatus AppendAICErrorDFXInfoToTilingData(ExpandableRtsArgBuffer* buffer, const uint64_t dfxInfoDumpIndex) const
     {
         TilingData* tilingData = buffer->GetTilingDataPtr();
-        OP_CHECK(
-            buffer->UpdateTilingDataSize(tilingData->data_size_) == ACLNN_SUCCESS,
-            OP_LOGW("Failed to sync tiling host data cursor"), return ACLNN_ERR_INNER);
+        OP_CHECK(buffer->UpdateTilingDataSize(tilingData->data_size_) == ACLNN_SUCCESS,
+                 OP_LOGW("Failed to sync tiling host data cursor"), return ACLNN_ERR_INNER);
 
-        OP_CHECK(
-            buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
-            OP_LOGW("Failed to seek tiling host data for DFX info"), return ACLNN_ERR_INNER);
-        *PtrCastTo<uint64_t>(static_cast<uint8_t*>(buffer->GetTilingHostDataCurEndAddr()) - sizeof(uint64_t)) =
-            dfxInfoDumpIndex;
+        OP_CHECK(buffer->SeekTilingHostData(sizeof(uint64_t)) == ACLNN_SUCCESS,
+                 OP_LOGW("Failed to seek tiling host data for DFX info"), return ACLNN_ERR_INNER);
+        *PtrCastTo<uint64_t>(static_cast<uint8_t*>(buffer->GetTilingHostDataCurEndAddr()) -
+                             sizeof(uint64_t)) = dfxInfoDumpIndex;
 
         tilingData = buffer->GetTilingDataPtr();
         tilingData->data_size_ = buffer->GetTilingHostDataSize();
@@ -1317,9 +1274,8 @@ public:
         CHECK_RET(args != nullptr, ACLNN_ERR_PARAM_NULLPTR);
         op::internal::OpKernelBin* bin = op::internal::GetLauncherCtx().GetOpKernelBin();
         if (bin == nullptr) {
-            bin = SelectBin(
-                *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-                *args->GetOpArg(op::OP_ATTR_ARG));
+            bin = SelectBin(*args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
+                            *args->GetOpArg(op::OP_ATTR_ARG));
         }
         if (bin == nullptr) {
             OP_LOGE(ACLNN_ERR_INNER, "Cannot find binary for op %s.", op::OpTypeDict::ToString(opType_).GetString());
@@ -1332,9 +1288,8 @@ public:
     aclnnStatus GetWorkspace(size_t const*& size, size_t& num, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         if (bins_.empty()) {
-            OP_LOGE(
-                ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND, "Op %s does not has any binary.",
-                op::OpTypeDict::ToString(opType_).GetString());
+            OP_LOGE(ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND, "Op %s does not has any binary.",
+                    op::OpTypeDict::ToString(opType_).GetString());
             return ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND;
         }
 
@@ -1383,21 +1338,19 @@ public:
         FVector<int64_t> dynamicIndex;
         FVector<int64_t> dynamicCount;
         FVector<NnopbaseAttrAddr*> attrsVec;
-        CHECK_RET_CODE(
-            inputs.VisitBy([&, this]([[maybe_unused]] size_t idx, OpArg& elem) {
-                return AppendTensor(elem, tensors, dynamicIndex, dynamicCount);
-            }),
-            "Append input tensor failed.");
+        CHECK_RET_CODE(inputs.VisitBy([&, this]([[maybe_unused]] size_t idx, OpArg& elem) {
+            return AppendTensor(elem, tensors, dynamicIndex, dynamicCount);
+        }),
+                       "Append input tensor failed.");
 
         for (size_t i = tensors.size(); i < inputNum_; ++i) {
             tensors.emplace_back(nullptr);
         }
         OP_LOGD("After append inputs %zu", tensors.size());
-        CHECK_RET_CODE(
-            outputs.VisitBy([&, this]([[maybe_unused]] size_t idx, OpArg& elem) {
-                return AppendTensor(elem, tensors, dynamicIndex, dynamicCount);
-            }),
-            "Append output tensor failed.");
+        CHECK_RET_CODE(outputs.VisitBy([&, this]([[maybe_unused]] size_t idx, OpArg& elem) {
+            return AppendTensor(elem, tensors, dynamicIndex, dynamicCount);
+        }),
+                       "Append output tensor failed.");
 
         OP_LOGD("After append outputs %zu", tensors.size());
         auto attrInfoSize = (opTypeStr_ == "LayerNormBetaGammaBackpropV2") ? attrInfos_.size() - 1 : attrInfos_.size();
@@ -1406,25 +1359,22 @@ public:
             "Append attr failed.");
 
         int64_t implMode = ToIndex(GetCurrentImplMode());
-        OP_LOGD(
-            "tensor size %zu; dynamic index %s, dynamic count %s. Attr size %zu.", tensors.size(),
-            IntegerVecToString(dynamicIndex).c_str(), IntegerVecToString(dynamicCount).c_str(), attrsVec.size());
+        OP_LOGD("tensor size %zu; dynamic index %s, dynamic count %s. Attr size %zu.", tensors.size(),
+                IntegerVecToString(dynamicIndex).c_str(), IntegerVecToString(dynamicCount).c_str(), attrsVec.size());
         int64_t determinConfig = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ? 1 : 0;
-        OP_LOGD(
-            "implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
-            implMode, determinConfig, tensors.size(), dynamicCount.size(), attrsVec.size(), valueDependIndex_.size());
-        OP_LOGD(
-            "Finding static kernel with [aicNum %u, aivNum %u].", GetThreadLocalContext().opConfigInfo_.aicNum_,
-            GetThreadLocalContext().opConfigInfo_.aivNum_);
+        OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
+                implMode, determinConfig, tensors.size(), dynamicCount.size(), attrsVec.size(),
+                valueDependIndex_.size());
+        OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u].", GetThreadLocalContext().opConfigInfo_.aicNum_,
+                GetThreadLocalContext().opConfigInfo_.aivNum_);
         NnopbaseStaticTensorNumInfo tensorNumInfo{
             static_cast<int64_t>(tensors.size()), static_cast<int64_t>(dynamicCount.size()),
             static_cast<int64_t>(attrsVec.size()), static_cast<int64_t>(valueDependIndex_.size())};
-        NnopbaseStaticRuntimeInfo staticRuntimeInfo{
-            opTypeStr_, GetThreadLocalContext().opConfigInfo_.aicNum_, GetThreadLocalContext().opConfigInfo_.aivNum_,
-            implMode, determinConfig};
-        simpKey = NnopbaseFindStaticKernel(
-            (tensors.data()), const_cast<const NnopbaseAttrAddr**>(attrsVec.data()), valueDependIndex_.data(),
-            &tensorNumInfo, &staticRuntimeInfo);
+        NnopbaseStaticRuntimeInfo staticRuntimeInfo{opTypeStr_, GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                    GetThreadLocalContext().opConfigInfo_.aivNum_, implMode,
+                                                    determinConfig};
+        simpKey = NnopbaseFindStaticKernel((tensors.data()), const_cast<const NnopbaseAttrAddr**>(attrsVec.data()),
+                                           valueDependIndex_.data(), &tensorNumInfo, &staticRuntimeInfo);
         if (simpKey != nullptr) {
             OP_LOGD("Simp key is %s", simpKey);
         } else {
@@ -1458,15 +1408,13 @@ public:
         size_t hash = HashBinary(simpKey, strlen(simpKey));
         auto iter = staticBins_.find(hash);
         if (iter == staticBins_.end()) {
-            OP_LOGI(
-                "Cannot find static bin of op %s, simplified key %s.", op::OpTypeDict::ToString(opType_).GetString(),
-                simpKey);
+            OP_LOGI("Cannot find static bin of op %s, simplified key %s.",
+                    op::OpTypeDict::ToString(opType_).GetString(), simpKey);
             return nullptr;
         }
 
-        OP_LOGI(
-            "Available static bin for op %s is %s. Key is %s", op::OpTypeDict::ToString(opType_).GetString(),
-            iter->second->binPath_.c_str(), simpKey);
+        OP_LOGI("Available static bin for op %s is %s. Key is %s", op::OpTypeDict::ToString(opType_).GetString(),
+                iter->second->binPath_.c_str(), simpKey);
         return iter->second.get();
     }
 
@@ -1484,9 +1432,8 @@ public:
 
         KeyLength len{0, 0, 0, maxKeyLength_};
         char* integralKey = (char*)op::internal::BlockPool::Malloc(len.totalBufferLength);
-        OP_CHECK(
-            integralKey != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "malloc failed, integralKey is nullptr."),
-            return nullptr);
+        OP_CHECK(integralKey != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "malloc failed, integralKey is nullptr."),
+                 return nullptr);
         char* initAddr = integralKey;
         OP_CHECK((GenerateKey(integralKey, len, inputs, outputs, attrs) == ACLNN_SUCCESS),
                  OP_LOGW("generateKey is not success when selectBin."),
@@ -1503,9 +1450,9 @@ public:
             return nullptr;
         }
 
-        OP_LOGI(
-            "Available bin for op %s is %s. Key is %s", op::OpTypeDict::ToString(opType_).GetString(),
-            iter->second->binPath_.c_str(), GetReadableKey(std::string(initAddr, integralKey - initAddr), len).c_str());
+        OP_LOGI("Available bin for op %s is %s. Key is %s", op::OpTypeDict::ToString(opType_).GetString(),
+                iter->second->binPath_.c_str(),
+                GetReadableKey(std::string(initAddr, integralKey - initAddr), len).c_str());
         op::internal::BlockPool::Free(initAddr);
         return iter->second.get();
     }
@@ -1532,17 +1479,14 @@ public:
     }
 
 private:
-    aclnnStatus AppendTensor(
-        const aclTensor* tensor, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
-        FVector<int64_t>& dynamicCount) const;
+    aclnnStatus AppendTensor(const aclTensor* tensor, FVector<const aclTensor*>& tensors,
+                             FVector<int64_t>& dynamicIndex, FVector<int64_t>& dynamicCount) const;
 
-    aclnnStatus AppendTensor(
-        const aclTensorList* tensorList, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
-        FVector<int64_t>& dynamicCount) const;
+    aclnnStatus AppendTensor(const aclTensorList* tensorList, FVector<const aclTensor*>& tensors,
+                             FVector<int64_t>& dynamicIndex, FVector<int64_t>& dynamicCount) const;
 
-    aclnnStatus AppendTensor(
-        OpArg& opArg, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
-        FVector<int64_t>& dynamicCount) const;
+    aclnnStatus AppendTensor(OpArg& opArg, FVector<const aclTensor*>& tensors, FVector<int64_t>& dynamicIndex,
+                             FVector<int64_t>& dynamicCount) const;
 
     aclnnStatus AppendAttr(size_t attrSizeInProto, size_t idx, OpArg& value, FVector<NnopbaseAttrAddr*>& attrs)
     {
@@ -1559,9 +1503,8 @@ private:
             OP_LOGD("Append Attr DataType: [%zu], %lu", idx, value->value);
             attr->addr = &(value->value);
             attr->size = sizeof(value->value);
-        } else if (
-            value.type == OpArgType::OPARG_BOOL || value.type == OpArgType::OPARG_INT ||
-            value.type == OpArgType::OPARG_UINT) {
+        } else if (value.type == OpArgType::OPARG_BOOL || value.type == OpArgType::OPARG_INT ||
+                   value.type == OpArgType::OPARG_UINT) {
 #ifdef DEBUG
             std::stringstream ss;
             ss << value->value;
@@ -1613,9 +1556,8 @@ private:
                 attr->addr = const_cast<void*>(saclarValue->GetData());
                 attr->size = saclarValue->Size();
             }
-        } else if (
-            value.type == OpArgType::OPARG_INT_LIST || value.type == OpArgType::OPARG_FLOAT_LIST ||
-            value.type == OpArgType::OPARG_BOOL_LIST) {
+        } else if (value.type == OpArgType::OPARG_INT_LIST || value.type == OpArgType::OPARG_FLOAT_LIST ||
+                   value.type == OpArgType::OPARG_BOOL_LIST) {
             attr->isVector = true;
             if (value->pointer == nullptr) {
                 OP_LOGW("Update Attr NULL aclIntArray/aclFloatArray/aclBoolArray*: [%zu]", idx);
@@ -1638,15 +1580,13 @@ private:
                     attr->elementSize = sizeof(*boolArrayValue->GetData());
                     attr->size = attr->elementSize * boolArrayValue->Size();
                 }
-                OP_LOGI(
-                    "Update type[%d] array attr*: [%zu] byte size %zu elementsize %zu",
-                    static_cast<int32_t>(value.type), idx, attr->size, attr->elementSize);
+                OP_LOGI("Update type[%d] array attr*: [%zu] byte size %zu elementsize %zu",
+                        static_cast<int32_t>(value.type), idx, attr->size, attr->elementSize);
             }
         } else {
-            OP_LOGW(
-                "Attr Type %d NOT SUPPORTED. supported type[ge::DataType, aclScalar, std::string, aclIntArray, "
-                "aclFloatArray, aclBoolArray, arithmetic type]",
-                static_cast<int32_t>(value.type));
+            OP_LOGW("Attr Type %d NOT SUPPORTED. supported type[ge::DataType, aclScalar, std::string, aclIntArray, "
+                    "aclFloatArray, aclBoolArray, arithmetic type]",
+                    static_cast<int32_t>(value.type));
         }
         return ACLNN_SUCCESS;
     }
@@ -1661,20 +1601,20 @@ private:
 
     aclnnStatus AssembleKeyForSingleTensor(const nlohmann::json& tensor, std::string& key, TensorInfo& tensorInfo);
 
-    aclnnStatus AssembleKeyByTensor(
-        const nlohmann::json& inOrOuts, std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, std::string& key,
-        KeyParams& keyParams);
+    aclnnStatus AssembleKeyByTensor(const nlohmann::json& inOrOuts,
+                                    std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, std::string& key,
+                                    KeyParams& keyParams);
 
-    aclnnStatus GenKeyByArgs(
-        char*& integralKey, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, OpArgList& args) const
+    aclnnStatus GenKeyByArgs(char*& integralKey, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos,
+                             OpArgList& args) const
     {
         // Your implementation here
         // Return 0 on success, otherwise return a non-zero error code
         return GenKeyByOneArg(integralKey, tensorInfos, genPlaceholder_, args);
     }
 
-    aclnnStatus GenerateKeyCustomizedSimplifiedKey(
-        char*& integralKey, KeyLength& len, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs) const
+    aclnnStatus GenerateKeyCustomizedSimplifiedKey(char*& integralKey, KeyLength& len, OpArgList& inputs,
+                                                   OpArgList& outputs, OpArgList& attrs) const
     {
         AssignAndIncrement(integralKey, len.totalBufferLength, PtrCastTo<uint8_t>("d="), sizeof("d=") - 1);
         if (GetThreadLocalContext().opConfigInfo_.isDeterministicOn_) {
@@ -1682,8 +1622,8 @@ private:
         } else {
             AssignAndIncrement(integralKey, NON_DETERMINISTIC_VALUE);
         }
-        AssignAndIncrement(
-            integralKey, len.totalBufferLength - sizeof("d=1") - 1, PtrCastTo<uint8_t>(",p="), sizeof(",p=") - 1);
+        AssignAndIncrement(integralKey, len.totalBufferLength - sizeof("d=1") - 1, PtrCastTo<uint8_t>(",p="),
+                           sizeof(",p=") - 1);
         AssignAndIncrement(integralKey, ToIndexChar(GetCurrentImplMode()));
         AssignAndIncrement(integralKey, SLASH);
         *integralKey = '\0';
@@ -1737,9 +1677,8 @@ private:
             OP_LOGW("genKeyByArgs about outputs is not success when generateKey.");
         }
         len.ctxAndtensorLen = integralKey - originalKey;
-        OP_LOGD(
-            "ctxAndtensorLen %zu addr[%p, %p] [%s].", len.ctxAndtensorLen, integralKey, originalKey,
-            GetReadableKey(std::string(originalKey, len.ctxAndtensorLen), len).c_str());
+        OP_LOGD("ctxAndtensorLen %zu addr[%p, %p] [%s].", len.ctxAndtensorLen, integralKey, originalKey,
+                GetReadableKey(std::string(originalKey, len.ctxAndtensorLen), len).c_str());
         if (len.ctxAndtensorLen >= len.totalBufferLength) {
             OP_LOGE(ACLNN_ERR_INNER, "tensorLen %zu is >= total_size %zu", len.ctxAndtensorLen, len.totalBufferLength);
             return ACLNN_ERR_INNER;
@@ -1778,13 +1717,13 @@ private:
 
     void UpdateFormatType(std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, size_t validTensorNum) const;
 
-    aclnnStatus HashAndInsert(
-        const std::string& binAndJsonDir, const std::string& binOrJsonPath, const size_t& pos, KeyParams& keyParams);
+    aclnnStatus HashAndInsert(const std::string& binAndJsonDir, const std::string& binOrJsonPath, const size_t& pos,
+                              KeyParams& keyParams);
 
     aclnnStatus GenerateKeyBySimplifiedKey(const nlohmann::json& singleBinJson, KeyParams& keyParams);
 
-    aclnnStatus GenerateKeyByJson(
-        const nlohmann::json& singleBinJson, const std::string& jsonPath, KeyParams& keyParams);
+    aclnnStatus GenerateKeyByJson(const nlohmann::json& singleBinJson, const std::string& jsonPath,
+                                  KeyParams& keyParams);
 
     bool IsGenInputPlaceholder(const nlohmann::json& singleBinJson);
     bool HasDevPtrArg(const nlohmann::json& singleBinJson) const;

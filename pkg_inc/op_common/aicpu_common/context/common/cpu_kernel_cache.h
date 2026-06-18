@@ -126,9 +126,8 @@ private:
      * @param shape_and_type: shape and types from extend information
      * @return uint32_t: 0 indicates success, while the others fail
      */
-    uint32_t ParseExtShapeAndType(
-        bool unknown_shape, FWKAdapter::ExtInfo* ext_info,
-        std::vector<FWKAdapter::ShapeAndType*>& shape_and_type) const;
+    uint32_t ParseExtShapeAndType(bool unknown_shape, FWKAdapter::ExtInfo* ext_info,
+                                  std::vector<FWKAdapter::ShapeAndType*>& shape_and_type) const;
 
     /*
      * parse extend unknown shape index information.
@@ -136,8 +135,8 @@ private:
      * @param unknown_shape_index_addr: unknown shape index and addr map
      * @return uint32_t: 0 indicates success, while the others fail
      */
-    uint32_t ParseExtUnknownShapeIndex(
-        FWKAdapter::ExtInfo* ext_info, std::map<uint32_t, uint64_t>& unknown_shape_index_addr) const;
+    uint32_t ParseExtUnknownShapeIndex(FWKAdapter::ExtInfo* ext_info,
+                                       std::map<uint32_t, uint64_t>& unknown_shape_index_addr) const;
 
     /*
      * parse extend session information.
@@ -156,8 +155,8 @@ private:
      */
     uint32_t ParseAsyncWait(FWKAdapter::ExtInfo* ext_info, uint8_t& wait_type, uint32_t& wait_id) const;
 
-    uint32_t ParseExtWorkSpaceInfo(
-        FWKAdapter::ExtInfo* ext_info, uint64_t& workspace_size, uint64_t& workspace_addr) const;
+    uint32_t ParseExtWorkSpaceInfo(FWKAdapter::ExtInfo* ext_info, uint64_t& workspace_size,
+                                   uint64_t& workspace_addr) const;
 
     /*
      * parse extend information.
@@ -175,8 +174,8 @@ private:
      * @param nodedef_len: kernel node def length
      * @return uint32_t: 0 indicates success, while the others fail
      */
-    uint32_t ParseIoAddr(
-        AicpuParamHead* param_head, std::vector<uint64_t>& io_addrs, char*& nodedef, uint32_t& nodedef_len) const;
+    uint32_t ParseIoAddr(AicpuParamHead* param_head, std::vector<uint64_t>& io_addrs, char*& nodedef,
+                         uint32_t& nodedef_len) const;
 
     /*
      * get cpu kernel context from cache
@@ -184,9 +183,9 @@ private:
      * @param kernel_id: kernel id, the key of cache
      * @return uint32_t: 0 indicates success, while the others fail
      */
-    std::shared_ptr<CpuKernelContext> GetCpuKernelContext(
-        std::shared_ptr<ExtInfoMsg> ext_info_msg, const char* nodedef, uint32_t nodedef_len,
-        std::shared_ptr<NodeDef>& nodedef_proto);
+    std::shared_ptr<CpuKernelContext> GetCpuKernelContext(std::shared_ptr<ExtInfoMsg> ext_info_msg, const char* nodedef,
+                                                          uint32_t nodedef_len,
+                                                          std::shared_ptr<NodeDef>& nodedef_proto);
 
     /*
      * get cpu kernel context from cache
@@ -195,9 +194,10 @@ private:
      * @param blkDimInfo: kernel blockdim info
      * @return uint32_t: 0 indicates success, while the others fail
      */
-    std::shared_ptr<CpuKernelContext> GetCpuKernelContextWithBlock(
-        std::shared_ptr<ExtInfoMsg> ext_info_msg, const char* nodedef, uint32_t nodedef_len,
-        std::shared_ptr<NodeDef>& nodedef_proto, struct BlkDimInfo* blkdim_info);
+    std::shared_ptr<CpuKernelContext> GetCpuKernelContextWithBlock(std::shared_ptr<ExtInfoMsg> ext_info_msg,
+                                                                   const char* nodedef, uint32_t nodedef_len,
+                                                                   std::shared_ptr<NodeDef>& nodedef_proto,
+                                                                   struct BlkDimInfo* blkdim_info);
 
     /*
      * get bit status on pos
@@ -207,20 +207,18 @@ private:
      */
     bool GetBitStatus(uint64_t num, uint64_t pos) const;
 
-    uint32_t CheckTensorParam(
-        const std::vector<uint64_t>& io_addrs, ExtInfoMsg& ext_info_msg, CpuKernelContext& ctx) const;
+    uint32_t CheckTensorParam(const std::vector<uint64_t>& io_addrs, ExtInfoMsg& ext_info_msg,
+                              CpuKernelContext& ctx) const;
 
-    uint32_t UpdateInputTensor(
-        const std::vector<uint64_t>& io_addrs, ExtInfoMsg& ext_info_msg, CpuKernelContext& ctx,
-        size_t& addr_index) const;
+    uint32_t UpdateInputTensor(const std::vector<uint64_t>& io_addrs, ExtInfoMsg& ext_info_msg, CpuKernelContext& ctx,
+                               size_t& addr_index) const;
 
     /*
      * parse run kernel parameters: io addrs and ExtInfoMsg.
      * @return int32_t: 0 indicates success, while the others fail
      */
-    int32_t ParseRunKernelParam(
-        void* param, std::vector<uint64_t>& io_addrs, char*& node_def, uint32_t& node_def_len,
-        std::shared_ptr<ExtInfoMsg>& ext_info_msg) const;
+    int32_t ParseRunKernelParam(void* param, std::vector<uint64_t>& io_addrs, char*& node_def, uint32_t& node_def_len,
+                                std::shared_ptr<ExtInfoMsg>& ext_info_msg) const;
 
     /*
      * dispatch cpu kernel based on V2/V1 registry.

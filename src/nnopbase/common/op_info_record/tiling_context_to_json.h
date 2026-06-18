@@ -19,8 +19,8 @@
 #include "graph/operator.h"
 
 namespace aclnnOpInfoRecord {
-nlohmann::json TilingContextToJson(
-    const gert::TilingContext* ctx, const std::map<std::string, std::string>& iniConfigMap,
-    const nlohmann::json& supportInfoJsonConfig, bool isMc2);
+nlohmann::json TilingContextToJson(const gert::TilingContext* ctx,
+                                   const std::map<std::string, std::string>& iniConfigMap,
+                                   const nlohmann::json& supportInfoJsonConfig, bool isMc2);
 }
 #endif // __OP_INFO_RECORD_TILING_CONTEXT_TO_JSON_H__

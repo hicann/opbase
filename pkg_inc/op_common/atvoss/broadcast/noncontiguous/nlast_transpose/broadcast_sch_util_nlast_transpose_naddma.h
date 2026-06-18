@@ -17,7 +17,7 @@
 
 #include "atvoss/util/kernel_vec_intf_apt.h"
 
-namespace Ops{
+namespace Ops {
 namespace Base {
 static constexpr int64_t NEGATIVE_THREE = -3;
 static constexpr int64_t NEGATIVE_TWO = -2;
@@ -25,8 +25,8 @@ static constexpr int64_t NEGATIVE_ONE = -1;
 static constexpr int64_t BLOCK = 32;
 
 template <std::size_t N>
-__aicore__ inline void BroadcastGetAxesIndicesNDDMA(
-    int64_t (&axesIndices)[N], int64_t prodIdx, const int64_t (&totalDims)[N], int64_t endIdx, int64_t totalProduct)
+__aicore__ inline void BroadcastGetAxesIndicesNDDMA(int64_t (&axesIndices)[N], int64_t prodIdx,
+                                                    const int64_t (&totalDims)[N], int64_t endIdx, int64_t totalProduct)
 {
     for (int64_t idx = 0; idx < endIdx; idx++) {
         totalProduct = totalProduct / totalDims[idx];
@@ -40,8 +40,8 @@ __aicore__ inline void BroadcastGetAxesIndicesNDDMA(
 }
 
 template <std::size_t N>
-__aicore__ inline void BroadcastUpdateAxesIndicesNDDMA(
-    int64_t (&axesIndices)[N], const int64_t (&totalDims)[N], int64_t endIdx, int64_t endDim)
+__aicore__ inline void BroadcastUpdateAxesIndicesNDDMA(int64_t (&axesIndices)[N], const int64_t (&totalDims)[N],
+                                                       int64_t endIdx, int64_t endDim)
 {
     axesIndices[endIdx]++;
     if (axesIndices[endIdx] == endDim) {
@@ -59,8 +59,8 @@ __aicore__ inline void BroadcastUpdateAxesIndicesNDDMA(
 }
 
 template <std::size_t N>
-__aicore__ inline int64_t BroadcastGetGmOffsetNDDMA(
-    const int64_t (&axesIndices)[N], const int64_t (&totalStrides)[N], int64_t endIdx, int64_t endDim)
+__aicore__ inline int64_t BroadcastGetGmOffsetNDDMA(const int64_t (&axesIndices)[N], const int64_t (&totalStrides)[N],
+                                                    int64_t endIdx, int64_t endDim)
 {
     int64_t gmOffset = 0;
     for (int64_t idx = 0; idx < endIdx; idx++) {
@@ -118,10 +118,11 @@ __aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNlastT
 }
 
 template <typename T1, typename T2, size_t N>
-__aicore__ inline void MovAlign2UBNlastNDDMA(
-    AscendC::GlobalTensor<T1>& inputGm, AscendC::LocalTensor<T2>& outputTensor, const int64_t (&outputDims)[N],
-    const int64_t (&outputStridesWithPad)[N], const int64_t (&inputStrides)[N], const int64_t (&inputDim)[N],
-    int64_t ubSplitAxis, int64_t shapeLen, int64_t ubSplitSize, int64_t gmOffset)
+__aicore__ inline void MovAlign2UBNlastNDDMA(AscendC::GlobalTensor<T1>& inputGm, AscendC::LocalTensor<T2>& outputTensor,
+                                             const int64_t (&outputDims)[N], const int64_t (&outputStridesWithPad)[N],
+                                             const int64_t (&inputStrides)[N], const int64_t (&inputDim)[N],
+                                             int64_t ubSplitAxis, int64_t shapeLen, int64_t ubSplitSize,
+                                             int64_t gmOffset)
 {
     // move align
     int64_t ubInnerDims[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM] = {1};
@@ -149,8 +150,8 @@ __aicore__ inline void MovAlign2UBNlastNDDMA(
     } else {
         dataCopyExtParams.blockCount = ubInnerDims[shapeLen + NEGATIVE_TWO];
         dataCopyExtParams.blockLen = ubInnerDims[shapeLen + NEGATIVE_ONE] * sizeof(T1);
-        dataCopyExtParams.srcStride =
-            (inputStrides[shapeLen + NEGATIVE_TWO] - inputDim[shapeLen + NEGATIVE_ONE]) * sizeof(T1);
+        dataCopyExtParams.srcStride = (inputStrides[shapeLen + NEGATIVE_TWO] - inputDim[shapeLen + NEGATIVE_ONE]) *
+                                      sizeof(T1);
         dataCopyExtParams.dstStride = 0;
         // 如果shapeLen >= 3 则使用LoopModeParams循环
         if (shapeLen - ubSplitAxis >= 3) {
@@ -166,20 +167,20 @@ __aicore__ inline void MovAlign2UBNlastNDDMA(
     }
     AscendC::SetLoopModePara(loopParam2Ub, DataCopyMVType::OUT_TO_UB);
     if constexpr (AscendC::IsSameType<T1, T2>::value) {
-        AscendC::DataCopyPad<T1, PaddingMode::Compact>(
-            outputTensor, inputGm[gmOffset], dataCopyExtParams, dataCopyPadExtParams);
+        AscendC::DataCopyPad<T1, PaddingMode::Compact>(outputTensor, inputGm[gmOffset], dataCopyExtParams,
+                                                       dataCopyPadExtParams);
     } else {
-        AscendC::DataCopyPad<T1, PaddingMode::Compact>(
-            outputTensor.template ReinterpretCast<T1>(), inputGm[gmOffset], dataCopyExtParams, dataCopyPadExtParams);
+        AscendC::DataCopyPad<T1, PaddingMode::Compact>(outputTensor.template ReinterpretCast<T1>(), inputGm[gmOffset],
+                                                       dataCopyExtParams, dataCopyPadExtParams);
     }
     AscendC::ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
 }
 
 template <typename T1, size_t N>
-__aicore__ inline void MovAlign2GMNlastNDDMA(
-    AscendC::GlobalTensor<T1>& outputGm, AscendC::LocalTensor<T1>& ubTensor, const int64_t (&outputDims)[N],
-    const int64_t (&outputStrides)[N], const int64_t (&outputStridesWithPad)[N], int64_t shapeLen, int64_t ubSplitAxis,
-    int64_t gmOffset, int64_t ubSplitSize)
+__aicore__ inline void MovAlign2GMNlastNDDMA(AscendC::GlobalTensor<T1>& outputGm, AscendC::LocalTensor<T1>& ubTensor,
+                                             const int64_t (&outputDims)[N], const int64_t (&outputStrides)[N],
+                                             const int64_t (&outputStridesWithPad)[N], int64_t shapeLen,
+                                             int64_t ubSplitAxis, int64_t gmOffset, int64_t ubSplitSize)
 {
     int64_t ubInnerDims[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM] = {1};
     for (int64_t i = 0; i < shapeLen; i++) {
@@ -243,16 +244,15 @@ __aicore__ inline void BroadcastNlastTransposeNddmaWithoutLoop(
         if constexpr (AscendC::IsSameType<T1, T2>::value) {
             AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor, inputGm[gmOffset], paramsMain);
         } else {
-            AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(
-                outputTensor.template ReinterpretCast<T1>(), inputGm[gmOffset], paramsMain);
+            AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor.template ReinterpretCast<T1>(),
+                                                          inputGm[gmOffset], paramsMain);
         }
     } else {
-        MovAlign2UBNlastNDDMA(
-            inputGm, outputTensor, outputDims, outputStridesWithPad, inputStrides, inputDim, ubSplitAxis, shapeLen,
-            ubSplitSize, gmOffset);
+        MovAlign2UBNlastNDDMA(inputGm, outputTensor, outputDims, outputStridesWithPad, inputStrides, inputDim,
+                              ubSplitAxis, shapeLen, ubSplitSize, gmOffset);
     }
 }
 } // namespace Base
-} //namespace Ops
+} // namespace Ops
 
 #endif // BROADCAST_SCH_UTIL_NLAST_TRANSPOSE_NADDMA_H_

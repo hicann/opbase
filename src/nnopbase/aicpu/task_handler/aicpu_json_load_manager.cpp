@@ -147,8 +147,8 @@ aclnnStatus JsonLoadManger::SetSupportedNewLaunchFlag()
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(
-    const std::string& opType, const std::string& kernelSoName, std::string& kernelSoPath)
+aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string& opType, const std::string& kernelSoName,
+                                                        std::string& kernelSoPath)
 {
     std::unique_lock<std::mutex> lk(aicpuCustBinLoadMutex_);
     const std::string custRegisterPath = custRegisterInfos_[opType];
@@ -175,9 +175,8 @@ bool JsonLoadManger::ReadCustJsonFile(const std::string& opsRegisterName, const 
         OP_LOGW("Parse custom json file[%s] failed.", customJsonPath.c_str());
         return false;
     }
-    OP_LOGI(
-        "Custom operator repository name is %s, custom operator info file = %s", opsRegisterName.c_str(),
-        custOpInfoFile.dump().c_str());
+    OP_LOGI("Custom operator repository name is %s, custom operator info file = %s", opsRegisterName.c_str(),
+            custOpInfoFile.dump().c_str());
     custOpJsonInfo_.emplace_back(std::pair<std::string, nlohmann::json>(opsRegisterName, custOpInfoFile));
     return true;
 }
@@ -274,8 +273,8 @@ void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDe
     }
 
     const size_t lastSlash = opsRegisterName.find_last_of('/');
-    const std::string dirName =
-        (lastSlash != std::string::npos) ? opsRegisterName.substr(lastSlash + 1) : opsRegisterName;
+    const std::string dirName = (lastSlash != std::string::npos) ? opsRegisterName.substr(lastSlash + 1) :
+                                                                   opsRegisterName;
 
     for (const auto& opDesc : infoDesc.opInfos) {
         if (opDesc.opType.empty()) {
@@ -283,34 +282,31 @@ void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDe
         }
 
         if (dirName == kCustOpsBlacklistVendorName && opDesc.opInfo.kernelSo == kCustOpsBlacklistSoName) {
-            OP_LOGI(
-                "vendor name[%s] and so name[%s] are in blacklist, skip to insert customer ops info. "
-                "ops register name is %s, op type is %s.",
-                dirName.c_str(), opDesc.opInfo.kernelSo.c_str(), opsRegisterName.c_str(), opDesc.opType.c_str());
+            OP_LOGI("vendor name[%s] and so name[%s] are in blacklist, skip to insert customer ops info. "
+                    "ops register name is %s, op type is %s.",
+                    dirName.c_str(), opDesc.opInfo.kernelSo.c_str(), opsRegisterName.c_str(), opDesc.opType.c_str());
             continue;
         }
 
         if (customOpsInfos_.find(opDesc.opType) != customOpsInfos_.end()) {
-            OP_LOGW(
-                "[%s] of operator [%s] is duplicated; discarding in favor of existing entry.", opDesc.opType.c_str(),
-                opsRegisterName.c_str());
+            OP_LOGW("[%s] of operator [%s] is duplicated; discarding in favor of existing entry.",
+                    opDesc.opType.c_str(), opsRegisterName.c_str());
         } else {
             auto ret = customOpsInfos_.emplace(std::pair<std::string, OpFullInfo>(opDesc.opType, opDesc.opInfo));
             if (!ret.second) {
                 OP_LOGW("Failed to insert operator [%s] and its information.", opDesc.opType.c_str());
             }
             custRegisterInfos_.emplace(std::pair<std::string, std::string>(opDesc.opType, opsRegisterName));
-            OP_LOGI(
-                "Reading custom operator json file: operator type is %s, operator register name is %s.",
-                opDesc.opType.c_str(), opsRegisterName.c_str());
+            OP_LOGI("Reading custom operator json file: operator type is %s, operator register name is %s.",
+                    opDesc.opType.c_str(), opsRegisterName.c_str());
         }
     }
     OP_LOGI("The number of elements in the custom operator registry container is %zu.", custRegisterInfos_.size());
     return;
 }
 
-bool JsonLoadManger::FindAndGetInCustomRegistry(
-    const std::string& opType, std::string& kernelSo, std::string& functionName)
+bool JsonLoadManger::FindAndGetInCustomRegistry(const std::string& opType, std::string& kernelSo,
+                                                std::string& functionName)
 {
     auto iter = customOpsInfos_.find(opType);
     if (iter == customOpsInfos_.end()) {
@@ -319,9 +315,8 @@ bool JsonLoadManger::FindAndGetInCustomRegistry(
     }
     kernelSo = iter->second.kernelSo;
     functionName = iter->second.functionName;
-    OP_LOGI(
-        "Found custom operator %s from the custom operator information library %s with function name %s.",
-        opType.c_str(), kernelSo.c_str(), functionName.c_str());
+    OP_LOGI("Found custom operator %s from the custom operator information library %s with function name %s.",
+            opType.c_str(), kernelSo.c_str(), functionName.c_str());
     return true;
 }
 

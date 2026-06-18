@@ -144,9 +144,9 @@ class aclTensor : public op::Object {
     friend class aclOpExecutor;
     friend mem::KernelGraph;
     friend class aclTensorList;
-    friend aclTensor* aclCreateTensor(
-        const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride, int64_t offset,
-        aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorData);
+    friend aclTensor* aclCreateTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType,
+                                      const int64_t* stride, int64_t offset, aclFormat format,
+                                      const int64_t* storageDims, uint64_t storageDimsNum, void* tensorData);
     friend aclnnStatus aclDestroyTensor(const aclTensor* tensor);
 
 public:
@@ -225,27 +225,24 @@ public:
     void SetFloat4E1M2Data(const op::Float4E1M2* value, uint64_t size, op::DataType dataType);
     void SetHiFloat4Data(const op::HiFloat4* value, uint64_t size, op::DataType dataType);
     void SetHiFloat8Data(const op::HiFloat8* value, uint64_t size, op::DataType dataType);
-    void InitTensor(
-        const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride, int64_t offset,
-        aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorDataAddr);
+    void InitTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
+                    int64_t offset, aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum,
+                    void* tensorDataAddr);
 
 private:
-    aclTensor(
-        const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride, int64_t offset,
-        const aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorDataAddr);
+    aclTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
+              int64_t offset, const aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum,
+              void* tensorDataAddr);
     aclTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat);
     aclTensor(const op::Shape& shape, op::DataType dataType, op::Format format, void* tensorDataAddr);
-    aclTensor(
-        const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-        op::Format originFormat, void* tensorDataAddr);
+    aclTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
+              op::Format storageFormat, op::Format originFormat, void* tensorDataAddr);
     aclTensor(const op::Shape& shape, op::DataType dataType, op::Format format);
-    aclTensor(
-        const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-        op::Format originFormat);
+    aclTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
+              op::Format storageFormat, op::Format originFormat);
     aclTensor(const aclTensor& other, const op::Shape& shape, int64_t offset);
-    aclTensor(
-        const aclTensor& other, const op::Shape& oriShape, const op::Shape& storageShape, const op::Strides& oriStride,
-        int64_t offset);
+    aclTensor(const aclTensor& other, const op::Shape& oriShape, const op::Shape& storageShape,
+              const op::Strides& oriStride, int64_t offset);
     aclTensor(const aclIntArray* value, op::DataType dataType);
     aclTensor(const aclBoolArray* value, op::DataType dataType);
     aclTensor(const aclFloatArray* value, op::DataType dataType);

@@ -117,9 +117,8 @@ int32_t DumpJsonToFile(const nlohmann::json& opJson, const OpInfoType type)
     }
     // input 首节点为dynamic需要处理
     if (!opJson["inputs"].is_array()) {
-        OP_LOGE(
-            ACLNN_ERR_INNER, "DumpJsonToFile cannot record node[%s] because the input quantity is null!",
-            opJson["op_type"].get<std::string>().c_str());
+        OP_LOGE(ACLNN_ERR_INNER, "DumpJsonToFile cannot record node[%s] because the input quantity is null!",
+                opJson["op_type"].get<std::string>().c_str());
         return 0;
     }
     std::string fileName = opJson["op_type"].get<std::string>() + "_";
@@ -139,9 +138,8 @@ int32_t DumpJsonToFile(const nlohmann::json& opJson, const OpInfoType type)
     OP_LOGI("DumpJsonToFile start to record json[%s]!", fileName.c_str());
     std::string jStr = opJson.dump(JSON_INDENT);
     if (Adx::AdumpSaveToFile(jStr.c_str(), jStr.size(), fileName.c_str(), Adx::SaveType::OVERWRITE) != 0) {
-        OP_LOGE(
-            ACLNN_ERR_INNER, "DumpJsonToFile dump node[%s] json file failed!",
-            opJson["op_type"].get<std::string>().c_str());
+        OP_LOGE(ACLNN_ERR_INNER, "DumpJsonToFile dump node[%s] json file failed!",
+                opJson["op_type"].get<std::string>().c_str());
         return -1;
     }
 
@@ -178,9 +176,8 @@ void AddPlatformInfoToJson(nlohmann::json& opJson, const gert::TilingContext* ct
             // 不存在异常string转化int失败的场景, 依赖组件的fe::PlatFormInfos在保存值时已做约束
             opJson["platform_info"]["vector_core_cnt"] = std::stoi(res[vecCoreCntKey]);
             opJson["platform_info"]["cube_core_cnt"] = std::stoi(res[cubeCoreCntKey]);
-            OP_LOGI(
-                "Save coreNum[%d, %d] to json.", opJson["platform_info"]["cube_core_cnt"].get<int32_t>(),
-                opJson["platform_info"]["vector_core_cnt"].get<int32_t>());
+            OP_LOGI("Save coreNum[%d, %d] to json.", opJson["platform_info"]["cube_core_cnt"].get<int32_t>(),
+                    opJson["platform_info"]["vector_core_cnt"].get<int32_t>());
         }
     }
 }
@@ -228,9 +225,8 @@ int32_t OpInfoDump(void)
  * @param [in] ctx: TilingContext
  * @return int32_t: 0 == SUCCESS, others is FAILED
  */
-int32_t OpInfoSerialize(
-    const gert::TilingContext* ctx, const aclnnOpInfoRecord::OpCompilerOption& opt,
-    const aclnnOpInfoRecord::OpKernelInfo* kernelInfo)
+int32_t OpInfoSerialize(const gert::TilingContext* ctx, const aclnnOpInfoRecord::OpCompilerOption& opt,
+                        const aclnnOpInfoRecord::OpKernelInfo* kernelInfo)
 {
     OP_CHECK(ctx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize ctx is nullptr!"), return -1);
     OP_CHECK(kernelInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "OpInfoSerialize kernelInfo is nullptr!"), return -1);
@@ -256,8 +252,8 @@ int32_t OpInfoSerialize(
             OP_LOGE(ACLNN_ERR_INNER, "Json %s does not contains supportInfo keyword.", builtInJsonPath.c_str());
             return -1;
         }
-        nlohmann::json jsonDebug =
-            TilingContextToJson(ctx, iniConfigMap, builtInJsonConfig["supportInfo"], kernelInfo->isMc2);
+        nlohmann::json jsonDebug = TilingContextToJson(ctx, iniConfigMap, builtInJsonConfig["supportInfo"],
+                                                       kernelInfo->isMc2);
         if (jsonDebug.is_null()) {
             return 0;
         }

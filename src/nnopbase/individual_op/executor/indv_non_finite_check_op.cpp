@@ -100,9 +100,9 @@ aclnnStatus NnopbaseNonFiniteCheckAddOutputs(NnopbaseExecutor* executor, void* c
 }
 
 // 出参和入参
-aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(
-    const std::vector<const GertTensor*>& inputs, void* const outputAddr, uint64_t* workspaceSize,
-    NnopbaseExecutor** executor)
+aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(const std::vector<const GertTensor*>& inputs,
+                                                      void* const outputAddr, uint64_t* workspaceSize,
+                                                      NnopbaseExecutor** executor)
 {
     const uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000U, __func__, false};
@@ -135,8 +135,8 @@ aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(
     return ret;
 }
 
-aclnnStatus NnopbaseNonFiniteCheckRunWithWorkspace(
-    void* workspace, uint64_t workspaceSize, NnopbaseExecutor* executor, aclrtStream stream)
+aclnnStatus NnopbaseNonFiniteCheckRunWithWorkspace(void* workspace, uint64_t workspaceSize, NnopbaseExecutor* executor,
+                                                   aclrtStream stream)
 {
     const uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000U, __func__, false};

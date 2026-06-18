@@ -21,18 +21,14 @@
 
 namespace op {
 namespace internal {
-template<typename T>
-aclnnStatus GetJsonValue(const nlohmann::json &json, const std::string &key1,
-                         const std::string &key2, T &value);
+template <typename T>
+aclnnStatus GetJsonValue(const nlohmann::json& json, const std::string& key1, const std::string& key2, T& value);
 
 class AttrLibInfo {
 public:
     AttrLibInfo() {}
     ~AttrLibInfo() {}
-    bool IsRequired() const
-    {
-        return isRequired_;
-    }
+    bool IsRequired() const { return isRequired_; }
 
 private:
     bool isRequired_;
@@ -40,20 +36,11 @@ private:
 
 class TensorLibInfo {
 public:
-    TensorType GetTensorType() const
-    {
-        return tensorType_;
-    }
+    TensorType GetTensorType() const { return tensorType_; }
 
-    bool IsInput() const
-    {
-        return isInput_;
-    }
+    bool IsInput() const { return isInput_; }
 
-    uint32_t GetIndex() const
-    {
-        return index_;
-    }
+    uint32_t GetIndex() const { return index_; }
 
 private:
     bool isInput_;
@@ -65,9 +52,9 @@ private:
 class KernelLibInfo {
 public:
     KernelLibInfo() = default;
-    KernelLibInfo(uint32_t opTypeId, const std::string &opType);
-    aclnnStatus Initialize(nlohmann::json &singleKernelJson);
-    const std::string &GetOpFile() const;
+    KernelLibInfo(uint32_t opTypeId, const std::string& opType);
+    aclnnStatus Initialize(nlohmann::json& singleKernelJson);
+    const std::string& GetOpFile() const;
 
 private:
     uint32_t opTypeId_;
@@ -80,7 +67,7 @@ private:
 
 class OpKernelLib {
 public:
-    static OpKernelLib &GetInstance()
+    static OpKernelLib& GetInstance()
     {
         // Warning: not thread-safe, use muxtex in multitheading environment
         static OpKernelLib instance;
@@ -88,11 +75,11 @@ public:
     }
 
     aclnnStatus Initialize();
-    const std::string &GetSocPath();
-    const std::string &GetAiCoreImplPath();
-    const std::vector<std::string> &GetCustomImplPath();
-    const std::vector<std::string> &GetConfigImplPath();
-    const KernelLibInfo &GetKernelLibInfo(uint32_t opTypeId) const;
+    const std::string& GetSocPath();
+    const std::string& GetAiCoreImplPath();
+    const std::vector<std::string>& GetCustomImplPath();
+    const std::vector<std::string>& GetConfigImplPath();
+    const KernelLibInfo& GetKernelLibInfo(uint32_t opTypeId) const;
     aclnnStatus ParseKernelLibInfos(uint32_t opType);
 
 private:

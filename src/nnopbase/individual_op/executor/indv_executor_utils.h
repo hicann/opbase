@@ -134,13 +134,12 @@ aclnnStatus NnopbaseSaveArray(const T* array, NnopbaseTensor* tensor)
     // valueDepend 需要获取 tensorSize
     NnopbaseSetDtypeAndSize(array, rt2Tensor);
 
-    NNOPBASE_ASSERT_TRUE_RETVAL(
-        (rt2Tensor->MutableTensorData().SetAddr(array->GetData(), nullptr)) == ge::GRAPH_SUCCESS);
+    NNOPBASE_ASSERT_TRUE_RETVAL((rt2Tensor->MutableTensorData().SetAddr(array->GetData(), nullptr)) ==
+                                ge::GRAPH_SUCCESS);
     rt2Tensor->MutableStride().SetDimNum(0U);
     rt2Tensor->SetOffset(0);
-    OP_LOGI(
-        "Get ValueDepend Input StorageFormat %d, dataType %d, shape [%lu], addr is %p.", rt2Tensor->GetStorageFormat(),
-        rt2Tensor->GetDataType(), array->Size(), rt2Tensor->GetAddr());
+    OP_LOGI("Get ValueDepend Input StorageFormat %d, dataType %d, shape [%lu], addr is %p.",
+            rt2Tensor->GetStorageFormat(), rt2Tensor->GetDataType(), array->Size(), rt2Tensor->GetAddr());
     return OK;
 }
 
@@ -179,18 +178,16 @@ enum class NnopbaseParamCheckMode {
 
 static inline bool IsContiguous(const GertShape& shape, const op::Strides& strides)
 {
-    OP_LOGI(
-        "Input tensor view shape is %s, view strides is %s", op::ToString(shape).GetString(),
-        op::ToString(strides).GetString());
+    OP_LOGI("Input tensor view shape is %s, view strides is %s", op::ToString(shape).GetString(),
+            op::ToString(strides).GetString());
     int64_t valid_stride = 1;
     for (int64_t i = static_cast<int64_t>(strides.size()) - 1; i >= 0; --i) {
         if (shape[i] == 1) {
             continue;
         }
         if (valid_stride != strides[i]) {
-            OP_LOGI(
-                "Input tensor is not contiguous, valid_stride is %ld, strides[%ld] is %ld", valid_stride, i,
-                strides[i]);
+            OP_LOGI("Input tensor is not contiguous, valid_stride is %ld, strides[%ld] is %ld", valid_stride, i,
+                    strides[i]);
             return false;
         }
         valid_stride *= shape[i];
@@ -207,8 +204,8 @@ static inline bool IsContiguousShape(const aclTensor* tensor)
     return IsContiguous(view_shape, tensor->GetViewStrides());
 }
 
-inline void NnopbaseCheckContiguous(
-    NnopbaseTensors* tensors, const aclTensor* tensor, const size_t index, const size_t irIdx)
+inline void NnopbaseCheckContiguous(NnopbaseTensors* tensors, const aclTensor* tensor, const size_t index,
+                                    const size_t irIdx)
 {
     if (!IsContiguousShape(tensor)) {
         tensors->unContiguousTensors.tensors.push_back(tensor);
@@ -219,14 +216,13 @@ inline void NnopbaseCheckContiguous(
             // 构造连续的aclTensor，scalar一定不会进入非连续判断的分支，此处dim的数量一定不是0
             const int64_t* dims = &tensor->GetViewShape()[0U];
             const uint64_t dumNum = tensor->GetViewShape().GetDimNum();
-            const auto contTensor = aclCreateTensor(
-                dims, dumNum, op::ToAclDataType(tensor->GetDataType()), nullptr, 0,
-                op::ToAclFormat(tensor->GetViewFormat()), dims, dumNum, tensor->GetData());
+            const auto contTensor = aclCreateTensor(dims, dumNum, op::ToAclDataType(tensor->GetDataType()), nullptr, 0,
+                                                    op::ToAclFormat(tensor->GetViewFormat()), dims, dumNum,
+                                                    tensor->GetData());
             tensors->unContiguousTensors.refContTensors.push_back(contTensor);
         }
-        OP_LOGD(
-            "Op input irIdx [%zu] idx [%zu] refIdx[%d] is uncontiguous.", irIdx, index,
-            tensors->paramDescs.instances[irIdx].refIdx);
+        OP_LOGD("Op input irIdx [%zu] idx [%zu] refIdx[%d] is uncontiguous.", irIdx, index,
+                tensors->paramDescs.instances[irIdx].refIdx);
     }
 }
 

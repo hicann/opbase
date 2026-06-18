@@ -90,8 +90,8 @@ public:
      * @param cb : callback function
      * @return uint32_t: 0->success other->failed
      */
-    uint32_t RunCpuKernelAsync(
-        CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id, std::function<uint32_t()> cb);
+    uint32_t RunCpuKernelAsync(CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id,
+                               std::function<uint32_t()> cb);
 
     /*
      * run async cpu kernel V2.
@@ -101,8 +101,8 @@ public:
      * @param cb : callback function
      * @return uint32_t: 0->success other->failed
      */
-    uint32_t RunCpuKernelAsyncV2(
-        CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id, std::function<uint32_t()> cb);
+    uint32_t RunCpuKernelAsyncV2(CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id,
+                                 std::function<uint32_t()> cb);
 
     // CpuKernel registration function to register different types of kernel to
     // the factory
@@ -148,9 +148,8 @@ protected:
 private:
     uint32_t RunCpuKernelCommon(CpuKernelContext& ctx, const std::string type, const std::shared_ptr<CpuKernel> kernel);
     uint32_t SetAsyncKernelContext(const std::string& type, const uint8_t wait_type, const uint32_t wait_id);
-    uint32_t RunCpuKernelAsyncCommon(
-        CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id, std::function<uint32_t()> cb,
-        const std::shared_ptr<CpuKernel> kernel);
+    uint32_t RunCpuKernelAsyncCommon(CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id,
+                                     std::function<uint32_t()> cb, const std::shared_ptr<CpuKernel> kernel);
     std::map<std::string, KERNEL_CREATOR_FUN> creatorMap_;   // kernel map
     std::map<std::string, KERNEL_CREATOR_FUN> creatorMapV2_; // kernel map V2
 };

@@ -55,15 +55,13 @@ private:
 public:
     ~aclOpExecutor() override;
     aclTensor* AllocTensor(const op::Shape& shape, op::DataType dataType, op::Format format = op::Format::FORMAT_ND);
-    aclTensor* AllocTensor(
-        const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-        op::Format originFormat);
+    aclTensor* AllocTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
+                           op::Format storageFormat, op::Format originFormat);
     aclTensor* AllocTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat);
-    aclTensor* AllocHostTensor(
-        const op::Shape& shape, op::DataType datatype, op::Format format = op::Format::FORMAT_ND);
-    aclTensor* AllocHostTensor(
-        const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-        op::Format originFormat);
+    aclTensor* AllocHostTensor(const op::Shape& shape, op::DataType datatype,
+                               op::Format format = op::Format::FORMAT_ND);
+    aclTensor* AllocHostTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
+                               op::Format storageFormat, op::Format originFormat);
     aclTensor* AllocHostTensor(const int64_t* value, uint64_t size, op::DataType dataType);
     aclTensor* AllocHostTensor(const uint64_t* value, uint64_t size, op::DataType dataType);
     aclTensor* AllocHostTensor(const bool* value, uint64_t size, op::DataType dataType);
@@ -79,9 +77,8 @@ public:
     aclTensor* AllocHostTensor(const op::fp16_t* value, uint64_t size, op::DataType dataType);
     aclTensor* AllocHostTensor(const op::bfloat16* value, uint64_t size, op::DataType dataType);
     aclTensor* CreateView(const aclTensor* tensor, const op::Shape& shape, int64_t offset);
-    aclTensor* CreateView(
-        const aclTensor* tensor, const op::Shape& oriShape, const op::Shape& storageShape, const op::Strides& oriStride,
-        int64_t offset);
+    aclTensor* CreateView(const aclTensor* tensor, const op::Shape& oriShape, const op::Shape& storageShape,
+                          const op::Strides& oriStride, int64_t offset);
     aclIntArray* AllocIntArray(const int64_t* value, uint64_t size);
     aclFloatArray* AllocFloatArray(const float* value, uint64_t size);
     aclBoolArray* AllocBoolArray(const bool* value, uint64_t size);
@@ -128,9 +125,8 @@ public:
 
     aclnnStatus AddToKernelLauncherListDvpp(uint32_t opType, op::KernelLauncher* obj, op::OpArgContext* args);
 
-    aclnnStatus AddToKernelLauncherListCopyTask(
-        uint32_t opType, op::KernelLauncher* obj, op::OpArgList& inputs, op::OpArgList& outputs,
-        op::OpArgList& workspace);
+    aclnnStatus AddToKernelLauncherListCopyTask(uint32_t opType, op::KernelLauncher* obj, op::OpArgList& inputs,
+                                                op::OpArgList& outputs, op::OpArgList& workspace);
 
     aclnnStatus AddToKernelLauncherListAiCpu(int32_t opType, op::KernelLauncher* obj, op::OpArgContext* args);
 
@@ -184,9 +180,9 @@ public:
     {
         if (uniqueExecutor_.get() != nullptr) {
             uniqueExecutor_.get()->DeleteCache();
-            OP_LOGE_WITHOUT_REPORT(
-                ACLNN_ERR_INNER_NOT_TRANS_EXECUTOR,
-                "When %s do success, ReleaseTo(executor) should be called before return.", funcName_);
+            OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER_NOT_TRANS_EXECUTOR,
+                                   "When %s do success, ReleaseTo(executor) should be called before return.",
+                                   funcName_);
         }
     }
 
@@ -217,11 +213,10 @@ void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** ex
 void InitL2Phase2Context([[maybe_unused]] const char* l2Name, aclOpExecutor* executor);
 void InitL0Context(const char* profilingName, aclOpExecutor* executor);
 
-aclnnStatus CreatAiCoreKernelLauncher(
-    [[maybe_unused]] const char* l0Name, uint32_t opType, aclOpExecutor* executor, op::OpArgContext* args);
-void CreatDSAKernelLauncher(
-    [[maybe_unused]] const char* l0Name, uint32_t opType, DSA_TASK_TYPE dsaTask, aclOpExecutor* executor,
-    op::OpArgContext* args);
+aclnnStatus CreatAiCoreKernelLauncher([[maybe_unused]] const char* l0Name, uint32_t opType, aclOpExecutor* executor,
+                                      op::OpArgContext* args);
+void CreatDSAKernelLauncher([[maybe_unused]] const char* l0Name, uint32_t opType, DSA_TASK_TYPE dsaTask,
+                            aclOpExecutor* executor, op::OpArgContext* args);
 
 aclnnStatus InferShape(uint32_t optype, op::OpArgList& inputs, op::OpArgList& outputs, op::OpArgList& attrs);
 

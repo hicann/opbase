@@ -41,8 +41,8 @@ namespace op {
 namespace internal {
 void CacheTensorInfo(const FVector<const aclTensor*>& inTensors, const FVector<const aclTensor*>& outTensors);
 void CacheDfxInfo(uint32_t numBlocks, const op::internal::ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet);
-aclnnStatus DoReportAdditionInfo(
-    void* infoLists, const TaskInfo& taskInfo, const op::internal::ProfilingInfoId& profilingInfoId);
+aclnnStatus DoReportAdditionInfo(void* infoLists, const TaskInfo& taskInfo,
+                                 const op::internal::ProfilingInfoId& profilingInfoId);
 } // namespace internal
 } // namespace op
 
@@ -74,9 +74,9 @@ TEST_F(ProfilingCacheUt, test_storeage)
     void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor* tensor = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                              aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                              deviceDataA);
     ;
     int64_t* storageDims = nullptr;
     uint64_t storageDimsNum = 0;
@@ -97,13 +97,13 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_has_op_cache)
     void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor* tensorIn = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensorIn = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                                aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                                deviceDataA);
     ;
-    const aclTensor* tensorOut = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensorOut = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                                 aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                                 deviceDataA);
     ;
     FVector<const aclTensor*> in;
     FVector<const aclTensor*> out;
@@ -137,13 +137,13 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor* tensorIn = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensorIn = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                                aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                                deviceDataA);
     ;
-    const aclTensor* tensorOut = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensorOut = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                                 aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                                 deviceDataA);
     ;
     const aclTensor* tensorHost = new aclTensor(shapeA.data(), shapeA.size(), op::DataType::DT_INT32);
     FVector<const aclTensor*> in;

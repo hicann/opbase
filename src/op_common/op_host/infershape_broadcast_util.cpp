@@ -61,9 +61,8 @@ static bool BroadcastDim(int64_t& dim1, const int64_t dim2)
  */
 static bool BroadcastShapeToOutShape(const gert::Shape* shape, gert::Shape* shapeOutput)
 {
-    OP_LOGD(
-        "BroadcastShapeToOutShape", "start broadcast %s to %s!", ToString(*shape).c_str(),
-        ToString(*shapeOutput).c_str());
+    OP_LOGD("BroadcastShapeToOutShape", "start broadcast %s to %s!", ToString(*shape).c_str(),
+            ToString(*shapeOutput).c_str());
 
     if (IsUnknownRank(*shape) || IsUnknownRank(*shapeOutput)) {
         OP_LOGD("BroadcastShapeToOutShape", "the input shape is [-2], set output shape is [-2]!");
@@ -79,9 +78,8 @@ static bool BroadcastShapeToOutShape(const gert::Shape* shape, gert::Shape* shap
         for (size_t i = shapeYLen; i > 0; i--) {
             int64_t dim1 = shape->GetDim(lenSub + i - 1);
             int64_t dim2 = shapeOutput->GetDim(i - 1);
-            OP_CHECK_IF(
-                !BroadcastDim(dim1, dim2),
-                OP_LOGE("BroadcastShapeToOutShape", "%ld and %ld cannot broadcast!", dim1, dim2), return false);
+            OP_CHECK_IF(!BroadcastDim(dim1, dim2),
+                        OP_LOGE("BroadcastShapeToOutShape", "%ld and %ld cannot broadcast!", dim1, dim2), return false);
             shapeOutput->SetDim(lenSub + i - 1, dim1);
         }
         for (size_t i = 0; i < lenSub; i++) {
@@ -92,9 +90,8 @@ static bool BroadcastShapeToOutShape(const gert::Shape* shape, gert::Shape* shap
         for (size_t i = 0; i < shapeLen; i++) {
             int64_t dim1 = shapeOutput->GetDim(lenSub + i);
             int64_t dim2 = shape->GetDim(i);
-            OP_CHECK_IF(
-                !BroadcastDim(dim1, dim2),
-                OP_LOGE("BroadcastShapeToOutShape", "%ld and %ld cannot broadcast!", dim1, dim2), return false);
+            OP_CHECK_IF(!BroadcastDim(dim1, dim2),
+                        OP_LOGE("BroadcastShapeToOutShape", "%ld and %ld cannot broadcast!", dim1, dim2), return false);
             shapeOutput->SetDim(lenSub + i, dim1);
         }
     }
@@ -105,12 +102,10 @@ bool BroadcastShape(const gert::Shape* in1Shape, const gert::Shape* in2Shape, ge
 {
     *outShape = *in1Shape;
 
-    OP_CHECK_IF(
-        !BroadcastShapeToOutShape(in2Shape, outShape),
-        OP_LOGE(
-            "BroadcastShape", "shape %s and %s cannot broadcast!", ToString(*in2Shape).c_str(),
-            ToString(*in1Shape).c_str()),
-        return false);
+    OP_CHECK_IF(!BroadcastShapeToOutShape(in2Shape, outShape),
+                OP_LOGE("BroadcastShape", "shape %s and %s cannot broadcast!", ToString(*in2Shape).c_str(),
+                        ToString(*in1Shape).c_str()),
+                return false);
     return true;
 }
 
@@ -121,9 +116,9 @@ bool BroadcastShape(const std::vector<const gert::Shape*>& inShapes, gert::Shape
     *outShape = *inShapes[0];
 
     for (size_t i = 1UL; i < size; i++) {
-        OP_CHECK_IF(
-            !BroadcastShapeToOutShape(inShapes[i], outShape),
-            OP_LOGE("BroadcastShape", "intput shapes %s cannot broadcast!", ToString(inShapes).c_str()), return false);
+        OP_CHECK_IF(!BroadcastShapeToOutShape(inShapes[i], outShape),
+                    OP_LOGE("BroadcastShape", "intput shapes %s cannot broadcast!", ToString(inShapes).c_str()),
+                    return false);
     }
 
     return true;
@@ -138,12 +133,10 @@ ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
     auto outShape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
 
-    OP_CHECK_IF(
-        !BroadcastShape(inShape1, inShape2, outShape),
-        OP_LOGE(
-            context->GetNodeName(), "InferShape4Broadcast shape %s and %s cannot broadcast!",
-            ToString(*inShape2).c_str(), ToString(*inShape1).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!BroadcastShape(inShape1, inShape2, outShape),
+                OP_LOGE(context->GetNodeName(), "InferShape4Broadcast shape %s and %s cannot broadcast!",
+                        ToString(*inShape2).c_str(), ToString(*inShape1).c_str()),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -163,8 +156,8 @@ ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context, size_t in
     auto outShape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
 
-    OP_CHECK_IF(
-        !BroadcastShape(inShapes, outShape), OP_LOGE(context, "BroadcastShape failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!BroadcastShape(inShapes, outShape), OP_LOGE(context, "BroadcastShape failed!"),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

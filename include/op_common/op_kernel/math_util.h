@@ -20,7 +20,8 @@ namespace Base {
 template <typename T>
 __aicore__ inline T CeilDiv(T a, T b)
 {
-    using type = typename std::conditional<sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t, uint64_t>::type;
+    using type = typename std::conditional<sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t,
+                                           uint64_t>::type;
     type res = (static_cast<type>(a) + static_cast<type>(b) - 1) / static_cast<type>(b);
     return static_cast<T>(res);
 }
@@ -34,7 +35,8 @@ __aicore__ inline T FloorDiv(T a, T b)
 template <typename T>
 __aicore__ inline T CeilAlign(T a, T b)
 {
-    using type = typename std::conditional<sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t, uint64_t>::type;
+    using type = typename std::conditional<sizeof(T) == sizeof(uint8_t) || sizeof(T) == sizeof(uint16_t), uint32_t,
+                                           uint64_t>::type;
     type res = (static_cast<type>(a) + static_cast<type>(b) - 1) / static_cast<type>(b) * static_cast<type>(b);
     return static_cast<T>(res);
 }

@@ -21,11 +21,10 @@
 
 #pragma "lib"
 
-namespace Ops{
+namespace Ops {
 namespace Base {
 template <class BrcDag, int64_t R>
-class BroadcastNlastTransposeUbBrcSch : public BroadcastNlastTransposeBaseSch<BrcDag, false, R>
-{
+class BroadcastNlastTransposeUbBrcSch : public BroadcastNlastTransposeBaseSch<BrcDag, false, R> {
 public:
     __aicore__ inline explicit BroadcastNlastTransposeUbBrcSch(
         const BroadcastNlastTransposeTilingData<BrcDag>* baseTilingData)
@@ -40,9 +39,8 @@ public:
     template <class... Args>
     __aicore__ inline void Init(TPipe* pipe, Args... args)
     {
-        static_assert(
-            BrcDag::InputSize + BrcDag::OutputSize == sizeof...(Args),
-            "BroadcastNlastTransposeUbBrcSch.Init args num should match DAG holders.");
+        static_assert(BrcDag::InputSize + BrcDag::OutputSize == sizeof...(Args),
+                      "BroadcastNlastTransposeUbBrcSch.Init args num should match DAG holders.");
         InitInputArgs<0>(args...); // 调用入参分析,input, output
         this->template SetScalar<0>(0);
         TBuf<TPosition::VECCALC> buf;
@@ -75,18 +73,17 @@ public:
      */
     __aicore__ inline void Process()
     {
-        ubLoopNum_ =
-            AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingData->blockTail : tilingData->blockFormer;
+        ubLoopNum_ = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingData->blockTail :
+                                                                            tilingData->blockFormer;
         int64_t axesIndices[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM] = {0};
-        BroadcastGetAxesIndices(
-            axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(), tilingData->outputDims,
-            tilingData->ubSplitAxis, tilingData->dimProductBeforeUbInner);
+        BroadcastGetAxesIndices(axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(), tilingData->outputDims,
+                                tilingData->ubSplitAxis, tilingData->dimProductBeforeUbInner);
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum_; ubLoopIdx++) {
             this->vBrcIndex_ = 0;
             cBrcIndex_ = 0;
             if (ubLoopIdx != 0) {
-                BroadcastUpdateAxesIndices(
-                    axesIndices, tilingData->outputDims, tilingData->ubSplitAxis, tilingData->ubOuter);
+                BroadcastUpdateAxesIndices(axesIndices, tilingData->outputDims, tilingData->ubSplitAxis,
+                                           tilingData->ubOuter);
             }
 
             int64_t ubSplitSize = axesIndices[tilingData->ubSplitAxis] == tilingData->ubOuter - 1 ?
@@ -164,18 +161,18 @@ protected:
 
             uint32_t brc_padded[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM] = {1, 1, 1, 1};
             for (uint32_t i = 0; i < this->runningRank_; ++i) {
-                brc_padded[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM - this->runningRank_ + i] =
-                    copyInBrcFormerShapeWithLastPad[cBrcIndex_][i];
+                brc_padded[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM - this->runningRank_ +
+                           i] = copyInBrcFormerShapeWithLastPad[cBrcIndex_][i];
             }
             for (uint32_t i = 0; i < BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM; ++i) {
                 copyInBrcFormerShapeWithLastPad[cBrcIndex_][i] = brc_padded[i];
             }
         }
 
-        GetBroadcastTilingInfo<T, R>(
-            R, this->dstUbFormerShapeLastPad_, copyInBrcFormerShapeWithLastPad[cBrcIndex_], false, runningTiling);
-        Broadcast<T, R>(
-            dst, src, this->dstUbFormerShapeLastPad_, copyInBrcFormerShapeWithLastPad[cBrcIndex_], &runningTiling);
+        GetBroadcastTilingInfo<T, R>(R, this->dstUbFormerShapeLastPad_, copyInBrcFormerShapeWithLastPad[cBrcIndex_],
+                                     false, runningTiling);
+        Broadcast<T, R>(dst, src, this->dstUbFormerShapeLastPad_, copyInBrcFormerShapeWithLastPad[cBrcIndex_],
+                        &runningTiling);
     }
 
     /**
@@ -188,9 +185,9 @@ protected:
      * @param pingPong DoubleBuffer中所处的ping/pong阶段
      */
     template <typename Op, int pos>
-    __aicore__ inline void CopyInAndVecBrc(
-        int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM], int64_t ubLoopIdx,
-        int32_t pingPong)
+    __aicore__ inline void CopyInAndVecBrc(int64_t ubSplitSize,
+                                           const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM],
+                                           int64_t ubLoopIdx, int32_t pingPong)
     {
         static_assert(Op::InHolders::Size == 1, "CopyIn input inHolders num should be 1.");
         using input = typename Op::InHolders::template At<0>;
@@ -203,14 +200,14 @@ protected:
         }
         // Prepare input args
         auto intList = this->template GetBufId<pos, true>(pingPong);
-        LocalTensor<inputType> inTensor =
-            this->tensorPool_[intList[1] * this->blockLen_].template ReinterpretCast<inputType>();
+        LocalTensor<inputType> inTensor = this->tensorPool_[intList[1] * this->blockLen_]
+                                              .template ReinterpretCast<inputType>();
 #ifndef __CCE_KT_TEST__
         inTensor.SetBufferLen(this->blockEleNum_);
 #endif
         GlobalTensor<inputType> globalTensor;
-        int64_t gmOffset = BroadcastGetGmOffset(
-            axesIndices, tilingData->inputBrcStrides[cBrcIndex_], tilingData->ubSplitAxis, tilingData->ubFormer);
+        int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingData->inputBrcStrides[cBrcIndex_],
+                                                tilingData->ubSplitAxis, tilingData->ubFormer);
 
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ inputType*>(this->inGm_[input::Pos] + gmOffset * sizeof(inputType)));
@@ -230,10 +227,11 @@ protected:
             this->dstUbFormerShapeLastPad_[i] = this->dstUbFormerShape_[i];
         }
         if (this->runningRank_ > 1) {
-            copyInBrcFormerShapeWithLastPad[cBrcIndex_][this->runningRank_ - 1] =
-                inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_TWO];
-            this->dstUbFormerShapeLastPad_[this->runningRank_ - 1] =
-                inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_TWO];
+            copyInBrcFormerShapeWithLastPad[cBrcIndex_][this->runningRank_ -
+                                                        1] = inputBrcStridesWithPad[cBrcIndex_]
+                                                                                   [tilingData->shapeLen - NUM_TWO];
+            this->dstUbFormerShapeLastPad_[this->runningRank_ -
+                                           1] = inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_TWO];
         }
         ubSplitSize = copyInBrcFormerShape[cBrcIndex_][0];
         int64_t block_count = 1;
@@ -253,24 +251,27 @@ protected:
             src_stride = tilingData->inputBrcStrides[cBrcIndex_][tilingData->shapeLen - NUM_TWO] - block_len;
 
             int64_t inputTypeAlignSize = blockSize / sizeof(inputType);
-            int64_t blockLenInputTypeAlignNum = (block_len + inputTypeAlignSize - 1) / inputTypeAlignSize * inputTypeAlignSize;
-            dst_stride = ((inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_TWO]  - blockLenInputTypeAlignNum) 
-                          * sizeof(inputType)) / blockSize;
+            int64_t blockLenInputTypeAlignNum = (block_len + inputTypeAlignSize - 1) / inputTypeAlignSize *
+                                                inputTypeAlignSize;
+            dst_stride = ((inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_TWO] -
+                           blockLenInputTypeAlignNum) *
+                          sizeof(inputType)) /
+                         blockSize;
         }
 
         if (this->runningRank_ > NUM_TWO) {
             block_count = copyInBrcFormerShape[cBrcIndex_][this->runningRank_ - NUM_TWO];
             loop1Size = ubSplitSize;
-            loop1SrcStride =
-                tilingData->inputBrcStrides[cBrcIndex_][tilingData->shapeLen - NUM_THREE] * sizeof(inputType);
+            loop1SrcStride = tilingData->inputBrcStrides[cBrcIndex_][tilingData->shapeLen - NUM_THREE] *
+                             sizeof(inputType);
             loop1DstStride = inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_THREE] * sizeof(inputType);
         }
 
         if (this->runningRank_ > NUM_THREE) {
             loop1Size = copyInBrcFormerShape[cBrcIndex_][this->runningRank_ - NUM_THREE];
             loop2Size = ubSplitSize;
-            loop2SrcStride =
-                tilingData->inputBrcStrides[cBrcIndex_][tilingData->shapeLen - NUM_FOUR] * sizeof(inputType);
+            loop2SrcStride = tilingData->inputBrcStrides[cBrcIndex_][tilingData->shapeLen - NUM_FOUR] *
+                             sizeof(inputType);
             loop2DstStride = inputBrcStridesWithPad[cBrcIndex_][tilingData->shapeLen - NUM_FOUR] * sizeof(inputType);
         }
 
@@ -288,8 +289,8 @@ protected:
         // Set rlsBuf
         ReleaseTensor<TPosition::VECIN>(intList[1]);
 
-        LocalTensor<inputType> outTensor =
-            this->tensorPool_[intList[0] * this->blockLen_].template ReinterpretCast<inputType>();
+        LocalTensor<inputType> outTensor = this->tensorPool_[intList[0] * this->blockLen_]
+                                               .template ReinterpretCast<inputType>();
 #ifndef __CCE_KT_TEST__
         outTensor.SetBufferLen(this->blockEleNum_);
 #endif
@@ -311,9 +312,9 @@ protected:
      * @return void
      */
     template <typename Op, int pos>
-    __aicore__ inline void CopyInMoveAlign(
-        int64_t handleLength, const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM], int64_t ubLoopIdx,
-        int32_t pingPong)
+    __aicore__ inline void CopyInMoveAlign(int64_t handleLength,
+                                           const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM],
+                                           int64_t ubLoopIdx, int32_t pingPong)
     {
         static_assert(Op::InHolders::Size == 1, "CopyInMoveAlign input inHolders num should be 1.");
         using input = typename Op::InHolders::template At<0>;
@@ -325,12 +326,12 @@ protected:
         }
         int64_t realIdx = (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter;
 
-        int64_t gmOffset = BroadcastGetGmOffset(
-            axesIndices, tilingData->inputStrides[input::Pos], tilingData->ubSplitAxis, tilingData->ubFormer);
+        int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingData->inputStrides[input::Pos],
+                                                tilingData->ubSplitAxis, tilingData->ubFormer);
         // Prepare input args
         int32_t bufId = this->template GetBufId<pos>(pingPong);
-        LocalTensor<inputType> inTensor =
-            this->tensorPool_[bufId * this->blockLen_].template ReinterpretCast<inputType>();
+        LocalTensor<inputType> inTensor = this->tensorPool_[bufId * this->blockLen_]
+                                              .template ReinterpretCast<inputType>();
 #ifndef __CCE_KT_TEST__
         inTensor.SetBufferLen(this->blockEleNum_);
 #endif
@@ -353,15 +354,19 @@ protected:
         uint64_t loop2DstStride = 0;
 
         if (this->runningRank_ > 1) {
-            this->template GetStridesWithPadThroughDims(tilingData->inputDims[input::Pos], inputStridesWithPad[input::Pos]);
+            this->template GetStridesWithPadThroughDims(tilingData->inputDims[input::Pos],
+                                                        inputStridesWithPad[input::Pos]);
             block_count = handleLength;
             block_len = tilingData->inputDims[input::Pos][tilingData->shapeLen - 1];
             src_stride = tilingData->inputStrides[input::Pos][tilingData->shapeLen - NUM_TWO] - block_len;
 
             int64_t inputTypeAlignSize = blockSize / sizeof(inputType);
-            int64_t blockLenInputTypeAlignNum = (block_len + inputTypeAlignSize - 1) / inputTypeAlignSize * inputTypeAlignSize;
-            dst_stride = ((inputStridesWithPad[input::Pos][tilingData->shapeLen - NUM_TWO]  - blockLenInputTypeAlignNum) 
-                          * sizeof(inputType)) / blockSize;
+            int64_t blockLenInputTypeAlignNum = (block_len + inputTypeAlignSize - 1) / inputTypeAlignSize *
+                                                inputTypeAlignSize;
+            dst_stride = ((inputStridesWithPad[input::Pos][tilingData->shapeLen - NUM_TWO] -
+                           blockLenInputTypeAlignNum) *
+                          sizeof(inputType)) /
+                         blockSize;
         }
 
         if (this->runningRank_ > NUM_TWO) {
@@ -424,20 +429,18 @@ protected:
         using inputType = typename Op::template FunInArgType<0>;
         static_assert(Placeholder::IsOutHolder<output>::Value, "output args should be out holder");
         if constexpr (std::is_same<typename output::DType, uint1_t>::value) {
-            static_assert(
-                std::is_same<inputType, uint8_t>::value,
-                "CopyOut data type is inconsistent with out holder data type.");
+            static_assert(std::is_same<inputType, uint8_t>::value,
+                          "CopyOut data type is inconsistent with out holder data type.");
             offset = offset / BYTE_LENGTH;
         } else {
-            static_assert(
-                std::is_same<typename output::DType, inputType>::value,
-                "CopyOut data type is inconsistent with Op data type.");
+            static_assert(std::is_same<typename output::DType, inputType>::value,
+                          "CopyOut data type is inconsistent with Op data type.");
         }
 
         // Prepare input args
         int32_t bufId = this->template GetBufId<GetFunOutputPosition<input>()>(pingPong);
-        LocalTensor<inputType> localTensor =
-            this->tensorPool_[bufId * this->blockLen_].template ReinterpretCast<inputType>();
+        LocalTensor<inputType> localTensor = this->tensorPool_[bufId * this->blockLen_]
+                                                 .template ReinterpretCast<inputType>();
 #ifndef __CCE_KT_TEST__
         localTensor.SetBufferLen(this->blockEleNum_);
 #endif
@@ -461,11 +464,14 @@ protected:
         if (this->runningRank_ > 1) {
             block_count = handleLength;
             block_len = tilingData->outputDims[tilingData->shapeLen - 1];
-            
+
             int64_t outputTypeAlignSize = blockSize / sizeof(inputType);
-            int64_t blockLenOutputTypeAlignNum = (block_len + outputTypeAlignSize - 1) / outputTypeAlignSize * outputTypeAlignSize;
-            src_stride = ((tilingData->outputStridesWithPad[tilingData->shapeLen - NUM_TWO]  - blockLenOutputTypeAlignNum) 
-                          * sizeof(inputType)) / blockSize;
+            int64_t blockLenOutputTypeAlignNum = (block_len + outputTypeAlignSize - 1) / outputTypeAlignSize *
+                                                 outputTypeAlignSize;
+            src_stride = ((tilingData->outputStridesWithPad[tilingData->shapeLen - NUM_TWO] -
+                           blockLenOutputTypeAlignNum) *
+                          sizeof(inputType)) /
+                         blockSize;
         }
 
         if (this->runningRank_ > NUM_TWO) {
@@ -482,9 +488,9 @@ protected:
             loop2DstStride = tilingData->outputStrides[tilingData->shapeLen - NUM_FOUR] * sizeof(inputType);
         }
 
-        DataCopyExtParams copyParams{
-            static_cast<uint16_t>(block_count), static_cast<uint32_t>(block_len * sizeof(inputType)), 
-            static_cast<uint32_t>(src_stride), 0, 0};
+        DataCopyExtParams copyParams{static_cast<uint16_t>(block_count),
+                                     static_cast<uint32_t>(block_len * sizeof(inputType)),
+                                     static_cast<uint32_t>(src_stride), 0, 0};
 
         AscendC::LoopModeParams LoopParams{loop1Size,      loop2Size,      loop1SrcStride,
                                            loop1DstStride, loop2SrcStride, loop2DstStride};
@@ -498,9 +504,8 @@ protected:
 
     // 遍历执行图
     template <int pos = 0, bool insideIf = false>
-    __aicore__ inline void Run(
-        int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM], int64_t ubLoopIdx,
-        int32_t pingPong)
+    __aicore__ inline void Run(int64_t ubSplitSize, const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM],
+                               int64_t ubLoopIdx, int32_t pingPong)
     {
         if constexpr (pos >= BrcDag::FunList::Size) {
             return;
@@ -529,15 +534,15 @@ protected:
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyInBrc>::Value) {
             CopyInAndVecBrc<Op, pos>(ubSplitSize, axesIndices, ubLoopIdx, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyOut>::Value) {
-            int64_t gmOffset = BroadcastGetGmOffset(
-                axesIndices, tilingData->outputStrides, tilingData->ubSplitAxis, tilingData->ubFormer);
+            int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingData->outputStrides, tilingData->ubSplitAxis,
+                                                    tilingData->ubFormer);
             // int64_t tileLength = ubSplitSize * tilingData->outputStrides[tilingData->ubSplitAxis];
             this->template CopyOutMoveAlign<Op, pos>(ubSplitSize, gmOffset, pingPong);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::Brc>::Value) {
             this->template VecBroadcast<Op, pos>(ubLoopIdx, pingPong);
         } else {
-            uint64_t tileLength =
-                ubSplitSize * tilingData->outputStridesWithPad[tilingData->ubSplitAxis]; /// 長度是补pad之后的
+            uint64_t tileLength = ubSplitSize *
+                                  tilingData->outputStridesWithPad[tilingData->ubSplitAxis]; /// 長度是补pad之后的
             this->template RunNormalOp<Op, pos>(tileLength, pingPong);
         }
 
@@ -569,6 +574,6 @@ private:
     uint32_t blockSize = Ops::Base::GetUbBlockSize();
 };
 } // namespace Base
-} //namespace Ops
+} // namespace Ops
 
 #endif // BROADCAST_SCH_NLAST_TRANSPOSE_UB_BROADCAST_H_

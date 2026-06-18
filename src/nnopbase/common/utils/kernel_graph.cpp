@@ -14,17 +14,16 @@
 #include <unordered_set>
 #include "opdev/op_def.h"
 
-
 namespace op::mem {
 namespace {
-const std::vector<std::string> TENSOR_TYPE_STR = {
-    "input", "output", "workspace", "output_ref", "user_input", "user_output", "invalid"};
+const std::vector<std::string> TENSOR_TYPE_STR = {"input",      "output",      "workspace", "output_ref",
+                                                  "user_input", "user_output", "invalid"};
 } // namespace
 KernelGraph::KernelGraph(int64_t graphId) : graphId_(graphId) {}
 
 KernelGraph::~KernelGraph()
 {
-    for (auto &node : kernelNodes_) {
+    for (auto& node : kernelNodes_) {
         if (node != nullptr) {
             delete node;
             node = nullptr;
@@ -33,17 +32,11 @@ KernelGraph::~KernelGraph()
     kernelNodes_.clear();
 }
 
-int64_t KernelGraph::GetGraphId() const
-{
-    return graphId_;
-}
+int64_t KernelGraph::GetGraphId() const { return graphId_; }
 
-const op::FVector<KernelNode *, DEFAULT_NODE_NUM> &KernelGraph::GetKernelNodes() const
-{
-    return kernelNodes_;
-}
+const op::FVector<KernelNode*, DEFAULT_NODE_NUM>& KernelGraph::GetKernelNodes() const { return kernelNodes_; }
 
-aclnnStatus KernelGraph::AddKernelNode(KernelNode *kernelNode)
+aclnnStatus KernelGraph::AddKernelNode(KernelNode* kernelNode)
 {
     OP_LOGD("Add kernel nodes %s with id %zu.", op::OpTypeDict::ToString(kernelNode->GetOpType()).GetString(),
             kernelNodes_.size());
@@ -54,7 +47,7 @@ aclnnStatus KernelGraph::AddKernelNode(KernelNode *kernelNode)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus KernelGraph::SetKernelNodes(op::FVector<KernelNode *, DEFAULT_NODE_NUM> &kernelNodes)
+aclnnStatus KernelGraph::SetKernelNodes(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& kernelNodes)
 {
     for (size_t i = 0; i < kernelNodes.size(); i++) {
         sortedNodes_.emplace_back(kernelNodes[i]);
@@ -67,15 +60,15 @@ aclnnStatus KernelGraph::SetKernelNodes(op::FVector<KernelNode *, DEFAULT_NODE_N
 
 aclnnStatus KernelGraph::TopologicalSortBFS()
 {
-    std::vector<KernelNode *> sortedNodes;
+    std::vector<KernelNode*> sortedNodes;
     std::vector<int64_t> indegrees(kernelNodes_.size(), 0);
-    for (auto &node : kernelNodes_) {
-        for (auto &tensor : node->GetOutputs()) {
-            for (auto &peer : tensor->GetPeerTensors()) {
+    for (auto& node : kernelNodes_) {
+        for (auto& tensor : node->GetOutputs()) {
+            for (auto& peer : tensor->GetPeerTensors()) {
                 auto topoId = peer->GetOwnerNode()->GetTopoId();
                 if (topoId >= static_cast<int64_t>(indegrees.size())) {
-                    OP_LOGE(ACLNN_ERR_INNER,
-                            "peer node's topo id %ld is larger thank the in-degree size %zu.", topoId, indegrees.size());
+                    OP_LOGE(ACLNN_ERR_INNER, "peer node's topo id %ld is larger thank the in-degree size %zu.", topoId,
+                            indegrees.size());
                     return ACLNN_ERR_INNER;
                 }
                 indegrees[topoId] += 1;
@@ -93,10 +86,10 @@ aclnnStatus KernelGraph::TopologicalSortBFS()
     while (!q.empty()) {
         size_t nodeIdx = q.front();
         q.pop();
-        auto &node = kernelNodes_[nodeIdx];
+        auto& node = kernelNodes_[nodeIdx];
         sortedNodes.push_back(node);
-        for (auto &tensor : node->GetOutputs()) {
-            for (auto &peer : tensor->GetPeerTensors()) {
+        for (auto& tensor : node->GetOutputs()) {
+            for (auto& peer : tensor->GetPeerTensors()) {
                 int peerIdx = peer->GetOwnerNode()->GetTopoId();
                 indegrees[peerIdx] -= 1;
                 if (indegrees[peerIdx] == 0) {
@@ -108,7 +101,7 @@ aclnnStatus KernelGraph::TopologicalSortBFS()
 
     kernelNodes_.assign(sortedNodes.begin(), sortedNodes.end());
     int64_t kernelId = 0;
-    for (auto &node : kernelNodes_) {
+    for (auto& node : kernelNodes_) {
         node->SetTopoId(kernelId++);
     }
     return ACLNN_SUCCESS;
@@ -118,9 +111,9 @@ int64_t KernelGraph::CalcIndegrees()
 {
     indegrees_.resize(kernelNodes_.size());
     stack_.resize(kernelNodes_.size());
-    for (auto &node : kernelNodes_) {
-        for (auto &output : node->GetOutputs()) {
-            for (auto &peer : output->GetPeerTensors()) {
+    for (auto& node : kernelNodes_) {
+        for (auto& output : node->GetOutputs()) {
+            for (auto& peer : output->GetPeerTensors()) {
                 auto peerIdx = peer->GetOwnerNode()->GetOriginalId();
                 OP_LOGI("node %ld output , peerIdx is %ld.", node->GetOriginalId(), peerIdx);
                 if (peerIdx != node->GetOriginalId()) {
@@ -149,17 +142,16 @@ aclnnStatus KernelGraph::TopologicalSortDFS()
     while (stackIdx > 0) {
         size_t nodeIdx = stack_[--stackIdx];
         if (nodeIdx >= kernelNodes_.size()) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "stackIdx %ld, nodeIdx %zu is larger than kernel nodes size %zu.", stackIdx, nodeIdx,
-                    kernelNodes_.size());
+            OP_LOGE(ACLNN_ERR_INNER, "stackIdx %ld, nodeIdx %zu is larger than kernel nodes size %zu.", stackIdx,
+                    nodeIdx, kernelNodes_.size());
             return ACLNN_ERR_INNER;
         }
-        auto &node = kernelNodes_[nodeIdx];
+        auto& node = kernelNodes_[nodeIdx];
         sortedNodes_[realIndex] = node;
         node->SetTopoId(static_cast<int64_t>(realIndex)); // this node will not be traversed again.
         ++realIndex;
-        for (auto &output : node->GetOutputs()) {
-            for (auto &peer : output->GetPeerTensors()) {
+        for (auto& output : node->GetOutputs()) {
+            for (auto& peer : output->GetPeerTensors()) {
                 int64_t peerIdx = peer->GetOwnerNode()->GetOriginalId();
                 // Reference input does not need to traverse. Otherwise there will be a self cycle.
                 if (output->GetRefTensor() != nullptr) {
@@ -207,16 +199,16 @@ aclnnStatus KernelGraph::CalcLifeTimeAndSize()
 {
     sortedKernelTensors_.clear();
     for (size_t i = 0; i < kernelNodes_.size(); i++) {
-        auto &node = sortedNodes_[i];
+        auto& node = sortedNodes_[i];
         auto topoId = node->GetTopoId();
-        for (const auto &workspace : node->GetWorkspace()) {
+        for (const auto& workspace : node->GetWorkspace()) {
             workspace->SetLifeTimeStart(topoId);
             workspace->SetLifeTimeEnd(topoId);
             workspace->CalcSize();
             sortedKernelTensors_.push_back(workspace);
         }
 
-        for (auto &output : node->GetOutputs()) {
+        for (auto& output : node->GetOutputs()) {
             if (output == nullptr) {
                 OP_LOGE(ACLNN_ERR_INNER, "node %ld is nullptr.", node->GetOriginalId());
                 return ACLNN_ERR_INNER;
@@ -228,7 +220,7 @@ aclnnStatus KernelGraph::CalcLifeTimeAndSize()
 
             output->SetLifeTimeStart(topoId);
             int64_t lifeTimeEnd = topoId;
-            for (const auto &peerIn : output->GetPeerTensors()) {
+            for (const auto& peerIn : output->GetPeerTensors()) {
                 OP_CHECK_NOTNULL(peerIn);
                 auto peerInOwnerNode = peerIn->GetOwnerNode();
                 OP_CHECK_NOTNULL(peerInOwnerNode);
@@ -246,12 +238,9 @@ aclnnStatus KernelGraph::CalcLifeTimeAndSize()
     return ACLNN_SUCCESS;
 }
 
-bool cmp(const KernelTensor *a, const KernelTensor *b)
-{
-    return a->GetLifeTimeEnd() > b->GetLifeTimeEnd();
-}
+bool cmp(const KernelTensor* a, const KernelTensor* b) { return a->GetLifeTimeEnd() > b->GetLifeTimeEnd(); }
 
-static std::string GetChildNodesName(const KernelTensor *output)
+static std::string GetChildNodesName(const KernelTensor* output)
 {
     std::string childName;
     for (auto peer : output->GetPeerTensors()) {
@@ -275,23 +264,21 @@ static std::string GetChildNodesName(const KernelTensor *output)
 size_t KernelGraph::PrintGraph()
 {
     size_t nodeSize = 0;
-    for (auto &node : kernelNodes_) {
+    for (auto& node : kernelNodes_) {
         size_t count = 0;
-        for (auto &output : node->GetOutputs()) {
+        for (auto& output : node->GetOutputs()) {
             OP_LOGD("node[%s %ld] output total[%zu], current %zu, is from wsp %d, acltensor: %p, child-nodes are: %s.",
-                    op::OpTypeDict::ToString(node->GetOpType()).GetString(),
-                    node->GetOriginalId(), node->GetOutputs().size(), count,
-                    output->GetAclTensor()->IsFromWorkspace(),
-                    output->GetAclTensor(), GetChildNodesName(output).c_str());
+                    op::OpTypeDict::ToString(node->GetOpType()).GetString(), node->GetOriginalId(),
+                    node->GetOutputs().size(), count, output->GetAclTensor()->IsFromWorkspace(), output->GetAclTensor(),
+                    GetChildNodesName(output).c_str());
             ++count;
         }
         count = 0;
-        for (auto &input : node->GetInputs()) {
+        for (auto& input : node->GetInputs()) {
             OP_LOGD("node[%s %ld],input total [%zu] current %zu , is from wsp %d, acltensor: %p, father-nodes are: %s.",
-                    op::OpTypeDict::ToString(node->GetOpType()).GetString(),
-                    node->GetOriginalId(), node->GetInputs().size(), count,
-                    input->GetAclTensor()->IsFromWorkspace(),
-                    input->GetAclTensor(), GetChildNodesName(input).c_str());
+                    op::OpTypeDict::ToString(node->GetOpType()).GetString(), node->GetOriginalId(),
+                    node->GetInputs().size(), count, input->GetAclTensor()->IsFromWorkspace(), input->GetAclTensor(),
+                    GetChildNodesName(input).c_str());
             ++count;
         }
         ++nodeSize;
@@ -322,23 +309,22 @@ aclnnStatus KernelGraph::SortKernelTensor(SortType sortType)
     return ACLNN_SUCCESS;
 }
 
-size_t KernelGraph::PrintTensors(const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &tensors) const
+size_t KernelGraph::PrintTensors(const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& tensors) const
 {
     JudgeTensorType();
     size_t tensorSize = 0;
-    for (auto &kt : tensors) {
+    for (auto& kt : tensors) {
         OP_LOGD("Node[%s],position[%ld], type %s, index %zu, [lifetime Start %ld->lifetime End %ld] memory size %ld.",
                 op::OpTypeDict::ToString(kt->GetOwnerNode()->GetOpType()).GetString(),
                 kt->GetOwnerNode()->GetOriginalId(), TENSOR_TYPE_STR[static_cast<size_t>(kt->GetType())].c_str(),
-                kt->GetIndex(), kt->GetLifeTimeStart(),
-                kt->GetLifeTimeEnd(), kt->GetSize());
+                kt->GetIndex(), kt->GetLifeTimeStart(), kt->GetLifeTimeEnd(), kt->GetSize());
         ++tensorSize;
     }
 
     return tensorSize;
 }
 
-const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &KernelGraph::GetSortedKernelTensors(SortType sortType)
+const op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM>& KernelGraph::GetSortedKernelTensors(SortType sortType)
 {
     if (SortKernelTensor(sortType) != ACLNN_SUCCESS) {
         sortedKernelTensors_.clear();
@@ -348,8 +334,5 @@ const op::FVector<KernelTensor *, DEFAULT_TENSOR_NUM> &KernelGraph::GetSortedKer
     return sortedKernelTensors_;
 }
 
-const FVector<KernelNode *, DEFAULT_NODE_NUM> &KernelGraph::GetSortedNodes()
-{
-    return sortedNodes_;
-}
+const FVector<KernelNode*, DEFAULT_NODE_NUM>& KernelGraph::GetSortedNodes() { return sortedNodes_; }
 } // namespace op::mem

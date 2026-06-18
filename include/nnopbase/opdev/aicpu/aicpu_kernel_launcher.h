@@ -20,15 +20,10 @@ namespace op {
 namespace internal {
 class AiCpuKernelLauncher : public KernelLauncher {
 public:
-    AiCpuKernelLauncher(uint32_t optype,
-                        op::CoreType coreType,
-                        const aclOpExecutor *opExe,
-                        op::internal::ProfilingInfoId &profilingInfoId,
-                        AicpuTask *task,
-                        OpArgContext *opArgCtx)
-        : KernelLauncher(optype, coreType, opExe, profilingInfoId),
-          task_(task),
-          args_(opArgCtx) {}
+    AiCpuKernelLauncher(uint32_t optype, op::CoreType coreType, const aclOpExecutor* opExe,
+                        op::internal::ProfilingInfoId& profilingInfoId, AicpuTask* task, OpArgContext* opArgCtx)
+        : KernelLauncher(optype, coreType, opExe, profilingInfoId), task_(task), args_(opArgCtx)
+    {}
 
     ~AiCpuKernelLauncher() override
     {
@@ -44,28 +39,28 @@ public:
     aclnnStatus Launch() override
     {
         AICPU_ASSERT_NOTNULL_RETVAL(task_);
-        AICPU_ASSERT_OK_RETVAL(task_->SetIoTensors(const_cast<aclOpExecutor *>(executor_), args_));
-        const auto ret = task_->Run(const_cast<aclOpExecutor *>(executor_), executor_->GetStream());
+        AICPU_ASSERT_OK_RETVAL(task_->SetIoTensors(const_cast<aclOpExecutor*>(executor_), args_));
+        const auto ret = task_->Run(const_cast<aclOpExecutor*>(executor_), executor_->GetStream());
         if (!executor_->IsRepeatable()) {
             task_->SetVisit(false);
         }
         return ret;
     }
 
-    internal::OpKernelBin *GetBin() override { return nullptr; }
+    internal::OpKernelBin* GetBin() override { return nullptr; }
 
-    bool CheckRepeatable([[maybe_unused]] const std::unordered_map<const aclStorage *, const aclStorage *> &relation,
-        [[maybe_unused]] const std::vector<const aclStorage *> &oriStorage) override
+    bool CheckRepeatable([[maybe_unused]] const std::unordered_map<const aclStorage*, const aclStorage*>& relation,
+                         [[maybe_unused]] const std::vector<const aclStorage*>& oriStorage) override
     {
         LauncherRepeatableChecker checker(relation, oriStorage);
         return checker.CheckLauncherRepeatable(args_);
     }
 
 private:
-    AicpuTask *task_;
+    AicpuTask* task_;
     // tuple of op args of different types.
-    OpArgContext *args_{nullptr};
+    OpArgContext* args_{nullptr};
 };
-}
-}
+} // namespace internal
+} // namespace op
 #endif

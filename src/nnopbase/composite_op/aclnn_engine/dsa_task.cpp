@@ -16,9 +16,8 @@ constexpr uint64_t DSA_WORKSPACE_SIZE = 512;
 aclnnStatus DSATask::ParamMemCpy(const aclrtStream stream) const
 {
     constexpr size_t destMax = 512;
-    const auto rc = aclrtMemcpyAsync(
-        workspaceBaseAddr_, destMax, workspaceHolder_, sizeof(workspaceHolder_), ACL_MEMCPY_HOST_TO_BUF_TO_DEVICE,
-        stream);
+    const auto rc = aclrtMemcpyAsync(workspaceBaseAddr_, destMax, workspaceHolder_, sizeof(workspaceHolder_),
+                                     ACL_MEMCPY_HOST_TO_BUF_TO_DEVICE, stream);
     if (rc != ACLNN_SUCCESS) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "aclrtMemcpyAsync workspace input failed: %d", rc);
         return ACLNN_ERR_RUNTIME_ERROR;

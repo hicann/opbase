@@ -55,14 +55,14 @@ void PrepareKernelTensor(KernelTensor* kernelTensor, int64_t lifeTimeStart, int6
 TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase0)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 2);
     kernelTensors.push_back(kernelTensor0.get());
 
-    auto aclTensor1 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor1 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor1 = std::make_unique<KernelTensor>(aclTensor1.get(), 0);
     PrepareKernelTensor(kernelTensor1.get(), 1, 2);
     kernelTensors.push_back(kernelTensor1.get());
@@ -76,8 +76,8 @@ TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase0)
 TEST_F(MemoryAllocatorUt, MaxAllocatorTestInplaceL0)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 2);
     kernelTensors.push_back(kernelTensor0.get());
@@ -96,20 +96,20 @@ TEST_F(MemoryAllocatorUt, MaxAllocatorTestInplaceL0)
 TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase1)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{16}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{16}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 0);
     kernelTensors.push_back(kernelTensor0.get());
 
-    auto aclTensor1 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor1 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor1 = std::make_unique<KernelTensor>(aclTensor1.get(), 0);
     PrepareKernelTensor(kernelTensor1.get(), 0, 2);
     kernelTensors.push_back(kernelTensor1.get());
 
-    auto aclTensor2 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor2 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor2 = std::make_unique<KernelTensor>(aclTensor2.get(), 0);
     PrepareKernelTensor(kernelTensor2.get(), 1, 2);
     kernelTensors.push_back(kernelTensor2.get());
@@ -122,20 +122,20 @@ TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase1)
 TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase2)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{1024}, op::DataType::DT_UINT8, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{1024}, op::DataType::DT_UINT8, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 0);
     kernelTensors.push_back(kernelTensor0.get());
 
-    auto aclTensor1 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor1 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor1 = std::make_unique<KernelTensor>(aclTensor1.get(), 0);
     PrepareKernelTensor(kernelTensor1.get(), 0, 2);
     kernelTensors.push_back(kernelTensor1.get());
 
-    auto aclTensor2 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor2 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor2 = std::make_unique<KernelTensor>(aclTensor2.get(), 0);
     PrepareKernelTensor(kernelTensor2.get(), 1, 2);
     kernelTensors.push_back(kernelTensor2.get());
@@ -158,8 +158,8 @@ TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase4)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
 
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{18}, op::DataType::DT_UINT8, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{18}, op::DataType::DT_UINT8, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 0);
     kernelTensors.push_back(kernelTensor0.get());
@@ -173,8 +173,8 @@ TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase5)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
 
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{481}, op::DataType::DT_UINT8, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{481}, op::DataType::DT_UINT8, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 0);
     kernelTensors.push_back(kernelTensor0.get());
@@ -187,14 +187,14 @@ TEST_F(MemoryAllocatorUt, MaxAllocatorTestCase5)
 TEST_F(MemoryAllocatorUt, LinearAllocatorTestCase0)
 {
     op::FVector<KernelTensor*, DEFAULT_TENSOR_NUM> kernelTensors;
-    auto aclTensor0 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor0 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor0 = std::make_unique<KernelTensor>(aclTensor0.get(), 0);
     PrepareKernelTensor(kernelTensor0.get(), 0, 2);
     kernelTensors.push_back(kernelTensor0.get());
 
-    auto aclTensor1 =
-        std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto aclTensor1 = std::make_unique<aclTensor>(op::Shape{4, 5}, op::DataType::DT_FLOAT, op::Format::FORMAT_ND,
+                                                  nullptr);
     auto kernelTensor1 = std::make_unique<KernelTensor>(aclTensor1.get(), 0);
     PrepareKernelTensor(kernelTensor1.get(), 1, 2);
     kernelTensors.push_back(kernelTensor1.get());

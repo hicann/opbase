@@ -13,9 +13,6 @@
 namespace op::internal {
 static thread_local LauncherContext g_LauncherCtx;
 
-LauncherContext &GetLauncherCtx()
-{
-    return g_LauncherCtx;
-}
+LauncherContext& GetLauncherCtx() { return g_LauncherCtx; }
 
 } // namespace op::internal

@@ -112,9 +112,8 @@ void BrcPrintVectors(const std::vector<std::vector<int64_t>>& allDims, const std
 ge::graphStatus IsTensorContiguous(const gert::Shape& viewShape, const gert::Stride* viewStride, bool& isContiguous)
 {
     isContiguous = true;
-    OP_CHECK_IF(
-        (viewStride == nullptr), OP_LOGI("BroadcastTiling", "IsContiguous Check viewStride is nullptr."),
-        return ge::GRAPH_SUCCESS);
+    OP_CHECK_IF((viewStride == nullptr), OP_LOGI("BroadcastTiling", "IsContiguous Check viewStride is nullptr."),
+                return ge::GRAPH_SUCCESS);
     size_t shapeDim = viewShape.GetDimNum();
     size_t strideDim = viewStride->GetDimNum();
     if (strideDim == 0) {
@@ -122,9 +121,8 @@ ge::graphStatus IsTensorContiguous(const gert::Shape& viewShape, const gert::Str
         return ge::GRAPH_SUCCESS;
     }
     if (shapeDim != strideDim) {
-        OP_LOGE(
-            "BroadcastTiling", "IsContiguous Check ViewShape DimNum %zu != ViewStride DimNum %zu.", shapeDim,
-            strideDim);
+        OP_LOGE("BroadcastTiling", "IsContiguous Check ViewShape DimNum %zu != ViewStride DimNum %zu.", shapeDim,
+                strideDim);
         return ge::GRAPH_FAILED;
     }
 
@@ -150,9 +148,8 @@ ge::graphStatus IsTensorContiguous(const gert::Shape& viewShape, const gert::Str
  * @param strides 合轴后stride大小
  * @return
  */
-ge::graphStatus DimensionCollapse(
-    const std::vector<gert::Shape>& inShapes, const gert::Shape& outShapes, std::vector<std::vector<int64_t>>& dims,
-    std::vector<std::vector<int64_t>>& strides)
+ge::graphStatus DimensionCollapse(const std::vector<gert::Shape>& inShapes, const gert::Shape& outShapes,
+                                  std::vector<std::vector<int64_t>>& dims, std::vector<std::vector<int64_t>>& strides)
 {
     // 获取输出shape的轴数量，并封装输出shape
     uint64_t maxDim = outShapes.GetDimNum();
@@ -280,9 +277,10 @@ ge::graphStatus DimensionCollapse(
  * @param strides 合轴后stride大小
  * @return
 */
-ge::graphStatus NonContiguousDimensionCollapse(
-    const std::vector<gert::Shape>& inShapes, const std::vector<gert::Stride>& inStrides, const gert::Shape& outShapes,
-    std::vector<std::vector<int64_t>>& dims, std::vector<std::vector<int64_t>>& strides)
+ge::graphStatus NonContiguousDimensionCollapse(const std::vector<gert::Shape>& inShapes,
+                                               const std::vector<gert::Stride>& inStrides, const gert::Shape& outShapes,
+                                               std::vector<std::vector<int64_t>>& dims,
+                                               std::vector<std::vector<int64_t>>& strides)
 {
     // 获取输出shape的轴数量，并封装输出shape
     uint64_t maxDim = outShapes.GetDimNum();
@@ -499,8 +497,8 @@ uint64_t GetBlockSplitFactor(BroadcastTilingData& broadcastTilingData, ubSplitIn
     return fusedProduct;
 }
 
-ge::graphStatus DoBrodcastTiling(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData)
+ge::graphStatus DoBrodcastTiling(const BroadcastTilingParams& broadcastTilingParams,
+                                 BroadcastTilingData& broadcastTilingData)
 {
     uint64_t computeKey = BroadcastGetComputeKey();
     auto iter = broadcastTilingParams.computeMap.find(computeKey);
@@ -511,21 +509,17 @@ ge::graphStatus DoBrodcastTiling(
         OP_LOGE("BroadcastTiling", "can not find computeKey");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        broadcastTilingParams.ubSize < computeParams.extraSize[0],
-        OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(broadcastTilingParams.ubSize < computeParams.extraSize[0],
+                OP_LOGE("BroadcastTiling", "ubSize is smaller than extra size."), return ge::GRAPH_FAILED);
 
     // 获取最大存活空间大小
     uint64_t maxElemNum = BroadcastGetMaxElemNum(broadcastTilingParams.ubSize, computeParams);
-    OP_LOGI(
-        "Broadcast", "Broadcast DoBrodcastTiling. origin maxElemNum: %lu ubSize: %ld", maxElemNum,
-        broadcastTilingParams.ubSize);
-    OP_CHECK_IF(
-        (broadcastTilingParams.ubSize <= 0), OP_LOGE("BroadcastTiling", "ubSize can not be 0"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (broadcastTilingParams.coreNum <= 0), OP_LOGE("BroadcastTiling", "coreNum can not be 0"),
-        return ge::GRAPH_FAILED);
+    OP_LOGI("Broadcast", "Broadcast DoBrodcastTiling. origin maxElemNum: %lu ubSize: %ld", maxElemNum,
+            broadcastTilingParams.ubSize);
+    OP_CHECK_IF((broadcastTilingParams.ubSize <= 0), OP_LOGE("BroadcastTiling", "ubSize can not be 0"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((broadcastTilingParams.coreNum <= 0), OP_LOGE("BroadcastTiling", "coreNum can not be 0"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF((maxElemNum == 0), OP_LOGE("BroadcastTiling", "maxElemNum can not be 0"), return ge::GRAPH_FAILED);
 
     ubSplitInfo ubInfo;
@@ -555,9 +549,8 @@ ge::graphStatus DoBrodcastTiling(
 
     uint64_t blockTail = fusedProduct - (blockNum - 1) * blockFormer;
     uint64_t dimProductBeforeUbInner = fusedProduct;
-    OP_LOGI(
-        "Broadcast", "Broadcast DoBrodcastTiling. maxElemNum: %lu fusedProduct: %lu ubFormer: %ld ", maxElemNum,
-        fusedProduct, ubInfo.ubFormer);
+    OP_LOGI("Broadcast", "Broadcast DoBrodcastTiling. maxElemNum: %lu fusedProduct: %lu ubFormer: %ld ", maxElemNum,
+            fusedProduct, ubInfo.ubFormer);
 
     broadcastTilingData.ubSplitAxis = ubInfo.ubSplitAxis;
     broadcastTilingData.ubFormer = ubInfo.ubFormer;
@@ -582,8 +575,8 @@ ge::graphStatus DoBrodcastTiling(
  *
  * @return
  */
-ge::graphStatus DoDimensionCollapse(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData)
+ge::graphStatus DoDimensionCollapse(const BroadcastTilingParams& broadcastTilingParams,
+                                    BroadcastTilingData& broadcastTilingData)
 {
     std::vector<std::vector<int64_t>> dims;
     std::vector<std::vector<int64_t>> strides;
@@ -591,17 +584,16 @@ ge::graphStatus DoDimensionCollapse(
     if (broadcastTilingParams.inputAllContiguous) {
         status = DimensionCollapse(broadcastTilingParams.inShape, broadcastTilingParams.outShape, dims, strides);
     } else {
-        status = NonContiguousDimensionCollapse(
-            broadcastTilingParams.inShape, broadcastTilingParams.inStride, broadcastTilingParams.outShape, dims,
-            strides);
+        status = NonContiguousDimensionCollapse(broadcastTilingParams.inShape, broadcastTilingParams.inStride,
+                                                broadcastTilingParams.outShape, dims, strides);
     }
     if (status != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
     broadcastTilingData.shapeLen = dims.back().size();
-    OP_CHECK_IF(
-        (broadcastTilingData.shapeLen > static_cast<int64_t>(BROADCAST_MAX_DIMS)),
-        OP_LOGE("BroadcastTiling", "broadcast can't support dim size greater than 8."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((broadcastTilingData.shapeLen > static_cast<int64_t>(BROADCAST_MAX_DIMS)),
+                OP_LOGE("BroadcastTiling", "broadcast can't support dim size greater than 8."),
+                return ge::GRAPH_FAILED);
 
     broadcastTilingData.dims = dims;
     broadcastTilingData.strides = strides;
@@ -609,8 +601,8 @@ ge::graphStatus DoDimensionCollapse(
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus BroadcastTiling(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData)
+ge::graphStatus BroadcastTiling(const BroadcastTilingParams& broadcastTilingParams,
+                                BroadcastTilingData& broadcastTilingData)
 {
     auto status = DoDimensionCollapse(broadcastTilingParams, broadcastTilingData);
     if (status != ge::GRAPH_SUCCESS) {

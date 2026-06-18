@@ -30,7 +30,8 @@ namespace Base {
 template <class BrcDag, bool UseNddma, int64_t R = 4>
 class BroadcastBaseSchLastTranspose {
 public:
-    __aicore__ inline explicit BroadcastBaseSchLastTranspose(const BroadcastLastTransposeTilingData<BrcDag> *baseTilingData)
+    __aicore__ inline explicit BroadcastBaseSchLastTranspose(
+        const BroadcastLastTransposeTilingData<BrcDag>* baseTilingData)
         : tilingData_(baseTilingData)
     {}
 
@@ -45,7 +46,7 @@ protected:
      */
     template <size_t N>
     __aicore__ inline void GetUbBroadcastShapeInfo(const int64_t (&oriShape)[N], int64_t inputUblength[2],
-        uint32_t (&ubFormershape)[N])
+                                                   uint32_t (&ubFormershape)[N])
     {
         int64_t ubFormerLength = 1;
         int64_t ubTailLength = 1;
@@ -102,7 +103,7 @@ protected:
      * @return void
      */
     template <typename T>
-    __aicore__ inline void VecBrc(LocalTensor<T> &dst, LocalTensor<T> &src, int64_t realIdx)
+    __aicore__ inline void VecBrc(LocalTensor<T>& dst, LocalTensor<T>& src, int64_t realIdx)
     {
         BroadcastTiling runningTiling;
         if (realIdx == tilingData_->ubOuter - 1) {
@@ -114,7 +115,7 @@ protected:
         }
         if constexpr (R == -1) {
             GetBroadcastTilingInfo<T>(runningRank_, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], false,
-                runningTiling);
+                                      runningTiling);
             Broadcast(dst, src, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], &runningTiling);
         } else {
             GetBroadcastTilingInfo<T, R>(R, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], false, runningTiling);
@@ -154,7 +155,7 @@ protected:
 #endif
         int64_t realIdx = (AscendC::GetBlockIdx() * tilingData_->blockFormer + ubLoopIdx) % tilingData_->ubOuter;
         static_assert(std::is_same<inputType, outputType>::value,
-            "Broadcast inputType  is inconsistent with outputType.");
+                      "Broadcast inputType  is inconsistent with outputType.");
         VecBrc<inputType, true>(outTensor, inputTensor, realIdx);
         ReleaseTensor<TPosition::VECCALC>(inputBufId);
         ReleaseTensor<TPosition::VECCALC>(bufId);
@@ -172,7 +173,7 @@ protected:
         if constexpr (idx < BrcDag::VarSize) {
             using VarPlaceHolder = typename BrcDag::Vars::template At<idx>;
             using DType = typename VarPlaceHolder::DType;
-            scalars_.template Set<idx>(reinterpret_cast<const DType &>(tilingData_->scalarData[offset]));
+            scalars_.template Set<idx>(reinterpret_cast<const DType&>(tilingData_->scalarData[offset]));
 
             if constexpr (idx + 1 < BrcDag::VarSize) {
                 offset += sizeof(DType);
@@ -260,8 +261,9 @@ protected:
      * @return void
      */
     template <typename Op, int pos>
-    __aicore__ inline void CopyIn(const int64_t (&axesIndices)[BROADCAST_MAX_DIMS_LAST_TRANSPOSE], int64_t lastAxisLoopIdx, 
-    	                          int64_t notLastUBSplitSize, int64_t lastUBSplitSize, int32_t pingPong)
+    __aicore__ inline void CopyIn(const int64_t (&axesIndices)[BROADCAST_MAX_DIMS_LAST_TRANSPOSE],
+                                  int64_t lastAxisLoopIdx, int64_t notLastUBSplitSize, int64_t lastUBSplitSize,
+                                  int32_t pingPong)
     {
         static_assert(Op::InHolders::Size == 1, "CopyIn input inHolders num should be 1.");
         using input = typename Op::InHolders::template At<0>;
@@ -278,26 +280,28 @@ protected:
 #ifndef __CCE_KT_TEST__
         inTensor.SetBufferLen(blockEleNum_);
 #endif
-        int64_t gmOffset = BroadcastGetGmOffsetLastTranspose(axesIndices, tilingData_->inputStrides[input::Pos], tilingData_->ubSplitAxis, 
-                                                            tilingData_->ubFormer, tilingData_->shapeLen, lastAxisLoopIdx, tilingData_->ubFormerLastAxis);
+        int64_t gmOffset = BroadcastGetGmOffsetLastTranspose(
+            axesIndices, tilingData_->inputStrides[input::Pos], tilingData_->ubSplitAxis, tilingData_->ubFormer,
+            tilingData_->shapeLen, lastAxisLoopIdx, tilingData_->ubFormerLastAxis);
         GlobalTensor<inputType> inputGm;
-        inputGm.SetGlobalBuffer(
-            reinterpret_cast<__gm__ inputType *>(inGm_[input::Pos] + gmOffset * sizeof(inputType)));
+        inputGm.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(inGm_[input::Pos] + gmOffset * sizeof(inputType)));
         // Set getBuf
         GetTensor<TPosition::VECIN>(bufId);
         if (tilingData_->inputStrides[input::Pos][tilingData_->shapeLen - 1] != 1) {
             static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
             // 只支持最多3维，所以直接使用不需要循环的nddma即可。
-            AscendC::MultiCopyParams<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE> paramsMain = BroadcastSetNddmaConfigWithoutLoop<inputType>(
-                    tilingData_->outputDims, tilingData_->outputStridesWithPad, tilingData_->inputStrides[input::Pos], tilingData_->shapeLen,tilingData_->ubSplitAxis, notLastUBSplitSize, lastUBSplitSize);
+            AscendC::MultiCopyParams<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE>
+                paramsMain = BroadcastSetNddmaConfigWithoutLoop<inputType>(
+                    tilingData_->outputDims, tilingData_->outputStridesWithPad, tilingData_->inputStrides[input::Pos],
+                    tilingData_->shapeLen, tilingData_->ubSplitAxis, notLastUBSplitSize, lastUBSplitSize);
             AscendC::DataCopy<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE, config>(inTensor, inputGm, paramsMain);
         } else {
-
             // Run copyIn
-            MovAlign2UB<inputType>(inTensor, inputGm, tilingData_->outputDims, tilingData_->inputStrides[input::Pos],  
-                                  tilingData_->outputStridesWithPad, tilingData_->ubSplitAxis, tilingData_->shapeLen, notLastUBSplitSize, lastUBSplitSize);
+            MovAlign2UB<inputType>(inTensor, inputGm, tilingData_->outputDims, tilingData_->inputStrides[input::Pos],
+                                   tilingData_->outputStridesWithPad, tilingData_->ubSplitAxis, tilingData_->shapeLen,
+                                   notLastUBSplitSize, lastUBSplitSize);
         }
-       
+
         // Set rlsBuf
         ReleaseTensor<TPosition::VECIN>(bufId);
     }
@@ -312,25 +316,27 @@ protected:
      * @return void
      */
     template <typename Op, int pos>
-    __aicore__ inline void CopyOut(const int64_t (&axesIndices)[BROADCAST_MAX_DIMS_LAST_TRANSPOSE], int64_t lastAxisLoopIdx, 
-    	                          int64_t notLastUBSplitSize, int64_t lastUBSplitSize, int32_t pingPong)
+    __aicore__ inline void CopyOut(const int64_t (&axesIndices)[BROADCAST_MAX_DIMS_LAST_TRANSPOSE],
+                                   int64_t lastAxisLoopIdx, int64_t notLastUBSplitSize, int64_t lastUBSplitSize,
+                                   int32_t pingPong)
     {
         static_assert(Op::Args::Size == 2, "Input args should be 2");
         using input = typename Op::Args::template At<1>;
         using output = typename Op::Args::template At<0>;
         using inputType = typename Op::template FunInArgType<0>;
         static_assert(Placeholder::IsOutHolder<output>::Value, "output args should be out holder");
-        int64_t gmOffset = BroadcastGetGmOffsetLastTranspose(axesIndices, tilingData_->outputStrides, tilingData_->ubSplitAxis, 
-                                                             tilingData_->ubFormer, tilingData_->shapeLen, lastAxisLoopIdx, tilingData_->ubFormerLastAxis);
+        int64_t gmOffset = BroadcastGetGmOffsetLastTranspose(
+            axesIndices, tilingData_->outputStrides, tilingData_->ubSplitAxis, tilingData_->ubFormer,
+            tilingData_->shapeLen, lastAxisLoopIdx, tilingData_->ubFormerLastAxis);
         if constexpr (std::is_same<typename output::DType, uint1_t>::value) {
             static_assert(std::is_same<inputType, uint8_t>::value,
-                "CopyOut data type is inconsistent with out holder data type.");
+                          "CopyOut data type is inconsistent with out holder data type.");
             gmOffset = gmOffset / BYTE_LENGTH;
             notLastUBSplitSize = notLastUBSplitSize / BYTE_LENGTH;
             lastUBSplitSize = lastUBSplitSize / BYTE_LENGTH;
         } else {
             static_assert(std::is_same<typename output::DType, inputType>::value,
-                "CopyOut data type is inconsistent with Op data type.");
+                          "CopyOut data type is inconsistent with Op data type.");
         }
 
         // Prepare input args
@@ -342,12 +348,13 @@ protected:
         static_assert(output::Pos < BrcDag::OutputSize, "output Pos is not less than output number.");
         GlobalTensor<inputType> outputGm;
         outputGm.SetGlobalBuffer(
-            reinterpret_cast<__gm__ inputType *>(outGm_[output::Pos] + gmOffset * sizeof(inputType)));
+            reinterpret_cast<__gm__ inputType*>(outGm_[output::Pos] + gmOffset * sizeof(inputType)));
         // Set getBuf
         GetTensor<TPosition::VECOUT>(bufId);
         // Run func
-        MovAlign2GM<inputType>(outputGm, outTensor, tilingData_->outputDims, tilingData_->outputStridesWithPad, 
-                               tilingData_->outputStrides, tilingData_->ubSplitAxis, tilingData_->shapeLen, notLastUBSplitSize, lastUBSplitSize);
+        MovAlign2GM<inputType>(outputGm, outTensor, tilingData_->outputDims, tilingData_->outputStridesWithPad,
+                               tilingData_->outputStrides, tilingData_->ubSplitAxis, tilingData_->shapeLen,
+                               notLastUBSplitSize, lastUBSplitSize);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECOUT>(bufId);
     }
@@ -381,14 +388,14 @@ protected:
     __aicore__ inline constexpr ScalarType GetScalar()
     {
         static_assert(!(Placeholder::IsVar<scalarValue>::Value && Placeholder::IsInHolder<scalarValue>::Value &&
-            Placeholder::IsConstValue<scalarValue>::Value),
-            "The input parameter type is not FunBind, Var, Const or Holder.");
+                        Placeholder::IsConstValue<scalarValue>::Value),
+                      "The input parameter type is not FunBind, Var, Const or Holder.");
         if constexpr (Placeholder::IsVar<scalarValue>::Value) {
             ScalarType scalar = scalars_.template Get<scalarValue::Pos>();
             return scalar;
         } else if constexpr (Placeholder::IsInHolder<scalarValue>::Value) {
             GlobalTensor<ScalarType> globalTensor;
-            globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ ScalarType *>(inGm_[scalarValue::Pos]));
+            globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ ScalarType*>(inGm_[scalarValue::Pos]));
             ScalarType scalar = globalTensor.GetValue(0);
             return scalar;
         } else if constexpr (Placeholder::IsConstValue<scalarValue>::Value) {
@@ -413,8 +420,8 @@ protected:
                 if constexpr (!isDuplicate) {
                     GetTensor<TPosition::VECCALC>(bufId);
                 }
-                LocalTensor<TensorType> inputTensor =
-                    tensorPool_[bufId * blockLen_].template ReinterpretCast<TensorType>();
+                LocalTensor<TensorType> inputTensor = tensorPool_[bufId * blockLen_]
+                                                          .template ReinterpretCast<TensorType>();
 #ifndef __CCE_KT_TEST__
                 inputTensor.SetBufferLen(blockEleNum_);
 #endif
@@ -455,31 +462,31 @@ protected:
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(LocalTensor<OutputType> &outTensor, Tuple &inputs, uint64_t tileLength,
-        AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outTensor, AscendC::Std::get<I>(inputs)..., tileLength);
     }
 
     template <typename Func, typename OutputType, typename Tuple>
-    __aicore__ inline auto Call(LocalTensor<OutputType> &outTensor, Tuple &inputs, uint64_t tileLength)
+    __aicore__ inline auto Call(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength)
     {
         return CallImpl<Func, OutputType>(outTensor, inputs, tileLength,
-            AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(OutputType &outScalar, Tuple &inputs, uint64_t tileLength,
-        AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(OutputType& outScalar, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outScalar, AscendC::Std::get<I>(inputs)..., tileLength);
     }
 
     template <typename Func, typename OutputType, typename Tuple>
-    __aicore__ inline auto Call(OutputType &outScalar, Tuple &inputs, uint64_t tileLength)
+    __aicore__ inline auto Call(OutputType& outScalar, Tuple& inputs, uint64_t tileLength)
     {
         return CallImpl<Func, OutputType>(outScalar, inputs, tileLength,
-            AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Op, size_t... I>
@@ -505,7 +512,7 @@ protected:
      * @return
      */
     template <typename OutputType, class Op, int pos = 0>
-    __aicore__ inline constexpr void RunOp(LocalTensor<OutputType> &outTensor, uint64_t tileLength, int32_t pingPong)
+    __aicore__ inline constexpr void RunOp(LocalTensor<OutputType>& outTensor, uint64_t tileLength, int32_t pingPong)
     {
         using Func = typename Op::Fun;
         auto inputArgs = PrepareArgs<Op>(pingPong);
@@ -564,9 +571,9 @@ protected:
     constexpr static auto cacheBufferIds_ = BrcDag::template GetBufferIds<UseNddma, true>();
 
 private:
-    const BroadcastLastTransposeTilingData<BrcDag> *tilingData_;
+    const BroadcastLastTransposeTilingData<BrcDag>* tilingData_;
 };
 } // namespace Base
-} //namespace Ops
+} // namespace Ops
 
 #endif // BROADCAST_BASE_SCH_LAST_TRANSPOSE_H_

@@ -36,8 +36,8 @@ ge::graphStatus InferShape4Reduce(gert::InferShapeContext* context)
 
     auto axesSize = static_cast<int32_t>(axesTensor->GetShapeSize());
 
-    OP_CHECK_IF(
-        axesSize < 0, OP_LOGE(context->GetNodeName(), "axes num cannot be less than 0!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(axesSize < 0, OP_LOGE(context->GetNodeName(), "axes num cannot be less than 0!"),
+                return ge::GRAPH_FAILED);
 
     if (axesSize == 0) {
         *outShape = *inShape;
@@ -46,10 +46,9 @@ ge::graphStatus InferShape4Reduce(gert::InferShapeContext* context)
     }
 
     auto dtype = axesTensor->GetDataType();
-    OP_CHECK_IF(
-        dtype != ge::DT_INT32 && dtype != ge::DT_INT64,
-        OP_LOGE(context->GetNodeName(), "axes datatype %s must in (int32, int64)", ToString(dtype).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(dtype != ge::DT_INT32 && dtype != ge::DT_INT64,
+                OP_LOGE(context->GetNodeName(), "axes datatype %s must in (int32, int64)", ToString(dtype).c_str()),
+                return ge::GRAPH_FAILED);
     if (dtype == ge::DT_INT32) {
         return ReduceDims<int32_t>(inShape, axesTensor, axesSize, *keepDims, outShape);
     }

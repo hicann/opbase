@@ -143,8 +143,8 @@ static void AddInputTensorsToThreadLocalCtx(const std::tuple<Args...>& t)
 {
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensor,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddInputTensorToThreadLocalCtx(args) :
                   void()),
              ...);
@@ -152,8 +152,8 @@ static void AddInputTensorsToThreadLocalCtx(const std::tuple<Args...>& t)
         t);
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensorList,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddInputTensorToThreadLocalCtx(args) :
                   void()),
              ...);
@@ -166,8 +166,8 @@ static void AddOutputTensorsToThreadLocalCtx(const std::tuple<Args...>& t)
 {
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensor,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddOutputTensorToThreadLocalCtx(args) :
                   void()),
              ...);
@@ -175,8 +175,8 @@ static void AddOutputTensorsToThreadLocalCtx(const std::tuple<Args...>& t)
         t);
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensorList,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddOutputTensorToThreadLocalCtx(args) :
                   void()),
              ...);
@@ -196,9 +196,8 @@ class OpDfxGuard {
 public:
     // L2_DFX PHASE_ONE
     template <typename INPUT_TUPLE = void*, typename OUTPUT_TUPLE = void*>
-    OpDfxGuard(
-        const char* file, int line, OpLevel level, const char* funcName, const char* paramNamesIn,
-        const char* paramNamesOut, const INPUT_TUPLE&& in, const OUTPUT_TUPLE&& out)
+    OpDfxGuard(const char* file, int line, OpLevel level, const char* funcName, const char* paramNamesIn,
+               const char* paramNamesOut, const INPUT_TUPLE&& in, const OUTPUT_TUPLE&& out)
         : funcName_(funcName),
           file_(file),
           printLog_(true),
@@ -225,9 +224,8 @@ public:
 
     // L0_DFX
     template <typename... Args>
-    OpDfxGuard(
-        uint32_t id, const char* file, int line, OpLevel level, const char* funcName, const char* paramNames,
-        const std::tuple<Args...>& t)
+    OpDfxGuard(uint32_t id, const char* file, int line, OpLevel level, const char* funcName, const char* paramNames,
+               const std::tuple<Args...>& t)
         : funcName_(funcName),
           file_(file),
           printLog_(true),
@@ -256,8 +254,8 @@ private:
     {
         size_t argNum = v.size();
         std::string splitStr = (index < (argNum - 1)) ? ", " : "";
-        if constexpr (
-            std::is_fundamental<std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<T>>>>::value) {
+        if constexpr (std::is_fundamental<
+                          std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<T>>>>::value) {
             if constexpr (std::is_same_v<T, char*> || std::is_same_v<T, const char*>) {
                 if (t == nullptr) {
                     res += v[index++] + ": nullptr" + splitStr;
@@ -377,8 +375,8 @@ inline void GenInternalOpTypeId()
 {
     [[maybe_unused]] static uint32_t memsetOpTypeId = op::GenOpTypeId("MemSet", OP_RESOURCES_VALUE(MemSet));
     [[maybe_unused]] static uint32_t memsetV2OpTypeId = op::GenOpTypeId("MemSetV2", OP_RESOURCES_VALUE(MemSetV2));
-    [[maybe_unused]] static uint32_t nonFiniteCheckOpTypeId =
-        op::GenOpTypeId("NonFiniteCheck", OP_RESOURCES_VALUE(NonFiniteCheck));
+    [[maybe_unused]] static uint32_t nonFiniteCheckOpTypeId = op::GenOpTypeId("NonFiniteCheck",
+                                                                              OP_RESOURCES_VALUE(NonFiniteCheck));
 }
 
 #define OP_TYPE_REGISTER(kernelName)                                                                 \
@@ -421,24 +419,24 @@ inline void GenInternalOpTypeId()
 #define L0_OP_PROF(paramNames, t) \
     op::OpDfxGuard opDfxGuard(op::kInvalidProfilingId, __FILE__, __LINE__, op::LevelZero, __func__, paramNames, t)
 
-#define L2_DFX_PHASE_1_WITHOUT_CACHE(APIName, IN, OUT)                                                        \
-    static_assert(                                                                                            \
-        op::ValidDfxName(#APIName "GetWorkspaceSize", __func__), "Invalid DFX:" #APIName "GetWorkspaceSize"); \
-    InitL2Phase1Context(#APIName, executor);                                                                  \
+#define L2_DFX_PHASE_1_WITHOUT_CACHE(APIName, IN, OUT)                     \
+    static_assert(op::ValidDfxName(#APIName "GetWorkspaceSize", __func__), \
+                  "Invalid DFX:" #APIName "GetWorkspaceSize");             \
+    InitL2Phase1Context(#APIName, executor);                               \
     L2_OP_PROF_PHASE_1(#IN, #OUT, IN, OUT)
 
-#define L2_DFX_PHASE_1(APIName, IN, OUT)                                                                      \
-    static_assert(                                                                                            \
-        op::ValidDfxName(#APIName "GetWorkspaceSize", __func__), "Invalid DFX:" #APIName "GetWorkspaceSize"); \
-    if (CheckPhase1Params(executor, workspaceSize) != ACLNN_SUCCESS) {                                        \
-        return ACLNN_ERR_PARAM_NULLPTR;                                                                       \
-    }                                                                                                         \
-    InitL2Phase1Context(#APIName, executor);                                                                  \
-    L2_OP_PROF_PHASE_1(#IN, #OUT, IN, OUT);                                                                   \
-    do {                                                                                                      \
-        if (op::internal::GetFromCache(executor, workspaceSize, #APIName, IN, OUT)) {                         \
-            return ACLNN_SUCCESS;                                                                             \
-        }                                                                                                     \
+#define L2_DFX_PHASE_1(APIName, IN, OUT)                                              \
+    static_assert(op::ValidDfxName(#APIName "GetWorkspaceSize", __func__),            \
+                  "Invalid DFX:" #APIName "GetWorkspaceSize");                        \
+    if (CheckPhase1Params(executor, workspaceSize) != ACLNN_SUCCESS) {                \
+        return ACLNN_ERR_PARAM_NULLPTR;                                               \
+    }                                                                                 \
+    InitL2Phase1Context(#APIName, executor);                                          \
+    L2_OP_PROF_PHASE_1(#IN, #OUT, IN, OUT);                                           \
+    do {                                                                              \
+        if (op::internal::GetFromCache(executor, workspaceSize, #APIName, IN, OUT)) { \
+            return ACLNN_SUCCESS;                                                     \
+        }                                                                             \
     } while (false)
 
 #define L2_DFX_PHASE_2(APIName)                                                            \

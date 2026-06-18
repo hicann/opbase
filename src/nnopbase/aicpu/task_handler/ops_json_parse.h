@@ -83,8 +83,8 @@ private:
 
     bool ConvertJsonFormat(nlohmann::json& jsonRead) const;
     aclnnStatus StringToBool(const std::string& str, bool& result) const;
-    bool CheckAndGetUserDefine(
-        const nlohmann::json& buff, const std::string& opType, const std::string& fieldStr, bool& value) const;
+    bool CheckAndGetUserDefine(const nlohmann::json& buff, const std::string& opType, const std::string& fieldStr,
+                               bool& value) const;
 };
 
 /**

@@ -136,10 +136,9 @@ private:
     ListHead lruList_;
 };
 
-template <
-    typename KeyType, typename ValueType, std::enable_if_t<std::is_base_of_v<KeyType, ValueType>, bool> = true,
-    std::enable_if_t<std::is_base_of_v<ListHead, ValueType>, bool> = true,
-    std::enable_if_t<std::is_base_of_v<HlistNode, ValueType>, bool> = true>
+template <typename KeyType, typename ValueType, std::enable_if_t<std::is_base_of_v<KeyType, ValueType>, bool> = true,
+          std::enable_if_t<std::is_base_of_v<ListHead, ValueType>, bool> = true,
+          std::enable_if_t<std::is_base_of_v<HlistNode, ValueType>, bool> = true>
 class OpCacheContainerIterator {
 public:
     using key_type = KeyType;
@@ -191,11 +190,11 @@ private:
     bool reverse_ = false;
 };
 
-template <
-    typename KeyType, typename ValueType, typename HashFunc = std::hash<KeyType>,
-    typename EqualFunc = std::equal_to<KeyType>, std::enable_if_t<std::is_base_of_v<KeyType, ValueType>, bool> = true,
-    std::enable_if_t<std::is_base_of_v<ListHead, ValueType>, bool> = true,
-    std::enable_if_t<std::is_base_of_v<HlistNode, ValueType>, bool> = true>
+template <typename KeyType, typename ValueType, typename HashFunc = std::hash<KeyType>,
+          typename EqualFunc = std::equal_to<KeyType>,
+          std::enable_if_t<std::is_base_of_v<KeyType, ValueType>, bool> = true,
+          std::enable_if_t<std::is_base_of_v<ListHead, ValueType>, bool> = true,
+          std::enable_if_t<std::is_base_of_v<HlistNode, ValueType>, bool> = true>
 class OpCacheContainer {
 public:
     friend class OpCacheContainerIterator<KeyType, ValueType>;

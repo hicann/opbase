@@ -53,11 +53,11 @@ uint32_t GenOpTypeId(const char* opName, const OP_RESOURCES& opResources)
 {
     for (const auto& [op_type, op_res] : opResources) {
         // 注册算子用到的资源
-        nnopbase::OpBinaryResourceManager::GetInstance().AddOpFuncHandle(
-            op_type, std::get<OP_RESOURCE_FUNC_IDX>(op_res));
+        nnopbase::OpBinaryResourceManager::GetInstance().AddOpFuncHandle(op_type,
+                                                                         std::get<OP_RESOURCE_FUNC_IDX>(op_res));
         nnopbase::OpBinaryResourceManager::GetInstance().AddBinary(op_type, std::get<OP_RESOURCE_BINARY_IDX>(op_res));
-        nnopbase::OpBinaryResourceManager::GetInstance().AddRuntimeKB(
-            op_type, std::get<OP_RESOURCE_RUNTIME_KB_IDX>(op_res));
+        nnopbase::OpBinaryResourceManager::GetInstance().AddRuntimeKB(op_type,
+                                                                      std::get<OP_RESOURCE_RUNTIME_KB_IDX>(op_res));
         if (ge::AscendString(opName) != op_type) {
             GenOpTypeId(op_type.GetString());
         }
@@ -77,11 +77,11 @@ uint32_t GenOpTypeId(const char* opName, const OP_SOC_RESOURCES& opResources)
             OP_LOGW("failed to find op resources, soc version %s", socVersion.GetString());
             return 0;
         }
-        nnopbase::OpBinaryResourceManager::GetInstance().AddOpFuncHandle(
-            op_type, std::get<OP_RESOURCE_FUNC_IDX>(op_res));
+        nnopbase::OpBinaryResourceManager::GetInstance().AddOpFuncHandle(op_type,
+                                                                         std::get<OP_RESOURCE_FUNC_IDX>(op_res));
         nnopbase::OpBinaryResourceManager::GetInstance().AddBinary(op_type, it->second);
-        nnopbase::OpBinaryResourceManager::GetInstance().AddRuntimeKB(
-            op_type, std::get<OP_RESOURCE_RUNTIME_KB_IDX>(op_res));
+        nnopbase::OpBinaryResourceManager::GetInstance().AddRuntimeKB(op_type,
+                                                                      std::get<OP_RESOURCE_RUNTIME_KB_IDX>(op_res));
         if (ge::AscendString(opName) != op_type) {
             GenOpTypeId(op_type.GetString());
         }
@@ -211,24 +211,24 @@ uint64_t GenSummaryItemId(const char* l2Name, const char* l0Name, const char* op
     CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info l0 name: %s failed.", l0Name);
     rc = strncpy_s(hashPtr + l2NameLen + l0NameLen + 1, totalSize - l2NameLen - l0NameLen - 1, "_", 1);
     CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info delimiter failed.");
-    rc = strncpy_s(
-        hashPtr + l2NameLen + l0NameLen + 1 + 1, totalSize - l2NameLen - l0NameLen - 1 - 1, opType, opTypeLen);
+    rc = strncpy_s(hashPtr + l2NameLen + l0NameLen + 1 + 1, totalSize - l2NameLen - l0NameLen - 1 - 1, opType,
+                   opTypeLen);
     CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info opType: %s failed.", opType);
     uint64_t id = MsprofGetHashId(hashPtr, strlen(hashPtr));
     OP_LOGI("GenSummaryItemId, l2Name = %s, l0Name = %s, opType = %s, id = %lu", l2Name, l0Name, opType, id);
     return id;
 }
 
-int32_t RecordOpArgCallbacker::RecordOpArgCallback(
-    [[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size)
+int32_t RecordOpArgCallbacker::RecordOpArgCallback([[maybe_unused]] uint64_t dumpSwitch,
+                                                   [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size)
 {
     SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) != 0 ? true : false);
     OP_LOGI("RecordOpArgCallback, get record op arg flag = %d", GetOpProfilingRecordArgFlag());
     return 0;
 }
 
-int32_t RecordOpArgCallbacker::RecordOpArgDump(
-    [[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig, [[maybe_unused]] int32_t size)
+int32_t RecordOpArgCallbacker::RecordOpArgDump([[maybe_unused]] uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig,
+                                               [[maybe_unused]] int32_t size)
 {
     SetOpProfilingRecordArgFlag((dumpSwitch & Adx::OP_INFO_RECORD_DUMP) != 0 ? true : false);
     if (!GetOpProfilingRecordArgFlag()) {
@@ -247,9 +247,8 @@ OpProfilingSwitch::OpProfilingSwitch()
       level2ProfilingFlag(false),
       timeStampFlag(false)
 {
-    Adx::AdumpRegisterCallback(
-        OP_ID, reinterpret_cast<Adx::AdumpCallback>(RecordOpArgCallbacker::RecordOpArgCallback),
-        reinterpret_cast<Adx::AdumpCallback>(RecordOpArgCallbacker::RecordOpArgDump));
+    Adx::AdumpRegisterCallback(OP_ID, reinterpret_cast<Adx::AdumpCallback>(RecordOpArgCallbacker::RecordOpArgCallback),
+                               reinterpret_cast<Adx::AdumpCallback>(RecordOpArgCallbacker::RecordOpArgDump));
 }
 
 int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len)
@@ -281,38 +280,35 @@ int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len)
         opProfilingSwitch.additionInfoFlag = false;
         opProfilingSwitch.level2ProfilingFlag = false;
         opProfilingSwitch.timeStampFlag = false;
-        OP_LOGI(
-            "After ProfilingCallBack Stop, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
-            "level2ProfilingFlag=%d, timeStampFlag=%d",
-            opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
-            opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag);
+        OP_LOGI("After ProfilingCallBack Stop, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
+                "level2ProfilingFlag=%d, timeStampFlag=%d",
+                opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
+                opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag);
         return 0;
     }
     OP_LOGI("ProfilingCallBack, profSwitch = %lu", handle->profSwitch);
 
-    OP_LOGI(
-        "Before ProfilingCallBack Update, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
-        "level2ProfilingFlag=%d",
-        opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
-        opProfilingSwitch.level2ProfilingFlag);
+    OP_LOGI("Before ProfilingCallBack Update, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
+            "level2ProfilingFlag=%d",
+            opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
+            opProfilingSwitch.level2ProfilingFlag);
 
     opProfilingSwitch.reportFlag = (handle->profSwitch & PROF_ACL_API_MASK) != 0;
     opProfilingSwitch.kernelLaunchFlag = (handle->profSwitch & PROF_TASK_TIME_MASK) != 0;
     opProfilingSwitch.additionInfoFlag = (handle->profSwitch & PROF_TASK_TIME_L1_MASK) != 0;
-    opProfilingSwitch.level2ProfilingFlag =
-        ((handle->profSwitch & PROF_TASK_TIME_L2_MASK) != 0 || (handle->profSwitch & PROF_OP_ATTR_MASK) != 0);
+    opProfilingSwitch.level2ProfilingFlag = ((handle->profSwitch & PROF_TASK_TIME_L2_MASK) != 0 ||
+                                             (handle->profSwitch & PROF_OP_ATTR_MASK) != 0);
     opProfilingSwitch.timeStampFlag = handle->profSwitch & PROF_OP_TIMESTAMP_MASK;
 
-    OP_LOGI(
-        "After ProfilingCallBack Update, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
-        "level2ProfilingFlag=%d, timeStampFlag=%d",
-        opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
-        opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag);
+    OP_LOGI("After ProfilingCallBack Update, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
+            "level2ProfilingFlag=%d, timeStampFlag=%d",
+            opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
+            opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag);
 
     if ((opProfilingSwitch.reportFlag || opProfilingSwitch.kernelLaunchFlag || opProfilingSwitch.timeStampFlag) &&
         opProfilingSwitch.additionInfoFlag) {
-        int32_t res =
-            MsprofRegTypeInfo(MSPROF_REPORT_NODE_LEVEL, MSPROF_REPORT_NODE_BASIC_INFO_TYPE, "node_basic_info");
+        int32_t res = MsprofRegTypeInfo(MSPROF_REPORT_NODE_LEVEL, MSPROF_REPORT_NODE_BASIC_INFO_TYPE,
+                                        "node_basic_info");
         if (res != 0) {
             OP_LOGW("MsprofRegTypeInfo node basic info return failed, res = %d", res);
             return -1;
@@ -353,9 +349,8 @@ void PrepareBasicInfo(MsprofCompactInfo& compactInfo, MsprofGeTaskType taskType,
         compactInfo.data.nodeBasicInfo.blockDim = numBlocks;
     compactInfo.data.nodeBasicInfo.opFlag = 0;
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
-    OP_LOGI(
-        "PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.", res,
-        compactInfo.timeStamp, compactInfo.data.nodeBasicInfo.taskType);
+    OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.", res,
+            compactInfo.timeStamp, compactInfo.data.nodeBasicInfo.taskType);
 }
 
 void PrepareBasicInfo(MsprofCompactInfo& compactInfo, const TaskInfo& taskInfo, uint64_t id, uint64_t summaryId)
@@ -380,12 +375,13 @@ void PrepareBasicInfo(MsprofCompactInfo& compactInfo, const TaskInfo& taskInfo, 
     }
     OP_LOGI("numBlocks is %u after calculation", numBlocks);
     compactInfo.data.nodeBasicInfo.blockDim = numBlocks;
-    compactInfo.data.nodeBasicInfo.opFlag =
-        (static_cast<uint32_t>(taskInfo.execMode) & static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ? 1 : 0;
+    compactInfo.data.nodeBasicInfo.opFlag = (static_cast<uint32_t>(taskInfo.execMode) &
+                                             static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ?
+                                                1 :
+                                                0;
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
-    OP_LOGI(
-        "PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.", res,
-        compactInfo.timeStamp, compactInfo.data.nodeBasicInfo.taskType);
+    OP_LOGI("PrepareBasicInfo, res = %d, compactInfo.timeStamp = %lu, nodeBasicInfo.taskType = %u.", res,
+            compactInfo.timeStamp, compactInfo.data.nodeBasicInfo.taskType);
 }
 
 void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream& stream)
@@ -394,9 +390,8 @@ void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream& stream)
     aclrtStreamAttrValue value = {};
     value.cacheOpInfoSwitch = 0;
     if (stream != nullptr) {
-        OP_CHECK_NO_RETURN(
-            aclrtGetStreamAttribute(stream, stmAttrType, &value) == ACL_SUCCESS,
-            OP_LOGW("aclrtGetStreamAttribute is not working as expected."));
+        OP_CHECK_NO_RETURN(aclrtGetStreamAttribute(stream, stmAttrType, &value) == ACL_SUCCESS,
+                           OP_LOGW("aclrtGetStreamAttribute is not working as expected."));
     } else {
         OP_LOGI("stream is nullptr, cannot get cache op info switch from stream attribute.");
     }
@@ -407,9 +402,8 @@ void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream& stream)
 #endif
 }
 
-static void ReportCacheOpInfoTensor(
-    uint8_t* dest, uint64_t& destOffset, const uint32_t& totalSize, const FVector<const aclTensor*>& tensors,
-    MsprofGeTensorType type)
+static void ReportCacheOpInfoTensor(uint8_t* dest, uint64_t& destOffset, const uint32_t& totalSize,
+                                    const FVector<const aclTensor*>& tensors, MsprofGeTensorType type)
 {
     for (size_t i = 0; i < tensors.size(); i++) {
         // MsrofTensorData: tensorType/format/dataType/shape
@@ -425,16 +419,14 @@ static void ReportCacheOpInfoTensor(
         for (size_t j = dim; j < MSPROF_GE_TENSOR_DATA_SHAPE_LEN; j++) {
             msTensor.shape[j] = 0;
         }
-        OP_CHECK(
-            memcpy_s(dest + destOffset, totalSize - destOffset, &msTensor, sizeof(MsrofTensorData)) == EOK,
-            OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
-            throw std::runtime_error("aclGraph profiling memcpy runtime error."));
+        OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &msTensor, sizeof(MsrofTensorData)) == EOK,
+                 OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+                 throw std::runtime_error("aclGraph profiling memcpy runtime error."));
         destOffset += sizeof(MsrofTensorData);
-        OP_LOGI(
-            "tensorIndex %zu, tensorType %u, format %u, dataType %u, shape(%u, %u, %u, %u, %u, %u, %u, %u)", i,
-            msTensor.tensorType, msTensor.format, msTensor.dataType, msTensor.shape[0], msTensor.shape[1],
-            msTensor.shape[2], msTensor.shape[3], msTensor.shape[4], msTensor.shape[5], msTensor.shape[6],
-            msTensor.shape[7]);
+        OP_LOGI("tensorIndex %zu, tensorType %u, format %u, dataType %u, shape(%u, %u, %u, %u, %u, %u, %u, %u)", i,
+                msTensor.tensorType, msTensor.format, msTensor.dataType, msTensor.shape[0], msTensor.shape[1],
+                msTensor.shape[2], msTensor.shape[3], msTensor.shape[4], msTensor.shape[5], msTensor.shape[6],
+                msTensor.shape[7]);
     }
 }
 
@@ -455,9 +447,9 @@ void ReportCacheOpInfo(const TaskInfo& taskInfo, OpArgContext* args, const uint6
     uint64_t destOffset = 0;
     cacheOpInfoBasic.attrId = attrId;
     cacheOpInfoBasic.taskType = static_cast<uint32_t>(taskInfo.type);
-    cacheOpInfoBasic.nodeId = GenSummaryItemId(
-        GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
-        op::OpTypeDict::ToString(opType).GetString());
+    cacheOpInfoBasic.nodeId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
+                                               GetThreadLocalContext().logInfo_.l0Name,
+                                               op::OpTypeDict::ToString(opType).GetString());
     cacheOpInfoBasic.opType = GenKernelLauncherId(op::OpTypeDict::ToString(opType).GetString());
     uint32_t numBlocks = op::internal::GetThreadLocalContext().numBlocks_;
     OP_LOGI("numBlocks is %u, taskInfo.ration is %u", numBlocks, taskInfo.ration);
@@ -468,22 +460,22 @@ void ReportCacheOpInfo(const TaskInfo& taskInfo, OpArgContext* args, const uint6
     }
     cacheOpInfoBasic.numBlocks = numBlocks;
     OP_LOGI("numBlocks is %u after calculation", numBlocks);
-    cacheOpInfoBasic.opFlag =
-        (static_cast<uint32_t>(taskInfo.execMode) & static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ? 1 : 0;
+    cacheOpInfoBasic.opFlag = (static_cast<uint32_t>(taskInfo.execMode) &
+                               static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ?
+                                  1 :
+                                  0;
     cacheOpInfoBasic.tensorNum = tensorNum;
-    OP_CHECK(
-        memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
-        OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
-        throw std::runtime_error("aclGraph profiling memcpy runtime error."));
+    OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
+             OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+             throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI(
-        "taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
-        cacheOpInfoBasic.taskType, cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.attrId,
-        cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag, cacheOpInfoBasic.tensorNum);
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
+            cacheOpInfoBasic.taskType, cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.attrId,
+            cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag, cacheOpInfoBasic.tensorNum);
     ReportCacheOpInfoTensor(dest, destOffset, totalSize, inTensors, MSPROF_GE_TENSOR_TYPE_INPUT);
     ReportCacheOpInfoTensor(dest, destOffset, totalSize, outTensors, MSPROF_GE_TENSOR_TYPE_OUTPUT);
-    OP_CHECK_NO_RETURN(
-        aclrtCacheLastTaskOpInfo(infoPtr, totalSize) == ACL_SUCCESS, OP_LOGW("aclrtCacheLastTaskOpInfo failed"));
+    OP_CHECK_NO_RETURN(aclrtCacheLastTaskOpInfo(infoPtr, totalSize) == ACL_SUCCESS,
+                       OP_LOGW("aclrtCacheLastTaskOpInfo failed"));
     op::internal::DeAllocate(infoPtr);
 }
 
@@ -503,26 +495,24 @@ void ReportCacheOpInfoDSA(OpArgList& inputs, OpArgList& outputs, MsprofGeTaskTyp
     uint64_t destOffset = 0;
     // CacheOpInfoBasic: taskType/nodeId/opType/numBlocks/opFlag/tensorNum
     cacheOpInfoBasic.taskType = static_cast<uint32_t>(taskType);
-    cacheOpInfoBasic.nodeId = GenSummaryItemId(
-        GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
-        GetThreadLocalContext().logInfo_.l0Name);
+    cacheOpInfoBasic.nodeId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
+                                               GetThreadLocalContext().logInfo_.l0Name,
+                                               GetThreadLocalContext().logInfo_.l0Name);
     cacheOpInfoBasic.opType = GenKernelLauncherId(GetThreadLocalContext().logInfo_.l0Name);
     cacheOpInfoBasic.numBlocks = 0;
     cacheOpInfoBasic.opFlag = 0;
     cacheOpInfoBasic.tensorNum = tensorNum;
-    OP_CHECK(
-        memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
-        OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
-        throw std::runtime_error("aclGraph profiling memcpy runtime error."));
+    OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
+             OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+             throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI(
-        "taskType %u, nodeId %zu, opType %zu, numBlocks %u, opFlag %u, tensorNum %u", cacheOpInfoBasic.taskType,
-        cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag,
-        cacheOpInfoBasic.tensorNum);
+    OP_LOGI("taskType %u, nodeId %zu, opType %zu, numBlocks %u, opFlag %u, tensorNum %u", cacheOpInfoBasic.taskType,
+            cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag,
+            cacheOpInfoBasic.tensorNum);
     ReportCacheOpInfoTensor(dest, destOffset, totalSize, inTensors, MSPROF_GE_TENSOR_TYPE_INPUT);
     ReportCacheOpInfoTensor(dest, destOffset, totalSize, outTensors, MSPROF_GE_TENSOR_TYPE_OUTPUT);
-    OP_CHECK_NO_RETURN(
-        aclrtCacheLastTaskOpInfo(infoPtr, totalSize) == ACL_SUCCESS, OP_LOGW("aclrtCacheLastTaskOpInfo failed"));
+    OP_CHECK_NO_RETURN(aclrtCacheLastTaskOpInfo(infoPtr, totalSize) == ACL_SUCCESS,
+                       OP_LOGW("aclrtCacheLastTaskOpInfo failed"));
     op::internal::DeAllocate(infoPtr);
 }
 
@@ -550,9 +540,8 @@ void RecoverAclTensorAddr(std::vector<AddrRestorer>& record)
     }
 }
 
-void PrepareTensorData(
-    const FVector<const aclTensor*>& tensors, MsprofTensorInfo& tensorInfo, MsprofGeTensorType type, uint32_t tensorNum,
-    uint32_t baseIndex)
+void PrepareTensorData(const FVector<const aclTensor*>& tensors, MsprofTensorInfo& tensorInfo, MsprofGeTensorType type,
+                       uint32_t tensorNum, uint32_t baseIndex)
 {
     for (size_t i = 0; i < tensorNum; i++) {
         MsrofTensorData& tensorData = tensorInfo.tensorData[i];
@@ -570,9 +559,8 @@ void PrepareTensorData(
     }
 }
 
-void PrepareTensorInfo(
-    const FVector<const aclTensor*>& tensors, MsprofTensorInfo& tensorInfo, uint64_t summaryId, MsprofGeTensorType type,
-    uint32_t tensorNum, uint32_t baseIndex)
+void PrepareTensorInfo(const FVector<const aclTensor*>& tensors, MsprofTensorInfo& tensorInfo, uint64_t summaryId,
+                       MsprofGeTensorType type, uint32_t tensorNum, uint32_t baseIndex)
 {
     tensorInfo.opName = summaryId;
     tensorInfo.tensorNum = tensorNum;
@@ -582,9 +570,8 @@ void PrepareTensorInfo(
 void ReportAdditionInfo(const TaskInfo& taskInfo, uint64_t id, uint64_t summaryId)
 {
     if (MSPROF_ADDTIONAL_INFO_DATA_LENGTH != sizeof(MsprofTensorInfo)) {
-        OP_LOGI(
-            "Mismatch length, MSPROF_ADDTIONAL_INFO_DATA_LENGTH = %u, sizeof(MsprofTensorInfo) = %zu",
-            MSPROF_ADDTIONAL_INFO_DATA_LENGTH, sizeof(MsprofTensorInfo));
+        OP_LOGI("Mismatch length, MSPROF_ADDTIONAL_INFO_DATA_LENGTH = %u, sizeof(MsprofTensorInfo) = %zu",
+                MSPROF_ADDTIONAL_INFO_DATA_LENGTH, sizeof(MsprofTensorInfo));
         return;
     }
 
@@ -617,46 +604,41 @@ void ReportNodeContextIdInfo(uint64_t summaryId)
     contextIdInfo.opName = summaryId;
     contextIdInfo.ctxIdNum = 1;
     contextIdInfo.ctxIds[0] = 0;
-    OP_CHECK(
-        memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &contextIdInfo, sizeof(MsprofContextIdInfo)) ==
-            EOK,
-        OP_LOGW("Failed to memcpy context info."), return);
+    OP_CHECK(memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &contextIdInfo,
+                      sizeof(MsprofContextIdInfo)) == EOK,
+             OP_LOGW("Failed to memcpy context info."), return);
     MsprofReportAdditionalInfo(true, (void*)(&additionInfo), sizeof(MsprofAdditionalInfo));
 }
 
-static void ReportTensorAdditionInfo(
-    const FVector<const aclTensor*>& tensors, MsprofAdditionalInfo& additionInfo, uint64_t summaryId,
-    MsprofGeTensorType type)
+static void ReportTensorAdditionInfo(const FVector<const aclTensor*>& tensors, MsprofAdditionalInfo& additionInfo,
+                                     uint64_t summaryId, MsprofGeTensorType type)
 {
     MsprofTensorInfo tensorInfo;
     uint32_t loop = tensors.size() / MSPROF_GE_TENSOR_DATA_NUM;
     uint32_t tail = tensors.size() % MSPROF_GE_TENSOR_DATA_NUM;
     for (uint32_t i = 0; i < loop; i++) {
-        PrepareTensorInfo(
-            tensors, tensorInfo, summaryId, type, MSPROF_GE_TENSOR_DATA_NUM, i * MSPROF_GE_TENSOR_DATA_NUM);
-        OP_CHECK(
-            memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo, sizeof(MsprofTensorInfo)) ==
-                EOK,
-            OP_LOGW("Failed to memcpy tensor additional info."), return);
+        PrepareTensorInfo(tensors, tensorInfo, summaryId, type, MSPROF_GE_TENSOR_DATA_NUM,
+                          i * MSPROF_GE_TENSOR_DATA_NUM);
+        OP_CHECK(memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo,
+                          sizeof(MsprofTensorInfo)) == EOK,
+                 OP_LOGW("Failed to memcpy tensor additional info."), return);
         MsprofReportAdditionalInfo(true, (void*)(&additionInfo), sizeof(MsprofAdditionalInfo));
     }
     if (tail != 0) {
         PrepareTensorInfo(tensors, tensorInfo, summaryId, type, tail, loop * MSPROF_GE_TENSOR_DATA_NUM);
-        OP_CHECK(
-            memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo, sizeof(MsprofTensorInfo)) ==
-                EOK,
-            OP_LOGW("Failed to memcpy tensor tail additional info."), return);
+        OP_CHECK(memcpy_s(additionInfo.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, &tensorInfo,
+                          sizeof(MsprofTensorInfo)) == EOK,
+                 OP_LOGW("Failed to memcpy tensor tail additional info."), return);
         MsprofReportAdditionalInfo(true, (void*)(&additionInfo), sizeof(MsprofAdditionalInfo));
     }
 }
 
-static void ReportAdditionInfoImpl(
-    FVector<const aclTensor*>& inTensors, FVector<const aclTensor*>& outTensors, uint64_t summaryId)
+static void ReportAdditionInfoImpl(FVector<const aclTensor*>& inTensors, FVector<const aclTensor*>& outTensors,
+                                   uint64_t summaryId)
 {
     if (MSPROF_ADDTIONAL_INFO_DATA_LENGTH != sizeof(MsprofTensorInfo)) {
-        OP_LOGI(
-            "Mismatch length, MSPROF_ADDTIONAL_INFO_DATA_LENGTH = %u, sizeof(MsprofTensorInfo) = %zu",
-            MSPROF_ADDTIONAL_INFO_DATA_LENGTH, sizeof(MsprofTensorInfo));
+        OP_LOGI("Mismatch length, MSPROF_ADDTIONAL_INFO_DATA_LENGTH = %u, sizeof(MsprofTensorInfo) = %zu",
+                MSPROF_ADDTIONAL_INFO_DATA_LENGTH, sizeof(MsprofTensorInfo));
         return;
     }
     MsprofAdditionalInfo additionInfo;
@@ -665,25 +647,23 @@ static void ReportAdditionInfoImpl(
     ReportTensorAdditionInfo(outTensors, additionInfo, summaryId, MSPROF_GE_TENSOR_TYPE_OUTPUT);
 }
 
-void ReportAdditionInfo(
-    FVector<const aclTensor*>& inTensors, FVector<const aclTensor*>& outTensors, MsprofGeTaskType taskType,
-    uint64_t summaryId)
+void ReportAdditionInfo(FVector<const aclTensor*>& inTensors, FVector<const aclTensor*>& outTensors,
+                        MsprofGeTaskType taskType, uint64_t summaryId)
 {
     OP_LOGD("Entering function ReportAdditionInfo");
     MsprofCompactInfo compactInfo;
-    PrepareBasicInfo(
-        compactInfo, taskType, op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_, summaryId);
+    PrepareBasicInfo(compactInfo, taskType, op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_,
+                     summaryId);
     ReportAdditionInfoImpl(inTensors, outTensors, summaryId);
 }
 
-void ReportAdditionInfo(
-    FVector<const aclTensor*>& inTensors, FVector<const aclTensor*>& outTensors, const TaskInfo& taskInfo,
-    uint64_t summaryId)
+void ReportAdditionInfo(FVector<const aclTensor*>& inTensors, FVector<const aclTensor*>& outTensors,
+                        const TaskInfo& taskInfo, uint64_t summaryId)
 {
     OP_LOGD("Entering function ReportAdditionInfo input TaskInfo");
     MsprofCompactInfo compactInfo;
-    PrepareBasicInfo(
-        compactInfo, taskInfo, op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_, summaryId);
+    PrepareBasicInfo(compactInfo, taskInfo, op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_,
+                     summaryId);
     ReportAdditionInfoImpl(inTensors, outTensors, summaryId);
 }
 
@@ -703,9 +683,8 @@ void ReportAttrInfo(std::string& attrStr, uint64_t summaryId)
     compactInfo.threadId = OpGetTid();
     compactInfo.dataLen = sizeof(MsprofAttrInfo);
     compactInfo.timeStamp = op::internal::GetThreadLocalContext().kernelLauncherStartTime_;
-    OP_CHECK(
-        memcpy_s(compactInfo.data.info, MSPROF_COMPACT_INFO_DATA_LENGTH, &attrInfo, sizeof(MsprofAttrInfo)) == EOK,
-        OP_LOGW("Failed to memcpy attr info."), return);
+    OP_CHECK(memcpy_s(compactInfo.data.info, MSPROF_COMPACT_INFO_DATA_LENGTH, &attrInfo, sizeof(MsprofAttrInfo)) == EOK,
+             OP_LOGW("Failed to memcpy attr info."), return);
     auto res = MsprofReportCompactInfo(true, &compactInfo, sizeof(compactInfo));
     OP_LOGI("ReportAttrInfo, res = %d, compactInfo.timeStamp = %lu", res, compactInfo.timeStamp);
 }
@@ -728,8 +707,8 @@ std::string GetLogApiInfo()
 
 static void FillDumpTensorInfo(Adx::TensorInfoV2& info, const aclTensor* tensor)
 {
-    info.tensorSize =
-        static_cast<size_t>(op::CalcShapeBytes(tensor->GetStorageShape().GetShapeSize(), tensor->GetDataType()));
+    info.tensorSize = static_cast<size_t>(
+        op::CalcShapeBytes(tensor->GetStorageShape().GetShapeSize(), tensor->GetDataType()));
     info.format = tensor->GetStorageFormat();
     info.dataType = tensor->GetDataType();
     info.tensorAddr = static_cast<int64_t*>(tensor->GetData());
@@ -745,9 +724,8 @@ static void FillDumpTensorInfo(Adx::TensorInfoV2& info, const aclTensor* tensor)
     }
 }
 
-void PrepareDumpTensor(
-    std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<const aclTensor*>& aclTensors, OpIOType ioType,
-    std::vector<AddrRestorer>& record)
+void PrepareDumpTensor(std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<const aclTensor*>& aclTensors,
+                       OpIOType ioType, std::vector<AddrRestorer>& record)
 {
     for (size_t i = 0; i < aclTensors.size(); i++) {
         Adx::TensorInfoV2 info;
@@ -758,9 +736,8 @@ void PrepareDumpTensor(
     }
 }
 
-void PrepareDumpTensor(
-    std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<const aclTensor*>& aclTensors,
-    const std::vector<uint32_t>& tensorsIdxList, OpIOType ioType, std::vector<AddrRestorer>& record)
+void PrepareDumpTensor(std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<const aclTensor*>& aclTensors,
+                       const std::vector<uint32_t>& tensorsIdxList, OpIOType ioType, std::vector<AddrRestorer>& record)
 {
     Adx::TensorType tensortype[] = {Adx::TensorType::INPUT, Adx::TensorType::OUTPUT, Adx::TensorType::WORKSPACE};
 
@@ -774,8 +751,8 @@ void PrepareDumpTensor(
     }
 }
 
-void PrepareDumpTensor(
-    std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<op::Tensor*>& opTensors, OpIOType ioType)
+void PrepareDumpTensor(std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<op::Tensor*>& opTensors,
+                       OpIOType ioType)
 {
     for (size_t i = 0; i < opTensors.size(); i++) {
         Adx::TensorInfoV2 info;
@@ -799,8 +776,8 @@ void PrepareDumpTensor(
     }
 }
 
-void PrepareL2DumpTensor(
-    std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<const aclTensor*>& aclTensors, OpIOType ioType)
+void PrepareL2DumpTensor(std::vector<Adx::TensorInfoV2>& dumpTensors, const std::vector<const aclTensor*>& aclTensors,
+                         OpIOType ioType)
 {
     for (size_t i = 0; i < aclTensors.size(); i++) {
         Adx::TensorInfoV2 info;
@@ -824,8 +801,8 @@ void PrepareL2DumpTensor(
     }
 }
 
-void DumpL2(
-    const std::vector<const aclTensor*>& tensors, const OpLogInfo& opLogInfo, OpIOType ioType, aclrtStream stream)
+void DumpL2(const std::vector<const aclTensor*>& tensors, const OpLogInfo& opLogInfo, OpIOType ioType,
+            aclrtStream stream)
 {
     if (op::internal::GetThreadLocalContext().opConfigInfo_.isOpDumpEnable_) {
         std::vector<Adx::TensorInfoV2> dumpTensors;
@@ -845,9 +822,8 @@ void SummaryAttrArg([[maybe_unused]] size_t idx, OpArg& value, std::vector<AttrI
     }
     if (value.type == OpArgType::OPARG_DATATYPE) {
         attrStr += ToString(static_cast<op::DataType>(value->value)).GetString();
-    } else if (
-        value.type == OpArgType::OPARG_BOOL || value.type == OpArgType::OPARG_INT ||
-        value.type == OpArgType::OPARG_UINT) {
+    } else if (value.type == OpArgType::OPARG_BOOL || value.type == OpArgType::OPARG_INT ||
+               value.type == OpArgType::OPARG_UINT) {
         std::stringstream ss;
         ss << value->value;
         attrStr += ss.str();
@@ -897,8 +873,8 @@ void ValueToStr(const T* t, std::string& attrStr, int64_t size)
     }
 }
 
-static void AddToAttrArg(
-    [[maybe_unused]] size_t idx, bool isTensor, std::string& attrStr, const aclTensor* tensor, size_t listIdx = 0)
+static void AddToAttrArg([[maybe_unused]] size_t idx, bool isTensor, std::string& attrStr, const aclTensor* tensor,
+                         size_t listIdx = 0)
 {
     if (tensor == nullptr) {
         return;
@@ -1005,9 +981,9 @@ void SummaryAttrArg([[maybe_unused]] size_t idx, OpArg& value, std::string& attr
     }
 }
 
-void PrepareExceptionDumpInfo(
-    const std::vector<op::Tensor*>& in, const std::vector<op::Tensor*>& out, const OpLogInfo& opLogInfo,
-    const ExceptionDumpInfo& exceptionDumpInfo, const aclrtStream stream)
+void PrepareExceptionDumpInfo(const std::vector<op::Tensor*>& in, const std::vector<op::Tensor*>& out,
+                              const OpLogInfo& opLogInfo, const ExceptionDumpInfo& exceptionDumpInfo,
+                              const aclrtStream stream)
 {
     int32_t deviceId = 0;
     uint32_t taskId = 0;
@@ -1028,33 +1004,29 @@ void PrepareExceptionDumpInfo(
     std::string l2Name = (opLogInfo.l2ApiName != nullptr) ? opLogInfo.l2ApiName : "L2DfxAbscent";
     l2Name += std::string("_L0");
     std::string l0Name = (opLogInfo.l0Name != nullptr) ? opLogInfo.l0Name : "L0DfxAbscent";
-    Adx::OperatorInfoV2 opInfo =
-        OperatorInfoBuilder(l2Name, l0Name)
-            .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
-            .TensorInfo(dumpInTensors)
-            .TensorInfo(dumpOutTensors)
-            .AdditionInfo(BLOCK_DIM_STR, exceptionDumpInfo.numBlocks_)
-            .AdditionInfo(DEV_FUNC, exceptionDumpInfo.devFunc_)
-            .AdditionInfo(TVM_MAGIC, exceptionDumpInfo.magic_)
-            .AdditionInfo(TILING_KEY_STR, exceptionDumpInfo.tilingKey_)
-            .AdditionInfo(TILING_DATA_STR, exceptionDumpInfo.tilingData_)
-            .DeviceInfo(
-                ARGS_BEFORE_EXEC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgs_,
-                op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgsSize_)
-            .Build();
+    Adx::OperatorInfoV2 opInfo = OperatorInfoBuilder(l2Name, l0Name)
+                                     .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
+                                     .TensorInfo(dumpInTensors)
+                                     .TensorInfo(dumpOutTensors)
+                                     .AdditionInfo(BLOCK_DIM_STR, exceptionDumpInfo.numBlocks_)
+                                     .AdditionInfo(DEV_FUNC, exceptionDumpInfo.devFunc_)
+                                     .AdditionInfo(TVM_MAGIC, exceptionDumpInfo.magic_)
+                                     .AdditionInfo(TILING_KEY_STR, exceptionDumpInfo.tilingKey_)
+                                     .AdditionInfo(TILING_DATA_STR, exceptionDumpInfo.tilingData_)
+                                     .DeviceInfo(ARGS_BEFORE_EXEC,
+                                                 op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgs_,
+                                                 op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgsSize_)
+                                     .Build();
     auto res = AdumpAddExceptionOperatorInfoV2(opInfo);
-    OP_LOGI(
-        "AdumpAddExceptionOperatorInfo block_dim: %s, dev_func: %s, magic: %s, tiling key: %s, tiling data: %s\n",
-        exceptionDumpInfo.numBlocks_.c_str(), exceptionDumpInfo.devFunc_.c_str(), exceptionDumpInfo.magic_.c_str(),
-        exceptionDumpInfo.tilingKey_.c_str(), exceptionDumpInfo.tilingData_.c_str());
-    OP_LOGI(
-        "AdumpAddExceptionOperatorInfo L2 = %s, L0 = %s, device_id = %d, task_id = %u, stream_id = %u, res = %d\n",
-        l2Name.c_str(), l0Name.c_str(), deviceId, taskId, streamId, res);
+    OP_LOGI("AdumpAddExceptionOperatorInfo block_dim: %s, dev_func: %s, magic: %s, tiling key: %s, tiling data: %s\n",
+            exceptionDumpInfo.numBlocks_.c_str(), exceptionDumpInfo.devFunc_.c_str(), exceptionDumpInfo.magic_.c_str(),
+            exceptionDumpInfo.tilingKey_.c_str(), exceptionDumpInfo.tilingData_.c_str());
+    OP_LOGI("AdumpAddExceptionOperatorInfo L2 = %s, L0 = %s, device_id = %d, task_id = %u, stream_id = %u, res = %d\n",
+            l2Name.c_str(), l0Name.c_str(), deviceId, taskId, streamId, res);
 }
 
-void PrepareExceptionDumpInfo(
-    OpArgContext* args, const OpLogInfo& opLogInfo, bool genPlaceholder, bool hasDevPtrArg_, bool interCoreSync,
-    std::vector<int32_t>& tensorOffset, const aclrtStream stream)
+void PrepareExceptionDumpInfo(OpArgContext* args, const OpLogInfo& opLogInfo, bool genPlaceholder, bool hasDevPtrArg_,
+                              bool interCoreSync, std::vector<int32_t>& tensorOffset, const aclrtStream stream)
 {
     std::vector<Adx::TensorInfoV2> dumpInTensors;
     std::vector<Adx::TensorInfoV2> dumpOutTensors;
@@ -1069,12 +1041,11 @@ void PrepareExceptionDumpInfo(
 
     int32_t currentIdx = (interCoreSync) ? 0 : -1;
 
-    TraitsAclTensorAndIdx(
-        aclInTensors, inTensorsIdxList, *args->GetOpArg(op::OP_INPUT_ARG), genPlaceholder, hasDevPtrArg_, currentIdx,
-        tensorOffset);
+    TraitsAclTensorAndIdx(aclInTensors, inTensorsIdxList, *args->GetOpArg(op::OP_INPUT_ARG), genPlaceholder,
+                          hasDevPtrArg_, currentIdx, tensorOffset);
 
-    TraitsAclTensorAndIdx(
-        aclOutTensors, outTensorsIdxList, *args->GetOpArg(op::OP_OUTPUT_ARG), genPlaceholder, currentIdx);
+    TraitsAclTensorAndIdx(aclOutTensors, outTensorsIdxList, *args->GetOpArg(op::OP_OUTPUT_ARG), genPlaceholder,
+                          currentIdx);
     if (inTensorsIdxList.size() != aclInTensors.size() || outTensorsIdxList.size() != aclOutTensors.size()) {
         OP_LOGW("Calculate input/output failed.");
         return;
@@ -1085,9 +1056,8 @@ void PrepareExceptionDumpInfo(
     PrepareDumpTensor(dumpOutTensors, aclOutTensors, outTensorsIdxList, OpOutputType, record);
 
     if (args->ContainsOpArgType(op::OP_WORKSPACE_ARG)) {
-        TraitsAclTensorAndIdx(
-            aclWorkSpaceTensors, workSpaceTensorsIdxList, *args->GetOpArg(op::OP_WORKSPACE_ARG), genPlaceholder,
-            currentIdx);
+        TraitsAclTensorAndIdx(aclWorkSpaceTensors, workSpaceTensorsIdxList, *args->GetOpArg(op::OP_WORKSPACE_ARG),
+                              genPlaceholder, currentIdx);
 
         if (workSpaceTensorsIdxList.size() != aclWorkSpaceTensors.size()) {
             OP_LOGW("Calculate workspace failed.");
@@ -1102,9 +1072,10 @@ void PrepareExceptionDumpInfo(
     RecoverAclTensorAddr(record);
 }
 
-void AddExceptionDumpOperatorInfo(
-    const std::vector<Adx::TensorInfoV2>& dumpInTensors, const std::vector<Adx::TensorInfoV2>& dumpOutTensors,
-    const std::vector<Adx::TensorInfoV2>& dumpWorkSpaceTensors, const OpLogInfo& opLogInfo, const aclrtStream stream)
+void AddExceptionDumpOperatorInfo(const std::vector<Adx::TensorInfoV2>& dumpInTensors,
+                                  const std::vector<Adx::TensorInfoV2>& dumpOutTensors,
+                                  const std::vector<Adx::TensorInfoV2>& dumpWorkSpaceTensors,
+                                  const OpLogInfo& opLogInfo, const aclrtStream stream)
 {
     int32_t deviceId = 0;
     uint32_t taskId = 0;
@@ -1119,32 +1090,30 @@ void AddExceptionDumpOperatorInfo(
     std::string l2Name = (opLogInfo.l2ApiName != nullptr) ? opLogInfo.l2ApiName : "L2DfxAbscent";
     l2Name += std::string("_") + std::to_string(opLogInfo.l2SequenceCounter) + std::string("_L0");
     std::string l0Name = (opLogInfo.l0Name != nullptr) ? opLogInfo.l0Name : "L0DfxAbscent";
-    Adx::OperatorInfoV2 opInfo =
-        OperatorInfoBuilder(l2Name, l0Name)
-            .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
-            .TensorInfo(dumpInTensors)
-            .TensorInfo(dumpOutTensors)
-            .TensorInfo(dumpWorkSpaceTensors)
-            .AdditionInfo(BLOCK_DIM_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.numBlocks_)
-            .AdditionInfo(DEV_FUNC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.devFunc_)
-            .AdditionInfo(TVM_MAGIC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.magic_)
-            .AdditionInfo(TILING_KEY_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingKey_)
-            .AdditionInfo(TILING_DATA_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingData_)
-            .DeviceInfo(
-                ARGS_BEFORE_EXEC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgs_,
-                op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgsSize_)
-            .Build();
+    Adx::OperatorInfoV2
+        opInfo = OperatorInfoBuilder(l2Name, l0Name)
+                     .Task(deviceId, taskId, static_cast<uint32_t>(streamId))
+                     .TensorInfo(dumpInTensors)
+                     .TensorInfo(dumpOutTensors)
+                     .TensorInfo(dumpWorkSpaceTensors)
+                     .AdditionInfo(BLOCK_DIM_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.numBlocks_)
+                     .AdditionInfo(DEV_FUNC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.devFunc_)
+                     .AdditionInfo(TVM_MAGIC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.magic_)
+                     .AdditionInfo(TILING_KEY_STR, op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingKey_)
+                     .AdditionInfo(TILING_DATA_STR,
+                                   op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingData_)
+                     .DeviceInfo(ARGS_BEFORE_EXEC, op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgs_,
+                                 op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgsSize_)
+                     .Build();
     auto res = AdumpAddExceptionOperatorInfoV2(opInfo);
-    OP_LOGI(
-        "AdumpAddExceptionOperatorInfo block_dim: %s, dev_func: %s, magic: %s, tiling key: %s, tiling data: %s\n",
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.numBlocks_.c_str(),
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.devFunc_.c_str(),
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.magic_.c_str(),
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingKey_.c_str(),
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingData_.c_str());
-    OP_LOGI(
-        "AdumpAddExceptionOperatorInfo L2 = %s, L0 = %s, device_id = %d, task_id = %u, stream_id = %u, res = %d\n",
-        l2Name.c_str(), l0Name.c_str(), deviceId, taskId, streamId, res);
+    OP_LOGI("AdumpAddExceptionOperatorInfo block_dim: %s, dev_func: %s, magic: %s, tiling key: %s, tiling data: %s\n",
+            op::internal::GetThreadLocalContext().exceptionDumpInfo_.numBlocks_.c_str(),
+            op::internal::GetThreadLocalContext().exceptionDumpInfo_.devFunc_.c_str(),
+            op::internal::GetThreadLocalContext().exceptionDumpInfo_.magic_.c_str(),
+            op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingKey_.c_str(),
+            op::internal::GetThreadLocalContext().exceptionDumpInfo_.tilingData_.c_str());
+    OP_LOGI("AdumpAddExceptionOperatorInfo L2 = %s, L0 = %s, device_id = %d, task_id = %u, stream_id = %u, res = %d\n",
+            l2Name.c_str(), l0Name.c_str(), deviceId, taskId, streamId, res);
 }
 
 void DumpL0(OpArgList& tensors, const OpLogInfo& opLogInfo, OpIOType ioType, aclrtStream stream)
@@ -1184,8 +1153,8 @@ static bool IsSaturationOverflow(aclrtStream stream)
     moduleIdValue.moduleId = kModelId;
     aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
     aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
-    auto ret = aclrtMallocWithCfg(
-        &descBuf, (npuArch == NpuArch::DAV_2201) ? (descBufLen * 2) : descBufLen, ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg);
+    auto ret = aclrtMallocWithCfg(&descBuf, (npuArch == NpuArch::DAV_2201) ? (descBufLen * 2) : descBufLen,
+                                  ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg);
     CHECK_COND(ret == ACL_SUCCESS, false, "failed to call aclrtMallocWithCfg, ret %d", ret);
 
     DevPtrGuard guard(descBuf);
@@ -1226,16 +1195,15 @@ static bool IsInfNanOverflow(OpArgContext* args, aclOpExecutor* executor, aclrtS
     return dump;
 }
 
-aclnnStatus OverflowDumpProcess(
-    OpArgContext* args, aclOpExecutor* executor, aclrtStream stream, op::internal::OpLogInfo& logInfo)
+aclnnStatus OverflowDumpProcess(OpArgContext* args, aclOpExecutor* executor, aclrtStream stream,
+                                op::internal::OpLogInfo& logInfo)
 {
     aclrtFloatOverflowMode floatOverflowMode = ACL_RT_OVERFLOW_MODE_SATURATION;
     aclError ret = aclrtGetDeviceSatMode(&floatOverflowMode);
-    OP_CHECK(
-        (ret == ACL_SUCCESS &&
-         (floatOverflowMode == ACL_RT_OVERFLOW_MODE_SATURATION || floatOverflowMode == ACL_RT_OVERFLOW_MODE_INFNAN)),
-        OP_LOGW("check aclrtGetDeviceSatMode failed, ret: %d, overflow mode %d", ret, floatOverflowMode),
-        return ACLNN_ERR_INNER);
+    OP_CHECK((ret == ACL_SUCCESS && (floatOverflowMode == ACL_RT_OVERFLOW_MODE_SATURATION ||
+                                     floatOverflowMode == ACL_RT_OVERFLOW_MODE_INFNAN)),
+             OP_LOGW("check aclrtGetDeviceSatMode failed, ret: %d, overflow mode %d", ret, floatOverflowMode),
+             return ACLNN_ERR_INNER);
 
     ret = aclrtSynchronizeStream(stream);
     OP_CHECK_NO_RETURN(ret == ACL_SUCCESS, OP_LOGW("aclrtSynchronizeStream failed, ret %d", ret));

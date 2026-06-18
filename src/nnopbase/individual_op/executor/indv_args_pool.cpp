@@ -72,9 +72,8 @@ bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* e
         return false;
     }
     if (args->keyLen != executor->ownArgs.keyLen) {
-        OP_LOGI(
-            "Op %s seed %zu key len is not equal, cache len %zu, input len %zu.", executor->opType, args->seed,
-            args->keyLen, executor->ownArgs.keyLen);
+        OP_LOGI("Op %s seed %zu key len is not equal, cache len %zu, input len %zu.", executor->opType, args->seed,
+                args->keyLen, executor->ownArgs.keyLen);
         return false;
     }
     if (memcmp(args->inputKey.data(), executor->ownArgs.inputKey.data(), args->keyLen) == 0) {
@@ -83,9 +82,8 @@ bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* e
         executor->isCachedArgs = true;
         args->isVist = true;
         Get(executor->args);
-        OP_LOGI(
-            "Op %s match args cache successfully, seed is %zu, key len is %zu.", executor->opType, args->seed,
-            args->keyLen);
+        OP_LOGI("Op %s match args cache successfully, seed is %zu, key len is %zu.", executor->opType, args->seed,
+                args->keyLen);
         return true;
     }
     return false;
@@ -115,9 +113,8 @@ bool ArgsPool::MatchArgs(NnopbaseExecutor* executor)
             }
         }
     }
-    OP_LOGI(
-        "Op %s cache miss, seed is %zu, key len is %zu.", executor->opType, executor->ownArgs.seed,
-        executor->ownArgs.keyLen);
+    OP_LOGI("Op %s cache miss, seed is %zu, key len is %zu.", executor->opType, executor->ownArgs.seed,
+            executor->ownArgs.keyLen);
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheEnd);
     return false;
 }
@@ -140,10 +137,8 @@ aclnnStatus ArgsPool::CreateArgs(NnopbaseExecutor* executor)
         if (executor->args->keyLen > executor->args->inputKey.size()) {
             executor->args->inputKey.resize(executor->args->keyLen);
         }
-        NNOPBASE_ASSERT_TRUE_RETVAL(
-            memcpy_s(
-                executor->args->inputKey.data(), executor->ownArgs.keyLen, executor->ownArgs.inputKey.data(),
-                executor->ownArgs.keyLen) == EOK);
+        NNOPBASE_ASSERT_TRUE_RETVAL(memcpy_s(executor->args->inputKey.data(), executor->ownArgs.keyLen,
+                                             executor->ownArgs.inputKey.data(), executor->ownArgs.keyLen) == EOK);
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSaveCachedTensor(&executor->args->inputs, &executor->ownArgs.inputs, true));
         NNOPBASE_ASSERT_OK_RETVAL(
             NnopbaseSaveCachedTensor(&executor->args->outputs, &executor->ownArgs.outputs, false));
@@ -161,9 +156,8 @@ void ArgsPool::EraseArgs(NnopbaseExecutorArgs* const tmp)
     auto& argsList = argsMap[tmp->seed];
     for (auto it = argsList.begin(); it != argsList.end(); it++) {
         if (*it == tmp) {
-            OP_LOGI(
-                "The number of args %zu cached has reached %zu, delete the oldest args %p seed %zu.", argsCache.size(),
-                maxCacheNum, tmp, tmp->seed);
+            OP_LOGI("The number of args %zu cached has reached %zu, delete the oldest args %p seed %zu.",
+                    argsCache.size(), maxCacheNum, tmp, tmp->seed);
             (void)argsList.erase(it);
             if (argsList.empty()) {
                 (void)argsMap.erase(tmp->seed);
@@ -182,10 +176,9 @@ void ArgsPool::Put(NnopbaseExecutorArgs* const args)
     while ((argsCache.size() >= maxCacheNum) && (!cacheList.empty())) {
         const auto& tmp = cacheList.back();
         if (tmp->isVist) {
-            OP_LOGW(
-                "The number of args cached has reached %zu, but the oldest args %p seed %zu is in use! "
-                "Can't delete args!",
-                maxCacheNum, tmp, tmp->seed);
+            OP_LOGW("The number of args cached has reached %zu, but the oldest args %p seed %zu is in use! "
+                    "Can't delete args!",
+                    maxCacheNum, tmp, tmp->seed);
             break;
         }
         EraseArgs(tmp);
@@ -217,9 +210,8 @@ void ArgsPool::FixCache(NnopbaseExecutorArgs* const args)
     }
     (void)argsCache.erase(args);
     fixedCacheMap[args->seed].push_back(args);
-    OP_LOGI(
-        "Fix args cache successfully, current fixed cache pool size for seed %zu is %zu", args->seed,
-        fixedCacheMap[args->seed].size());
+    OP_LOGI("Fix args cache successfully, current fixed cache pool size for seed %zu is %zu", args->seed,
+            fixedCacheMap[args->seed].size());
     return;
 }
 

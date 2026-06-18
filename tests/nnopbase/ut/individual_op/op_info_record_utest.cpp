@@ -44,8 +44,8 @@ protected:
     virtual void TearDown()
     {
         gert::DefaultOpImplSpaceRegistryV2::GetInstance().ClearSpaceRegistry();
-        aclnnOpInfoRecord::Path confFile =
-            aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath().Concat("conf/dump_tool_config.ini");
+        aclnnOpInfoRecord::Path confFile = aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath().Concat(
+            "conf/dump_tool_config.ini");
         (void)std::remove(confFile.GetCString());
     }
 };

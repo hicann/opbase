@@ -13,8 +13,8 @@
 
 namespace op {
 namespace internal {
-inline aclnnStatus UpdateWorkspace(
-    aclOpExecutor* executor, const size_t* workspaceSize, size_t workspaceNum, aclTensorList** workspace)
+inline aclnnStatus UpdateWorkspace(aclOpExecutor* executor, const size_t* workspaceSize, size_t workspaceNum,
+                                   aclTensorList** workspace)
 {
     FVector<aclTensor*> workspaces;
     for (size_t i = 0; i != workspaceNum; ++i) {
@@ -26,9 +26,8 @@ inline aclnnStatus UpdateWorkspace(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus GetWorkspace(
-    uint32_t optype, aclTensorList** workspace, aclOpExecutor* executor, OpArgList& inputs, OpArgList& outputs,
-    OpArgList& attrs)
+aclnnStatus GetWorkspace(uint32_t optype, aclTensorList** workspace, aclOpExecutor* executor, OpArgList& inputs,
+                         OpArgList& outputs, OpArgList& attrs)
 {
     const size_t* workspaceSize = nullptr;
     size_t workspaceNum = 0;

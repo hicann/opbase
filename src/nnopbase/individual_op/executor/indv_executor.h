@@ -193,23 +193,22 @@ typedef struct {
 } NnopbaseBlockInfoForVectorCore;
 
 aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor* executor, aclrtStream stream);
-aclnnStatus NnopbaseExecutorGetStreamAndEvent(
-    const aclrtStream stream, aclrtStream* subStream, aclrtEvent* evtA, aclrtEvent* evtB,
-    std::shared_ptr<std::mutex>& streamLckPtr);
+aclnnStatus NnopbaseExecutorGetStreamAndEvent(const aclrtStream stream, aclrtStream* subStream, aclrtEvent* evtA,
+                                              aclrtEvent* evtB, std::shared_ptr<std::mutex>& streamLckPtr);
 aclnnStatus NnopbaseCreateStreamResource(NnopbaseStreamForCombineExecution* nnopbaseStream);
 void NnopbaseDestroyStreamCallback(aclrtStream stream, const bool isCreate);
 
 aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor* executor, const NnopbaseOpInfo opInfo);
 void NnopbaseExecutorDeInit(NnopbaseExecutor* executor);
 void StreamMapClear(aclrtStream stream);
-aclnnStatus CheckSocVersionAndParam(
-    NnopbaseExecutor* executor, NnopbaseParamCheckMode mode = NnopbaseParamCheckMode::kCheckRequiredIo);
+aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor* executor,
+                                    NnopbaseParamCheckMode mode = NnopbaseParamCheckMode::kCheckRequiredIo);
 aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* executor, bool usingStride = false);
 void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* executor);
 size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor* const executor, bool usingStride = false);
 NnopbaseUChar* NnopbaseExecutorGenAttrsKey(NnopbaseAttrs* attrs, NnopbaseUChar* verKey);
-NnopbaseUChar* NnopbaseExecutorGenTensorsKey(
-    NnopbaseUChar* verKey, NnopbaseTensors* tensors, size_t tensorNum, bool usingStride = false);
+NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, NnopbaseTensors* tensors, size_t tensorNum,
+                                             bool usingStride = false);
 bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor* executor);
 NnopbaseUChar* NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar* verKey, const NnopbaseUChar* addr);
 aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor* executor);
@@ -217,10 +216,10 @@ aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor* executor);
 // prepare args for launch
 void** NnopbaseExecutorPrepareNullTensors(const NnopbaseExecutor* const executor, void** addr, size_t* tensorIndex);
 aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor* executor, aclrtStream const stream);
-void** NnopbaseExecutorPrepareInputsParamsExt(
-    NnopbaseExecutor* executor, void** addr, NnopbaseExecutorArgsAddr* argsAddr);
-void** NnopbaseExecutorPrepareOutputsParamsExt(
-    NnopbaseExecutor* executor, void** addr, NnopbaseExecutorArgsAddr* argsAddr);
+void** NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor* executor, void** addr,
+                                              NnopbaseExecutorArgsAddr* argsAddr);
+void** NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor* executor, void** addr,
+                                               NnopbaseExecutorArgsAddr* argsAddr);
 
 aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseExecutorGcSpace(void* data);
@@ -235,17 +234,14 @@ struct NnopbaseTensorIoOptions {
     bool ignoreCont;
 };
 
-aclnnStatus NnopbaseExecutorAddTensor(
-    NnopbaseExecutor* executor, const aclTensor* tensor, const uint32_t index, const bool isInput,
-    const bool ignoreCont);
+aclnnStatus NnopbaseExecutorAddTensor(NnopbaseExecutor* executor, const aclTensor* tensor, const uint32_t index,
+                                      const bool isInput, const bool ignoreCont);
 aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors* tensors, const uint32_t index);
-aclnnStatus NnopbaseExecutorAddDynamicTensors(
-    NnopbaseExecutor* executor, const aclTensorList* tensorList, const uint32_t index, const bool isInput,
-    const bool ignoreCont = false);
+aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor* executor, const aclTensorList* tensorList,
+                                              const uint32_t index, const bool isInput, const bool ignoreCont = false);
 aclnnStatus NnopbaseExecutorSetRef(NnopbaseExecutor* executor, const size_t inputIrIdx, const size_t outputIrIdx);
-aclnnStatus NnopbaseExecutorAddAttr(
-    NnopbaseExecutor* executor, const void* const attrAddr, const size_t attrLen, const size_t index,
-    const size_t elementSize, const NnopbaseAttrDtype dtype);
+aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor* executor, const void* const attrAddr, const size_t attrLen,
+                                    const size_t index, const size_t elementSize, const NnopbaseAttrDtype dtype);
 
 // IOcache
 aclnnStatus NnopbaseExecutorInitIoCaches(NnopbaseTensors* tensors, const NnopbaseChar* paramDesc, const uint32_t num);
@@ -253,15 +249,15 @@ aclnnStatus NnopbaseExecutorExtendIoCaches(NnopbaseTensors* tensors);
 void NnopbaseExecutorFixCache(NnopbaseExecutor* executor);
 
 // execute
-aclnnStatus NnopbaseExecutorRunWithWorkspace(
-    NnopbaseExecutor* executor, aclrtStream stream, void* workspace, const uint64_t workspaceLen);
+aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor* executor, aclrtStream stream, void* workspace,
+                                             const uint64_t workspaceLen);
 aclnnStatus NnopbaseExecutorRunForWorkspace(NnopbaseExecutor* executor, uint64_t* workspaceLen);
 void NnopbaseExecutorClear(NnopbaseExecutor* executor);
 
 size_t NnopbaseCalcArgsSize(NnopbaseExecutor* executor, const size_t tilingDataSize);
 void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* executor);
-aclnnStatus NnopbaseExecutorArgsGetDfxInfo(
-    NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr, const uint32_t workspaceNum);
+aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr,
+                                           const uint32_t workspaceNum);
 bool NnopbaseMatchArgsCache(NnopbaseExecutor* executor, size_t& seed);
 aclnnStatus NnopbaseCreateExecutorArgs(NnopbaseExecutor* executor, const size_t seed);
 
@@ -273,31 +269,28 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor* const executor);
 aclnnStatus NnopbaseOverflowDump(NnopbaseExecutor* const executor, aclrtStream stream);
 
 // for profiling
-void NnopbaseReportMemsetAdditionInfo(
-    const NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType, const uint64_t timeStamp);
+void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
+                                      const uint64_t timeStamp);
 void NnopbaseReportAdditionInfo(void* const executor, uint32_t numBlocks, uint32_t taskType, const uint64_t timeStamp);
 void NnopbaseInnerReportLaunchInfo(const uint64_t beginTime, const uint64_t itemId);
 void NnopbaseReportTimeStampInfo(const std::vector<MsprofAicTimeStampInfo>& timeStampInfo);
-void NnopbaseExecutorReportProfiling(
-    NnopbaseExecutor* const executor, uint32_t numBlocks, const uint32_t taskType, const uint64_t launchBeginTime,
-    aclrtStream stream);
+void NnopbaseExecutorReportProfiling(NnopbaseExecutor* const executor, uint32_t numBlocks, const uint32_t taskType,
+                                     const uint64_t launchBeginTime, aclrtStream stream);
 void NnopbaseReportAttrAndHostInfo(const NnopbaseExecutor* const executor, const uint64_t timeStamp);
 std::string NnopbaseGetHostInfoStr(const NnopbaseTensors& tensors);
 std::string NnopbaseGetAttrVal(const NnopbaseAttrs& attrs);
-void NnopbaseReportCacheOpInfo(
-    NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType, aclrtStream stream);
+void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
+                               aclrtStream stream);
 
-aclnnStatus NnopbaseExecutorAddScalarInput(
-    NnopbaseTensors* tensors, const aclScalar* scalar, const uint32_t index, const int32_t srcIndex,
-    const ge::DataType dtype);
-aclnnStatus NnopbaseExecutorAddScalarListInput(
-    NnopbaseTensors* tensors, const aclScalarList* scalarList, const uint32_t index, const int32_t srcIndex,
-    const ge::DataType dtype);
+aclnnStatus NnopbaseExecutorAddScalarInput(NnopbaseTensors* tensors, const aclScalar* scalar, const uint32_t index,
+                                           const int32_t srcIndex, const ge::DataType dtype);
+aclnnStatus NnopbaseExecutorAddScalarListInput(NnopbaseTensors* tensors, const aclScalarList* scalarList,
+                                               const uint32_t index, const int32_t srcIndex, const ge::DataType dtype);
 
 // global config
 aclnnStatus NnopbaseExecutorSetGlobalConfig();
-void NnopbaseReportContextIdInfoByRation(
-    NnopbaseExecutor* const opExecutor, const uint64_t timeStamp, uint32_t& numBlocks, uint32_t& taskType);
+void NnopbaseReportContextIdInfoByRation(NnopbaseExecutor* const opExecutor, const uint64_t timeStamp,
+                                         uint32_t& numBlocks, uint32_t& taskType);
 
 void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor* const executor);
 void PrintNnopbaseInitTimeStampInfo();
@@ -306,8 +299,8 @@ void PrintNnopbaseInitTimeStampInfo();
 aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor* executor, aclrtStream stream);
 
-aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(
-    NnopbaseExecutor* executor, CoreType& coreType, NnopbaseTaskRation& taskRation);
+aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(NnopbaseExecutor* executor, CoreType& coreType,
+                                                     NnopbaseTaskRation& taskRation);
 
 // for mc2
 aclnnStatus NnopbaseSetMc2Tiling(NnopbaseExecutor* executor, const char* const group);
@@ -316,9 +309,9 @@ static inline void NnopbaseExecutorSetHcclServerType(NnopbaseExecutor* executor,
     executor->mc2OpCfg.sType = sType;
 }
 
-aclnnStatus NnopbaseSetRefTensorAddr(
-    NnopbaseExecutor* executor, const size_t index, const void* const addr,
-    const std::vector<NnopbaseParamInstance>& inInstances, const std::vector<NnopbaseParamInstance>& outInstances);
+aclnnStatus NnopbaseSetRefTensorAddr(NnopbaseExecutor* executor, const size_t index, const void* const addr,
+                                     const std::vector<NnopbaseParamInstance>& inInstances,
+                                     const std::vector<NnopbaseParamInstance>& outInstances);
 
 // for uncontiguous
 aclnnStatus NnopbaseExecutorSetUnContExecutor(NnopbaseExecutor* executor, aclOpExecutor* inExe, const size_t inWsSize);
@@ -386,8 +379,8 @@ static inline void NnopbaseExecutorAddTilingId(NnopbaseExecutor* executor, Nnopb
     executor->tilingId = tilingId;
 }
 
-static inline void NnopbaseExecutorAddSupportList(
-    NnopbaseExecutor* executor, OpSupportList* supportList, uint32_t* socSupportList, size_t socSupportListLen)
+static inline void NnopbaseExecutorAddSupportList(NnopbaseExecutor* executor, OpSupportList* supportList,
+                                                  uint32_t* socSupportList, size_t socSupportListLen)
 {
     executor->supportList = supportList;
     executor->socSupportList = socSupportList;
@@ -399,8 +392,9 @@ static inline void NnopbaseExecutorAddOpTypeId(NnopbaseExecutor* executor, const
     executor->opTypeId = opTypeId;
 }
 
-static inline void NnopbaseExecutorGetRefUnContiguousTensors(
-    NnopbaseExecutor* executor, const aclTensorList** unContTensors, const aclTensorList** contTensors)
+static inline void NnopbaseExecutorGetRefUnContiguousTensors(NnopbaseExecutor* executor,
+                                                             const aclTensorList** unContTensors,
+                                                             const aclTensorList** contTensors)
 {
     auto& inUnContTensors = executor->args->inputs.unContiguousTensors;
     auto& refUnContTensors = inUnContTensors.refUnContTensors;
@@ -420,13 +414,13 @@ static inline void NnopbaseExecutorGetRefUnContiguousTensors(
 
 void NnopbaseExecutorGetUnContiguousTensors(NnopbaseExecutor* executor, const aclTensorList** inTensors);
 
-static inline void NnopbaseExecutorGetUnContExecutor(
-    NnopbaseExecutor* executor, aclOpExecutor** inExe, size_t* inWsSize)
+static inline void NnopbaseExecutorGetUnContExecutor(NnopbaseExecutor* executor, aclOpExecutor** inExe,
+                                                     size_t* inWsSize)
 {
     *inExe = executor->inUnContExe;
     *inWsSize = executor->inUncontWsSize;
-    OP_LOGI(
-        "Op %s get contiguous workspace size %zu bytes, executor addr is %p.", executor->opType, *inWsSize, executor);
+    OP_LOGI("Op %s get contiguous workspace size %zu bytes, executor addr is %p.", executor->opType, *inWsSize,
+            executor);
 }
 
 static inline void NnopbaseExecutorGetViewCopyExecutor(NnopbaseExecutor* executor, aclOpExecutor** exe)
@@ -435,8 +429,8 @@ static inline void NnopbaseExecutorGetViewCopyExecutor(NnopbaseExecutor* executo
     *exe = executor->viewCopyExe;
 }
 
-static inline void NnopbaseExecutorReleaseRefContiguousTensors(
-    NnopbaseExecutor* executor, const aclTensorList** tensors)
+static inline void NnopbaseExecutorReleaseRefContiguousTensors(NnopbaseExecutor* executor,
+                                                               const aclTensorList** tensors)
 {
     *tensors = executor->args->inputs.unContiguousTensors.refContTensorList;
     executor->args->inputs.unContiguousTensors.refContTensorList = nullptr;
@@ -461,8 +455,8 @@ static inline void NnopbaseExecutorSetCollecter(NnopbaseExecutor* executor, Nnop
 }
 
 void NnopbaseReloadStaticBinJsonInfos(void);
-aclnnStatus NnopbaseExecutorConvertScalarType(
-    std::vector<uint8_t>& scalarValue, const aclScalar* scalar, ge::DataType dtype, const size_t offset);
+aclnnStatus NnopbaseExecutorConvertScalarType(std::vector<uint8_t>& scalarValue, const aclScalar* scalar,
+                                              ge::DataType dtype, const size_t offset);
 aclnnStatus NnopbaseSetUnContiguousExecutorRepeatable(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseSetRepeatable(void* executor);
 aclnnStatus NnopbaseReSetUnContiguousExecutorRepeatable(NnopbaseExecutor* executor);

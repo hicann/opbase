@@ -122,8 +122,8 @@ protected:
         uint32_t opType = op::OpTypeDict::ToOpType(opTypeStr);
         string filePrefix = "ascend910/add_n/AddN_8b4ec10fbb39c5c0a65192c606400b29_high_performance";
 
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, /*debug=*/true, OP_INPUT(tensorList), OP_OUTPUT(result));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, /*debug=*/true, OP_INPUT(tensorList),
+                         OP_OUTPUT(result));
 
         auto ctx = op::MakeOpArgContext(OP_INPUT(tensorList), OP_OUTPUT(result));
         auto* launcher = new op::AiCoreKernelLauncher{opType, AI_CORE, profilingId, nullptr, ctx};
@@ -148,12 +148,12 @@ protected:
 
         auto tilingRes = op::internal::OpRunContextMgr::opRunCtx_.tilingCtx_.GetTilingResult();
         EXPECT_NE(tilingRes, nullptr);
-        void* dfxInfoAtomicIndex = op::internal::PtrShift(
-            tilingRes->tilingData_->data_, tilingRes->tilingData_->data_size_ - sizeof(uint64_t));
+        void* dfxInfoAtomicIndex = op::internal::PtrShift(tilingRes->tilingData_->data_,
+                                                          tilingRes->tilingData_->data_size_ - sizeof(uint64_t));
         EXPECT_EQ(*static_cast<uint64_t*>(dfxInfoAtomicIndex), 5525);
         for (int i = 2; i <= 4; i++) {
-            void* shapeSizePtr = op::internal::PtrShift(
-                tilingRes->tilingData_->data_, tilingRes->tilingData_->data_size_ - i * sizeof(uint64_t));
+            void* shapeSizePtr = op::internal::PtrShift(tilingRes->tilingData_->data_,
+                                                        tilingRes->tilingData_->data_size_ - i * sizeof(uint64_t));
             std::cout << *static_cast<uint64_t*>(shapeSizePtr) << std::endl;
             EXPECT_EQ(*static_cast<uint64_t*>(shapeSizePtr), 192);
         }
@@ -165,8 +165,8 @@ protected:
     {
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType(op_type);
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, /*debug=*/false, OP_ATTR(std::forward<ATTRS>(opAttrs)...));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, /*debug=*/false,
+                         OP_ATTR(std::forward<ATTRS>(opAttrs)...));
     }
 
     void TestStaticBinaryAdd(const string& filePrefix)
@@ -184,8 +184,8 @@ protected:
 
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("TestStaticAdd");
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, /*debug=*/false, OP_INPUT(input0, input1), OP_OUTPUT(output));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, /*debug=*/false, OP_INPUT(input0, input1),
+                         OP_OUTPUT(output));
     }
 
     void TestStaticBinaryConv2D(const string& filePrefix)
@@ -215,9 +215,9 @@ protected:
         op::internal::ProfilingInfoId profilingId;
         uint32_t opType = op::OpTypeDict::ToOpType("Conv2D");
 
-        LAUNCH_AND_CHECK(
-            opType, AI_CORE, profilingId, filePrefix, /*debug=*/true, OP_INPUT(input0, input1), OP_OUTPUT(output0),
-            OP_ATTR(stridesIntArray, paddingsIntArray, dilationsIntArray, groups, dataFormat, offset_x));
+        LAUNCH_AND_CHECK(opType, AI_CORE, profilingId, filePrefix, /*debug=*/true, OP_INPUT(input0, input1),
+                         OP_OUTPUT(output0),
+                         OP_ATTR(stridesIntArray, paddingsIntArray, dilationsIntArray, groups, dataFormat, offset_x));
     }
 };
 
@@ -236,8 +236,8 @@ TEST_F(TestDebugKernel, TestStaticBinaryConv2D)
 
 TEST_F(TestDebugKernel, TestStaticBinaryAdd)
 {
-    string filePrefix =
-        "static_kernel/ai_core/static_kernel_202307261051/TestStaticAdd/TestStaticAdd_high_performance_0";
+    string
+        filePrefix = "static_kernel/ai_core/static_kernel_202307261051/TestStaticAdd/TestStaticAdd_high_performance_0";
     TestStaticBinaryAdd(filePrefix);
 }
 

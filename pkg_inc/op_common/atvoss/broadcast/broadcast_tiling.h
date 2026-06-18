@@ -21,28 +21,30 @@
 namespace Ops {
 namespace Base {
 
-OPBASE_API uint64_t
-GetBlockSplitFactor(BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo, uint64_t maxElemNum);
+OPBASE_API uint64_t GetBlockSplitFactor(BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo,
+                                        uint64_t maxElemNum);
 
-OPBASE_API ge::graphStatus DoBrodcastTiling(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData);
+OPBASE_API ge::graphStatus DoBrodcastTiling(const BroadcastTilingParams& broadcastTilingParams,
+                                            BroadcastTilingData& broadcastTilingData);
 
-OPBASE_API ge::graphStatus BroadcastTiling(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData);
+OPBASE_API ge::graphStatus BroadcastTiling(const BroadcastTilingParams& broadcastTilingParams,
+                                           BroadcastTilingData& broadcastTilingData);
 
-OPBASE_API ge::graphStatus DoDimensionCollapse(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData);
+OPBASE_API ge::graphStatus DoDimensionCollapse(const BroadcastTilingParams& broadcastTilingParams,
+                                               BroadcastTilingData& broadcastTilingData);
 
-OPBASE_API ge::graphStatus NonContiguousDimensionCollapse(
-    const std::vector<gert::Shape>& inShapes, const std::vector<gert::Stride>& inStrides, const gert::Shape& outShapes,
-    std::vector<std::vector<int64_t>>& dims, std::vector<std::vector<int64_t>>& strides);
+OPBASE_API ge::graphStatus NonContiguousDimensionCollapse(const std::vector<gert::Shape>& inShapes,
+                                                          const std::vector<gert::Stride>& inStrides,
+                                                          const gert::Shape& outShapes,
+                                                          std::vector<std::vector<int64_t>>& dims,
+                                                          std::vector<std::vector<int64_t>>& strides);
 
-OPBASE_API ge::graphStatus DimensionCollapse(
-    const std::vector<gert::Shape>& inShapes, const gert::Shape& outShapes, std::vector<std::vector<int64_t>>& dims,
-    std::vector<std::vector<int64_t>>& strides);
+OPBASE_API ge::graphStatus DimensionCollapse(const std::vector<gert::Shape>& inShapes, const gert::Shape& outShapes,
+                                             std::vector<std::vector<int64_t>>& dims,
+                                             std::vector<std::vector<int64_t>>& strides);
 
-OPBASE_API ge::graphStatus IsTensorContiguous(
-    const gert::Shape& viewShape, const gert::Stride* viewStride, bool& isContiguous);
+OPBASE_API ge::graphStatus IsTensorContiguous(const gert::Shape& viewShape, const gert::Stride* viewStride,
+                                              bool& isContiguous);
 
 const gert::Shape g_vec_1_shape = {1};
 /**
@@ -69,9 +71,8 @@ public:
      * @param context tiling上下文
      * @param kernelType kernel选择的类型，1,NDDMA 2 UB BRC，默认为0，都选择
      */
-    explicit BroadcastBaseTiling(
-        gert::TilingContext* context,
-        uint32_t kernelType = static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_BOTH))
+    explicit BroadcastBaseTiling(gert::TilingContext* context,
+                                 uint32_t kernelType = static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_BOTH))
         : context_(context), kernelType_(kernelType)
     {}
 
@@ -83,11 +84,10 @@ public:
      */
     ge::graphStatus DoTiling(int64_t extraSize = 0, int64_t extraBufferNum = 0, bool preferMultiCore = false)
     {
-        OP_LOGI(
-            context_->GetNodeName(),
-            "Broadcast DoTiling. extraSize: %ld extraBufNum: %ld "
-            "Broadcast dag param InputSize is %u, CopyBrcSize is %u, VecBrcSize is %u ",
-            tmpExtraSize, tmpExtraBufferNum, OpDag::InputSize, OpDag::CopyBrcSize, OpDag::VecBrcSize);
+        OP_LOGI(context_->GetNodeName(),
+                "Broadcast DoTiling. extraSize: %ld extraBufNum: %ld "
+                "Broadcast dag param InputSize is %u, CopyBrcSize is %u, VecBrcSize is %u ",
+                tmpExtraSize, tmpExtraBufferNum, OpDag::InputSize, OpDag::CopyBrcSize, OpDag::VecBrcSize);
 
         tmpExtraSize = extraSize;
         tmpExtraBufferNum = extraBufferNum;
@@ -119,9 +119,8 @@ public:
         broadcastTilingParams.inputAllContiguous = inputAllContiguous;
         broadcastTilingParams.preferMultiCore = preferMultiCore;
 
-        OP_LOGI(
-            context_->GetNodeName(), "coreNum: %llu, ubSize: %llu, inputAllContiguous:%d", coreNum, ubSize,
-            inputAllContiguous);
+        OP_LOGI(context_->GetNodeName(), "coreNum: %llu, ubSize: %llu, inputAllContiguous:%d", coreNum, ubSize,
+                inputAllContiguous);
 
         // 3. 合轴
         status = DoDimensionCollapse(broadcastTilingParams, tilingData);
@@ -134,9 +133,8 @@ public:
         BrcPrintVectors(tilingData.strides, "after DoDimensionCollapse in&out strides");
 
         // 4. 根据轴信息判断是否走onedim分支
-        OP_CHECK_IF(
-            (tilingData.dims.back().size() == 0),
-            OP_LOGE(context_->GetNodeName(), "tensor check is empty, check failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((tilingData.dims.back().size() == 0),
+                    OP_LOGE(context_->GetNodeName(), "tensor check is empty, check failed"), return ge::GRAPH_FAILED);
         if (tilingData.dims.back().size() == 1 && broadcastTilingParams.inputAllContiguous) {
             if constexpr ((OpDag::InputSize + OpDag::OutputSize <= MAX_IN_OUT_ARGS_NUMBER) && OpDag::VarSize <= 0) {
                 status = DoOneDimOpTilingAdvance();
@@ -201,12 +199,10 @@ public:
      */
     ge::graphStatus SetOpInputStorageShapes(const std::vector<gert::Shape>& opInputStorageShapes)
     {
-        OP_CHECK_IF(
-            (opInputStorageShapes.size() <= 0),
-            OP_LOGE(
-                context_->GetNodeName(), "The size of the parameter opInputStorageShapes for the method "
-                                         "SetOpInputStorageShapes must be greater than 0."),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((opInputStorageShapes.size() <= 0),
+                    OP_LOGE(context_->GetNodeName(), "The size of the parameter opInputStorageShapes for the method "
+                                                     "SetOpInputStorageShapes must be greater than 0."),
+                    return ge::GRAPH_FAILED);
         OP_LOGI(context_->GetNodeName(), "Size of opInputStorageShapes is %zu", opInputStorageShapes.size());
         inShapes = opInputStorageShapes;
 
@@ -227,12 +223,11 @@ private:
             coreNum = compileInfoPtr->coreNum;
             ubSize = compileInfoPtr->ubSize;
 
-            OP_CHECK_IF(
-                (coreNum == 0), OP_LOGE(context_->GetNodeName(), "compileInfo core num check is 0, check failed"),
-                return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                (ubSize == 0), OP_LOGE(context_->GetNodeName(), "compileInfo ubSize check is 0, check failed"),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF((coreNum == 0),
+                        OP_LOGE(context_->GetNodeName(), "compileInfo core num check is 0, check failed"),
+                        return ge::GRAPH_FAILED);
+            OP_CHECK_IF((ubSize == 0), OP_LOGE(context_->GetNodeName(), "compileInfo ubSize check is 0, check failed"),
+                        return ge::GRAPH_FAILED);
         } else {
             auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
             coreNum = ascendcPlatform.GetCoreNumAiv();
@@ -240,12 +235,12 @@ private:
             ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
             ubSize = ubSizePlatForm;
 
-            OP_CHECK_IF(
-                (coreNum == 0), OP_LOGE(context_->GetNodeName(), "ascendcPlatform core num check is 0, check failed"),
-                return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                (ubSize == 0), OP_LOGE(context_->GetNodeName(), "ascendcPlatform ubSize check is 0, check failed"),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF((coreNum == 0),
+                        OP_LOGE(context_->GetNodeName(), "ascendcPlatform core num check is 0, check failed"),
+                        return ge::GRAPH_FAILED);
+            OP_CHECK_IF((ubSize == 0),
+                        OP_LOGE(context_->GetNodeName(), "ascendcPlatform ubSize check is 0, check failed"),
+                        return ge::GRAPH_FAILED);
         }
 
         OP_LOGI(context_->GetNodeName(), "Broadcast GetPlatformInfo ubSize is %lu, coreNum is %lu", ubSize, coreNum);
@@ -269,12 +264,11 @@ private:
             bool isInContiguous = true;
             auto inputStorageShape = context_->GetInputShape(i);
             OP_CHECK_NULL_WITH_CONTEXT(context_, inputStorageShape);
-            auto inCheckRet =
-                IsTensorContiguous(inputStorageShape->GetShape(), context_->GetInputStride(i), isInContiguous);
-            OP_CHECK_IF(
-                (inCheckRet != ge::GRAPH_SUCCESS),
-                OP_LOGE(context_->GetNodeName(), "check input %lu IsTensorContiguous failed", i),
-                return ge::GRAPH_FAILED);
+            auto inCheckRet = IsTensorContiguous(inputStorageShape->GetShape(), context_->GetInputStride(i),
+                                                 isInContiguous);
+            OP_CHECK_IF((inCheckRet != ge::GRAPH_SUCCESS),
+                        OP_LOGE(context_->GetNodeName(), "check input %lu IsTensorContiguous failed", i),
+                        return ge::GRAPH_FAILED);
             if (!isInContiguous) {
                 inShapes.push_back(inputStorageShape->GetShape());
                 inStrides[i] = *(context_->GetInputStride(i));
@@ -348,11 +342,10 @@ private:
             using Op = typename OpDag::CopyBrcNodes::template At<pos>;
             using Input = typename Op::InHolders::template At<0>;
             int64_t idx = Input::Pos;
-            std::copy(
-                tilingData.dims[idx].begin(), tilingData.dims[idx].end(), *(brcBaseTilingData->inputBrcDims + pos));
-            std::copy(
-                tilingData.strides[idx].begin(), tilingData.strides[idx].end(),
-                *(brcBaseTilingData->inputBrcStrides + pos));
+            std::copy(tilingData.dims[idx].begin(), tilingData.dims[idx].end(),
+                      *(brcBaseTilingData->inputBrcDims + pos));
+            std::copy(tilingData.strides[idx].begin(), tilingData.strides[idx].end(),
+                      *(brcBaseTilingData->inputBrcStrides + pos));
             if constexpr (pos + 1 < OpDag::CopyBrcSize) {
                 SetInputNddmaParams<pos + 1>();
             }
@@ -390,8 +383,8 @@ private:
             using Input = typename Op::SourceInHolders::template At<0>;
             int64_t idx = Input::Pos;
 
-            std::copy(
-                tilingData.dims[idx].begin(), tilingData.dims[idx].end(), *(brcBaseTilingData->inputVecBrcDims + pos));
+            std::copy(tilingData.dims[idx].begin(), tilingData.dims[idx].end(),
+                      *(brcBaseTilingData->inputVecBrcDims + pos));
 
             brcBaseTilingData->inputVecBrcStrides[pos] = tilingData.strides[idx][tilingData.ubSplitAxis];
             if constexpr (pos + 1 < OpDag::VecBrcSize) {
@@ -410,8 +403,8 @@ private:
             if (copyInBrcPos.count(i)) {
                 continue;
             }
-            std::copy(
-                tilingData.strides[i].begin(), tilingData.strides[i].end(), *(brcBaseTilingData->inputStrides + i));
+            std::copy(tilingData.strides[i].begin(), tilingData.strides[i].end(),
+                      *(brcBaseTilingData->inputStrides + i));
 
             int64_t formerLength = 1;
             int64_t tailLength = 1;
@@ -536,17 +529,16 @@ private:
     {
         brcBaseTilingData = context_->GetTilingData<BroadcastBaseTilingData<OpDag>>();
 
-        OP_CHECK_IF(
-            (brcBaseTilingData == nullptr),
-            OP_LOGE(context_->GetNodeName(), "Get brcBaseTilingData from GE context failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((brcBaseTilingData == nullptr),
+                    OP_LOGE(context_->GetNodeName(), "Get brcBaseTilingData from GE context failed"),
+                    return ge::GRAPH_FAILED);
         // 1、判断ubbrc用到 2、设置copyIn参数用到
         GetCopyInBrcPosList();
 
         bool isUbBroadcast = IsUbBroadcast();
         int64_t bufferNum = GetBufferNum(isUbBroadcast);
-        OP_LOGI(
-            context_->GetNodeName(), "Broadcast DoBroadcastOpTiling. isUbBroadcast: %d bufferNum: %ld ", isUbBroadcast,
-            bufferNum);
+        OP_LOGI(context_->GetNodeName(), "Broadcast DoBroadcastOpTiling. isUbBroadcast: %d bufferNum: %ld ",
+                isUbBroadcast, bufferNum);
 
         BroadcastComputeParams params;
         params.maxDtypeBits = OpDag::MaxDtypeBytes * BROADCAST_BITS_NUM;
@@ -611,8 +603,8 @@ private:
     }
 
     //
-    ge::graphStatus isBroadcastTemplateNonContiguousSupport(
-        bool& isSupported, bool& isLastTranspose, bool& isLastAxisBrc)
+    ge::graphStatus isBroadcastTemplateNonContiguousSupport(bool& isSupported, bool& isLastTranspose,
+                                                            bool& isLastAxisBrc)
     {
         isSupported = true;
         isLastTranspose = false;
@@ -622,10 +614,9 @@ private:
             auto shapeDim = tilingData.dims[i].size();
             auto strideDim = tilingData.strides[i].size();
 
-            OP_CHECK_IF(
-                (shapeDim != strideDim),
-                OP_LOGE(context_->GetNodeName(), "shapeDim %lu != strideDim %lu", shapeDim, strideDim),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF((shapeDim != strideDim),
+                        OP_LOGE(context_->GetNodeName(), "shapeDim %lu != strideDim %lu", shapeDim, strideDim),
+                        return ge::GRAPH_FAILED);
 
             // DimNum为0 表示连续场景
             if (inStrides[i].GetDimNum() == 0) {
@@ -705,19 +696,17 @@ private:
         bool isLastAxisBrc = false;
         auto status = isBroadcastTemplateNonContiguousSupport(isSupport, isLastTranspose, isLastAxisBrc);
 
-        OP_CHECK_IF(
-            (status != ge::GRAPH_SUCCESS),
-            OP_LOGE(context_->GetNodeName(), "isBroadcastTemplateNonContiguousSupport failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((status != ge::GRAPH_SUCCESS),
+                    OP_LOGE(context_->GetNodeName(), "isBroadcastTemplateNonContiguousSupport failed"),
+                    return ge::GRAPH_FAILED);
 
         // 添加判断条件
         if (isSupport) {
             if (isLastTranspose) {
                 // Last轴转置
-                OP_LOGI(
-                    context_->GetNodeName(),
-                    "Broadcast DoNonContiguousBroadcastOpTiling: enter last transpose schmode (303). Next to run "
-                    "DoBroadcastOpTilingLastTranspose");
+                OP_LOGI(context_->GetNodeName(),
+                        "Broadcast DoNonContiguousBroadcastOpTiling: enter last transpose schmode (303). Next to run "
+                        "DoBroadcastOpTilingLastTranspose");
                 status = DoBroadcastOpTilingLastTranspose(broadcastTilingParams);
             } else {
                 // NLast轴转置 (尾轴需要连续(stride == 1))
@@ -765,10 +754,9 @@ private:
     {
         brcLastTransposeTilingData = context_->GetTilingData<BroadcastLastTransposeTilingData<OpDag>>();
 
-        OP_CHECK_IF(
-            (brcLastTransposeTilingData == nullptr),
-            OP_LOGE(context_->GetNodeName(), "Get brcLastTransposeTilingData from GE context failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((brcLastTransposeTilingData == nullptr),
+                    OP_LOGE(context_->GetNodeName(), "Get brcLastTransposeTilingData from GE context failed"),
+                    return ge::GRAPH_FAILED);
         int64_t bufferNum = GetBufferNum(false);
 
         BroadcastComputeParams params;
@@ -802,10 +790,9 @@ private:
     {
         brcNLastTransposeTilingData = context_->GetTilingData<BroadcastNlastTransposeTilingData<OpDag>>();
 
-        OP_CHECK_IF(
-            (brcNLastTransposeTilingData == nullptr),
-            OP_LOGE(context_->GetNodeName(), "Get brcNLastTransposeTilingData from GE context failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((brcNLastTransposeTilingData == nullptr),
+                    OP_LOGE(context_->GetNodeName(), "Get brcNLastTransposeTilingData from GE context failed"),
+                    return ge::GRAPH_FAILED);
 
         // 1、判断ubbrc用到 2、设置copyIn参数用到
         GetCopyInBrcPosList();
@@ -821,17 +808,16 @@ private:
 
         auto status = DoBroadcastTilingNLastTranspose<OpDag, BroadcastNlastTransposeTilingData<OpDag>>(
             broadcastTilingParams, brcNLastTransposeTilingData, tilingData, isUbBroadcast);
-        OP_CHECK_IF(
-            (status != ge::GRAPH_SUCCESS), OP_LOGE(context_->GetNodeName(), "DoBroadcastTilingNLastTranspose failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((status != ge::GRAPH_SUCCESS),
+                    OP_LOGE(context_->GetNodeName(), "DoBroadcastTilingNLastTranspose failed"),
+                    return ge::GRAPH_FAILED);
 
         schMode = isUbBroadcast ? SCH_MODE_NONCONTIGUOUS_NLAST_TRANSPOSE_UB_BRC :
                                   SCH_MODE_NONCONTIGUOUS_NLAST_TRANSPOSE_NDDMA;
         brcNLastTransposeTilingData->scheMode = schMode;
 
-        OP_LOGI(
-            context_->GetNodeName(),
-            "Broadcast DoBroadcastOpTilingNLastTranspose: now enter nlast transpose schmode (%ld). ", schMode);
+        OP_LOGI(context_->GetNodeName(),
+                "Broadcast DoBroadcastOpTilingNLastTranspose: now enter nlast transpose schmode (%ld). ", schMode);
 
         // 手动循环逐个字节拷贝
         for (uint64_t i = 0; i < BROADCAST_MAX_SCALAR_BYTES; i++) {
@@ -859,37 +845,33 @@ private:
 
     ge::graphStatus GetOneDimUBFormer(int32_t aliveNum, int64_t actualUbSize)
     {
-        OP_CHECK_IF(
-            (aliveNum == 0),
-            OP_LOGE(context_->GetNodeName(), "aliveNum check is 0, check failed, aliveNum is %d", aliveNum),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((aliveNum == 0),
+                    OP_LOGE(context_->GetNodeName(), "aliveNum check is 0, check failed, aliveNum is %d", aliveNum),
+                    return ge::GRAPH_FAILED);
 
         // 先分ub，再分核
         // 开DB，CACHE_LINE 对齐
         const uint32_t dTypeSize = OpDag::MaxDtypeBytes;
-        OP_CHECK_IF(
-            (dTypeSize == 0), OP_LOGE(context_->GetNodeName(), "OpDag::MaxDtypeBytes check is 0, check failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((dTypeSize == 0), OP_LOGE(context_->GetNodeName(), "OpDag::MaxDtypeBytes check is 0, check failed"),
+                    return ge::GRAPH_FAILED);
 
-        OP_LOGI(
-            context_->GetNodeName(), "Broadcast GetOneDimUBFormer. aliveNum: %d dTypeSize: %ld ", aliveNum, dTypeSize);
+        OP_LOGI(context_->GetNodeName(), "Broadcast GetOneDimUBFormer. aliveNum: %d dTypeSize: %ld ", aliveNum,
+                dTypeSize);
 
         int64_t ubFormerByte = actualUbSize / aliveNum;
         int64_t ubFormerByteFloorAlign = (ubFormerByte / CACHE_LINE) * CACHE_LINE;
         brcOneDimTilingData->ubFormer = ubFormerByteFloorAlign / dTypeSize;
-        OP_CHECK_IF(
-            (brcOneDimTilingData->ubFormer == 0),
-            OP_LOGE(
-                context_->GetNodeName(),
-                "ub size or CACHE_LINE check failed. actualUbSize: %ld CACHE_LINE: %ld dTypeSize: %u", actualUbSize,
-                CACHE_LINE, dTypeSize),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((brcOneDimTilingData->ubFormer == 0),
+                    OP_LOGE(context_->GetNodeName(),
+                            "ub size or CACHE_LINE check failed. actualUbSize: %ld CACHE_LINE: %ld dTypeSize: %u",
+                            actualUbSize, CACHE_LINE, dTypeSize),
+                    return ge::GRAPH_FAILED);
 
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus AdaptOneDimTilingData(
-        int64_t blockNum, int64_t ubFormer, int64_t ubTail, int64_t blockFormer, int64_t blockTail)
+    ge::graphStatus AdaptOneDimTilingData(int64_t blockNum, int64_t ubFormer, int64_t ubTail, int64_t blockFormer,
+                                          int64_t blockTail)
     {
         brcOneDimTilingData->blockNum = blockNum;
         brcOneDimTilingData->ubFormer = ubFormer;
@@ -905,21 +887,18 @@ private:
     }
     ge::graphStatus DoOneDimFormerTiling(int32_t aliveNum)
     {
-        OP_CHECK_IF(
-            (aliveNum == 0),
-            OP_LOGE(context_->GetNodeName(), "aliveNum check is 0, check failed, aliveNum is %d", aliveNum),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((aliveNum == 0),
+                    OP_LOGE(context_->GetNodeName(), "aliveNum check is 0, check failed, aliveNum is %d", aliveNum),
+                    return ge::GRAPH_FAILED);
 
         const uint32_t dTypeSize = OpDag::MaxDtypeBytes;
-        OP_CHECK_IF(
-            (tilingData.dims.back().size() == 0),
-            OP_LOGE(context_->GetNodeName(), "tilingData.dims.back check is empty, check failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((tilingData.dims.back().size() == 0),
+                    OP_LOGE(context_->GetNodeName(), "tilingData.dims.back check is empty, check failed"),
+                    return ge::GRAPH_FAILED);
 
         int64_t dimLength = tilingData.dims.back()[0];
-        OP_CHECK_IF(
-            (dimLength == 0), OP_LOGE(context_->GetNodeName(), "dimLength is zero, check failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((dimLength == 0), OP_LOGE(context_->GetNodeName(), "dimLength is zero, check failed"),
+                    return ge::GRAPH_FAILED);
 
         // 为方便kernel计算，减少kernel scalar，对于整除无尾场景，也认为有个整数的尾块
         int64_t ubFormer = brcOneDimTilingData->ubFormer;
@@ -936,8 +915,8 @@ private:
             (ubFormer * dTypeSize * aliveNum) > PER_CORE_MIN_UB_BYTE) {
             int64_t dimPerCore = dimLength * 2 / coreNum; // 1/2 的coreNum进行分配
             // 向上对齐到128Byte，理论上不会超过原来计算的ubFormer
-            int64_t alignDimPerCore =
-                ((((dimPerCore * dTypeSize) + CACHE_LINE - 1) / CACHE_LINE) * CACHE_LINE) / dTypeSize;
+            int64_t alignDimPerCore = ((((dimPerCore * dTypeSize) + CACHE_LINE - 1) / CACHE_LINE) * CACHE_LINE) /
+                                      dTypeSize;
             ubFormer = (ubFormer > alignDimPerCore) ? alignDimPerCore : ubFormer;
 
             // 如果分配到核数一半后，小于8k(开DB后)，则直接按照 8k
@@ -959,13 +938,12 @@ private:
 
         AdaptOneDimTilingData(blockNum, ubFormer, ubTail, blockFormer, blockTail);
 
-        OP_LOGI(
-            context_->GetNodeName(),
-            "Broadcast one dim do tiling finish. coreNum: %ld CACHE_LINE: %ld "
-            "blockNum: %ld ubFormer: %ld ubTail: %ld blockFormer: %ld blockTail: %ld "
-            "dimLength: %ld, scalarFlag: %d",
-            coreNum, CACHE_LINE, blockNum, ubFormer, ubTail, blockFormer, blockTail, dimLength,
-            brcOneDimTilingData->scalarFlag);
+        OP_LOGI(context_->GetNodeName(),
+                "Broadcast one dim do tiling finish. coreNum: %ld CACHE_LINE: %ld "
+                "blockNum: %ld ubFormer: %ld ubTail: %ld blockFormer: %ld blockTail: %ld "
+                "dimLength: %ld, scalarFlag: %d",
+                coreNum, CACHE_LINE, blockNum, ubFormer, ubTail, blockFormer, blockTail, dimLength,
+                brcOneDimTilingData->scalarFlag);
 
         return ge::GRAPH_SUCCESS;
     }
@@ -974,26 +952,22 @@ private:
     {
         brcOneDimTilingData = context_->GetTilingData<BroadcastOneDimTilingData>();
 
-        OP_CHECK_IF(
-            (brcOneDimTilingData == nullptr),
-            OP_LOGE(context_->GetNodeName(), "Get brcOneDimTilingData from GE context failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((brcOneDimTilingData == nullptr),
+                    OP_LOGE(context_->GetNodeName(), "Get brcOneDimTilingData from GE context failed"),
+                    return ge::GRAPH_FAILED);
 
         int32_t aliveNum = OpDag::template GetBufferNum<true, true>();
         aliveNum = aliveNum + tmpExtraBufferNum;
         int64_t actualUbSize = ubSize - tmpExtraSize;
 
-        OP_CHECK_IF(
-            (GetOneDimScalarFlag() == ge::GRAPH_FAILED), OP_LOGE(context_->GetNodeName(), "GetOneDimScalarFlag failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((GetOneDimScalarFlag() == ge::GRAPH_FAILED),
+                    OP_LOGE(context_->GetNodeName(), "GetOneDimScalarFlag failed"), return ge::GRAPH_FAILED);
 
-        OP_CHECK_IF(
-            (GetOneDimUBFormer(aliveNum, actualUbSize) == ge::GRAPH_FAILED),
-            OP_LOGE(context_->GetNodeName(), "GetUBFormer failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((GetOneDimUBFormer(aliveNum, actualUbSize) == ge::GRAPH_FAILED),
+                    OP_LOGE(context_->GetNodeName(), "GetUBFormer failed"), return ge::GRAPH_FAILED);
 
-        OP_CHECK_IF(
-            (DoOneDimFormerTiling(aliveNum) == ge::GRAPH_FAILED),
-            OP_LOGE(context_->GetNodeName(), "DoOneDimFormerTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((DoOneDimFormerTiling(aliveNum) == ge::GRAPH_FAILED),
+                    OP_LOGE(context_->GetNodeName(), "DoOneDimFormerTiling failed"), return ge::GRAPH_FAILED);
 
         schMode = SCH_MODE_ONE_DIM;
         context_->SetBlockDim(brcOneDimTilingData->blockNum);
@@ -1016,65 +990,56 @@ private:
 
     ge::graphStatus GetOneDimUBFormerAdvance(int32_t aliveNum, int64_t actualUbSize)
     {
-        OP_CHECK_IF(
-            (aliveNum == 0),
-            OP_LOGE(context_->GetNodeName(), "aliveNum check is 0, check failed, aliveNum is %d", aliveNum),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((aliveNum == 0),
+                    OP_LOGE(context_->GetNodeName(), "aliveNum check is 0, check failed, aliveNum is %d", aliveNum),
+                    return ge::GRAPH_FAILED);
 
         // 先分ub，再分核
         // 开DB，CACHE_LINE 对齐
         const uint32_t dTypeSize = OpDag::MaxDtypeBytes;
-        OP_CHECK_IF(
-            (dTypeSize == 0), OP_LOGE(context_->GetNodeName(), "OpDag::MaxDtypeBytes check is 0, check failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((dTypeSize == 0), OP_LOGE(context_->GetNodeName(), "OpDag::MaxDtypeBytes check is 0, check failed"),
+                    return ge::GRAPH_FAILED);
 
-        OP_LOGI(
-            context_->GetNodeName(), "Broadcast GetOneDimUBFormerAdvance. aliveNum: %d dTypeSize: %u ", aliveNum,
-            dTypeSize);
+        OP_LOGI(context_->GetNodeName(), "Broadcast GetOneDimUBFormerAdvance. aliveNum: %d dTypeSize: %u ", aliveNum,
+                dTypeSize);
 
         int64_t ubFormerByte = actualUbSize / aliveNum;
         int64_t ubFormerByteFloorAlign = (ubFormerByte / CACHE_LINE_512) * CACHE_LINE_512;
         brcOneDimTilingDataAdvance->tileNum = ubFormerByteFloorAlign / dTypeSize;
         OP_CHECK_IF(
             (brcOneDimTilingDataAdvance->tileNum == 0),
-            OP_LOGE(
-                context_->GetNodeName(),
-                "ub size or CACHE_LINE_512 check failed. actualUbSize: %ld CACHE_LINE_512: %ld dTypeSize: %u",
-                actualUbSize, CACHE_LINE_512, dTypeSize),
+            OP_LOGE(context_->GetNodeName(),
+                    "ub size or CACHE_LINE_512 check failed. actualUbSize: %ld CACHE_LINE_512: %ld dTypeSize: %u",
+                    actualUbSize, CACHE_LINE_512, dTypeSize),
             return ge::GRAPH_FAILED);
 
-        OP_LOGI(
-            context_->GetNodeName(), "Broadcast GetOneDimUBFormerAdvance finish. tileNum is: %d ",
-            brcOneDimTilingDataAdvance->tileNum);
+        OP_LOGI(context_->GetNodeName(), "Broadcast GetOneDimUBFormerAdvance finish. tileNum is: %d ",
+                brcOneDimTilingDataAdvance->tileNum);
         return ge::GRAPH_SUCCESS;
     }
 
     ge::graphStatus DoOneDimFormerTilingAdvance()
     {
-        OP_LOGI(
-            context_->GetNodeName(), "Broadcast DoOneDimFormerTilingAdvance. tilingData.dims.back().size is: %zu ",
-            tilingData.dims.back().size());
+        OP_LOGI(context_->GetNodeName(), "Broadcast DoOneDimFormerTilingAdvance. tilingData.dims.back().size is: %zu ",
+                tilingData.dims.back().size());
         const uint32_t inputDTypeSize = OpDag::MinDtypeBytes;
         const uint32_t dTypeSize = OpDag::MaxDtypeBytes;
-        OP_CHECK_IF(
-            (tilingData.dims.back().size() == 0),
-            OP_LOGE(context_->GetNodeName(), "tilingData.dims.back check is empty, check failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((tilingData.dims.back().size() == 0),
+                    OP_LOGE(context_->GetNodeName(), "tilingData.dims.back check is empty, check failed"),
+                    return ge::GRAPH_FAILED);
 
         uint64_t dimLength = tilingData.dims.back()[0];
-        OP_CHECK_IF(
-            (dimLength == 0), OP_LOGE(context_->GetNodeName(), "dimLength is zero, check failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((dimLength == 0), OP_LOGE(context_->GetNodeName(), "dimLength is zero, check failed"),
+                    return ge::GRAPH_FAILED);
 
         int32_t tileNum = brcOneDimTilingDataAdvance->tileNum;
         uint64_t blockNum = coreNum;
         int32_t inputcacheLineNum = CACHE_LINE_512 / inputDTypeSize;
         int32_t cacheLineNum = CACHE_LINE_512 / dTypeSize;
-        OP_LOGI(
-            context_->GetNodeName(),
-            "Broadcast DoOneDimFormerTilingAdvance begin. blockNum: %lu, inputDTypeSize: %u, inputcacheLineNum %d, "
-            "cacheLineNum %d, dimLength %lu",
-            blockNum, inputDTypeSize, inputcacheLineNum, cacheLineNum, dimLength);
+        OP_LOGI(context_->GetNodeName(),
+                "Broadcast DoOneDimFormerTilingAdvance begin. blockNum: %lu, inputDTypeSize: %u, inputcacheLineNum %d, "
+                "cacheLineNum %d, dimLength %lu",
+                blockNum, inputDTypeSize, inputcacheLineNum, cacheLineNum, dimLength);
         if (coreNum * inputcacheLineNum > dimLength) {
             // 如果dimLength不足 coreNum * 512, 则减少核数。
             tileNum = inputcacheLineNum;
@@ -1096,11 +1061,10 @@ private:
         brcOneDimTilingDataAdvance->blockNum = blockNum;
         brcOneDimTilingDataAdvance->dimLen = dimLength;
 
-        OP_LOGI(
-            context_->GetNodeName(),
-            "Broadcast one dim advance do tiling finish. coreNum: %ld, CACHE_LINE: %ld, "
-            "tileNum: %d, blockNum: %lu, dimLength: %ld, scalarFlag: %d",
-            coreNum, CACHE_LINE_512, tileNum, blockNum, dimLength, brcOneDimTilingDataAdvance->scalarFlag);
+        OP_LOGI(context_->GetNodeName(),
+                "Broadcast one dim advance do tiling finish. coreNum: %ld, CACHE_LINE: %ld, "
+                "tileNum: %d, blockNum: %lu, dimLength: %ld, scalarFlag: %d",
+                coreNum, CACHE_LINE_512, tileNum, blockNum, dimLength, brcOneDimTilingDataAdvance->scalarFlag);
 
         return ge::GRAPH_SUCCESS;
     }
@@ -1109,26 +1073,22 @@ private:
     {
         brcOneDimTilingDataAdvance = context_->GetTilingData<BroadcastOneDimTilingDataAdvance>();
 
-        OP_CHECK_IF(
-            (brcOneDimTilingDataAdvance == nullptr),
-            OP_LOGE(context_->GetNodeName(), "Get brcOneDimTilingDataAdvance from GE context failed"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF((brcOneDimTilingDataAdvance == nullptr),
+                    OP_LOGE(context_->GetNodeName(), "Get brcOneDimTilingDataAdvance from GE context failed"),
+                    return ge::GRAPH_FAILED);
 
         int32_t aliveNum = OpDag::template GetBufferNum<true, true>();
         aliveNum = aliveNum + tmpExtraBufferNum;
         int64_t actualUbSize = ubSize - tmpExtraSize;
 
-        OP_CHECK_IF(
-            (GetOneDimScalarFlagAdvance() == ge::GRAPH_FAILED),
-            OP_LOGE(context_->GetNodeName(), "GetOneDimScalarFlag failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((GetOneDimScalarFlagAdvance() == ge::GRAPH_FAILED),
+                    OP_LOGE(context_->GetNodeName(), "GetOneDimScalarFlag failed"), return ge::GRAPH_FAILED);
 
-        OP_CHECK_IF(
-            (GetOneDimUBFormerAdvance(aliveNum, actualUbSize) == ge::GRAPH_FAILED),
-            OP_LOGE(context_->GetNodeName(), "GetUBFormer failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((GetOneDimUBFormerAdvance(aliveNum, actualUbSize) == ge::GRAPH_FAILED),
+                    OP_LOGE(context_->GetNodeName(), "GetUBFormer failed"), return ge::GRAPH_FAILED);
 
-        OP_CHECK_IF(
-            (DoOneDimFormerTilingAdvance() == ge::GRAPH_FAILED),
-            OP_LOGE(context_->GetNodeName(), "DoOneDimFormerTiling failed"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((DoOneDimFormerTilingAdvance() == ge::GRAPH_FAILED),
+                    OP_LOGE(context_->GetNodeName(), "DoOneDimFormerTiling failed"), return ge::GRAPH_FAILED);
 
         schMode = SCH_MODE_ONE_DIM_ADVANCE;
         context_->SetBlockDim(brcOneDimTilingDataAdvance->blockNum);

@@ -46,9 +46,8 @@ aclnnStatus InferShapeContextHolder::EnsureContextCapacity(size_t requiredCapaci
     // Allocate new memory (do NOT use realloc)
     size_t newSize = sizeof(KernelRunContext) + sizeof(AsyncAnyValue*) * (newCapacity + inferShapeValueNum_);
     KernelRunContext* newCtx = static_cast<KernelRunContext*>(malloc(newSize));
-    OP_CHECK(
-        newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc inferShapeCtx, size %zu.", newSize),
-        return ACLNN_ERR_INNER);
+    OP_CHECK(newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc inferShapeCtx, size %zu.", newSize),
+             return ACLNN_ERR_INNER);
 
     // Calculate old size for copy
     size_t oldSize = sizeof(KernelRunContext) + sizeof(AsyncAnyValue*) * (inferShapeCtxCapacity_ + inferShapeValueNum_);
@@ -77,9 +76,8 @@ aclnnStatus InferShapeContextHolder::UpdateInferShapeContext(const KernelContext
 
     // Ensure capacity before updating context
     size_t requiredCapacity = kernelCtx->inputNum_ + kernelCtx->outputNum_ + inferShapeValueNum_;
-    CHECK_RET_CODE(
-        const_cast<InferShapeContextHolder*>(this)->EnsureContextCapacity(requiredCapacity),
-        "EnsureContextCapacity failed.");
+    CHECK_RET_CODE(const_cast<InferShapeContextHolder*>(this)->EnsureContextCapacity(requiredCapacity),
+                   "EnsureContextCapacity failed.");
 
     inferShapeCtx_->compute_node_info = kernelCtx->computeNodeInfo_;
     inferShapeCtx_->kernel_extend_info = &kernelCtx->kernelExtendInfo_;

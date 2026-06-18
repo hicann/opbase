@@ -60,9 +60,8 @@ aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
     // Allocate new memory (do NOT use realloc)
     size_t newSize = sizeof(AsyncAnyValue) * newCapacity;
     AsyncAnyValue* newArg = static_cast<AsyncAnyValue*>(malloc(newSize));
-    OP_CHECK(
-        newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc opInArg, size %zu.", newSize),
-        return ACLNN_ERR_INNER);
+    OP_CHECK(newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc opInArg, size %zu.", newSize),
+             return ACLNN_ERR_INNER);
 
     // Copy existing data to new location
     size_t oldSize = sizeof(AsyncAnyValue) * opInArgCapacity_;
@@ -100,9 +99,8 @@ aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCa
     size_t newSize = sizeof(ComputeNodeInfo) + sizeof(AnchorInstanceInfo) * newCapacity +
                      sizeof(CompileTimeTensorDesc) * newCapacity + sizeof(RuntimeAttrsDef) + attrCapacity_;
     ComputeNodeInfo* newInfo = static_cast<ComputeNodeInfo*>(malloc(newSize));
-    OP_CHECK(
-        newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo, size %zu.", newSize),
-        return ACLNN_ERR_INNER);
+    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo, size %zu.", newSize),
+             return ACLNN_ERR_INNER);
 
     // Copy existing data
     OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
@@ -156,10 +154,9 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
     size_t newSize = sizeof(ComputeNodeInfo) + sizeof(AnchorInstanceInfo) * computeNodeInfoCapacity_ +
                      sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_ + sizeof(RuntimeAttrsDef) + newCapacity;
     ComputeNodeInfo* newInfo = static_cast<ComputeNodeInfo*>(malloc(newSize));
-    OP_CHECK(
-        newInfo != nullptr,
-        OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo for attr expansion, size %zu.", newSize),
-        return ACLNN_ERR_INNER);
+    OP_CHECK(newInfo != nullptr,
+             OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo for attr expansion, size %zu.", newSize),
+             return ACLNN_ERR_INNER);
 
     // Copy data up to current computeNodeInfoSize_
     OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
@@ -206,9 +203,8 @@ void KernelContextHolder::UpdateAttrDefOffset(size_t inoutNum, size_t attrNum)
     attrDef_->attr_num = attrNum;
     attrDataStart_ = PtrCastTo<uint8_t>(attrDef_ + 1) + sizeof(size_t) * attrNum;
 #ifdef DEBUG
-    OP_LOGD(
-        "Adjust attr offset. [%zu]. inout num %zu. attr num: %zu,  %zu", attrOffset, inoutNum, attrNum,
-        PtrOffset(computeNodeInfo_, attrDef_));
+    OP_LOGD("Adjust attr offset. [%zu]. inout num %zu. attr num: %zu,  %zu", attrOffset, inoutNum, attrNum,
+            PtrOffset(computeNodeInfo_, attrDef_));
 #endif
 }
 

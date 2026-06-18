@@ -165,21 +165,20 @@ void PlatformInfoImpl::InitInstMMadSocSpecAbility(map<string, vector<string>>& a
     OP_LOGI("Start InitInstMMadSocSpecAbility.");
     // all ability:
     // u32u8u8,s32s8s8,s32u8s8,f16f16f16,f32f16f16,f16f16u2,u8,s8,f162f16,f162f32,f16u2,u8s8,h322f32,f322f32
-    map<string, SocSpecAbility> convertMap = {
-        {"u32u8u8", SocSpecAbility::INST_MMAD_U32U8U8},
-        {"s32s8s8", SocSpecAbility::INST_MMAD_S32S8S8},
-        {"s32u8s8", SocSpecAbility::INST_MMAD_S32U8S8},
-        {"f16f16f16", SocSpecAbility::INST_MMAD_F16F16F16},
-        {"f32f16f16", SocSpecAbility::INST_MMAD_F32F16F16},
-        {"f16f16u2", SocSpecAbility::INST_MMAD_F16F16U2},
-        {"u8", SocSpecAbility::INST_MMAD_U8},
-        {"s8", SocSpecAbility::INST_MMAD_S8},
-        {"f162f16", SocSpecAbility::INST_MMAD_F162F16},
-        {"f162f32", SocSpecAbility::INST_MMAD_F162F32},
-        {"f16u2", SocSpecAbility::INST_MMAD_F16U2},
-        {"u8s8", SocSpecAbility::INST_MMAD_U8S8},
-        {"h322f32", SocSpecAbility::INST_MMAD_H322F32},
-        {"f322f32", SocSpecAbility::INST_MMAD_F322F32}};
+    map<string, SocSpecAbility> convertMap = {{"u32u8u8", SocSpecAbility::INST_MMAD_U32U8U8},
+                                              {"s32s8s8", SocSpecAbility::INST_MMAD_S32S8S8},
+                                              {"s32u8s8", SocSpecAbility::INST_MMAD_S32U8S8},
+                                              {"f16f16f16", SocSpecAbility::INST_MMAD_F16F16F16},
+                                              {"f32f16f16", SocSpecAbility::INST_MMAD_F32F16F16},
+                                              {"f16f16u2", SocSpecAbility::INST_MMAD_F16F16U2},
+                                              {"u8", SocSpecAbility::INST_MMAD_U8},
+                                              {"s8", SocSpecAbility::INST_MMAD_S8},
+                                              {"f162f16", SocSpecAbility::INST_MMAD_F162F16},
+                                              {"f162f32", SocSpecAbility::INST_MMAD_F162F32},
+                                              {"f16u2", SocSpecAbility::INST_MMAD_F16U2},
+                                              {"u8s8", SocSpecAbility::INST_MMAD_U8S8},
+                                              {"h322f32", SocSpecAbility::INST_MMAD_H322F32},
+                                              {"f322f32", SocSpecAbility::INST_MMAD_F322F32}};
 
     auto instMapIt = aiCoreInstMap.find("Intrinsic_mmad");
     if (instMapIt != aiCoreInstMap.end()) {
@@ -240,8 +239,8 @@ void PlatformInfoImpl::InitAiCoreSpec()
         blockSize_ = num;
         OP_LOGI("InitAiCoreSpec success, block size is: %ld", blockSize_);
     } catch (const invalid_argument& e) {
-        OP_LOGW(
-            "InitAiCoreSpec Failed, ubblock_size is not a number string: %s, use default 32.", blockSizeStr.c_str());
+        OP_LOGW("InitAiCoreSpec Failed, ubblock_size is not a number string: %s, use default 32.",
+                blockSizeStr.c_str());
     } catch (const out_of_range& e) {
         OP_LOGW("InitAiCoreSpec Failed, ubblock_size is out of int range: %s, use default 32.", blockSizeStr.c_str());
     }
@@ -268,9 +267,8 @@ void PlatformInfoImpl::InitSoCInfo()
 void PlatformInfoImpl::InitNpuArch()
 {
     char archVal[NPU_ARCH_VAL_MAX_LEN] = {0};
-    OP_CHECK(
-        rtGetSocSpec("version", "NpuArch", archVal, NPU_ARCH_VAL_MAX_LEN) == RT_ERROR_NONE,
-        OP_LOGW("call rtGetSocSpec failed"), return);
+    OP_CHECK(rtGetSocSpec("version", "NpuArch", archVal, NPU_ARCH_VAL_MAX_LEN) == RT_ERROR_NONE,
+             OP_LOGW("call rtGetSocSpec failed"), return);
     std::string archStrVal(archVal);
     uint32_t npuArchVal = 0;
     try {
@@ -362,23 +360,22 @@ const PlatformInfo& PlatformThreadLocalCtx::GetPlatformInfo()
 {
     int32_t deviceId;
     auto ret = aclrtGetDevice(&deviceId);
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get device id failed when do GetCurrentPlatformInfo."),
-        return invalidPlatform_);
+    OP_CHECK(ret == ACL_SUCCESS,
+             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get device id failed when do GetCurrentPlatformInfo."),
+             return invalidPlatform_);
     while (platformInfoList_.size() <= static_cast<size_t>(deviceId)) {
         PlatformInfo* info = new PlatformInfo(platformInfoList_.size());
         platformInfoList_.push_back(info);
     }
-    OP_LOGI(
-        "GetCurrentPlatformInfo, get current device is: %d, tPlatformInfoList.size(): %lu", deviceId,
-        platformInfoList_.size());
+    OP_LOGI("GetCurrentPlatformInfo, get current device is: %d, tPlatformInfoList.size(): %lu", deviceId,
+            platformInfoList_.size());
     if (!platformInfoList_[deviceId]->Valid()) {
         fe::PlatFormInfos* platformOriginInfo = new fe::PlatFormInfos();
-        auto getPlatformRet =
-            fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(deviceId, *platformOriginInfo);
+        auto getPlatformRet = fe::PlatformInfoManager::GeInstance().GetRuntimePlatformInfosByDevice(
+            deviceId, *platformOriginInfo);
         if (getPlatformRet != 0) {
-            OP_LOGE(
-                ACLNN_ERR_RUNTIME_ERROR, "Call PlatformInfoManager::GeInstance().GetPlatformInstanceByDevice failed.");
+            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR,
+                    "Call PlatformInfoManager::GeInstance().GetPlatformInstanceByDevice failed.");
             delete platformOriginInfo;
         } else {
             OP_LOGI("GetRuntimePlatformInfosByDevice success.");

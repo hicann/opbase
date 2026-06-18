@@ -71,16 +71,14 @@ protected:
         size_t hashKey = 123;
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(
-            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/"
-            "QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
-            p);
-        snprintf_s(
-            binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/"
-            "Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
-            p);
+        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/"
+                   "QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
+                   p);
+        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/"
+                   "Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
+                   p);
         op::internal::OpKernelBin* fakeBin = new op::internal::OpKernelBin(
             opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, hasDevPtrArg);
         return fakeBin;
@@ -128,8 +126,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase2)
 
     uint32_t opType = op::OpTypeDict::ToOpType("Sort");
     auto input = OP_INPUT(self.get());
-    auto output =
-        OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr), static_cast<aclTensorList*>(nullptr));
+    auto output = OP_OUTPUT(out.get(), idx.get(), static_cast<aclTensor*>(nullptr),
+                            static_cast<aclTensorList*>(nullptr));
     auto attr = OP_ATTR(dim, descending);
 
     auto ws1 = std::make_unique<aclTensor>(wsShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, nullptr);
@@ -578,12 +576,10 @@ TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)
     for (size_t i = 1; i <= binNum; i++) {
         char jsonPath[1024];
         char binPath[1024];
-        snprintf_s(
-            jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.json", p, i);
-        snprintf_s(
-            binPath, sizeof(binPath), sizeof(binPath),
-            "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.o", p, i);
+        snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.json", p, i);
+        snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+                   "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/dummy/dummy_%zu.o", p, i);
         op::internal::OpKernelBin* bin = new op::internal::OpKernelBin(
             9999, jsonPath, jsonPath, binPath, key, hashKey, op::internal::BinType::DYNAMIC_BIN, false, false);
         aclnnStatus rc = bin->JsonLoad();
@@ -799,8 +795,8 @@ static void TestLaunchWithCaptureStub(AclrtStub* captureStub)
     thread_local uint64_t kernelLaunchIdDefinedInL0Dfx = op::internal::GenKernelLauncherId("Axpy");
     op::internal::ProfilingInfoId profilingInfoId(0, kernelLaunchIdDefinedInL0Dfx, 0);
 
-    auto ctx = op::MakeOpArgContext(
-        OP_INPUT(self.get(), other.get()), OP_OUTPUT(out.get()), OP_ATTR(alpha), OP_WORKSPACE(out.get()));
+    auto ctx = op::MakeOpArgContext(OP_INPUT(self.get(), other.get()), OP_OUTPUT(out.get()), OP_ATTR(alpha),
+                                    OP_WORKSPACE(out.get()));
     auto launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
 
     auto rc = launcher->Launch();

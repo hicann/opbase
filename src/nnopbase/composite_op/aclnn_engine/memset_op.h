@@ -23,11 +23,7 @@ namespace internal {
 
 class OpKernelBin;
 
-enum class MemsetVersion : uint8_t {
-    MEMSET_V1 = 0,
-    MEMSET_V1_ASCENDC,
-    MEMSET_V2
-};
+enum class MemsetVersion : uint8_t { MEMSET_V1 = 0, MEMSET_V1_ASCENDC, MEMSET_V2 };
 
 const std::string MEMSET_V1_NAME = "MemSet";
 const std::string MEMSET_V2_NAME = "MemSetV2";
@@ -35,24 +31,24 @@ const std::string MEMSET_V2_NAME = "MemSetV2";
 class MemsetV2ArgContext {
 public:
     MemsetV2ArgContext();
-    aclnnStatus Init(const std::vector<MemSetTensorInfo> &memsetTensorInfo);
+    aclnnStatus Init(const std::vector<MemSetTensorInfo>& memsetTensorInfo);
     ~MemsetV2ArgContext();
-    OpArgContext *GetMemsetV2OpArgContext();
+    OpArgContext* GetMemsetV2OpArgContext();
 
 private:
-    void AddOneMemSetTensor(const aclTensor *tensor, op::DataType dtype, int64_t valueInt, float valueFloat);
+    void AddOneMemSetTensor(const aclTensor* tensor, op::DataType dtype, int64_t valueInt, float valueFloat);
 
     int32_t hugeMemPoolIndex_{op::kInvalidHugeMemIndexId};
-    std::vector<const aclTensor *> memsetInputs_;
+    std::vector<const aclTensor*> memsetInputs_;
     std::vector<int64_t> memsetIntAttrs_;
     std::vector<float> memsetFloatAttrs_;
-    aclTensorList *memsetTensors_{nullptr};
-    aclIntArray *intAttrArray_{nullptr};
-    aclFloatArray *floatAttrArray_{nullptr};
-    OpArgContext *memsetV2OpArgCtx_{nullptr};
+    aclTensorList* memsetTensors_{nullptr};
+    aclIntArray* intAttrArray_{nullptr};
+    aclFloatArray* floatAttrArray_{nullptr};
+    OpArgContext* memsetV2OpArgCtx_{nullptr};
 };
 
-aclnnStatus SelectMemsetOpBin(MemsetVersion memsetVersion, size_t inputNum, OpKernelBin *&opBin);
+aclnnStatus SelectMemsetOpBin(MemsetVersion memsetVersion, size_t inputNum, OpKernelBin*& opBin);
 
 } // namespace internal
 } // namespace op

@@ -117,9 +117,8 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
         }
         exhaustBlocks.push_back(p);
     }
-    printf(
-        "[Test2] Exhausted BlockStore: %zu blocks held (%zu KB)\n", exhaustBlocks.size(),
-        exhaustBlocks.size() * (kBlockSize + sizeof(BlockStore::BlockHeader)) / 1024);
+    printf("[Test2] Exhausted BlockStore: %zu blocks held (%zu KB)\n", exhaustBlocks.size(),
+           exhaustBlocks.size() * (kBlockSize + sizeof(BlockStore::BlockHeader)) / 1024);
 
     size_t rssBefore = GetProcessRssKB();
     printf("[Test2] RSS before phases: %zu KB\n", rssBefore);
@@ -149,9 +148,8 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
 
     size_t rssAfterPhase1 = GetProcessRssKB();
     size_t phase1Growth = (rssAfterPhase1 > rssBefore) ? (rssAfterPhase1 - rssBefore) : 0;
-    printf(
-        "[Test2] Phase1 (%zu threads, cache enabled): RSS %zu -> %zu KB, growth=%zu KB\n", kTotalThreadsPhase1,
-        rssBefore, rssAfterPhase1, phase1Growth);
+    printf("[Test2] Phase1 (%zu threads, cache enabled): RSS %zu -> %zu KB, growth=%zu KB\n", kTotalThreadsPhase1,
+           rssBefore, rssAfterPhase1, phase1Growth);
 
     // Step 3: Phase 2 - threads with cache disabled (thread 101+)
     // cacheDisabled_=true → CacheAlloc → BlockPool::Malloc (SYS_TAG from std::malloc)
@@ -181,9 +179,8 @@ TEST_F(BlockCacheLimitTest, MemoryStableAfterCacheLimit)
 
     size_t rssAfterPhase2 = GetProcessRssKB();
     size_t phase2Growth = (rssAfterPhase2 > rssAfterPhase1) ? (rssAfterPhase2 - rssAfterPhase1) : 0;
-    printf(
-        "[Test2] Phase2 (%zu threads, cache disabled): RSS %zu -> %zu KB, growth=%zu KB\n", kTotalThreadsPhase2,
-        rssAfterPhase1, rssAfterPhase2, phase2Growth);
+    printf("[Test2] Phase2 (%zu threads, cache disabled): RSS %zu -> %zu KB, growth=%zu KB\n", kTotalThreadsPhase2,
+           rssAfterPhase1, rssAfterPhase2, phase2Growth);
 
     // Step 4: Clean up exhaust blocks
     for (void* p : exhaustBlocks) {

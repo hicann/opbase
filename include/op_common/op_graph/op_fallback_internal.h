@@ -199,9 +199,8 @@ inline aclTensor* ConvertType(const gert::Tensor* ge_tensor)
         strides[i] = shape[i + 1] * strides[i + 1];
     }
 
-    aclTensor* out = aclCreateTensor(
-        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
-        device_addr);
+    aclTensor* out = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
+                                     shape.data(), shape.size(), device_addr);
 
     OP_CHECK_IF(out == nullptr, OP_LOGE("aclnnfallback", "out nullptr"), return nullptr);
 
@@ -314,8 +313,8 @@ auto ConvertToOpApiFunc(const Tuple& params, void* opApiAddr, std_utils::index_s
 template <typename Tuple>
 auto ConvertToOpApiFunc(const Tuple& params, void* opApiAddr) -> typename std::enable_if<
     std::tuple_size<Tuple>::value != 0,
-    decltype(ConvertToOpApiFunc(
-        params, opApiAddr, std_utils::make_index_sequence<std::tuple_size<Tuple>::value>{}))>::type
+    decltype(ConvertToOpApiFunc(params, opApiAddr,
+                                std_utils::make_index_sequence<std::tuple_size<Tuple>::value>{}))>::type
 {
     static constexpr auto size = std::tuple_size<Tuple>::value;
     return ConvertToOpApiFunc(params, opApiAddr, std_utils::make_index_sequence<size>{});

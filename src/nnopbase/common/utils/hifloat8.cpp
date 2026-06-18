@@ -22,20 +22,50 @@
 namespace {
 // Exponent to mantissa width mapping
 constexpr std::array<uint8_t, 24> HIF8_EXP_TO_MANTISSA_WIDTH = {{
-    3, 3, 3, 3,                   // [0, 3]
-    2, 2, 2, 2,                   // [4, 7]
-    1, 1, 1, 1, 1, 1, 1, 1,       // [8, 15]
-    0, 0, 0, 0, 0, 0, 0,          // [16, 22]
-    static_cast<uint8_t>(-1),     // [23]
+    3,
+    3,
+    3,
+    3, // [0, 3]
+    2,
+    2,
+    2,
+    2, // [4, 7]
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1, // [8, 15]
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,                        // [16, 22]
+    static_cast<uint8_t>(-1), // [23]
 }};
 
 // Exponent to Dot prefix mapping
 constexpr std::array<uint8_t, 16> HIF8_EXP_TO_DOT = {{
-    0b0001,                                                               // [0]
-    0b0010,                                                               // [1]
-    0b0100, 0b0100,                                                       // [2, 3]
-    0b1000, 0b1000, 0b1000, 0b1000,                                       // [4, 7]
-    0b1100, 0b1100, 0b1100, 0b1100, 0b1100, 0b1100, 0b1100, 0b1100,       // [8, 15]
+    0b0001, // [0]
+    0b0010, // [1]
+    0b0100,
+    0b0100, // [2, 3]
+    0b1000,
+    0b1000,
+    0b1000,
+    0b1000, // [4, 7]
+    0b1100,
+    0b1100,
+    0b1100,
+    0b1100,
+    0b1100,
+    0b1100,
+    0b1100,
+    0b1100, // [8, 15]
 }};
 
 // Bit width constants
@@ -55,16 +85,13 @@ constexpr uint8_t HIF8_DOT_OFFSET = 3;
 constexpr int8_t HIF8_NML_EXP_MAX = 15;
 constexpr int8_t HIF8_DML_EXP_MIN = -22;
 
-constexpr uint8_t HIF8_SIGN_MASK = 0b10000000;  // Sign mask for external operators
+constexpr uint8_t HIF8_SIGN_MASK = 0b10000000; // Sign mask for external operators
 
 constexpr uint8_t IEEE_FP32_EXP_BITS = 8;
 constexpr uint8_t IEEE_FP32_MAN_BITS = 32 - 1 - IEEE_FP32_EXP_BITS;
 
 // Bit extraction utility
-uint32_t Extract32(uint32_t u32, uint8_t width, uint8_t offset)
-{
-    return (u32 >> offset) & ((1U << width) - 1U);
-}
+uint32_t Extract32(uint32_t u32, uint8_t width, uint8_t offset) { return (u32 >> offset) & ((1U << width) - 1U); }
 
 // Bit deposition utility
 uint32_t Deposit32(uint32_t u32, uint8_t width, uint8_t offset, uint32_t val)
@@ -88,13 +115,11 @@ uint8_t EncodeHiF8(int8_t exp, uint8_t mantissa)
         return Deposit32(m, 1, HIF8_MSB_INDEX - (__builtin_clz(m) - CLZ_OFFSET_FOR_UINT8), se_bit);
     };
     return static_cast<uint8_t>(HIF8_EXP_TO_DOT[mag] << HIF8_DOT_OFFSET) |
-           static_cast<uint8_t>(encode_em(mag, exp < 0) << HIF8_EXP_TO_MANTISSA_WIDTH[mag]) |
-           mantissa;
+           static_cast<uint8_t>(encode_em(mag, exp < 0) << HIF8_EXP_TO_MANTISSA_WIDTH[mag]) | mantissa;
 }
 
 // IEEE floating point type classification
-enum class IeeeType : int8_t
-{
+enum class IeeeType : int8_t {
     ZERO,
     NOT_A_NUMBER,
     POSITIVE_INFINITY,
@@ -189,36 +214,20 @@ int8_t ExtractExponent(uint8_t dot, uint8_t mantissa_width, uint8_t raw)
     return (se != 0 ? -1 : 1) * static_cast<int8_t>(mag);
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 namespace op {
-HiFloat8::HiFloat8(float f32) : value(BitsFromFp32(BitCast<uint32_t>(f32)))
-{}
+HiFloat8::HiFloat8(float f32) : value(BitsFromFp32(BitCast<uint32_t>(f32))) {}
 
-HiFloat8::operator float() const
-{
-    return Hifp8ToFloat(*this);
-}
+HiFloat8::operator float() const { return Hifp8ToFloat(*this); }
 
-bool HiFloat8::IsNaN() const
-{
-    return value == HIF8_NAN_VALUE;
-}
+bool HiFloat8::IsNaN() const { return value == HIF8_NAN_VALUE; }
 
-bool HiFloat8::IsInf() const
-{
-    return (value & static_cast<uint8_t>(~HIF8_SIGN_MASK)) == HIF8_INF_VALUE;
-}
+bool HiFloat8::IsInf() const { return (value & static_cast<uint8_t>(~HIF8_SIGN_MASK)) == HIF8_INF_VALUE; }
 
-bool HiFloat8::IsZero() const
-{
-    return (value & static_cast<uint8_t>(~HIF8_SIGN_MASK)) == HIF8_ZERO_VALUE;
-}
+bool HiFloat8::IsZero() const { return (value & static_cast<uint8_t>(~HIF8_SIGN_MASK)) == HIF8_ZERO_VALUE; }
 
-uint8_t HiFloat8::BitsFromFp32(uint32_t f32)
-{
-    return HiF8FromIeeeBits<IEEE_FP32_EXP_BITS, IEEE_FP32_MAN_BITS>(f32);
-}
+uint8_t HiFloat8::BitsFromFp32(uint32_t f32) { return HiF8FromIeeeBits<IEEE_FP32_EXP_BITS, IEEE_FP32_MAN_BITS>(f32); }
 
 float HiFloat8::Hifp8ToFloat(HiFloat8 hif8)
 {
@@ -229,12 +238,22 @@ float HiFloat8::Hifp8ToFloat(HiFloat8 hif8)
                                                     std::numeric_limits<float>::infinity();
     }
     static const std::array<std::pair<uint8_t, uint8_t>, 16> DOT_TABLE = {{
-        { HIF8_DML_FLAG, 4 },                        // 0b0000
-        { 0, 4 },                                   // 0b0001
-        { 1, 3 }, { 1, 3 },                         // 0b001.
-        { 2, 2 }, { 2, 2 }, { 2, 2 }, { 2, 2 },     // 0b01..
-        { 3, 2 }, { 3, 2 }, { 3, 2 }, { 3, 2 },     // 0b10..
-        { 4, 2 }, { 4, 2 }, { 4, 2 }, { 4, 2 },     // 0b11..
+        {HIF8_DML_FLAG, 4}, // 0b0000
+        {0, 4},             // 0b0001
+        {1, 3},
+        {1, 3}, // 0b001.
+        {2, 2},
+        {2, 2},
+        {2, 2},
+        {2, 2}, // 0b01..
+        {3, 2},
+        {3, 2},
+        {3, 2},
+        {3, 2}, // 0b10..
+        {4, 2},
+        {4, 2},
+        {4, 2},
+        {4, 2}, // 0b11..
     }};
     const float sign = (hif8.value & HIF8_SIGN_MASK) != 0 ? -1.0F : 1.0F;
     const auto pair = DOT_TABLE[(hif8.value & HIF8_DML_MASK) >> HIF8_DOT_OFFSET];
@@ -242,8 +261,8 @@ float HiFloat8::Hifp8ToFloat(HiFloat8 hif8)
     const uint8_t width = pair.second;
 
     if (dot == HIF8_DML_FLAG) {
-        const int8_t dml_exp =
-            static_cast<int8_t>(hif8.value & static_cast<uint8_t>(~(HIF8_SIGN_MASK | HIF8_DML_MASK)));
+        const int8_t dml_exp = static_cast<int8_t>(hif8.value &
+                                                   static_cast<uint8_t>(~(HIF8_SIGN_MASK | HIF8_DML_MASK)));
         if (dml_exp == 0) {
             return 0.0F;
         }

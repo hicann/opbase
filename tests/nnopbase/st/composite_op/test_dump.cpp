@@ -69,9 +69,9 @@ TEST_F(DumpUt, dump_l2)
     void* deviceDataA = nullptr;
     vector<int64_t> stridesA = {2, 1, 32, 16};
 
-    const aclTensor* tensor = aclCreateTensor(
-        shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0, aclFormat::ACL_FORMAT_ND, storageShapeA.data(),
-        storageShapeA.size(), deviceDataA);
+    const aclTensor* tensor = aclCreateTensor(shapeA.data(), shapeA.size(), dtype1, stridesA.data(), 0,
+                                              aclFormat::ACL_FORMAT_ND, storageShapeA.data(), storageShapeA.size(),
+                                              deviceDataA);
     ;
     std::vector<const aclTensor*> in;
     op::internal::OpLogInfo info;

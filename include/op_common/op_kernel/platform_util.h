@@ -15,22 +15,19 @@
 
 #ifndef OP_COMMON_OP_KERNEL_PLATFORM_UTIL_H
 #define OP_COMMON_OP_KERNEL_PLATFORM_UTIL_H
-#if ASC_DEVKIT_MAJOR >=9
+#if ASC_DEVKIT_MAJOR >= 9
 #include "basic_api/kernel_vec_intf.h"
 #else
 #include "kernel_operator.h"
 #endif
 
-namespace Ops{
+namespace Ops {
 namespace Base {
 
 /**
  * Get the block size of unified buffer in bytes
  */
-__aicore__ inline constexpr uint32_t GetUbBlockSize()
-{
-    return 32U;
-}
+__aicore__ inline constexpr uint32_t GetUbBlockSize() { return 32U; }
 
 /**
  * Get the size of vector registers in bytes

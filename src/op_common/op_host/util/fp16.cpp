@@ -534,8 +534,8 @@ static double fp16ToDouble(const uint16_t& fpVal)
     return ret;
 }
 
-static inline void Fp16AlignExp4Int8(
-    uint8_t sRet, uint16_t hfE, uint64_t& longIntM, uint8_t& overflowFlag, uint16_t& shiftOut)
+static inline void Fp16AlignExp4Int8(uint8_t sRet, uint16_t hfE, uint64_t& longIntM, uint8_t& overflowFlag,
+                                     uint16_t& shiftOut)
 {
     while (hfE != FP16_EXP_BIAS) {
         if (hfE > FP16_EXP_BIAS) {
@@ -664,8 +664,8 @@ static uint8_t fp16ToUInt8(const uint16_t& fpVal)
     return mRet;
 }
 
-static inline void Fp16AlignExp4Int16(
-    uint8_t sRet, uint16_t hfE, uint64_t& longIntM, uint8_t& overflowFlag, uint16_t& shiftOut)
+static inline void Fp16AlignExp4Int16(uint8_t sRet, uint16_t hfE, uint64_t& longIntM, uint8_t& overflowFlag,
+                                      uint16_t& shiftOut)
 {
     while (hfE != FP16_EXP_BIAS) {
         if (hfE > FP16_EXP_BIAS) {

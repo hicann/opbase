@@ -123,18 +123,16 @@ public:
     bool SetRunParam(KernelLaunchConfig& launchCfg, std::string& kernelName)
     {
         launchCfg_ = launchCfg;
-        OP_LOGD(
-            "Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, numBlocks: %u, "
-            "scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, funcHandle: %p, binHandle: %p",
-            static_cast<int>(launchCfg_.engineType), launchCfg_.isFatBin, launchCfg_.tilingKey, launchCfg_.numBlocks,
-            launchCfg_.schemMode, launchCfg_.blockDimOffset, launchCfg_.dynUBufSize, launchCfg_.funcHandle,
-            launchCfg_.binHandle);
+        OP_LOGD("Save launch config to cache, engine type: %d, isFatBin: %d, tilingKey: %lu, numBlocks: %u, "
+                "scheduleMode: %u, blockDimOffset: %u, dynUBufSize: %u, funcHandle: %p, binHandle: %p",
+                static_cast<int>(launchCfg_.engineType), launchCfg_.isFatBin, launchCfg_.tilingKey,
+                launchCfg_.numBlocks, launchCfg_.schemMode, launchCfg_.blockDimOffset, launchCfg_.dynUBufSize,
+                launchCfg_.funcHandle, launchCfg_.binHandle);
         if (!launchCfg_.isFatBin) {
-            OP_CHECK(
-                kernelName.length() < KERNEL_NAME_MAX_SIZE,
-                OP_LOGW("kernel name is bigger than %zu", KERNEL_NAME_MAX_SIZE), return false);
-            auto rc =
-                strncpy_s(kernelNameOfNoFatBin_, KERNEL_NAME_MAX_SIZE - 1, kernelName.c_str(), kernelName.length());
+            OP_CHECK(kernelName.length() < KERNEL_NAME_MAX_SIZE,
+                     OP_LOGW("kernel name is bigger than %zu", KERNEL_NAME_MAX_SIZE), return false);
+            auto rc = strncpy_s(kernelNameOfNoFatBin_, KERNEL_NAME_MAX_SIZE - 1, kernelName.c_str(),
+                                kernelName.length());
             OP_CHECK(rc == EOK, OP_LOGW("Copy kernel name to cache failed"), return false);
             OP_LOGD("Kernel name of no fat bin is: %s", kernelNameOfNoFatBin_);
         }
@@ -264,8 +262,8 @@ private:
     // 刷新 rtArg_.args 和 hostAddr_（扩容后 baseAddr_ 改变时调用）
     void RefreshRtArgsAddr();
 
-    void AddExceptionDumpDataToCache(
-        const LaunchArgInfo& argInfo, OpExecCache* cache, LaunchArgCache* launchCache) const;
+    void AddExceptionDumpDataToCache(const LaunchArgInfo& argInfo, OpExecCache* cache,
+                                     LaunchArgCache* launchCache) const;
     void AddDFXInfoDumpDataToCache(const LaunchArgInfo& argInfo, OpExecCache* cache, LaunchArgCache* launchCache) const;
 
     bool hasFftsAddr_{false};
@@ -294,9 +292,8 @@ int PrintExceptionDumpInfo(void* dump, size_t num);
 int PrintAICErrorDFXInfo(const void* dfxInfoAddr, const size_t argNum, const size_t dataSize);
 void PrintHostDataSize(const rtArgs_t& rtArg);
 void PrintTilingData(const rtArgs_t& rtArg);
-void AddArgInfoToCache(
-    OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, const LaunchArgInfo& launchArgInfo, bool hasFftsAddr,
-    const ExpandableRtsArgBuffer* rtsArgBuffer);
+void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, const LaunchArgInfo& launchArgInfo,
+                       bool hasFftsAddr, const ExpandableRtsArgBuffer* rtsArgBuffer);
 void ReportRTSException(const LaunchArgCache* launchCache, void* cacheException);
 } // namespace op::internal
 

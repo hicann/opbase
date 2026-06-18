@@ -12,8 +12,8 @@
 #include "sharder.h"
 
 namespace aicpu {
-using ParallelForFunc =
-    void (*)(int64_t total, int64_t per_unit_size, const std::function<void(int64_t, int64_t)>& work);
+using ParallelForFunc = void (*)(int64_t total, int64_t per_unit_size,
+                                 const std::function<void(int64_t, int64_t)>& work);
 using GetCPUNumFunc = uint32_t (*)();
 class DeviceSharder : public Sharder {
 public:
@@ -27,8 +27,8 @@ public:
      * @param per_unit_size: expect size of per unit work
      * @param work: process of per unit work
      */
-    void ParallelFor(
-        int64_t total, int64_t per_unit_size, const std::function<void(int64_t, int64_t)>& work) const override;
+    void ParallelFor(int64_t total, int64_t per_unit_size,
+                     const std::function<void(int64_t, int64_t)>& work) const override;
 
     /*
      * Get CPU number

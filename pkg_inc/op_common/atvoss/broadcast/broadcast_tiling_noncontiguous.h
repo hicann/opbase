@@ -19,19 +19,18 @@
 
 namespace Ops {
 namespace Base {
-OPBASE_API uint64_t GetBlockSplitFactorLastTranspose(
-    BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo, uint64_t maxElemNum,
-    const BroadcastComputeParams& computeParams);
+OPBASE_API uint64_t GetBlockSplitFactorLastTranspose(BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo,
+                                                     uint64_t maxElemNum, const BroadcastComputeParams& computeParams);
 
-OPBASE_API ge::graphStatus DoBrodcastTilingLastTranspose(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData);
+OPBASE_API ge::graphStatus DoBrodcastTilingLastTranspose(const BroadcastTilingParams& broadcastTilingParams,
+                                                         BroadcastTilingData& broadcastTilingData);
 
-OPBASE_API uint64_t GetBlockSplitFactorNLastTranspose(
-    BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo, uint64_t maxElemNum,
-    const BroadcastComputeParams& computeParams, bool isUbBroadcast);
+OPBASE_API uint64_t GetBlockSplitFactorNLastTranspose(BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo,
+                                                      uint64_t maxElemNum, const BroadcastComputeParams& computeParams,
+                                                      bool isUbBroadcast);
 
-OPBASE_API ge::graphStatus BroadcastTilingNLastTranspose(
-    const BroadcastTilingParams& broadcastTilingParams, BroadcastTilingData& broadcastTilingData, bool isUbBroadcast);
+OPBASE_API ge::graphStatus BroadcastTilingNLastTranspose(const BroadcastTilingParams& broadcastTilingParams,
+                                                         BroadcastTilingData& broadcastTilingData, bool isUbBroadcast);
 
 /**
  *  按顺序将对应节点的输入shape信息设置到tilingdata中
@@ -45,12 +44,10 @@ void SetInputNddmaParams(T* brcLastTransposeTilingData, BroadcastTilingData& til
         using Op = typename OpDag::CopyBrcNodes::template At<pos>;
         using Input = typename Op::InHolders::template At<0>;
         int64_t idx = Input::Pos;
-        std::copy(
-            tilingData.dims[idx].begin(), tilingData.dims[idx].end(),
-            *(brcLastTransposeTilingData->inputBrcDims + pos));
-        std::copy(
-            tilingData.strides[idx].begin(), tilingData.strides[idx].end(),
-            *(brcLastTransposeTilingData->inputBrcStrides + pos));
+        std::copy(tilingData.dims[idx].begin(), tilingData.dims[idx].end(),
+                  *(brcLastTransposeTilingData->inputBrcDims + pos));
+        std::copy(tilingData.strides[idx].begin(), tilingData.strides[idx].end(),
+                  *(brcLastTransposeTilingData->inputBrcStrides + pos));
         if constexpr (pos + 1 < OpDag::CopyBrcSize) {
             SetInputNddmaParams<OpDag, T, pos + 1>(brcLastTransposeTilingData, tilingData);
         }
@@ -88,9 +85,8 @@ void SetInputUbBrcParams(T* brcLastTransposeTilingData, BroadcastTilingData& til
         using Input = typename Op::SourceInHolders::template At<0>;
         int64_t idx = Input::Pos;
 
-        std::copy(
-            tilingData.dims[idx].begin(), tilingData.dims[idx].end(),
-            *(brcLastTransposeTilingData->inputVecBrcDims + pos));
+        std::copy(tilingData.dims[idx].begin(), tilingData.dims[idx].end(),
+                  *(brcLastTransposeTilingData->inputVecBrcDims + pos));
 
         brcLastTransposeTilingData->inputVecBrcStrides[pos] = tilingData.strides[idx][tilingData.ubSplitAxis];
         if constexpr (pos + 1 < OpDag::VecBrcSize) {
@@ -110,9 +106,8 @@ void SetInputParams(T* brcLastTransposeTilingData, BroadcastTilingData& tilingDa
         if (copyInBrcPos.count(i)) {
             continue;
         }
-        std::copy(
-            tilingData.strides[i].begin(), tilingData.strides[i].end(),
-            *(brcLastTransposeTilingData->inputStrides + i));
+        std::copy(tilingData.strides[i].begin(), tilingData.strides[i].end(),
+                  *(brcLastTransposeTilingData->inputStrides + i));
         std::copy(tilingData.dims[i].begin(), tilingData.dims[i].end(), *(brcLastTransposeTilingData->inputDims + i));
     }
 }
@@ -140,8 +135,8 @@ void AdaptBroadcastLastTransposeTilingData(T* brcLastTransposeTilingData, Broadc
     brcLastTransposeTilingData->blockNum = tilingData.blockNum;
     brcLastTransposeTilingData->minDtypeBlockAlignSize = tilingData.minDtypeBlockAlignSize;
     std::copy(tilingData.dims.back().begin(), tilingData.dims.back().end(), brcLastTransposeTilingData->outputDims);
-    std::copy(
-        tilingData.strides.back().begin(), tilingData.strides.back().end(), brcLastTransposeTilingData->outputStrides);
+    std::copy(tilingData.strides.back().begin(), tilingData.strides.back().end(),
+              brcLastTransposeTilingData->outputStrides);
 
     // 逐个拷贝生成outputStridesWithPad
     for (int64_t i = tilingData.shapeLen - 1; i >= 0; i--) {
@@ -153,15 +148,16 @@ void AdaptBroadcastLastTransposeTilingData(T* brcLastTransposeTilingData, Broadc
                                      tilingData.minDtypeBlockAlignSize * tilingData.minDtypeBlockAlignSize;
             brcLastTransposeTilingData->outputStridesWithPad[i] = oriStrideAlign;
         } else {
-            brcLastTransposeTilingData->outputStridesWithPad[i] =
-                brcLastTransposeTilingData->outputStridesWithPad[i + 1] * brcLastTransposeTilingData->outputDims[i + 1];
+            brcLastTransposeTilingData->outputStridesWithPad[i] = brcLastTransposeTilingData
+                                                                      ->outputStridesWithPad[i + 1] *
+                                                                  brcLastTransposeTilingData->outputDims[i + 1];
         }
     }
 }
 
 template <typename OpDag, typename T>
-ge::graphStatus DoBroadcastTilingLastTranspose(
-    BroadcastTilingParams& broadcastTilingParams, T* brcLastTransposeTilingData, BroadcastTilingData& tilingData)
+ge::graphStatus DoBroadcastTilingLastTranspose(BroadcastTilingParams& broadcastTilingParams,
+                                               T* brcLastTransposeTilingData, BroadcastTilingData& tilingData)
 {
     auto status = DoBrodcastTilingLastTranspose(broadcastTilingParams, tilingData);
     if (status != ge::GRAPH_SUCCESS) {
@@ -181,8 +177,8 @@ ge::graphStatus DoBroadcastTilingLastTranspose(
     return ge::GRAPH_SUCCESS;
 }
 template <typename OpDag, typename T>
-void AdaptBroadcastNLastTransposeTilingData(
-    T* brcNLastTransposeTilingData, BroadcastTilingData& tilingData, bool isUbBroadcast)
+void AdaptBroadcastNLastTransposeTilingData(T* brcNLastTransposeTilingData, BroadcastTilingData& tilingData,
+                                            bool isUbBroadcast)
 {
     brcNLastTransposeTilingData->blockFormer = tilingData.blockFormer;
     brcNLastTransposeTilingData->ubFormer = tilingData.ubFormer;
@@ -196,8 +192,8 @@ void AdaptBroadcastNLastTransposeTilingData(
     brcNLastTransposeTilingData->blockNum = tilingData.blockNum;
     brcNLastTransposeTilingData->minDtypeBlockAlignSize = tilingData.minDtypeBlockAlignSize;
     std::copy(tilingData.dims.back().begin(), tilingData.dims.back().end(), brcNLastTransposeTilingData->outputDims);
-    std::copy(
-        tilingData.strides.back().begin(), tilingData.strides.back().end(), brcNLastTransposeTilingData->outputStrides);
+    std::copy(tilingData.strides.back().begin(), tilingData.strides.back().end(),
+              brcNLastTransposeTilingData->outputStrides);
 
     int64_t boundaryNum = 3;
     if (isUbBroadcast) {
@@ -214,17 +210,17 @@ void AdaptBroadcastNLastTransposeTilingData(
                                      tilingData.minDtypeBlockAlignSize * tilingData.minDtypeBlockAlignSize;
             brcNLastTransposeTilingData->outputStridesWithPad[i] = oriStrideAlign;
         } else {
-            brcNLastTransposeTilingData->outputStridesWithPad[i] =
-                brcNLastTransposeTilingData->outputStridesWithPad[i + 1] *
-                brcNLastTransposeTilingData->outputDims[i + 1];
+            brcNLastTransposeTilingData->outputStridesWithPad[i] = brcNLastTransposeTilingData
+                                                                       ->outputStridesWithPad[i + 1] *
+                                                                   brcNLastTransposeTilingData->outputDims[i + 1];
         }
     }
 }
 
 template <typename OpDag, typename T>
-ge::graphStatus DoBroadcastTilingNLastTranspose(
-    BroadcastTilingParams& broadcastTilingParams, T* brcNLastTransposeTilingData, BroadcastTilingData& tilingData,
-    bool isUbBroadcast)
+ge::graphStatus DoBroadcastTilingNLastTranspose(BroadcastTilingParams& broadcastTilingParams,
+                                                T* brcNLastTransposeTilingData, BroadcastTilingData& tilingData,
+                                                bool isUbBroadcast)
 {
     auto status = BroadcastTilingNLastTranspose(broadcastTilingParams, tilingData, isUbBroadcast);
     if (status != ge::GRAPH_SUCCESS) {

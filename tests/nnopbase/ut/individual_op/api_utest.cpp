@@ -51,13 +51,11 @@ void SetSocVersion(const std::string& version)
 
 class NnopbaseUnitTest : public testing::Test {
 public:
-    aclTensor* CreateAclTensor(
-        vector<int64_t> view_shape, vector<int64_t> stride, int64_t offset, vector<int64_t> storage_shape,
-        aclDataType dataType = ACL_FLOAT, int64_t dataOffset = 0)
+    aclTensor* CreateAclTensor(vector<int64_t> view_shape, vector<int64_t> stride, int64_t offset,
+                               vector<int64_t> storage_shape, aclDataType dataType = ACL_FLOAT, int64_t dataOffset = 0)
     {
-        return aclCreateTensor(
-            view_shape.data(), view_shape.size(), dataType, stride.data(), offset, ACL_FORMAT_ND, storage_shape.data(),
-            storage_shape.size(), data + dataOffset);
+        return aclCreateTensor(view_shape.data(), view_shape.size(), dataType, stride.data(), offset, ACL_FORMAT_ND,
+                               storage_shape.data(), storage_shape.size(), data + dataOffset);
     }
 
 protected:
@@ -91,9 +89,8 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetExecutorNullPtr)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_EQ(executor, nullptr);
 }
 
@@ -109,15 +106,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithoutAttr)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1, 0};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -152,23 +147,21 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithAttr)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {1, 1};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     (void)NnopbaseSetFormatMatchMode(executor, 1);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_NCDHW, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_NCDHW, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
     (void)NnopbaseAddOutput(executor, tensor, 0);
-    ASSERT_EQ(
-        ((NnopbaseExecutor*)executor)->ownArgs.inputs.extTensors[0].rt2Tensor.GetStorageFormat(), ge::FORMAT_NCDHW);
+    ASSERT_EQ(((NnopbaseExecutor*)executor)->ownArgs.inputs.extTensors[0].rt2Tensor.GetStorageFormat(),
+              ge::FORMAT_NCDHW);
 
     int64_t bias1[] = {1, 2, 3};
     size_t bias1_size = 3U;
@@ -218,14 +211,12 @@ void* GetDynamicInputExecutor(void* executorSpace)
     char inputDesc[] = {2, 2, 2};
     char outputDesc[] = {2};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
@@ -274,23 +265,19 @@ TEST_F(NnopbaseUnitTest, NnopBaseDynamicTensorAddrGet)
     char inputDesc[] = {2, 1, 2};
     char outputDesc[] = {2, 1, 2};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape1 = {1, 1, 1, 1, 1};
     std::vector<int64_t> shape2 = {1, 1, 1, 1, 2};
     std::vector<int64_t> shape3 = {1, 1, 1, 1, 3};
-    aclTensor* tensor1 = aclCreateTensor(
-        shape1.data(), shape1.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape1.data(),
-        shape1.size(), nullptr);
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
-    aclTensor* tensor3 = aclCreateTensor(
-        shape3.data(), shape3.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape3.data(),
-        shape3.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape1.data(), shape1.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape1.data(), shape1.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
+    aclTensor* tensor3 = aclCreateTensor(shape3.data(), shape3.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape3.data(), shape3.size(), nullptr);
     std::vector<const aclTensor*> tensor_list_a;
     std::vector<const aclTensor*> tensor_list_b;
     tensor_list_a.push_back(tensor1);
@@ -435,15 +422,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithWorkSpace)
     char outputDesc[] = {1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -480,9 +465,8 @@ TEST_F(NnopbaseUnitTest, NnopbaseGetExecutorFailed)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_EQ(executor, nullptr);
 
     void* stream = nullptr;
@@ -498,9 +482,8 @@ TEST_F(NnopbaseUnitTest, NnopbaseNoExecutor)
 {
     void* executor = nullptr;
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     ASSERT_EQ(NnopbaseAddInput(executor, tensor, 0), ACLNN_ERR_PARAM_NULLPTR);
     ASSERT_EQ(NnopbaseAddOutput(executor, tensor, 0), ACLNN_ERR_PARAM_NULLPTR);
 
@@ -510,8 +493,8 @@ TEST_F(NnopbaseUnitTest, NnopbaseNoExecutor)
     ASSERT_EQ(NnopbaseAddDynamicInput(executor, aclTensorTestList, 0), ACLNN_ERR_PARAM_NULLPTR);
     ASSERT_EQ(NnopbaseAddDynamicOutput(executor, aclTensorTestList, 0), ACLNN_ERR_PARAM_NULLPTR);
     static float momentum_def[] = {1};
-    ASSERT_EQ(
-        NnopbaseAddAttrWithDtype(executor, momentum_def, sizeof(float), 0, kNnopbaseFloat), ACLNN_ERR_PARAM_NULLPTR);
+    ASSERT_EQ(NnopbaseAddAttrWithDtype(executor, momentum_def, sizeof(float), 0, kNnopbaseFloat),
+              ACLNN_ERR_PARAM_NULLPTR);
 
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), ACLNN_ERR_PARAM_NULLPTR);
@@ -538,15 +521,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseParamCheckFailed)
     char outputDesc[] = {1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -584,9 +565,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunFailed)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     TensorDesc inputDesc1[3] = {
@@ -603,9 +583,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunFailed)
     ASSERT_EQ(NnopbaseAddSupportList(executor, &supportList, socSupportList, 2), OK);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -635,18 +614,15 @@ TEST_F(NnopbaseUnitTest, NnopBaseDynamicCheckFailed)
     char outputDesc[] = {1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
-    aclTensor* tensor2 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<const aclTensor*> tensor_list;
     tensor_list.push_back(tensor1);
     tensor_list.push_back(tensor2);
@@ -658,11 +634,10 @@ TEST_F(NnopbaseUnitTest, NnopBaseDynamicCheckFailed)
     ASSERT_EQ(NnopbaseAddInput(executor, tensor1, 3), OK);
     ASSERT_EQ(NnopbaseAddOutput(executor, tensor1, 0), OK);
 
-    TensorDesc inputDesc1[4] = {
-        {ge::DT_FLOAT, ge::FORMAT_ND},
-        {ge::DT_FLOAT16, ge::FORMAT_ND},
-        {ge::DT_FLOAT16, ge::FORMAT_ND},
-        {ge::DT_FLOAT16, ge::FORMAT_ND}};
+    TensorDesc inputDesc1[4] = {{ge::DT_FLOAT, ge::FORMAT_ND},
+                                {ge::DT_FLOAT16, ge::FORMAT_ND},
+                                {ge::DT_FLOAT16, ge::FORMAT_ND},
+                                {ge::DT_FLOAT16, ge::FORMAT_ND}};
     TensorDesc outputDesc1[1] = {{ge::DT_FLOAT16, ge::FORMAT_ND}};
     SupportInfo list1 = {inputDesc1, 4, outputDesc1, 1};
     SupportInfo supportInfo0[1] = {list1};
@@ -693,15 +668,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseCheckFailedWithUnsupportOutputDtype)
     char outputDesc[] = {0, 1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -739,18 +712,15 @@ TEST_F(NnopbaseUnitTest, NnopBaseNotFindKernel)
     char outputDesc[] = {1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
-    aclTensor* tensor2 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<const aclTensor*> tensor_list;
     tensor_list.push_back(tensor1);
     tensor_list.push_back(tensor2);
@@ -794,15 +764,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseUnlimitedMaxNumExecutor)
     char attrDesc[] = {};
     void* executor = nullptr;
     for (int i = 0; i < 100; i++) {
-        executor = NnopbaseGetExecutor(
-            executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-            sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+        executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                       sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
         ASSERT_NE(executor, nullptr);
     }
 
-    executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                   sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     NnopbaseExecutorGcSpace(executorSpace);
@@ -820,9 +788,8 @@ TEST_F(NnopbaseUnitTest, TestNnopbaseAddSupportList)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     TensorDesc inputDesc1[3] = {
@@ -851,9 +818,8 @@ TEST_F(NnopbaseUnitTest, TestNnopbaseAddOpTypeId)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     NnopbaseAddOpTypeId(executor, 32);
@@ -942,18 +908,15 @@ TEST_F(NnopbaseUnitTest, NnopbaseFindSupportInfoSuccess)
     char outputDesc[] = {1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
-    aclTensor* tensor1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
@@ -999,19 +962,16 @@ TEST_F(NnopbaseUnitTest, NnopbaseAddUnContiguousTensor)
     char outputDesc[] = {1};
     char attrDesc[] = {};
 
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 3, 1};
     std::vector<int64_t> shape1 = {1, 2, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
-    aclTensor* tensor1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT16, shape1.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT16, shape1.data(), 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
@@ -1038,16 +998,14 @@ TEST_F(NnopbaseUnitTest, NnopContiguousUpdateAddrSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 3, 1, 1, 1};
     std::vector<int64_t> shape1 = {1, 2, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     ASSERT_EQ(NnopbaseSetRef(executor, 0, 0), OK);
     ASSERT_EQ(NnopbaseAddInput(executor, tensor, 0), OK);
@@ -1135,16 +1093,14 @@ TEST_F(NnopbaseUnitTest, NnopContiguousUpdateAddrFailed)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 3, 1, 1, 1};
     std::vector<int64_t> shape1 = {1, 2, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
@@ -1186,23 +1142,19 @@ TEST_F(NnopbaseUnitTest, NnopUnContiguousUpdateAddrFailed)
     char inputDesc[] = {1, 2, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 3, 1, 1, 1};
     std::vector<int64_t> shape1 = {1, 2, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
-    aclTensor* tensor1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, shape1.data(), 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<int64_t> shape2 = {1, 1, 1, 1, 1};
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, shape2.data(), 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, shape2.data(), 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list;
     tensor_list.push_back(tensor);
@@ -1248,15 +1200,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunWithArrayAttrSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {1, 1, 1};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -1302,15 +1252,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -1348,9 +1296,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFailed)
 
     const char* opType = "Flash1";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1387,9 +1334,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOpTypeFailed)
 
     const char* opType = "Flash1";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1426,9 +1372,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelRefreshFailed)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1464,9 +1409,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelSuccess)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1504,9 +1448,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithValueDependSuccess)
     std::vector<int64_t> shape = {5};
     int32_t tensorData[] = {27, 27, 27, 27, 39856}; // 16进制->1b
     void* ptr = (void*)tensorData;
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_INT32, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), ptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_INT32, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), ptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1542,9 +1485,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithFloatAttrSuccess)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1587,9 +1529,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithArrayAttrSuccess)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1632,9 +1573,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithArrayAttrNullptrSuccess)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1677,9 +1617,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOptionalNullSuccess)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, NULL, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -1715,9 +1654,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelFail)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor, tensor};
     int64_t numTensors = 5;
     const int64_t dynamicIndex[] = {};
@@ -1758,15 +1696,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelWithAttrSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {1, 1, 1, 1};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -1815,19 +1751,16 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelWithDynamicInputSuccess)
     char inputDesc[] = {1, 2, 1};
     char outputDesc[] = {2};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<int64_t> shape2 = {1, 1, 1, 1, 1};
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
@@ -1866,19 +1799,16 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelWithOptionalInputSuccess)
     char inputDesc[] = {1, 2, 1, 0};
     char outputDesc[] = {2};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<int64_t> shape2 = {1, 1, 1, 1, 1};
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
@@ -1917,16 +1847,14 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelWithValueDependSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {1, 1, 1, 1};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
     float tensorData[] = {0.8, 0.8, 0.8, 0.8, 0.8}; // 16进制->1b
     void* ptr = (void*)tensorData;
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), ptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), ptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddInput(executor, tensor, 2);
@@ -1976,15 +1904,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseCheckWorkspaceSuccess)
     char inputDesc[] = {1, 1};
     char outputDesc[] = {1, 1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddInput(executor, tensor, 0);
     (void)NnopbaseAddInput(executor, tensor, 1);
     (void)NnopbaseAddOutput(executor, tensor, 0);
@@ -2004,9 +1930,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelWithStringAttrSuccess)
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {5};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     const aclTensor* tensors[] = {tensor, tensor, tensor, tensor};
     int64_t numTensors = 4;
     const int64_t dynamicIndex[] = {};
@@ -2056,19 +1981,16 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunStaticKernelWithOptionalOutputNullSuccess)
     char inputDesc[] = {1, 2, 1};
     char outputDesc[] = {0, 2};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<int64_t> shape2 = {1, 1, 1, 1, 1};
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
 
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
@@ -2107,15 +2029,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseAddArrayInputSuccess)
     char inputDesc[] = {1, 1, 0, 0, 0};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<float> vec(2048 * 4, 2.0);
     auto* floatArray = aclCreateFloatArray(vec.data(), vec.size());
     int64_t intValues[] = {3, 4, 5};
@@ -2175,20 +2095,17 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunWithHostAndDynamicInput)
     char inputDesc[] = {1, 2, 0};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1, 1, 1, 1};
-    aclTensor* tensor1 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<aclTensor*> tensor_list;
     for (size_t i = 0U; i < 80; i++) {
-        aclTensor* tensor = aclCreateTensor(
-            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-            shape.size(), nullptr);
+        aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                            aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
         tensor_list.push_back(tensor);
     }
     aclTensorList* aclTensorTestList = aclCreateTensorList(tensor_list.data(), tensor_list.size());
@@ -2231,19 +2148,16 @@ TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTensorSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1, 0};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape1 = {1, 1, 1, 1, 1};
-    aclTensor* tensor1 = aclCreateTensor(
-        shape1.data(), shape1.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape1.data(),
-        shape1.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape1.data(), shape1.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape1.data(), shape1.size(), nullptr);
     std::vector<int64_t> shape2 = {0};
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
     ASSERT_EQ(tensor2->IsEmpty(), true);
     ASSERT_EQ(NnopbaseAddInput(executor, tensor1, 0), OK);
     ASSERT_EQ(NnopbaseAddInput(executor, tensor1, 1), OK);
@@ -2275,19 +2189,16 @@ TEST_F(NnopbaseUnitTest, NnopBaseAllOutputIsEmptyTensorWithDynamicSuccess)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {0, 2};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape1 = {1, 1, 1, 1, 1};
-    aclTensor* tensor1 = aclCreateTensor(
-        shape1.data(), shape1.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape1.data(),
-        shape1.size(), nullptr);
+    aclTensor* tensor1 = aclCreateTensor(shape1.data(), shape1.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape1.data(), shape1.size(), nullptr);
     std::vector<int64_t> shape2 = {0};
-    aclTensor* tensor2 = aclCreateTensor(
-        shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape2.data(),
-        shape2.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape2.data(), shape2.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape2.data(), shape2.size(), nullptr);
     std::vector<const aclTensor*> tensorList;
     tensorList.push_back(tensor2);
     aclTensorList* aclTensorTestList = aclCreateTensorList(tensorList.data(), tensorList.size());
@@ -2322,9 +2233,8 @@ TEST_F(NnopbaseUnitTest, NnopBaseAddOptionalArrayAttrSuccess)
     char inputDesc[] = {};
     char outputDesc[] = {};
     char attrDesc[] = {0, 0, 0};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     static bool bias2Def[] = {true, false};
@@ -2334,17 +2244,15 @@ TEST_F(NnopbaseUnitTest, NnopBaseAddOptionalArrayAttrSuccess)
 
     static float bias3Def[] = {0.1, 0.2};
     static size_t bias3Len = 2;
-    ASSERT_EQ(
-        NnopbaseAddArrayAttrWithDtype(
-            executor, static_cast<void*>(bias3Def), bias3Len, sizeof(float), 1, kNnopbaseFloat),
-        OK);
+    ASSERT_EQ(NnopbaseAddArrayAttrWithDtype(executor, static_cast<void*>(bias3Def), bias3Len, sizeof(float), 1,
+                                            kNnopbaseFloat),
+              OK);
 
     static int64_t bias4Def[] = {1, 2};
     static size_t bias4Len = 2;
-    ASSERT_EQ(
-        NnopbaseAddArrayAttrWithDtype(
-            executor, static_cast<void*>(bias4Def), bias4Len, sizeof(int64_t), 2, kNnopbaseInt),
-        OK);
+    ASSERT_EQ(NnopbaseAddArrayAttrWithDtype(executor, static_cast<void*>(bias4Def), bias4Len, sizeof(int64_t), 2,
+                                            kNnopbaseInt),
+              OK);
 
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();
@@ -2361,15 +2269,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithScalarInput)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     int32_t scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_FLOAT);
@@ -2410,15 +2316,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithDoubleDtypeScalarInput)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     double scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
@@ -2459,15 +2363,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithScalarListInput)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     float scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_FLOAT);
@@ -2509,15 +2411,13 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithDoubleDtypeScalarListInput)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     double scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_DOUBLE);
@@ -2547,23 +2447,20 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithDynamicInputOver50)
     char inputDesc[] = {2, 2, 2};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
     std::vector<aclTensor*> tensor_list_a;
     for (size_t i = 0U; i < 30; i++) {
-        aclTensor* tensor = aclCreateTensor(
-            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-            shape.size(), nullptr);
+        aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                            aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
         tensor_list_a.push_back(tensor);
     }
     aclTensorList* aclTensorTestList = aclCreateTensorList(tensor_list_a.data(), tensor_list_a.size());
-    aclTensor* tensor2 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddDynamicInput(executor, aclTensorTestList, 0);
     (void)NnopbaseAddDynamicInput(executor, aclTensorTestList, 1);
     (void)NnopbaseAddDynamicInput(executor, aclTensorTestList, 2);
@@ -2600,23 +2497,20 @@ TEST_F(NnopbaseUnitTest, NnopBaseRunSuccessWithDynamicInputMaxLen)
     char inputDesc[] = {2, 2, 2};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1, 1, 1, 1};
     std::vector<aclTensor*> tensor_list_a;
     for (size_t i = 0U; i < 16; i++) {
-        aclTensor* tensor = aclCreateTensor(
-            shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-            shape.size(), nullptr);
+        aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                            aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
         tensor_list_a.push_back(tensor);
     }
     aclTensorList* aclTensorTestList = aclCreateTensorList(tensor_list_a.data(), tensor_list_a.size());
-    aclTensor* tensor2 = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor2 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                         aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     (void)NnopbaseAddDynamicInput(executor, aclTensorTestList, 0);
     (void)NnopbaseAddDynamicInput(executor, aclTensorTestList, 1);
     (void)NnopbaseAddDynamicInput(executor, aclTensorTestList, 2);
@@ -2653,15 +2547,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarWithDtype)
     char inputDesc[] = {1, 1, 0, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     int32_t scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_INT32);
@@ -2707,15 +2599,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarListWithDtype)
     char inputDesc[] = {1, 1, 0, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     int32_t scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_INT32);
@@ -2762,15 +2652,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarWithName)
     char inputDesc[] = {1, 1, 0, 0, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     int32_t scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_INT32);
@@ -2820,15 +2708,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseSupportScalarListWithName)
     char inputDesc[] = {1, 0, 0, 0, 1, 0, 2};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
     std::vector<const aclTensor*> tensor_list_a;
     tensor_list_a.push_back(tensor);
     aclTensorList* aclTensorTestList = aclCreateTensorList(tensor_list_a.data(), tensor_list_a.size());
@@ -2882,15 +2768,13 @@ TEST_F(NnopbaseUnitTest, NnopbaseAddScalarInputWithErrorDtype)
     char inputDesc[] = {1, 1, 0, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};
-    aclTensor* tensor = aclCreateTensor(
-        shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0, aclFormat::ACL_FORMAT_ND, shape.data(),
-        shape.size(), nullptr);
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
 
     float scalar_value = 5;
     auto* scalar = aclCreateScalar(&scalar_value, aclDataType::ACL_FLOAT);
@@ -2995,9 +2879,8 @@ TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessWithAiCPU)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
@@ -3018,9 +2901,8 @@ TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessForascend950WithAiCPU)
     char inputDesc[] = {1, 1, 1};
     char outputDesc[] = {1};
     char attrDesc[] = {};
-    void* executor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
     NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);

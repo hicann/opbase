@@ -112,8 +112,8 @@ void CalculateHashKey(const std::tuple<Args...>& t)
 };
 
 template <typename INPUT_TUPLE = void*, typename OUTPUT_TUPLE = void*>
-bool GetFromCache(
-    aclOpExecutor** executor, uint64_t* workspaceSize, const char* api, const INPUT_TUPLE& in, const OUTPUT_TUPLE& out)
+bool GetFromCache(aclOpExecutor** executor, uint64_t* workspaceSize, const char* api, const INPUT_TUPLE& in,
+                  const OUTPUT_TUPLE& out)
 {
     // Collecting Cache Data
     InitExecutorCacheThreadLocal();

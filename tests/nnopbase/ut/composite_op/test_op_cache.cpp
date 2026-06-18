@@ -59,8 +59,8 @@ protected:
     static void TearDownTestCase() {}
 };
 
-aclError aclrtBinaryLoadFromFileInvoked(
-    const char_t* const binPath, const rtLoadBinaryConfig_t* const optionalCfg, rtBinHandle* handle)
+aclError aclrtBinaryLoadFromFileInvoked(const char_t* const binPath, const rtLoadBinaryConfig_t* const optionalCfg,
+                                        rtBinHandle* handle)
 {
     rtBinHandle handle_tmp = nullptr;
     *handle = &handle_tmp;
@@ -132,12 +132,10 @@ TEST_F(OpCacheUt, CreateHashTest)
     const aclScalar* scalarNull1 = nullptr;
     int dim = 0;
     bool keepdim = true;
-    auto in0 = std::make_tuple(
-        tensorPtr1, tensorListPtr, scalarPtr, scalarListPtr1, array1Ptr, array2Ptr, tensorList2Ptr, arrayNull1,
-        arrayNull2, arrayNull3, dim);
-    auto out0 = std::make_tuple(
-        array3Ptr, array4Ptr, tensorPtr2, scalarListPtr2, dataType, arrayNull4, tensorListNull1, tensorListNull2,
-        scalarListNull1, scalarListNull2, scalarNull1, keepdim);
+    auto in0 = std::make_tuple(tensorPtr1, tensorListPtr, scalarPtr, scalarListPtr1, array1Ptr, array2Ptr,
+                               tensorList2Ptr, arrayNull1, arrayNull2, arrayNull3, dim);
+    auto out0 = std::make_tuple(array3Ptr, array4Ptr, tensorPtr2, scalarListPtr2, dataType, arrayNull4, tensorListNull1,
+                                tensorListNull2, scalarListNull1, scalarListNull2, scalarNull1, keepdim);
     OpCacheKey key;
     // OpExecCache::GenerateOpCacheKey(key, apiName, in0, out0);
     UnInitPTACacheThreadLocal();
@@ -678,13 +676,12 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1)
 
     aclTensorList* workspace = nullptr;
     auto ctx2 = op::MakeOpArgContext(input, output, attr);
-    GetWorkspace(
-        opType, &workspace, executor, *ctx2->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx2->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    GetWorkspace(opType, &workspace, executor, *ctx2->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+                 *ctx2->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx2->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     op::DestroyOpArgContext(ctx2);
 
-    auto ctx = op::MakeOpArgContext(
-        OP_WORKSPACE(workspace), OP_INPUT(self.get()), OP_OUTPUT(out.get(), idx.get()), OP_ATTR(dim, descending));
+    auto ctx = op::MakeOpArgContext(OP_WORKSPACE(workspace), OP_INPUT(self.get()), OP_OUTPUT(out.get(), idx.get()),
+                                    OP_ATTR(dim, descending));
     auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
     launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
     executor->AddToKernelLauncherList(launcher);
@@ -738,17 +735,15 @@ TEST_F(OpCacheUt, CreateHashGetCacheSuccessTest1)
 
     aclTensorList* workspaceInplace = nullptr;
     auto ctx3 = op::MakeOpArgContext(input, output, attr);
-    GetWorkspace(
-        opType, &workspaceInplace, executorInplace, *ctx3->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
-        *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx3->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    GetWorkspace(opType, &workspaceInplace, executorInplace, *ctx3->GetOpArg(op::OpArgDef::OP_INPUT_ARG),
+                 *ctx3->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx3->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     op::DestroyOpArgContext(ctx3);
 
-    auto ctx4 = op::MakeOpArgContext(
-        OP_WORKSPACE(workspaceInplace), OP_INPUT(self.get()), OP_OUTPUT(out.get(), idx.get()),
-        OP_ATTR(dim, descending));
+    auto ctx4 = op::MakeOpArgContext(OP_WORKSPACE(workspaceInplace), OP_INPUT(self.get()),
+                                     OP_OUTPUT(out.get(), idx.get()), OP_ATTR(dim, descending));
 
-    auto* launcherInplace =
-        new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoIdInplace, executorInplace, ctx4};
+    auto* launcherInplace = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoIdInplace, executorInplace,
+                                                         ctx4};
     launcherInplace->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
     executorInplace->AddToKernelLauncherList(launcherInplace);
 
@@ -832,8 +827,8 @@ TEST_F(OpCacheUt, CreateHashAbnormalBufferOverflow)
     aclTensorList* tensorListNull2 = nullptr;
     int dim = 0;
     bool keepdim = true;
-    auto in0 =
-        std::make_tuple(tensorListPtr, tensorList2Ptr, tensorList3Ptr, tensorList4Ptr, tensorList5Ptr, dim, keepdim);
+    auto in0 = std::make_tuple(tensorListPtr, tensorList2Ptr, tensorList3Ptr, tensorList4Ptr, tensorList5Ptr, dim,
+                               keepdim);
     auto out0 = std::make_tuple(array3Ptr, scalarPtr, dataType, arrayNull4, tensorListNull1, tensorListNull2);
     OpCacheKey key;
     // OpExecCache::GenerateOpCacheKey(key, apiName, in0, out0);

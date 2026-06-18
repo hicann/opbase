@@ -19,40 +19,40 @@
 namespace aicpu {
 class NodeDefImpl;
 class AICPU_VISIBILITY NodeDef {
-  friend class CpuKernelUtils;
+    friend class CpuKernelUtils;
 
- public:
-  NodeDef() = delete;
-  ~NodeDef() = default;
+public:
+    NodeDef() = delete;
+    ~NodeDef() = default;
 
-  std::shared_ptr<Tensor> MutableInputs(int32_t index) const;
+    std::shared_ptr<Tensor> MutableInputs(int32_t index) const;
 
-  std::shared_ptr<Tensor> MutableOutputs(int32_t index) const;
+    std::shared_ptr<Tensor> MutableOutputs(int32_t index) const;
 
-  std::unordered_map<std::string, std::shared_ptr<AttrValue> > Attrs() const;
+    std::unordered_map<std::string, std::shared_ptr<AttrValue> > Attrs() const;
 
-  bool ParseFromString(const std::string &str);
+    bool ParseFromString(const std::string& str);
 
-  bool SerializeToString(std::string &str) const;
+    bool SerializeToString(std::string& str) const;
 
-  void SetOpType(const std::string &op);
+    void SetOpType(const std::string& op);
 
-  std::string GetOpType() const;
+    std::string GetOpType() const;
 
-  std::shared_ptr<Tensor> AddInputs();
+    std::shared_ptr<Tensor> AddInputs();
 
-  std::shared_ptr<Tensor> AddOutputs();
+    std::shared_ptr<Tensor> AddOutputs();
 
-  bool AddAttrs(const std::string &name, const AttrValue *attr);
+    bool AddAttrs(const std::string& name, const AttrValue* attr);
 
-  int32_t InputsSize() const;
+    int32_t InputsSize() const;
 
-  int32_t OutputsSize() const;
+    int32_t OutputsSize() const;
 
- private:
-  explicit NodeDef(NodeDefImpl *impl);
+private:
+    explicit NodeDef(NodeDefImpl* impl);
 
-  std::shared_ptr<NodeDefImpl> impl_{nullptr};
+    std::shared_ptr<NodeDefImpl> impl_{nullptr};
 };
-}  // namespace aicpu
-#endif  // AICPU_CONTEXT_INC_NODE_DEF_H_
+} // namespace aicpu
+#endif // AICPU_CONTEXT_INC_NODE_DEF_H_

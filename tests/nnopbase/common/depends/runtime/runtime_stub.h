@@ -47,9 +47,9 @@ class RuntimeStub {
         return RT_ERROR_NONE;
     }
 
-    virtual rtError_t rtKernelLaunchWithHandleV2(
-        void* hdl, const uint64_t tilingKey, uint32_t blockDim, rtArgsEx_t* argsInfo, rtSmDesc_t* smDesc,
-        rtStream_t stm, const rtTaskCfgInfo_t* cfgInfo)
+    virtual rtError_t rtKernelLaunchWithHandleV2(void* hdl, const uint64_t tilingKey, uint32_t blockDim,
+                                                 rtArgsEx_t* argsInfo, rtSmDesc_t* smDesc, rtStream_t stm,
+                                                 const rtTaskCfgInfo_t* cfgInfo)
     {
         return RT_ERROR_NONE;
     }

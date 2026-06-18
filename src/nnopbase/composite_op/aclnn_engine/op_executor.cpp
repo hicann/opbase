@@ -161,8 +161,8 @@ aclnnStatus OpExecutorImpl::SetRepeatable(const op::FVector<op::KernelLauncher*>
              OP_LOGW("size if tensor relation must be pair of tensor"), return ACLNN_ERR_INNER;);
     // check tensor can repeat
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
-    cachedStorageList_.assign(
-        opTlsCtx.cachedStorageList_.begin(), opTlsCtx.cachedStorageList_.begin() + opTlsCtx.cachedStorageListSize_);
+    cachedStorageList_.assign(opTlsCtx.cachedStorageList_.begin(),
+                              opTlsCtx.cachedStorageList_.begin() + opTlsCtx.cachedStorageListSize_);
     // middle -> output
     std::unordered_map<const aclStorage*, const aclStorage*> relation;
     for (size_t i = 0; i < tensorRelation_.size(); i += K_PAIR_STORAGE_RELATION) {
@@ -190,8 +190,8 @@ void OpExecutorImpl::UpdateStorageAddr()
     if (repeatMode_ != RepeatMode::Repeat) {
         return;
     }
-    OP_CHECK(
-        (tensorRelation_.size() % 2 == 0), OP_LOGE(ACLNN_ERR_INNER, "the size of tensorRelation must be even"), return);
+    OP_CHECK((tensorRelation_.size() % 2 == 0), OP_LOGE(ACLNN_ERR_INNER, "the size of tensorRelation must be even"),
+             return);
     for (size_t i = 0; i < tensorRelation_.size(); i += K_PAIR_STORAGE_RELATION) {
         const aclTensor* output = tensorRelation_[i];
         const aclTensor* middle = tensorRelation_[i + 1];
@@ -207,8 +207,8 @@ aclnnStatus OpExecutorImpl::RepeatRunWithCache(void* workspaceAddr, const aclrtS
     }
     OP_CHECK((opExecCache_ != nullptr && opExecCache_->CanUse()), OP_LOGW("don't have cache or cache can't use"),
              return ACLNN_ERR_INNER;);
-    OP_CHECK(
-        CheckCacheable(), OP_LOGW("cache can't be used because enable some dfx options."), return ACLNN_ERR_INNER;);
+    OP_CHECK(CheckCacheable(), OP_LOGW("cache can't be used because enable some dfx options."),
+             return ACLNN_ERR_INNER;);
     OP_LOGI("Repeat run executor, device ptr after update: %s", ReportAddrForRepeat().c_str());
     cacheAddrLists_.clear();
     for (const aclStorage* s : cachedStorageList_) {
@@ -383,220 +383,193 @@ void aclOpExecutor::UpdateTensorAddr(void* workspaceAddr, const size_t size)
 aclTensor* aclOpExecutor::AllocTensor(const op::Shape& shape, op::DataType dataType, op::Format format)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(shape, dataType, format, nullptr); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(shape, dataType, format, nullptr); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensor failed."); delete tensor; return nullptr;);
 }
 
-aclTensor* aclOpExecutor::AllocTensor(
-    const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-    op::Format originFormat)
+aclTensor* aclOpExecutor::AllocTensor(const op::Shape& storageShape, const op::Shape& originShape,
+                                      op::DataType dataType, op::Format storageFormat, op::Format originFormat)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(storageShape, originShape, dataType, storageFormat, originFormat, nullptr);
-        allocatedObjList_.push_back(tensor); allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(storageShape, originShape, dataType, storageFormat, originFormat, nullptr);
+                  allocatedObjList_.push_back(tensor); allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(dataType, storageFormat, originFormat); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(dataType, storageFormat, originFormat); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensor failed."); delete tensor; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::AllocHostTensor(const op::Shape& shape, op::DataType datatype, op::Format format)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(shape, datatype, format); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(shape, datatype, format); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
-aclTensor* aclOpExecutor::AllocHostTensor(
-    const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-    op::Format originFormat)
+aclTensor* aclOpExecutor::AllocHostTensor(const op::Shape& storageShape, const op::Shape& originShape,
+                                          op::DataType dataType, op::Format storageFormat, op::Format originFormat)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(storageShape, originShape, dataType, storageFormat, originFormat);
-        allocatedObjList_.push_back(tensor); allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(storageShape, originShape, dataType, storageFormat, originFormat);
+                  allocatedObjList_.push_back(tensor); allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::AllocHostTensor(const int64_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::AllocHostTensor(const bool* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const uint64_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const char* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const int32_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const uint32_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const int16_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const uint16_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const int8_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const uint8_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 aclTensor* aclOpExecutor::AllocHostTensor(const double* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::AllocHostTensor(const float* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::AllocHostTensor(const op::fp16_t* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::AllocHostTensor(const op::bfloat16* value, uint64_t size, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, size, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocHostTensor failed."); delete tensor; return nullptr;);
 }
 
 const aclTensor* aclOpExecutor::ConvertToTensor(const aclIntArray* value, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
 }
 
 const aclTensor* aclOpExecutor::ConvertToTensor(const aclBoolArray* value, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
 }
 
 const aclTensor* aclOpExecutor::ConvertToTensor(const aclFloatArray* value, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
 }
 
 const aclTensor* aclOpExecutor::ConvertToTensor(const aclFp16Array* value, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
 }
 
 const aclTensor* aclOpExecutor::ConvertToTensor(const aclBf16Array* value, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
 }
 
 const aclTensor* aclOpExecutor::ConvertToTensor(const aclScalar* value, op::DataType dataType)
 {
     aclTensor* tensor = nullptr;
-    ADD_TRY_CATCH(
-        tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
-        allocatedTensorList_.push_back(tensor); return tensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
+    ADD_TRY_CATCH(tensor = new aclTensor(value, dataType); allocatedObjList_.push_back(tensor);
+                  allocatedTensorList_.push_back(tensor); return tensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed."); delete tensor; return nullptr;);
 }
 
 aclnnStatus aclOpExecutor::Run()
@@ -609,22 +582,19 @@ aclnnStatus aclOpExecutor::Run()
     for (size_t i = 0; i < nodeCount; i++) {
         auto node = sortedNodes[i];
         OP_CHECK_NOTNULL(node);
-        OP_CHECK(
-            node->GetOriginalId() < static_cast<int64_t>(nodeCount),
-            OP_LOGE(
-                ACLNN_ERR_INNER, "check node's original id failed, it should be less than %zu, but actually is %zu.",
-                nodeCount, node->GetOriginalId()),
-            return ACLNN_ERR_INNER);
+        OP_CHECK(node->GetOriginalId() < static_cast<int64_t>(nodeCount),
+                 OP_LOGE(ACLNN_ERR_INNER,
+                         "check node's original id failed, it should be less than %zu, but actually is %zu.", nodeCount,
+                         node->GetOriginalId()),
+                 return ACLNN_ERR_INNER);
         auto& launcher = kernelLaunchObjList_[node->GetOriginalId()];
         launcher->UpdateThreadLocal();
-        OP_LOGI(
-            "%zu start to Launch %s, original id:%ld.", i, op::OpTypeDict::ToString(launcher->GetOpType()).GetString(),
-            node->GetOriginalId());
+        OP_LOGI("%zu start to Launch %s, original id:%ld.", i,
+                op::OpTypeDict::ToString(launcher->GetOpType()).GetString(), node->GetOriginalId());
         status = launcher->Launch();
         if (status != ACLNN_SUCCESS) {
-            OP_LOGE(
-                status, "launch failed for %s, errno:%d.", op::OpTypeDict::ToString(launcher->GetOpType()).GetString(),
-                status);
+            OP_LOGE(status, "launch failed for %s, errno:%d.",
+                    op::OpTypeDict::ToString(launcher->GetOpType()).GetString(), status);
             break;
         }
     }
@@ -679,55 +649,48 @@ void aclOpExecutor::SetStream(aclrtStream stream) { impl_->SetStream(stream); }
 aclIntArray* aclOpExecutor::AllocIntArray(const int64_t* value, uint64_t size)
 {
     aclIntArray* array = nullptr;
-    ADD_TRY_CATCH(
-        array = new aclIntArray(value, size); allocatedObjList_.push_back(array); return array;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocIntArray failed."); delete array; return nullptr;);
+    ADD_TRY_CATCH(array = new aclIntArray(value, size); allocatedObjList_.push_back(array); return array;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocIntArray failed."); delete array; return nullptr;);
 }
 
 aclFloatArray* aclOpExecutor::AllocFloatArray(const float* value, uint64_t size)
 {
     aclFloatArray* array = nullptr;
-    ADD_TRY_CATCH(
-        array = new aclFloatArray(value, size); allocatedObjList_.push_back(array); return array;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocFloatArray failed."); delete array; return nullptr;);
+    ADD_TRY_CATCH(array = new aclFloatArray(value, size); allocatedObjList_.push_back(array); return array;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocFloatArray failed."); delete array; return nullptr;);
 }
 
 aclBoolArray* aclOpExecutor::AllocBoolArray(const bool* value, uint64_t size)
 {
     aclBoolArray* array = nullptr;
-    ADD_TRY_CATCH(
-        array = new aclBoolArray(value, size); allocatedObjList_.push_back(array); return array;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocBoolArray failed."); delete array; return nullptr;);
+    ADD_TRY_CATCH(array = new aclBoolArray(value, size); allocatedObjList_.push_back(array); return array;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocBoolArray failed."); delete array; return nullptr;);
 }
 
 aclTensorList* aclOpExecutor::AllocTensorList(const aclTensor* const* tensors, uint64_t size)
 {
     aclTensorList* list = nullptr;
-    ADD_TRY_CATCH(
-        list = new aclTensorList(tensors, size); allocatedObjList_.push_back(list); return list;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensorList failed."); delete list; return nullptr;);
+    ADD_TRY_CATCH(list = new aclTensorList(tensors, size); allocatedObjList_.push_back(list); return list;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocTensorList failed."); delete list; return nullptr;);
 }
 
 aclScalarList* aclOpExecutor::AllocScalarList(const aclScalar* const* scalars, uint64_t size)
 {
     aclScalarList* list = nullptr;
-    ADD_TRY_CATCH(
-        list = new aclScalarList(scalars, size); allocatedObjList_.push_back(list); return list;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalarList failed."); delete list; return nullptr;);
+    ADD_TRY_CATCH(list = new aclScalarList(scalars, size); allocatedObjList_.push_back(list); return list;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalarList failed."); delete list; return nullptr;);
 }
 
 aclTensor* aclOpExecutor::CreateView(const aclTensor* tensor, const op::Shape& shape, int64_t offset)
 {
     aclTensor* viewTensor = nullptr;
-    ADD_TRY_CATCH(
-        viewTensor = new aclTensor(*tensor, shape, offset); allocatedObjList_.push_back(viewTensor);
-        allocatedTensorList_.push_back(viewTensor); return viewTensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::CreateView failed."); delete viewTensor; return nullptr;);
+    ADD_TRY_CATCH(viewTensor = new aclTensor(*tensor, shape, offset); allocatedObjList_.push_back(viewTensor);
+                  allocatedTensorList_.push_back(viewTensor); return viewTensor;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::CreateView failed."); delete viewTensor; return nullptr;);
 }
 
-aclTensor* aclOpExecutor::CreateView(
-    const aclTensor* tensor, const op::Shape& oriShape, const op::Shape& storageShape, const op::Strides& oriStride,
-    int64_t offset)
+aclTensor* aclOpExecutor::CreateView(const aclTensor* tensor, const op::Shape& oriShape, const op::Shape& storageShape,
+                                     const op::Strides& oriStride, int64_t offset)
 {
     aclTensor* viewTensor = nullptr;
 
@@ -744,121 +707,107 @@ aclTensor* aclOpExecutor::CreateView(
     storageShapeCorrect.SetDim(0, actualShapeLen);
     OP_LOGI("storageSize: %lu, actualShapeLen: %lu", storageSize, actualShapeLen);
 
-    ADD_TRY_CATCH(
-        viewTensor = new aclTensor(*tensor, oriShape, storageShapeCorrect, oriStride, offset);
-        allocatedObjList_.push_back(viewTensor); allocatedTensorList_.push_back(viewTensor); return viewTensor;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::CreateView failed."); delete viewTensor; return nullptr;);
+    ADD_TRY_CATCH(viewTensor = new aclTensor(*tensor, oriShape, storageShapeCorrect, oriStride, offset);
+                  allocatedObjList_.push_back(viewTensor); allocatedTensorList_.push_back(viewTensor);
+                  return viewTensor;, OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::CreateView failed."); delete viewTensor;
+                  return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(float value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(double value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(op::fp16_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(op::bfloat16 value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(int32_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(int64_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(int16_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(int8_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 aclScalar* aclOpExecutor::AllocScalar(uint32_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(uint64_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(uint16_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(uint8_t value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(bool value)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(value); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 aclScalar* aclOpExecutor::AllocScalar(const void* data, op::DataType dataType)
 {
     aclScalar* scalar = nullptr;
-    ADD_TRY_CATCH(
-        scalar = new aclScalar(data, dataType); allocatedObjList_.push_back(scalar); return scalar;
-        , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
+    ADD_TRY_CATCH(scalar = new aclScalar(data, dataType); allocatedObjList_.push_back(scalar); return scalar;
+                  , OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::AllocScalar failed."); delete scalar; return nullptr;);
 }
 
 op::internal::OpLogInfo aclOpExecutor::GetLogInfo() const { return impl_->GetLogInfo(); }
@@ -912,14 +861,14 @@ aclnnStatus aclOpExecutor::AddToKernelLauncherListDvpp(uint32_t opType, op::Kern
 {
     // dvpp
     kernelLaunchObjList_.emplace_back(obj);
-    auto ret = op::internal::BuildGraph(
-        impl_->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-        *args->GetOpArg(op::OP_WORKSPACE_ARG));
+    auto ret = op::internal::BuildGraph(impl_->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
+                                        *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG));
     return ret;
 }
 
-aclnnStatus aclOpExecutor::AddToKernelLauncherListCopyTask(
-    uint32_t opType, op::KernelLauncher* obj, op::OpArgList& inputs, op::OpArgList& outputs, op::OpArgList& workspace)
+aclnnStatus aclOpExecutor::AddToKernelLauncherListCopyTask(uint32_t opType, op::KernelLauncher* obj,
+                                                           op::OpArgList& inputs, op::OpArgList& outputs,
+                                                           op::OpArgList& workspace)
 {
     // z_framework_op
     impl_->AbandonCache();
@@ -932,9 +881,8 @@ aclnnStatus aclOpExecutor::AddToKernelLauncherListAiCpu(int32_t opType, op::Kern
 {
     impl_->AbandonCache(true);
     kernelLaunchObjList_.emplace_back(obj);
-    auto ret = op::internal::BuildGraph(
-        impl_->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-        *args->GetOpArg(op::OP_WORKSPACE_ARG));
+    auto ret = op::internal::BuildGraph(impl_->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
+                                        *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG));
     return ret;
 }
 uint64_t aclOpExecutor::GetMagicNumber() { return magicNumber_; }
@@ -942,8 +890,8 @@ uint64_t aclOpExecutor::GetMagicNumber() { return magicNumber_; }
 UniqueExecutor::UniqueExecutor(const char* funcName) : funcName_(funcName), uniqueExecutor_(new aclOpExecutor())
 {
     OP_LOGI("Create executor: %p", uniqueExecutor_.get());
-    OP_CHECK(
-        uniqueExecutor_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "executor constructed failed."), throw std::bad_alloc());
+    OP_CHECK(uniqueExecutor_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "executor constructed failed."),
+             throw std::bad_alloc());
     auto& threadLocalCtx = op::internal::GetThreadLocalContext();
     uniqueExecutor_->SetLogInfo(threadLocalCtx.logInfo_);
     uniqueExecutor_->SetOpConfigInfo(threadLocalCtx.opConfigInfo_);
@@ -1053,25 +1001,22 @@ void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** ex
     opTlsCtx.logInfo_.l2ApiName = l2Name;
     opTlsCtx.logInfo_.l2SequenceCounter = op::internal::OpGetLogSequence();
     uint32_t controlCoreNum = 0;
-    OP_CHECK_NO_RETURN(
-        aclrtGetResInCurrentThread(ACL_RT_DEV_RES_CUBE_CORE, &controlCoreNum) == ACL_RT_SUCCESS,
-        controlCoreNum = op::GetCurrentPlatformInfo().GetCubeCoreNum());
+    OP_CHECK_NO_RETURN(aclrtGetResInCurrentThread(ACL_RT_DEV_RES_CUBE_CORE, &controlCoreNum) == ACL_RT_SUCCESS,
+                       controlCoreNum = op::GetCurrentPlatformInfo().GetCubeCoreNum());
     opTlsCtx.opConfigInfo_.aicNum_ = controlCoreNum;
-    OP_CHECK_NO_RETURN(
-        aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &controlCoreNum) == ACL_RT_SUCCESS,
-        controlCoreNum = op::GetCurrentPlatformInfo().GetVectorCoreNum());
+    OP_CHECK_NO_RETURN(aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &controlCoreNum) == ACL_RT_SUCCESS,
+                       controlCoreNum = op::GetCurrentPlatformInfo().GetVectorCoreNum());
     opTlsCtx.opConfigInfo_.aivNum_ = controlCoreNum;
     opTlsCtx.opConfigInfo_.isOpDumpEnable_ = op::internal::IsDumpEnable();
 
     int64_t determinConfig = 0;
     aclError aclRet = aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &determinConfig);
-    OP_CHECK_NO_RETURN(
-        aclRet == ACL_SUCCESS, determinConfig = 0; OP_LOGW("can not get system param deterministic, ret= %d.", aclRet));
+    OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, determinConfig = 0;
+                       OP_LOGW("can not get system param deterministic, ret= %d.", aclRet));
     opTlsCtx.opConfigInfo_.isDeterministicOn_ = (determinConfig == 1);
-    OP_LOGI(
-        "aic num: %u, aiv num: %u, is deterministic on: %d, is op dump enable: %d", opTlsCtx.opConfigInfo_.aicNum_,
-        opTlsCtx.opConfigInfo_.aivNum_, opTlsCtx.opConfigInfo_.isDeterministicOn_,
-        opTlsCtx.opConfigInfo_.isOpDumpEnable_);
+    OP_LOGI("aic num: %u, aiv num: %u, is deterministic on: %d, is op dump enable: %d", opTlsCtx.opConfigInfo_.aicNum_,
+            opTlsCtx.opConfigInfo_.aivNum_, opTlsCtx.opConfigInfo_.isDeterministicOn_,
+            opTlsCtx.opConfigInfo_.isOpDumpEnable_);
 }
 
 void InitL2Phase2Context([[maybe_unused]] const char* l2Name, aclOpExecutor* executor)
@@ -1106,8 +1051,8 @@ aclnnStatus InferShape(uint32_t optype, op::OpArgList& inputs, op::OpArgList& ou
     return op::internal::InferShape(optype, inputs, outputs, attrs);
 }
 
-aclnnStatus CreatAiCoreKernelLauncher(
-    [[maybe_unused]] const char* l0Name, uint32_t opType, aclOpExecutor* executor, op::OpArgContext* args)
+aclnnStatus CreatAiCoreKernelLauncher([[maybe_unused]] const char* l0Name, uint32_t opType, aclOpExecutor* executor,
+                                      op::OpArgContext* args)
 {
     CHECK_RET(args != nullptr && executor != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     op::internal::ProfilingInfoId profilingInfoId;
@@ -1121,29 +1066,27 @@ aclnnStatus CreatAiCoreKernelLauncher(
     if (args->ContainsOpArgType(op::OP_WORKSPACE_ARG)) {
         auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, args};
         executor->AddToKernelLauncherList(launcher);
-        op::internal::BuildGraph(
-            executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-            *args->GetOpArg(op::OP_WORKSPACE_ARG));
+        op::internal::BuildGraph(executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
+                                 *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG));
     } else {
         aclTensorList* workspace = nullptr;
         op::internal::GetLauncherCtx().ClearTilingCache();
-        addToLaunchRet = op::internal::GetWorkspace(
-            opType, &workspace, executor, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-            *args->GetOpArg(op::OP_ATTR_ARG));
+        addToLaunchRet = op::internal::GetWorkspace(opType, &workspace, executor, *args->GetOpArg(op::OP_INPUT_ARG),
+                                                    *args->GetOpArg(op::OP_OUTPUT_ARG),
+                                                    *args->GetOpArg(op::OP_ATTR_ARG));
         args->AppendOpWorkspaceArg(workspace);
         auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, args};
         launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
 
         executor->AddToKernelLauncherList(launcher);
-        op::internal::BuildGraph(
-            executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-            *args->GetOpArg(op::OP_WORKSPACE_ARG), *args->GetOpArg(op::OP_OUTSHAPE_ARG));
+        op::internal::BuildGraph(executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
+                                 *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG),
+                                 *args->GetOpArg(op::OP_OUTSHAPE_ARG));
     }
     return addToLaunchRet;
 }
-void CreatDSAKernelLauncher(
-    [[maybe_unused]] const char* l0Name, uint32_t opType, DSA_TASK_TYPE dsaTask, aclOpExecutor* executor,
-    op::OpArgContext* args)
+void CreatDSAKernelLauncher([[maybe_unused]] const char* l0Name, uint32_t opType, DSA_TASK_TYPE dsaTask,
+                            aclOpExecutor* executor, op::OpArgContext* args)
 {
     if (args == nullptr) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Failed to create dsa task");
@@ -1185,7 +1128,6 @@ void CreatDSAKernelLauncher(
     executor->AddToKernelLauncherList(launcher);
     executor->AbandonCache(true);
 
-    op::internal::BuildGraph(
-        executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-        *args->GetOpArg(op::OP_WORKSPACE_ARG));
+    op::internal::BuildGraph(executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
+                             *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG));
 }

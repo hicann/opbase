@@ -98,12 +98,12 @@ inline std::string GetOpName()
  * @param [in]level(0: debug, 1: info, 2: warning, 3: error, 5: trace, 6: oplog, 16: event)
  * @param [in]fmt: log content
  */
-#define DOplogSub(moduleId, submodule, level, fmt, ...)                                                         \
-    do {                                                                                                        \
-        if (unlikely(CheckLogLevelInner(moduleId, level) == 1)) {                                               \
-            DlogRecordInner(                                                                                    \
-                moduleId, level, "[%s:%d][%s]" fmt, GetFileName(__FILE__), __LINE__, submodule, ##__VA_ARGS__); \
-        }                                                                                                       \
+#define DOplogSub(moduleId, submodule, level, fmt, ...)                                                     \
+    do {                                                                                                    \
+        if (unlikely(CheckLogLevelInner(moduleId, level) == 1)) {                                           \
+            DlogRecordInner(moduleId, level, "[%s:%d][%s]" fmt, GetFileName(__FILE__), __LINE__, submodule, \
+                            ##__VA_ARGS__);                                                                 \
+        }                                                                                                   \
     } while (false)
 
 #define DDfxlogSub(moduleId, submodule, level, file, line, fmt, ...)                                   \
@@ -114,12 +114,11 @@ inline std::string GetOpName()
     } while (false)
 
 #if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
-#define OP_TEST_LOG(fmt, ...)                                                                                          \
-    do {                                                                                                               \
-        fprintf(                                                                                                       \
-            stdout, "[OP_TEST] [tid: %lu][%s:%d] %s:" fmt "\n", op::OpLog::GetTid(), __FILE__, __LINE__, __FUNCTION__, \
-            ##__VA_ARGS__);                                                                                            \
-        fflush(stdout);                                                                                                \
+#define OP_TEST_LOG(fmt, ...)                                                                                \
+    do {                                                                                                     \
+        fprintf(stdout, "[OP_TEST] [tid: %lu][%s:%d] %s:" fmt "\n", op::OpLog::GetTid(), __FILE__, __LINE__, \
+                __FUNCTION__, ##__VA_ARGS__);                                                                \
+        fflush(stdout);                                                                                      \
     } while (0)
 #define OP_LOGI(...) OP_TEST_LOG(__VA_ARGS__)
 #define OP_LOGW(...) OP_TEST_LOG(__VA_ARGS__)
@@ -161,20 +160,17 @@ inline std::string GetOpName()
 #define OP_EVENT(...)
 #endif
 
-#define OpLogSub(moduleId, level, op_info, fmt, ...)                                                \
-    DOplogSub(                                                                                      \
-        static_cast<int32_t>(moduleId), OPAPI_SUBMOD_NAME, level, "[%s][%lu] %s" fmt, __FUNCTION__, \
-        op::OpLog::GetTid(), op_info, ##__VA_ARGS__)
+#define OpLogSub(moduleId, level, op_info, fmt, ...)                                                      \
+    DOplogSub(static_cast<int32_t>(moduleId), OPAPI_SUBMOD_NAME, level, "[%s][%lu] %s" fmt, __FUNCTION__, \
+              op::OpLog::GetTid(), op_info, ##__VA_ARGS__)
 
-#define OpLogErrSub(moduleId, level, op_info, errno, fmt, ...)                                                \
-    DOplogSub(                                                                                                \
-        static_cast<int32_t>(moduleId), OPAPI_SUBMOD_NAME, level, "[%s][%lu] errno[%d] %s" fmt, __FUNCTION__, \
-        op::OpLog::GetTid(), errno, op_info, ##__VA_ARGS__)
+#define OpLogErrSub(moduleId, level, op_info, errno, fmt, ...)                                                      \
+    DOplogSub(static_cast<int32_t>(moduleId), OPAPI_SUBMOD_NAME, level, "[%s][%lu] errno[%d] %s" fmt, __FUNCTION__, \
+              op::OpLog::GetTid(), errno, op_info, ##__VA_ARGS__)
 
-#define OpDfxLogSub(moduleId, level, file, line, func, op_info, fmt, ...)                                            \
-    DDfxlogSub(                                                                                                      \
-        static_cast<int32_t>(moduleId), OPAPI_SUBMOD_NAME, level, GetFileName(file), line, "[%s][%lu] %s" fmt, func, \
-        op::OpLog::GetTid(), op_info, ##__VA_ARGS__)
+#define OpDfxLogSub(moduleId, level, file, line, func, op_info, fmt, ...)                                             \
+    DDfxlogSub(static_cast<int32_t>(moduleId), OPAPI_SUBMOD_NAME, level, GetFileName(file), line, "[%s][%lu] %s" fmt, \
+               func, op::OpLog::GetTid(), op_info, ##__VA_ARGS__)
 
 #if !defined(__ANDROID__) && !defined(ANDROID)
 #define D_OP_LOGI(opname, fmt, ...) OpLogSub(OP_ID, OP_LOG_INFO, opname, fmt, ##__VA_ARGS__)

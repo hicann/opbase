@@ -247,8 +247,8 @@ public:
             } else if constexpr (mode == 1) {
                 wrapper = GetWrapper<mte3Posion + 1, 0, mte3Posion, mte2Posion>(this->pingPtr_, this->pingCursor);
             } else if constexpr (mode == 2) {
-                wrapper =
-                    GetWrapper<tmpCount + 1, mte2Posion, mte3Posion, mte2Posion>(this->pingPtr_, this->pingCursor);
+                wrapper = GetWrapper<tmpCount + 1, mte2Posion, mte3Posion, mte2Posion>(this->pingPtr_,
+                                                                                       this->pingCursor);
             }
         } else {
             if constexpr (mode == 0) {
@@ -256,8 +256,8 @@ public:
             } else if constexpr (mode == 1) {
                 wrapper = GetWrapper<mte3Posion + 1, 0, mte3Posion, mte2Posion>(this->pongPtr_, this->pongCursor);
             } else if constexpr (mode == 2) {
-                wrapper =
-                    GetWrapper<tmpCount + 1, mte2Posion, mte3Posion, mte2Posion>(this->pongPtr_, this->pongCursor);
+                wrapper = GetWrapper<tmpCount + 1, mte2Posion, mte3Posion, mte2Posion>(this->pongPtr_,
+                                                                                       this->pongCursor);
             }
         }
         return wrapper;

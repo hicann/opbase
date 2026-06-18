@@ -39,8 +39,8 @@ public:
     {
         return customBinhandleInfos_[kernelSoPath].binHandle;
     }
-    static aclnnStatus LoadAicpuCustBinaryFromJson(
-        const std::string& opType, const std::string& kernelSoName, std::string& kernelSoPath);
+    static aclnnStatus LoadAicpuCustBinaryFromJson(const std::string& opType, const std::string& kernelSoName,
+                                                   std::string& kernelSoPath);
     static aclnnStatus CustJsonLoadAndParse();
     static bool FindAndGetInCustomRegistry(const std::string& opType, std::string& kernelSo, std::string& functionName);
 
@@ -51,8 +51,8 @@ private:
     JsonLoadManger(JsonLoadManger&&) = delete;
     JsonLoadManger& operator=(const JsonLoadManger&) = delete;
     JsonLoadManger& operator=(JsonLoadManger&&) = delete;
-    static aclnnStatus LoadBinaryFromJson(
-        const std::string& opsPath, aclrtBinHandle& binHandle, const bool isCust = false);
+    static aclnnStatus LoadBinaryFromJson(const std::string& opsPath, aclrtBinHandle& binHandle,
+                                          const bool isCust = false);
     static bool ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath);
     static bool ReadCustOpInfoFromJsonFile(const std::string& path);
     static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc);

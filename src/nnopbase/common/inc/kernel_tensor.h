@@ -55,9 +55,8 @@ public:
 
         size_t typeSize = op::TypeSize(aclTensor_->GetDataType());
         if (typeSize > ge::kDataTypeSizeBitOffset) {
-            if (ge::MulOverflow(
-                    (typeSize - ge::kDataTypeSizeBitOffset), aclTensor_->GetStorageShape().GetShapeSize(),
-                    tensorSize_)) {
+            if (ge::MulOverflow((typeSize - ge::kDataTypeSizeBitOffset), aclTensor_->GetStorageShape().GetShapeSize(),
+                                tensorSize_)) {
                 return ACLNN_ERR_INNER;
             }
             tensorSize_ = (tensorSize_ + (BITS_PER_BYTE - 1)) >> BITS_PER_BYTE_SHIFT;

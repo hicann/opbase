@@ -105,9 +105,8 @@ private:
     __aicore__ inline constexpr static bool IsTensorMove()
     {
         // if pre reduce only have copyin
-        if constexpr (
-            Pattern::ID == PATTERN_A &&
-            (OpDag::ReduceOpPos == 1 && OpDag::PostReduceNodeInfo::SavedFunList::Size == 1)) {
+        if constexpr (Pattern::ID == PATTERN_A &&
+                      (OpDag::ReduceOpPos == 1 && OpDag::PostReduceNodeInfo::SavedFunList::Size == 1)) {
             return true;
         } else {
             return false;
@@ -123,10 +122,10 @@ private:
     constexpr static int32_t POST_MTE2_NUM = GetPostMte2Num();
     constexpr static int32_t POST_MTE3_NUM = GetPostMte3Num();
     constexpr static int32_t POST_TEMP_CALC_NUM = GetPostTempCalcNum();
-    constexpr static int32_t PRE_MTE2_NUM =
-        OpDag::template GetMte2NumImpl<typename OpDag::PreReduceNodeInfo, true, false>();
-    constexpr static int32_t PRE_MTE3_NUM =
-        OpDag::template GetMte3NumImpl<typename OpDag::PreReduceNodeInfo, true, false>();
+    constexpr static int32_t
+        PRE_MTE2_NUM = OpDag::template GetMte2NumImpl<typename OpDag::PreReduceNodeInfo, true, false>();
+    constexpr static int32_t
+        PRE_MTE3_NUM = OpDag::template GetMte3NumImpl<typename OpDag::PreReduceNodeInfo, true, false>();
     constexpr static uint32_t INPUT_NUM = OpDag::InputSize;
     constexpr static uint32_t OUPUT_NUM = OpDag::OutputSize;
     constexpr static MemLevel BUF_LEVEL = OpDag::BufLevel;
@@ -196,11 +195,10 @@ public:
         postBufSize_ = tiling_->resultBlock * (POST_MTE2_NUM + POST_TEMP_CALC_NUM + POST_MTE3_NUM);
         resBufSize_ = tiling_->resultBlock;
 
-        RUN_LOG(
-            "Pre MTE2: %d, Calc:%d, MTE3:%d, Post MTE2:%d, Calc:%d, MTE3:%d, preBufSize:%d, postBufSize:%d, "
-            "resBufSize:%d\n",
-            PRE_MTE2_NUM_TOTAL, PRE_TEMP_CALC_NUM, PRE_MTE3_NUM_TOTAL, POST_MTE2_NUM, POST_TEMP_CALC_NUM, POST_MTE3_NUM,
-            preBufSize_, postBufSize_, resBufSize_);
+        RUN_LOG("Pre MTE2: %d, Calc:%d, MTE3:%d, Post MTE2:%d, Calc:%d, MTE3:%d, preBufSize:%d, postBufSize:%d, "
+                "resBufSize:%d\n",
+                PRE_MTE2_NUM_TOTAL, PRE_TEMP_CALC_NUM, PRE_MTE3_NUM_TOTAL, POST_MTE2_NUM, POST_TEMP_CALC_NUM,
+                POST_MTE3_NUM, preBufSize_, postBufSize_, resBufSize_);
 
         pipeIn->InitBuffer(buf_, preBufSize_ + postBufSize_ + resBufSize_ + CACHE_BUF_SIZE);
         preBufPool_ = buf_.Get<uint8_t>();
@@ -233,8 +231,8 @@ public:
             SchTypeA op(this, input_, output_, &workspace_, tiling_);
             op.Process(args...);
         } else {
-            using SchTypeA =
-                ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+            using SchTypeA = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
+                                                       OpDag>;
             SchTypeA op(this, input_, output_, &workspace_, tiling_);
             op.Process(args...);
         }
@@ -257,11 +255,11 @@ public:
             groupOp.Process(args...);
         } else {
             SetGroupTilingNonContiguous(groupTiling);
-            using SchTypeR =
-                ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+            using SchTypeR = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
+                                                       OpDag>;
             SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
-            using SchTypeA =
-                ReduceSchAuxNonContiguous<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>, false, OpDag>;
+            using SchTypeA = ReduceSchAuxNonContiguous<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>,
+                                                       false, OpDag>;
             SchTypeA groupOp(this, input_, output_, &workspace_, &groupTiling);
 
             op.Process(args...);
@@ -306,8 +304,8 @@ public:
         groupTiling.factorRCntPerCore = 1;
         groupTiling.factorRTotalCnt = 1;
         groupTiling.factorATotalCnt = Ops::Base::CeilDiv(groupTiling.shape[1], groupTiling.ubFactorA);
-        groupTiling.factorACntPerCore =
-            Ops::Base::CeilDiv(groupTiling.factorATotalCnt, static_cast<uint64_t>(tiling_->coreNum));
+        groupTiling.factorACntPerCore = Ops::Base::CeilDiv(groupTiling.factorATotalCnt,
+                                                           static_cast<uint64_t>(tiling_->coreNum));
     }
 
     __aicore__ inline void SetGroupTilingNonContiguous(ReduceOpTilingData& groupTiling)
@@ -321,9 +319,9 @@ public:
     }
 
     template <class T, class V>
-    __aicore__ inline void MaxLoopDataCopyPad(
-        const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view, const DataCopyExtParams& copyInParams,
-        const DataCopyPadExtParams<T>& padParams)
+    __aicore__ inline void MaxLoopDataCopyPad(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view,
+                                              const DataCopyExtParams& copyInParams,
+                                              const DataCopyPadExtParams<T>& padParams)
     {
         for (uint64_t i = 0; i < view.axis[CONST7].repeat; i++) {
             for (uint64_t j = 0; j < view.axis[CONST6].repeat; j++) {
@@ -375,8 +373,8 @@ public:
     }
 
     template <int32_t pos, class InnerPattern, class T, class V>
-    __aicore__ inline void CopyInWithMoveAlignNonContiguous(
-        const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view)
+    __aicore__ inline void CopyInWithMoveAlignNonContiguous(const LocalTensor<T>& dst, const GlobalTensor<T>& src,
+                                                            V& view)
     {
         T paddingValue = 0;
         DataCopyPadExtParams<T> padParams{true, 0, 0, paddingValue};
@@ -410,30 +408,26 @@ public:
                 if constexpr (Pattern::Dim == CONST3) {
                     MultiCopyLoopInfo<CONST3> copyLoopInfo = {
                         .loopSrcStride = {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride},
-                        .loopDstStride =
-                            {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
-                             static_cast<uint32_t>(view.axis[CONST2].dstStride)},
-                        .loopSize =
-                            {static_cast<uint32_t>(view.axis[CONST0].repeat),
-                             static_cast<uint32_t>(view.axis[CONST1].repeat),
-                             static_cast<uint32_t>(view.axis[CONST2].repeat)},
+                        .loopDstStride = {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
+                                          static_cast<uint32_t>(view.axis[CONST2].dstStride)},
+                        .loopSize = {static_cast<uint32_t>(view.axis[CONST0].repeat),
+                                     static_cast<uint32_t>(view.axis[CONST1].repeat),
+                                     static_cast<uint32_t>(view.axis[CONST2].repeat)},
                         .loopLpSize = {0, 0, 0},
                         .loopRpSize = {0, 0, 0}};
                     MultiCopyParams<T, CONST3> params = {copyLoopInfo, 0};
                     DataCopy<T, CONST3, config>(dst, src[view.addr], params);
                 } else {
                     MultiCopyLoopInfo<CONST4> copyLoopInfo = {
-                        .loopSrcStride =
-                            {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride, view.axis[CONST3].srcStride},
-                        .loopDstStride =
-                            {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
-                             static_cast<uint32_t>(view.axis[CONST2].dstStride),
-                             static_cast<uint32_t>(view.axis[CONST3].dstStride)},
-                        .loopSize =
-                            {static_cast<uint32_t>(view.axis[CONST0].repeat),
-                             static_cast<uint32_t>(view.axis[CONST1].repeat),
-                             static_cast<uint32_t>(view.axis[CONST2].repeat),
-                             static_cast<uint32_t>(view.axis[CONST3].repeat)},
+                        .loopSrcStride = {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
+                                          view.axis[CONST3].srcStride},
+                        .loopDstStride = {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
+                                          static_cast<uint32_t>(view.axis[CONST2].dstStride),
+                                          static_cast<uint32_t>(view.axis[CONST3].dstStride)},
+                        .loopSize = {static_cast<uint32_t>(view.axis[CONST0].repeat),
+                                     static_cast<uint32_t>(view.axis[CONST1].repeat),
+                                     static_cast<uint32_t>(view.axis[CONST2].repeat),
+                                     static_cast<uint32_t>(view.axis[CONST3].repeat)},
                         .loopLpSize = {0, 0, 0, 0},
                         .loopRpSize = {0, 0, 0, 0}};
                     MultiCopyParams<T, CONST4> params = {copyLoopInfo, 0};
@@ -441,20 +435,17 @@ public:
                 }
             } else {
                 MultiCopyLoopInfo<CONST5> copyLoopInfo = {
-                    .loopSrcStride =
-                        {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride, view.axis[CONST3].srcStride,
-                         view.axis[CONST4].srcStride},
-                    .loopDstStride =
-                        {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
-                         static_cast<uint32_t>(view.axis[CONST2].dstStride),
-                         static_cast<uint32_t>(view.axis[CONST3].dstStride),
-                         static_cast<uint32_t>(view.axis[CONST4].dstStride)},
-                    .loopSize =
-                        {static_cast<uint32_t>(view.axis[CONST0].repeat),
-                         static_cast<uint32_t>(view.axis[CONST1].repeat),
-                         static_cast<uint32_t>(view.axis[CONST2].repeat),
-                         static_cast<uint32_t>(view.axis[CONST3].repeat),
-                         static_cast<uint32_t>(view.axis[CONST4].repeat)},
+                    .loopSrcStride = {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
+                                      view.axis[CONST3].srcStride, view.axis[CONST4].srcStride},
+                    .loopDstStride = {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
+                                      static_cast<uint32_t>(view.axis[CONST2].dstStride),
+                                      static_cast<uint32_t>(view.axis[CONST3].dstStride),
+                                      static_cast<uint32_t>(view.axis[CONST4].dstStride)},
+                    .loopSize = {static_cast<uint32_t>(view.axis[CONST0].repeat),
+                                 static_cast<uint32_t>(view.axis[CONST1].repeat),
+                                 static_cast<uint32_t>(view.axis[CONST2].repeat),
+                                 static_cast<uint32_t>(view.axis[CONST3].repeat),
+                                 static_cast<uint32_t>(view.axis[CONST4].repeat)},
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
                 MultiCopyParams<T, CONST5> params = {copyLoopInfo, 0};
@@ -478,17 +469,18 @@ public:
     {
         static constexpr MultiCopyConfig config = {false, 0, 0, false};
         MultiCopyLoopInfo<CONST5> copyLoopInfo = {
-            .loopSrcStride =
-                {view.axis[CONST0].srcStride, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
-                 view.axis[CONST3].srcStride, view.axis[CONST4].srcStride},
-            .loopDstStride =
-                {static_cast<uint32_t>(view.axis[CONST0].dstStride), static_cast<uint32_t>(view.axis[CONST1].dstStride),
-                 static_cast<uint32_t>(view.axis[CONST2].dstStride), static_cast<uint32_t>(view.axis[CONST3].dstStride),
-                 static_cast<uint32_t>(view.axis[CONST4].dstStride)},
-            .loopSize =
-                {static_cast<uint32_t>(view.axis[CONST0].repeat), static_cast<uint32_t>(view.axis[CONST1].repeat),
-                 static_cast<uint32_t>(view.axis[CONST2].repeat), static_cast<uint32_t>(view.axis[CONST3].repeat),
-                 static_cast<uint32_t>(view.axis[CONST4].repeat)},
+            .loopSrcStride = {view.axis[CONST0].srcStride, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
+                              view.axis[CONST3].srcStride, view.axis[CONST4].srcStride},
+            .loopDstStride = {static_cast<uint32_t>(view.axis[CONST0].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST1].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST2].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST3].dstStride),
+                              static_cast<uint32_t>(view.axis[CONST4].dstStride)},
+            .loopSize = {static_cast<uint32_t>(view.axis[CONST0].repeat),
+                         static_cast<uint32_t>(view.axis[CONST1].repeat),
+                         static_cast<uint32_t>(view.axis[CONST2].repeat),
+                         static_cast<uint32_t>(view.axis[CONST3].repeat),
+                         static_cast<uint32_t>(view.axis[CONST4].repeat)},
             .loopLpSize = {0, 0, 0, 0, 0},
             .loopRpSize = {0, 0, 0, 0, 0}};
         MultiCopyParams<T, CONST5> params = {copyLoopInfo, 0};
@@ -568,10 +560,9 @@ public:
     template <typename ScalarType, typename ScalarValue>
     __aicore__ inline constexpr ScalarType GetScalar()
     {
-        static_assert(
-            !(Placeholder::IsVar<ScalarValue>::Value && Placeholder::IsInHolder<ScalarValue>::Value &&
-              Placeholder::IsConstValue<ScalarValue>::Value),
-            "The input parameter type is not FunBind, Var, Const or Holder.");
+        static_assert(!(Placeholder::IsVar<ScalarValue>::Value && Placeholder::IsInHolder<ScalarValue>::Value &&
+                        Placeholder::IsConstValue<ScalarValue>::Value),
+                      "The input parameter type is not FunBind, Var, Const or Holder.");
         if constexpr (Placeholder::IsVar<ScalarValue>::Value) {
             if constexpr (!__aux::IsSameType<OpDag, void>::Value) {
                 return OpScalars_.template Get<ScalarValue::Pos>();

@@ -90,8 +90,8 @@ public:
     template <typename OpDag, bool CheckShape = true>
     ge::graphStatus DoTiling4Bits(EleBaseTilingData& eleTilingData, int64_t extraSize = 0, int64_t extraBufferNum = 0);
     template <typename OpDag, bool CheckShape>
-    ge::graphStatus DoTiling4Bits(
-        ElewiseTilingData& elewiseTilingData, int64_t extraSize = 0, int64_t extraBufferNum = 0);
+    ge::graphStatus DoTiling4Bits(ElewiseTilingData& elewiseTilingData, int64_t extraSize = 0,
+                                  int64_t extraBufferNum = 0);
 
     template <typename T>
     void SetScalar(T value);
@@ -104,8 +104,8 @@ private:
     template <bool CheckShape = true>
     ge::graphStatus GetShapeInfo();
     void AdaptEleBaseTilingData(const ElewiseTilingData& elewiseTilingData, EleBaseTilingData& eleBaseTilingData);
-    void AdaptEleBaseTilingData16B(
-        const ElewiseTilingData& elewiseTilingData, EleBaseTilingData16B& eleBaseTilingData16B);
+    void AdaptEleBaseTilingData16B(const ElewiseTilingData& elewiseTilingData,
+                                   EleBaseTilingData16B& eleBaseTilingData16B);
     ge::graphStatus AdaptEleBaseTilingData24B(const ElewiseTilingData& elewiseTilingData);
     ge::graphStatus AdaptEleBaseTilingData32B(const ElewiseTilingData& elewiseTilingData);
     EleBaseTilingData32B* Ele32BTilingData = nullptr;
@@ -119,8 +119,8 @@ private:
     gert::Shape shape;
 };
 
-OPBASE_API ge::graphStatus ElewiseTiling(
-    const ElewiseTilingParams& elewiseTilingParams, ElewiseTilingData& elewiseTilingData);
+OPBASE_API ge::graphStatus ElewiseTiling(const ElewiseTilingParams& elewiseTilingParams,
+                                         ElewiseTilingData& elewiseTilingData);
 OPBASE_API bool IsSameElewiseShape(const gert::Shape&, const gert::Shape&);
 
 template <bool CheckShape>
@@ -162,8 +162,8 @@ ge::graphStatus ElewiseBaseTiling::GetShapeInfo()
 
 // 0.5字宽的数据，如fp4
 template <typename OpDag, bool CheckShape>
-ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(
-    ElewiseTilingData& elewiseTilingData, int64_t extraSize, int64_t extraBufferNum)
+ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(ElewiseTilingData& elewiseTilingData, int64_t extraSize,
+                                                 int64_t extraBufferNum)
 {
     auto status = GetPlatformInfo();
     if (status != ge::GRAPH_SUCCESS) {
@@ -184,9 +184,8 @@ ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(
     // 合轴
     int64_t dim0 = 1;
     for (uint64_t i = 0; i < shape.GetDimNum(); i++) {
-        OP_CHECK_IF(
-            shape.GetDim(i) == 0, OP_LOGE("ElewiseBaseTiling::DoTiling4Bits", "elewiseTiling dim can not be 0"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(shape.GetDim(i) == 0, OP_LOGE("ElewiseBaseTiling::DoTiling4Bits", "elewiseTiling dim can not be 0"),
+                    return ge::GRAPH_FAILED);
         dim0 = dim0 * shape.GetDim(i);
     }
     // 两个fp4类型数据当做 一个int8类型数据看待，向上取整
@@ -207,8 +206,8 @@ ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(
 
 // 0.5字宽的数据，如fp4
 template <typename OpDag, bool CheckShape>
-ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(
-    EleBaseTilingData& eleTilingData, int64_t extraSize, int64_t extraBufferNum)
+ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(EleBaseTilingData& eleTilingData, int64_t extraSize,
+                                                 int64_t extraBufferNum)
 {
     ElewiseTilingData elewiseTilingData;
     auto status = DoTiling4Bits<OpDag, CheckShape>(elewiseTilingData, extraSize, extraBufferNum);
@@ -221,8 +220,8 @@ ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(
 }
 
 template <typename OpDag, bool CheckShape>
-ge::graphStatus ElewiseBaseTiling::DoTiling(
-    ElewiseTilingData& elewiseTilingData, int64_t extraSize, int64_t extraBufferNum)
+ge::graphStatus ElewiseBaseTiling::DoTiling(ElewiseTilingData& elewiseTilingData, int64_t extraSize,
+                                            int64_t extraBufferNum)
 {
     auto status = GetPlatformInfo();
     if (status != ge::GRAPH_SUCCESS) {
@@ -254,8 +253,8 @@ ge::graphStatus ElewiseBaseTiling::DoTiling(
 }
 
 template <typename OpDag, bool CheckShape>
-ge::graphStatus ElewiseBaseTiling::DoTiling(
-    EleBaseTilingData& eleTilingDataV2, int64_t extraSize, int64_t extraBufferNum)
+ge::graphStatus ElewiseBaseTiling::DoTiling(EleBaseTilingData& eleTilingDataV2, int64_t extraSize,
+                                            int64_t extraBufferNum)
 {
     ElewiseTilingData elewiseTilingData;
     auto status = DoTiling<OpDag, CheckShape>(elewiseTilingData, extraSize, extraBufferNum);
@@ -268,8 +267,8 @@ ge::graphStatus ElewiseBaseTiling::DoTiling(
 }
 
 template <typename OpDag, bool CheckShape>
-ge::graphStatus ElewiseBaseTiling::DoTiling(
-    EleBaseTilingData16B& eleTilingData16B, int64_t extraSize, int64_t extraBufferNum)
+ge::graphStatus ElewiseBaseTiling::DoTiling(EleBaseTilingData16B& eleTilingData16B, int64_t extraSize,
+                                            int64_t extraBufferNum)
 {
     ElewiseTilingData elewiseTilingData;
     auto status = DoTiling<OpDag, CheckShape>(elewiseTilingData, extraSize, extraBufferNum);

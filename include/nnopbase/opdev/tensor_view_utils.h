@@ -20,11 +20,11 @@ namespace op {
  * 1. Private formats tensor must be contiguous.
  * 2. Empty tensor must be contiguous.
  * 3. The stride and view shape match contiguous features.
- * 4. nullptr return true by default. 
+ * 4. nullptr return true by default.
  * @param tensor The input tensor
  * @return bool True/false
  */
-bool IsContiguous(const aclTensor *tensor);
+bool IsContiguous(const aclTensor* tensor);
 
 /**
  * @brief Check whether all input tensors can be regarded as a view of contiguous tensors
@@ -32,21 +32,21 @@ bool IsContiguous(const aclTensor *tensor);
  * @param tensorList The input tensors.
  * @return
  */
-bool CanPickViewAsContiguous(std::initializer_list<const aclTensor *> tensorList);
+bool CanPickViewAsContiguous(std::initializer_list<const aclTensor*> tensorList);
 
 /**
  * @brief Check whether the input tensor can be regarded as a view of a contiguous tensor.
  * @param tensor The input tensor
  * @return True/false
  */
-bool CanPickViewAsContiguous(const aclTensor *tensor);
+bool CanPickViewAsContiguous(const aclTensor* tensor);
 
 /**
  * @brief Check whether the input tensor is valid.
  * @param tensor The input tensor
  * @return bool True/false
  */
-bool Validate(const aclTensor *tensor);
+bool Validate(const aclTensor* tensor);
 } // namespace op
 
 #endif // OP_API_COMMON_INC_OP_DEV_TENSOR_VIEW_UTILS_H

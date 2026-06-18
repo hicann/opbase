@@ -35,8 +35,8 @@ aclError aclGetTensorDescDimV2(const aclTensorDesc* desc, size_t index, int64_t*
     return ACL_SUCCESS;
 }
 
-aclTensorDesc::aclTensorDesc(
-    const aclDataType aclTensorDataType, const std::initializer_list<int64_t> shape, const aclFormat aclTensorFormat)
+aclTensorDesc::aclTensorDesc(const aclDataType aclTensorDataType, const std::initializer_list<int64_t> shape,
+                             const aclFormat aclTensorFormat)
     : dims(shape)
 {
     this->dataType = aclTensorDataType;

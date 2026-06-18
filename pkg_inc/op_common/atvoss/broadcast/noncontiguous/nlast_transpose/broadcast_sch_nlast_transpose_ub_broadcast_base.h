@@ -24,15 +24,14 @@
 #include "atvoss/util/broadcast_utils.h"
 #include "atvoss/broadcast/broadcast_base_struct.h"
 
-namespace Ops{
+namespace Ops {
 namespace Base {
 constexpr uint64_t NUM_FOUR = 4;
 constexpr uint64_t NUM_THREE = 3;
 constexpr uint64_t NUM_TWO = 2;
 
 template <class BrcDag, bool UseNddma, int64_t R = -1>
-class BroadcastNlastTransposeBaseSch
-{
+class BroadcastNlastTransposeBaseSch {
 public:
     __aicore__ inline explicit BroadcastNlastTransposeBaseSch(
         const BroadcastNlastTransposeTilingData<BrcDag>* baseTilingData)
@@ -79,8 +78,8 @@ protected:
     template <size_t N>
     __aicore__ inline void GetStridesWithPadThroughDims(const int64_t (&oriDims)[N], uint32_t (&stridesWithPad)[N])
     {
-        int64_t tmp_strides[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM] = {
-            1, 1, 1, 1}; /* 计算 viewshape 连续后对应的 stride*/
+        int64_t tmp_strides[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM] = {1, 1, 1,
+                                                                      1}; /* 计算 viewshape 连续后对应的 stride*/
         int64_t base = 1;
         for (int64_t j = tilingData_->shapeLen - 1; j >= 0; j--) {
             tmp_strides[j] = base;
@@ -145,8 +144,8 @@ protected:
             vecBrcFormerShape_[vBrcIndex_][0] = vBrcFormer_[vBrcIndex_];
         }
         if constexpr (R == -1) {
-            GetBroadcastTilingInfo<T>(
-                runningRank_, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], false, runningTiling);
+            GetBroadcastTilingInfo<T>(runningRank_, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], false,
+                                      runningTiling);
             Broadcast(dst, src, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], &runningTiling);
         } else {
             GetBroadcastTilingInfo<T, R>(R, dstUbFormerShape_, vecBrcFormerShape_[vBrcIndex_], false, runningTiling);
@@ -185,8 +184,8 @@ protected:
         inputTensor.SetBufferLen(blockEleNum_);
 #endif
         int64_t realIdx = (AscendC::GetBlockIdx() * tilingData_->blockFormer + ubLoopIdx) % tilingData_->ubOuter;
-        static_assert(
-            std::is_same<inputType, outputType>::value, "Broadcast inputType  is inconsistent with outputType.");
+        static_assert(std::is_same<inputType, outputType>::value,
+                      "Broadcast inputType  is inconsistent with outputType.");
         VecBrc<inputType, true>(outTensor, inputTensor, realIdx);
         ReleaseTensor<TPosition::VECCALC>(inputBufId);
         ReleaseTensor<TPosition::VECCALC>(bufId);
@@ -311,10 +310,9 @@ protected:
     template <typename ScalarType, typename scalarValue>
     __aicore__ inline constexpr ScalarType GetScalar()
     {
-        static_assert(
-            !(Placeholder::IsVar<scalarValue>::Value && Placeholder::IsInHolder<scalarValue>::Value &&
-              Placeholder::IsConstValue<scalarValue>::Value),
-            "The input parameter type is not FunBind, Var, Const or Holder.");
+        static_assert(!(Placeholder::IsVar<scalarValue>::Value && Placeholder::IsInHolder<scalarValue>::Value &&
+                        Placeholder::IsConstValue<scalarValue>::Value),
+                      "The input parameter type is not FunBind, Var, Const or Holder.");
         if constexpr (Placeholder::IsVar<scalarValue>::Value) {
             ScalarType scalar = scalars_.template Get<scalarValue::Pos>();
             return scalar;
@@ -345,8 +343,8 @@ protected:
                 if constexpr (!isDuplicate) {
                     GetTensor<TPosition::VECCALC>(bufId);
                 }
-                LocalTensor<TensorType> inputTensor =
-                    tensorPool_[bufId * blockLen_].template ReinterpretCast<TensorType>();
+                LocalTensor<TensorType> inputTensor = tensorPool_[bufId * blockLen_]
+                                                          .template ReinterpretCast<TensorType>();
 #ifndef __CCE_KT_TEST__
                 inputTensor.SetBufferLen(blockEleNum_);
 #endif
@@ -387,8 +385,8 @@ protected:
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(
-        LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outTensor, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -396,13 +394,13 @@ protected:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(
-            outTensor, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(outTensor, inputs, tileLength,
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(
-        OutputType& outScalar, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(OutputType& outScalar, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outScalar, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -410,8 +408,8 @@ protected:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(OutputType& outScalar, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(
-            outScalar, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(outScalar, inputs, tileLength,
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Op, size_t... I>
@@ -500,6 +498,6 @@ private:
     const BroadcastNlastTransposeTilingData<BrcDag>* tilingData_;
 };
 } // namespace Base
-} //namespace Ops
+} // namespace Ops
 
 #endif // BROADCAST_SCH_NLAST_TRANSPOSE_UB_BROADCAST_BASE_H_

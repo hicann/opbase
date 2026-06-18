@@ -222,8 +222,8 @@ void AnyValue::AllocateOperations<T>::Operate(const AnyValue::OperateType ot, co
             *PtrToPtr<void, void*>(out) = const_cast<void*>(av->holder_.pointer);
             break;
         case OperateType::kOpClone:
-            PtrToPtr<void, AnyValue>(out)->holder_.pointer =
-                new (std::nothrow) T(*PtrToPtr<const void, const T>(av->holder_.pointer));
+            PtrToPtr<void, AnyValue>(out)->holder_.pointer = new (std::nothrow)
+                T(*PtrToPtr<const void, const T>(av->holder_.pointer));
             PtrToPtr<void, AnyValue>(out)->operate_ = av->operate_;
             break;
         case OperateType::kOpMove: {
@@ -265,8 +265,8 @@ void AnyValue::InlineOperations<T>::Operate(const AnyValue::OperateType ot, cons
             break;
         }
         case OperateType::kOpGetAddr:
-            *PtrToPtr<void, void*>(out) =
-                const_cast<void*>(PtrToPtr<const ValueBuf, const void>(&av->holder_.inline_buf));
+            *PtrToPtr<void, void*>(out) = const_cast<void*>(
+                PtrToPtr<const ValueBuf, const void>(&av->holder_.inline_buf));
             break;
         case OperateType::kOpClone: {
             auto* const av_p = PtrToPtr<void, AnyValue>(out);
@@ -311,8 +311,8 @@ void AnyValue::InnerSet(T&& value)
 {
     using PureT = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
     using Inline = std::integral_constant<bool, sizeof(PureT) <= sizeof(holder_)>;
-    using Operations = typename std::conditional<
-        Inline{}, AnyValue::InlineOperations<PureT>, AnyValue::AllocateOperations<PureT>>::type;
+    using Operations = typename std::conditional<Inline{}, AnyValue::InlineOperations<PureT>,
+                                                 AnyValue::AllocateOperations<PureT>>::type;
 
     Operations::Construct(std::forward<T>(value), this);
 }

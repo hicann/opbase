@@ -71,9 +71,8 @@ const std::string& OpArgTypeStr(int argType)
     }
 }
 
-aclnnStatus GenKeyByArgImpl(
-    char*& key, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, bool ignoreOptional, size_t idx,
-    const aclTensor* tensor, int argType)
+aclnnStatus GenKeyByArgImpl(char*& key, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, bool ignoreOptional,
+                            size_t idx, const aclTensor* tensor, int argType)
 {
     if (tensor == nullptr) {
         OP_LOGW("tensor is nullptr when genKeyByArgImpl.");
@@ -81,9 +80,8 @@ aclnnStatus GenKeyByArgImpl(
     }
 
     if (idx >= tensorInfos.size()) {
-        OP_LOGE(
-            ACLNN_ERR_INNER, "%s %zu is larger than support nd size %zu.", OpArgTypeStr(argType).c_str(), idx,
-            tensorInfos.size());
+        OP_LOGE(ACLNN_ERR_INNER, "%s %zu is larger than support nd size %zu.", OpArgTypeStr(argType).c_str(), idx,
+                tensorInfos.size());
         return ACLNN_ERR_INNER;
     }
 
@@ -123,10 +121,9 @@ aclnnStatus GenKeyByArgImpl(
             if (tensorInfo.fmtInfo.fmtType == FormatType::SUPPORT_ND) {
                 AssignAndIncrement(key, static_cast<char_t>(ge::FORMAT_ND));
             } else {
-                OP_LOGE(
-                    ACLNN_ERR_INNER, "Cannot find any bin for %s %zu with [storage format %d, primary format %d].",
-                    OpArgTypeStr(argType).c_str(), idx, tensor->GetStorageFormat(),
-                    GetPrimaryFormat(tensor->GetStorageFormat()));
+                OP_LOGE(ACLNN_ERR_INNER, "Cannot find any bin for %s %zu with [storage format %d, primary format %d].",
+                        OpArgTypeStr(argType).c_str(), idx, tensor->GetStorageFormat(),
+                        GetPrimaryFormat(tensor->GetStorageFormat()));
                 return ACLNN_ERR_INNER;
             }
         }
@@ -137,9 +134,8 @@ aclnnStatus GenKeyByArgImpl(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus GenKeyByArgImpl(
-    char*& key, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, bool ignoreOptional, size_t idx,
-    const aclTensorList* tensorList, int argType)
+aclnnStatus GenKeyByArgImpl(char*& key, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, bool ignoreOptional,
+                            size_t idx, const aclTensorList* tensorList, int argType)
 {
     if (ignoreOptional && idx < tensorInfos.size() && tensorInfos[idx].tensorType == TensorType::OPTIONAL) {
         return ACLNN_SUCCESS;
@@ -158,22 +154,21 @@ aclnnStatus GenKeyByArgImpl(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus GenKeyByArgImpl(
-    char*& key, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, bool ignoreOptional, size_t idx,
-    OpArg& opArg, int argType)
+aclnnStatus GenKeyByArgImpl(char*& key, const std::array<TensorInfo, MAX_TENSOR_SIZE>& tensorInfos, bool ignoreOptional,
+                            size_t idx, OpArg& opArg, int argType)
 {
     if (opArg.type == OpArgType::OPARG_ACLTENSOR) {
-        return GenKeyByArgImpl(
-            key, tensorInfos, ignoreOptional, idx, reinterpret_cast<aclTensor*>(opArg->pointer), argType);
+        return GenKeyByArgImpl(key, tensorInfos, ignoreOptional, idx, reinterpret_cast<aclTensor*>(opArg->pointer),
+                               argType);
     } else if (opArg.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-        return GenKeyByArgImpl(
-            key, tensorInfos, ignoreOptional, idx, reinterpret_cast<aclTensorList*>(opArg->pointer), argType);
+        return GenKeyByArgImpl(key, tensorInfos, ignoreOptional, idx, reinterpret_cast<aclTensorList*>(opArg->pointer),
+                               argType);
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus GenKeyByOneAttrImplWrapper(
-    char*& key, size_t& remainLen, std::vector<AttrInfo>& attrInfos, OpArg& arg, size_t idx)
+aclnnStatus GenKeyByOneAttrImplWrapper(char*& key, size_t& remainLen, std::vector<AttrInfo>& attrInfos, OpArg& arg,
+                                       size_t idx)
 {
     if (attrInfos.size() <= idx) {
         return ACLNN_SUCCESS;
@@ -200,11 +195,11 @@ aclnnStatus GenKeyByOneAttrImplWrapper(
         case OpArgType::OPARG_ACLSCALAR:
             return GenKeyByOneAttrImpl(key, remainLen, idx, attrInfos[idx], reinterpret_cast<aclScalar*>(arg->pointer));
         case OpArgType::OPARG_INT_LIST:
-            return GenKeyByOneAttrImpl(
-                key, remainLen, idx, attrInfos[idx], reinterpret_cast<aclIntArray*>(arg->pointer));
+            return GenKeyByOneAttrImpl(key, remainLen, idx, attrInfos[idx],
+                                       reinterpret_cast<aclIntArray*>(arg->pointer));
         case OpArgType::OPARG_FLOAT_LIST:
-            return GenKeyByOneAttrImpl(
-                key, remainLen, idx, attrInfos[idx], reinterpret_cast<aclFloatArray*>(arg->pointer));
+            return GenKeyByOneAttrImpl(key, remainLen, idx, attrInfos[idx],
+                                       reinterpret_cast<aclFloatArray*>(arg->pointer));
         default:
             std::string argTypeRange = "[OPARG_ACLSCALAR(2), OPARG_STRING(3), OPARG_BOOL(4), OPARG_INT(5), "
                                        "OPARG_UINT(6), OPARG_FLOAT(7), OPARG_DOUBLE(8), OPARG_DATATYPE(9), "

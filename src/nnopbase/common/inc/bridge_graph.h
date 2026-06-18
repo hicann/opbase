@@ -19,9 +19,8 @@
 namespace op {
 namespace internal {
 
-void* BuildKernelNodeImpl(
-    uint32_t opType, FVector<aclTensor*>& aclInputs, FVector<aclTensor*>& aclOutputs,
-    FVector<aclTensor*>& aclWorkspace);
+void* BuildKernelNodeImpl(uint32_t opType, FVector<aclTensor*>& aclInputs, FVector<aclTensor*>& aclOutputs,
+                          FVector<aclTensor*>& aclWorkspace);
 
 void* CreateGraphImpl();
 
@@ -36,8 +35,8 @@ static void TraitsAclTensor(FVector<aclTensor*>& result, const std::tuple<Args..
 {
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensor, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensor,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddToList(result, args) :
                   void()),
              ...);
@@ -45,8 +44,8 @@ static void TraitsAclTensor(FVector<aclTensor*>& result, const std::tuple<Args..
         t);
     std::apply(
         [&](auto&... args) {
-            ((std::is_same_v<
-                  aclTensorList, std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
+            ((std::is_same_v<aclTensorList,
+                             std::remove_const_t<std::remove_pointer_t<std::remove_reference_t<decltype(args)>>>> ?
                   AddToList(result, args) :
                   void()),
              ...);
@@ -55,8 +54,8 @@ static void TraitsAclTensor(FVector<aclTensor*>& result, const std::tuple<Args..
 }
 
 template <typename INPUT, typename OUTPUT, typename WORKSPACE>
-aclnnStatus BuildGraph(
-    void* graph, uint32_t opType, const INPUT& inputs, const OUTPUT& outputs, const WORKSPACE& workspace)
+aclnnStatus BuildGraph(void* graph, uint32_t opType, const INPUT& inputs, const OUTPUT& outputs,
+                       const WORKSPACE& workspace)
 {
     FVector<aclTensor*> acl_inputs;
     FVector<aclTensor*> acl_outputs;
@@ -75,8 +74,8 @@ aclnnStatus BuildGraph(
 
 aclnnStatus BuildGraph(void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace);
 
-aclnnStatus BuildGraph(
-    void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace, OpArgList& outputshape);
+aclnnStatus BuildGraph(void* graph, uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& workspace,
+                       OpArgList& outputshape);
 
 } // namespace internal
 } // namespace op

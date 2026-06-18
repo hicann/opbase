@@ -135,7 +135,7 @@ bool BroadcastInferShape(const op::Shape& self, const op::Shape& other, op::Shap
             std::string smallerDimShapeStr = std::string(op::ToString(smallerDimShape).GetString());
             std::string dim1Str = std::to_string(dim1);
             std::string reason = "The tensor whose shape is " + largerDimShapeStr + " and the tensor whose shape is " +
-                smallerDimShapeStr + " do not meet the broadcast condition";
+                                 smallerDimShapeStr + " do not meet the broadcast condition";
             OP_LOGE_FOR_INVALID_ARGUMENT_TENSOR_INPUT_SHAPE(largerDimShapeStr.c_str(), dim1Str.c_str(), reason.c_str());
             return false;
         }

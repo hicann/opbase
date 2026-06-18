@@ -25,27 +25,25 @@ aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt* nodeExt, Nn
         attrDef->offset[i] = current_offset;
         if (attrs->attrs[i].addr.isVector) {
             const size_t totalSize = sizeof(gert::ContinuousVector) + attrs->attrs[i].addr.size;
-            gert::ContinuousVector* const vector =
-                op::internal::PtrCastTo<gert::ContinuousVector>(ptr + current_offset);
+            gert::ContinuousVector* const vector = op::internal::PtrCastTo<gert::ContinuousVector>(ptr +
+                                                                                                   current_offset);
             const size_t capacity = attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize;
             const size_t size = attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize;
             vector->Init(capacity);
             const auto ret = vector->SetSize(size);
             NNOPBASE_ASSERT_TRUE_RETVAL(ret == ge::GRAPH_SUCCESS);
-            const auto memRet = memcpy_s(
-                vector->MutableData(), attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr, attrs->attrs[i].addr.size);
-            CHECK_COND(
-                memRet == EOK, ACLNN_ERR_PARAM_INVALID,
-                "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", memRet,
-                attrs->attrs[i].addr.addr, vector->MutableData(), attrs->attrs[i].addr.size);
+            const auto memRet = memcpy_s(vector->MutableData(), attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr,
+                                         attrs->attrs[i].addr.size);
+            CHECK_COND(memRet == EOK, ACLNN_ERR_PARAM_INVALID,
+                       "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", memRet,
+                       attrs->attrs[i].addr.addr, vector->MutableData(), attrs->attrs[i].addr.size);
             current_offset += totalSize;
         } else {
-            const auto ret = memcpy_s(
-                ptr + current_offset, attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr, attrs->attrs[i].addr.size);
-            CHECK_COND(
-                ret == EOK, ACLNN_ERR_PARAM_INVALID,
-                "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", ret, attrs->attrs[i].addr.addr,
-                ptr + current_offset, attrs->attrs[i].addr.size);
+            const auto ret = memcpy_s(ptr + current_offset, attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr,
+                                      attrs->attrs[i].addr.size);
+            CHECK_COND(ret == EOK, ACLNN_ERR_PARAM_INVALID,
+                       "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", ret,
+                       attrs->attrs[i].addr.addr, ptr + current_offset, attrs->attrs[i].addr.size);
             current_offset += attrs->attrs[i].addr.size;
         }
     }
@@ -76,10 +74,9 @@ aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor* executor)
             nodeExt->node = node;
             auto ret = memcpy_s(node, sizeof(NnopbaseComputeNodeInfo), nodeExt->buf, sizeof(NnopbaseComputeNodeInfo));
             // 异常分支node随nodeExt，跟随executor销毁时释放
-            CHECK_COND(
-                ret == EOK, ACLNN_ERR_PARAM_INVALID,
-                "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", ret, nodeExt->buf, node,
-                sizeof(NnopbaseComputeNodeInfo));
+            CHECK_COND(ret == EOK, ACLNN_ERR_PARAM_INVALID,
+                       "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", ret, nodeExt->buf, node,
+                       sizeof(NnopbaseComputeNodeInfo));
 
             if (nodeExt->buf != nullptr) {
                 free(nodeExt->buf);
@@ -102,9 +99,9 @@ aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor* executor)
     }
     const NnopbaseParamDesc* const outputDesc = &executor->args->outputs.paramDescs;
     for (size_t i = 0U; i < outputIrNum; i++) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseComputeNodeSetInstInfo(
-            nodeExt->node->irOutputsNum, i, nodeExt->outputInstStart, outputDesc->instances[i].startIndex,
-            outputDesc->instances[i].num));
+        NNOPBASE_ASSERT_OK_RETVAL(
+            NnopbaseComputeNodeSetInstInfo(nodeExt->node->irOutputsNum, i, nodeExt->outputInstStart,
+                                           outputDesc->instances[i].startIndex, outputDesc->instances[i].num));
     }
     return OK;
 }
@@ -134,8 +131,8 @@ aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor* executor)
 {
     NnopbaseKernelRunContext* const context = executor->contextExt.context;
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseComputeNodeInfoUpdt(executor));
-    context->input_size = static_cast<size_t>(
-        executor->args->inputs.num + executor->args->outputs.num + static_cast<uint32_t>(kInputsAppendEnd));
+    context->input_size = static_cast<size_t>(executor->args->inputs.num + executor->args->outputs.num +
+                                              static_cast<uint32_t>(kInputsAppendEnd));
     context->output_size = gert::TilingContext::kOutputNum;
     context->output_start = &context->values[context->input_size];
     context->compute_node_info = executor->contextExt.nodeExt.node;

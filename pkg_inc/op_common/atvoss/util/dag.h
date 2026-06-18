@@ -42,9 +42,9 @@ struct GetRealArgs {
  */
 template <class T>
 struct GetRealArgs<T, __aux::Void_t<typename T::RealArgs>> {
-    using Type = __aux::Condition<
-        (Vec::IsCastNoOp<typename T::Fun>::Value), typename GetRealArgs<typename T::RealArgs::template At<0>>::Type,
-        typename T::RealBindType>;
+    using Type = __aux::Condition<(Vec::IsCastNoOp<typename T::Fun>::Value),
+                                  typename GetRealArgs<typename T::RealArgs::template At<0>>::Type,
+                                  typename T::RealBindType>;
 };
 
 /**
@@ -77,8 +77,8 @@ private:
 
     template <typename... Rs>
     struct CreateRealBind<Elems<Rs...>> {
-        using Type =
-            __aux::Condition<(Vec::IsCastNoOp<Func>::Value), typename RealArgs::template At<0>, Bind<Func, Rs...>>;
+        using Type = __aux::Condition<(Vec::IsCastNoOp<Func>::Value), typename RealArgs::template At<0>,
+                                      Bind<Func, Rs...>>;
     };
 
 public:
@@ -162,10 +162,9 @@ struct DAGSch {
 public:
     using OutList = typename OutList_::template ForEach<GetRealBindType>;
     using MemOpt = MemOptCfg_;
-    static_assert(
-        MemOpt::memoryLevel == MemLevel::LEVEL_0 || MemOpt::memoryLevel == MemLevel::LEVEL_1 ||
-            MemOpt::memoryLevel == MemLevel::LEVEL_2,
-        "Buffer level should be in [0, 1, 2].");
+    static_assert(MemOpt::memoryLevel == MemLevel::LEVEL_0 || MemOpt::memoryLevel == MemLevel::LEVEL_1 ||
+                      MemOpt::memoryLevel == MemLevel::LEVEL_2,
+                  "Buffer level should be in [0, 1, 2].");
 
     constexpr static bool HasComputeOrder = !__aux::IsSameType<ComputeOrder_, void>::Value;
 
@@ -193,9 +192,8 @@ public:
     using VecPostReduceNodes = typename __aux::FilterDagAux<FunList, ReduceOpPos, 0, __aux::CheckPost>::Type;
     using PreReduceNodeInfo = __aux::Condition<
         (ReduceOpPos > 0),
-        DagNodeInfo<
-            VecPreReduceNodes, Elems<typename FunList::template At<ReduceOpPos>>,
-            /*supportBrc=*/false>,
+        DagNodeInfo<VecPreReduceNodes, Elems<typename FunList::template At<ReduceOpPos>>,
+                    /*supportBrc=*/false>,
         FullNodeInfo>;
     using PostReduceNodeInfo = __aux::Condition<
         (ReduceOpPos > 0), DagNodeInfo<VecPostReduceNodes, OutList, /*supportBrc=*/false>, FullNodeInfo>;
@@ -397,9 +395,8 @@ public:
         constexpr uint32_t mte3Count = GetMte3NumImpl<NodeInfo, use_nddma, cache_brc>();
         // Total Temp Buf Count including Cache Temp buf in CopyInBrc & VecBrc
         constexpr uint32_t tempBufCount = GetTempBufNumImpl<NodeInfo, use_nddma, cache_brc>();
-        static_assert(
-            ((mte2Count + mte3Count) * BUF_PING_PONG + tempBufCount) <= BUF_MAX_COUNT,
-            "Buffer count exceeded 32. Please try to switch MemLevel to LEVEL_1 or LEVEL_0.");
+        static_assert(((mte2Count + mte3Count) * BUF_PING_PONG + tempBufCount) <= BUF_MAX_COUNT,
+                      "Buffer count exceeded 32. Please try to switch MemLevel to LEVEL_1 or LEVEL_0.");
         constexpr uint32_t PongOffset = mte2Count + mte3Count + tempBufCount;
         // Persist Mte2 Count
         constexpr uint32_t persistMte2Count = NodeInfo::template GetPersistMte2Num<use_nddma, cache_brc>();
@@ -408,24 +405,18 @@ public:
         // Persist Temp Buf Count
         constexpr uint32_t persistTempBufCount = NodeInfo::template GetPersistTempCalcBufNum<use_nddma, cache_brc>();
         // Generate Buffer ID List.
-        using PersistMte2Es = typename GenerateBufferWrappers<
-            persistMte2Count, BUF_TYPE_MTE2,
-            /*Offset=*/0>::Type;
-        using Mte2Es = typename GenerateBufferWrappers<
-            mte2Count - persistMte2Count, BUF_TYPE_MTE2,
-            /*Offset=*/persistMte2Count>::Type;
-        using PersistMte3Es = typename GenerateBufferWrappers<
-            persistMte3Count, BUF_TYPE_MTE3,
-            /*Offset=*/mte2Count>::Type;
-        using Mte3Es = typename GenerateBufferWrappers<
-            mte3Count - persistMte3Count, BUF_TYPE_MTE3,
-            /*Offset=*/mte2Count + persistMte3Count>::Type;
-        using PersistTmpEs = typename GenerateBufferWrappers<
-            persistTempBufCount, BUF_TYPE_TEMP,
-            /*Offset=*/mte2Count + mte3Count>::Type;
-        using TmpEs = typename GenerateBufferWrappers<
-            tempBufCount - persistTempBufCount, BUF_TYPE_TEMP,
-            /*Offset=*/mte2Count + mte3Count + persistTempBufCount>::Type;
+        using PersistMte2Es = typename GenerateBufferWrappers<persistMte2Count, BUF_TYPE_MTE2,
+                                                              /*Offset=*/0>::Type;
+        using Mte2Es = typename GenerateBufferWrappers<mte2Count - persistMte2Count, BUF_TYPE_MTE2,
+                                                       /*Offset=*/persistMte2Count>::Type;
+        using PersistMte3Es = typename GenerateBufferWrappers<persistMte3Count, BUF_TYPE_MTE3,
+                                                              /*Offset=*/mte2Count>::Type;
+        using Mte3Es = typename GenerateBufferWrappers<mte3Count - persistMte3Count, BUF_TYPE_MTE3,
+                                                       /*Offset=*/mte2Count + persistMte3Count>::Type;
+        using PersistTmpEs = typename GenerateBufferWrappers<persistTempBufCount, BUF_TYPE_TEMP,
+                                                             /*Offset=*/mte2Count + mte3Count>::Type;
+        using TmpEs = typename GenerateBufferWrappers<tempBufCount - persistTempBufCount, BUF_TYPE_TEMP,
+                                                      /*Offset=*/mte2Count + mte3Count + persistTempBufCount>::Type;
         using PongMte3Es = __aux::Condition<
             bufferLvl == MemLevel::LEVEL_0,
             typename GenerateBufferWrappers<

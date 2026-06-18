@@ -79,11 +79,10 @@ static std::unique_ptr<OpKernelBin> CreateFakeOpKernelBin(bool genPlaceholder, b
     size_t hashKey = 123;
     char jsonPath[1024];
     char binPath[1024];
-    snprintf_s(
-        jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/"
-        "QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
-        p);
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/quant_batch_matmul_v3/"
+               "QuantBatchMatmulV3_ND_ND_int8_int8_bf16_high_performance.json",
+               p);
     snprintf_s(
         binPath, sizeof(binPath), sizeof(binPath),
         "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/add/Add_41dadce325b0f810d03359af2a38990b_high_performance.o",
@@ -157,9 +156,9 @@ public:
         return ACL_SUCCESS;
     }
 
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchNormalTest2AclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -227,9 +226,9 @@ public:
 
 class MultiDoLaunchNormalTest2CacheAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchNormalTest2CacheAclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -314,11 +313,10 @@ static void MultiDoLaunchNormalTest2()
         jsonPath, sizeof(jsonPath), sizeof(jsonPath),
         "%s/built-in/ /ai_core/tbe/kernel/ascend910/axpy/Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
         p);
-    snprintf_s(
-        binPath, sizeof(binPath), sizeof(binPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
-        p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+               p);
     uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
     OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, false);
     kernelBin.interCoreSync_ = false;
@@ -371,13 +369,13 @@ static void MultiDoLaunchNormalTest2()
 
     // workspace
     int* workspacePtr = new int;
-    auto tensor5 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor5 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor5Ptr = tensor5.release();
     tensor5Ptr->SetFromWorkspace(true);
     tensor5Ptr->SetWorkspaceOffset(0);
-    auto tensor6 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor6 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor6Ptr = tensor6.release();
     tensor6Ptr->SetFromWorkspace(true);
     tensor6Ptr->SetWorkspaceOffset(512);
@@ -535,9 +533,9 @@ public:
         return ACL_SUCCESS;
     }
 
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchNormalTest3AclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -615,9 +613,9 @@ public:
 
 class MultiDoLaunchNormalTest3CacheAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchNormalTest3CacheRuntimeStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -708,16 +706,14 @@ static void MultiDoLaunchNormalTest3()
     size_t hashKey = 123;
     char jsonPath[1024];
     char binPath[1024];
-    snprintf_s(
-        jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
-        p);
-    snprintf_s(
-        binPath, sizeof(binPath), sizeof(binPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
-        p);
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+               p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+               p);
     uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
     OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, false);
     kernelBin.interCoreSync_ = false;
@@ -770,13 +766,13 @@ static void MultiDoLaunchNormalTest3()
 
     // workspace
     int* workspacePtr = new int;
-    auto tensor5 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor5 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor5Ptr = tensor5.release();
     tensor5Ptr->SetFromWorkspace(true);
     tensor5Ptr->SetWorkspaceOffset(0);
-    auto tensor6 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor6 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor6Ptr = tensor6.release();
     tensor6Ptr->SetFromWorkspace(true);
     tensor6Ptr->SetWorkspaceOffset(512);
@@ -943,9 +939,9 @@ public:
         return ACL_SUCCESS;
     }
 
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchNormalTest4AclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -1024,9 +1020,9 @@ public:
 
 class MultiDoLaunchNormalTest4CacheAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchAlignTestCacheAclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -1118,16 +1114,14 @@ static void MultiDoLaunchNormalTest4()
     size_t hashKey = 123;
     char jsonPath[1024];
     char binPath[1024];
-    snprintf_s(
-        jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
-        p);
-    snprintf_s(
-        binPath, sizeof(binPath), sizeof(binPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
-        p);
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+               p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+               p);
     uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
     OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, false);
     kernelBin.interCoreSync_ = false;
@@ -1180,13 +1174,13 @@ static void MultiDoLaunchNormalTest4()
 
     // workspace
     int* workspacePtr = new int;
-    auto tensor5 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor5 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor5Ptr = tensor5.release();
     tensor5Ptr->SetFromWorkspace(true);
     tensor5Ptr->SetWorkspaceOffset(0);
-    auto tensor6 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor6 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor6Ptr = tensor6.release();
     tensor6Ptr->SetFromWorkspace(true);
     tensor6Ptr->SetWorkspaceOffset(512);
@@ -1351,9 +1345,9 @@ public:
         return ACL_SUCCESS;
     }
 
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchAlignTestAclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -1436,9 +1430,9 @@ public:
 
 class MultiDoLaunchAlignTestCacheAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         OP_LOGI("MultiDoLaunchAlignTestCacheAclrtStub aclrtLaunchKernelWithHostArgs start");
         // check rts params
@@ -1534,16 +1528,14 @@ static void MultiDoLaunchAlignTest()
     size_t hashKey = 123;
     char jsonPath[1024];
     char binPath[1024];
-    snprintf_s(
-        jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
-        p);
-    snprintf_s(
-        binPath, sizeof(binPath), sizeof(binPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
-        p);
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+               p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
+               p);
     uint32_t opType = op::OpTypeDict::ToOpType("QuantBatchMatmulV3");
     OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, false);
     kernelBin.interCoreSync_ = false;
@@ -1600,13 +1592,13 @@ static void MultiDoLaunchAlignTest()
 
     // workspace
     int* workspacePtr = new int;
-    auto tensor5 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor5 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor5Ptr = tensor5.release();
     tensor5Ptr->SetFromWorkspace(true);
     tensor5Ptr->SetWorkspaceOffset(0);
-    auto tensor6 =
-        std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND, workspacePtr);
+    auto tensor6 = std::make_unique<aclTensor>(selfShape, op::DataType::DT_FLOAT16, op::Format::FORMAT_ND,
+                                               workspacePtr);
     aclTensor* tensor6Ptr = tensor6.release();
     tensor6Ptr->SetFromWorkspace(true);
     tensor6Ptr->SetWorkspaceOffset(512);
@@ -1740,9 +1732,9 @@ static void MultiDoLaunchAlignTest()
 
 class InvalidFunctionHandleAclrtStub : public AclrtStub {
 public:
-    aclError aclrtLaunchKernelWithHostArgs(
-        aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg* cfg, void* hostArgs,
-        size_t argsSize, aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum)
     {
         if (returnInvalidHandleFlag == true) {
             OP_LOGI("return ACL_ERROR_RT_INVALID_HANDLE");
@@ -1867,16 +1859,14 @@ static void TestInvalidFunctionHandle2()
     size_t hashKey = 123;
     char jsonPath[1024];
     char binPath[1024];
-    snprintf_s(
-        jsonPath, sizeof(jsonPath), sizeof(jsonPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/"
-        "MemSet_1a6864193b99ef93ef38616f04a712ab_high_performance.json",
-        p);
-    snprintf_s(
-        binPath, sizeof(binPath), sizeof(binPath),
-        "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/"
-        "MemSet_1a6864193b99ef93ef38616f04a712ab_high_performance.o.o",
-        p);
+    snprintf_s(jsonPath, sizeof(jsonPath), sizeof(jsonPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/"
+               "MemSet_1a6864193b99ef93ef38616f04a712ab_high_performance.json",
+               p);
+    snprintf_s(binPath, sizeof(binPath), sizeof(binPath),
+               "%s/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/"
+               "MemSet_1a6864193b99ef93ef38616f04a712ab_high_performance.o.o",
+               p);
     uint32_t opType = op::OpTypeDict::ToOpType("Memset");
     OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey, BinType::DYNAMIC_BIN, false, false);
 

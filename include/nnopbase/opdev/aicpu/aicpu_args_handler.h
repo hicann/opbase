@@ -33,8 +33,8 @@ struct AicpuArgsForLaunch {
 
 class AicpuArgsHandler {
 public:
-    AicpuArgsHandler(
-        const std::string& opType, const std::string& nodeName, const uint32_t ioNum, const bool needDeviceExt)
+    AicpuArgsHandler(const std::string& opType, const std::string& nodeName, const uint32_t ioNum,
+                     const bool needDeviceExt)
         : opType_(opType), nodeName_(nodeName), ioNum_(ioNum), needDeviceExt_(needDeviceExt), args_({})
     {}
 
@@ -62,9 +62,9 @@ public:
 
     // alignSize is for op in device, actual alloced srcSize may smaller than alignSize.
     aclnnStatus AddHostInput(const size_t idx, void* data, const size_t srcSize, const size_t alignSize);
-    aclnnStatus UpdateIoAddr(
-        const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const aclrtStream stream,
-        aclOpExecutor* executor, const uint64_t deviceExtMemSize, const uint64_t deviceCacheOffset);
+    aclnnStatus UpdateIoAddr(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                             const aclrtStream stream, aclOpExecutor* executor, const uint64_t deviceExtMemSize,
+                             const uint64_t deviceCacheOffset);
     virtual ~AicpuArgsHandler() = default;
     virtual void UpdateDeviceExtInfoAddr(void* deviceExtInfoAddr) = 0;
 
@@ -113,16 +113,15 @@ protected:
  */
 class AicpuCCArgsHandler : public AicpuArgsHandler {
 public:
-    AicpuCCArgsHandler(
-        const std::string& opType, const std::string& nodeName, const uint32_t ioNum, const bool needDeviceExt)
+    AicpuCCArgsHandler(const std::string& opType, const std::string& nodeName, const uint32_t ioNum,
+                       const bool needDeviceExt)
         : AicpuArgsHandler(opType, nodeName, ioNum, needDeviceExt)
     {}
 
-    aclnnStatus GenCCArgs(
-        const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs,
-        std::string& taskInfo) const;
-    aclnnStatus BuildCCArgs(
-        const std::string& argData, const std::string& kernelName, const std::string& soName, const size_t extInfoSize);
+    aclnnStatus GenCCArgs(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                          const AicpuAttrs& attrs, std::string& taskInfo) const;
+    aclnnStatus BuildCCArgs(const std::string& argData, const std::string& kernelName, const std::string& soName,
+                            const size_t extInfoSize);
     void UpdateDeviceExtInfoAddr(void* deviceExtInfoAddr) override;
 
 private:
@@ -150,14 +149,13 @@ private:
  */
 class AicpuTfArgsHandler : public AicpuArgsHandler {
 public:
-    AicpuTfArgsHandler(
-        const std::string& opType, const std::string& nodeName, const uint32_t ioNum, const bool needDeviceExt)
+    AicpuTfArgsHandler(const std::string& opType, const std::string& nodeName, const uint32_t ioNum,
+                       const bool needDeviceExt)
         : AicpuArgsHandler(opType, nodeName, ioNum, needDeviceExt)
     {}
 
-    aclnnStatus GenTfArgs(
-        const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs, const AicpuAttrs& attrs,
-        STR_FWK_OP_KERNEL& fwkOpKernel, std::string& taskInfo) const;
+    aclnnStatus GenTfArgs(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,
+                          const AicpuAttrs& attrs, STR_FWK_OP_KERNEL& fwkOpKernel, std::string& taskInfo) const;
     aclnnStatus BuildTfArgs(STR_FWK_OP_KERNEL& fwkOpKernel, const std::string& taskInfo, const size_t extInfoSize);
     void UpdateDeviceExtInfoAddr(void* deviceExtInfoAddr) override;
 

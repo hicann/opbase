@@ -33,8 +33,8 @@ void IndvSoc::Init(void)
         return;
     ge::AscendString curSocVersion = op::ToString(op::GetCurrentPlatformInfo().GetSocVersion());
     socVersion = curSocVersion.GetString();
-    std::transform(
-        socVersion.begin(), socVersion.end(), socVersion.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::transform(socVersion.begin(), socVersion.end(), socVersion.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
     isInit = true;
 }
 
@@ -85,9 +85,8 @@ bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType)
 {
     const bool isEnableCcuLaunch = SupportMc2FusionLaunch() && ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) ||
                                                                 (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU));
-    OP_LOGD(
-        "NnopbaseEnableCcuLaunch check, socVersion=%s, sType=%d, isEnableCcuLaunch=%d", socVersion.c_str(),
-        static_cast<int>(sType), isEnableCcuLaunch);
+    OP_LOGD("NnopbaseEnableCcuLaunch check, socVersion=%s, sType=%d, isEnableCcuLaunch=%d", socVersion.c_str(),
+            static_cast<int>(sType), isEnableCcuLaunch);
     return isEnableCcuLaunch;
 }
 
@@ -96,9 +95,8 @@ bool IndvSoc::NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType)
     const std::string& curSocVersion = GetCurSocVersion();
     const bool isSupportFusionLaunch = SupportMc2FusionLaunch();
     const bool isSupportA5AiCpu = (isSupportFusionLaunch && (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU));
-    OP_LOGD(
-        "NnopbaseSupportA5AiCpu check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, isSupportA5AiCpu=%d",
-        curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, isSupportA5AiCpu);
+    OP_LOGD("NnopbaseSupportA5AiCpu check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, isSupportA5AiCpu=%d",
+            curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, isSupportA5AiCpu);
     return isSupportA5AiCpu;
 }
 

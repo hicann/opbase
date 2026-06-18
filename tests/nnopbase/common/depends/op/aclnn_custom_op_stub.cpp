@@ -39,9 +39,8 @@ aclnnStatus aclnnCustomOp(void* workspace, uint64_t workspaceSize, aclOpExecutor
     return NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceSize);
 }
 
-aclnnStatus aclnnCustomOpGetWorkspaceSize(
-    const aclTensor* x1, const aclTensor* x2, const aclTensor* x3, const aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnCustomOpGetWorkspaceSize(const aclTensor* x1, const aclTensor* x2, const aclTensor* x3,
+                                          const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     uint64_t timeStamp = NnopbaseMsprofSysTime();
     static NnopbaseDfxId dfxId = {0x60000, __func__, false};
@@ -59,9 +58,9 @@ aclnnStatus aclnnCustomOpGetWorkspaceSize(
     if (!executorSpace) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCreateExecutorSpace(&executorSpace));
     }
-    void* nnopExecutor = NnopbaseGetExecutor(
-        executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
-        sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    void* nnopExecutor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char),
+                                             outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                                             sizeof(attrDesc) / sizeof(char));
     NNOPBASE_ASSERT_NOTNULL_RETVAL(nnopExecutor);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     *executor = reinterpret_cast<aclOpExecutor*>(nnopExecutor);

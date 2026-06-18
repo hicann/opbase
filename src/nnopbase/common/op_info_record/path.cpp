@@ -122,8 +122,9 @@ Path Path::ParentPath() const
     }
 
     const size_t pos = path_.find_last_of(DIRECTORY_SEPARATOR);
-    std::string parentPath =
-        pos != std::string::npos ? (pos == 0 ? std::string(&DIRECTORY_SEPARATOR, 1) : path_.substr(0, pos)) : "";
+    std::string parentPath = pos != std::string::npos ?
+                                 (pos == 0 ? std::string(&DIRECTORY_SEPARATOR, 1) : path_.substr(0, pos)) :
+                                 "";
     return Path(parentPath);
 }
 
@@ -158,9 +159,8 @@ const char* Path::GetCString() const { return path_.c_str(); }
 void Path::AppendPath(const std::string& path)
 {
     std::string newPath = aclnnOpInfoRecord::Utils::Trim(path);
-    (void)newPath.erase(newPath.begin(), std::find_if(newPath.begin(), newPath.end(), [](uint8_t ch) {
-                            return ch != DIRECTORY_SEPARATOR;
-                        }));
+    (void)newPath.erase(newPath.begin(), std::find_if(newPath.begin(), newPath.end(),
+                                                      [](uint8_t ch) { return ch != DIRECTORY_SEPARATOR; }));
     (void)newPath.erase(
         std::find_if(newPath.rbegin(), newPath.rend(), [](uint8_t ch) { return ch != DIRECTORY_SEPARATOR; }).base(),
         newPath.end());

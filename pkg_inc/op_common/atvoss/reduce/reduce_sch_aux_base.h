@@ -83,9 +83,8 @@ public:
     constexpr static int32_t preBufNum_ = GetPreBufferNum();
 
 public:
-    __aicore__ inline ReduceSchAuxBase(
-        ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output, GlobalTensor<uint8_t>* workspace,
-        const ReduceOpTilingData* tiling)
+    __aicore__ inline ReduceSchAuxBase(ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output,
+                                       GlobalTensor<uint8_t>* workspace, const ReduceOpTilingData* tiling)
     {
         sch_ = sch;
         input_ = input;
@@ -161,8 +160,9 @@ public:
                 }
 
                 if (tail) {
-                    static_cast<Derived*>(this)->iterAddr_[axis].stride =
-                        shape - static_cast<Derived*>(this)->iterAddr_[axis].start;
+                    static_cast<Derived*>(this)->iterAddr_[axis].stride = shape - static_cast<Derived*>(this)
+                                                                                      ->iterAddr_[axis]
+                                                                                      .start;
                     IterateInnerA<start + 1, end>(aIndex, args...);
                 }
             } else {
@@ -260,11 +260,11 @@ public:
     __aicore__ inline void ReduceComputeMerge(V& view, S& shape, P& padParam0, P& padParam1, int32_t idx)
     {
         static_assert(IsSameType<PromoteDType, DataType>::value, "reduce calc dtype must be same with pre dag out.");
-        const int32_t innerR =
-            (padParam0.burstPaddingStart > padParam1.burstPaddingStart ? padParam0.burstPaddingStart :
-                                                                         padParam1.burstPaddingStart);
-        const int32_t rRepeats =
-            (padParam0.rPaddingStart > padParam1.rPaddingStart ? padParam0.rPaddingStart : padParam1.rPaddingStart);
+        const int32_t innerR = (padParam0.burstPaddingStart > padParam1.burstPaddingStart ?
+                                    padParam0.burstPaddingStart :
+                                    padParam1.burstPaddingStart);
+        const int32_t rRepeats = (padParam0.rPaddingStart > padParam1.rPaddingStart ? padParam0.rPaddingStart :
+                                                                                      padParam1.rPaddingStart);
         CalculataRDetails(view, shape, innerR, rRepeats);
 
         LocalTensor<PromoteDType> input0 = GetReduceInputTensor<PromoteDType>(0, idx, eleNum_);
@@ -296,13 +296,12 @@ public:
         } else {
             static_cast<Derived*>(this)->CalculatePatternRAPadding(view, shape, padding);
         }
-        RUN_LOG(
-            "burstPaddingStart:%ld, burstPaddingLen:%ld, burstPaddingRepeat:%ld, rPaddingStart:%ld, "
-            "rPaddingLen:%ld, "
-            "rPaddingRepeat:%ld, aPaddingStart:%ld, aPaddingLen:%ld, aPaddingRepeat:%ld\n",
-            padding.burstPaddingStart, padding.burstPaddingLen, padding.burstPaddingRepeat, padding.rPaddingStart,
-            padding.rPaddingLen, padding.rPaddingRepeat, padding.aPaddingStart, padding.aPaddingLen,
-            padding.aPaddingRepeat);
+        RUN_LOG("burstPaddingStart:%ld, burstPaddingLen:%ld, burstPaddingRepeat:%ld, rPaddingStart:%ld, "
+                "rPaddingLen:%ld, "
+                "rPaddingRepeat:%ld, aPaddingStart:%ld, aPaddingLen:%ld, aPaddingRepeat:%ld\n",
+                padding.burstPaddingStart, padding.burstPaddingLen, padding.burstPaddingRepeat, padding.rPaddingStart,
+                padding.rPaddingLen, padding.rPaddingRepeat, padding.aPaddingStart, padding.aPaddingLen,
+                padding.aPaddingRepeat);
     }
 
     template <class V, class S>
@@ -341,13 +340,13 @@ public:
     {
         using ElemOp = typename OpDag::FunList::template At<pos>;
         using Func = typename ElemOp::Fun;
-        RUN_LOG(
-            "RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld\n", PRINT_TYPE(Func), ElemOp::Args::Size, ElemOp::InArgs::Size);
+        RUN_LOG("RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld\n", PRINT_TYPE(Func), ElemOp::Args::Size,
+                ElemOp::InArgs::Size);
         if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value) {
             CopyIn<ElemOp, pos>(view, shape, pingPong, idx);
-        } else if constexpr (
-            Vec::IsCastOp<Func>::Value &&
-            IsSameType<typename ElemOp::template FunRetArgType<1>, typename ElemOp::template FunRetArgType<0>>::value) {
+        } else if constexpr (Vec::IsCastOp<Func>::Value &&
+                             IsSameType<typename ElemOp::template FunRetArgType<1>,
+                                        typename ElemOp::template FunRetArgType<0>>::value) {
             RUN_LOG("Cast with same src and dst type, skip cast.\n");
         } else {
             RunNormalOp<ElemOp, pos>(shape, pingPong);
@@ -362,18 +361,17 @@ public:
     {
         using ElemOp = typename OpDag::FunList::template At<pos>;
         using Func = typename ElemOp::Fun;
-        RUN_LOG(
-            "RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld, Pos:%d\n", PRINT_TYPE(Func), ElemOp::Args::Size,
-            ElemOp::InArgs::Size, pos);
+        RUN_LOG("RUN.Func[%s]: ArgsSize:%ld, InArgsSize:%ld, Pos:%d\n", PRINT_TYPE(Func), ElemOp::Args::Size,
+                ElemOp::InArgs::Size, pos);
         if constexpr (Vec::IsReduceOp<Func>::Value) {
             CopyFromReduce<ElemOp>(aIndex, shape);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyOut>::Value) {
             CopyOut<ElemOp, pos>(view, shape);
         } else if constexpr (__aux::IsSameTemplateType<Func, Vec::CopyIn>::Value) {
             PostCopyIn<ElemOp, pos>(shape);
-        } else if constexpr (
-            Vec::IsCastOp<Func>::Value &&
-            IsSameType<typename ElemOp::template FunRetArgType<1>, typename ElemOp::template FunRetArgType<0>>::value) {
+        } else if constexpr (Vec::IsCastOp<Func>::Value &&
+                             IsSameType<typename ElemOp::template FunRetArgType<1>,
+                                        typename ElemOp::template FunRetArgType<0>>::value) {
             RUN_LOG("Cast with same src and dst type, skip cast.\n");
         } else {
             RunNormalOp<ElemOp, pos>(shape, 0);
@@ -389,8 +387,8 @@ public:
         static_assert(ElemOp::InHolders::Size == 1, "CopyIn input inHolders num should be 1.");
         using Input = typename ElemOp::InHolders::template At<0>;
         using InputType = typename ElemOp::template FunInArgType<0>;
-        static_assert(
-            IsSameType<typename Input::DType, InputType>::value, "CopyIn data type is inconsistent with Opdata type.");
+        static_assert(IsSameType<typename Input::DType, InputType>::value,
+                      "CopyIn data type is inconsistent with Opdata type.");
 
         // Prepare Input args
         uint8_t bufId = GetPreBufId<pos>(pingPong, idx);
@@ -496,8 +494,8 @@ public:
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(
-        LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outTensor, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -505,13 +503,13 @@ public:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(LocalTensor<OutputType>& outTensor, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(
-            outTensor, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(outTensor, inputs, tileLength,
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename Func, typename OutputType, typename Tuple, size_t... I>
-    __aicore__ inline auto CallImpl(
-        OutputType& outScalar, Tuple& inputs, uint64_t tileLength, AscendC::Std::index_sequence<I...>)
+    __aicore__ inline auto CallImpl(OutputType& outScalar, Tuple& inputs, uint64_t tileLength,
+                                    AscendC::Std::index_sequence<I...>)
     {
         return Func(outScalar, AscendC::Std::get<I>(inputs)..., tileLength);
     }
@@ -519,8 +517,8 @@ public:
     template <typename Func, typename OutputType, typename Tuple>
     __aicore__ inline auto Call(OutputType& outScalar, Tuple& inputs, uint64_t tileLength)
     {
-        return CallImpl<Func, OutputType>(
-            outScalar, inputs, tileLength, AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
+        return CallImpl<Func, OutputType>(outScalar, inputs, tileLength,
+                                          AscendC::Std::make_index_sequence<AscendC::Std::tuple_size<Tuple>::value>{});
     }
 
     template <typename ElemOp, size_t... I>
@@ -667,8 +665,8 @@ public:
         } else {
             uint8_t bufId = GetPostBufId<GetFunOutputPos<Input>()>();
             uint8_t syncId = bufId + preBufNum_;
-            LocalTensor<outDtype> src =
-                sch_->ReduceSch::template AllocTensorAux<outDtype, GetFunOutputPos<Input>()>(bufId);
+            LocalTensor<outDtype> src = sch_->ReduceSch::template AllocTensorAux<outDtype, GetFunOutputPos<Input>()>(
+                bufId);
             GetTensor<TPosition::VECOUT>(syncId);
             sch_->ReduceSch::template CopyOutAux(globalTensor, src, view);
             ReleaseTensor<TPosition::VECOUT>(syncId);

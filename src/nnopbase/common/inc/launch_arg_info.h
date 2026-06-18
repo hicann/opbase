@@ -274,10 +274,9 @@ private:
             devArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
-            OP_LOGD(
-                "Append Launch DEVICE aclTensor. dims: %zu, dtype: %d, aclTensor: %p, addr: %p, tensor size: %zu",
-                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, arg->GetData(),
-                arg->GetTensor()->GetSize());
+            OP_LOGD("Append Launch DEVICE aclTensor. dims: %zu, dtype: %d, aclTensor: %p, addr: %p, tensor size: %zu",
+                    arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, arg->GetData(),
+                    arg->GetTensor()->GetSize());
             const auto& shape = arg->GetStorageShape();
             for (size_t i = 0; i < shape.GetDimNum(); i++) {
                 OP_LOGD("#### DEVICE aclTensor Shape: %lu", shape.GetDim(i));
@@ -289,9 +288,8 @@ private:
             hostArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
-            OP_LOGD(
-                "Append Launch HOST aclTensor. dims: %zu, dtype: %d, %p, calc size: %zu, tensor size: %zu",
-                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, size, arg->GetTensor()->GetSize());
+            OP_LOGD("Append Launch HOST aclTensor. dims: %zu, dtype: %d, %p, calc size: %zu, tensor size: %zu",
+                    arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, size, arg->GetTensor()->GetSize());
             const auto& shape = arg->GetStorageShape();
             for (size_t i = 0; i < shape.GetDimNum(); i++) {
                 OP_LOGD("#### HOST aclTensor Shape: %lu", shape.GetDim(i));
@@ -349,9 +347,8 @@ private:
         tensorNum_++;
         dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(arg);
 #ifdef DEBUG
-        OP_LOGD(
-            "Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu",
-            arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData(), arg->GetTensor()->GetSize());
+        OP_LOGD("Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu",
+                arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData(), arg->GetTensor()->GetSize());
         const auto& shape = arg->GetStorageShape();
         for (size_t i = 0; i < shape.GetDimNum(); i++) {
             OP_LOGD("#### DEVICE aclTensor Shape: %lu", shape.GetDim(i));
@@ -402,9 +399,8 @@ private:
         tensorNum_++;
         dfxInfoDumpElemCount_++;
 #ifdef DEBUG
-        OP_LOGD(
-            "Append Launch Outshape Tensor. dims: %zu, dtype: %d, data:%p", arg->GetStorageShape().GetDimNum(),
-            arg->GetDataType(), arg->GetData());
+        OP_LOGD("Append Launch Outshape Tensor. dims: %zu, dtype: %d, data:%p", arg->GetStorageShape().GetDimNum(),
+                arg->GetDataType(), arg->GetData());
         const auto& shape = arg->GetStorageShape();
         for (size_t i = 0; i < shape.GetDimNum(); i++) {
             OP_LOGD("#### DEVICE aclTensor Shape: %lu", shape.GetDim(i));

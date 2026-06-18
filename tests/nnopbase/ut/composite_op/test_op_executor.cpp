@@ -252,9 +252,9 @@ TEST_F(OpExecutorTest, AddToKernelLauncherListCopyTask)
     auto ctx = op::MakeOpArgContext(input, output, attr);
     auto* launcher = new op::AiCoreKernelLauncher{opType, op::AI_CORE, profilingInfoId, executor, ctx};
     launcher->SaveLaunchCtx(std::move(op::internal::GetLauncherCtx()));
-    auto ret1 = executor->AddToKernelLauncherListCopyTask(
-        opType, launcher, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    auto ret1 = executor->AddToKernelLauncherListCopyTask(opType, launcher, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
+                                                          *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+                                                          *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret1, ACL_SUCCESS);
 }
 
@@ -345,9 +345,8 @@ TEST_F(OpExecutorTest, apiOtherTest)
     ret = CreatAiCoreKernelLauncher("Axpy", opType, executor, ctx1);
     EXPECT_EQ(ret, ACL_SUCCESS);
 
-    ret = InferShape(
-        opType, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    ret = InferShape(opType, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+                     *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret, ACLNN_SUCCESS);
     // op::DestroyOpArgContext(ctx);
 }
@@ -379,9 +378,9 @@ TEST_F(OpExecutorTest, DSAKernelLauncherUnNormalTaskType)
     DSA_TASK_TYPE unNormalDsaTaskType = static_cast<DSA_TASK_TYPE>(100); // > enum DSA_TASK_TYPE
     CreatDSAKernelLauncher("Axpy", opType, unNormalDsaTaskType, executor, ctx);
 
-    aclnnStatus ret = InferShape(
-        opType, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG), *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
-        *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
+    aclnnStatus ret = InferShape(opType, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
+                                 *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
+                                 *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret, ACLNN_SUCCESS);
     // op::DestroyOpArgContext(ctx);
 }

@@ -35,8 +35,8 @@ struct HasCopyIn {
 };
 
 template <typename C>
-struct HasCopyIn<
-    C, decltype(void(&C::template CopyIn<struct DummyPos, struct DummyPattern, struct DummyT, struct DummyV>))> {
+struct HasCopyIn<C, decltype(void(
+                        &C::template CopyIn<struct DummyPos, struct DummyPattern, struct DummyT, struct DummyV>))> {
     static constexpr bool value = true;
 };
 
@@ -273,125 +273,118 @@ __aicore__ inline int32_t CaculateInnerA(ADDR& iterAddr)
 template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
 __aicore__ inline constexpr ReduceSchLoopInfo GetSchLoopInfo0()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PatternID / CONST10,
-        .reduceDichotomy = CONST1,
-        .loopACount = LoopARCount / CONST10,
-        .loopAAxis = {},
-        .loopRCount = LoopARCount % CONST10,
-        .loopRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .loopInnerACount = LoopInnerARCount / CONST10,
-        .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopInnerRCount = LoopInnerARCount % CONST10,
-        .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .innerPatternID = PatternID % CONST10};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PatternID / CONST10,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = LoopARCount / CONST10,
+                                           .loopAAxis = {},
+                                           .loopRCount = LoopARCount % CONST10,
+                                           .loopRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .loopInnerACount = LoopInnerARCount / CONST10,
+                                           .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopInnerRCount = LoopInnerARCount % CONST10,
+                                           .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .innerPatternID = PatternID % CONST10};
     return schInfo;
 }
 
 template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
 __aicore__ inline constexpr ReduceSchLoopInfo GetSchLoopInfo1()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PatternID / CONST10,
-        .reduceDichotomy = CONST1,
-        .loopACount = LoopARCount / CONST10,
-        .loopAAxis = {DIM0},
-        .loopRCount = LoopARCount % CONST10,
-        .loopRAxis = {DIM0, DIM1, DIM3, DIM5, DIM7},
-        .loopInnerACount = LoopInnerARCount / CONST10,
-        .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopInnerRCount = LoopInnerARCount % CONST10,
-        .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .innerPatternID = PatternID % CONST10};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PatternID / CONST10,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = LoopARCount / CONST10,
+                                           .loopAAxis = {DIM0},
+                                           .loopRCount = LoopARCount % CONST10,
+                                           .loopRAxis = {DIM0, DIM1, DIM3, DIM5, DIM7},
+                                           .loopInnerACount = LoopInnerARCount / CONST10,
+                                           .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopInnerRCount = LoopInnerARCount % CONST10,
+                                           .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .innerPatternID = PatternID % CONST10};
     return schInfo;
 }
 
 template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
 __aicore__ inline constexpr ReduceSchLoopInfo GetSchLoopInfo2()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PatternID / CONST10,
-        .reduceDichotomy = CONST1,
-        .loopACount = LoopARCount / CONST10,
-        .loopAAxis = {DIM0, DIM2},
-        .loopRCount = LoopARCount % CONST10,
-        .loopRAxis = {DIM0, DIM2, DIM1, DIM3, DIM5, DIM7},
-        .loopInnerACount = LoopInnerARCount / CONST10,
-        .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopInnerRCount = LoopInnerARCount % CONST10,
-        .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .innerPatternID = PatternID % CONST10};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PatternID / CONST10,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = LoopARCount / CONST10,
+                                           .loopAAxis = {DIM0, DIM2},
+                                           .loopRCount = LoopARCount % CONST10,
+                                           .loopRAxis = {DIM0, DIM2, DIM1, DIM3, DIM5, DIM7},
+                                           .loopInnerACount = LoopInnerARCount / CONST10,
+                                           .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopInnerRCount = LoopInnerARCount % CONST10,
+                                           .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .innerPatternID = PatternID % CONST10};
     return schInfo;
 }
 
 template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
 __aicore__ inline constexpr ReduceSchLoopInfo GetSchLoopInfo3()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PatternID / CONST10,
-        .reduceDichotomy = CONST1,
-        .loopACount = LoopARCount / CONST10,
-        .loopAAxis = {DIM0, DIM2, DIM4},
-        .loopRCount = LoopARCount % CONST10,
-        .loopRAxis = {DIM0, DIM2, DIM4, DIM1, DIM3, DIM5, DIM7},
-        .loopInnerACount = LoopInnerARCount / CONST10,
-        .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopInnerRCount = LoopInnerARCount % CONST10,
-        .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .innerPatternID = PatternID % CONST10};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PatternID / CONST10,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = LoopARCount / CONST10,
+                                           .loopAAxis = {DIM0, DIM2, DIM4},
+                                           .loopRCount = LoopARCount % CONST10,
+                                           .loopRAxis = {DIM0, DIM2, DIM4, DIM1, DIM3, DIM5, DIM7},
+                                           .loopInnerACount = LoopInnerARCount / CONST10,
+                                           .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopInnerRCount = LoopInnerARCount % CONST10,
+                                           .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .innerPatternID = PatternID % CONST10};
     return schInfo;
 }
 
 template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
 __aicore__ inline constexpr ReduceSchLoopInfo GetSchLoopInfo4()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PatternID / CONST10,
-        .reduceDichotomy = CONST1,
-        .loopACount = LoopARCount / CONST10,
-        .loopAAxis = {DIM0, DIM2, DIM4, DIM6},
-        .loopRCount = LoopARCount % CONST10,
-        .loopRAxis = {DIM0, DIM2, DIM4, DIM6, DIM1, DIM3, DIM5, DIM7},
-        .loopInnerACount = LoopInnerARCount / CONST10,
-        .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopInnerRCount = LoopInnerARCount % CONST10,
-        .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .innerPatternID = PatternID % CONST10};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PatternID / CONST10,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = LoopARCount / CONST10,
+                                           .loopAAxis = {DIM0, DIM2, DIM4, DIM6},
+                                           .loopRCount = LoopARCount % CONST10,
+                                           .loopRAxis = {DIM0, DIM2, DIM4, DIM6, DIM1, DIM3, DIM5, DIM7},
+                                           .loopInnerACount = LoopInnerARCount / CONST10,
+                                           .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopInnerRCount = LoopInnerARCount % CONST10,
+                                           .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .innerPatternID = PatternID % CONST10};
     return schInfo;
 }
 
 template <uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount>
 __aicore__ inline constexpr ReduceSchLoopInfo GetSchLoopInfo5()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PatternID / CONST10,
-        .reduceDichotomy = CONST1,
-        .loopACount = LoopARCount / CONST10,
-        .loopAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopRCount = LoopARCount % CONST10,
-        .loopRAxis = {DIM0, DIM2, DIM4, DIM6, DIM8, DIM1, DIM3, DIM5, DIM7},
-        .loopInnerACount = LoopInnerARCount / CONST10,
-        .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
-        .loopInnerRCount = LoopInnerARCount % CONST10,
-        .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
-        .innerPatternID = PatternID % CONST10};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PatternID / CONST10,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = LoopARCount / CONST10,
+                                           .loopAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopRCount = LoopARCount % CONST10,
+                                           .loopRAxis = {DIM0, DIM2, DIM4, DIM6, DIM8, DIM1, DIM3, DIM5, DIM7},
+                                           .loopInnerACount = LoopInnerARCount / CONST10,
+                                           .loopInnerAAxis = {DIM0, DIM2, DIM4, DIM6, DIM8},
+                                           .loopInnerRCount = LoopInnerARCount % CONST10,
+                                           .loopInnerRAxis = {DIM1, DIM3, DIM5, DIM7},
+                                           .innerPatternID = PatternID % CONST10};
     return schInfo;
 }
 
 __aicore__ inline constexpr ReduceSchLoopInfo GetGroupSchLoopInfo()
 {
-    constexpr ReduceSchLoopInfo schInfo = {
-        .patternID = PATTERN_RA,
-        .reduceDichotomy = CONST1,
-        .loopACount = CONST1,
-        .loopAAxis = {DIM1},
-        .loopRCount = CONST0,
-        .loopRAxis = {},
-        .loopInnerACount = CONST0,
-        .loopInnerAAxis = {},
-        .loopInnerRCount = CONST1,
-        .loopInnerRAxis = {DIM0},
-        .innerPatternID = PATTERN_RA};
+    constexpr ReduceSchLoopInfo schInfo = {.patternID = PATTERN_RA,
+                                           .reduceDichotomy = CONST1,
+                                           .loopACount = CONST1,
+                                           .loopAAxis = {DIM1},
+                                           .loopRCount = CONST0,
+                                           .loopRAxis = {},
+                                           .loopInnerACount = CONST0,
+                                           .loopInnerAAxis = {},
+                                           .loopInnerRCount = CONST1,
+                                           .loopInnerRAxis = {DIM0},
+                                           .innerPatternID = PATTERN_RA};
     return schInfo;
 }
 

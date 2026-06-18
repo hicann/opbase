@@ -43,9 +43,8 @@ aclnnStatus GetJsonValue(const nlohmann::json& json, const std::string& key1, co
         try {
             value = iter1->get<T>();
         } catch (nlohmann::json::exception& e) {
-            OP_LOGE(
-                ACLNN_ERR_INNER_OP_FILE_INVALID, "Exception:%s occurs when getting json value for key1 %s.", e.what(),
-                key1.c_str());
+            OP_LOGE(ACLNN_ERR_INNER_OP_FILE_INVALID, "Exception:%s occurs when getting json value for key1 %s.",
+                    e.what(), key1.c_str());
         }
     } else {
         auto iter2 = iter1->find(key2);
@@ -55,9 +54,9 @@ aclnnStatus GetJsonValue(const nlohmann::json& json, const std::string& key1, co
         try {
             value = iter2->get<T>();
         } catch (nlohmann::json::exception& e) {
-            OP_LOGE(
-                ACLNN_ERR_INNER_OP_FILE_INVALID, "Exception:%s occurs when getting json value for key1 %s and key2 %s.",
-                e.what(), key1.c_str(), key2.c_str());
+            OP_LOGE(ACLNN_ERR_INNER_OP_FILE_INVALID,
+                    "Exception:%s occurs when getting json value for key1 %s and key2 %s.", e.what(), key1.c_str(),
+                    key2.c_str());
         }
     }
 
@@ -135,9 +134,8 @@ const std::string& OpKernelLib::GetAiCoreImplPath()
 
     std::string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(
-        ret == ACLNN_SUCCESS && !oppRealPath.empty(), OP_LOGW("opp kernel real path can not be found. ret %d", ret),
-        return aiCoreImplPath_);
+    OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
+             OP_LOGW("opp kernel real path can not be found. ret %d", ret), return aiCoreImplPath_);
 
     aiCoreImplPath_.append(oppRealPath);
     aiCoreImplPath_.append(AICORE_IMPL_PATH_SUFFIX);
@@ -260,12 +258,10 @@ const std::vector<std::string> OpKernelLib::GetConfigFilePaths()
     std::string configFileDir = GetAiCoreImplPath();
     configFileDir.append(KERNEL_CONFIG_SUFFIX);
     configFileDir.append(GetSocPath());
-    OP_CHECK(
-        ReadDirBySuffix(configFileDir, ".json", configFileNames) == ACLNN_SUCCESS,
-        OP_LOGW("Failed to read dir: %s", configFileDir.c_str()), return configFilePaths);
-    OP_CHECK(
-        !configFileNames.empty(), OP_LOGW("configFileNames is emtpy in %s", configFileDir.c_str()),
-        return configFilePaths);
+    OP_CHECK(ReadDirBySuffix(configFileDir, ".json", configFileNames) == ACLNN_SUCCESS,
+             OP_LOGW("Failed to read dir: %s", configFileDir.c_str()), return configFilePaths);
+    OP_CHECK(!configFileNames.empty(), OP_LOGW("configFileNames is emtpy in %s", configFileDir.c_str()),
+             return configFilePaths);
     bool hasLegacyFile = false;
     std::string lebacyFileName;
     for (auto& fileName : configFileNames) {
@@ -299,17 +295,16 @@ const std::vector<std::string> OpKernelLib::GetCustomFilePaths()
     const std::string oppPathStr = oppPath;
     const std::vector<std::string> vendorNames = GetVendorNames();
     for (const auto& vendorName : vendorNames) {
-        const std::string customFileDir =
-            oppPathStr + "/vendors/" + vendorName + CUSTOM_IMPL_PATH_SUFFIX + KERNEL_CONFIG_SUFFIX + GetSocPath();
+        const std::string customFileDir = oppPathStr + "/vendors/" + vendorName + CUSTOM_IMPL_PATH_SUFFIX +
+                                          KERNEL_CONFIG_SUFFIX + GetSocPath();
         std::vector<std::string> customFileNames;
         std::string realCustomFileDir = RealPath(customFileDir);
         if (realCustomFileDir == "") {
             OP_LOGW("custom file dir is null.");
             continue;
         }
-        OP_CHECK_NO_RETURN(
-            ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
-            OP_LOGW("Failed to read dir: %s", customFileDir.c_str()));
+        OP_CHECK_NO_RETURN(ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
+                           OP_LOGW("Failed to read dir: %s", customFileDir.c_str()));
         for (const auto& fileName : customFileNames) {
             const std::string customFilePath = customFileDir + fileName;
             const std::string realCustomFilePath = RealPath(customFilePath);
@@ -334,11 +329,10 @@ aclnnStatus OpKernelLib::Initialize()
         try {
             std::ifstream f(filePath);
             allKernelsJson_.merge_patch(Json::parse(f));
-            OP_CHECK(
-                allKernelsJson_.is_object(),
-                OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(
-                    filePath.c_str(), "The operator JSON file is not in the standard key-value structure"),
-                return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
+            OP_CHECK(allKernelsJson_.is_object(),
+                     OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(
+                         filePath.c_str(), "The operator JSON file is not in the standard key-value structure"),
+                     return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
         } catch (std::exception& e) {
             OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(filePath.c_str(), e.what());
             return ACLNN_ERR_INNER_LOAD_JSON_FAILED;

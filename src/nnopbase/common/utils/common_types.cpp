@@ -107,10 +107,9 @@ aclArray<T>::aclArray(const T* value, uint64_t size)
         size_ = size;
         value_ = new (base) T[size];
         if constexpr (std::is_trivial_v<T>) {
-            OP_CHECK(
-                memcpy_s(value_, size * sizeof(T), value, size * sizeof(T)) == EOK,
-                OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
-                throw std::runtime_error("aclArray<T>::aclArray memcpy runtime error."));
+            OP_CHECK(memcpy_s(value_, size * sizeof(T), value, size * sizeof(T)) == EOK,
+                     OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+                     throw std::runtime_error("aclArray<T>::aclArray memcpy runtime error."));
         } else {
             for (uint64_t i = 0; i < size; i++) {
                 value_[i] = value[i];
@@ -140,9 +139,8 @@ aclTensor::aclTensor(const op::Shape& shape, op::DataType dataType, op::Format f
     : aclTensor(shape, shape, dataType, format, format, tensorDataAddr)
 {}
 
-aclTensor::aclTensor(
-    const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-    op::Format originFormat, void* tensorDataAddr)
+aclTensor::aclTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
+                     op::Format storageFormat, op::Format originFormat, void* tensorDataAddr)
     : storage_(new (std::nothrow) aclStorage(tensorDataAddr, true)),
       viewOffset_(0),
       viewStrides_(),
@@ -167,9 +165,8 @@ aclTensor::aclTensor(const op::Shape& shape, op::DataType dataType, op::Format f
     : aclTensor(shape, shape, dataType, format, format)
 {}
 
-aclTensor::aclTensor(
-    const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType, op::Format storageFormat,
-    op::Format originFormat)
+aclTensor::aclTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
+                     op::Format storageFormat, op::Format originFormat)
     : viewOffset_(0), viewStrides_(), viewShape_(originShape), viewFormat_(originFormat)
 {
     auto typeSize = op::TypeSize(dataType);
@@ -192,9 +189,9 @@ aclTensor::aclTensor(
     tensor_ = new (base) op::Tensor(gertShape, gertFormat, op::TensorPlacement::kOnHost, dataType, dataAddr);
 }
 
-aclTensor::aclTensor(
-    const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride, int64_t offset,
-    const aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorDataAddr)
+aclTensor::aclTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
+                     int64_t offset, const aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum,
+                     void* tensorDataAddr)
     : viewOffset_(offset), viewStrides_(), viewShape_(), viewFormat_(static_cast<op::Format>(format))
 {
     op::ToShape(viewDims, viewDimsNum, viewShape_);
@@ -217,8 +214,8 @@ aclTensor::aclTensor(
 
     void* base = op::internal::Allocate(sizeof(op::Tensor));
     OP_CHECK(base != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."), throw std::bad_alloc());
-    tensor_ = new (base) op::Tensor(
-        storageShape, storageFormat, op::TensorPlacement::kOnDeviceHbm, op::ToOpDataType(dataType), tensorDataAddr);
+    tensor_ = new (base) op::Tensor(storageShape, storageFormat, op::TensorPlacement::kOnDeviceHbm,
+                                    op::ToOpDataType(dataType), tensorDataAddr);
     storage_ = new (std::nothrow) aclStorage(tensorDataAddr);
     OP_CHECK(storage_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."), throw std::bad_alloc());
 }
@@ -236,15 +233,13 @@ aclTensor::aclTensor(const aclTensor& other, const op::Shape& shape, int64_t off
     storageShape.MutableOriginShape() = shape;
     void* base = op::internal::Allocate(sizeof(op::Tensor));
     OP_CHECK(base != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."), throw std::bad_alloc());
-    tensor_ = new (base) op::Tensor(
-        storageShape, other.tensor_->GetFormat(), other.tensor_->GetPlacement(), other.GetDataType(),
-        other.tensor_->GetTensorData().GetAddr());
+    tensor_ = new (base) op::Tensor(storageShape, other.tensor_->GetFormat(), other.tensor_->GetPlacement(),
+                                    other.GetDataType(), other.tensor_->GetTensorData().GetAddr());
     op::ToContiguousStrides(viewShape_, viewStrides_);
 }
 
-aclTensor::aclTensor(
-    const aclTensor& other, const op::Shape& oriShape, const op::Shape& storageShape, const op::Strides& oriStride,
-    int64_t offset)
+aclTensor::aclTensor(const aclTensor& other, const op::Shape& oriShape, const op::Shape& storageShape,
+                     const op::Strides& oriStride, int64_t offset)
     : storage_(other.storage_),
       viewOffset_(offset),
       viewStrides_(oriStride),
@@ -257,9 +252,8 @@ aclTensor::aclTensor(
     storageShapeLocal.MutableOriginShape() = oriShape;
     void* base = op::internal::Allocate(sizeof(op::Tensor));
     OP_CHECK(base != nullptr, OP_LOGE(ACLNN_ERR_INNER, "aclTensor allocate failed."), throw std::bad_alloc());
-    tensor_ = new (base) op::Tensor(
-        storageShapeLocal, other.tensor_->GetFormat(), other.tensor_->GetPlacement(), other.GetDataType(),
-        other.tensor_->GetTensorData().GetAddr());
+    tensor_ = new (base) op::Tensor(storageShapeLocal, other.tensor_->GetFormat(), other.tensor_->GetPlacement(),
+                                    other.GetDataType(), other.tensor_->GetTensorData().GetAddr());
     auto& geStride = tensor_->MutableStride();
     geStride.SetDimNum(oriStride.size());
     for (size_t i = 0; i < oriStride.size(); i++) {
@@ -373,9 +367,8 @@ aclTensor::aclTensor(const aclScalar* value, op::DataType dataType)
             *static_cast<uint8_t*>(dataAddr) = value->ToHiFloat8().value;
             break;
         default:
-            OP_CHECK(
-                memset_s(dataAddr, typeSize, 0, typeSize) == EOK,
-                OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "memset_s failed."), return);
+            OP_CHECK(memset_s(dataAddr, typeSize, 0, typeSize) == EOK,
+                     OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "memset_s failed."), return);
             std::string dtypeRange = "[DT_FLOAT(0), DT_FLOAT16(1), DT_INT8(2), DT_INT32(3), DT_UINT8(4), "
                                      "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
                                      "DT_DOUBLE(11), DT_BOOL(12), DT_COMPLEX64(16), DT_COMPLEX128(17), DT_BF16(27), "
@@ -437,9 +430,9 @@ op::DataType aclTensor::GetDataType() const
     if (tensor_) {
         return tensor_->GetDataType();
     } else {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR,
-            "the aclTensor(%p)'s tensor_ address is %p. please check the memory usage in your code.", this, tensor_);
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
+                "the aclTensor(%p)'s tensor_ address is %p. please check the memory usage in your code.", this,
+                tensor_);
         return op::DataType::DT_MAX;
     }
 }
@@ -516,9 +509,9 @@ bool aclTensor::IsEmpty() const
     return isEmpty;
 }
 
-void aclTensor::InitTensor(
-    const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride, int64_t offset,
-    aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum, void* tensorDataAddr)
+void aclTensor::InitTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
+                           int64_t offset, aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum,
+                           void* tensorDataAddr)
 {
     if (viewDims && viewDimsNum) {
         op::ToShape(viewDims, viewDimsNum, viewShape_);
@@ -575,17 +568,16 @@ template <typename T>
 static void SetDataByBool(int64_t index, void* dataAddr, const T value)
 {
     auto tmpDataAddr = static_cast<bool*>(dataAddr);
-    if constexpr (
-        std::is_floating_point<T>::value || std::is_same<op::fp16_t, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float8E5M2, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float8E4M3FN, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float8E8M0, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float6E3M2, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float6E2M3, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float4E2M1, typename std::decay<T>::type>::value ||
-        std::is_same<op::Float4E1M2, typename std::decay<T>::type>::value ||
-        std::is_same<op::HiFloat4, typename std::decay<T>::type>::value ||
-        std::is_same<op::HiFloat8, typename std::decay<T>::type>::value) {
+    if constexpr (std::is_floating_point<T>::value || std::is_same<op::fp16_t, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float8E5M2, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float8E4M3FN, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float8E8M0, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float6E3M2, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float6E2M3, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float4E2M1, typename std::decay<T>::type>::value ||
+                  std::is_same<op::Float4E1M2, typename std::decay<T>::type>::value ||
+                  std::is_same<op::HiFloat4, typename std::decay<T>::type>::value ||
+                  std::is_same<op::HiFloat8, typename std::decay<T>::type>::value) {
         *(tmpDataAddr + index) = std::abs(static_cast<float>(value)) >= std::numeric_limits<float>::epsilon();
     } else {
         *(tmpDataAddr + index) = static_cast<bool>(value);
@@ -770,10 +762,9 @@ aclTensorList::aclTensorList(const aclTensor* const* tensors, uint64_t size)
     if (tensors != nullptr && size != 0) {
         this->size_ = size;
         this->tensors_ = new (std::nothrow) aclTensor*[size];
-        OP_CHECK(
-            memcpy_s(this->tensors_, size * sizeof(aclTensor*), tensors, size * sizeof(aclTensor*)) == EOK,
-            OP_LOGW("Failed to memcpy in aclTensorList create."),
-            throw std::runtime_error("aclTensorList::aclTensorList memcpy runtime error."));
+        OP_CHECK(memcpy_s(this->tensors_, size * sizeof(aclTensor*), tensors, size * sizeof(aclTensor*)) == EOK,
+                 OP_LOGW("Failed to memcpy in aclTensorList create."),
+                 throw std::runtime_error("aclTensorList::aclTensorList memcpy runtime error."));
     }
 }
 
@@ -820,10 +811,9 @@ aclScalarList::aclScalarList(const aclScalar* const* scalars, uint64_t size)
     if (scalars != nullptr && size != 0) {
         this->size_ = size;
         this->scalars_ = new (std::nothrow) aclScalar*[size];
-        OP_CHECK(
-            memcpy_s(this->scalars_, size * sizeof(aclScalar*), scalars, size * sizeof(aclScalar*)) == EOK,
-            OP_LOGW("Failed to memcpy in aclScalarList create."),
-            throw std::runtime_error("aclScalarList::aclScalarList memcpy runtime error."));
+        OP_CHECK(memcpy_s(this->scalars_, size * sizeof(aclScalar*), scalars, size * sizeof(aclScalar*)) == EOK,
+                 OP_LOGW("Failed to memcpy in aclScalarList create."),
+                 throw std::runtime_error("aclScalarList::aclScalarList memcpy runtime error."));
     }
 }
 
@@ -876,51 +866,43 @@ bool aclScalar::CheckOverflows() const
         case op::DataType::DT_BF16:
             return op::internal::Overflows<to>(static_cast<float>(BFloat16()));
         case op::DataType::DT_INT8:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.i8);
             }
         case op::DataType::DT_INT16:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.i16);
             }
         case op::DataType::DT_UINT16:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.ui16);
             }
         case op::DataType::DT_UINT8:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.ui8);
             }
         case op::DataType::DT_INT32:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.i32);
             }
         case op::DataType::DT_INT64:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.i64);
             }
         case op::DataType::DT_UINT32:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.ui32);
             }
         case op::DataType::DT_UINT64:
-            if constexpr (
-                !std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
-                !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
+            if constexpr (!std::is_same<std::complex<double>, typename std::decay<to>::type>::value &&
+                          !std::is_same<std::complex<float>, typename std::decay<to>::type>::value) {
                 return op::internal::Overflows<to>(v.ui64);
             }
         case op::DataType::DT_BOOL:
@@ -1361,32 +1343,31 @@ ge::AscendString aclScalar::ToString() const
 
 ge::AscendString ToString(aclDataType dataType)
 {
-    static std::map<aclDataType, std::string> dtype = {
-        {ACL_DT_UNDEFINED, "undefined"},
-        {ACL_FLOAT, "float32"},
-        {ACL_FLOAT16, "float16"},
-        {ACL_INT8, "int8"},
-        {ACL_INT32, "int32"},
-        {ACL_UINT8, "uint8"},
-        {ACL_INT16, "int16"},
-        {ACL_UINT16, "uint16"},
-        {ACL_UINT32, "uint32"},
-        {ACL_INT64, "int64"},
-        {ACL_UINT64, "uint64"},
-        {ACL_DOUBLE, "double"},
-        {ACL_BOOL, "bool"},
-        {ACL_STRING, "string"},
-        {ACL_COMPLEX64, "complex64"},
-        {ACL_COMPLEX128, "complex128"},
-        {ACL_BF16, "bfloat16"},
-        {ACL_HIFLOAT8, "hifloat8"},
-        {ACL_FLOAT8_E5M2, "float8_e5m2"},
-        {ACL_FLOAT8_E4M3FN, "float8_e4m3fn"},
-        {ACL_FLOAT8_E8M0, "float8_e8m0"},
-        {ACL_FLOAT6_E3M2, "float6_e3m2"},
-        {ACL_FLOAT6_E2M3, "float6_e2m3"},
-        {ACL_FLOAT4_E2M1, "float4_e2m1"},
-        {ACL_FLOAT4_E1M2, "float4_e1m2"}};
+    static std::map<aclDataType, std::string> dtype = {{ACL_DT_UNDEFINED, "undefined"},
+                                                       {ACL_FLOAT, "float32"},
+                                                       {ACL_FLOAT16, "float16"},
+                                                       {ACL_INT8, "int8"},
+                                                       {ACL_INT32, "int32"},
+                                                       {ACL_UINT8, "uint8"},
+                                                       {ACL_INT16, "int16"},
+                                                       {ACL_UINT16, "uint16"},
+                                                       {ACL_UINT32, "uint32"},
+                                                       {ACL_INT64, "int64"},
+                                                       {ACL_UINT64, "uint64"},
+                                                       {ACL_DOUBLE, "double"},
+                                                       {ACL_BOOL, "bool"},
+                                                       {ACL_STRING, "string"},
+                                                       {ACL_COMPLEX64, "complex64"},
+                                                       {ACL_COMPLEX128, "complex128"},
+                                                       {ACL_BF16, "bfloat16"},
+                                                       {ACL_HIFLOAT8, "hifloat8"},
+                                                       {ACL_FLOAT8_E5M2, "float8_e5m2"},
+                                                       {ACL_FLOAT8_E4M3FN, "float8_e4m3fn"},
+                                                       {ACL_FLOAT8_E8M0, "float8_e8m0"},
+                                                       {ACL_FLOAT6_E3M2, "float6_e3m2"},
+                                                       {ACL_FLOAT6_E2M3, "float6_e2m3"},
+                                                       {ACL_FLOAT4_E2M1, "float4_e2m1"},
+                                                       {ACL_FLOAT4_E1M2, "float4_e1m2"}};
     auto iter = dtype.find(dataType);
     if (iter != dtype.end()) {
         return ge::AscendString((iter->second).c_str());
@@ -1613,8 +1594,8 @@ aclTensor::aclTensor(const T* value, uint64_t size, op::DataType dataType)
         case op::DataType::DT_BOOL: {
             auto tmpDataAddr = static_cast<bool*>(dataAddr);
             for (uint64_t i = 0; i < size; i++) {
-                if constexpr (
-                    std::is_floating_point<T>::value || std::is_same<op::fp16_t, typename std::decay<T>::type>::value) {
+                if constexpr (std::is_floating_point<T>::value ||
+                              std::is_same<op::fp16_t, typename std::decay<T>::type>::value) {
                     *(tmpDataAddr + i) = std::abs(value[i]) >= std::numeric_limits<float>::epsilon();
                 } else {
                     *(tmpDataAddr + i) = static_cast<bool>(value[i]);

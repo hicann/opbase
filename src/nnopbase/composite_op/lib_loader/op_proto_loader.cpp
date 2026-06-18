@@ -52,9 +52,8 @@ static void LoadProtoSo(const string& so)
     std::vector<ge::AscendString> soPathVec;
     soPathVec.emplace_back(soPath);
     gert::OppSoDesc soDesc(soPathVec, desc);
-    OP_CHECK(
-        spaceRegistryV2->AddSoToRegistry(soDesc) == ge::GRAPH_SUCCESS,
-        OP_LOGW("AddSoToRegistry failed, so path: %s", so.c_str()), return);
+    OP_CHECK(spaceRegistryV2->AddSoToRegistry(soDesc) == ge::GRAPH_SUCCESS,
+             OP_LOGW("AddSoToRegistry failed, so path: %s", so.c_str()), return);
     OP_LOGI("AddSoToRegistry successfully, so path: %s", so.c_str());
 }
 

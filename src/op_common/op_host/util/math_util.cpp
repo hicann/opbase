@@ -103,8 +103,8 @@ bool SplitIntoEqualByParts(int64_t splitLen, int32_t parts, SplitResult& splitRe
     splitResult.splitCount = splitLen < parts ? splitLen : parts;
     splitResult.splitFactor = CeilDiv(splitLen, static_cast<int64_t>(splitResult.splitCount));
     splitResult.splitCount = CeilDiv(splitLen, splitResult.splitFactor);
-    splitResult.splitTailFactor =
-        (splitLen % splitResult.splitFactor == 0) ? splitResult.splitFactor : splitLen % splitResult.splitFactor;
+    splitResult.splitTailFactor = (splitLen % splitResult.splitFactor == 0) ? splitResult.splitFactor :
+                                                                              splitLen % splitResult.splitFactor;
     return true;
 }
 
@@ -126,8 +126,8 @@ bool SplitIntoEqualByFactor(int64_t splitLen, int32_t factor, SplitResult& split
     }
     splitResult.splitFactor = splitLen < factor ? splitLen : factor;
     splitResult.splitCount = CeilDiv(splitLen, static_cast<int64_t>(splitResult.splitFactor));
-    splitResult.splitTailFactor =
-        (splitLen % splitResult.splitFactor == 0) ? splitResult.splitFactor : splitLen % splitResult.splitFactor;
+    splitResult.splitTailFactor = (splitLen % splitResult.splitFactor == 0) ? splitResult.splitFactor :
+                                                                              splitLen % splitResult.splitFactor;
     splitResult.splitFactor = (splitResult.splitCount == 1) ? 0 : splitResult.splitFactor;
     return true;
 }

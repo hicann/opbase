@@ -20,30 +20,28 @@ namespace aicpu {
 using SharderWork = std::function<void(int64_t, int64_t)>;
 
 class EigenThreadPoolEmbedding {
- public:
-  static EigenThreadPoolEmbedding *GetInstance();
+public:
+    static EigenThreadPoolEmbedding* GetInstance();
 
-  /*
-   * ParallelFor shards the "total" units of work.
-   */
-  void ParallelFor(int64_t total, int64_t per_unit_size,
-                   const SharderWork &work) const;
+    /*
+     * ParallelFor shards the "total" units of work.
+     */
+    void ParallelFor(int64_t total, int64_t per_unit_size, const SharderWork& work) const;
 
- private:
-  EigenThreadPoolEmbedding() = default;
-  ~EigenThreadPoolEmbedding() = default;
+private:
+    EigenThreadPoolEmbedding() = default;
+    ~EigenThreadPoolEmbedding() = default;
 
-  EigenThreadPoolEmbedding(const EigenThreadPoolEmbedding &) = delete;
-  EigenThreadPoolEmbedding(EigenThreadPoolEmbedding &&) = delete;
-  EigenThreadPoolEmbedding &operator=(const EigenThreadPoolEmbedding &) = delete;
-  EigenThreadPoolEmbedding &operator=(EigenThreadPoolEmbedding &&) = delete;
+    EigenThreadPoolEmbedding(const EigenThreadPoolEmbedding&) = delete;
+    EigenThreadPoolEmbedding(EigenThreadPoolEmbedding&&) = delete;
+    EigenThreadPoolEmbedding& operator=(const EigenThreadPoolEmbedding&) = delete;
+    EigenThreadPoolEmbedding& operator=(EigenThreadPoolEmbedding&&) = delete;
 
-  static std::mutex mutex_;  // protect init_flag_
-  static bool init_flag_;    // true means initialized
-  static int32_t
-      core_num_;  // the number of CPU cores that can be used by users
-  static std::unique_ptr<Eigen::ThreadPool> eigen_threadpool_;
-  static std::unique_ptr<Eigen::ThreadPoolDevice> threadpool_device_;
+    static std::mutex mutex_; // protect init_flag_
+    static bool init_flag_;   // true means initialized
+    static int32_t core_num_; // the number of CPU cores that can be used by users
+    static std::unique_ptr<Eigen::ThreadPool> eigen_threadpool_;
+    static std::unique_ptr<Eigen::ThreadPoolDevice> threadpool_device_;
 };
-};      // namespace aicpu
-#endif  // AICPU_CONTEXT_COMMON_EIGEN_THREAD_POOL_EMBEDDING_H
+}; // namespace aicpu
+#endif // AICPU_CONTEXT_COMMON_EIGEN_THREAD_POOL_EMBEDDING_H
