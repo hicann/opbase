@@ -50,15 +50,15 @@ const gert::Shape g_vec_1_shape = {1};
  * When the dim num of shape is 0, this shape is considered to express a scalar.
  * This function returns the original shape when it receives a non-scalar shape,
  * and returns the vector shape that returns a {1} when it receives a scalar shape
- * @param in_shape input shape
+ * @param inShape input shape
  * @return non-scalar shape
  */
-inline const gert::Shape& EnsureNotScalar(const gert::Shape& in_shape)
+inline const gert::Shape& EnsureNotScalar(const gert::Shape& inShape)
 {
-    if (in_shape.IsScalar()) {
+    if (inShape.IsScalar()) {
         return g_vec_1_shape;
     }
-    return in_shape;
+    return inShape;
 }
 
 template <typename OpDag>
