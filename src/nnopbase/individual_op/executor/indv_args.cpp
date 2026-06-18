@@ -181,8 +181,8 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(
         CHECK_COND(
             (memcpy_s(op::internal::PtrCastTo<void>(argsAddr->ptr), oomSize, executor->args->dfxInfo.data(), oomSize) ==
              EOK),
-            ACLNN_ERR_PARAM_INVALID, "Memcpy oom info failed, src is %p, dst is %p, size is %u.", argsAddr->ptr,
-            executor->args->dfxInfo.data(), oomSize);
+            ACLNN_ERR_PARAM_INVALID, "Failed to execute memcpy_s oom info, src is %p, dst is %p, size is %u.",
+            argsAddr->ptr, executor->args->dfxInfo.data(), oomSize);
         argsAddr->ptr += oomSize;
     }
     if (op::internal::IsArgExceptionDumpEnable()) {
@@ -196,8 +196,8 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(
                 exceptionDumpAddr, executor->args->dfxInfo.size() * sizeof(uint64_t), executor->args->dfxInfo.data(),
                 executor->args->dfxInfo.size() * sizeof(uint64_t)) == EOK,
             ACLNN_ERR_PARAM_INVALID,
-            "Memcpy dfx info failed, exceptionDumpAddr is %p, dfx Info addr is %p, size is %zu.", exceptionDumpAddr,
-            executor->args->dfxInfo.data(), executor->args->dfxInfo.size() * sizeof(uint64_t));
+            "Failed to execute memcpy_s dfx info, exceptionDumpAddr is %p, dfx Info addr is %p, size is %zu.",
+            exceptionDumpAddr, executor->args->dfxInfo.data(), executor->args->dfxInfo.size() * sizeof(uint64_t));
     }
     return OK;
 }

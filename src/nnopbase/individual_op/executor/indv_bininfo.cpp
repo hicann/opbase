@@ -95,8 +95,7 @@ aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo
 aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<MemsetOpBinInfo>& binInfo, bool loadFuncHandleByTilingKey)
 {
     if (binInfo->bin == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(
-            NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
     }
     aclrtBinaryLoadOption aclrtBinaryLoadOp = aclrtBinaryLoadOption{
         .type = ACL_RT_BINARY_LOAD_OPT_LAZY_MAGIC, .value = aclrtBinaryLoadOptionValue{.magic = binInfo->magic}};
@@ -182,7 +181,7 @@ static void NnopbaseGetInitValue(nlohmann::json& opJson, NnopbaseBinInfo* binInf
             OP_LOGI("InitValues size is %zu.", binInfo->initValues.size());
         }
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("Not get parameters, reason %s", e.what());
+        OP_LOGW("Failed to get parameters, reason: %s", e.what());
     }
 }
 
@@ -201,7 +200,7 @@ static void NnopbaseGetOomFlag(NnopbaseBinInfo* binInfo, nlohmann::json& binJson
             }
             OP_LOGI("OomFlag is %d.", binInfo->oomFlag);
         } catch (const nlohmann::json::exception& e) {
-            OP_LOGW("Not get op_debug_config, reason %s.", e.what());
+            OP_LOGW("Failed to get op_debug_config, reason: %s.", e.what());
         }
     }
 }
@@ -222,7 +221,7 @@ static aclnnStatus NnopbaseGetDebugOptions(NnopbaseBinInfo* binInfo, nlohmann::j
         binInfo->debugBufSize = binJsonInfo["debugBufSize"].get<size_t>();
         OP_LOGI("Get printType is [%s], debugBufSize is [%lu bytes].", debugOptions.c_str(), binInfo->debugBufSize);
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("Not get printType or debugBufSize, reason %s.", e.what());
+        OP_LOGW("Failed to get printType or debugBufSize, reason: %s.", e.what());
     }
     return OK;
 }
@@ -240,7 +239,7 @@ static aclnnStatus NnopbaseSetOpJsonConfig(NnopbaseBinInfo* binInfo, nlohmann::j
                 OP_LOGI("Get taskRation is [%s].", taskRation.c_str());
             }
         } catch (const nlohmann::json::exception& e) {
-            OP_LOGW("Not get taskRation, reason %s.", e.what());
+            OP_LOGW("Failed to get taskRation, reason: %s.", e.what());
         }
     }
 
@@ -249,7 +248,7 @@ static aclnnStatus NnopbaseSetOpJsonConfig(NnopbaseBinInfo* binInfo, nlohmann::j
         binInfo->opParaSize = ((opParaSize % 8U) != 0) ? (opParaSize / 8U + 1U) * 8U : opParaSize; // 8byte对齐
         OP_LOGI("Get opParaSize is [%u bytes], binInfo->opParaSize is [%u bytes].", opParaSize, binInfo->opParaSize);
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("Not get opParaSize, reason %s", e.what());
+        OP_LOGW("Failed to get opParaSize, reason: %s", e.what());
     }
 
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetDebugOptions(binInfo, binJsonInfo));
@@ -277,7 +276,7 @@ static aclnnStatus NnopbaseUpdateBinConfigJsonInfo(nlohmann::json& opJsonInfo, N
             "Get multiKernelType is [%u], tilingKey is [%lu], kernelType is [%s], taskRation is [%s]",
             binInfo->multiKernelType, tilingKey, kernelType.c_str(), taskRation.c_str());
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Read jsonfile binInfo failed, reason %s.", e.what());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to read kernel json file, reason %s.", e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
 
@@ -288,7 +287,7 @@ static aclnnStatus NnopbaseUpdateBinConfigJsonInfo(nlohmann::json& opJsonInfo, N
             binInfo->tilingKeyInfo[tilingKey].crossCoreSync = (crossCoreSync == 1);
             OP_LOGI("Get crossCoreSync is [%u].", crossCoreSync);
         } catch (const nlohmann::json::exception& e) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Can not get crossCoreSync, reason %s.", e.what());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to get crossCoreSync, reason %s.", e.what());
             return ACLNN_ERR_PARAM_INVALID;
         }
     }
@@ -348,8 +347,8 @@ aclnnStatus NnopbaseLoadMemsetJson(std::shared_ptr<MemsetOpInfo>& memsetInfo)
         OP_LOGI("Memset op magic is %u, coreType is %s.", memsetInfo->binInfo->magic, coreType.c_str());
     } catch (const nlohmann::json::exception& e) {
         OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Read Memset json %s failed, errmsg:%s.", memsetInfo->memSetJsonPath.c_str(),
-            e.what());
+            ACLNN_ERR_PARAM_INVALID, "Failed to read kernel json of operator MemSet %s, errmsg:%s.",
+            memsetInfo->memSetJsonPath.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
 
@@ -361,9 +360,13 @@ aclnnStatus NnopbaseGetBinPath(const std::string& jsonPath, std::string& binPath
     const size_t pos = jsonPath.find(".json");
     if (pos != std::string::npos) {
         binPath = jsonPath.substr(0U, pos + 1U) + "o";
-        OP_LOGI("BinPath is %s.", binPath.c_str());
+        OP_LOGD("Kernel file path is %s.", binPath.c_str());
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Get binPath from jsonPath %s failed.", jsonPath.c_str());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "Failed to get kernel file from json file path %s,"
+            " path of json file must end with .json suffix.",
+            jsonPath.c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -374,10 +377,12 @@ aclnnStatus NnopbaseGetMemsetBinInfo(std::shared_ptr<MemsetOpInfo>& memsetInfo)
     std::string binPath;
     CHECK_COND(
         NnopbaseGetBinPath(memsetInfo->memSetJsonPath, binPath) == OK, ACLNN_ERR_PARAM_INVALID,
-        "Get memset binary file failed.");
+        "Failed to get binary file of MemSet operator.");
     NnopbaseChar kernelPath[NNOPBASE_FILE_PATH_MAX_LEN] = {};
     if (mmRealPath(binPath.c_str(), kernelPath, NNOPBASE_FILE_PATH_MAX_LEN) != EN_OK) {
-        OP_LOGW("Get Memset kernel path %s failed, errmsg:%s.", binPath.c_str(), NnopbaseGetmmErrorMsg());
+        OP_LOGW(
+            "Failed to get kernel path of MemSet operator, relative kernel path is %s, errmsg:%s.", binPath.c_str(),
+            NnopbaseGetmmErrorMsg());
         return ACLNN_ERR_PARAM_INVALID;
     }
 
@@ -435,12 +440,12 @@ aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo* binInfo, const std::string& o
     nlohmann::json memsetJsonInfo;
     bool loadFuncHandleByTilingKey = true;
     if (NnopbaseReadJsonConfig(memsetOpJsonPathV2, memsetJsonInfo) != OK) {
-        OP_LOGW("Read %s failed, trying another path %s.", memsetOpJsonPathV2.c_str(), memsetOpJsonPathV1.c_str());
+        OP_LOGW("Failed to read %s, trying another path %s.", memsetOpJsonPathV2.c_str(), memsetOpJsonPathV1.c_str());
         memsetBasePath = oppPath + MEMSET_BINARY_JSON_COMMON_DIR + socVersion + "/ops_legacy";
         loadFuncHandleByTilingKey = false;
         CHECK_COND(
             NnopbaseReadJsonConfig(memsetOpJsonPathV1, memsetJsonInfo) == OK, ACLNN_ERR_PARAM_INVALID,
-            "Read %s failed.", memsetOpJsonPathV1.c_str());
+            "Failed to read %s.", memsetOpJsonPathV1.c_str());
     }
     binInfo->memsetInfo = std::make_shared<MemsetOpInfo>();
     NNOPBASE_ASSERT_NOTNULL_RETVAL(binInfo->memsetInfo);
@@ -450,11 +455,11 @@ aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo* binInfo, const std::string& o
     return OK;
 }
 
-aclnnStatus NnopbaseBinInfoReadJsonFile(
+aclnnStatus NnopbaseReadKernelJsonFile(
     NnopbaseBinInfo* binInfo, const std::string& oppPath, const std::string& socVersion)
 {
     std::string dirPath;
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetOpJsonPath(binInfo->binPath, dirPath));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetKernelJsonPath(binInfo->binPath, dirPath));
     nlohmann::json binJsonInfo;
     if (binInfo->loadBinInfoType != kStaticBinInfo) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadJsonConfig(dirPath, binJsonInfo));
@@ -479,10 +484,11 @@ aclnnStatus NnopbaseKernelUnRegister(void** handle)
     return OK;
 }
 
-aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar* const binPath, const NnopbaseUChar** bin, uint32_t* binLen)
+aclnnStatus NnopbaseReadBinFile(const NnopbaseChar* const binPath, const NnopbaseUChar** bin, uint32_t* binLen)
 {
     struct stat statbuf;
-    CHECK_COND(stat(binPath, &statbuf) != -1, ACLNN_ERR_PARAM_INVALID, "Failed to stat file: %s", binPath);
+    auto ret = stat(binPath, &statbuf);
+    CHECK_COND(ret != -1, ACLNN_ERR_PARAM_INVALID, "Failed to stat file: %s, errno = %d.", binPath, errno);
     NNOPBASE_ASSERT_TRUE_RETVAL(statbuf.st_size > 0);
     const size_t size = static_cast<size_t>(statbuf.st_size);
     auto buf = std::make_unique<NnopbaseUChar[]>(size);
@@ -492,7 +498,7 @@ aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar* const binPath, const 
     NNOPBASE_ASSERT_TRUE_RETVAL(fd != -1);
     const int32_t len = read(fd, buf.get(), size);
     if (close(fd) == -1) {
-        OP_LOGW("Close bin file %s failed, errno = %d.", binPath, errno);
+        OP_LOGW("Failed to close bin file %s, errno = %d.", binPath, errno);
     }
 
     NNOPBASE_ASSERT_TRUE_RETVAL(len != -1);
@@ -501,13 +507,17 @@ aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar* const binPath, const 
     return OK;
 }
 
-aclnnStatus NnopbaseGetOpJsonPath(const std::string& binPath, std::string& jsonPath)
+aclnnStatus NnopbaseGetKernelJsonPath(const std::string& binPath, std::string& jsonPath)
 {
     const size_t pos = binPath.find(".o");
     if (pos != std::string::npos) {
         jsonPath = binPath.substr(0U, pos + 1U) + "json";
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Get binJsonPath from binPath %s failed.", binPath.c_str());
+        OP_LOGE(
+            ACLNN_ERR_PARAM_INVALID,
+            "Failed to get json file from kernel file path %s,"
+            " path of kernel file must end with .o suffix.",
+            binPath.c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -526,8 +536,7 @@ aclnnStatus NnopbaseReadJsonConfig(const std::string& binaryInfoPath, nlohmann::
         ifs >> binaryInfoConfig;
         ifs.close();
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Read jsonfile [%s] failed, reason %s", binaryInfoPath.c_str(), e.what());
-        ifs.close();
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(binaryInfoPath.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
     OP_LOGI("Read jsonfile [%s] successfully.", binaryInfoPath.c_str());

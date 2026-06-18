@@ -60,7 +60,7 @@ aclIntArray* NnopbaseCovertIntArray(const gert::Tensor* tensor)
 {
     OP_CHECK(tensor != nullptr, OP_LOGI("Gert tensor is nullptr."), return nullptr);
     OP_CHECK(
-        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Gert tensor is not host placement."),
+        tensor->GetPlacement() == gert::kOnHost, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "gert tensor is not host placement."),
         return nullptr);
     return aclCreateIntArray(static_cast<const int64_t*>(tensor->GetAddr()), tensor->GetStorageShape().GetShapeSize());
 }
@@ -112,22 +112,22 @@ aclScalarList* NnopbaseConvertScalarList(const gert::Tensor* tensor)
 
 aclIntArray* NnopbaseCovertIntArrayAttr(const gert::TypedContinuousVector<int64_t>* arr)
 {
-    OP_CHECK(arr != nullptr, OP_LOGI("int64_t arr is nullptr."), return nullptr);
-    OP_CHECK(arr->GetSize() != 0U, OP_LOGI("Arr size is 0."), return nullptr);
+    OP_CHECK(arr != nullptr, OP_LOGI("int64_t array is nullptr."), return nullptr);
+    OP_CHECK(arr->GetSize() != 0U, OP_LOGI("Array size is 0."), return nullptr);
     return aclCreateIntArray(arr->GetData(), arr->GetSize());
 }
 
 aclBoolArray* NnopbaseCovertBoolArrayAttr(const gert::TypedContinuousVector<bool>* arr)
 {
-    OP_CHECK(arr != nullptr, OP_LOGI("bool arr is nullptr."), return nullptr);
-    OP_CHECK(arr->GetSize() != 0UL, OP_LOGI("Arr size is 0."), return nullptr);
+    OP_CHECK(arr != nullptr, OP_LOGI("bool array is nullptr."), return nullptr);
+    OP_CHECK(arr->GetSize() != 0UL, OP_LOGI("Array size is 0."), return nullptr);
     return aclCreateBoolArray(arr->GetData(), arr->GetSize());
 }
 
 aclFloatArray* NnopbaseCovertFloatArrayAttr(const gert::TypedContinuousVector<float>* arr)
 {
-    OP_CHECK(arr != nullptr, OP_LOGI("float arr is nullptr."), return nullptr);
-    OP_CHECK(arr->GetSize() != 0UL, OP_LOGI("Arr size is 0."), return nullptr);
+    OP_CHECK(arr != nullptr, OP_LOGI("float array is nullptr."), return nullptr);
+    OP_CHECK(arr->GetSize() != 0UL, OP_LOGI("Array size is 0."), return nullptr);
     return aclCreateFloatArray(arr->GetData(), arr->GetSize());
 }
 

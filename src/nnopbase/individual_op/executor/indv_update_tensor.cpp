@@ -30,7 +30,7 @@ aclnnStatus NnopbaseSetRefTensorAddr(
                     size_t outputStartIndex = outInstances[outputIrIndex].startIndex;
                     CHECK_COND(
                         NnopbaseSetOutputTensorAddr(executor, outputStartIndex + offset, addr) == OK,
-                        ACLNN_ERR_PARAM_INVALID, "Set output addr failed, outputStartIndex[%zu], offset[%zu].",
+                        ACLNN_ERR_PARAM_INVALID, "Failed to set output address, outputStartIndex[%zu], offset[%zu].",
                         outputStartIndex, offset);
                 }
                 break;
@@ -47,7 +47,7 @@ aclnnStatus NnopbaseUpdateDynamicTensors(NnopbaseTensors* dstTensors, NnopbaseTe
     const uint32_t tensorListSize = static_cast<uint32_t>(tensors->paramDescs.instances[index].tensorList->Size());
     CHECK_COND(
         (dynamicNum == tensorListSize), ACLNN_ERR_PARAM_INVALID,
-        "Update dynamic tensor[%u] failed, instance num is %u, tensorListSize is %u.", index, dynamicNum,
+        "Failed to update dynamic tensor[%u], instance num is %u, tensorListSize is %u.", index, dynamicNum,
         tensorListSize);
     for (uint32_t j = 0U; j < dynamicNum; j++) {
         NNOPBASE_ASSERT_OK_RETVAL(dstTensors->extTensors[startIndex + j].rt2Tensor.MutableTensorData().SetAddr(

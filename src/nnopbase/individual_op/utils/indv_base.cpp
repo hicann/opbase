@@ -87,7 +87,7 @@ std::string ToStr(const GertTensor& tensor)
     if (it != kCovertFunc.end()) {
         return (it->second)(tensor);
     } else {
-        OP_LOGW("Tensor dtype %s cannot not be reported.", op::ToString(dataType).GetString());
+        OP_LOGW("Tensor dtype %s cannot be reported.", op::ToString(dataType).GetString());
         std::stringstream res;
         NnopbasePrintHex(PtrCastTo<uint8_t>(tensor.GetAddr()), tensor.GetSize(), res);
         std::string str = res.str();

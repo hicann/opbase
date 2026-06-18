@@ -128,7 +128,7 @@ aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor* const executor, aclrtStream 
             aclrtWaitAndResetNotify(executor->aicpuNotify[0].first, executor->aicpuStream[0], UINT32_MAX) ==
                 ACL_SUCCESS,
             ACLNN_ERR_RUNTIME_ERROR,
-            "Call aclrtWaitAndResetNotify failed, executor is %p, aicpuStream is %p, stream is %p, Notify is %p.",
+            "Failed to call aclrtWaitAndResetNotify, executor is %p, aicpuStream is %p, stream is %p, Notify is %p.",
             executor, executor->aicpuStream[0], stream, executor->aicpuNotify[0].first);
         NNOPBASE_ASSERT_RTOK_RETVAL(aclrtRecordNotify(executor->aicpuNotify[0].first, stream));
     }
@@ -222,7 +222,9 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAd
     const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     OP_CHECK(
         memcpy_s(argsAddr->hostInputData, opName.length(), &opName[0], opName.length()) == EOK,
-        OP_LOGW("Memcpy aicpu opName failed, opName is %s, length %zu.", opName.c_str(), opName.length()), return);
+        OP_LOGW(
+            "Failed to execute memcpy_s for aicpu opName, opName is %s, length %zu.", opName.c_str(), opName.length()),
+        return);
 
     if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
         const size_t opLen = ((opName.length() + 7) / 8) * 8;
@@ -237,7 +239,7 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAd
 static aclnnStatus NnopbaseGetAicpuTimeout(uint32_t* time)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(time);
-    CHECK_COND(aclrtGetOpExecuteTimeout(time) == ACL_RT_SUCCESS, ACLNN_ERR_RUNTIME_ERROR, "Get op timeout failed.");
+    CHECK_COND(aclrtGetOpExecuteTimeout(time) == ACL_RT_SUCCESS, ACLNN_ERR_RUNTIME_ERROR, "Failed to get op timeout.");
     const NnopbaseChar* hcclTimeoutEnv = nullptr;
     MM_SYS_GET_ENV(MM_ENV_HCCL_EXEC_TIMEOUT, hcclTimeoutEnv);
     uint32_t hcclTimeout = NNOPBASE_HCCL_DEFAULT_TIME;

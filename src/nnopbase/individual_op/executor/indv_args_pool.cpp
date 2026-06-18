@@ -68,7 +68,7 @@ void ArgsPool::Finalize()
 bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* executor)
 {
     if (args->isVist) {
-        OP_LOGI("Op %s seed %zu args %p is visit.", executor->opType, args->seed, args);
+        OP_LOGI("Op %s seed %zu args %p is visited.", executor->opType, args->seed, args);
         return false;
     }
     if (args->keyLen != executor->ownArgs.keyLen) {

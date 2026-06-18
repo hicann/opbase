@@ -3293,7 +3293,7 @@ HcclResult HcclAllocComResourceException(HcclComm comm, void* stream, void* Tili
     return HCCL_E_PARA;
 }
 
-HcclResult HcclGetAicpuOpStreamAndNotifyException(HcclComm comm, void* Opstream, uint8_t notifyCnt, void** aicpuNotify)
+HcclResult HcclGetAicpuOpStreamAndNotifyException(HcclComm comm, void* opStream, uint8_t notifyCnt, void** aicpuNotify)
 {
     return HCCL_E_PARA;
 }
@@ -3339,9 +3339,9 @@ HcclResult HcclAllocComResourceNormal(HcclComm comm, void* stream, void* TilingD
 }
 
 HcclResult HcclGetAicpuOpStreamAndNotifyNormal(
-    HcclComm comm, aclrtStream* Opstream, uint8_t notifyCnt, void** aicpuNotify)
+    HcclComm comm, aclrtStream* opStream, uint8_t notifyCnt, void** aicpuNotify)
 {
-    *Opstream = &x;
+    *opStream = &x;
     return HCCL_SUCCESS;
 }
 

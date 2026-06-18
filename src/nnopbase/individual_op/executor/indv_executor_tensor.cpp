@@ -410,8 +410,8 @@ aclnnStatus NnopbaseExecutorAddTensor(
 aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors* tensors, const uint32_t index)
 {
     CHECK_COND(
-        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID, "Add tensor[%u] failed, expect index is [%u].", index,
-        tensors->expectIndex);
+        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID, "Failed to add tensor[%u], expect index is [%u].",
+        index, tensors->expectIndex);
     CHECK_COND(
         index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
         "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
@@ -486,8 +486,8 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(
         OP_LOGI("Dynamic output[%u] size is %lu", index, tensorList->Size());
     }
     CHECK_COND(
-        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID, "Add dynamic tensor[%u] failed, expect index is [%u].",
-        index, tensors->expectIndex);
+        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID,
+        "Failed to add dynamic tensor[%u], expect index is [%u].", index, tensors->expectIndex);
     CHECK_COND(
         index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
         "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
@@ -534,7 +534,7 @@ aclnnStatus NnopbaseExecutorAddAttr(
     }
     CHECK_COND(
         attrAddr != nullptr, ACLNN_ERR_INNER_NULLPTR,
-        "Add attr[%zu] failed, please check the value of input attr[%zu].", index, index);
+        "Failed to add attr[%zu], please check the value of input attr[%zu].", index, index);
     opAttrs.attrs[index].addr.addr = attrAddr;
     opAttrs.attrs[index].addr.size = attrLen;
     opAttrs.attrs[index].addr.elementSize = elementSize;
@@ -545,7 +545,7 @@ aclnnStatus NnopbaseExecutorAddAttr(
     if (opAttrs.attrs[index].addr.isVector) {
         opAttrs.totalSize += sizeof(gert::ContinuousVector);
     }
-    OP_LOGI("Add %s attr index %zu, attrLen %zu", nnopbase::ToStr(dtype).c_str(), index, attrLen);
+
     if ((op::internal::PtrCastTo<NnopbaseExecutor>(executor)->matchArgsV2) &&
         (g_nnopbaseSysCfgParams.enableArgsCache) && !op::internal::GetOpProfilingRecordArgFlag()) {
         NnopbaseUChar* key =

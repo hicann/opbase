@@ -40,10 +40,10 @@ extern "C" {
 
 #define NNOPBASE_ASSERT_OK_RETVAL(v)                     \
     do {                                                 \
-        const aclnnStatus _chk_stutus = (v);             \
-        if (_chk_stutus != OK) {                         \
-            OP_LOGE(_chk_stutus, "Check %s failed", #v); \
-            return (_chk_stutus);                        \
+        const aclnnStatus _chk_status = (v);             \
+        if (_chk_status != OK) {                         \
+            OP_LOGE(_chk_status, "Check %s failed", #v); \
+            return (_chk_status);                        \
         }                                                \
     } while (false)
 
