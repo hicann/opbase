@@ -24,6 +24,7 @@
 #include "opdev/op_log.h"
 #include "opdev/op_dfx.h"
 #include "opdev/common_types.h"
+#include "opdev/shape_utils.h"
 
 namespace op::internal {
 
@@ -65,6 +66,7 @@ void UpdateTensorShape([[maybe_unused]] size_t index, const aclTensor* arg, void
 #endif
         newShape.AppendDim(dimSize);
     }
+    OP_LOGI("new shape: %s", op::ToString(newShape).GetString());
     const_cast<aclTensor*>(arg)->SetStorageShape(newShape);
     const_cast<aclTensor*>(arg)->SetOriginalShape(newShape);
     const_cast<aclTensor*>(arg)->SetViewShape(newShape);

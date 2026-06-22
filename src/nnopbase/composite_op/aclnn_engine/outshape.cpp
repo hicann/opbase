@@ -20,6 +20,7 @@ aclnnStatus RefreshOutputShape([[maybe_unused]] size_t index, OpArgList& outputS
     OP_CHECK(shapeData != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Sync Tensor Data failed."), return ACLNN_ERR_INNER);
     op::DataType dtype = outputShapeTensor->GetDataType();
     size_t dtypeSize = op::TypeSize(dtype);
+    OP_LOGI("Output shape tensor dtype: %s, arg count: %zu", op::ToString(dtype).GetString(), outputShape.count);
     if (dtype == op::DataType::DT_FLOAT) {
         for (size_t i = 1; i < outputShape.count; i += OP_OUTSHAPE_COUNT) {
             void* currShape = PtrShift(shapeData, (i / OP_OUTSHAPE_COUNT * OP_OUTSHAPE_RANK * dtypeSize));
