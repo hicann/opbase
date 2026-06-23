@@ -148,7 +148,7 @@ aclnnStatus NnopbaseExecutorConvertScalarType(std::vector<uint8_t> &scalarValue,
             *op::internal::PtrCastTo<std::complex<double>>(scalarValue.data() + offset) = scalar->ToComplex128();
             return OK;
         default:
-            OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "Not supported data type[%s].", op::ToString(dtype).GetString());
+            OP_LOGE(ACL_ERROR_API_NOT_SUPPORT, "Unsupported data type[%s].", op::ToString(dtype).GetString());
             return ACLNN_ERR_PARAM_INVALID;
     }
 }
@@ -329,17 +329,18 @@ aclnnStatus NnopbaseExecutorExtendIoCaches(NnopbaseTensors *tensors)
 
 void StreamMapClear(aclrtStream stream) {
     if (g_nnopbaseStreamMap.find(stream) != g_nnopbaseStreamMap.end()) {
-        OP_LOGI("Start clear stream. Main stream is %p, subStream %p, eventA %p, eventB %p",
-            stream,
-            g_nnopbaseStreamMap[stream].stream,
-            g_nnopbaseStreamMap[stream].eventA,
-            g_nnopbaseStreamMap[stream].eventB);
-        OP_CHECK_NO_RETURN(aclrtDestroyStream(g_nnopbaseStreamMap[stream].stream) == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy stream %p failed.", g_nnopbaseStreamMap[stream].stream));
-        OP_CHECK_NO_RETURN(aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventA) == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy event %p failed.", g_nnopbaseStreamMap[stream].eventA));
-        OP_CHECK_NO_RETURN(aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventB) == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Destroy event %p failed.", g_nnopbaseStreamMap[stream].eventB));
+        OP_LOGI(
+            "Start clear stream. Main stream is %p, subStream %p, eventA %p, eventB %p", stream,
+            g_nnopbaseStreamMap[stream].stream, g_nnopbaseStreamMap[stream].eventA, g_nnopbaseStreamMap[stream].eventB);
+        OP_CHECK_NO_RETURN(
+            aclrtDestroyStream(g_nnopbaseStreamMap[stream].stream) == ACL_SUCCESS,
+            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to destroy stream %p.", g_nnopbaseStreamMap[stream].stream));
+        OP_CHECK_NO_RETURN(
+            aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventA) == ACL_SUCCESS,
+            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to destroy event %p.", g_nnopbaseStreamMap[stream].eventA));
+        OP_CHECK_NO_RETURN(
+            aclrtDestroyEvent(g_nnopbaseStreamMap[stream].eventB) == ACL_SUCCESS,
+            OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to destroy event %p.", g_nnopbaseStreamMap[stream].eventB));
         g_nnopbaseStreamMap.erase(stream);
     }
     return;
@@ -488,10 +489,12 @@ static aclnnStatus NnopnbaseMemsetTiling(NnopbaseExecutor *executor)
         &(executor->args->memsetArgs[tilingDataOffset]));
 
     auto tilingFunc = executor->args->binInfo->memsetInfo->tilingFunc;
-    CHECK_COND((tilingFunc != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Do not find tiling func of MemSet!");
-    NNOPBASE_ASSERT_RETVAL(tilingFunc(op::internal::PtrCastTo<gert::TilingContext>(
-                                   executor->args->binInfo->memsetInfo->contextExt.context)) == ge::GRAPH_SUCCESS,
-            ACLNN_ERR_INNER_TILING_ERROR);
+    CHECK_COND((tilingFunc != nullptr), ACLNN_ERR_INNER_TILING_ERROR, "Failed to find tiling function of MemSet!");
+    NNOPBASE_ASSERT_RETVAL(
+        tilingFunc(
+            op::internal::PtrCastTo<gert::TilingContext>(executor->args->binInfo->memsetInfo->contextExt.context)) ==
+            ge::GRAPH_SUCCESS,
+        ACLNN_ERR_INNER_TILING_ERROR);
 
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->numBlocks);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args->binInfo->memsetInfo->tilingKey);
@@ -580,7 +583,8 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor *executor, aclrtStream str
     const uint32_t dynUBufSize = *(memsetInfo->dynUBufSize);
     const uint64_t tilingKey = *(memsetInfo->tilingKey);
     const uint8_t scheMode = static_cast<uint8_t>(*(memsetInfo->scheMode));
-    OP_LOGI("Start to launch Memset task, numBlocks is %u, tilingKey is %llu, dynUBufSize is %u, schemMode is %u.",
+    OP_LOGI(
+        "Start to launch Memset task, numBlocks is %u, tilingKey is %llu, dynUBufSize is %u, scheMode is %u.",
         numBlocks, tilingKey, dynUBufSize, *(memsetInfo->scheMode));
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPrepareMemsetArgs(executor));
     aclrtFuncHandle funcHandle;
@@ -648,11 +652,14 @@ aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(NnopbaseExecutor *executor,
         coreType = executor->args->binInfo->tilingKeyInfo[tilingKey].coreType;
         taskRation = executor->args->binInfo->tilingKeyInfo[tilingKey].taskRation;
     } else {
-        OP_LOGE(ACLNN_ERR_INNER_TILING_ERROR, "OP [%s] not find tilingKey[%lu].", executor->opType, tilingKey);
+        OP_LOGE(
+            ACLNN_ERR_INNER_TILING_ERROR, "Cannot find tilingKey[%lu] in kernel json file of %s.", tilingKey,
+            executor->opType);
         return ACLNN_ERR_PARAM_INVALID;
     }
-    OP_LOGI("OP [%s] tilingKey is [%lu], coreType is %d,  taskRation is [%d].", executor->opType, tilingKey, coreType,
-            taskRation);
+    OP_LOGI(
+        "OP [%s] tilingKey is [%lu], coreType is %d, taskRation is [%d].", executor->opType, tilingKey, coreType,
+        taskRation);
     return OK;
 }
 
@@ -903,13 +910,15 @@ aclnnStatus NnopbaseExecutorGetStreamAndEvent(
         *evtB = g_nnopbaseStreamMap[mainStream].eventB;
         OP_LOGI("Found main stream is %p, subStream %p, eventA %p, eventB %p", mainStream, *subStream, *evtA, *evtB);
     } else {
-        CHECK_COND(aclrtCreateStreamWithConfig(subStream, 0U,
-                                           ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC) == ACL_SUCCESS,
-                   ACLNN_ERR_RUNTIME_ERROR, "Create stream %p failed.", subStream);
-        CHECK_COND(aclrtCreateEventExWithFlag(evtA, ACL_EVENT_SYNC) == ACL_SUCCESS,
-                   ACLNN_ERR_RUNTIME_ERROR, "Create event %p failed.", evtA);
-        CHECK_COND(aclrtCreateEventExWithFlag(evtB, ACL_EVENT_SYNC) == ACL_SUCCESS,
-                   ACLNN_ERR_RUNTIME_ERROR, "Create event %p failed.", evtB);
+        CHECK_COND(
+            aclrtCreateStreamWithConfig(subStream, 0U, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC) == ACL_SUCCESS,
+            ACLNN_ERR_RUNTIME_ERROR, "Failed to create stream %p.", subStream);
+        CHECK_COND(
+            aclrtCreateEventExWithFlag(evtA, ACL_EVENT_SYNC) == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR,
+            "Failed to create event %p.", evtA);
+        CHECK_COND(
+            aclrtCreateEventExWithFlag(evtB, ACL_EVENT_SYNC) == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR,
+            "Failed to create event %p.", evtB);
         g_nnopbaseStreamMap[mainStream] = {*subStream, *evtA, *evtB};
     }
     OP_LOGI("Main stream is %p, subStream %p, eventA %p, eventB %p.", mainStream, *subStream, *evtA, *evtB);

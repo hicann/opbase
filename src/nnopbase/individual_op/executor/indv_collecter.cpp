@@ -313,9 +313,9 @@ aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo &jsonInfo, TilingF
     if (opImpl != nullptr) {
         // check null at executor, some op no rt2 tiling
         *tiling = reinterpret_cast<TilingFun>(opImpl->tiling);
-        OP_LOGI("Get opImpl of %s success.", jsonInfo.opType.c_str());
+        OP_LOGI("Get opImpl of %s successfully.", jsonInfo.opType.c_str());
     } else {
-        OP_LOGW("Get opImpl of %s failed, opImpl is nullptr.", jsonInfo.opType.c_str());
+        OP_LOGW("Failed to get opImpl of %s, opImpl is nullptr.", jsonInfo.opType.c_str());
         *tiling = nullptr;
     }
     return OK;
@@ -342,29 +342,30 @@ aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::st
     const NnopbaseChar *ascendHomePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
     OP_CHECK(ascendHomePath != nullptr,
-            OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("NnopbaseGetCurEnvPackageOsAndCpuType", 
-            "ASCEND_HOME_PATH"), return ACLNN_ERR_PARAM_NULLPTR);
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE(
+            "NnopbaseGetCurEnvPackageOsAndCpuType", "ASCEND_HOME_PATH"),
+        return ACLNN_ERR_PARAM_NULLPTR);
     std::string modelPath = ascendHomePath;
     std::string sceneV1 = modelPath + "/share/info/opbase/" + SCENE;
     OP_LOGI("Try to extract os and cpu info from %s.", sceneV1.c_str());
     std::ifstream ifs(sceneV1);
     if (!ifs.good()) {
         ifs.close();
-        OP_LOGW("Get %s failed, try another path.", sceneV1.c_str());
-        const NnopbaseChar *oppPathEnv = nullptr;
+        OP_LOGW("Failed to get %s, trying another path.", sceneV1.c_str());
+        const NnopbaseChar* oppPathEnv = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
         OP_CHECK(oppPathEnv != nullptr,
-                OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("NnopbaseGetCurEnvPackageOsAndCpuType", 
-                "ASCEND_OPP_PATH"), return ACLNN_ERR_PARAM_NULLPTR);
+            OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE(
+                "NnopbaseGetCurEnvPackageOsAndCpuType", "ASCEND_OPP_PATH"),
+            return ACLNN_ERR_PARAM_NULLPTR);
         NNOPBASE_ASSERT_NOTNULL_RETVAL(oppPathEnv);
         modelPath = oppPathEnv;
         std::string sceneV2 = modelPath + "/" + SCENE;
         ifs.open(sceneV2);
     }
-    CHECK_COND(ifs.good(),
-        ACLNN_ERR_PARAM_INVALID,
-        "Read scene.info failed, please check if the opp package is installed!.");
-
+    CHECK_COND(
+        ifs.good(), ACLNN_ERR_PARAM_INVALID,
+        "Failed to read scene.info, please check if the opp package is installed!");
     std::string line;
     while (std::getline(ifs, line)) {
         NnopbaseTrim(line, '\r');
@@ -393,7 +394,7 @@ bool NnopbaseReadConfigFile(const std::string &configPath, std::vector<std::stri
     OP_LOGI("The real path of config.ini is %s.", configPath.c_str());
     std::ifstream ifs(configPath);
     if (!ifs.good()) {
-        OP_LOGW("Can not open file:%s.", configPath.c_str());
+        OP_LOGW("Cannot open file: %s.", configPath.c_str());
         return false;
     }
     std::string line;
@@ -407,7 +408,7 @@ bool NnopbaseReadConfigFile(const std::string &configPath, std::vector<std::stri
             const size_t posOfEqual = line.find('=');
             if (posOfEqual == std::string::npos) {
                 ifs.close();
-                OP_LOGE(ACLNN_ERR_INNER, "The file %s format is error.", configPath.c_str());
+                OP_LOGE(ACLNN_ERR_INNER, "The format of file %s is invalid.", configPath.c_str());
                 return false;
             }
             const std::string value = line.substr(posOfEqual + 1U);
@@ -497,7 +498,7 @@ aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImp
             if (mmRealPath(path.c_str(), &(soPath[0U]), NNOPBASE_FILE_PATH_MAX_LEN) == EN_OK) {
                 tilingSoPaths.push_back(std::string(&(soPath[0U])));
             } else {
-                OP_LOGW("Get op tiling so path for %s failed, errmsg:%s.", path.c_str(), NnopbaseGetmmErrorMsg());
+                OP_LOGW("Failed to get op tiling so path for %s, errmsg:%s.", path.c_str(), NnopbaseGetmmErrorMsg());
             }
         }
         for (auto tilingSoPath : tilingSoPaths) {
@@ -512,14 +513,14 @@ aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImp
             if(registry->AddSoToRegistry(oppSoDesc) == ge::GRAPH_SUCCESS) {
                 openSoSuccess = true;
             } else {
-                OP_LOGW("Load op tiling so path for %s failed.", tilingSoPath.c_str());
+                OP_LOGW("Failed to load op tiling so path for %s.", tilingSoPath.c_str());
             }
         }
     }
     if (openSoSuccess) {
         return OK;
     }
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Get op tiling so path failed.");
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to get op tiling so path.");
     return ACLNN_ERR_PARAM_INVALID;
 }
 
@@ -672,18 +673,14 @@ void SetExtraKernelInfoToBin(const NnopbaseJsonInfo &jsonInfo, std::unique_ptr<N
         }
         binInfo->extraKernelDesc->runInfo = std::make_unique<StaticKernelJsonRunInfo>(*runInfo);
         NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc->runInfo);
-        OP_LOGI("Update runInfo of %s json to binInfo, aicpuNumBlocks %u, numBlocks %u,"
-            " dynUBufSize %u scheduleMode %u, tilingCond %u tilingKey %llu clearAtomic %d workspaceSizesNum:%zu",
-                jsonInfo.opType.c_str(),
-                binInfo->extraKernelDesc->runInfo->aicpuNumBlocks,
-                binInfo->extraKernelDesc->runInfo->numBlocks,
-                binInfo->extraKernelDesc->runInfo->dynUBufSize,
-                binInfo->extraKernelDesc->runInfo->scheduleMode,
-                binInfo->extraKernelDesc->runInfo->tilingCond,
-                binInfo->extraKernelDesc->runInfo->tilingKey,
-                binInfo->extraKernelDesc->runInfo->clearAtomic,
-                binInfo->extraKernelDesc->runInfo->workspaceSizesNum
-            );
+        OP_LOGI(
+            "Update runInfo of %s json to binInfo, aicpuNumBlocks %u, numBlocks %u,"
+            " dynUBufSize %u, scheduleMode %u, tilingCond %u, tilingKey %llu, clearAtomic %d, workspaceSizesNum %zu.",
+            jsonInfo.opType.c_str(), binInfo->extraKernelDesc->runInfo->aicpuNumBlocks,
+            binInfo->extraKernelDesc->runInfo->numBlocks, binInfo->extraKernelDesc->runInfo->dynUBufSize,
+            binInfo->extraKernelDesc->runInfo->scheduleMode, binInfo->extraKernelDesc->runInfo->tilingCond,
+            binInfo->extraKernelDesc->runInfo->tilingKey, binInfo->extraKernelDesc->runInfo->clearAtomic,
+            binInfo->extraKernelDesc->runInfo->workspaceSizesNum);
     }
     if (coreNum != nullptr) {
         if (binInfo->extraKernelDesc == nullptr) {
@@ -743,10 +740,9 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string &key, NnopbaseRegInfo *cons
 void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& staticKernelJsonConfig)
 {
     try {
+        kernelDesc.runInfo = std::make_unique<StaticKernelJsonRunInfo>();
         if (staticKernelJsonConfig.contains("runInfo")) {
-            auto &runInfo = staticKernelJsonConfig["runInfo"];
-            kernelDesc.runInfo = std::make_unique<StaticKernelJsonRunInfo>();
-            if (kernelDesc.runInfo == nullptr) {return;}
+            auto& runInfo = staticKernelJsonConfig["runInfo"];
             kernelDesc.runInfo->aicpuNumBlocks = runInfo["aicpu_block_dim"].get<uint32_t>();
             kernelDesc.runInfo->numBlocks = runInfo["block_dim"].get<uint32_t>();
             kernelDesc.runInfo->dynUBufSize = runInfo["local_memory_size"].get<uint32_t>();
@@ -755,11 +751,6 @@ void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& sta
             kernelDesc.runInfo->tilingKey = runInfo["tiling_key"].get<uint64_t>();
             kernelDesc.runInfo->clearAtomic = runInfo["clear_atomic"].get<uint32_t>();
             std::string tilingData = runInfo["tiling_data"].get<std::string>();
-            kernelDesc.runInfo->workspaceSizesNum = staticKernelJsonConfig["workspace"]["num"].get<size_t>();
-            kernelDesc.runInfo->workspaceSizes.resize(kernelDesc.runInfo->workspaceSizesNum);
-            for (size_t i = 0U; i < kernelDesc.runInfo->workspaceSizesNum; ++i) {
-                kernelDesc.runInfo->workspaceSizes[i] = staticKernelJsonConfig["workspace"]["size"][i].get<size_t>();
-            }
             if (tilingData.size() % 2U == 1U) {
                 OP_LOGW("To convert static tiling data, the size of tiling data must be even!");
             } else {
@@ -769,15 +760,28 @@ void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& sta
                     kernelDesc.runInfo->tilingData.emplace_back(byte);
                 }
             }
-            OP_LOGI("Parse runInfo success. aicpuNumBlocks is %u, numBlocks is %u, localMemorySize is %u,"
-            " scheduleMode is %u, tilingCond is %u, tilingKey is %llu, clearAtomic is %u, staticTilingData size is %u, workspaceNum is %zu",
-            kernelDesc.runInfo->aicpuNumBlocks, kernelDesc.runInfo->numBlocks, kernelDesc.runInfo->dynUBufSize, kernelDesc.runInfo->scheduleMode,
-            kernelDesc.runInfo->tilingCond, kernelDesc.runInfo->tilingKey, kernelDesc.runInfo->clearAtomic, kernelDesc.runInfo->tilingData.size(),
-            kernelDesc.runInfo->workspaceSizesNum);
+        } else {
+            // 非mc2静态算子场景
+            kernelDesc.runInfo->numBlocks = staticKernelJsonConfig["blockDim"].get<uint32_t>();
+            kernelDesc.runInfo->dynUBufSize = staticKernelJsonConfig["localMemorySize"].get<uint32_t>();
+            kernelDesc.runInfo->scheduleMode = staticKernelJsonConfig["schedule_mode"].get<uint32_t>();
         }
-    } catch (const nlohmann::json::exception &e) {
+        kernelDesc.runInfo->workspaceSizesNum = staticKernelJsonConfig["workspace"]["num"].get<size_t>();
+        kernelDesc.runInfo->workspaceSizes.resize(kernelDesc.runInfo->workspaceSizesNum);
+        for (size_t i = 0U; i < kernelDesc.runInfo->workspaceSizesNum; ++i) {
+            kernelDesc.runInfo->workspaceSizes[i] = staticKernelJsonConfig["workspace"]["size"][i].get<size_t>();
+        }
+        OP_LOGI(
+            "Parse runInfo successfully, aicpuNumBlocks is %u, numBlocks is %u, dynUBufSize is %u,"
+            " scheduleMode is %u, tilingCond is %u, tilingKey is %llu, clearAtomic is %u, staticTilingData size is "
+            "%u, workspaceNum is %zu",
+            kernelDesc.runInfo->aicpuNumBlocks, kernelDesc.runInfo->numBlocks, kernelDesc.runInfo->dynUBufSize,
+            kernelDesc.runInfo->scheduleMode, kernelDesc.runInfo->tilingCond, kernelDesc.runInfo->tilingKey,
+            kernelDesc.runInfo->clearAtomic, kernelDesc.runInfo->tilingData.size(),
+            kernelDesc.runInfo->workspaceSizesNum);
+    } catch (const nlohmann::json::exception& e) {
         kernelDesc.runInfo = nullptr;
-        OP_LOGW("Read static kernel json file of runInfo failed, reason %s", e.what());
+        OP_LOGW("Failed to read static kernel json file of runInfo, reason: %s", e.what());
     }
     return;
 }
@@ -791,13 +795,13 @@ void UpdatePlatformInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json
             if (kernelDesc.coreNum == nullptr) {return;}
             kernelDesc.coreNum->aicNum = platformInfo["cubeCoreCnt"].get<uint32_t>();
             kernelDesc.coreNum->aivNum = platformInfo["vectorCoreCnt"].get<uint32_t>();
-            OP_LOGI("Parse platformInfo success: origin[%u, %u] aicNum is %u, aicNum is %u",
-            platformInfo["cubeCoreCnt"].get<uint32_t>(), platformInfo["vectorCoreCnt"].get<uint32_t>(),
-                kernelDesc.coreNum->aicNum, kernelDesc.coreNum->aivNum);
+            OP_LOGI(
+                "Parse platformInfo successfully, aicNum is %u, aivNum is %u", kernelDesc.coreNum->aicNum,
+                kernelDesc.coreNum->aivNum);
         }
     } catch (const nlohmann::json::exception &e) {
         kernelDesc.coreNum = nullptr;
-        OP_LOGW("Read static kernel json file of platformInfo failed, reason %s", e.what());
+        OP_LOGW("Failed to read static kernel json file of platformInfo, reason: %s", e.what());
     }
     return;
 }
@@ -807,7 +811,8 @@ aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo &jsonInfo)
     std::string staticKernelBinPath = jsonInfo.path;
     const size_t pos = staticKernelBinPath.find(".o");
     if (pos == std::string::npos) {
-        OP_LOGW("Static kernel json %s is not a correct format, read extra infos failed.", staticKernelBinPath.c_str());
+        OP_LOGW(
+            "Static kernel json %s is not a correct format, failed to read extra infos.", staticKernelBinPath.c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
     std::string staticKernelJsonPath = staticKernelBinPath.substr(0U, pos + 1U) + "json";
@@ -815,8 +820,8 @@ aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo &jsonInfo)
     if (NnopbaseReadJsonConfig(staticKernelJsonPath, staticKernelJsonConfig) != OK) {
         return ACLNN_ERR_PARAM_INVALID;
     }
-    OP_LOGI("Read json static kernel json info success %s", staticKernelJsonPath.c_str());
-    auto &kernelDesc = jsonInfo.extraKernelDesc;
+    OP_LOGI("Read static kernel json info %s successfully.", staticKernelJsonPath.c_str());
+    auto& kernelDesc = jsonInfo.extraKernelDesc;
     // 静态算子的json配置读取失败不影响算子的动态执行
     UpdateRunInfoForStaticJson(kernelDesc, staticKernelJsonConfig);
     UpdatePlatformInfoForStaticJson(kernelDesc, staticKernelJsonConfig);
@@ -1095,8 +1100,7 @@ static aclnnStatus NnopbaseGetOpBinPath(const std::string &filePath, std::string
     if (pos != std::string::npos) {
         binPath = filePath.substr(0U, pos + 1U) + "o";
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Get binPath from filePath %s failed.",
-                filePath.c_str());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to get binPath from filePath %s.", filePath.c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -1120,12 +1124,12 @@ static aclnnStatus NnopbaseCollecterReadStaticBinJsonInfo(NnopbaseJsonInfo &json
         std::string binPath;
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetOpBinPath(filePath, binPath));
         const errno_t ret = strcpy_s(jsonInfo.path, NNOPBASE_FILE_PATH_MAX_LEN, binPath.c_str());
-        CHECK_COND(ret == EOK,
-            ACLNN_ERR_PARAM_INVALID, "Strcpy binPath[%s] to jsonInfo.path[%s] failed, result is %d.",
-            binPath.c_str(), jsonInfo.path, ret);
-    } catch (const nlohmann::json::exception &e) {
-        OP_LOGD("%s not get coreType or filePath, reason %s",
-            jsonInfo.opType.c_str(), e.what());
+        CHECK_COND(
+            ret == EOK, ACLNN_ERR_PARAM_INVALID,
+            "Failed to execute strcpy_s from binPath[%s] to jsonInfo.path[%s], result is %d.", binPath.c_str(),
+            jsonInfo.path, ret);
+    } catch (const nlohmann::json::exception& e) {
+        OP_LOGD("%s not get coreType or filePath, reason %s", jsonInfo.opType.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
     OP_LOGI("Get %s coreType is [%d].",
@@ -1143,8 +1147,8 @@ static aclnnStatus NnopbaseGetSimplifiedKey(nlohmann::json &binInfo, NnopbaseJso
             const std::string key = binInfo["simplifiedKey"].get<std::string>();
             jsonInfo.keys = std::vector<std::string>({key});
         }
-    } catch (const nlohmann::json::exception &e) {
-        OP_LOGW("Read op %s jsonfile failed, reason %s", jsonInfo.opType.c_str(), e.what());
+    } catch (const nlohmann::json::exception& e) {
+        OP_LOGW("Failed to read op %s jsonfile, reason: %s", jsonInfo.opType.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -1160,8 +1164,8 @@ static aclnnStatus NnopbaseUpdateCommonJsonInfo(nlohmann::json &binInfo, const s
     try {
         coreType = binInfo["coreType"].get<int32_t>();
         relativeBinPath = binInfo["binPath"].get<std::string>();
-    } catch (const nlohmann::json::exception &e) {
-        OP_LOGW("Read op %s coreType or binPath failed, reason %s", jsonInfo.opType.c_str(), e.what());
+    } catch (const nlohmann::json::exception& e) {
+        OP_LOGW("Failed to read op %s coreType or binPath, reason: %s", jsonInfo.opType.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
     if (!pkgName.empty()) {
@@ -1184,11 +1188,11 @@ static aclnnStatus NnopbaseUpdateCommonJsonInfo(nlohmann::json &binInfo, const s
     jsonInfo.coreType = static_cast<CoreType>(coreType);
     // get kernelPath
     const errno_t ret = strcpy_s(jsonInfo.path, NNOPBASE_FILE_PATH_MAX_LEN, kernelPath.c_str());
-    CHECK_COND(ret == EOK,
-        ACLNN_ERR_PARAM_INVALID, "Strcpy kernel path[%s] to jsonInfo.path[%s] failed, result is %d.",
-        kernelPath.c_str(), jsonInfo.path, ret);
-    OP_LOGI("Get op[%s] coreType is [%d], binPath is [%s]",
-        jsonInfo.opType.c_str(), jsonInfo.coreType, jsonInfo.path);
+    CHECK_COND(
+        ret == EOK, ACLNN_ERR_PARAM_INVALID,
+        "Failed to execute strcpy_s from kernel path[%s] to jsonInfo.path[%s], result is %d.", kernelPath.c_str(),
+        jsonInfo.path, ret);
+    OP_LOGI("Get op[%s] coreType is [%d], binPath is [%s]", jsonInfo.opType.c_str(), jsonInfo.coreType, jsonInfo.path);
     jsonInfo.multiKernelType = 0U;
     
     if ((jsonInfo.coreType == kMix || jsonInfo.coreType == kMixAiCore || jsonInfo.coreType == kMixAiv)) {
@@ -1217,8 +1221,8 @@ aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json &binInfo, NnopbaseJsonIn
             OP_LOGW("WorkspaceSizes %lu is too large.", binDesc["workspace"].size());
             return ACLNN_ERR_PARAM_INVALID;
         }
-    } catch (const nlohmann::json::exception &e) {
-        OP_LOGW("Read op %s jsonfile binDesc failed, reason %s", jsonInfo.opType.c_str(), e.what());
+    } catch (const nlohmann::json::exception& e) {
+        OP_LOGW("Failed to read op %s jsonfile binDesc, reason: %s", jsonInfo.opType.c_str(), e.what());
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -1235,22 +1239,22 @@ aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter *c
         jsonInfo.opType = iter.key();
         for (auto binInfo : (iter.value())["staticList"]) {
             if (NnopbaseUpdateCommonJsonInfo(binInfo, kernelPath, jsonInfo) != OK) {
-                OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to read op %s jsonfile.", jsonInfo.opType.c_str());
                 continue;
             }
             if (NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo) != OK) {
-                OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to read op %s jsonfile.", jsonInfo.opType.c_str());
                 continue;
             }
             if (UpdateStaticJsonExtraInfo(jsonInfo) != OK) {
-                OP_LOGW("Update extra info of static op %s failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to update extra info of static op %s.", jsonInfo.opType.c_str());
             }
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
         }
 
         for (auto binInfo : (iter.value())["binaryList"]) {
             if (NnopbaseUpdateCommonJsonInfo(binInfo, kernelPath, jsonInfo) != OK) {
-                OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to read op %s jsonfile.", jsonInfo.opType.c_str());
                 continue;
             }
             jsonInfo.isStaticShape = false;
@@ -1274,7 +1278,7 @@ aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter 
             NNOPBASE_SIMPLIFIED_KEY_MODE_CUSTOMIZED);
         for (auto binInfo : (iter.value())["binaryList"]) {
             if (NnopbaseUpdateCommonJsonInfo(binInfo, kernelPath, jsonInfo, pkgName) != OK) {
-                OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to read op %s jsonfile.", jsonInfo.opType.c_str());
                 continue;
             }
             jsonInfo.isStaticShape = false;
@@ -1321,23 +1325,23 @@ aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter *
         jsonInfo.opType = iter.key();
         for (auto binInfo : (iter.value())["staticList"]) {
             if (NnopbaseUpdateCommonJsonInfo(binInfo, kernelPath, jsonInfo) != OK) {
-                OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to read op %s jsonfile.", jsonInfo.opType.c_str());
                 continue;
             }
             if (NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo) != OK) {
-                OP_LOGW("Read op %s jsonfile failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to read op %s jsonfile.", jsonInfo.opType.c_str());
                 continue;
             }
             if (UpdateStaticJsonExtraInfo(jsonInfo) != OK) {
                 // 不是每个静态json都包含runInfo字段，该字段是否存在不影响staticBin的正常场景执行
-                OP_LOGW("Update extra info of static op %s failed.", jsonInfo.opType.c_str());
+                OP_LOGW("Failed to update extra info of static op %s.", jsonInfo.opType.c_str());
             }
             readSuccessFlag = true;
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
         }
     }
     if (!readSuccessFlag) {
-        OP_LOGW("Read and parse static kernel config failed.");
+        OP_LOGW("Failed to read and parse static kernel config.");
     } else {
         OP_LOGI("Get static kernel path and read config successfully.");
     }
@@ -1513,9 +1517,10 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
     const aclnnStatus retForDynamicKernelInfo =
         NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath, builtInStartIndex);
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
-    CHECK_COND((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
-        "Get path and read binary_info_config.json failed, "
-            "please check if the opp_kernel package is installed!");
+    CHECK_COND(
+        (retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
+        "Failed to get path and read binary_info_config.json, "
+        "please check if the opp_kernel package is installed!");
     OP_LOGI("[NnopbaseCollecter] Collecter work end.");
     return OK;
 }

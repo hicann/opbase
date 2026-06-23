@@ -260,8 +260,6 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor *executor, const size_t tilingDataS
 void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseExecutorArgsGetDfxInfo(
     NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr, const uint32_t workspaceNum);
-bool NnopbaseMatchArgsCache(NnopbaseExecutor *executor, size_t &seed);
-aclnnStatus NnopbaseCreateExecutorArgs(NnopbaseExecutor *executor, const size_t seed);
 
 // for dumpdata
 void NnopbaseDumpData(NnopbaseExecutor *executor, Adx::TensorType ioType, aclrtStream stream, NnopbaseChar *opType);
@@ -460,9 +458,9 @@ static inline void NnopbaseExecutorSetCollecter(NnopbaseExecutor *executor, Nnop
 void NnopbaseReloadStaticBinJsonInfos(void);
 aclnnStatus NnopbaseExecutorConvertScalarType(std::vector<uint8_t> &scalarValue, const aclScalar *scalar,
                                               ge::DataType dtype, const size_t offset);
-aclnnStatus NnopbaseSetUnContiguousExecutorRepeatable(NnopbaseExecutor *executor);
+aclnnStatus NnopbaseSetAuxOpExecutorRepeatable(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseSetRepeatable(void *executor);
-aclnnStatus NnopbaseReSetUnContiguousExecutorRepeatable(NnopbaseExecutor *executor);
+aclnnStatus NnopbaseResetAuxOpExecutor(NnopbaseExecutor *executor);
 aclnnStatus NnopbaseResetExecutor(void *executor);
 bool NnopbaseIsInput(const void *executor, const size_t index, size_t *tensorIndex);
 bool NnopbaseDynamicIsInput(const void *executor, const size_t irIndex, size_t *tensorIrIndex);

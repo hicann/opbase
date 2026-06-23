@@ -111,26 +111,24 @@ bool GenStaticKeyAndFindStaticBin(NnopbaseExecutor *executor, bool usingStride)
 void UpdateStaticKernelTilingInfo(NnopbaseExecutor *executor)
 {
     OP_LOGI("Start updating %s tilingInfo.", executor->opType);
-    ResizeExecutorArgsBuf(executor);
-    auto &tilingInfo = executor->args->tilingInfo;
     auto staticBinInfo = executor->args->binInfo;
-    auto &staticKernelRunInfo = staticBinInfo->extraKernelDesc->runInfo;
+    if (staticBinInfo->extraKernelDesc == nullptr || staticBinInfo->extraKernelDesc->runInfo == nullptr) {
+        return;
+    }
+    auto& staticKernelRunInfo = staticBinInfo->extraKernelDesc->runInfo;
+    ResizeExecutorArgsBuf(executor);
+    auto& tilingInfo = executor->args->tilingInfo;
     tilingInfo.tilingKey = staticKernelRunInfo->tilingKey;
     tilingInfo.numBlocks = staticKernelRunInfo->numBlocks;
     tilingInfo.scheMode = static_cast<uint8_t>(staticKernelRunInfo->scheduleMode);
     tilingInfo.aicpuNumBlocks = staticKernelRunInfo->aicpuNumBlocks;
     tilingInfo.needAtomic = staticKernelRunInfo->clearAtomic;
     tilingInfo.staticTilingData = staticKernelRunInfo->tilingData;
-    OP_LOGI("Updated static tilingInfo: opType : %s, aicpuNumBlocks %u, numBlocks %u,"
-        " scheduleMode %u,  tilingKey %llu clearAtomic %d staticJson TilingData Size %zu, staticTilingDataSize %zu",
-        executor->opType,
-        tilingInfo.aicpuNumBlocks,
-        tilingInfo.numBlocks,
-        tilingInfo.scheMode,
-        tilingInfo.tilingKey,
-        tilingInfo.needAtomic,
-        staticKernelRunInfo->tilingData.size(),
-        tilingInfo.staticTilingData.size());
+    OP_LOGI(
+        "Updated static tilingInfo: opType %s, aicpuNumBlocks %u, numBlocks %u,"
+        " scheduleMode %u, tilingKey %llu, clearAtomic %d, staticTilingDataSize %zu.",
+        executor->opType, tilingInfo.aicpuNumBlocks, tilingInfo.numBlocks, tilingInfo.scheMode, tilingInfo.tilingKey,
+        tilingInfo.needAtomic, tilingInfo.staticTilingData.size());
 }
 }
 
@@ -152,7 +150,6 @@ aclnnStatus NnopbaseExecutorGetAttr(NnopbaseExecutor *executor, const size_t ind
         return ACLNN_ERR_PARAM_INVALID;
     }
     *attr = &(opAttrs->attrs[index].addr);
-    OP_LOGI("[NnopbaseExecutorAddAttr] index %zu", index);
     return OK;
 }
 
@@ -259,8 +256,6 @@ static inline aclnnStatus NnopbaseGetSupportInfo(const NnopbaseExecutor *const e
         }
     }
 
-    OP_LOGE(ACLNN_ERR_INNER_FIND_KERNEL_ERROR, "Op %s not support soc version %s.", executor->opType,
-            socVersion.c_str());
     return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
 }
 
@@ -375,23 +370,27 @@ static inline bool IsParamMatchSupportInfo(NnopbaseExecutor *executor, OpSocSupp
     return false;
 }
 
-aclnnStatus NnopbaseSetUnContiguousExecutorRepeatable(NnopbaseExecutor *executor)
+aclnnStatus NnopbaseSetAuxOpExecutorRepeatable(NnopbaseExecutor *executor)
 {
     aclOpExecutor *inExe = executor->inUnContExe;
     if (inExe != nullptr) {
         if (inExe->GetMagicNumber() != K_EXECUTOR_MAGIC_NUMBER) {
-            OP_LOGE(ACLNN_ERR_INNER, "Magic number is %lu, unContExe support set repeatable.", inExe->GetMagicNumber());
+            OP_LOGE(
+                ACLNN_ERR_INNER,
+                "Magic number is %lu, this executor for Contiguous operator does not support setting repeatable.",
+                inExe->GetMagicNumber());
             return ACLNN_ERR_INNER;
         }
         auto ret = inExe->SetRepeatable();
-        CHECK_COND(ret == OK, ACLNN_ERR_INNER, "Op %s set UnContiguous executor repeatable failed.", executor->opType);
-        aclOpExecutor *viewCopyExe = executor->viewCopyExe;
+        CHECK_COND(ret == OK, ACLNN_ERR_INNER, "Failed to set executor for Contiguous operator repeatable.");
+        aclOpExecutor* viewCopyExe = executor->viewCopyExe;
         if (viewCopyExe != nullptr) {
             if (viewCopyExe->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
                 return viewCopyExe->SetRepeatable();
             }
-            OP_LOGE(ACLNN_ERR_INNER,
-                "Magic number is %lu, viewCopyExe does not support set repeatable.",
+            OP_LOGE(
+                ACLNN_ERR_INNER,
+                "Magic number is %lu, this executor for ViewCopy operator does not support setting repeatable.",
                 viewCopyExe->GetMagicNumber());
             return ACLNN_ERR_INNER;
         }
@@ -409,17 +408,20 @@ aclnnStatus NnopbaseSetRepeatable(void *executor)
     aclnnStatus ret = OK;
     NnopbaseExecutorFixCache(static_cast<NnopbaseExecutor*>(executor));
     if ((static_cast<NnopbaseExecutor *>(executor))->inUnContExe != nullptr) {
-        ret = NnopbaseSetUnContiguousExecutorRepeatable(static_cast<NnopbaseExecutor *>(executor));
+        ret = NnopbaseSetAuxOpExecutorRepeatable(static_cast<NnopbaseExecutor *>(executor));
     }
     return ret;
 }
 
-aclnnStatus NnopbaseReSetUnContiguousExecutorRepeatable(NnopbaseExecutor *executor)
+aclnnStatus NnopbaseResetAuxOpExecutor(NnopbaseExecutor* executor)
 {
     aclOpExecutor *inExe = executor->inUnContExe;
     if (inExe != nullptr) {
         if (inExe->GetMagicNumber() != K_EXECUTOR_MAGIC_NUMBER) {
-            OP_LOGE(ACLNN_ERR_INNER, "Magic number is %lu, does not support reset repeatable.", inExe->GetMagicNumber());
+            OP_LOGE(
+                ACLNN_ERR_INNER,
+                "Magic number is %lu, this executor of Contiguous operator does not support resetting.",
+                inExe->GetMagicNumber());
             return ACLNN_ERR_INNER;
         }
         delete inExe;
@@ -440,8 +442,8 @@ aclnnStatus NnopbaseResetExecutor(void *executor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     op::internal::GetThreadLocalContext().logInfo_.l2ApiName = (static_cast<NnopbaseExecutor *>(executor))->opType;
     aclnnStatus ret = OK;
-    if ((static_cast<NnopbaseExecutor *>(executor))->inUnContExe != nullptr) {
-        ret = NnopbaseReSetUnContiguousExecutorRepeatable(static_cast<NnopbaseExecutor *>(executor));
+    if ((static_cast<NnopbaseExecutor*>(executor))->inUnContExe != nullptr) {
+        ret = NnopbaseResetAuxOpExecutor(static_cast<NnopbaseExecutor*>(executor));
     }
     NnopbaseExecutorClear(static_cast<NnopbaseExecutor *>(executor));
     return ret;
@@ -737,13 +739,14 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor *executor, NnopbaseBinInfo *
     if (binInfo->hasReg) { return OK;}
 
     if (binInfo->bin == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
+        NNOPBASE_ASSERT_OK_RETVAL(
+            NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
     }
 
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoReadJsonFile(binInfo, executor->collecter->oppPath,
-        socVersion));
-    if (executor->mc2OpCfg.isMc2 && nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadKernelJsonFile(binInfo, executor->collecter->oppPath, socVersion));
+    if (executor->mc2OpCfg.isMc2 &&
+        nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collecter->useCoreTypeMagic, binInfo));
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
     } else {
@@ -805,7 +808,7 @@ static void NnopbaseExecutorGetWorkspaceSizes(NnopbaseExecutor *executor, uint64
         *workspaceLen = 0U;
         executor->workspaces.length = 0U;
         executor->args->outputs.outPutShapeSize = 0U;
-        OP_LOGI("Op %s all output is empty tensor.", executor->opType);
+        OP_LOGI("Op %s all outputs are empty tensors.", executor->opType);
         return;
     }
     const auto workspacesSizes = NnopbaseGetWorkspacesSizesFromArgs(executor->args);
@@ -893,15 +896,13 @@ static aclnnStatus NnopbaseExecutorCopyAttr(NnopbaseExecutor *executor)
     executor->args->attrsData.resize(attrs.totalDataLen);
     size_t offset = 0;
     for (size_t i = 0U; i < attrs.num; i++) {
-        CHECK_COND((memcpy_s((op::internal::PtrCastTo<uint8_t>(executor->args->attrsData.data()) + offset),
-                        attrs.attrs[i].addr.size,
-                        attrs.attrs[i].addr.addr,
-                        attrs.attrs[i].addr.size) == EOK),
+        CHECK_COND(
+            (memcpy_s(
+                 (op::internal::PtrCastTo<uint8_t>(executor->args->attrsData.data()) + offset),
+                 attrs.attrs[i].addr.size, attrs.attrs[i].addr.addr, attrs.attrs[i].addr.size) == EOK),
             ACLNN_ERR_PARAM_INVALID,
-            "Memcpy attr[%zu] info failed, src is %p, dst is %p, size is %zu.",
-            i,
-            op::internal::PtrCastTo<uint8_t>(executor->args->attrsData.data()) + offset,
-            attrs.attrs[i].addr.addr,
+            "Failed to execute memcpy_s for attr[%zu] info, src is %p, dst is %p, size is %zu.", i,
+            op::internal::PtrCastTo<uint8_t>(executor->args->attrsData.data()) + offset, attrs.attrs[i].addr.addr,
             attrs.attrs[i].addr.size);
         // 开启L2 profiling时，保存attr，保证传给算子tiling的attr和上报的attr一致
         attrs.attrs[i].addr.addr = op::internal::PtrCastTo<void>(executor->args->attrsData.data() + offset);
@@ -927,10 +928,8 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor *executor)
 
     // find static bin
     if (executor->regInfo->hasStaticShapeBin && NnopbaseExecutorGetStaticBinInfo(executor)) {
-        OP_LOGI("Op[%s] have find static bin.", executor->opType);
-        if (executor->mc2OpCfg.isMc2) {
-            UpdateStaticKernelTilingInfo(executor);
-        }
+        OP_LOGI("Op[%s] has found static bin.", executor->opType);
+        UpdateStaticKernelTilingInfo(executor);
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindBinEnd);
         return OK;
     }
@@ -1231,9 +1230,9 @@ static aclnnStatus NnopbaseExecutorLaunchKernelForVectorCore(
     const uint64_t launchBeginTime = NnopbaseMsprofSysTime();
     // aicore kernel launch
     NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, blockInfo.aicNumBlocks, true));
-    NnopbaseExecutorReportProfiling(executor, blockInfo.aicNumBlocks, MSPROF_GE_TASK_TYPE_AI_CORE, launchBeginTime,
-        stream);
-    OP_LOGI("Main stream launch success.");
+    NnopbaseExecutorReportProfiling(
+        executor, blockInfo.aicNumBlocks, MSPROF_GE_TASK_TYPE_AI_CORE, launchBeginTime, stream);
+    OP_LOGI("Main stream launched successfully.");
 
     const uint8_t scheMode = static_cast<uint8_t>(executor->args->tilingInfo.scheMode);
     const uint64_t aivLaunchBeginTime = NnopbaseMsprofSysTime();
@@ -1346,16 +1345,21 @@ aclnnStatus NnopbaseExecutorRefreshOutputShape(NnopbaseExecutor *executor)
         executor->outputShapeData.resize(executor->args->outputs.outPutShapeSize);
     }
     auto ret = memset_s(
-        executor->outputShapeData.data(), executor->args->outputs.outPutShapeSize, 0, executor->args->outputs.outPutShapeSize);
-    CHECK_COND(ret == EOK, ACLNN_ERR_INNER,
-        "Memset outputShapeData failed, ret %d, outputShapeData addr is %p, outPutShapeSize is %zu.",
+        executor->outputShapeData.data(), executor->args->outputs.outPutShapeSize, 0,
+        executor->args->outputs.outPutShapeSize);
+    CHECK_COND(
+        ret == EOK, ACLNN_ERR_INNER,
+        "Failed to execute memset_s for outputShapeData, ret %d, outputShapeData addr is %p, outPutShapeSize is %zu.",
         ret, executor->outputShapeData.data(), executor->args->outputs.outPutShapeSize);
-    ret = aclrtMemcpy(executor->outputShapeData.data(),
-        executor->outputShapeData.size(), outPutShape, executor->args->outputs.outPutShapeSize, ACL_MEMCPY_DEVICE_TO_HOST);
-    CHECK_COND(ret == ACL_SUCCESS,
-        ACLNN_ERR_RUNTIME_ERROR,
-        "Memcpy outputShape data failed, ret is %d, src is %p, size is %zu bytes, dst is %p, size is %zu bytes.",
-        ret, executor->outputShapeData.data(), executor->outputShapeData.size(), outPutShape, executor->args->outputs.outPutShapeSize);
+    ret = aclrtMemcpy(
+        executor->outputShapeData.data(), executor->outputShapeData.size(), outPutShape,
+        executor->args->outputs.outPutShapeSize, ACL_MEMCPY_DEVICE_TO_HOST);
+    CHECK_COND(
+        ret == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR,
+        "Failed to execute aclrtMemcpy for outputShapeData,"
+        " ret is %d, src is %p, size is %zu bytes, dst is %p, size is %zu bytes.",
+        ret, executor->outputShapeData.data(), executor->outputShapeData.size(), outPutShape,
+        executor->args->outputs.outPutShapeSize);
     // outputShape: [output_shape1_dim, output_shape1, output_shape2_dim, output_shape2]
     // output_shape1_dim=2, output_shape1=[32,64,0,0,0,0,0,0]
     uint64_t *hostData = op::internal::PtrCastTo<uint64_t>(executor->outputShapeData.data());

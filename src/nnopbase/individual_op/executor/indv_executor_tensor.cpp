@@ -405,14 +405,12 @@ aclnnStatus NnopbaseExecutorAddTensor(NnopbaseExecutor *executor, const aclTenso
 
 aclnnStatus NnopbaseExecutorUpdateTensorsIndex(NnopbaseTensors *tensors, const uint32_t index)
 {
-    CHECK_COND(index >= tensors->expectIndex,
-        ACLNN_ERR_PARAM_INVALID,
-        "Add tensor[%u] failed, expect index is [%u].",
-        index,
-        tensors->expectIndex);
-    CHECK_COND(index < tensors->paramDescs.count,
-        ACLNN_ERR_PARAM_INVALID, "Tensor index [%zu] is greater than or equal to IrTensor num: %d",
-        index, tensors->paramDescs.count);
+    CHECK_COND(
+        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID, "Failed to add tensor[%u], expect index is [%u].",
+        index, tensors->expectIndex);
+    CHECK_COND(
+        index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
+        "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
     uint32_t startIndex = index;
     if (tensors->hasDynamic) {
         uint32_t count = 0;
@@ -479,17 +477,16 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor *executor, const 
     } else {
         OP_LOGI("Dynamic output[%u] size is %lu", index, tensorList->Size());
     }
-    CHECK_COND(index >= tensors->expectIndex,
-        ACLNN_ERR_PARAM_INVALID,
-        "Add dynamic tensor[%u] failed, expect index is [%u].",
-        index,
-        tensors->expectIndex);
-    CHECK_COND(index < tensors->paramDescs.count,
-        ACLNN_ERR_PARAM_INVALID, "Tensor index [%zu] is greater than or equal to IrTensor num: %d",
-        index, tensors->paramDescs.count);
-    CHECK_COND(tensorList->Size() <= NNOPBASE_DYNAMIC_PARAM_DEF_NUM,
-        ACLNN_ERR_PARAM_INVALID, "Size of tensorList in dynamic input[%zu] is %llu, which exceeds limit: %d",
-        index, tensorList->Size(), NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
+    CHECK_COND(
+        index >= tensors->expectIndex, ACLNN_ERR_PARAM_INVALID,
+        "Failed to add dynamic tensor[%u], expect index is [%u].", index, tensors->expectIndex);
+    CHECK_COND(
+        index < tensors->paramDescs.count, ACLNN_ERR_PARAM_INVALID,
+        "Tensor index [%zu] is greater than or equal to IrTensor num: %d", index, tensors->paramDescs.count);
+    CHECK_COND(
+        tensorList->Size() <= NNOPBASE_DYNAMIC_PARAM_DEF_NUM, ACLNN_ERR_PARAM_INVALID,
+        "Size of tensorList in dynamic input[%zu] is %llu, which exceeds limit: %d", index, tensorList->Size(),
+        NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
 
     uint32_t count = 0U;
     for (uint32_t i = tensors->expectIndex; i < index; i++) {
@@ -528,10 +525,9 @@ aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *cons
         std::to_string(opAttrs.num).c_str());
         return ACLNN_ERR_PARAM_INVALID;
     }
-    CHECK_COND(attrAddr != nullptr,
-        ACLNN_ERR_INNER_NULLPTR,
-        "Add attr[%zu] failed, please check the value of input attr[%zu].",
-        index, index);
+    CHECK_COND(
+        attrAddr != nullptr, ACLNN_ERR_INNER_NULLPTR,
+        "Failed to add attr[%zu], please check the value of input attr[%zu].", index, index);
     opAttrs.attrs[index].addr.addr = attrAddr;
     opAttrs.attrs[index].addr.size = attrLen;
     opAttrs.attrs[index].addr.elementSize = elementSize;
@@ -542,10 +538,11 @@ aclnnStatus NnopbaseExecutorAddAttr(NnopbaseExecutor *executor, const void *cons
     if (opAttrs.attrs[index].addr.isVector) {
         opAttrs.totalSize += sizeof(gert::ContinuousVector);
     }
-    OP_LOGI("Add %s attr index %zu, attrLen %zu", nnopbase::ToStr(dtype).c_str(), index, attrLen);
-    if ((op::internal::PtrCastTo<NnopbaseExecutor>(executor)->matchArgsV2) && (g_nnopbaseSysCfgParams.enableArgsCache) &&
-        !op::internal::GetOpProfilingRecordArgFlag()) {
-        NnopbaseUChar *key = op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data()) + executor->ownArgs.keyLen;
+
+    if ((op::internal::PtrCastTo<NnopbaseExecutor>(executor)->matchArgsV2) &&
+        (g_nnopbaseSysCfgParams.enableArgsCache) && !op::internal::GetOpProfilingRecordArgFlag()) {
+        NnopbaseUChar* key =
+            op::internal::PtrCastTo<NnopbaseUChar>(executor->ownArgs.inputKey.data()) + executor->ownArgs.keyLen;
         // 第0个属性和输入中间用占位符隔开
         if (index == 0) {
             key = Indv::CacheKeyBuilder::AppendPlaceHolder(&executor->ownArgs, key);

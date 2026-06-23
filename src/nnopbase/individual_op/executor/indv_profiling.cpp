@@ -129,7 +129,7 @@ aclnnStatus NnopbaseGetTilingKeyInfo(NnopbaseExecutor *const opExecutor, Nnopbas
                    "Op %s taskRation %d is not supported!", opExecutor->opType, taskRation);
         ration = iter->second;
     } else {
-        OP_LOGW("%s not find tilingKey %lu from tilingKeyInfo.", opExecutor->opType, tilingKey);
+        OP_LOGW("%s cannot find tilingKey %lu from tilingKeyInfo.", opExecutor->opType, tilingKey);
         return ACLNN_ERR_PARAM_INVALID;
     }
     return OK;
@@ -157,7 +157,7 @@ void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlo
     OP_CHECK(stream != nullptr, OP_LOGW("stream is nullptr, do not support aclGraph profiling capture."), return);
     aclError ret = aclrtGetStreamAttribute(stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
     if (ret != ACL_SUCCESS) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get stream attribute failed, ret is [%d]", ret);
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to get stream attribute, ret is [%d]", ret);
         return;
     }
     if (!static_cast<bool>(value.cacheOpInfoSwitch)) {
@@ -174,8 +174,9 @@ void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlo
         itemId = executor->aicpuItemId;
     }
     size_t totalSize = sizeof(op::internal::CacheOpInfoBasic) + sizeof(MsrofTensorData) * totalNum;
-    void *buffer = malloc(totalSize);
-    OP_CHECK(buffer != nullptr, OP_LOGE(ACLNN_ERR_INNER, "malloc buffer failed, strerr[%s]", strerror(errno)), return);
+    void* buffer = malloc(totalSize);
+    OP_CHECK(
+        buffer != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to malloc buffer, strerror[%s]", strerror(errno)), return);
     (void)memset_s(buffer, totalSize, 0, totalSize);
     op::internal::CacheOpInfoBasic *opInfo = static_cast<op::internal::CacheOpInfoBasic*>(buffer);
 
@@ -194,9 +195,10 @@ void NnopbaseReportCacheOpInfo(NnopbaseExecutor *const executor, uint32_t numBlo
 
     ret = aclrtCacheLastTaskOpInfo(buffer, totalSize);
     if (ret != ACL_SUCCESS) {
-        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Report op info cache failed, ret is [%d]", ret);
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to report operator info cache, ret is [%d]", ret);
     }
-    OP_LOGI("Report op [%s] info cache, task type[%u], numBlocks[%u], attrId[%llu] size[%zu]",
+    OP_LOGI(
+        "Report op [%s] info cache successfully, task type[%u], numBlocks[%u], attrId[%llu] size[%zu]",
         executor->opType, taskType, numBlocks, opInfo->attrId, totalSize);
     free(buffer);
 }
@@ -259,7 +261,7 @@ void NnopbaseReportContextIdInfo(const NnopbaseExecutor *const executor, const u
     contextIdInfo->opName = executor->itemId;
     (void)MsprofReportAdditionalInfo(
         static_cast<uint32_t>(true), &info, static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
-    OP_LOGD("OP [%s] have report contextid info.", executor->opType);
+    OP_LOGD("OP [%s] has reported contextid info.", executor->opType);
     return;
 }
 
@@ -270,9 +272,9 @@ void NnopbaseReportContextIdInfoByRation(NnopbaseExecutor *const opExecutor, con
     if (opExecutor->args->binInfo->multiKernelType == 1) {
         NnopbaseTaskRation taskRation;
         CoreType kernelType;
-        OP_CHECK(NnopbaseGetTilingKeyInfo(opExecutor, taskRation, kernelType, ration) == OK,
-            OP_LOGW("Get tilingkey info failed."),
-            return);
+        OP_CHECK(
+            NnopbaseGetTilingKeyInfo(opExecutor, taskRation, kernelType, ration) == OK,
+            OP_LOGW("Failed to get tilingKey info."), return);
         if ((taskRation == kRation01 || taskRation == kRation10)) {
             const uint64_t tilingKey = opExecutor->args->tilingInfo.tilingKey;
             if (opExecutor->args->binInfo->tilingKeyInfo[tilingKey].crossCoreSync) {

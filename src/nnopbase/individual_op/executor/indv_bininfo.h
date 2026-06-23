@@ -215,12 +215,13 @@ typedef struct {
 aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo *binInfo);
 
-aclnnStatus NnopbaseBinInfoReadJsonFile(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);
-aclnnStatus NnopbaseBinInfoReadBinFile(const NnopbaseChar *const binPath, const NnopbaseUChar **bin, uint32_t *binLen);
-aclnnStatus NnopbaseKernelUnRegister(void **handle);
-aclnnStatus NnopbaseReadJsonConfig(const std::string &binaryInfoPath, nlohmann::json &binaryInfoConfig);
-aclnnStatus NnopbaseGetOpJsonPath(const std::string &binPath, std::string &jsonPath);
-NnopbaseChar *NnopbaseGetmmErrorMsg();
+aclnnStatus NnopbaseReadKernelJsonFile(
+    NnopbaseBinInfo* binInfo, const std::string& oppPath, const std::string& socVersion);
+aclnnStatus NnopbaseReadBinFile(const NnopbaseChar* const binPath, const NnopbaseUChar** bin, uint32_t* binLen);
+aclnnStatus NnopbaseKernelUnRegister(void** handle);
+aclnnStatus NnopbaseReadJsonConfig(const std::string& binaryInfoPath, nlohmann::json& binaryInfoConfig);
+aclnnStatus NnopbaseGetKernelJsonPath(const std::string& binPath, std::string& jsonPath);
+NnopbaseChar* NnopbaseGetmmErrorMsg();
 
 // for memset aux operator
 aclnnStatus NnopbaseGenMemsetInfo(NnopbaseBinInfo *binInfo, const std::string &oppPath, const std::string &socVersion);

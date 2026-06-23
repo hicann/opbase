@@ -31,17 +31,20 @@ aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt *nodeExt, Nn
             vector->Init(capacity);
             const auto ret = vector->SetSize(size);
             NNOPBASE_ASSERT_TRUE_RETVAL(ret == ge::GRAPH_SUCCESS);
-            const auto memRet = memcpy_s(vector->MutableData(), attrs->attrs[i].addr.size,
-                                         attrs->attrs[i].addr.addr, attrs->attrs[i].addr.size);
-            CHECK_COND(memRet == EOK, ACLNN_ERR_PARAM_INVALID,
-                       "Memcpy failed! ret = %d, src = %p, dst = %p, len = %zu.",
-                       memRet, attrs->attrs[i].addr.addr, vector->MutableData(), attrs->attrs[i].addr.size);
+            const auto memRet = memcpy_s(
+                vector->MutableData(), attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr, attrs->attrs[i].addr.size);
+            CHECK_COND(
+                memRet == EOK, ACLNN_ERR_PARAM_INVALID,
+                "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", memRet,
+                attrs->attrs[i].addr.addr, vector->MutableData(), attrs->attrs[i].addr.size);
             current_offset += totalSize;
         } else {
-            const auto ret = memcpy_s(ptr + current_offset, attrs->attrs[i].addr.size,
-                                      attrs->attrs[i].addr.addr, attrs->attrs[i].addr.size);
-            CHECK_COND(ret == EOK, ACLNN_ERR_PARAM_INVALID, "Memcpy failed! ret = %d, src = %p, dst = %p, len = %zu.",
-                       ret, attrs->attrs[i].addr.addr, ptr + current_offset, attrs->attrs[i].addr.size);
+            const auto ret = memcpy_s(
+                ptr + current_offset, attrs->attrs[i].addr.size, attrs->attrs[i].addr.addr, attrs->attrs[i].addr.size);
+            CHECK_COND(
+                ret == EOK, ACLNN_ERR_PARAM_INVALID,
+                "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", ret, attrs->attrs[i].addr.addr,
+                ptr + current_offset, attrs->attrs[i].addr.size);
             current_offset += attrs->attrs[i].addr.size;
         }
     }
@@ -73,8 +76,10 @@ aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor *executor)
             nodeExt->node = node;
             auto ret = memcpy_s(node, sizeof(NnopbaseComputeNodeInfo), nodeExt->buf, sizeof(NnopbaseComputeNodeInfo));
             // 异常分支node随nodeExt，跟随executor销毁时释放
-            CHECK_COND(ret == EOK, ACLNN_ERR_PARAM_INVALID, "Memcpy failed! ret = %d, src = %p, dst = %p, len = %zu.",
-                       ret, nodeExt->buf, node, sizeof(NnopbaseComputeNodeInfo));
+            CHECK_COND(
+                ret == EOK, ACLNN_ERR_PARAM_INVALID,
+                "Failed to execute memcpy_s! ret = %d, src = %p, dst = %p, len = %zu.", ret, nodeExt->buf, node,
+                sizeof(NnopbaseComputeNodeInfo));
 
             if (nodeExt->buf != nullptr) {
                 free(nodeExt->buf);

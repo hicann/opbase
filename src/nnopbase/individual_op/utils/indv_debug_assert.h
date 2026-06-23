@@ -38,13 +38,13 @@ extern "C" {
         }                                         \
     } while (false)
 
-#define NNOPBASE_ASSERT_OK_RETVAL(v)                                \
-    do {                                                            \
-        const aclnnStatus _chk_stutus = (v);                        \
-        if (_chk_stutus != OK) {                                    \
-            OP_LOGE(_chk_stutus, "Check %s failed", #v);            \
-            return (_chk_stutus);                                   \
-        }                                                           \
+#define NNOPBASE_ASSERT_OK_RETVAL(v)                     \
+    do {                                                 \
+        const aclnnStatus _chk_status = (v);             \
+        if (_chk_status != OK) {                         \
+            OP_LOGE(_chk_status, "Check %s failed", #v); \
+            return (_chk_status);                        \
+        }                                                \
     } while (false)
 
 #define NNOPBASE_ASSERT_RTOK_RETVAL(v) NNOPBASE_ASSERT_RETVAL(((v) == 0), (ACLNN_ERR_RUNTIME_ERROR))

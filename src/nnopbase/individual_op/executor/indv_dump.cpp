@@ -411,7 +411,7 @@ static bool NnopbaseNeedL0ExceptionDump(void)
 aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor *const executor)
 {
     if (executor->args->binInfo->dfxInfo.isAssertEnable || NnopbaseNeedL0ExceptionDump()) {
-        OP_LOGI("ArgExceptionDump is enable.");
+        OP_LOGI("ArgExceptionDump is enabled.");
         uint32_t atomicIndex = 0U;
         size_t mc2ContextNum = 0U;
         if (executor->mc2OpCfg.isMc2) {

@@ -499,12 +499,10 @@ static aclnnStatus NnopbaseSetMemsetTilingContext(std::shared_ptr<MemsetOpInfo> 
     auto tilingParseContextValue = std::make_unique<NnopbaseAsyncAnyValue[]>(kParseOutputNum);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tilingParseContextValue);
     auto ret = memset_s(tilingParseContextValue.get(), tilingParseSize, 0, tilingParseSize);
-    CHECK_COND(ret == EOK,
-        ACLNN_ERR_INNER,
-        "Memset tilingParseContextValue failed, ret %d, tilingParseContextValue addr is %p, tilingParseSize is %zu.",
-        ret,
-        tilingParseContextValue.get(),
-        tilingParseSize);
+    CHECK_COND(
+        ret == EOK, ACLNN_ERR_INNER,
+        "Failed to execute memset_s, ret = %d, tilingParseContextValue addr is %p, tilingParseSize is %zu.", ret,
+        tilingParseContextValue.get(), tilingParseSize);
 
     tilingParseContextValue[kCompileInfo].data.pointer = const_cast<NnopbaseChar *>(memsetInfo->compileInfo.c_str());
     tilingParseContextValue[kPlatformInfo].data.pointer = static_cast<void*>(g_nnopbasePlatformMgr.memsetInfos.get());
@@ -518,12 +516,10 @@ static aclnnStatus NnopbaseSetMemsetTilingContext(std::shared_ptr<MemsetOpInfo> 
     auto tilingParseContext = std::make_unique<uint8_t[]>(tilingParseCtxSize);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tilingParseContext);
     ret = memset_s(tilingParseContext.get(), tilingParseCtxSize, 0, tilingParseCtxSize);
-    CHECK_COND(ret == EOK,
-        ACLNN_ERR_INNER,
-        "Memset tilingParseContext failed, ret %d, tilingParseContext addr is %p, tilingParseCtxSize is %zu.",
-        ret,
-        tilingParseContext.get(),
-        tilingParseCtxSize);
+    CHECK_COND(
+        ret == EOK, ACLNN_ERR_INNER,
+        "Failed to execute memset_s, ret = %d, tilingParseContext addr is %p, tilingParseCtxSize is %zu.", ret,
+        tilingParseContext.get(), tilingParseCtxSize);
     memsetInfo->tilingParseContext = op::internal::PtrCastTo<NnopbaseKernelRunContext>(tilingParseContext.release());
     memsetInfo->tilingParseContext->compute_node_info = memsetInfo->contextExt.nodeExt.node;
 
@@ -558,14 +554,14 @@ aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo> &
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->tiling_parse);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->tiling);
     CHECK_COND(
-        NnopbaseSetMemsetTilingContext(memsetInfo, opImpl->compile_info_creator()) == OK,
-        ACLNN_ERR_INNER,
-        "set memset op tilingContext failed.");
+        NnopbaseSetMemsetTilingContext(memsetInfo, opImpl->compile_info_creator()) == OK, ACLNN_ERR_INNER,
+        "Failed to set tilingContext for MemSet operator.");
 
     memsetInfo->tilingFunc = reinterpret_cast<TilingFun>(opImpl->tiling);
-    auto ret = opImpl->tiling_parse(
-        op::internal::PtrCastTo<gert::KernelContext>(memsetInfo->tilingParseContext));
-    CHECK_COND((ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR, "Memset tiling parse failed, ret is %u.", ret);
+    auto ret = opImpl->tiling_parse(op::internal::PtrCastTo<gert::KernelContext>(memsetInfo->tilingParseContext));
+    CHECK_COND(
+        (ret == ge::GRAPH_SUCCESS), ACLNN_ERR_INNER_TILING_ERROR,
+        "Failed to execute tiling parse function of MemSet operator, ret is %u.", ret);
     return OK;
 }
 

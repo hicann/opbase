@@ -58,11 +58,11 @@ inline void NnopbaseGetCoreNum(uint32_t *const aicNum, uint32_t *const aivNum)
 {
     uint32_t coreNum = 0;
     auto ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_CUBE_CORE, &coreNum);
-    OP_LOGD("get cube core num %d, ret %d.", coreNum, ret);
+    OP_LOGD("Get cube core num %d, ret %d.", coreNum, ret);
     *aicNum = coreNum;
 
     ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &coreNum);
-    OP_LOGD("get vector core num %d, ret %d.", coreNum, ret);
+    OP_LOGD("Get vector core num %d, ret %d.", coreNum, ret);
     *aivNum = coreNum;
 }
 
@@ -244,7 +244,7 @@ static inline NnopbaseUChar *NnopbaseAppendBinary(void *buf, const size_t bufLen
     if (src != nullptr && memcpy_s(buf, bufLen, src, srcLen) == EOK) {
         buf = op::internal::PtrCastTo<NnopbaseUChar>(buf) + srcLen;
     } else {
-        OP_LOGW("Failed to append binary, probably because src is null or memcpy failed!");
+        OP_LOGW("Failed to append binary, probably because src is null or failed to execute memcpy_s!");
     }
     return op::internal::PtrCastTo<NnopbaseUChar>(buf);
 }

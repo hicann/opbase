@@ -2172,7 +2172,7 @@ TEST_F(NnopbaseExecutorUnitTest, TestGetMemsetBinInfoFailed)
     std::string jsonPath = "/built-in/op_impl/ai_core/tbe/kernel/ascend910/mem_set/";
     std::string binPath;
     ASSERT_EQ(NnopbaseGetBinPath(jsonPath, binPath), ACLNN_ERR_PARAM_INVALID);
-    ASSERT_EQ(NnopbaseGetOpJsonPath(jsonPath, binPath), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseGetKernelJsonPath(jsonPath, binPath), ACLNN_ERR_PARAM_INVALID);
 
     std::string oppPath = std::string(OP_API_COMMON_UT_SRC_DIR) + "/built-in/op_impl/ai_core/tbe/kernel/config/ascend910";
     std::shared_ptr<MemsetOpInfo> memsetInfo = std::make_shared<MemsetOpInfo>();
