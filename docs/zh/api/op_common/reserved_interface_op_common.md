@@ -12,13 +12,6 @@
 | GetOpInfo(const char\* str) | 获取算子信息字符串，支持空指针保护。 |
 | IsContextType\<T\>() | 判断模板类型T是否为Context类型。 |
 | GetOpInfo(T context) | 从TilingContext或InferShapeContext中获取算子类型和名称信息。 |
-| DLOG_DEBUG | DEBUG级别日志级别常量，值为0。 |
-| DLOG_INFO | INFO级别日志级别常量，值为1。 |
-| DLOG_WARN | WARN级别日志级别常量，值为2。 |
-| DLOG_ERROR | ERROR级别日志级别常量，值为3。 |
-| OP_MODULE_ID | 算子模块ID常量，值为63。 |
-| DlogRecordInner(int32_t moduleId, int32_t level, const char\* fmt, ...) | 内部日志记录函数，按模块ID和级别记录日志。 |
-| CheckLogLevelInner(int32_t moduleId, int32_t level) | 内部日志级别检查函数，判断指定模块的日志级别是否使能。 |
 | OP_LOGE_LIBOPAPI_REPORT(opName, fmt, ...) | 底层日志上报宏，记录ERROR级别日志。 |
 | OP_LOGE_WITHOUT_REPORT(opName, ...) | 仅记录日志不上报错误的日志宏。 |
 | OpLogSub(moduleId, level, opInfo, fmt, ...) | 指定模块和级别的日志记录宏。 |
