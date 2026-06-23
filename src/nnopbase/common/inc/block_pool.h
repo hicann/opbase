@@ -271,17 +271,25 @@ private:
 
 class BlockCache {
 public:
-    BlockCache()
+    BlockCache() = default;
+
+    ~BlockCache()
     {
-        size_t count = activeCacheCount_.fetch_add(1, std::memory_order_relaxed) + 1;
-        if (count > kMaxCacheInstances) {
-            cacheDisabled_ = true;
-            OP_LOGW("Thread count [%zu] is more than max cache limit [%zu], thread block cache is disabled.", count,
-                    kMaxCacheInstances);
+        OP_LOGD("BlockCache destructing, cacheCount per size class: "
+                "size64B [%zu], size256B [%zu], size1KB [%zu], "
+                "size4KB [%zu], size16KB [%zu], size64KB [%zu].",
+                cacheCount_[0], cacheCount_[1], cacheCount_[2], cacheCount_[3], cacheCount_[4], cacheCount_[5]);
+        for (int i = 0; i < BlockPool::MAX_STORE; i++) {
+            BlockStore::BlockHeader* head = cacheHead_[i];
+            while (head != nullptr) {
+                BlockStore::BlockHeader* next = reinterpret_cast<BlockStore::BlockHeader*>(head->cacheExt_);
+                std::free(head);
+                head = next;
+            }
+            cacheHead_[i] = nullptr;
+            cacheCount_[i] = 0;
         }
     }
-
-    ~BlockCache() = default;
 
     static void* CacheAlloc(size_t size) { return get_instance().CacheAllocImpl(size); }
 
@@ -298,6 +306,29 @@ private:
 
     inline bool CacheEmpty(int index) { return cacheHead_[index] == nullptr; }
 
+    // 申请 batch 个 SYS_TAG 块到 addrList，返回实际申请到的数量
+    // 逻辑参考 BlockPool::BatchMatchImpl 的 while (n < batch) 段，
+    // 但只走 std::malloc 不尝试 BlockStore（设计目的：保证 cacheHead_ 全是 SYS_TAG 块，
+    // 使 ~BlockCache 析构能直接 std::free 释放，彻底规避 use-after-free）
+    size_t BatchMallocSysMem(int index, void** addrList, size_t batch)
+    {
+        size_t blockSize = CacheIndex[index].size;
+        size_t n = 0;
+        while (n < batch) {
+            void* block = std::malloc(sizeof(BlockStore::BlockHeader) + blockSize);
+            if (block == nullptr) {
+                OP_LOGW(
+                    "std::malloc failed in BatchMallocSysMem, blockSize [%zu], target batch [%zu], actual got [%zu].",
+                    blockSize, batch, n);
+                break;
+            }
+            BlockStore::BlockHeader* head = static_cast<BlockStore::BlockHeader*>(block);
+            head->userTag_ = BlockPool::SYS_TAG;
+            addrList[n++] = head + 1;
+        }
+        return n;
+    }
+
     void* PoolAlloc(size_t size, int index)
     {
         if (index == BlockPool::INVALID_STORE) {
@@ -306,17 +337,16 @@ private:
 
         size_t batch = CacheBatchSize[index];
         void* addrList[ADDR_LIST_LARGEST_SIZE];
-        size_t n = BlockPool::BatchMalloc(size, addrList, batch);
+        size_t n = BatchMallocSysMem(index, addrList, batch);
         if (n) {
             const std::lock_guard<OpSpinlock> guard(guard_);
             for (size_t i = 0; i < n; i++) {
                 BlockStore::BlockHeader* head = BlockStore::GetBlockHeader(addrList[i]);
-                head->cacheExt_ = reinterpret_cast<uintptr_t>(this);
-                // use blockIdx_ to store cache index if SYS_TAG
-                if (head->userTag_ == BlockPool::SYS_TAG) {
-                    head->blockIdx_ = static_cast<BlockStore::BlockIdx>(index);
-                }
-                if (i > 0) {
+                // use blockIdx_ to store cache index, all blocks are SYS_TAG here
+                head->blockIdx_ = static_cast<BlockStore::BlockIdx>(index);
+                if (i == 0) {
+                    head->cacheExt_ = reinterpret_cast<uintptr_t>(this);
+                } else {
                     head->cacheExt_ = reinterpret_cast<uintptr_t>(cacheHead_[index]);
                     cacheHead_[index] = head;
                     cacheCount_[index]++;
@@ -329,15 +359,12 @@ private:
 
     inline void* CacheAllocImpl(size_t size)
     {
-        if (cacheDisabled_) {
-            return BlockPool::Malloc(size);
-        }
         int index = BlockPool::GetStoreIndex(size);
         if (index == BlockPool::INVALID_STORE) {
             return PoolAlloc(size, index);
         }
 
-        if (index < 0 || index > BlockPool::MAX_STORE) {
+        if (index < 0 || index >= BlockPool::MAX_STORE) {
             OP_LOGE(ACLNN_ERR_INNER, "invalid cache to alloc, idx %d size %lu", index, size);
             return nullptr;
         }
@@ -365,10 +392,6 @@ private:
 
     void CacheFreeImpl(void* block)
     {
-        if (cacheDisabled_) {
-            BlockPool::Free(block);
-            return;
-        }
         BlockStore::BlockHeader* head = BlockStore::GetBlockHeader(block);
         if (head->cacheExt_ == BlockStore::NOT_IN_CACHE) {
             BlockPool::Free(block);
@@ -376,7 +399,7 @@ private:
         }
 
         int idx = GetBlockCacheIndex(head);
-        if (idx < 0 || idx > BlockPool::MAX_STORE) {
+        if (idx < 0 || idx >= BlockPool::MAX_STORE) {
             OP_LOGW("invalid block to free, idx %d tag %u blockIdx %d cacheExt %lu", idx, head->userTag_,
                     head->blockIdx_, head->cacheExt_);
             return;
@@ -393,10 +416,6 @@ private:
         cacheHead_[idx] = head;
         cacheCount_[idx]++;
     }
-
-    static constexpr size_t kMaxCacheInstances = 100;
-    inline static std::atomic<size_t> activeCacheCount_{0};
-    bool cacheDisabled_{false};
 
     // cache size limit and cache block recycle in future
     const std::array<BlockPool::BlockDesc, BlockPool::MAX_STORE> CacheIndex = {
