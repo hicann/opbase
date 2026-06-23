@@ -555,6 +555,7 @@ if [ -d "$vendor_dir" ]; then
 fi
 chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/scene.info" 2> /dev/null
 chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/version.info" 2> /dev/null
+chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/opp/version.info" 2> /dev/null
 chmod 600 "${install_version_dir}""/share/info/${ops_base_platform_dir}/ascend_install.info" 2> /dev/null
 
 if [ "${is_change_dir_mode}" = "true" ]; then
