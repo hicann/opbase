@@ -22,12 +22,30 @@
 #include <sys/syscall.h>
 #include "exe_graph/runtime/shape.h"
 #include "base/err_msg.h"
-#include "dlog_pub.h"
 #include "graph/ge_error_codes.h"
 #include "graph/types.h"
 #include "op_common/op_host/util/opbase_export.h"
+
+#ifndef DLOG_DEBUG
+#define DLOG_DEBUG 0
+#endif
+#ifndef DLOG_INFO
+#define DLOG_INFO 1
+#endif
+#ifndef DLOG_WARN
+#define DLOG_WARN 2
+#endif
+#ifndef DLOG_ERROR
+#define DLOG_ERROR 3
+#endif
+
+constexpr int32_t OP_MODULE_ID = 63;
+
 namespace Ops {
 namespace Base {
+
+OPBASE_API void DlogRecordInner(int32_t moduleId, int32_t level, const char* fmt, ...);
+OPBASE_API int32_t CheckLogLevelInner(int32_t moduleId, int32_t level);
 
 #ifndef OP_SUBMOD_NAME
 #define OP_SUBMOD_NAME "OPS_BASE"
@@ -83,15 +101,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
     return opInfo;
 }
 
-#define OP_LOGE_LIBOPAPI_REPORT(opName, fmt, ...)                                             \
-    do {                                                                                      \
-        if (CheckLogLevel(static_cast<int>(OP), DLOG_ERROR) == 1) {                           \
-            DlogRecord(static_cast<int>(OP), DLOG_ERROR,                                      \
-                       "[%s:%d][%s]"                                                          \
-                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
-                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
-                       Ops::Base::GetSafeStr(Ops::Base::GetOpInfo(opName)), ##__VA_ARGS__);   \
-        }                                                                                     \
+#define OP_LOGE_LIBOPAPI_REPORT(opName, fmt, ...)                                                             \
+    do {                                                                                                      \
+        if (Ops::Base::CheckLogLevelInner(static_cast<int>(OP_MODULE_ID), DLOG_ERROR) == 1) {                 \
+            Ops::Base::DlogRecordInner(static_cast<int>(OP_MODULE_ID), DLOG_ERROR,                            \
+                                       "[%s:%d][%s]"                                                          \
+                                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
+                                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
+                                       Ops::Base::GetSafeStr(Ops::Base::GetOpInfo(opName)), ##__VA_ARGS__);   \
+        }                                                                                                     \
     } while (0)
 
 // ============================================================================
@@ -1022,32 +1040,32 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
     } while (0)
 
 #ifndef OP_LOG_LIBOPAPI_ONLY
-#define OpLogSub(moduleId, level, opInfo, fmt, ...)                                           \
-    do {                                                                                      \
-        if (CheckLogLevel(static_cast<int>(moduleId), level) == 1) {                          \
-            DlogRecord(static_cast<int>(moduleId), level,                                     \
-                       "[%s:%d][%s]"                                                          \
-                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
-                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
-                       Ops::Base::GetSafeStr(opInfo), ##__VA_ARGS__);                         \
-        }                                                                                     \
+#define OpLogSub(moduleId, level, opInfo, fmt, ...)                                                           \
+    do {                                                                                                      \
+        if (Ops::Base::CheckLogLevelInner(static_cast<int>(moduleId), level) == 1) {                          \
+            Ops::Base::DlogRecordInner(static_cast<int>(moduleId), level,                                     \
+                                       "[%s:%d][%s]"                                                          \
+                                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
+                                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
+                                       Ops::Base::GetSafeStr(opInfo), ##__VA_ARGS__);                         \
+        }                                                                                                     \
     } while (0)
 
-#define OpLogErrSub(moduleId, level, opInfo, fmt, ...)                                        \
-    do {                                                                                      \
-        if (CheckLogLevel(static_cast<int>(moduleId), level) == 1) {                          \
-            DlogRecord(static_cast<int>(moduleId), level,                                     \
-                       "[%s:%d][%s]"                                                          \
-                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
-                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
-                       Ops::Base::GetSafeStr(opInfo), ##__VA_ARGS__);                         \
-        }                                                                                     \
+#define OpLogErrSub(moduleId, level, opInfo, fmt, ...)                                                        \
+    do {                                                                                                      \
+        if (Ops::Base::CheckLogLevelInner(static_cast<int>(moduleId), level) == 1) {                          \
+            Ops::Base::DlogRecordInner(static_cast<int>(moduleId), level,                                     \
+                                       "[%s:%d][%s]"                                                          \
+                                       "[%s][%" PRIu64 "] OpName:[%s] " fmt,                                  \
+                                       __FILE__, __LINE__, OP_SUBMOD_NAME, __FUNCTION__, Ops::Base::GetTid(), \
+                                       Ops::Base::GetSafeStr(opInfo), ##__VA_ARGS__);                         \
+        }                                                                                                     \
     } while (0)
 
-#define D_OP_LOGI(opName, fmt, ...) OpLogSub(OP, DLOG_INFO, opName, fmt, ##__VA_ARGS__)
-#define D_OP_LOGW(opName, fmt, ...) OpLogSub(OP, DLOG_WARN, opName, fmt, ##__VA_ARGS__)
-#define D_OP_LOGE(opName, fmt, ...) OpLogErrSub(OP, DLOG_ERROR, opName, fmt, ##__VA_ARGS__)
-#define D_OP_LOGD(opName, fmt, ...) OpLogSub(OP, DLOG_DEBUG, opName, fmt, ##__VA_ARGS__)
+#define D_OP_LOGI(opName, fmt, ...) OpLogSub(OP_MODULE_ID, DLOG_INFO, opName, fmt, ##__VA_ARGS__)
+#define D_OP_LOGW(opName, fmt, ...) OpLogSub(OP_MODULE_ID, DLOG_WARN, opName, fmt, ##__VA_ARGS__)
+#define D_OP_LOGE(opName, fmt, ...) OpLogErrSub(OP_MODULE_ID, DLOG_ERROR, opName, fmt, ##__VA_ARGS__)
+#define D_OP_LOGD(opName, fmt, ...) OpLogSub(OP_MODULE_ID, DLOG_DEBUG, opName, fmt, ##__VA_ARGS__)
 #define unlikely(x) __builtin_expect((x), 0)
 #define likely(x) __builtin_expect((x), 1)
 

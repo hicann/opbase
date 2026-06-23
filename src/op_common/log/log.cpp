@@ -15,11 +15,24 @@
 
 #include <string>
 #include <vector>
+#include <cstdarg>
+#include "base/dlog_pub.h"
 #include "op_common/log/log.h"
 #include <graph/utils/type_utils.h>
 
 namespace Ops {
 namespace Base {
+
+OPBASE_API void DlogRecordInner(int32_t moduleId, int32_t level, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    DlogVaList(moduleId, level, fmt, args);
+    va_end(args);
+}
+
+OPBASE_API int32_t CheckLogLevelInner(int32_t moduleId, int32_t level) { return CheckLogLevel(moduleId, level); }
+
 std::string ToString(ge::DataType type) { return ge::TypeUtils::DataTypeToSerialString(type); }
 
 /*
