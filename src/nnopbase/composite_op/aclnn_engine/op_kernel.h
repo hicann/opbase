@@ -690,7 +690,7 @@ public:
             isVectorCoreEnableScenario_ = (npuArch == NpuArch::DAV_2002) ? true : false;
             return DoLaunchWithDfx(res, stream, args);
         } else {
-            OP_LOGW("Entering two Kernel Launchs with AIC and AIV.");
+            OP_LOGW("Entering two Kernel Launches with AIC and AIV.");
             return DoLaunchWithSplitAicAndAiv(res, stream, args);
         }
     }

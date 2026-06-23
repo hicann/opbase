@@ -278,7 +278,7 @@ public:
             float status = 0;
             rc = aclrtMemcpy(&status, sizeof(float), outputAddr, sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
             OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtMemcpy failed, ret %d", ret), return ACLNN_ERR_INNER);
-            OP_LOGD("non finete check status %f", status);
+            OP_LOGD("non finite check status %f", status);
             if (static_cast<int>(status) == 1) {
                 dump = true;
                 return ACLNN_SUCCESS;

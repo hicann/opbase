@@ -975,7 +975,7 @@ void* OpExecCache::AddLaunchData(size_t dataLen)
     // if cache buf not enough, abandon cache.
     if (cacheOffset_ + dataLen > cacheCap_) {
         MarkOpCacheInvalid();
-        OP_LOGW("cache buf has full, abondan current cache.");
+        OP_LOGW("cache buf has full, abandon current cache.");
         if (dataLen > cacheCap_) {
             OP_LOGW("cache buf cap is not enough for once cache data!");
         }
