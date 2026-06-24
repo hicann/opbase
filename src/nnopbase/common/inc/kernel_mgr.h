@@ -51,11 +51,7 @@ public:
     {
         aclnnStatus rc = AclOpKernelInit(opType);
         if (rc != ACLNN_SUCCESS) {
-            OP_LOGE(
-                rc,
-                "AclOpKernelInit failed opType. Maybe caused by the following reasons:\n\t 1. Please check whether the "
-                "CANN environment variables are sourced.\n\t 2. Please check if the kernel package is installed.\n\t 3. "
-                "Please confirm whether the current chip or version already supports the faulty operator.");
+            OP_LOGE(rc, "AclOpKernelInit failed, opType: %s.", op::OpTypeDict::ToString(opType).GetString());
             return rc;
         }
 
@@ -90,11 +86,7 @@ public:
         OP_LOGI("Begin GetWorkspace, opType: %u", opType);
         aclnnStatus ret = AclOpKernelInit(opType);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGE(
-                ret,
-                "AclOpKernelInit failed opType. Maybe caused by the following reasons:\n\t 1. Please check whether the "
-                "CANN enviroment variables are sourced.\n\t 2. Please check if the kernel package is installed.\n\t 3. "
-                "Please confirm whether the current chip or version already supports the faulty operator.");
+            OP_LOGE(ret, "AclOpKernelInit failed, opType: %s.", op::OpTypeDict::ToString(opType).GetString());
             return ret;
         }
 
