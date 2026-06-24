@@ -86,15 +86,20 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     endif()
     add_cann_version_info_targets()
 
+    add_library(opbase_headers INTERFACE)
+    target_include_directories(opbase_headers INTERFACE
+        ${OPS_BASE_DIR}/include
+        ${OPS_BASE_DIR}/include/op_common
+    )
+
     # 本地头文件 target（pkg_inc 下的本地头文件优先于 CANN 安装目录）
     add_library(ops_base_internal_headers INTERFACE)
     target_include_directories(ops_base_internal_headers INTERFACE
-        ${OPS_BASE_DIR}/include
-        ${OPS_BASE_DIR}/include/op_common
         ${OPS_BASE_DIR}/include/op_common/op_graph
         ${OPS_BASE_INCLUDE}
         ${OPS_BASE_INCLUDE}/op_common
     )
+    target_link_libraries(ops_base_internal_headers INTERFACE opbase_headers)
 
     add_library(ops_base SHARED ${OPS_BASE_SRC})
     target_compile_options(ops_base
