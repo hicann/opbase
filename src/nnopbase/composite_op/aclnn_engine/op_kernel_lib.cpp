@@ -356,6 +356,7 @@ aclnnStatus OpKernelLib::Initialize()
     std::vector<std::string> opKernelLibFilePaths = GetCustomFilePaths();
     std::vector<std::string> configFilePaths = GetConfigFilePaths();
     opKernelLibFilePaths.insert(opKernelLibFilePaths.end(), configFilePaths.begin(), configFilePaths.end());
+    std::reverse(opKernelLibFilePaths.begin(), opKernelLibFilePaths.end());
     for (const auto &filePath : opKernelLibFilePaths) {
         OP_LOGD("OpKernelLib start parse json file: %s.", filePath.c_str());
         try {

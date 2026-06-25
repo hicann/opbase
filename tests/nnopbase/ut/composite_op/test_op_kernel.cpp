@@ -1325,6 +1325,84 @@ TEST_F(OpKernelUT, Initialize_Custom) {
     setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
 }
 
+static void WriteOpInfoJson(const std::string& dir, const std::string& fileName, const std::string& opKey,
+                            const std::string& opFileValue)
+{
+    namespace fs = std::filesystem;
+    fs::create_directories(dir);
+    std::ofstream f(dir + "/" + fileName);
+    f << "{\"" << opKey << "\": {\"opFile\": {\"value\": \"" << opFileValue << "\"}}}";
+}
+
+static const std::string UT_SOC_DIR = "ascend910/";
+
+TEST_F(OpKernelUT, Initialize_MergePriority_CustomWinsOverBuiltin)
+{
+    const std::string oppPath = "./test_merge_custom_vs_builtin";
+    setenv("ASCEND_OPP_PATH", oppPath.c_str(), 1);
+    namespace fs = std::filesystem;
+
+    system(("mkdir -p " + oppPath + "/vendors").c_str());
+    system(("echo 'priority=custom_vnd' > " + oppPath + "/vendors/config.ini").c_str());
+
+    WriteOpInfoJson(oppPath + "/vendors/custom_vnd/op_impl/ai_core/tbe/config/" + UT_SOC_DIR, "custom.json",
+                    "AvgPool2D", "from_custom");
+    WriteOpInfoJson(oppPath + "/built-in/op_impl/ai_core/tbe/config/" + UT_SOC_DIR, "builtin.json", "AvgPool2D",
+                    "from_builtin");
+
+    OpKernelLib opKnlLib;
+    ASSERT_EQ(opKnlLib.Initialize(), 0);
+    EXPECT_EQ(opKnlLib.allKernelsJson_["AvgPool2D"]["opFile"]["value"].get<std::string>(), "from_custom");
+
+    fs::remove_all(oppPath);
+    setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
+}
+
+TEST_F(OpKernelUT, Initialize_MergePriority_FirstVendorWins)
+{
+    const std::string oppPath = "./test_merge_vendor_order";
+    setenv("ASCEND_OPP_PATH", oppPath.c_str(), 1);
+    namespace fs = std::filesystem;
+
+    system(("mkdir -p " + oppPath + "/vendors").c_str());
+    system(("echo 'priority=vnd_a,vnd_b' > " + oppPath + "/vendors/config.ini").c_str());
+
+    WriteOpInfoJson(oppPath + "/vendors/vnd_a/op_impl/ai_core/tbe/config/" + UT_SOC_DIR, "a.json", "AvgPool2D",
+                    "from_vnd_a");
+    WriteOpInfoJson(oppPath + "/vendors/vnd_b/op_impl/ai_core/tbe/config/" + UT_SOC_DIR, "b.json", "AvgPool2D",
+                    "from_vnd_b");
+
+    OpKernelLib opKnlLib;
+    ASSERT_EQ(opKnlLib.Initialize(), 0);
+    EXPECT_EQ(opKnlLib.allKernelsJson_["AvgPool2D"]["opFile"]["value"].get<std::string>(), "from_vnd_a");
+
+    fs::remove_all(oppPath);
+    setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
+}
+
+TEST_F(OpKernelUT, Initialize_MergePriority_NonOverlappingKeys)
+{
+    const std::string oppPath = "./test_merge_nonoverlap";
+    setenv("ASCEND_OPP_PATH", oppPath.c_str(), 1);
+    namespace fs = std::filesystem;
+
+    system(("mkdir -p " + oppPath + "/vendors").c_str());
+    system(("echo 'priority=custom_vnd' > " + oppPath + "/vendors/config.ini").c_str());
+
+    WriteOpInfoJson(oppPath + "/vendors/custom_vnd/op_impl/ai_core/tbe/config/" + UT_SOC_DIR, "custom.json",
+                    "AvgPool2D", "custom_only");
+    WriteOpInfoJson(oppPath + "/built-in/op_impl/ai_core/tbe/config/" + UT_SOC_DIR, "builtin.json", "Add",
+                    "builtin_only");
+
+    OpKernelLib opKnlLib;
+    ASSERT_EQ(opKnlLib.Initialize(), 0);
+    EXPECT_EQ(opKnlLib.allKernelsJson_["AvgPool2D"]["opFile"]["value"].get<std::string>(), "custom_only");
+    EXPECT_EQ(opKnlLib.allKernelsJson_["Add"]["opFile"]["value"].get<std::string>(), "builtin_only");
+
+    fs::remove_all(oppPath);
+    setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
+}
+
 TEST_F(OpKernelUT, testGetConfigImplPath2) {
     const std::string validVendorsEnv = std::string(OP_API_COMMON_UT_SRC_DIR) + "/valid_vendors/";
     setenv("ASCEND_OPP_PATH", validVendorsEnv.c_str(), 1);
