@@ -627,25 +627,21 @@ public:
 
         SliceView<CONST2> newView;
         newView.addr = addrOffset;
-
+        S newShape;
+        newShape.value[0] = 1;
         uint64_t outLen = 1;
         uint64_t outRepeat = 1;
         CalculateOutView(view, shape, outLen, outRepeat);
         newView.axis[0].repeat = outLen;
         newView.axis[1].repeat = outRepeat;
         // 混合精度场景，MTE3搬出需要跳搬(lp_norm_v2存在此场景)
-        uint64_t inDtypeBlockAlign = Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
-        if (sizeof(InDType) != sizeof(OutDType)) {
-            newView.axis[1].srcStride = inDtypeBlockAlign;
+        uint64_t minDtypeBlockAlign = Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
+        if constexpr (Pattern::TailA) {
+            newView.axis[1].srcStride = minDtypeBlockAlign;
+            newShape.value[1] = outRepeat * minDtypeBlockAlign;
         } else {
             newView.axis[1].srcStride = outLen;
-        }
-        S newShape;
-        newShape.value[0] = 1;
-        if constexpr (Pattern::TailA) {
-            newShape.value[1] = outRepeat * Ops::Base::CeilAlign(outLen, UB_BLOCK / MIN_DTYPE_BYTES);
-        } else {
-            newShape.value[1] = outRepeat * inDtypeBlockAlign;
+            newShape.value[1] = outRepeat * outLen;
         }
         RunPostOp<OpDag::ReduceOpPos>(aIndex, newView, newShape);
     }
