@@ -88,6 +88,7 @@ struct ReduceTilingKey {
     uint32_t loopARCount = 0;
     uint32_t loopInnerARCount = 0;
     bool isContiguous = true;
+    bool batchInvariant = false;
 };
 
 namespace ReduceOpTmpl {
@@ -360,6 +361,18 @@ protected:
     void ComputeProgressUnitA(const uint64_t* shape);
 
     template <class Pattern>
+    void ComputeRFirst(const uint64_t* shape);
+
+    template <class Pattern>
+    void ComputeAWithRFullLoad(const uint64_t* shape);
+
+    template <class Pattern>
+    void ComputeAWithRCannotFullLoad(const uint64_t* shape);
+
+    template <class Pattern>
+    void SetTilingDataBatchInvariant(const uint64_t* shape);
+
+    template <class Pattern>
     ge::graphStatus ComputeEmptyTiling(uint64_t* shape);
 
     template <class Pattern>
@@ -391,6 +404,7 @@ protected:
     uint64_t basicBlock_{0};  // 算子搬入的buffer大小
     uint64_t resultBlock_{0}; // reduce计算后的buffer大小
     int32_t dimNum_{0};
+    bool needReserveA_ = 0;
     size_t workSpaceSize_{0};
     CacheLineBlock cBlock_;
     ReduceTilingUnit unitA_;
@@ -447,7 +461,8 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(gert::TilingContext* context, ReduceO
 } // namespace Base
 } // namespace Ops
 
-#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                                           \
-    result = GET_TPL_TILING_KEY(reduceTilingKey.isContiguous, reduceTilingKey.patternID, reduceTilingKey.loopARCount, \
-                                reduceTilingKey.loopInnerARCount, __VA_ARGS__)
+#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                      \
+    result = GET_TPL_TILING_KEY(                                                                 \
+        reduceTilingKey.isContiguous, reduceTilingKey.batchInvariant, reduceTilingKey.patternID, \
+        reduceTilingKey.loopARCount, reduceTilingKey.loopInnerARCount, __VA_ARGS__)
 #endif

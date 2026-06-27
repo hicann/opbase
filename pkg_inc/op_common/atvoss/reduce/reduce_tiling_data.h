@@ -31,6 +31,7 @@ struct ReduceOpTilingData {
     uint64_t basicBlock;
     uint64_t resultBlock;
     int32_t coreNum;
+    int32_t realCoreNum;
     int32_t useNddma;
     float meanVar;
     uint64_t shape[ReduceOpTmpl::MAX_DIM] = {0};       // 输入shape

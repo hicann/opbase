@@ -22,6 +22,7 @@
 #include "reduce_operator.h"
 #include "reduce_tensor_empty.h"
 #include "reduce_tensor_move.h"
+#include "reduce_sch_batch_invariant.h"
 
 namespace Ops {
 namespace Base {
@@ -36,8 +37,11 @@ struct EleSclar<ElemOp, true> {
     using T = void;
 };
 
-template <bool isContiguous, uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount, class OpDag>
-class ReduceSch {
+template <
+    bool isContiguous, bool batchInvariant, uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount,
+    class OpDag>
+class ReduceSch
+{
 public:
     constexpr static ReduceSchLoopInfo SchLoopInfo = GetSchLoopInfo<PatternID, LoopARCount, LoopInnerARCount>();
     using Pattern = typename __reducePattern::GetPattern<SchLoopInfo.patternID>::T;
@@ -244,7 +248,7 @@ public:
         constexpr static ReduceSchLoopInfo groupSchLoopInfo = GetGroupSchLoopInfo();
         ReduceOpTilingData groupTiling;
         SetGroupTiling(groupTiling);
-        if constexpr (isContiguous) {
+        if constexpr (isContiguous && !batchInvariant) {
             using SchTypeR = ReduceSchAux<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
             SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
             using SchTypeA = ReduceSchAux<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>, false, OpDag>;
@@ -253,10 +257,21 @@ public:
             op.Process(args...);
             SyncAll();
             groupOp.Process(args...);
+        } else if constexpr (isContiguous && batchInvariant) {
+            groupTiling.ubFactorA = tiling_->resultBlock / sizeof(DataType);
+            groupTiling.factorACntPerCore = Ops::Base::CeilDiv(groupTiling.factorATotalCnt,
+                                                           static_cast<uint64_t>(tiling_->realCoreNum));
+            using SchTypeR = ReduceSchAuxBatchInvariant<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+            SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
+            using SchTypeA = ReduceSchAuxBatchInvariant<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>, false, OpDag>;
+            SchTypeA groupOp(this, input_, output_, &workspace_, &groupTiling);
+
+            op.Process(args...);
+            SyncAll();
+            groupOp.Process(args...);
         } else {
             SetGroupTilingNonContiguous(groupTiling);
-            using SchTypeR = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
-                                                       OpDag>;
+            using SchTypeR = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
             SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
             using SchTypeA = ReduceSchAuxNonContiguous<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>,
                                                        false, OpDag>;

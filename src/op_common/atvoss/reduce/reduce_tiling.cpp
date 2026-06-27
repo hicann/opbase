@@ -15,6 +15,7 @@
 
 #include "op_common/atvoss/reduce/reduce_tiling.h"
 #include "op_common/op_host/util/math_util.h"
+#include "reduce_tiling_batch_invariant.h"
 
 namespace Ops {
 namespace Base {
@@ -23,10 +24,7 @@ using namespace ReduceOpTmpl;
 // float数据类型, UB间reduce缓存为16K时,最大能支持的A, 公式CACHE_BUF_SIZE = MAX_INNER_A * log2(Ro)
 // log2(Ro)支持最大取值为32
 constexpr static int32_t MAX_INNER_A = 512; // 单位字节
-constexpr static double THRES_HOLD = 0.95;
 constexpr static int32_t A_STEP_LEN = 4;
-constexpr static int32_t AXES_STEP = 2; // A轴和R轴循环遍历的步长
-
 /**
  * Ensure that the returned shape is non-scalar.
  * When the dim num of shape is 0, this shape is considered to express a scalar.
@@ -154,8 +152,9 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
     OP_CHECK_IF((GetInputShape(context, inputIdx, opInput.shape) == ge::GRAPH_FAILED),
                 OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF((GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
-                OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        (GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
+        OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -207,14 +206,6 @@ static void MakeWrapDim(const std::vector<int64_t>& shape, std::vector<int64_t>&
         }
     }
     std::sort(axes.begin(), axes.end());
-}
-
-static inline void AssembleUnit(ReduceTilingUnit& unit, int32_t idx, uint64_t inner, uint64_t outer, uint64_t step)
-{
-    unit.idx = idx;
-    unit.inner = inner;
-    unit.outer = outer;
-    unit.step = step;
 }
 
 template <class Pattern>
@@ -561,6 +552,7 @@ void ReduceOpTiling::DoReduceTiling(ReduceTilingKey& key)
     uint64_t newShape[MAX_DIM] = {0};
     int64_t newStride[MAX_DIM] = {0};
     int32_t newShapeSize = 0;
+    tilingKey_.batchInvariant = key.batchInvariant;
     TransformShape(newShape, newStride, newShapeSize);
 
     DoTilingMatchPattern(newShape, newShapeSize);
@@ -855,7 +847,6 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
     AssembleUnit(unitA_, iA, innerA, outerA, step);
 }
 
-// try get reduce result block size
 template <class Pattern>
 uint64_t ReduceOpTiling::TryGetReduceBlock(const uint64_t* shape, uint64_t preInputBufferNum, uint64_t preRestBufferNum,
                                            uint64_t postBufferNum)
@@ -981,20 +972,26 @@ ge::graphStatus ReduceOpTiling::ComputeTiling(uint64_t* shape)
     if (IsEmtpyTensor<Pattern>(shape)) {
         return ComputeEmptyTiling<Pattern>(shape);
     }
-
-    ComputeCacheLineBlockAndUnit<Pattern>(shape);
-
-    ComputeUnitA<Pattern>(shape);
-
-    ComputeUnitR<Pattern>(shape);
-
-    ComputeProgressUnitA<Pattern>(shape);
+    if (tilingKey_.batchInvariant && CheckIsContiguous(opInput_)) {
+        ComputeRFirst<Pattern>(shape);
+        if (unitR_.idx == -1) {
+            ComputeAWithRFullLoad<Pattern>(shape);
+        } else {
+            ComputeAWithRCannotFullLoad<Pattern>(shape);
+        }
+        SetTilingDataBatchInvariant<Pattern>(shape);
+    } else {
+        ComputeCacheLineBlockAndUnit<Pattern>(shape);
+        ComputeUnitA<Pattern>(shape);
+        ComputeUnitR<Pattern>(shape);
+        ComputeProgressUnitA<Pattern>(shape);
+        SetTilingData<Pattern>(shape);
+    }
 
     OP_LOGI(context_,
             "tiling step outerA:%lu, innerA:%lu, stepA:%lu, idxA:%d, outerR:%lu, innerR:%lu, stepR:%lu, idxR:%d",
             unitA_.outer, unitA_.inner, unitA_.step, unitA_.idx, unitR_.outer, unitR_.inner, unitR_.step, unitR_.idx);
 
-    SetTilingData<Pattern>(shape);
     SetTilingKey<Pattern>();
     return ge::GRAPH_SUCCESS;
 }
@@ -1039,8 +1036,8 @@ void ReduceOpTiling::SetTilingData(const uint64_t* shape)
     tilingData_->coreNum = static_cast<int32_t>(compileInfo_->vectorCoreNum);
     tilingData_->useNddma = IsUseNddma<Pattern>(shape);
     ComputeStride<Pattern>(shape);
-
     uint32_t realCore = CeilDiv(unitA_.outer, factorACntPerCore) * CeilDiv(unitR_.outer, factorRCntPerCore);
+    tilingData_->realCoreNum = realCore;
     context_->SetBlockDim(realCore);
 }
 
@@ -1125,8 +1122,9 @@ void ReduceOpTiling::SetTilingKey()
     tilingKey_.loopARCount = static_cast<uint32_t>(aCount * CONST10 + rCount);
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * CONST10 + innerRCount);
     tilingKey_.isContiguous = CheckIsContiguous(opInput_);
-    OP_LOGI(context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d", tilingKey_.patternID,
-            tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0);
+    OP_LOGI(
+        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, isBatchInvariant:%d", tilingKey_.patternID,
+        tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0, tilingKey_.batchInvariant ? 1 : 0);
 }
 
 void ReduceOpTiling::GetTilingKey(ReduceTilingKey& key) { key = tilingKey_; }
