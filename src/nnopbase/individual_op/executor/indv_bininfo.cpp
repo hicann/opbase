@@ -94,8 +94,10 @@ aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo
 
 aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<MemsetOpBinInfo>& binInfo, bool loadFuncHandleByTilingKey)
 {
-    if (binInfo->bin == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
+    if (binInfo->bin == nullptr && NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen) != OK) {
+        std::string errMsg = "1.The file does not exist. 2.The file is damaged. 3.The user does not have the read permission";
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binInfo->binPath.c_str(), errMsg.c_str());
+        return ACLNN_ERR_INNER_OP_FILE_INVALID;
     }
     aclrtBinaryLoadOption aclrtBinaryLoadOp = aclrtBinaryLoadOption{
         .type = ACL_RT_BINARY_LOAD_OPT_LAZY_MAGIC, .value = aclrtBinaryLoadOptionValue{.magic = binInfo->magic}};
@@ -519,15 +521,16 @@ aclnnStatus NnopbaseReadJsonConfig(const std::string& binaryInfoPath, nlohmann::
 
     std::ifstream ifs(binaryInfoPath.c_str());
     if (!ifs.is_open()) {
-        OP_LOGW("Failed to open file %s.", binaryInfoPath.c_str());
-        return ACLNN_ERR_PARAM_INVALID;
+        std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
+        OP_LOGW("Failed to open file %s. Reason: %s", binaryInfoPath.c_str(), errMsg.c_str());
+        return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
     }
     try {
         ifs >> binaryInfoConfig;
         ifs.close();
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE_WITH_INVALID_CONTENT(binaryInfoPath.c_str(), e.what());
-        return ACLNN_ERR_PARAM_INVALID;
+        OP_LOGW("Failed to parse file %s. Reason: %s", binaryInfoPath.c_str(), e.what());
+        return ACLNN_ERR_INNER_LOAD_JSON_FAILED;
     }
     OP_LOGI("Read jsonfile [%s] successfully.", binaryInfoPath.c_str());
     return OK;

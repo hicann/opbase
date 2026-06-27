@@ -302,7 +302,7 @@ aclnnStatus NnopbasePrepareExceptionDumpInfo(NnopbaseExecutor* const executor, a
         const std::string l2Name(executor->opType);
         const std::string l0Name(executor->opType);
         const uint32_t numBlocks = NnopbaseExecutorGetNumBlocks(executor);
-        const std::string& magic = nnopbase::GetMagicFormBin(executor->collecter->useCoreTypeMagic,
+        const std::string& magic = nnopbase::GetMagicFormBin(executor->collector->useCoreTypeMagic,
                                                              executor->args->binInfo);
         std::string devFunc;
         std::string kernelInfo;

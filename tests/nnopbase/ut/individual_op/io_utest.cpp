@@ -9,7 +9,7 @@
  */
 #include <gtest/gtest.h>
 #include "executor/indv_bininfo.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "executor/indv_executor.h"
 #include "executor/indv_compute_node_info.h"
 #include "utils/file_faker.h"

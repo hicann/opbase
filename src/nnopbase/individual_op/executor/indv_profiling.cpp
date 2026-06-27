@@ -9,7 +9,7 @@
  */
 #include <mutex>
 #include "indv_executor.h"
-#include "indv_collecter.h"
+#include "indv_collector.h"
 #include "utils/indv_base.h"
 #include "utils/indv_debug_assert.h"
 #include "utils/indv_soc.h"

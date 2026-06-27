@@ -19,7 +19,7 @@
 #include "utils/thread_var_container.h"
 #include "utils/indv_soc.h"
 #include "executor/indv_executor.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "executor/indv_tilingcontext_builder.h"
 #include "executor/indv_bininfo.h"
 #include "executor/indv_args_pool.h"
@@ -258,14 +258,14 @@ aclnnStatus NnopbaseInit()
         return OK;
     }
     OP_LOGI("NnopbaseInit Start.");
-    if (gBinCollecter == nullptr) {
-        auto binCollecter = std::make_unique<NnopbaseBinCollecter>();
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(binCollecter);
-        RecordNnopbaseInitTime(binCollecter.get(), NnopbaseCollectorTimeIdx::kCollectorInitStart);
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterInit(binCollecter.get()));
-        RecordNnopbaseInitTime(binCollecter.get(), NnopbaseCollectorTimeIdx::kCollectorInitEnd);
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterWork(binCollecter.get()));
-        gBinCollecter = binCollecter.release();
+    if (gBinCollector == nullptr) {
+        auto binCollector = std::make_unique<NnopbaseBinCollector>();
+        NNOPBASE_ASSERT_NOTNULL_RETVAL(binCollector);
+        RecordNnopbaseInitTime(binCollector.get(), NnopbaseCollectorTimeIdx::kCollectorInitStart);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorInit(binCollector.get()));
+        RecordNnopbaseInitTime(binCollector.get(), NnopbaseCollectorTimeIdx::kCollectorInitEnd);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorWork(binCollector.get()));
+        gBinCollector = binCollector.release();
     }
     NnopbaseExecutorSpaceSetInit(&g_nnopbaseSpaceSet);
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorSetGlobalConfig());
@@ -279,7 +279,7 @@ void NnopbaseReloadStaticBinJsonInfos(void)
 {
     OP_LOGI("NnopbaseReloadStaticBinJsonInfos start.");
     NnopbaseExecutorClearSet(&g_nnopbaseSpaceSet);
-    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollecter);
+    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollector);
     if (ret != OK) {
         OP_LOGW("Failed to reload static kernel information.");
     } else {
@@ -331,7 +331,7 @@ void* NnopbaseGetExecutor(void* space, const NnopbaseChar* opType, NnopbaseChar*
         aclnnStatus ret = NnopbaseExecutorInit(executor,
                                                {inputsDesc, inputNum, outputsDesc, outputNum, attrsDesc, attrsNum});
         if (ret == OK) {
-            NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+            NnopbaseExecutorSetCollector(executor, gBinCollector);
             executor->space = (NnopbaseExecutorSpace*)space;
             ret = NnopbaseExecutorSetRegInfo(executor, opType);
         }
@@ -1120,22 +1120,22 @@ const NnopbaseChar* NnopbaseFindStaticKernel(const aclTensor* tensors[], const N
         NNOPBASE_NORM_MAX_BIN_BUCKETS);
     OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
 
-    verKey1 = NnopbaseCollecterGenStaticKey(verKey1, &regInfoKey, tensorNumInfo, tensors, attrs,
+    verKey1 = NnopbaseCollectorGenStaticKey(verKey1, &regInfoKey, tensorNumInfo, tensors, attrs,
                                             staticRuntimeInfo->implMode, staticRuntimeInfo->deterMode, valueDepend,
                                             true);
 
     NnopbaseCoreNum coreNum{staticRuntimeInfo->aicNum, staticRuntimeInfo->aivNum};
-    auto simplifiedKey = NnopbaseCollecterGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
+    auto simplifiedKey = NnopbaseCollectorGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
                                                              uint32_t(verKey1 - verbose), &coreNum);
     if (simplifiedKey != nullptr) {
         return simplifiedKey;
     } else {
         OP_LOGW("Cannot find static kernel bin with stride information, trying to find without stride again.");
         NnopbaseUChar* verKey2 = verbose;
-        verKey2 = NnopbaseCollecterGenStaticKey(verKey2, &regInfoKey, tensorNumInfo, tensors, attrs,
+        verKey2 = NnopbaseCollectorGenStaticKey(verKey2, &regInfoKey, tensorNumInfo, tensors, attrs,
                                                 staticRuntimeInfo->implMode, staticRuntimeInfo->deterMode, valueDepend,
                                                 false);
-        return NnopbaseCollecterGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
+        return NnopbaseCollectorGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
                                                    uint32_t(verKey2 - verbose), &coreNum);
     }
 }

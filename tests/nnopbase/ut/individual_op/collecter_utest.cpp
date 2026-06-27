@@ -9,7 +9,7 @@
  */
 #include <cstdio>
 #include "utils/indv_types.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "executor/indv_bininfo.h"
 #include <gtest/gtest.h>
 #include <string.h>
@@ -32,75 +32,75 @@ void SetSocVersion(const std::string& version)
 }
 } // namespace
 
-class NnopbaseCollecterUnitTest : public testing::Test {
+class NnopbaseCollectorUnitTest : public testing::Test {
 protected:
     void SetUp() { setenv("ASCEND_C", "1", 1); }
     void TearDown() { unsetenv("ASCEND_C"); }
 };
 
-void CollecterClean(NnopbaseBinCollecter* collecter)
+void CollectorClean(NnopbaseBinCollector* collector)
 {
     for (size_t i = 0; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; ++i) {
-        DList* head = &collecter->regInfoTbl.buckets[i].head;
+        DList* head = &collector->regInfoTbl.buckets[i].head;
         for (DoubleListNode *node = head->node.next, *tmp = node->next; node != &(head->node);
              node = tmp, tmp = (node)->next) {
             NnopbaseRegInfo* regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
             if (!regInfo->key.opType.empty()) {
-                NnopbaseCollecterGcRegInfo(regInfo);
+                NnopbaseCollectorGcRegInfo(regInfo);
             }
         }
     }
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_collecter_init_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_collector_init_ok)
 {
-    NnopbaseBinCollecter* bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    NnopbaseBinCollector* bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    delete bin_collecter;
+    delete bin_collector;
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_soc_version_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_get_soc_version_ok)
 {
-    NnopbaseBinCollecter* bin_collecter = new NnopbaseBinCollecter;
+    NnopbaseBinCollector* bin_collector = new NnopbaseBinCollector;
     std::string socVersion = std::string(nnopbase::OPS_SUBPATH_ASCEND910B);
     SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND910B);
     ASSERT_EQ(socVersion, nnopbase::IndvSoc::GetInstance().GetCurSocVersion());
-    int32_t ret = NnopbaseSetCollecterSocVersion(bin_collecter);
+    int32_t ret = NnopbaseSetCollectorSocVersion(bin_collector);
     ASSERT_EQ(ret, OK);
-    delete bin_collecter;
+    delete bin_collector;
     nnopbase::IndvSoc::GetInstance().Reset();
 }
 
-NnopbaseBinCollecter* bin_collecter = NULL;
-TEST_F(NnopbaseCollecterUnitTest, test_collecter_work_ok)
+NnopbaseBinCollector* bin_collector = NULL;
+TEST_F(NnopbaseCollectorUnitTest, test_collector_work_ok)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_find_binInfo_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_find_binInfo_ok)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     DList* head;
     // opType:"bninference_d_kernel"->key
     uint64_t key = 320;
-    head = &bin_collecter->regInfoTbl.buckets[key].head;
+    head = &bin_collector->regInfoTbl.buckets[key].head;
 
     NnopbaseRegInfo* regInfo;
     const char* strKey = "bninference_d_kernel/d=0,p=0/1,30/1,30/1,30/1,30";
@@ -108,36 +108,36 @@ TEST_F(NnopbaseCollecterUnitTest, test_find_binInfo_ok)
     unsigned char verbose[1024];
     unsigned char* binKey = verbose;
     uint32_t size = 0U;
-    ret = NnopbaseCollecterConvertDynamicVerbKey(strKey, binKey, &size);
+    ret = NnopbaseCollectorConvertDynamicVerbKey(strKey, binKey, &size);
     ASSERT_EQ(ret, OK);
     NnopbaseBinInfo* binInfoRes;
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
-        binInfoRes = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, size);
+        binInfoRes = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, size);
         if (binInfoRes) {
             break;
         }
     }
     ASSERT_NE(binInfoRes, nullptr);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_find_binInfo_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_find_binInfo_fail)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     DList* head;
     uint64_t key = 320;
-    head = &bin_collecter->regInfoTbl.buckets[key].head;
+    head = &bin_collector->regInfoTbl.buckets[key].head;
 
     NnopbaseRegInfo* regInfo;
     const char* strKey = "bninference_d_kernel/d=0,p=0/1,100/1,100/1,100";
@@ -145,36 +145,36 @@ TEST_F(NnopbaseCollecterUnitTest, test_find_binInfo_fail)
     unsigned char verbose[1024];
     unsigned char* binKey = verbose;
     uint32_t size = 0U;
-    ret = NnopbaseCollecterConvertDynamicVerbKey(strKey, binKey, &size);
+    ret = NnopbaseCollectorConvertDynamicVerbKey(strKey, binKey, &size);
     ASSERT_EQ(ret, OK);
     NnopbaseBinInfo* binInfoRes;
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
-        binInfoRes = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, size);
+        binInfoRes = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, size);
         if (binInfoRes) {
             break;
         }
     }
     ASSERT_EQ(binInfoRes, nullptr);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_find_binInfo_hashKey_transborder)
+TEST_F(NnopbaseCollectorUnitTest, test_find_binInfo_hashKey_transborder)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     DList* head;
     uint64_t key = 320;
-    head = &bin_collecter->regInfoTbl.buckets[key].head;
+    head = &bin_collector->regInfoTbl.buckets[key].head;
 
     NnopbaseRegInfo* regInfo;
     const char* strKey = "bninference_d_kernel/d=0,p=0/1,100/1,100/1,100";
@@ -182,26 +182,26 @@ TEST_F(NnopbaseCollecterUnitTest, test_find_binInfo_hashKey_transborder)
     unsigned char verbose[1024];
     unsigned char* binKey = verbose;
     uint32_t size = 0U;
-    ret = NnopbaseCollecterConvertDynamicVerbKey(strKey, binKey, &size);
+    ret = NnopbaseCollectorConvertDynamicVerbKey(strKey, binKey, &size);
     ASSERT_EQ(ret, OK);
     NnopbaseBinInfo* binInfoRes;
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
-        binInfoRes = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, size);
+        binInfoRes = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, size);
         if (binInfoRes) {
             break;
         }
     }
     ASSERT_EQ(binInfoRes, nullptr);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_bin_info_build_fail_len)
+TEST_F(NnopbaseCollectorUnitTest, test_bin_info_build_fail_len)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
     NnopbaseBinInfo* binInfo = (NnopbaseBinInfo*)malloc(sizeof(NnopbaseBinInfo));
@@ -217,29 +217,29 @@ TEST_F(NnopbaseCollecterUnitTest, test_bin_info_build_fail_len)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_read_opinfo_config_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_read_opinfo_config_fail)
 {
-    bin_collecter = new NnopbaseBinCollecter;
+    bin_collector = new NnopbaseBinCollector;
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> commonPath;
     commonPath.push_back(
         std::make_pair("/usr/local/Ascend/latest/opp/built-in/123/4243", gert::OppImplVersionTag::kOpp));
-    int32_t ret = NnopbaseCollecterGetDynamicKernelPathAndReadConfig(bin_collecter, commonPath, 0U);
+    int32_t ret = NnopbaseCollectorGetDynamicKernelPathAndReadConfig(bin_collector, commonPath, 0U);
     ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_convert_verb_key_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_convert_verb_key_ok)
 {
     const char* strKey = "bninference_d_kernel/d=0,p=0/1,30/1,30/1,30";
     unsigned char verbKey[1024];
     unsigned char* binKey = verbKey;
     uint32_t size = 0U;
-    int32_t ret = NnopbaseCollecterConvertDynamicVerbKey(strKey, binKey, &size);
+    int32_t ret = NnopbaseCollectorConvertDynamicVerbKey(strKey, binKey, &size);
     ASSERT_EQ(ret, OK);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_optype_hashkey_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_get_optype_hashkey_ok)
 {
     const char opType[] = "bninference_d_kernel";
     size_t expectHashkey = 320;
@@ -247,56 +247,56 @@ TEST_F(NnopbaseCollecterUnitTest, test_get_optype_hashkey_ok)
     ASSERT_EQ(hash_key, expectHashkey);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_verbose_hashkey_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_get_verbose_hashkey_ok)
 {
     const char* strKey = "bninference_d_kernel/d=0,p=0/1,30/1,30/1,30/1,30";
     unsigned char verbKey[1024];
     unsigned char* binKey = verbKey;
     uint32_t size = 0U;
     size_t expectHashkey = 558;
-    int32_t ret = NnopbaseCollecterConvertDynamicVerbKey(strKey, binKey, &size);
+    int32_t ret = NnopbaseCollectorConvertDynamicVerbKey(strKey, binKey, &size);
     ASSERT_EQ(ret, OK);
     uint64_t hashKey = NnopbaseHashBinary(binKey, size) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
     ASSERT_EQ(hashKey, expectHashkey);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_insert_binCollecter_dlist_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_insert_binCollector_dlist_ok)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     int node_num = 0;
     uint64_t key = 320;
     NnopbaseRegInfo* regInfo;
-    DList* head = &(bin_collecter->regInfoTbl.buckets[key].head);
+    DList* head = &(bin_collector->regInfoTbl.buckets[key].head);
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
         node_num += 1;
     }
     ASSERT_EQ(node_num, 1);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_insert_regInfo_dlist_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_insert_regInfo_dlist_ok)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     int node_num = 0;
     uint64_t key = 320;     // key for bninference_d_kernel
     uint64_t hashKey = 558; // key for one of input of bninference_d_kernel
-    DList* head = &(bin_collecter->regInfoTbl.buckets[key].head);
+    DList* head = &(bin_collector->regInfoTbl.buckets[key].head);
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         NnopbaseRegInfo* regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
         if (!regInfo->key.opType.empty()) {
@@ -308,140 +308,140 @@ TEST_F(NnopbaseCollecterUnitTest, test_insert_regInfo_dlist_ok)
     }
     ASSERT_EQ(node_num, 2); // 1980 & 1971
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_tiling_func_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_get_tiling_func_ok)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     uint64_t key = 558;
-    DList* head = &(bin_collecter->regInfoTbl.buckets[key].head);
+    DList* head = &(bin_collector->regInfoTbl.buckets[key].head);
     NnopbaseRegInfo* regInfo;
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         regInfo = ((NnopbaseRegInfo*)((char*)(node)-offsetof(NnopbaseRegInfo, dllNode)));
         ASSERT_NE(regInfo->tiling, nullptr);
     }
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_tilingFunc_null)
+TEST_F(NnopbaseCollectorUnitTest, test_get_tilingFunc_null)
 {
     TilingFun tiling;
     NnopbaseJsonInfo jsonInfo;
     jsonInfo.opType = "Add";
-    ASSERT_EQ(NnopbaseCollecterSetTiling(jsonInfo, &tiling, gert::OppImplVersionTag::kOpp), OK);
+    ASSERT_EQ(NnopbaseCollectorSetTiling(jsonInfo, &tiling, gert::OppImplVersionTag::kOpp), OK);
     ASSERT_EQ(tiling, nullptr);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_load_tilingso_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_load_tilingso_fail)
 {
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
     int32_t ret = NnopbaseLoadTilingSo(basePath);
     ASSERT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_path_and_read_config_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_get_path_and_read_config_fail)
 {
     ASSERT_EQ(NnopbaseSetStubNoConfigFiles(), 1);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
-    ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
+    ret = NnopbaseCollectorWork(bin_collector);
+    ASSERT_EQ(ret, ACLNN_ERR_INNER_LOAD_JSON_FAILED);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_get_base_path_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_get_base_path_fail)
 {
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
-    ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
+    ret = NnopbaseCollectorWork(bin_collector);
+    ASSERT_EQ(ret, ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_find_regInfoInTbl_ok)
+TEST_F(NnopbaseCollectorUnitTest, test_find_regInfoInTbl_ok)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     NnopbaseChar opType[50] = "bninference_d_kernel";
     uint64_t hashKey = 320;
-    NnopbaseRegInfo* regInfo = NnopbaseCollecterFindRegInfoInTbl(bin_collecter, opType, hashKey);
+    NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(bin_collector, opType, hashKey);
     ASSERT_NE(regInfo, nullptr);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_find_regInfoInTbl_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_find_regInfoInTbl_fail)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    bin_collecter = new NnopbaseBinCollecter;
-    int32_t ret = NnopbaseCollecterInit(bin_collecter);
+    bin_collector = new NnopbaseBinCollector;
+    int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
-    ret = NnopbaseCollecterWork(bin_collecter);
+    ret = NnopbaseCollectorWork(bin_collector);
     ASSERT_EQ(ret, OK);
     NnopbaseChar opType[50] = "bninference_d_kernel";
     uint64_t hashKey = 1024;
-    NnopbaseRegInfo* regInfo = NnopbaseCollecterFindRegInfoInTbl(bin_collecter, opType, hashKey);
+    NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(bin_collector, opType, hashKey);
     ASSERT_EQ(regInfo, nullptr);
     if (!ret) {
-        CollecterClean(bin_collecter);
+        CollectorClean(bin_collector);
     }
-    delete bin_collecter;
-    bin_collecter = NULL;
+    delete bin_collector;
+    bin_collector = NULL;
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_find_regInfoInTbl_nullptr)
+TEST_F(NnopbaseCollectorUnitTest, test_find_regInfoInTbl_nullptr)
 {
-    bin_collecter = nullptr;
+    bin_collector = nullptr;
     NnopbaseChar opType[50] = "bninference_d_kernel";
     uint64_t hashKey = 320;
-    NnopbaseRegInfo* regInfo = NnopbaseCollecterFindRegInfoInTbl(bin_collecter, opType, hashKey);
+    NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(bin_collector, opType, hashKey);
     ASSERT_EQ(regInfo, nullptr);
-    delete bin_collecter;
+    delete bin_collector;
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_read_json_fail_1)
+TEST_F(NnopbaseCollectorUnitTest, test_read_json_fail_1)
 {
     std::string binaryInfoPath = "";
     nlohmann::json binaryInfoConfig;
-    ASSERT_EQ(NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig), ACLNN_ERR_INNER_LOAD_JSON_FAILED);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_read_op_json_fail)
+TEST_F(NnopbaseCollectorUnitTest, test_read_op_json_fail)
 {
     std::string path = "test";
     std::string path_json_config = path + "/test.json";
@@ -449,10 +449,10 @@ TEST_F(NnopbaseCollecterUnitTest, test_read_op_json_fail)
     system(("echo 'test json' > " + path_json_config).c_str());
 
     nlohmann::json binaryInfoConfig;
-    ASSERT_EQ(NnopbaseReadJsonConfig(path_json_config, binaryInfoConfig), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseReadJsonConfig(path_json_config, binaryInfoConfig), ACLNN_ERR_INNER_LOAD_JSON_FAILED);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_read_config_file_empty)
+TEST_F(NnopbaseCollectorUnitTest, test_read_config_file_empty)
 {
     std::string path = "test";
     std::string path_json_config = path + "/config.ini";
@@ -463,7 +463,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_read_config_file_empty)
     ASSERT_EQ(NnopbaseReadConfigFile(path_json_config, subPath), true);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_update_static_json_info_Fail_1)
+TEST_F(NnopbaseCollectorUnitTest, test_update_static_json_info_Fail_1)
 {
     std::string path = "../static_kernel/test_static.json";
     nlohmann::json binInfo;
@@ -471,7 +471,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_update_static_json_info_Fail_1)
     ASSERT_EQ(NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo), ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_update_static_json_info_Fail_2)
+TEST_F(NnopbaseCollectorUnitTest, test_update_static_json_info_Fail_2)
 {
     std::string path = "../static_kernel/test_static.json";
     nlohmann::json binInfo;
@@ -483,7 +483,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_update_static_json_info_Fail_2)
     ASSERT_EQ(NnopbaseUpdateStaticJsonInfo(binInfo, jsonInfo), ACLNN_ERR_PARAM_INVALID);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_update_static_bin_json_infos_success)
+TEST_F(NnopbaseCollectorUnitTest, test_update_static_bin_json_infos_success)
 {
     std::string AddTik2Json = "{"
                               "  \"coreType\" : \"VectorCore\","
@@ -540,14 +540,14 @@ TEST_F(NnopbaseCollecterUnitTest, test_update_static_bin_json_infos_success)
     NnopbaseChar opType[50] = "AddTik2";
     EXPECT_EQ(manager.AddBinary(ge::AscendString(opType), addTik2OpBinary), ge::GRAPH_SUCCESS);
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    NnopbaseBinCollecter collecter;
-    EXPECT_EQ(NnopbaseUpdateStaticBinJsonInfos(&collecter, opType), OK);
+    NnopbaseBinCollector collector;
+    EXPECT_EQ(NnopbaseUpdateStaticBinJsonInfos(&collector, opType), OK);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_kernel_config)
+TEST_F(NnopbaseCollectorUnitTest, test_kernel_config)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    NnopbaseBinCollecter collecter;
+    NnopbaseBinCollector collector;
     std::string basePath = "./usr/local/Ascend/latest/opp";
     nlohmann::json StaticDebugBinInfo;
     StaticDebugBinInfo["coreType"] = 1;
@@ -558,50 +558,50 @@ TEST_F(NnopbaseCollecterUnitTest, test_kernel_config)
     nlohmann::json binInfo;
     binInfo["StaticDebug"]["staticList"] = {StaticDebugBinInfo};
     ASSERT_EQ(
-        NnopbaseCollecterReadDebugKernelOpInfoConfig(&collecter, binInfo, basePath, gert::OppImplVersionTag::kOpp), OK);
+        NnopbaseCollectorReadDebugKernelOpInfoConfig(&collector, binInfo, basePath, gert::OppImplVersionTag::kOpp), OK);
 
     nlohmann::json staticBinInfo;
     binInfo["TestStatic"]["binaryList"] = {staticBinInfo};
     ASSERT_EQ(
-        NnopbaseCollecterReadDebugKernelOpInfoConfig(&collecter, binInfo, basePath, gert::OppImplVersionTag::kOpp), OK);
+        NnopbaseCollectorReadDebugKernelOpInfoConfig(&collector, binInfo, basePath, gert::OppImplVersionTag::kOpp), OK);
 
     staticBinInfo["coreType"] = 1;
     staticBinInfo["simplifiedKey"] = "xxxx";
     staticBinInfo["binPath"] = "static_kernel_202307261051/TestStatic/TestStatic_high_performance_0.o";
     binInfo["TestStatic"]["staticList"] = {staticBinInfo};
     ASSERT_EQ(
-        NnopbaseCollecterReadStaticKernelOpInfoConfig(&collecter, binInfo, basePath, gert::OppImplVersionTag::kOpp),
+        NnopbaseCollectorReadStaticKernelOpInfoConfig(&collector, binInfo, basePath, gert::OppImplVersionTag::kOpp),
         OK);
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_add_reg_info)
+TEST_F(NnopbaseCollectorUnitTest, test_add_reg_info)
 {
     NnopbaseRegInfo* reg1;
-    NnopbaseBinCollecter collecter;
-    NnopbaseCollecterInit(&collecter);
+    NnopbaseBinCollector collector;
+    NnopbaseCollectorInit(&collector);
     NnopbaseJsonInfo jsonInfo;
     jsonInfo.opType = "mul";
-    ASSERT_EQ(NnopbaseCollecterAddRegInfoToTbl(&collecter, jsonInfo, 1, reg1, gert::OppImplVersionTag::kOpp), OK);
+    ASSERT_EQ(NnopbaseCollectorAddRegInfoToTbl(&collector, jsonInfo, 1, reg1, gert::OppImplVersionTag::kOpp), OK);
 
     NnopbaseRegInfo* reg2;
     jsonInfo.opType = "mul";
-    ASSERT_EQ(NnopbaseCollecterAddRegInfoToTbl(&collecter, jsonInfo, 1, reg2, gert::OppImplVersionTag::kOpp), OK);
+    ASSERT_EQ(NnopbaseCollectorAddRegInfoToTbl(&collector, jsonInfo, 1, reg2, gert::OppImplVersionTag::kOpp), OK);
     delete reg1;
     delete reg2;
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_opp_latest)
+TEST_F(NnopbaseCollectorUnitTest, test_opp_latest)
 {
     ASSERT_EQ(NnopbaseSetStubFiles("", true), 1);
-    NnopbaseBinCollecter bin_collecter;
-    ASSERT_EQ(NnopbaseCollecterInit(&bin_collecter), OK);
-    ASSERT_EQ(NnopbaseCollecterWork(&bin_collecter), OK);
-    CollecterClean(&bin_collecter);
+    NnopbaseBinCollector bin_collector;
+    ASSERT_EQ(NnopbaseCollectorInit(&bin_collector), OK);
+    ASSERT_EQ(NnopbaseCollectorWork(&bin_collector), OK);
+    CollectorClean(&bin_collector);
     NnopbaseUnsetEnvAndClearFolder();
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_read_custom_opapi_path)
+TEST_F(NnopbaseCollectorUnitTest, test_read_custom_opapi_path)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
     std::vector<std::string> basePath;
@@ -613,7 +613,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_read_custom_opapi_path)
     setenv("ASCEND_CUSTOM_OPP_PATH", cust_opp_path.c_str(), 1);
 }
 
-TEST_F(NnopbaseCollecterUnitTest, test_read_custom_opapi_path_failed)
+TEST_F(NnopbaseCollectorUnitTest, test_read_custom_opapi_path_failed)
 {
     std::string cust_opp_path = "/usr/local/Ascend/latest/opp/errCust";
     setenv("ASCEND_CUSTOM_OPP_PATH", cust_opp_path.c_str(), 1);

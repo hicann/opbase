@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "indv_collecter.h"
+#include "indv_collector.h"
 
 #include <map>
 #include <string>
@@ -33,6 +33,10 @@ using namespace nnopbase;
 
 namespace {
 constexpr char const* OP_TILING_SO_SUFFIX = ".so";
+constexpr char* ERR_REASON_FOR_OPP_PACKAGE = "1.The operator package is not installed. "
+    "2.The operator package is damaged. "
+    "3.The binary_info_config.json file is damaged or does not exist. "
+    "4.The user does not have sufficient permissions and the binary_info_config.json file in the operator package fails to be read";
 constexpr size_t MAX_BIN_KEY_MULTIPLIER = 4UL;
 static const std::vector<std::string> OPS_PATH_VEC = {
     "ops_math",  "ops_nn", "ops_cv", "ops_transformer", "ops_oam",
@@ -71,14 +75,14 @@ void GetCustomVendorName(std::vector<std::string>& customPaths)
     NnopbaseSplitStr(customOppPath, ":", customPaths);
 }
 
-void NnopbaseGetBasePath(NnopbaseBinCollecter* const collecter,
+void NnopbaseGetBasePath(NnopbaseBinCollector* const collector,
                          std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath,
                          int32_t& builtInStartIndex)
 {
     // 处理自研 高优先级在前 低优先级在后
     OP_LOGI("Start to get basePath.");
     NnopbaseGetCustomOppPath(basePath);
-    NnopbaseGetOppPath(collecter, basePath, builtInStartIndex);
+    NnopbaseGetOppPath(collector, basePath, builtInStartIndex);
     OP_LOGI("Get basePath finished, basePath size is %zu.", basePath.size());
 }
 
@@ -182,13 +186,13 @@ extern "C" {
 static constexpr int32_t NNOPBASE_OP_TYPE_INDEX = 0;
 static constexpr int32_t NNOPBASE_COMPILE_ARGS_INDEX = 1;
 
-NnopbaseBinCollecter* gBinCollecter = nullptr;
+NnopbaseBinCollector* gBinCollector = nullptr;
 
 // if usingStride = false,
 // [OpType, determin, precision, {dtype,format,shape}....attrs] to generate staticKey
 // if usingStride = true,
 // [OpType, determin, precision, {dtype,format,shape,stride,offset}....attrs] to generate staticKey
-NnopbaseUChar* NnopbaseCollecterGenStaticKey(NnopbaseUChar* verKey, const NnopbaseRegInfoKey* const regInfoKey,
+NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const NnopbaseRegInfoKey* const regInfoKey,
                                              const NnopbaseStaticTensorNumInfo* const tensorNumInfo,
                                              const aclTensor* tensors[], const NnopbaseAttrAddr* attrs[],
                                              const int64_t implMode, const int64_t deterMin,
@@ -283,16 +287,16 @@ NnopbaseUChar* NnopbaseCollecterGenStaticKey(NnopbaseUChar* verKey, const Nnopba
     return verKey;
 }
 
-const NnopbaseChar* NnopbaseCollecterGetStaticKernelBin(const NnopbaseChar* const opType, const uint64_t key,
+const NnopbaseChar* NnopbaseCollectorGetStaticKernelBin(const NnopbaseChar* const opType, const uint64_t key,
                                                         const NnopbaseUChar* verbose, const uint32_t verbLen,
                                                         const NnopbaseCoreNum* const coreNum)
 {
-    NnopbaseRegInfo* regInfo = NnopbaseCollecterFindRegInfoInTbl(gBinCollecter, opType, key);
+    NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(gBinCollector, opType, key);
     if (regInfo == nullptr) {
         return nullptr;
     }
     const size_t hashKey = NnopbaseHashBinary(verbose, static_cast<size_t>(verbLen)) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
-    const NnopbaseBinInfo* binInfo = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, verbLen, coreNum);
+    const NnopbaseBinInfo* binInfo = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, verbLen, coreNum);
     if (binInfo == nullptr) {
         return nullptr;
     }
@@ -300,7 +304,7 @@ const NnopbaseChar* NnopbaseCollecterGetStaticKernelBin(const NnopbaseChar* cons
     return binInfo->binPath.c_str();
 }
 
-aclnnStatus NnopbaseCollecterSetTiling(const NnopbaseJsonInfo& jsonInfo, TilingFun* const tiling,
+aclnnStatus NnopbaseCollectorSetTiling(const NnopbaseJsonInfo& jsonInfo, TilingFun* const tiling,
                                        gert::OppImplVersionTag oppImplVersion)
 {
     auto& registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(oppImplVersion);
@@ -337,30 +341,34 @@ aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string& hostEnvOs, std::st
 {
     const NnopbaseChar* ascendHomePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
-    OP_CHECK(ascendHomePath != nullptr,
-             OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("NnopbaseGetCurEnvPackageOsAndCpuType",
-                                                                   "ASCEND_HOME_PATH"),
-             return ACLNN_ERR_PARAM_NULLPTR);
+    if (ascendHomePath == nullptr) {
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Finding platform configuration file scene.info",
+                                                            "ASCEND_HOME_PATH");
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
     std::string modelPath = ascendHomePath;
-    std::string sceneV1 = modelPath + "/share/info/opbase/" + SCENE;
-    OP_LOGI("Try to extract os and cpu info from %s.", sceneV1.c_str());
-    std::ifstream ifs(sceneV1);
+    std::string sceneInfoPath = modelPath + "/share/info/opbase/" + SCENE;
+    OP_LOGI("Try to extract os and cpu info from %s.", sceneInfoPath.c_str());
+    std::ifstream ifs(sceneInfoPath);
     if (!ifs.good()) {
         ifs.close();
-        OP_LOGW("Failed to get %s, trying another path.", sceneV1.c_str());
+        OP_LOGW("Failed to get %s, trying another path.", sceneInfoPath.c_str());
         const NnopbaseChar* oppPathEnv = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
         OP_CHECK(oppPathEnv != nullptr,
-                 OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("NnopbaseGetCurEnvPackageOsAndCpuType",
+                 OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Finding platform configuration file scene.info",
                                                                        "ASCEND_OPP_PATH"),
                  return ACLNN_ERR_PARAM_NULLPTR);
         NNOPBASE_ASSERT_NOTNULL_RETVAL(oppPathEnv);
         modelPath = oppPathEnv;
-        std::string sceneV2 = modelPath + "/" + SCENE;
-        ifs.open(sceneV2);
+        sceneInfoPath = modelPath + "/" + SCENE;
+        ifs.open(sceneInfoPath);
     }
-    CHECK_COND(ifs.good(), ACLNN_ERR_PARAM_INVALID,
-               "Failed to read scene.info, please check if the opp package is installed!");
+    if (!ifs.good()) {
+        std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(sceneInfoPath.c_str(), errMsg.c_str());
+        return ACLNN_ERR_INNER;
+    }
     std::string line;
     while (std::getline(ifs, line)) {
         NnopbaseTrim(line, '\r');
@@ -417,7 +425,7 @@ bool NnopbaseReadConfigFile(const std::string& configPath, std::vector<std::stri
     return true;
 }
 
-void NnopbaseGetOppPath(NnopbaseBinCollecter* const collecter,
+void NnopbaseGetOppPath(NnopbaseBinCollector* const collector,
                         std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath,
                         int32_t& builtInStartIndex)
 {
@@ -442,7 +450,7 @@ void NnopbaseGetOppPath(NnopbaseBinCollecter* const collecter,
     // 走旧的opp路径
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string oppKernelBase = GetBuiltInBasePath(oppImplVersion);
-    collecter->oppPath = oppKernelBase;
+    collector->oppPath = oppKernelBase;
     // 追加built_in
     if (!oppKernelBase.empty()) {
         basePath.push_back(std::make_pair(oppKernelBase + "/built-in", oppImplVersion));
@@ -522,19 +530,19 @@ aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImp
     return ACLNN_ERR_PARAM_INVALID;
 }
 
-NnopbaseRegInfo* NnopbaseCollecterFindRegInfoInTbl(const NnopbaseBinCollecter* const collecter,
+NnopbaseRegInfo* NnopbaseCollectorFindRegInfoInTbl(const NnopbaseBinCollector* const collector,
                                                    const NnopbaseChar* const opType, const uint64_t hashKey)
 {
     if (hashKey >= NNOPBASE_NORM_MAX_BIN_BUCKETS) {
         OP_LOGE(ACLNN_ERR_INNER, "HashKey[%lu] is too large, please check.", hashKey);
         return nullptr;
     }
-    if (collecter == nullptr) {
+    if (collector == nullptr) {
         return nullptr;
     }
     NnopbaseRegInfo* regInfo = nullptr;
     int32_t ret = 0;
-    const DList* const head = &collecter->regInfoTbl.buckets[hashKey].head;
+    const DList* const head = &collector->regInfoTbl.buckets[hashKey].head;
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
         regInfo = (op::internal::PtrCastTo<NnopbaseRegInfo>(op::internal::PtrCastTo<NnopbaseChar>(node) -
                                                             offsetof(NnopbaseRegInfo, dllNode)));
@@ -549,25 +557,25 @@ NnopbaseRegInfo* NnopbaseCollecterFindRegInfoInTbl(const NnopbaseBinCollecter* c
     return nullptr;
 }
 
-aclnnStatus NnopbaseCollecterOpRegInfoInit(NnopbaseRegInfo* regInfo, const NnopbaseJsonInfo& jsonInfo,
+aclnnStatus NnopbaseCollectorOpRegInfoInit(NnopbaseRegInfo* regInfo, const NnopbaseJsonInfo& jsonInfo,
                                            const uint64_t hashKey, gert::OppImplVersionTag oppImplVersion)
 {
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterSetTiling(jsonInfo, &regInfo->tiling, oppImplVersion));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorSetTiling(jsonInfo, &regInfo->tiling, oppImplVersion));
     regInfo->key.opType = jsonInfo.opType;
     regInfo->isActive = true;
     regInfo->key.hashKey = hashKey;
     DoubleListNodeInit(&regInfo->dllNode);
-    NnopbaseCollecterInitBinTbl(&regInfo->binTbl);
+    NnopbaseCollectorInitBinTbl(&regInfo->binTbl);
     return OK;
 }
 
-void NnopbaseCollecterOpRegInfoDestroy(NnopbaseRegInfo** regInfo)
+void NnopbaseCollectorOpRegInfoDestroy(NnopbaseRegInfo** regInfo)
 {
     delete (*regInfo);
     *regInfo = nullptr;
 }
 
-aclnnStatus NnopbaseCollecterAddRegInfoToTbl(NnopbaseBinCollecter* const collecter, const NnopbaseJsonInfo& jsonInfo,
+aclnnStatus NnopbaseCollectorAddRegInfoToTbl(NnopbaseBinCollector* const collector, const NnopbaseJsonInfo& jsonInfo,
                                              const uint64_t hashKey, NnopbaseRegInfo*& reg,
                                              gert::OppImplVersionTag oppImplVersion)
 {
@@ -575,8 +583,8 @@ aclnnStatus NnopbaseCollecterAddRegInfoToTbl(NnopbaseBinCollecter* const collect
     OP_LOGD("Start to add %s regInfo to table, hashkey is %ld.", jsonInfo.opType.c_str(), hashKey);
     auto regInfo = std::make_unique<NnopbaseRegInfo>();
     NNOPBASE_ASSERT_NOTNULL_RETVAL(regInfo);
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterOpRegInfoInit(regInfo.get(), jsonInfo, hashKey, oppImplVersion));
-    DList* const head = &collecter->regInfoTbl.buckets[regInfo->key.hashKey].head;
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorOpRegInfoInit(regInfo.get(), jsonInfo, hashKey, oppImplVersion));
+    DList* const head = &collector->regInfoTbl.buckets[regInfo->key.hashKey].head;
 
     NnopbaseRegInfo* other = nullptr;
     for (DoubleListNode* node = head->node.next; node != &(head->node); node = node->next) {
@@ -599,17 +607,17 @@ aclnnStatus NnopbaseCollecterAddRegInfoToTbl(NnopbaseBinCollecter* const collect
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterAddRepoInfo(NnopbaseBinCollecter* const collecter, const NnopbaseJsonInfo& jsonInfo,
+aclnnStatus NnopbaseCollectorAddRepoInfo(NnopbaseBinCollector* const collector, const NnopbaseJsonInfo& jsonInfo,
                                          const string& key, gert::OppImplVersionTag oppImplVersion)
 {
     const uint64_t hashKey = static_cast<uint64_t>(
         NnopbaseHashBinary(op::internal::PtrCastTo<const NnopbaseUChar>(jsonInfo.opType.c_str()),
                            jsonInfo.opType.size()) %
         NNOPBASE_NORM_MAX_BIN_BUCKETS);
-    NnopbaseRegInfo* regInfo = NnopbaseCollecterFindRegInfoInTbl(collecter, jsonInfo.opType.c_str(), hashKey);
+    NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(collector, jsonInfo.opType.c_str(), hashKey);
     if (regInfo == nullptr) {
         NNOPBASE_ASSERT_OK_RETVAL(
-            NnopbaseCollecterAddRegInfoToTbl(collecter, jsonInfo, hashKey, regInfo, oppImplVersion));
+            NnopbaseCollectorAddRegInfoToTbl(collector, jsonInfo, hashKey, regInfo, oppImplVersion));
         NNOPBASE_ASSERT_NOTNULL_RETVAL(regInfo);
     }
     NNOPBASE_ASSERT_TRUE_RETVAL(regInfo->isActive);
@@ -623,28 +631,28 @@ aclnnStatus NnopbaseCollecterAddRepoInfo(NnopbaseBinCollecter* const collecter, 
             jsonInfo.isStaticShape ? "true" : "false", jsonInfo.customizedSimplifiedKey ? "true" : "false");
     if (jsonInfo.isStaticShape) {
         regInfo->hasStaticShapeBin = true;
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterConvertStaticVerbKey(key.c_str(), &(binKey[0U]), &keySize));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorConvertStaticVerbKey(key.c_str(), &(binKey[0U]), &keySize));
     } else if (jsonInfo.customizedSimplifiedKey) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterConvertCustomizedVerbKey(key.c_str(), &(binKey[0U]), &keySize));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorConvertCustomizedVerbKey(key.c_str(), &(binKey[0U]), &keySize));
     } else {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterConvertDynamicVerbKey(key.c_str(), &(binKey[0U]), &keySize));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorConvertDynamicVerbKey(key.c_str(), &(binKey[0U]), &keySize));
     } // isDynamic
 
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddBinInfo(key, regInfo, jsonInfo, &(binKey[0U]), keySize));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorAddBinInfo(key, regInfo, jsonInfo, &(binKey[0U]), keySize));
     return OK;
 }
 
-inline static aclnnStatus NnopbaseCollecterAddRepoInfos(NnopbaseBinCollecter* const collecter,
+inline static aclnnStatus NnopbaseCollectorAddRepoInfos(NnopbaseBinCollector* const collector,
                                                         const NnopbaseJsonInfo& jsonInfo,
                                                         gert::OppImplVersionTag oppImplVersion)
 {
     for (const auto& key : jsonInfo.keys) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfo(collecter, jsonInfo, key, oppImplVersion));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorAddRepoInfo(collector, jsonInfo, key, oppImplVersion));
     }
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterGcRegInfo(void* data)
+aclnnStatus NnopbaseCollectorGcRegInfo(void* data)
 {
     NnopbaseRegInfo* regInfo = op::internal::PtrCastTo<NnopbaseRegInfo>(data);
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
@@ -666,7 +674,7 @@ aclnnStatus NnopbaseCollecterGcRegInfo(void* data)
             }
         }
     }
-    NnopbaseCollecterOpRegInfoDestroy(&regInfo);
+    NnopbaseCollectorOpRegInfoDestroy(&regInfo);
     return ACLNN_SUCCESS;
 }
 
@@ -703,7 +711,7 @@ void SetExtraKernelInfoToBin(const NnopbaseJsonInfo& jsonInfo, std::unique_ptr<N
     }
 }
 
-aclnnStatus NnopbaseCollecterAddBinInfo(const string& key, NnopbaseRegInfo* const regInfo,
+aclnnStatus NnopbaseCollectorAddBinInfo(const string& key, NnopbaseRegInfo* const regInfo,
                                         const NnopbaseJsonInfo& jsonInfo, const NnopbaseUChar* const verbose,
                                         const uint32_t len)
 {
@@ -712,7 +720,7 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string& key, NnopbaseRegInfo* cons
     // incremental update static bin
     if (jsonInfo.isStaticShape) {
         size_t hashKey = NnopbaseHashBinary(verbose, len) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
-        NnopbaseBinInfo* findBin = NnopbaseCollecterFindBinInfo(regInfo, hashKey, verbose, len,
+        NnopbaseBinInfo* findBin = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, len,
                                                                 jsonInfo.extraKernelDesc.coreNum.get());
         if (findBin != nullptr) {
             OP_LOGI("%s binInfo already exists, no need to add.", regInfo->key.opType.c_str());
@@ -742,7 +750,7 @@ aclnnStatus NnopbaseCollecterAddBinInfo(const string& key, NnopbaseRegInfo* cons
     NNOPBASE_ASSERT_TRUE_RETVAL(vec->SetSize(jsonInfo.workspaceSizeNum) == ge::GRAPH_SUCCESS);
     binInfo->binPath = std::string(jsonInfo.path);
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBinInfoSetOpBinInfoKey(binInfo.get(), verbose, len));
-    NnopbaseCollecterInsertBinInfo(regInfo, binInfo.release()); // insert in list
+    NnopbaseCollectorInsertBinInfo(regInfo, binInfo.release()); // insert in list
     OP_LOGD("Finish add %s binInfo.", regInfo->key.opType.c_str());
     return OK;
 }
@@ -839,7 +847,7 @@ aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo& jsonInfo)
     return OK;
 }
 
-void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo* const regInfo, NnopbaseBinInfo* binInfo)
+void NnopbaseCollectorInsertBinInfo(NnopbaseRegInfo* const regInfo, NnopbaseBinInfo* binInfo)
 {
     const size_t key = binInfo->binInfoKey.hashKey;
     const uint32_t keyLen = binInfo->binInfoKey.len;
@@ -855,7 +863,7 @@ void NnopbaseCollecterInsertBinInfo(NnopbaseRegInfo* const regInfo, NnopbaseBinI
 }
 
 // 一样的key，会优先选择先放入hash表的
-NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo* const regInfo, const size_t hashKey,
+NnopbaseBinInfo* NnopbaseCollectorFindBinInfo(NnopbaseRegInfo* const regInfo, const size_t hashKey,
                                               const NnopbaseUChar* const verbose, const uint32_t verbLen,
                                               const NnopbaseCoreNum* const coreNum)
 {
@@ -897,7 +905,7 @@ NnopbaseBinInfo* NnopbaseCollecterFindBinInfo(NnopbaseRegInfo* const regInfo, co
     return nullptr;
 }
 
-aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar* const strKey, NnopbaseUChar* const binKey,
+aclnnStatus NnopbaseCollectorConvertCustomizedVerbKey(const NnopbaseChar* const strKey, NnopbaseUChar* const binKey,
                                                       uint32_t* const size)
 {
     const size_t len = strlen(strKey);
@@ -939,7 +947,7 @@ aclnnStatus NnopbaseCollecterConvertCustomizedVerbKey(const NnopbaseChar* const 
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterConvertDynamicVerbKey(const NnopbaseChar* const strKey, NnopbaseUChar* const binKey,
+aclnnStatus NnopbaseCollectorConvertDynamicVerbKey(const NnopbaseChar* const strKey, NnopbaseUChar* const binKey,
                                                    uint32_t* const size)
 {
     const size_t len = strlen(strKey);
@@ -1024,7 +1032,7 @@ NnopbaseUChar* NnopbaseBeyond8ByteCopy(const int32_t start, const int32_t end, c
     return verKey;
 }
 
-aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar* const strKey, NnopbaseUChar* const binKey,
+aclnnStatus NnopbaseCollectorConvertStaticVerbKey(const NnopbaseChar* const strKey, NnopbaseUChar* const binKey,
                                                   uint32_t* const size)
 {
     const size_t len = strlen(strKey);
@@ -1122,7 +1130,7 @@ static aclnnStatus NnopbaseGetOpBinPath(const std::string& filePath, std::string
     return OK;
 }
 
-static aclnnStatus NnopbaseCollecterReadStaticBinJsonInfo(NnopbaseJsonInfo& jsonInfo)
+static aclnnStatus NnopbaseCollectorReadStaticBinJsonInfo(NnopbaseJsonInfo& jsonInfo)
 {
     std::tuple<nlohmann::json, nnopbase::Binary> binInfo;
     NNOPBASE_ASSERT_OK_RETVAL(
@@ -1240,7 +1248,7 @@ aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json& binInfo, NnopbaseJsonIn
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter* const collecter,
+aclnnStatus NnopbaseCollectorReadDebugKernelOpInfoConfig(NnopbaseBinCollector* const collector,
                                                          nlohmann::json& binaryInfoConfig, const std::string& basePath,
                                                          gert::OppImplVersionTag oppImplVersion)
 {
@@ -1260,7 +1268,7 @@ aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter* c
             if (UpdateStaticJsonExtraInfo(jsonInfo) != OK) {
                 OP_LOGW("Failed to update extra info of static op %s.", jsonInfo.opType.c_str());
             }
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorAddRepoInfos(collector, jsonInfo, oppImplVersion));
         }
 
         for (auto binInfo : (iter.value())["binaryList"]) {
@@ -1269,13 +1277,13 @@ aclnnStatus NnopbaseCollecterReadDebugKernelOpInfoConfig(NnopbaseBinCollecter* c
                 continue;
             }
             jsonInfo.isStaticShape = false;
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorAddRepoInfos(collector, jsonInfo, oppImplVersion));
         }
     }
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter* const collecter,
+aclnnStatus NnopbaseCollectorReadDynamicKernelOpInfoConfig(NnopbaseBinCollector* const collector,
                                                            const nlohmann::json& binaryInfoConfig,
                                                            const std::string& basePath,
                                                            gert::OppImplVersionTag oppImplVersion,
@@ -1293,16 +1301,16 @@ aclnnStatus NnopbaseCollecterReadDynamicKernelOpInfoConfig(NnopbaseBinCollecter*
                 continue;
             }
             jsonInfo.isStaticShape = false;
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorAddRepoInfos(collector, jsonInfo, oppImplVersion));
         }
     }
     OP_LOGI("Read Op Info config successfully.");
     return OK;
 }
 
-aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter* const collecter, const NnopbaseChar* const opType)
+aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollector* const collector, const NnopbaseChar* const opType)
 {
-    // 将运行态添加的静态库算子信息注册到collecter中
+    // 将运行态添加的静态库算子信息注册到collector中
     const auto allOpBinaryDesc = nnopbase::OpBinaryResourceManager::GetInstance().GetAllOpBinaryDesc();
     auto iter = allOpBinaryDesc.find(ge::AscendString(opType));
     if (iter != allOpBinaryDesc.end()) {
@@ -1313,19 +1321,19 @@ aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter* const collect
             jsonInfo.opType = opType;
             jsonInfo.loadBinInfoType = kStaticBinInfo;
             if (NnopbaseGetSimplifiedKey(binInfo, jsonInfo) != OK ||
-                NnopbaseCollecterReadStaticBinJsonInfo(jsonInfo) != OK) {
+                NnopbaseCollectorReadStaticBinJsonInfo(jsonInfo) != OK) {
                 OP_LOGW("Cannot Update kernel bin info for opType: %s", opType);
                 continue;
             }
             NNOPBASE_ASSERT_OK_RETVAL(
-                NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, gert::OppImplVersionTag::kOpp));
+                NnopbaseCollectorAddRepoInfos(collector, jsonInfo, gert::OppImplVersionTag::kOpp));
             OP_LOGI("Update static kernel info successfully, opType: %s.", opType);
         }
     }
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter* const collecter,
+aclnnStatus NnopbaseCollectorReadStaticKernelOpInfoConfig(NnopbaseBinCollector* const collector,
                                                           nlohmann::json& binaryInfoConfig, const std::string& basePath,
                                                           gert::OppImplVersionTag oppImplVersion)
 {
@@ -1348,7 +1356,7 @@ aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter* 
                 OP_LOGW("Failed to update extra info of static op %s.", jsonInfo.opType.c_str());
             }
             readSuccessFlag = true;
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, oppImplVersion));
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorAddRepoInfos(collector, jsonInfo, oppImplVersion));
         }
     }
     if (!readSuccessFlag) {
@@ -1359,23 +1367,24 @@ aclnnStatus NnopbaseCollecterReadStaticKernelOpInfoConfig(NnopbaseBinCollecter* 
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterGetDebugKernelPathAndReadConfig(NnopbaseBinCollecter* const collecter)
+aclnnStatus NnopbaseCollectorGetDebugKernelPathAndReadConfig(NnopbaseBinCollector* const collector)
 {
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
-    NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
+    // Debug算子库为可选项，算子公共路径为空不中断流程
+    if (basePath.empty()) { return OK; };
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const std::string& binaryInfoPath = basePath + "/debug_kernel/config/" + socVersion + "/binary_info_config.json";
     // 若不存在debug kernel的目录，会在NnopbaseReadJsonConfig里面的realpath判断返回error，不打error日志
     nlohmann::json binaryInfoConfig;
     if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK) {
         NNOPBASE_ASSERT_OK_RETVAL(
-            NnopbaseCollecterReadDebugKernelOpInfoConfig(collecter, binaryInfoConfig, basePath, oppImplVersion));
+            NnopbaseCollectorReadDebugKernelOpInfoConfig(collector, binaryInfoConfig, basePath, oppImplVersion));
     }
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo* regInfo)
+aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo)
 {
     if (regInfo == nullptr) {
         // skip delete if there is no regInfo in table.
@@ -1410,21 +1419,22 @@ aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo* regInfo)
     return OK;
 }
 
-aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter* const collecter)
+aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollector* const collector)
 {
-    if (collecter == nullptr) {
+    if (collector == nullptr) {
         OP_LOGD("collector is nullptr.");
         return OK;
     }
     // reload static kernel info
-    return NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter);
+    return NnopbaseCollectorGetStaticKernelPathAndReadConfig(collector);
 }
 
-aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter* const collecter)
+aclnnStatus NnopbaseCollectorGetStaticKernelPathAndReadConfig(NnopbaseBinCollector* const collector)
 {
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
-    NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
+    // 静态算子库为可选项，算子公共路径为空不中断流程
+    if (basePath.empty()) { return OK; };
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const std::string& binaryInfoPath = basePath + "/static_kernel/ai_core/config/" + socVersion +
                                         "/binary_info_config.json";
@@ -1433,13 +1443,13 @@ aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollect
     nlohmann::json binaryInfoConfig;
     if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK) {
         NNOPBASE_ASSERT_OK_RETVAL(
-            NnopbaseCollecterReadStaticKernelOpInfoConfig(collecter, binaryInfoConfig, basePath, oppImplVersion));
+            NnopbaseCollectorReadStaticKernelOpInfoConfig(collector, binaryInfoConfig, basePath, oppImplVersion));
     }
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(
-    NnopbaseBinCollecter* const collecter, const std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath,
+aclnnStatus NnopbaseCollectorGetDynamicKernelPathAndReadConfig(
+    NnopbaseBinCollector* const collector, const std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath,
     int32_t builtInStartIndex)
 {
     OP_LOGI("Start get path and read binary_info_config json.");
@@ -1454,7 +1464,7 @@ aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(
             for (const std::string& pkgName : OPS_PATH_VEC) {
                 const std::string binaryInfoPath = binaryBasePath + "/" + pkgName + "/binary_info_config.json";
                 if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK &&
-                    NnopbaseCollecterReadDynamicKernelOpInfoConfig(collecter, binaryInfoConfig, basePath[i].first,
+                    NnopbaseCollectorReadDynamicKernelOpInfoConfig(collector, binaryInfoConfig, basePath[i].first,
                                                                    basePath[i].second, pkgName) == OK) {
                     readConfigSucc = true;
                     foundConfig = true;
@@ -1465,7 +1475,7 @@ aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(
         if (!foundConfig) {
             const std::string binaryInfoPath = binaryBasePath + "/binary_info_config.json";
             if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK &&
-                NnopbaseCollecterReadDynamicKernelOpInfoConfig(collecter, binaryInfoConfig, basePath[i].first,
+                NnopbaseCollectorReadDynamicKernelOpInfoConfig(collector, binaryInfoConfig, basePath[i].first,
                                                                basePath[i].second) == OK) {
                 readConfigSucc = true;
             }
@@ -1478,7 +1488,7 @@ aclnnStatus NnopbaseCollecterGetDynamicKernelPathAndReadConfig(
     return ACLNN_ERR_PARAM_INVALID;
 }
 
-aclnnStatus NnopbaseCollecterGetStaticBinaryInfo(NnopbaseBinCollecter* const collecter)
+aclnnStatus NnopbaseCollectorGetStaticBinaryInfo(NnopbaseBinCollector* const collector)
 {
     bool getOpInfoSucc = false;
     const auto allOpBinaryDesc = nnopbase::OpBinaryResourceManager::GetInstance().GetAllOpBinaryDesc();
@@ -1490,11 +1500,11 @@ aclnnStatus NnopbaseCollecterGetStaticBinaryInfo(NnopbaseBinCollecter* const col
             jsonInfo.opType = iter->first.GetString();
             jsonInfo.loadBinInfoType = kStaticBinInfo;
             if (NnopbaseGetSimplifiedKey(binInfo, jsonInfo) != OK ||
-                NnopbaseCollecterReadStaticBinJsonInfo(jsonInfo) != OK) {
+                NnopbaseCollectorReadStaticBinJsonInfo(jsonInfo) != OK) {
                 continue;
             }
             NNOPBASE_ASSERT_OK_RETVAL(
-                NnopbaseCollecterAddRepoInfos(collecter, jsonInfo, gert::OppImplVersionTag::kOpp));
+                NnopbaseCollectorAddRepoInfos(collector, jsonInfo, gert::OppImplVersionTag::kOpp));
             getOpInfoSucc = true;
         }
     }
@@ -1504,53 +1514,54 @@ aclnnStatus NnopbaseCollecterGetStaticBinaryInfo(NnopbaseBinCollecter* const col
     return OK;
 }
 
-aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter* const collecter)
+aclnnStatus NnopbaseCollectorWork(NnopbaseBinCollector* const collector)
 {
-    OP_LOGI("[NnopbaseCollecter] Collecter work start.");
+    OP_LOGI("[NnopbaseCollector] Collector work start.");
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
     int32_t builtInStartIndex = -1;
-    NnopbaseGetBasePath(collecter, basePath, builtInStartIndex);
-    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
+    NnopbaseGetBasePath(collector, basePath, builtInStartIndex);
+    RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
 
     if (basePath.size() > 0) {
         (void)(NnopbaseLoadTilingSo(basePath));
     }
-    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
+    RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
 
     if (NnopbaseIsExceptionDumpEnable() || g_nnopbaseSysCfgParams.enableDebugKernel) {
-        (void)NnopbaseCollecterGetDebugKernelPathAndReadConfig(collecter);
+        (void)NnopbaseCollectorGetDebugKernelPathAndReadConfig(collector);
     }
-    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd);
+    RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd);
 
-    (void)NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter);
-    const aclnnStatus retForStaticBinaryInfo = NnopbaseCollecterGetStaticBinaryInfo(collecter);
-    if (retForStaticBinaryInfo != OK) {
-        CHECK_COND((basePath.size() >= 1), ACLNN_ERR_PARAM_INVALID,
-                   "May not set ASCEND_OPP_PATH or ASCEND_CUSTOM_OPP_PATH in env!");
+    (void)NnopbaseCollectorGetStaticKernelPathAndReadConfig(collector);
+    const aclnnStatus retForStaticBinaryInfo = NnopbaseCollectorGetStaticBinaryInfo(collector);
+    if (retForStaticBinaryInfo != OK && basePath.empty()) {
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Reading binary_info_config.json file in the operator packages",
+            "ASCEND_OPP_PATH or ASCEND_CUSTOM_OPP_PATH");
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND;
     }
-    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
+    RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
 
-    const aclnnStatus retForDynamicKernelInfo = NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath,
+    const aclnnStatus retForDynamicKernelInfo = NnopbaseCollectorGetDynamicKernelPathAndReadConfig(collector, basePath,
                                                                                                    builtInStartIndex);
-    RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
-    CHECK_COND((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
-               "Failed to get path and read binary_info_config.json, "
-               "please check if the opp_kernel package is installed!");
-    OP_LOGI("[NnopbaseCollecter] Collecter work end.");
+    RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
+    OP_CHECK((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK),
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE("binary_info_config.json", ERR_REASON_FOR_OPP_PACKAGE),
+        return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
+    OP_LOGI("[NnopbaseCollector] Collector work end.");
     return OK;
 }
 
-aclnnStatus NnopbaseSetCollecterSocVersion(NnopbaseBinCollecter* collecter)
+aclnnStatus NnopbaseSetCollectorSocVersion(NnopbaseBinCollector* collector)
 {
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     OP_LOGI("Get current soc version: %s", socVersion.c_str());
     CHECK_COND(nnopbase::IndvSoc::GetInstance().SupportCurrentSoc(), ACLNN_ERR_PARAM_INVALID,
                "Not supported socVersion %s.", socVersion.c_str());
 
-    collecter->useCoreTypeMagic = nnopbase::IndvSoc::GetInstance().UseCoreTypeMagic();
+    collector->useCoreTypeMagic = nnopbase::IndvSoc::GetInstance().UseCoreTypeMagic();
     if (nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch()) {
-        collecter->useCoreTypeMagic = true;
-        collecter->isMc2FusionLaunch = true;
+        collector->useCoreTypeMagic = true;
+        collector->isMc2FusionLaunch = true;
     }
     return OK;
 }

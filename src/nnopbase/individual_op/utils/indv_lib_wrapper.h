@@ -31,7 +31,7 @@ public:
     {
         NNOPBASE_ASSERT_NOTNULL_RETVAL(loadSoPath);
 
-        OP_LOGI("Nnopbase starts to load dynamic library %s.", loadSoPath);
+        OP_LOGI("Start loading dynamic library %s.", loadSoPath);
         soHandle_ = mmDlopen(loadSoPath, MMPA_RTLD_LAZY);
         if (soHandle_ == nullptr) {
             OP_LOGW("Failed to open "
@@ -57,7 +57,7 @@ public:
     template <typename T>
     T LoadFunction(const char* const functionName)
     {
-        OP_LOGI("Nnopbase starts to load function %s in %s.", functionName, soPath_.c_str());
+        OP_LOGI("Start loading function %s in %s.", functionName, soPath_.c_str());
         T function = reinterpret_cast<T>(mmDlsym(soHandle_, functionName));
         if (function == nullptr) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
@@ -92,15 +92,10 @@ public:
         const std::lock_guard<std::mutex> lk(mutex_);
         if (!hasInit_) {
             if (openSo("libopapi_math.so") != OK) {
-                OP_LOGW("Failed to load libopapi_math.so, trying alternative dynamic library.");
-                // libopapi.so在cann包的lib64路径下，正常配置一定在LD_LIBRARY_PATH下
-                if (openSo("libopapi.so") != OK) {
-                    OP_LOGE(
-                        ACLNN_ERR_PARAM_INVALID,
-                        "Failed to open libopapi_math.so and libopapi.so! Please check if built-in operator "
-                        "package is installed and check if libopapi_math.so or libopapi.so is under LD_LIBRARY_PATH!");
-                    return nullptr;
-                }
+                std::string errMsg = "Failed to enable the AutoContiguous() function. Check whether the ops_math operator package"
+                    " is installed and whether libopapi_math.so is under environment variable LD_LIBRARY_PATH";
+                OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
+                return nullptr;
             }
             hasInit_ = true;
         }
@@ -569,7 +564,7 @@ private:
         const char* ascendHomePath = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
         OP_CHECK(ascendHomePath != nullptr,
-                 OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Load libacl_rt.so", "ASCEND_HOME_PATH"),
+                 OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading libacl_rt.so", "ASCEND_HOME_PATH"),
                  return ACLNN_ERR_INNER_NULLPTR);
         std::string rtsLibraryPath = std::string(ascendHomePath) + "/lib64/libacl_rt.so";
         NNOPBASE_ASSERT_OK_RETVAL(openSo(rtsLibraryPath.c_str()));

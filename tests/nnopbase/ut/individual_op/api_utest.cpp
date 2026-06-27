@@ -15,7 +15,7 @@
 #include "individual_op_internal.h"
 #include "op_cache_internal.h"
 #include "executor/indv_bininfo.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "utils/file_faker.h"
 #include "utils/indv_soc.h"
 #include "utils/thread_var_container.h"
@@ -1368,7 +1368,7 @@ TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelOpTypeFailed)
 TEST_F(NnopbaseUnitTest, NnopBaseFindStaticKernelRefreshFailed)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    EXPECT_EQ(NnopbaseCollecterDeleteStaticBins(nullptr), OK);
+    EXPECT_EQ(NnopbaseCollectorDeleteStaticBins(nullptr), OK);
 
     const char* opType = "Flash";
     std::vector<int64_t> shape = {1, 1, 1, 1, 1};

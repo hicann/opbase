@@ -11,7 +11,7 @@
 #include <future>
 #include "mockcpp/mockcpp.hpp"
 #include "executor/indv_bininfo.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "executor/indv_executor.h"
 #include "executor/indv_compute_node_info.h"
 #include "executor/indv_non_finite_check_op.h"
@@ -144,15 +144,15 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorInitDynamicInput)
 void GetExecutor(NnopbaseExecutor*& executor, const char* opType = "bninference_d_kernel",
                  std::vector<int64_t> shape = {1, 1, 1, 1, 1})
 {
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
+    static NnopbaseBinCollector* gBinCollector = nullptr;
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -167,7 +167,7 @@ void GetExecutor(NnopbaseExecutor*& executor, const char* opType = "bninference_
     ASSERT_EQ(ret, OK);
     executor->space = new NnopbaseExecutorSpace();
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     if (opType != "bninference_d_kernel") {
         return;
     }
@@ -191,15 +191,15 @@ void GetExecutor(NnopbaseExecutor*& executor, const char* opType = "bninference_
 void GetExecutorWithAttr(NnopbaseExecutor*& executor, const char* opType = "bninference_d_kernel",
                          std::vector<int64_t> shape = {1, 1, 1, 1, 1})
 {
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
+    static NnopbaseBinCollector* gBinCollector = nullptr;
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
 
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -213,7 +213,7 @@ void GetExecutorWithAttr(NnopbaseExecutor*& executor, const char* opType = "bnin
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     if (opType != "bninference_d_kernel") {
@@ -331,13 +331,13 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicInput)
 {
     nnopbase::ArgsPool::GetInstance().Finalize();
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -351,7 +351,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicInput)
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     const char* opType = "bninference_d_kernel";
@@ -392,13 +392,13 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicInput)
 TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicOutput1)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -412,7 +412,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicOutput1)
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     const char* opType = "custom_op1";
@@ -449,13 +449,13 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicOutput1)
 TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicOutput2)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -469,7 +469,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorDynamicOutput2)
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     const char* opType = "custom_op2";
@@ -509,13 +509,13 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput1)
     op::internal::opProfilingSwitch.additionInfoFlag = true;
 
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -529,7 +529,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput1)
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     const char* opType = "bninference_d_kernel";
@@ -586,13 +586,13 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput1)
 TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput2)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -606,7 +606,7 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorOptionalInput2)
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     const char* opType = "bninference_d_kernel";
@@ -1729,13 +1729,13 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseDynamicInputExceptionArgsUt)
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
 
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
 
@@ -1749,7 +1749,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseDynamicInputExceptionArgsUt)
                    sizeof(attrDesc) / sizeof(char)});
     ASSERT_EQ(ret, OK);
 
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     const char* opType = "custom_op1";
@@ -2267,8 +2267,8 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
     executor->opType = strdup("test_op");
     executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
     executor->mc2OpCfg.isMc2 = true;
-    executor->collecter = new NnopbaseBinCollecter;
-    executor->collecter->isMc2FusionLaunch = false;
+    executor->collector = new NnopbaseBinCollector;
+    executor->collector->isMc2FusionLaunch = false;
     executor->args = new NnopbaseExecutorArgs;
     executor->argsExt.hostInputInfoNum = 1U;
     executor->aicpuArgs.hostInputInfoNum = 1U;
@@ -2295,7 +2295,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
     ASSERT_EQ(kernelName, expected_kernelName);
 
     delete executor->args;
-    delete executor->collecter;
+    delete executor->collector;
     free(executor->opType);
     delete executor;
 }
@@ -2309,8 +2309,8 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     executor->opType = strdup("test_op");
     executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
     executor->mc2OpCfg.isMc2 = true;
-    executor->collecter = new NnopbaseBinCollecter;
-    executor->collecter->isMc2FusionLaunch = false;
+    executor->collector = new NnopbaseBinCollector;
+    executor->collector->isMc2FusionLaunch = false;
     executor->args = new NnopbaseExecutorArgs;
     executor->argsExt.hostInputInfoNum = 1U;
     executor->aicpuArgs.hostInputInfoNum = 1U;
@@ -2344,7 +2344,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     // SOC version will be restored by SocVersionGuard destructor
 
     delete executor->args;
-    delete executor->collecter;
+    delete executor->collector;
     free(executor->opType);
     delete executor;
 }

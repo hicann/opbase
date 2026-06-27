@@ -10,7 +10,7 @@
 
 #include "indv_non_finite_check_op.h"
 #include "indv_executor.h"
-#include "indv_collecter.h"
+#include "indv_collector.h"
 #include "utils/indv_soc.h"
 #include "individual_op_api.h"
 

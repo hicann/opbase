@@ -13,7 +13,7 @@
 #include "individual_op_api.h"
 #include "individual_op_internal.h"
 #include "op_cache_internal.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "utils/file_faker.h"
 #include "depends/dump/dump_stub.h"
 #include "depends/mmpa/mmpa_stub.h"
@@ -103,14 +103,14 @@ TEST_F(NnopbaseOpPathTest, test_custom_opp_path_with_default)
     system(("mkdir -p " + path_vendors).c_str());
     system(("echo 'load_priority=mdc' > " + path_config).c_str());
 
-    NnopbaseBinCollecter* bin_collecter = new NnopbaseBinCollecter;
+    NnopbaseBinCollector* bin_collector = new NnopbaseBinCollector;
     std::vector<std::pair<std::string, gert::OppImplVersionTag>> base_path;
     int32_t builtInStartIndex = -1;
-    NnopbaseGetOppPath(bin_collecter, base_path, builtInStartIndex);
+    NnopbaseGetOppPath(bin_collector, base_path, builtInStartIndex);
     unsetenv("ASCEND_OPP_PATH");
     EXPECT_EQ(base_path.size(), 2);
     EXPECT_EQ(builtInStartIndex, base_path.size() - 1);
-    delete bin_collecter;
+    delete bin_collector;
 }
 
 TEST_F(NnopbaseOpPathTest, test_read_config_file_format_error)

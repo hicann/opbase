@@ -65,19 +65,19 @@ TEST_F(NnopbaseKernelLaunchUt, test)
     file.close();
 
     binInfo.binPath = "test.o";
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        auto ret = NnopbaseCollecterInit(gBinCollecter);
+    static NnopbaseBinCollector* gBinCollector = nullptr;
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        auto ret = NnopbaseCollectorInit(gBinCollector);
         ASSERT_EQ(ret, OK);
-        ret = NnopbaseCollecterWork(gBinCollecter);
+        ret = NnopbaseCollectorWork(gBinCollector);
         ASSERT_EQ(ret, OK);
     }
     NnopbaseExecutor* executor = new NnopbaseExecutor;
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
-    executor->collecter->useCoreTypeMagic = true;
-    executor->collecter->oppPath = "/usr/local/Ascend/latest/opp";
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
+    executor->collector->useCoreTypeMagic = true;
+    executor->collector->oppPath = "/usr/local/Ascend/latest/opp";
     executor->opType = "AddCustom";
     std::string socVersion = "ascend910b";
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();

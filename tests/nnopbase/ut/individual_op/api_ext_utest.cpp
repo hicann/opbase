@@ -15,7 +15,7 @@
 #include "individual_op_api.h"
 #include "individual_op_internal.h"
 #include "op_cache_internal.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "utils/file_faker.h"
 #include "utils/indv_soc.h"
 #include "depends/dump/dump_stub.h"
@@ -1614,10 +1614,6 @@ public:
 
     void* mmDlopen(const char* fileName, int32_t mode)
     {
-        if (count == 0) {
-            count++;
-            return nullptr;
-        }
         return &count;
     }
 
@@ -2448,8 +2444,8 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
     ASSERT_EQ(NnopbaseAddAttr(executor, static_cast<void*>(group), strlen(group) + 1, 0), OK);
     ASSERT_EQ(NnopbaseSetHcomGroup(executor, group), OK);
 
-    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch;
-    ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = true;
+    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch;
+    ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = true;
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
     void* stream = nullptr;
@@ -2460,7 +2456,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
 
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     // SOC version will be restored by SocVersionGuard destructor
-    ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
+    ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
     const size_t kfcArgsFmtOffset = ((NnopbaseExecutor*)executor)->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset *
                                     sizeof(void*);
@@ -2554,8 +2550,8 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
     ASSERT_EQ(NnopbaseAddAttr(executor, static_cast<void*>(group), strlen(group) + 1, 0), OK);
     ASSERT_EQ(NnopbaseSetHcomGroup(executor, group), OK);
 
-    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch;
-    ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = true;
+    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch;
+    ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = true;
     size_t workspaceLen = 0U;
     ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
     void* stream = nullptr;
@@ -2566,7 +2562,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
 
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     // SOC version will be restored by SocVersionGuard destructor
-    ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
+    ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
     const size_t kfcArgsFmtOffset = ((NnopbaseExecutor*)executor)->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset *
                                     sizeof(void*);
@@ -2634,12 +2630,12 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void*)> setHcclS
                                          sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
     ASSERT_NE(executor, nullptr);
 
-    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch;
+    auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch;
     SetSocVersion(socVersion);
     if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND950 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
-        ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = true;
+        ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = true;
     } else {
-        ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = false;
+        ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = false;
     }
 
     int* ptr = new int;
@@ -2676,7 +2672,7 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void*)> setHcclS
 
     ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
     // SOC version will be restored by SocVersionGuard destructor
-    ((NnopbaseExecutor*)executor)->collecter->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
+    ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
     NnopbaseExecutorGcSpace(executorSpace);
     if (workspaceLen > 0U) {

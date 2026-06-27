@@ -10,7 +10,7 @@
 #include "indv_executor.h"
 #include "indv_tilingcontext_builder.h"
 #include "indv_args_pool.h"
-#include "indv_collecter.h"
+#include "indv_collector.h"
 #include "utils/thread_var_container.h"
 #include "utils/indv_soc.h"
 #include "base/registry/op_impl_space_registry_v2.h"
@@ -285,7 +285,7 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor* executor, const NnopbaseOpInf
     executor->needAtomic = nullptr;
     executor->scheMode = nullptr;
     executor->dynUbufSize = nullptr;
-    executor->collecter = nullptr;
+    executor->collector = nullptr;
     executor->workspaces.num = 0U;
     executor->workspaces.length = 0U;
     executor->opType = nullptr;
@@ -670,17 +670,17 @@ void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor* const executor)
 void PrintNnopbaseInitTimeStampInfo()
 {
     if (g_nnopbaseSysCfgParams.enableTimeStamp) {
-        PrintInitTime(gBinCollecter->collectorTp, "collector init", NnopbaseCollectorTimeIdx::kCollectorInitStart,
+        PrintInitTime(gBinCollector->collectorTp, "collector init", NnopbaseCollectorTimeIdx::kCollectorInitStart,
                       NnopbaseCollectorTimeIdx::kCollectorInitEnd);
-        PrintInitTime(gBinCollecter->collectorTp, "get base path", NnopbaseCollectorTimeIdx::kCollectorInitEnd,
+        PrintInitTime(gBinCollector->collectorTp, "get base path", NnopbaseCollectorTimeIdx::kCollectorInitEnd,
                       NnopbaseCollectorTimeIdx::kGetBasePathEnd);
-        PrintInitTime(gBinCollecter->collectorTp, "load tiling so", NnopbaseCollectorTimeIdx::kGetBasePathEnd,
+        PrintInitTime(gBinCollector->collectorTp, "load tiling so", NnopbaseCollectorTimeIdx::kGetBasePathEnd,
                       NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
-        PrintInitTime(gBinCollecter->collectorTp, "load debug kernel", NnopbaseCollectorTimeIdx::kLoadTilingSoEnd,
+        PrintInitTime(gBinCollector->collectorTp, "load debug kernel", NnopbaseCollectorTimeIdx::kLoadTilingSoEnd,
                       NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd);
-        PrintInitTime(gBinCollecter->collectorTp, "load static kernel", NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd,
+        PrintInitTime(gBinCollector->collectorTp, "load static kernel", NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd,
                       NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
-        PrintInitTime(gBinCollecter->collectorTp, "load dynamic kernel", NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd,
+        PrintInitTime(gBinCollector->collectorTp, "load dynamic kernel", NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd,
                       NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
     }
 }
@@ -691,17 +691,20 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor* executor, const Nnopbas
     const uint64_t hashKey = static_cast<uint64_t>(
                                  NnopbaseHashBinary(op::internal::PtrCastTo<const NnopbaseUChar>(opType), len)) %
                              NNOPBASE_NORM_MAX_BIN_BUCKETS;
-    executor->regInfo = NnopbaseCollecterFindRegInfoInTbl(executor->collecter, opType, hashKey);
+    executor->regInfo = NnopbaseCollectorFindRegInfoInTbl(executor->collector, opType, hashKey);
     if (executor->regInfo == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateStaticBinJsonInfos(executor->collecter, opType));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateStaticBinJsonInfos(executor->collector, opType));
         OP_LOGI("Find register info in table again, opType: %s", opType);
-        executor->regInfo = NnopbaseCollecterFindRegInfoInTbl(executor->collecter, opType, hashKey); // 再次查找
+        executor->regInfo = NnopbaseCollectorFindRegInfoInTbl(executor->collector, opType, hashKey); // 再次查找
     }
     if (executor->regInfo == nullptr) {
         std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
         std::string
-            errMsg = "SoC version " + socVersion +
-                     " verification failed. This SoC is not configured through the AddConfig API of the OpDef class";
+            errMsg = "1.SoC version " + socVersion +
+                     " verification failed. This SoC is not configured through the AddConfig API of the OpDef class. ";
+        errMsg += "2.The binary_info_config.json file to which the " + std::string(opType) + " operator belongs fails to "
+            "be loaded because the file is damaged or does not exist or the user does not have sufficient permissions. ";
+        errMsg += "3.The operator package to which the " + std::string(opType) + " operator belongs is not installed";
         OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
         return ACLNN_ERR_PARAM_NULLPTR;
     }
@@ -989,7 +992,7 @@ void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* executor)
 bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* executor)
 {
     NnopbaseExecutorGenDynamicKey(executor);
-    executor->args->binInfo = NnopbaseCollecterFindBinInfo(
+    executor->args->binInfo = NnopbaseCollectorFindBinInfo(
         executor->regInfo, executor->binInfoKey.hashKey, &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len);
     return executor->args->binInfo != nullptr;
 }

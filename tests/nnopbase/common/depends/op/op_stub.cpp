@@ -13,7 +13,7 @@
 #include "register/op_impl_registry.h"
 #include "executor/indv_bininfo.h"
 #include "utils/indv_base.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "register/tilingdata_base.h"
 #include <assert.h>
 

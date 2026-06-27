@@ -12,7 +12,7 @@
 #include "graph/types.h"
 #include "utils/indv_debug_assert.h"
 #include "utils/indv_soc.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "executor/indv_executor.h"
 #include "op_stub.h"
 

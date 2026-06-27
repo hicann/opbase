@@ -19,7 +19,7 @@
 #include "utils/indv_guard.h"
 #include "utils/indv_lib_wrapper.h"
 #include "indv_bininfo.h"
-#include "indv_collecter.h"
+#include "indv_collector.h"
 #include "indv_args.h"
 #include "aclnn/acl_meta.h"
 #include "op_info_serialize.h"
@@ -99,7 +99,7 @@ typedef struct {
     uint32_t* aicpuNumBlocks;
     NnopbaseExecutorArgs* args;
     NnopbaseExecutorArgs ownArgs;
-    NnopbaseBinCollecter* collecter;
+    NnopbaseBinCollector* collector;
     NnopbaseRegInfo* regInfo;
     NnopbaseWorkSpaces workspaces;
     NnopbaseChar* opType;
@@ -351,9 +351,9 @@ inline void RecordNnopbaseTime(NnopbaseExecutor* const executor, const size_t in
     }
 }
 
-inline void RecordNnopbaseInitTime(NnopbaseBinCollecter* const collecter, const size_t index)
+inline void RecordNnopbaseInitTime(NnopbaseBinCollector* const collector, const size_t index)
 {
-    clock_gettime(CLOCK_MONOTONIC, &(collecter->collectorTp[index]));
+    clock_gettime(CLOCK_MONOTONIC, &(collector->collectorTp[index]));
 }
 
 inline uint32_t NnopbaseExecutorGetNumBlocks(NnopbaseExecutor* executor)
@@ -449,9 +449,9 @@ void NnopbaseExecutorClearSet(NnopbaseExecutorSpaceSet* set);
 
 aclnnStatus NnopbaseExecutorGetAttr(NnopbaseExecutor* executor, const size_t index, NnopbaseAttrAddr** attr);
 
-static inline void NnopbaseExecutorSetCollecter(NnopbaseExecutor* executor, NnopbaseBinCollecter* collecter)
+static inline void NnopbaseExecutorSetCollector(NnopbaseExecutor* executor, NnopbaseBinCollector* collector)
 {
-    executor->collecter = collecter;
+    executor->collector = collector;
 }
 
 void NnopbaseReloadStaticBinJsonInfos(void);

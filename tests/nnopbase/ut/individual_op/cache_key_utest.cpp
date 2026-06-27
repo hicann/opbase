@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 #include "mockcpp/mockcpp.hpp"
 #include "executor/indv_bininfo.h"
-#include "executor/indv_collecter.h"
+#include "executor/indv_collector.h"
 #include "executor/indv_executor.h"
 #include "executor/indv_cache_key_builder.h"
 #include "utils/file_faker.h"
@@ -62,13 +62,13 @@ protected:
 void GetCacheTestExecutor(NnopbaseExecutor*& executor, const char* opType = "bninference_d_kernel",
                           std::vector<int64_t> shape = {1, 1, 1, 1, 1})
 {
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
+    static NnopbaseBinCollector* gBinCollector = nullptr;
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        ASSERT_EQ(NnopbaseCollecterInit(gBinCollecter), OK);
-        ASSERT_EQ(NnopbaseCollecterWork(gBinCollecter), OK);
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        ASSERT_EQ(NnopbaseCollectorInit(gBinCollector), OK);
+        ASSERT_EQ(NnopbaseCollectorWork(gBinCollector), OK);
     }
     executor = new NnopbaseExecutor;
     ASSERT_NE(executor, nullptr);
@@ -80,7 +80,7 @@ void GetCacheTestExecutor(NnopbaseExecutor*& executor, const char* opType = "bni
                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char)}),
         OK);
     executor->space = new NnopbaseExecutorSpace();
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     ASSERT_EQ(NnopbaseExecutorSetRegInfo(executor, opType), OK);
 
     aclTensor* tensor = aclCreateTensor(&shape[0], shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
@@ -98,13 +98,13 @@ void GetCacheTestExecutor(NnopbaseExecutor*& executor, const char* opType = "bni
 
 void GetCacheTestExecutorWithAttr(NnopbaseExecutor*& executor)
 {
-    static NnopbaseBinCollecter* gBinCollecter = nullptr;
+    static NnopbaseBinCollector* gBinCollector = nullptr;
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
-    if (gBinCollecter == nullptr) {
-        gBinCollecter = new NnopbaseBinCollecter;
-        ASSERT_NE(gBinCollecter, nullptr);
-        ASSERT_EQ(NnopbaseCollecterInit(gBinCollecter), OK);
-        ASSERT_EQ(NnopbaseCollecterWork(gBinCollecter), OK);
+    if (gBinCollector == nullptr) {
+        gBinCollector = new NnopbaseBinCollector;
+        ASSERT_NE(gBinCollector, nullptr);
+        ASSERT_EQ(NnopbaseCollectorInit(gBinCollector), OK);
+        ASSERT_EQ(NnopbaseCollectorWork(gBinCollector), OK);
     }
     executor = new NnopbaseExecutor;
     ASSERT_NE(executor, nullptr);
@@ -115,7 +115,7 @@ void GetCacheTestExecutorWithAttr(NnopbaseExecutor*& executor)
         NnopbaseExecutorInit(executor, {inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char)}),
         OK);
-    NnopbaseExecutorSetCollecter(executor, gBinCollecter);
+    NnopbaseExecutorSetCollector(executor, gBinCollector);
     NnopbaseExecutorSpace space;
     executor->space = &space;
     ASSERT_EQ(NnopbaseExecutorSetRegInfo(executor, "bninference_d_kernel"), OK);

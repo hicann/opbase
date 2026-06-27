@@ -98,7 +98,7 @@ bool GenStaticKeyAndFindStaticBin(NnopbaseExecutor* executor, bool usingStride)
     }
     // 已在缓存匹配流程调用控核接口，保证executor的coreNum不为非法值
     auto coreNum = NnopbaseCoreNum({executor->coreNum.aicNum, executor->coreNum.aivNum});
-    auto binInfo = NnopbaseCollecterFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
+    auto binInfo = NnopbaseCollectorFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
                                                 &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len,
                                                 &coreNum);
     if ((binInfo != nullptr) && (NnopbaseKernelRegister(executor, binInfo) == OK)) {
@@ -219,8 +219,9 @@ static inline void NnopbaseAddTensorsInfo(const NnopbaseTensors& tensors, std::s
         }
         // 对于未传入的可选输入占位
         if (extTensors[j].isNull) {
-            ioInfo += "(NULL, NULL) ";
+            ioInfo += "(NULL, NULL)";
             j += 1U;
+            ioInfo += (i != tensors.paramDescs.count - 1U) ? ", " : "";
             continue;
         }
 
@@ -229,14 +230,15 @@ static inline void NnopbaseAddTensorsInfo(const NnopbaseTensors& tensors, std::s
             const size_t startIndex = paramInstance[i].startIndex;
             ioInfo += std::string("(") + op::ToString(extTensors[startIndex].rt2Tensor.GetDataType()).GetString() +
                       std::string(", ");
-            ioInfo += op::ToString(extTensors[startIndex].rt2Tensor.GetStorageFormat()).GetString() + std::string(") ");
+            ioInfo += op::ToString(extTensors[startIndex].rt2Tensor.GetStorageFormat()).GetString() + std::string(")");
             j += paramInstance[i].num;
         } else {
             ioInfo += std::string("(") + op::ToString(extTensors[j].rt2Tensor.GetDataType()).GetString() +
                       std::string(", ");
-            ioInfo += op::ToString(extTensors[j].rt2Tensor.GetStorageFormat()).GetString() + std::string(") ");
+            ioInfo += op::ToString(extTensors[j].rt2Tensor.GetStorageFormat()).GetString() + std::string(")");
             j += 1U;
         }
+        ioInfo += (i != tensors.paramDescs.count - 1U) ? ", " : "";
     }
 }
 
@@ -264,31 +266,27 @@ static inline aclnnStatus NnopbaseGetSupportInfo(const NnopbaseExecutor* const e
 static inline aclnnStatus PrintExceptionIoParamInfo(const NnopbaseExecutor* const executor,
                                                     OpSocSupportInfo& supportList)
 {
-    // print input info
-    std::string ioInfo = std::string("The dtype or format of the actual input or output parameter is not supported,"
-                                     " details of parameter are ");
-    NnopbaseAddTensorsInfo(executor->args->inputs, ioInfo);
-    NnopbaseAddTensorsInfo(executor->args->outputs, ioInfo);
-    ioInfo += std::string("but supported list is:");
+    std::string ioInfo = std::string("Supported dtype and format list is:");
     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "%s", ioInfo.c_str());
 
     // print support info
     for (size_t i = 0U; i < supportList.num; i++) {
-        std::string info = std::string("SupportInfo[") + std::to_string(i) + "] ";
+        std::string info = std::string("SupportInfo[") + std::to_string(i) + "]: ";
         const auto& supportInfo = supportList.supportInfo[i];
         for (size_t j = 0U; j < supportInfo.inputsNum; ++j) {
             if (executor->args->inputs.paramDescs.instances[j].name != nullptr) {
                 info += std::string(executor->args->inputs.paramDescs.instances[j].name);
             }
             info += std::string("(") + op::ToString(supportInfo.inputsDesc[j].dtype).GetString() + std::string(", ");
-            info += op::ToString(supportInfo.inputsDesc[j].format).GetString() + std::string(") ");
+            info += op::ToString(supportInfo.inputsDesc[j].format).GetString() + std::string("), ");
         }
         for (size_t j = 0U; j < supportInfo.outputsNum; ++j) {
             if (executor->args->outputs.paramDescs.instances[j].name != nullptr) {
                 info += std::string(executor->args->outputs.paramDescs.instances[j].name);
             }
             info += std::string("(") + op::ToString(supportInfo.outputsDesc[j].dtype).GetString() + std::string(", ");
-            info += op::ToString(supportInfo.outputsDesc[j].format).GetString() + std::string(") ");
+            info += op::ToString(supportInfo.outputsDesc[j].format).GetString() + std::string(")");
+            info += (j < supportInfo.outputsNum - 1U) ? ", " : "";
         }
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "%s", info.c_str());
     }
@@ -750,18 +748,20 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor* executor, NnopbaseBinInfo* 
         return OK;
     }
 
-    if (binInfo->bin == nullptr) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen));
+    if (binInfo->bin == nullptr && NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen) != OK) {
+        std::string errMsg = "1.The file does not exist. 2.The file is damaged. 3.The user does not have the read permission";
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binInfo->binPath.c_str(), errMsg.c_str());
+        return ACLNN_ERR_INNER_OP_FILE_INVALID;
     }
 
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadKernelJsonFile(binInfo, executor->collecter->oppPath, socVersion));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadKernelJsonFile(binInfo, executor->collector->oppPath, socVersion));
     if (executor->mc2OpCfg.isMc2 &&
         nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collecter->useCoreTypeMagic, binInfo));
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collector->useCoreTypeMagic, binInfo));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collector->useCoreTypeMagic, binInfo));
     } else {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collecter->useCoreTypeMagic, binInfo));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collector->useCoreTypeMagic, binInfo));
     }
 #ifndef PRODUCT_SIDE_IS_DEVICE
 #if (RUNTIME_VERSION_NUM >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER) && \
@@ -953,7 +953,7 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor* executor)
         if (ret != ACLNN_ERR_PARAM_INVALID) {
             std::string errMsg = "Cannot find kernel file for operator " + std::string(executor->opType) +
                                  ". The corresponding simplifiedKey" +
-                                 " in binary_info_config.json is missing, please reinstall operator package";
+                                 " in binary_info_config.json file is missing, please reinstall operator package";
             OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
             return ACLNN_ERR_INNER_FIND_KERNEL_ERROR;
         }
@@ -986,9 +986,12 @@ aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor* executor, NnopbaseParamChe
     if (IsParamMatchSupportInfo(executor, supportList, mode)) {
         return OK;
     } else {
-        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(
-            "The dtype or format of the actual input or output"
-            " parameter of the operator is inconsistent with that defined in the operator prototype OpDef");
+        std::string errMsg = "The dtype or format of the actual input or output parameter of the operator "
+            "is inconsistent with that defined in the operator prototype OpDef, details of parameter are ";
+        NnopbaseAddTensorsInfo(executor->args->inputs, errMsg);
+        errMsg += ", ";
+        NnopbaseAddTensorsInfo(executor->args->outputs, errMsg);
+        OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
         return PrintExceptionIoParamInfo(executor, supportList);
     }
 }
