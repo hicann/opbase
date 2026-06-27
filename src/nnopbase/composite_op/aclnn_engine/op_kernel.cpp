@@ -353,8 +353,8 @@ aclnnStatus OpKernelBin::GetBinData()
         };
         ret = binData_.InitVar(f);
         if (ret != ACLNN_SUCCESS) {
-            std::string retStr = std::to_string(ret);
-            OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(relativeJsonPath_.c_str(), retStr.c_str());
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to load builtin kernel binary [%s], data is null/empty or out of memory.",
+                    relativeJsonPath_.c_str());
             return ret;
         }
         OP_LOGI("Get builtin op kernel bin obj [%s]", relativeJsonPath_.c_str());
@@ -367,8 +367,8 @@ aclnnStatus OpKernelBin::GetBinData()
     };
     ret = binData_.InitVar(f);
     if (ret != ACLNN_SUCCESS) {
-        std::string retStr = std::to_string(ret);
-        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binPath_.c_str(), retStr.c_str());
+        std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binPath_.c_str(), errMsg.c_str());
         return ret;
     }
     return ACLNN_SUCCESS;
