@@ -654,7 +654,7 @@ const static std::string g_msg = R"(
       "errTitle": "Invalid_Argument",
       "ErrCode": "EZ0037",
       "ErrMessage": "Parameter %s of %s is invalid. Reason: %s.",
-      "Arglist": "arg_name, op_name, reason",
+      "Arglist": "param_name, op_name, reason",
       "suggestion": {
         "Possible Cause": "N/A",
         "Solution": "Check whether the input/output tensor meets the condition."
