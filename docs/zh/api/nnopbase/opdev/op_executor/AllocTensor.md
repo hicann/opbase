@@ -22,13 +22,13 @@ aclTensor *AllocTensor(DataType dataType, Format storageFormat, Format originFor
 
 | 参数 | 输入/输出 | 说明 |
 | --- | --- | --- |
-| shape | 输入 | 将aclTensor的[StorageShape](GetStorageShape.md)和[OriginShape](GetOriginalShape.md)都设置为指定的shape。 |
+| shape | 输入 | 将aclTensor的[StorageShape](../common_types/GetStorageShape.md)和[OriginShape](../common_types/GetOriginalShape.md)都设置为指定的shape。 |
 | dataType | 输入 | 指定aclTensor的数据类型。 |
-| format | 输入 | 将aclTensor的[StorageFormat](GetStorageFormat.md)和[OriginFormat](GetOriginalFormat.md)都设置为指定的format。 |
-| storageShape | 输入 | 将aclTensor的[StorageShape](GetStorageShape.md)设置为指定shape。 |
-| originShape | 输入 | 将aclTensor的[OriginShape](GetOriginalShape.md)设置为指定shape。 |
-| storageFormat | 输入 | 将aclTensor的[StorageFormat](GetStorageFormat.md)设置为指定format。 |
-| originFormat | 输入 | 将aclTensor的[OriginFormat](GetOriginalFormat.md)设置为指定format。 |
+| format | 输入 | 将aclTensor的[StorageFormat](../common_types/GetStorageFormat.md)和[OriginFormat](../common_types/GetOriginalFormat.md)都设置为指定的format。 |
+| storageShape | 输入 | 将aclTensor的[StorageShape](../common_types/GetStorageShape.md)设置为指定shape。 |
+| originShape | 输入 | 将aclTensor的[OriginShape](../common_types/GetOriginalShape.md)设置为指定shape。 |
+| storageFormat | 输入 | 将aclTensor的[StorageFormat](../common_types/GetStorageFormat.md)设置为指定format。 |
+| originFormat | 输入 | 将aclTensor的[OriginFormat](../common_types/GetOriginalFormat.md)设置为指定format。 |
 
 ## 返回值说明
 
