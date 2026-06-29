@@ -11,48 +11,23 @@
 #ifndef INDV_LIB_WRAPPER_H_
 #define INDV_LIB_WRAPPER_H_
 
-#include <string>
-#include <vector>
 #include <mutex>
+#include <string>
 #include <unordered_map>
-#include "mmpa/mmpa_api.h"
-#include "hccl/base.h"
-#include "aclnn/acl_meta.h"
+#include <vector>
 #include "acl/acl_rt.h"
-#include "utils/indv_debug_assert.h"
+#include "aclnn/acl_meta.h"
+#include "hccl/base.h"
+#include "mmpa/mmpa_api.h"
 #include "nnopbase_error_msg.h"
 
 namespace nnopbase {
 class NnopBaseLoadSo {
 public:
-    virtual ~NnopBaseLoadSo() {}
+    virtual ~NnopBaseLoadSo();
 
-    aclnnStatus openSo(const char* loadSoPath)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(loadSoPath);
-
-        OP_LOGI("Start loading dynamic library %s.", loadSoPath);
-        soHandle_ = mmDlopen(loadSoPath, MMPA_RTLD_LAZY);
-        if (soHandle_ == nullptr) {
-            OP_LOGW("Failed to open "
-                    "dynamic library %s. dlopen error:%s.",
-                    loadSoPath, mmDlerror());
-            return ACLNN_ERR_PARAM_INVALID;
-        }
-        OP_LOGI("Load dynamic library %s successfully.", loadSoPath);
-
-        soPath_ = loadSoPath;
-        return OK;
-    }
-
-    void closeSo()
-    {
-        if (soHandle_ != nullptr) {
-            mmDlclose(soHandle_);
-            soHandle_ = nullptr;
-            soPath_ = "";
-        }
-    }
+    aclnnStatus openSo(const char* loadSoPath);
+    void closeSo();
 
     template <typename T>
     T LoadFunction(const char* const functionName)
@@ -81,46 +56,13 @@ private:
 
 class ApiWrapper : public NnopBaseLoadSo {
 public:
-    static ApiWrapper& GetInstance()
-    {
-        static ApiWrapper instance;
-        return instance;
-    }
-
-    void* GetFunc(const char* funcName)
-    {
-        const std::lock_guard<std::mutex> lk(mutex_);
-        if (!hasInit_) {
-            if (openSo("libopapi_math.so") != OK) {
-                std::string errMsg = "Failed to enable the AutoContiguous() function. Check whether the ops_math operator package"
-                    " is installed and whether libopapi_math.so is under environment variable LD_LIBRARY_PATH";
-                OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
-                return nullptr;
-            }
-            hasInit_ = true;
-        }
-        if (funcName == nullptr) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Function name is nullptr!");
-            return nullptr;
-        }
-        const auto& it = functions_.find(funcName);
-        if (it != functions_.end()) {
-            return it->second;
-        }
-        void* const func = LoadFunction<void*>(funcName);
-        if (func != nullptr) {
-            functions_[funcName] = func;
-            return func;
-        }
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to get function %s!", funcName);
-        return nullptr;
-    }
-
-    aclnnStatus LoadFunctions() override { return OK; }
+    static ApiWrapper& GetInstance();
+    void* GetFunc(const char* funcName);
+    aclnnStatus LoadFunctions() override;
 
 private:
-    ApiWrapper() = default;
-    ~ApiWrapper() override { closeSo(); }
+    ApiWrapper();
+    ~ApiWrapper() override;
 
     bool hasInit_ = false;
     std::mutex mutex_;
@@ -129,249 +71,40 @@ private:
 
 class IndvMc2ClientWrapper : public NnopBaseLoadSo {
 public:
-    static IndvMc2ClientWrapper& GetInstance(void)
-    {
-        static IndvMc2ClientWrapper instance;
-        return instance;
-    }
+    static IndvMc2ClientWrapper& GetInstance(void);
 
     // 调用端必须保证不多线程调用
-    aclnnStatus IndvMc2ClientWrapperInit(const char* loadSoPath)
-    {
-        hcclAllocComResourceByTilingHandle = nullptr;
-        closeSo();
-        aclnnStatus ret = openSo(loadSoPath);
-        if (ret != OK) {
-            OP_LOGW("Failed to load dynamic library %s, retVal = %d.", loadSoPath, ret);
-            return ret;
-        }
-        NNOPBASE_ASSERT_OK_RETVAL(LoadFunctions());
-        return OK;
-    }
-    aclnnStatus HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData, void** commContext)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
-
-        HcclResult ret = hcclAllocComResourceByTilingHandle(comm, stream, TilingData, commContext);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclAllocComResourceByTiling "
-                    "function of the mc2_client module, ret = %d, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
+    aclnnStatus IndvMc2ClientWrapperInit(const char* loadSoPath);
+    aclnnStatus HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData, void** commContext);
 
 private:
     using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void*, void*, void**);
-    HcclAllocComResourceByTilingFunc hcclAllocComResourceByTilingHandle = nullptr;
-    IndvMc2ClientWrapper(void) {}
-    ~IndvMc2ClientWrapper() override
-    {
-        hcclAllocComResourceByTilingHandle = nullptr;
-        closeSo();
-    }
 
-    aclnnStatus LoadFunctions() override
-    {
-        hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>(
-            "HcclAllocComResourceByTiling");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
-        return OK;
-    }
+    IndvMc2ClientWrapper(void);
+    ~IndvMc2ClientWrapper() override;
+
+    aclnnStatus LoadFunctions() override;
+
+    HcclAllocComResourceByTilingFunc hcclAllocComResourceByTilingHandle = nullptr;
 };
 
 class IndvHcclWrapper : public NnopBaseLoadSo {
 public:
-    static IndvHcclWrapper& GetInstance(void)
-    {
-        static IndvHcclWrapper instance;
-        return instance;
-    }
+    static IndvHcclWrapper& GetInstance(void);
 
     // 调用端必须保证不多线程调用
-    aclnnStatus IndvHcclWrapperInit(const char* loadSoPath, const bool needLoadDavidHcclApi)
-    {
-        hcclAllocComResourceByTilingHandle = nullptr;
-        hcclGetAicpuOpStreamAndNotifyHandle = nullptr;
-        hcomGetCommHandleByGroupHandle = nullptr;
-        hcclGetRankIdHandle = nullptr;
-        hcclGetCcuTaskInfoHandle = nullptr;
-
-        // 静态Mc2开启场景重构Topo结构落盘Json用
-        hcclGetRankSizeHandle = nullptr;
-        hcclRankGraphGetLayersHandle = nullptr;
-        hcclRankGraphGetRankSizeByLayerHandle = nullptr;
-        hcclRankGraphGetTopoTypeByLayerHandle = nullptr;
-        hcclGetHcclBufferHandle = nullptr;
-        closeSo();
-
-        NNOPBASE_ASSERT_OK_RETVAL(openSo(loadSoPath));
-        NNOPBASE_ASSERT_OK_RETVAL(LoadFunctions());
-        if (needLoadDavidHcclApi) {
-            NNOPBASE_ASSERT_OK_RETVAL(LoadDavidHcclFunctions());
-        }
-        return OK;
-    }
-
-    aclnnStatus HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData, void** commContext)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
-
-        HcclResult ret = hcclAllocComResourceByTilingHandle(comm, stream, TilingData, commContext);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclAllocComResourceByTiling "
-                    "function of the hccl module, ret = %d, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-
+    aclnnStatus IndvHcclWrapperInit(const char* loadSoPath, const bool needLoadDavidHcclApi);
+    aclnnStatus HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData, void** commContext);
     aclnnStatus HcclGetAicpuOpStreamAndNotify(HcclComm comm, aclrtStream* opStream, uint8_t notifyCnt,
-                                              void** aicpuNotify)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetAicpuOpStreamAndNotifyHandle);
-        HcclResult ret = hcclGetAicpuOpStreamAndNotifyHandle(comm, opStream, notifyCnt, aicpuNotify);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclGetAicpuOpStreamAndNotify "
-                    "function of the hccl module, ret = %d, comm = %p, notifyCnt = %u.",
-                    ret, comm, notifyCnt);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-
-    aclnnStatus HcomGetCommHandleByGroup(const char* group, HcclComm* commHandle)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcomGetCommHandleByGroupHandle);
-
-        HcclResult ret = hcomGetCommHandleByGroupHandle(group, commHandle);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcomGetCommHandleByGroup "
-                    "function of the hccl module, ret = %d, group = %s.",
-                    ret, group);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-
-    aclnnStatus HcclGetRankId(HcclComm comm, uint32_t* rankSize)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankIdHandle);
-
-        HcclResult ret = hcclGetRankIdHandle(comm, rankSize);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclGetRankId "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-
-    aclnnStatus HcclGetCcuTaskInfo(HcclComm comm, void* fusionArgs, void* ccuTaskGroup)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetCcuTaskInfoHandle);
-
-        HcclResult ret = hcclGetCcuTaskInfoHandle(comm, fusionArgs, ccuTaskGroup);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclGetCcuTaskInfo "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-
-    aclnnStatus HcclRankGraphGetLayers(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetLayersHandle);
-
-        HcclResult ret = hcclRankGraphGetLayersHandle(comm, netLayers, netLayerNum);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclRankGraphGetLayers "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-    aclnnStatus HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uint32_t* rankNum)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetRankSizeByLayerHandle);
-
-        HcclResult ret = hcclRankGraphGetRankSizeByLayerHandle(comm, netLayer, rankNum);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclRankGraphGetRankSizeByLayer "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-    aclnnStatus HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, uint32_t* topoType)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetTopoTypeByLayerHandle);
-
-        HcclResult ret = hcclRankGraphGetTopoTypeByLayerHandle(comm, netLayer, topoType);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclRankGraphGetTopoTypeByLayer "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-    aclnnStatus HcclGetHcclBuffer(HcclComm comm, void** buffer, uint64_t* size)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetHcclBufferHandle);
-
-        HcclResult ret = hcclGetHcclBufferHandle(comm, buffer, size);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclGetHcclBuffer "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
-
-    aclnnStatus HcclGetRankSize(HcclComm comm, uint32_t* rankSize)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankSizeHandle);
-
-        HcclResult ret = hcclGetRankSizeHandle(comm, rankSize);
-        if (ret != HCCL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the HcclGetRankId "
-                    "function of the hccl module, ret = %u, comm = %p.",
-                    ret, comm);
-            return ACLNN_ERR_INNER;
-        }
-
-        return OK;
-    }
+                                              void** aicpuNotify);
+    aclnnStatus HcomGetCommHandleByGroup(const char* group, HcclComm* commHandle);
+    aclnnStatus HcclGetRankId(HcclComm comm, uint32_t* rankSize);
+    aclnnStatus HcclGetCcuTaskInfo(HcclComm comm, void* fusionArgs, void* ccuTaskGroup);
+    aclnnStatus HcclRankGraphGetLayers(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum);
+    aclnnStatus HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uint32_t* rankNum);
+    aclnnStatus HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, uint32_t* topoType);
+    aclnnStatus HcclGetHcclBuffer(HcclComm comm, void** buffer, uint64_t* size);
+    aclnnStatus HcclGetRankSize(HcclComm comm, uint32_t* rankSize);
 
 private:
     using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void*, void*, void**);
@@ -387,60 +120,11 @@ private:
     using HcclRankGraphGetTopoTypeByLayerFunc = HcclResult (*)(HcclComm, uint32_t, uint32_t*);
     using HcclGetHcclBufferFunc = HcclResult (*)(HcclComm, void**, uint64_t*);
 
-    IndvHcclWrapper(void) {}
+    IndvHcclWrapper(void);
+    ~IndvHcclWrapper() override;
 
-    ~IndvHcclWrapper() override
-    {
-        hcclAllocComResourceByTilingHandle = nullptr;
-        hcclGetAicpuOpStreamAndNotifyHandle = nullptr;
-        hcomGetCommHandleByGroupHandle = nullptr;
-        hcclGetCcuTaskInfoHandle = nullptr;
-        hcclGetRankIdHandle = nullptr;
-
-        // 静态Mc2开启场景重构Topo结构落盘Json用
-        hcclGetRankSizeHandle = nullptr;
-        hcclRankGraphGetLayersHandle = nullptr;
-        hcclRankGraphGetRankSizeByLayerHandle = nullptr;
-        hcclRankGraphGetTopoTypeByLayerHandle = nullptr;
-        hcclGetHcclBufferHandle = nullptr;
-        closeSo();
-    }
-
-    aclnnStatus LoadFunctions() override
-    {
-        hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>(
-            "HcclAllocComResourceByTiling");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
-        hcclGetAicpuOpStreamAndNotifyHandle = LoadFunction<HcclGetAicpuOpStreamAndNotifyFunc>(
-            "HcclGetAicpuOpStreamAndNotify");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetAicpuOpStreamAndNotifyHandle);
-        hcomGetCommHandleByGroupHandle = LoadFunction<HcomGetCommHandleByGroupFunc>("HcomGetCommHandleByGroup");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcomGetCommHandleByGroupHandle);
-        hcclGetRankIdHandle = LoadFunction<HcclGetRankIdFunc>("HcclGetRankId");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankIdHandle);
-
-        // 静态Mc2开启场景重构Topo结构落盘Json用
-        hcclGetRankSizeHandle = LoadFunction<HcclGetRankSizeFunc>("HcclGetRankSize");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetRankSizeHandle);
-        hcclRankGraphGetLayersHandle = LoadFunction<HcclRankGraphGetLayersFunc>("HcclRankGraphGetLayers");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetLayersHandle);
-        hcclRankGraphGetRankSizeByLayerHandle = LoadFunction<HcclRankGraphGetRankSizeByLayerFunc>(
-            "HcclRankGraphGetRankSizeByLayer");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetRankSizeByLayerHandle);
-        hcclRankGraphGetTopoTypeByLayerHandle = LoadFunction<HcclRankGraphGetTopoTypeByLayerFunc>(
-            "HcclRankGraphGetTopoTypeByLayer");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclRankGraphGetTopoTypeByLayerHandle);
-        hcclGetHcclBufferHandle = LoadFunction<HcclGetHcclBufferFunc>("HcclGetHcclBuffer");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetHcclBufferHandle);
-        return OK;
-    }
-
-    aclnnStatus LoadDavidHcclFunctions()
-    {
-        hcclGetCcuTaskInfoHandle = LoadFunction<HcclGetCcuTaskInfoFunc>("HcclGetCcuTaskInfo");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclGetCcuTaskInfoHandle);
-        return OK;
-    }
+    aclnnStatus LoadFunctions() override;
+    aclnnStatus LoadDavidHcclFunctions();
 
     HcclAllocComResourceByTilingFunc hcclAllocComResourceByTilingHandle = nullptr;
     HcclGetAicpuOpStreamAndNotifyFunc hcclGetAicpuOpStreamAndNotifyHandle = nullptr;
@@ -458,63 +142,14 @@ private:
 
 class NnopbaseSoLoader {
 public:
-    static NnopbaseSoLoader& GetInstance()
-    {
-        static NnopbaseSoLoader instance;
-        return instance;
-    }
-
-    void* FindFunction(const std::vector<std::string>& soPaths, const std::string& funcName)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (const auto& soPath : soPaths) {
-            if (loadedLibraries.find(soPath) != loadedLibraries.end()) {
-                if (functions_[soPath].find(funcName) != functions_[soPath].end()) {
-                    OP_LOGI("Get func %s from %s successfully.", funcName.c_str(), soPath.c_str());
-                    return functions_[soPath][funcName];
-                } else {
-                    void* func_ptr = mmDlsym(loadedLibraries[soPath], funcName.c_str());
-                    if (func_ptr) {
-                        functions_[soPath][funcName] = func_ptr;
-                        OP_LOGW("Get funcName %s successfully", funcName.c_str());
-                        return func_ptr;
-                    }
-                    OP_LOGW("Failed to get function %s from %s!", funcName.c_str(), soPath.c_str());
-                }
-            } else {
-                void* handle = mmDlopen(soPath.c_str(), RTLD_LAZY);
-                if (!handle) {
-                    OP_LOGW("Failed to open %s, dlopen error:%s.", soPath.c_str(), mmDlerror());
-                    continue;
-                }
-                loadedLibraries[soPath] = handle;
-                OP_LOGW("Open %s successfully", soPath.c_str());
-
-                void* func_ptr = mmDlsym(loadedLibraries[soPath], funcName.c_str());
-                if (func_ptr) {
-                    functions_[soPath][funcName] = func_ptr;
-                    OP_LOGW("Get funcName %s successfully", funcName.c_str());
-                    return func_ptr;
-                }
-            }
-        }
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to get function %s!", funcName.c_str());
-        return nullptr;
-    }
-
-    void closeSo()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (const auto& pair : loadedLibraries) {
-            mmDlclose(pair.second);
-        }
-        loadedLibraries.clear();
-        functions_.clear();
-    }
+    static NnopbaseSoLoader& GetInstance();
+    void* FindFunction(const std::vector<std::string>& soPaths, const std::string& funcName);
+    void closeSo();
 
 private:
-    NnopbaseSoLoader() = default;
-    ~NnopbaseSoLoader() { closeSo(); }
+    NnopbaseSoLoader();
+    ~NnopbaseSoLoader();
+
     std::unordered_map<std::string, std::unordered_map<std::string, void*>> functions_;
     std::unordered_map<std::string, void*> loadedLibraries;
     std::mutex mutex_;
@@ -522,63 +157,19 @@ private:
 
 class IndvRtsWrapper : public NnopBaseLoadSo {
 public:
-    static IndvRtsWrapper* GetInstance(void)
-    {
-        static IndvRtsWrapper instance;
-        static std::once_flag initFlag;
-        static bool initSuccess = false;
-        std::call_once(initFlag, [&]() { initSuccess = (instance.IndvRtsWrapperInit() == OK); });
-        return initSuccess ? &instance : nullptr;
-    }
-
-    aclnnStatus AclrtBinarySetExceptionCallback(void* binHandle, void* callback, void* userData = nullptr)
-    {
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(rtsRegisterExceptionCallbackHandle);
-        auto ret = rtsRegisterExceptionCallbackHandle(binHandle, reinterpret_cast<customOpExceptionCallback>(callback),
-                                                      userData);
-        if (ret != ACL_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER,
-                    "Failed to invoke the aclrtBinarySetExceptionCallback "
-                    "function of the acl_rt module, ret = %d, callback = %p.",
-                    ret, callback);
-            return ACLNN_ERR_INNER;
-        }
-        return OK;
-    }
+    static IndvRtsWrapper* GetInstance(void);
+    aclnnStatus AclrtBinarySetExceptionCallback(void* binHandle, void* callback, void* userData = nullptr);
 
 private:
     using customOpExceptionCallback = void (*)(aclrtExceptionInfo*, void*);
     using NnopbaseRegisterExceptionCallbackFunc = aclError (*)(void*, customOpExceptionCallback, void*);
 
-    IndvRtsWrapper() {};
-    ~IndvRtsWrapper() override
-    {
-        rtsRegisterExceptionCallbackHandle = nullptr;
-        closeSo();
-    }
+    IndvRtsWrapper();
+    ~IndvRtsWrapper() override;
 
-    aclnnStatus IndvRtsWrapperInit()
-    {
-        rtsRegisterExceptionCallbackHandle = nullptr;
-        closeSo();
-        const char* ascendHomePath = nullptr;
-        MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
-        OP_CHECK(ascendHomePath != nullptr,
-                 OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading libacl_rt.so", "ASCEND_HOME_PATH"),
-                 return ACLNN_ERR_INNER_NULLPTR);
-        std::string rtsLibraryPath = std::string(ascendHomePath) + "/lib64/libacl_rt.so";
-        NNOPBASE_ASSERT_OK_RETVAL(openSo(rtsLibraryPath.c_str()));
-        NNOPBASE_ASSERT_OK_RETVAL(LoadFunctions());
-        return OK;
-    }
+    aclnnStatus IndvRtsWrapperInit();
+    aclnnStatus LoadFunctions() override;
 
-    aclnnStatus LoadFunctions() override
-    {
-        rtsRegisterExceptionCallbackHandle = LoadFunction<NnopbaseRegisterExceptionCallbackFunc>(
-            "aclrtBinarySetExceptionCallback");
-        NNOPBASE_ASSERT_NOTNULL_RETVAL(rtsRegisterExceptionCallbackHandle);
-        return OK;
-    }
     NnopbaseRegisterExceptionCallbackFunc rtsRegisterExceptionCallbackHandle = nullptr;
 };
 } // namespace nnopbase
