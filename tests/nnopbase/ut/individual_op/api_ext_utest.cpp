@@ -1619,10 +1619,6 @@ class ApiStub : public Adx::MmpaStub {
 
     void *mmDlopen(const char *fileName, int32_t mode)
     {
-        if (count == 0) {
-            count++;
-            return nullptr;
-        }
         return &count;
     }
     
