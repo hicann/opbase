@@ -53,7 +53,7 @@ public:
     constexpr static int32_t ELEMENT_ONE_REPEAT = Ops::Base::GetVRegSize() / sizeof(DataType);
     constexpr static uint64_t UB_BLOCK = Ops::Base::GetUbBlockSize();
     constexpr static int32_t CACHE_BUF_SIZE = 16 * 1024;
-
+    constexpr static bool isBatchInvariant = batchInvariant;
     ReduceOp* reduceOp_;
 
 private:

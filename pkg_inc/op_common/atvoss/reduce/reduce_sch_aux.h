@@ -374,6 +374,12 @@ public:
         if (view.isBlockAligned != 1) {
             value = Ops::Base::CeilAlign(static_cast<uint64_t>(value), UB_BLOCK / sizeof(T));
         }
+        // 开启batch一致性时，RA场景当dimA<vllength时需要把尾轴A对齐到vllength + ubblocklen
+        if constexpr (ReduceSch::isBatchInvariant) {
+            if (value <= AuxBase::VL_ELEMS) {
+                value = Ops::Base::CeilAlign(value, static_cast<int64_t>(AuxBase::VL_ELEMS)) + UB_BLOCK / sizeof(T);
+            }
+        }
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {
                 view.axis[i].dstStride = value;

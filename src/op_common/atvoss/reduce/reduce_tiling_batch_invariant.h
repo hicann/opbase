@@ -45,7 +45,8 @@ void ReduceOpTiling::ComputeRFirst(const uint64_t* shape)
     //AR和尾轴为R且尾轴R大于64，ub内不需要预留cacheline大小的空间；其余场景预留cacheline大小空间
     needReserveA_ = !(Pattern::ID == PATTERN_AR || (!Pattern::TailA && shape[Pattern::Dim - 1] > TAIL_R_THRES));
     OP_LOGD(context_, "needReserveA is %d", needReserveA_);
-    uint64_t maxRInUB = needReserveA_ ? bBlockNum / cacheSize : bBlockNum;
+    //尾轴为A时预留cachesize+ubBlockSize大小的空间，因为kernel侧尾轴A可能按照cacheSize + ubBlockSize对齐
+    uint64_t maxRInUB = needReserveA_ ? bBlockNum / (cacheSize + ubBlockSize) : bBlockNum;
     uint64_t innerR = 1;
     int32_t startR = Pattern::TailA ? Pattern::Dim - AXES_STEP : Pattern::Dim - CONST1;
     int32_t endR = Pattern::FirstA ? CONST1 : CONST0;
