@@ -678,7 +678,6 @@ public:
         static_assert(IsSameType<PromoteDType, DataType>::value, "group copy out dtype must be same with pre dag out.");
         // CopyOut As RA Pattern
         SliceView<CONST2> newView;
-        int32_t blockId = GetBlockIdx();
         int32_t innerA = CaculateInnerA<LoopInfo, Pattern::TailA, Pattern::Dim>(static_cast<Derived*>(this)->iterAddr_);
         uint64_t outLen = 1;
         uint64_t outRepeat = 1;
@@ -694,20 +693,7 @@ public:
         if constexpr (LoopInfo->loopACount > 0) {
             axis = LoopInfo->loopAAxis[LoopInfo->loopACount - 1];
         }
-
-        uint64_t addrOffset = 0;
-        if constexpr (LoopInfo->loopInnerACount > 0) {
-            for (int32_t i = axis; i < Dim; i += CONST2) {
-                addrOffset += static_cast<Derived*>(this)->iterAddr_[i].start * tiling_->dstStride[i];
-            }
-        }
-
-        uint64_t axisStep = LoopInfo->loopACount > 0 ? loopAAxisStep_ : 1;
-        newView.addr = (blockId % tiling_->groupR) *
-                           Ops::Base::CeilAlign(tiling_->outSize, static_cast<uint64_t>(VL_ELEMS)) +     // group offset
-                       (blockId / (tiling_->groupR * axisStep)) * tiling_->sliceShape[axis] * innerA +  // AAxis offset
-                       (blockId / tiling_->groupR % axisStep) * ubFactorA_ * innerA +        // main offset
-                       addrOffset;                                                                 // innerA offset
+        newView.addr = static_cast<Derived*>(this)->CalculateCopyOutGroupAddr(axis, innerA);
 
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
         LocalTensor<PromoteDType> outTensor;
