@@ -680,7 +680,7 @@ void ReduceOpTiling::ComputeUnitA(const uint64_t* shape)
         double maxRate = 0.0f;
         for (; step <= axisLen; step = step + stepLen) {
             uint64_t s = step > sliceShape_[iA] ? FloorAlign(step, sliceShape_[iA]) : step; // 非连续与sliceShape对齐
-            if (iA == Pattern::Dim - 1 && s != sliceShape_[iA]) {
+            if (iA == Pattern::Dim - 1 && s <= sliceShape_[iA]) {
                 s = FloorAlign(s, ubBlockSize);
             }
             uint64_t tmpInnerA = innerA * s;
