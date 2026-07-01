@@ -76,3 +76,5 @@
   - [BroadcastShape](BroadcastShape.md)
   - [InferShape4Elewise](InferShape4Elewise.md)
   - [InferShape4Reduce](InferShape4Reduce.md)
+
+- [预留接口](reserved_interface_op_common.md)
