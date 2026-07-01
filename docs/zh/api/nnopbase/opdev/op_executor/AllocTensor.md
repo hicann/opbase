@@ -7,16 +7,16 @@
 ## 函数原型
 
 ```cpp
-aclTensor* AllocTensor(const op::Shape& shape, op::DataType dataType, op::Format format = op::Format::FORMAT_ND);
+aclTensor* AllocTensor(const op::Shape& shape, op::DataType dataType, op::Format format = op::Format::FORMAT_ND)
 ```
 
 ```cpp
 aclTensor* AllocTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
-                       op::Format storageFormat, op::Format originFormat);
+                       op::Format storageFormat, op::Format originFormat)
 ```
 
 ```cpp
-aclTensor* AllocTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat);
+aclTensor* AllocTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat)
 ```
 
 ## 参数说明
