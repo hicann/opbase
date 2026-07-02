@@ -114,7 +114,7 @@
     </file_info>
 
     <file_info value="aclnnop_dir" copy_type="source" src_path="" dst_path="$(TARGET_ENV)/include" install_path="$(TARGET_ENV)/include" install_type="all">
-      <file value="aclnnop" install_mod="550" entity="true"/>
+        <file value="aclnnop" install_mod="550"/>
     </file_info>
 
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/include/op_common/op_host" install_path="$(TARGET_ENV)/include/op_common/op_host" install_type="all">
