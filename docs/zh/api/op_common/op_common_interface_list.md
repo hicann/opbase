@@ -20,10 +20,10 @@
   </tr></thead>
 <tbody>
   <tr>
-    <td rowspan="33">log</td>
+    <td rowspan="44">log</td>
     <td><a href='OP_LOGE.md'>OP_LOGE</a></td>
     <td>打印算子ERROR级别日志。</td>
-    <td rowspan="33">include/op_common/log/log.h</td>
+    <td rowspan="44">include/op_common/log/log.h</td>
   </tr>
   <tr>
     <td><a href='OP_LOGD.md'>OP_LOGD</a></td>
@@ -154,6 +154,50 @@
     <td>记录并上报多参数值校验错误（带原因），上报EZ0027错误码。</td>
   </tr>
   <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_STRIDE.md'>OP_LOGE_FOR_INVALID_STRIDE</a></td>
+    <td>记录并上报参数stride校验错误，上报EZ0028错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_FILE_PATH.md'>OP_LOGE_FOR_FILE_PATH</a></td>
+    <td>记录并上报文件路径无效错误，上报EZ0029错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_FILE_OPEN.md'>OP_LOGE_FOR_FILE_OPEN</a></td>
+    <td>记录并上报文件打开失败错误，上报EZ0030错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_FILE_PARSE.md'>OP_LOGE_FOR_FILE_PARSE</a></td>
+    <td>记录并上报文件解析失败错误，上报EZ0031错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_CONFIG.md'>OP_LOGE_FOR_INVALID_CONFIG</a></td>
+    <td>记录并上报配置项值无效错误，上报EZ0032错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_CONFIG_WITH_REASON.md'>OP_LOGE_FOR_INVALID_CONFIG_WITH_REASON</a></td>
+    <td>记录并上报配置项值无效错误（带原因），上报EZ0033错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_CONFIGS_WITH_REASON.md'>OP_LOGE_FOR_INVALID_CONFIGS_WITH_REASON</a></td>
+    <td>记录并上报多配置项值无效错误（带原因），上报EZ0034错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_FORMAT_WITH_REASON.md'>OP_LOGE_FOR_INVALID_FORMAT_WITH_REASON</a></td>
+    <td>记录并上报参数格式校验错误（带原因），上报EZ0035错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_GRAPH_NODE.md'>OP_LOGE_FOR_INVALID_GRAPH_NODE</a></td>
+    <td>记录并上报图节点无效错误，上报EZ0036错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_ARGUMENT_WITH_REASON.md'>OP_LOGE_FOR_INVALID_ARGUMENT_WITH_REASON</a></td>
+    <td>记录并上报参数无效错误（带原因），上报EZ0037错误码。</td>
+  </tr>
+  <tr>
+    <td><a href='OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON.md'>OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON</a></td>
+    <td>记录并上报参数列表大小校验错误（带原因），上报EZ0038错误码。</td>
+  </tr>
+  <tr>
     <td rowspan="5">math</td>
     <td><a href='FloorDiv.md'>FloorDiv</a></td>
     <td>向下取整的除法。</td>
@@ -176,10 +220,10 @@
     <td>判断两个float类型或double类型的数值是否相等。</td>
   </tr>
   <tr>
-    <td rowspan="4">platform</td>
+    <td rowspan="11">platform</td>
     <td><a href='GetAivCoreNum.md'>GetAivCoreNum</a></td>
     <td>获取平台AI Vector的核数。</td>
-    <td rowspan="4">include/op_common/op_host/util/platform_util.h</td>
+    <td rowspan="11">include/op_common/op_host/util/platform_util.h</td>
   </tr>
   <tr>
     <td><a href='GetAicCoreNum.md'>GetAicCoreNum</a></td>    
@@ -190,11 +234,39 @@
     <td>获取平台UB（Unified Buffer）空间大小，单位bytes。</td>
   </tr>
   <tr>
-    <td><a href='GetUbBlockSize.md'>GetUbBlockSize</a></td>    
+     <td><a href='GetUbBlockSize.md'>GetUbBlockSize</a></td>    
     <td>获取平台UB（Unified Buffer）的block单元大小，单位bytes。</td>
   </tr>
   <tr>
-    <td rowspan="6">infershape</td>
+     <td><a href='GetVRegSize.md'>GetVRegSize</a></td>    
+    <td>获取平台向量寄存器（Vector Register）的大小，单位bytes。</td>
+  </tr>
+  <tr>
+     <td><a href='GetSimtMaxThreadNum.md'>GetSimtMaxThreadNum</a></td>    
+    <td>获取平台SIMT最大线程数。</td>
+  </tr>
+  <tr>
+     <td><a href='GetSimtMaxDCacheSize.md'>GetSimtMaxDCacheSize</a></td>    
+    <td>获取平台SIMT最大DCache大小，单位bytes。</td>
+  </tr>
+  <tr>
+     <td><a href='GetCacheLineSize.md'>GetCacheLineSize</a></td>    
+    <td>获取平台Cache Line的大小，单位bytes。</td>
+  </tr>
+  <tr>
+     <td><a href='GetSectorCacheLineSize.md'>GetSectorCacheLineSize</a></td>    
+    <td>获取平台Sector Cache Line的大小，单位bytes。</td>
+  </tr>
+  <tr>
+     <td><a href='GetNddmaDcacheSize.md'>GetNddmaDcacheSize</a></td>    
+    <td>获取平台NDDMA DCache的大小，单位bytes。</td>
+  </tr>
+  <tr>
+     <td><a href='GetWorkspaceSize.md'>GetWorkspaceSize</a></td>    
+    <td>获取平台LibApi Workspace的大小，单位bytes。</td>
+  </tr>
+  <tr>
+    <td rowspan="8">infershape</td>
     <td><a href='SetUnknownRank.md'>SetUnknownRank</a></td>
     <td>设置输入shape为维度不确定的动态shape。</td>
     <td rowspan="4">include/op_common/op_host/util/shape_util.h</td>
@@ -212,14 +284,23 @@
     <td>检查输入shape的每一根轴长度是否都为不确定值。</td>
   </tr>
   <tr>
-    <td><a href='InferShape4Broadcast.md'>InferShape4Broadcast</a></td>    
+     <td><a href='InferShape4Broadcast.md'>InferShape4Broadcast</a></td>    
     <td>broadcast类算子的infershape方法。</td>
-    <td rowspan="1">include/op_common/op_host/infershape_broadcast_util.h</td>
+    <td rowspan="2">include/op_common/op_host/infershape_broadcast_util.h</td>
   </tr>
   <tr>
-    <td><a href='InferShape4Elewise.md'>InferShape4Elewise</a></td>    
+     <td><a href='BroadcastShape.md'>BroadcastShape</a></td>    
+    <td>根据输入张量的shape推导broadcast后的输出shape。</td>
+  </tr>
+  <tr>
+     <td><a href='InferShape4Elewise.md'>InferShape4Elewise</a></td>    
     <td>elewise类算子的infershape方法。</td>
     <td rowspan="1">include/op_common/op_host/infershape_elewise_util.h</td>
+  </tr>
+  <tr>
+     <td><a href='InferShape4Reduce.md'>InferShape4Reduce</a></td>    
+    <td>reduce类算子的infershape方法。</td>
+    <td rowspan="1">include/op_common/op_host/infershape_reduce_util.h</td>
   </tr>
 </tbody>
 </table> 

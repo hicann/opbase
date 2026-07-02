@@ -308,3 +308,28 @@ aclError aclrtDestroyEvent(aclrtEvent event)
     }
     return ACL_SUCCESS;
 }
+
+EXTERN_C
+aclError aclrtCtxGetCurrentDefaultStream(aclrtStream* stream)
+{
+    *stream = (void*)(new uint8_t[1]);
+    return ACL_SUCCESS;
+}
+
+EXTERN_C
+aclError aclrtDestroyStream(aclrtStream stream)
+{
+    if (stream != nullptr) {
+        delete[] static_cast<uint8_t*>(stream);
+    }
+    return ACL_SUCCESS;
+}
+
+EXTERN_C
+aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t* value)
+{
+    if (value != nullptr) {
+        *value = 24U;
+    }
+    return ACL_SUCCESS;
+}
