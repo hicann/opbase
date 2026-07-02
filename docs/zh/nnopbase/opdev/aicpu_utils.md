@@ -1,4 +1,4 @@
-# aicpu\_uitls<a name="ZH-CN_TOPIC_0000002515603051"></a>
+# aicpu\_utils<a name="ZH-CN_TOPIC_0000002515603051"></a>
 
 本章接口为预留接口，后续有可能变更或废弃，不建议开发者使用，开发者无需关注。
 
