@@ -462,7 +462,7 @@ else
         if [ -f "${_TARGET_INSTALL_PATH}/${upgrade_old_version_dir}/${ops_base_platform_old_dir}/script/uninstall.sh" ]; then
             ${_TARGET_INSTALL_PATH}/${upgrade_old_version_dir}/${ops_base_platform_old_dir}/script/uninstall.sh
         else
-            sh "${_UNINSTALL_SHELL_FILE}" "${_TARGET_INSTALL_PATH}" "upgrade" "${is_quiet}" "All" "${is_docker_install}" "${docker_root}"
+            sh "${_UNINSTALL_SHELL_FILE}" "${_TARGET_INSTALL_PATH}" "upgrade" "${is_quiet}" "All" "${is_docker_install}" "${docker_root}" "$pkg_version_dir"
         fi
     fi
 fi
