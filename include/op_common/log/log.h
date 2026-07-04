@@ -26,25 +26,9 @@
 #include "graph/types.h"
 #include "op_common/op_host/util/opbase_export.h"
 
-#ifndef DLOG_DEBUG
-#define DLOG_DEBUG 0
-#endif
-#ifndef DLOG_INFO
-#define DLOG_INFO 1
-#endif
-#ifndef DLOG_WARN
-#define DLOG_WARN 2
-#endif
-#ifndef DLOG_ERROR
-#define DLOG_ERROR 3
-#endif
+#include "toolchain/slog.h"
 
 constexpr int32_t OP_MODULE_ID = 63;
-
-extern "C" {
-int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel);
-void DlogRecord(int32_t moduleId, int32_t level, const char* fmt, ...);
-}
 
 namespace Ops {
 namespace Base {
