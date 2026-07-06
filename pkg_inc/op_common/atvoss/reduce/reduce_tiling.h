@@ -34,8 +34,8 @@ using namespace optiling;
 
 constexpr uint64_t WORKSPACE_SIZE = 16 * 1024 * 1024; // fixed workspace size for ascendc
 constexpr uint64_t BASIC_BLOCK = 64 * 1024UL;
-constexpr uint64_t POST_BUF_SIZE = 8 * 1024UL;   // post reduce size for ub reduce
-constexpr uint64_t CACHE_BUF_SIZE = 16 * 1024UL; // cache for binary reduce
+constexpr uint64_t POST_BUF_SIZE = 8 * 1024UL;        // post reduce size for ub reduce
+constexpr uint64_t CACHE_BUF_SIZE = 16 * 1024UL;      // cache for binary reduce
 
 struct ReduceTilingUnit {
     int32_t idx = -1;   // ub cut axis
@@ -242,7 +242,7 @@ public:
      */
     ReduceOpTiling(gert::TilingContext* context, ReduceOpCompileInfo* compileInfo = nullptr,
                    ReduceOpTilingData* tilingData = nullptr)
-        : context_(context), compileInfo_(compileInfo), tilingData_(tilingData) {};
+        : context_(context), compileInfo_(compileInfo), tilingData_(tilingData){};
 
     virtual ~ReduceOpTiling() {}
     /*
@@ -272,7 +272,7 @@ public:
     }
 
 protected:
-    virtual void CalcUserBasicBlock([[maybe_unused]] bool patternA) {};
+    virtual void CalcUserBasicBlock([[maybe_unused]] bool patternA){};
 
     virtual void CalcUserWorkSpace();
 
@@ -396,6 +396,8 @@ protected:
 
     void GetTilingKey(ReduceTilingKey& key);
 
+    bool isPrime(uint64_t num);
+
 protected:
     gert::TilingContext* context_{nullptr};
     ReduceOpCompileInfo* compileInfo_{nullptr};
@@ -416,7 +418,7 @@ protected:
     uint64_t sliceNum_[MAX_DIM] = {0};    // 每个轴slice切片的个数
     uint64_t sliceShape_[MAX_DIM] = {0};  // 每个轴slice切片后的shape大小
     uint64_t sliceStride_[MAX_DIM] = {0}; // 每个轴slice切片后的stride长度
-}; // class ReduceOpTiling
+};                                        // class ReduceOpTiling
 
 /*
  * \brief reduce template tiling interface
@@ -461,8 +463,8 @@ OPBASE_API ge::graphStatus Tiling4ReduceOp(gert::TilingContext* context, ReduceO
 } // namespace Base
 } // namespace Ops
 
-#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                      \
-    result = GET_TPL_TILING_KEY(                                                                 \
-        reduceTilingKey.isContiguous, reduceTilingKey.batchInvariant, reduceTilingKey.patternID, \
-        reduceTilingKey.loopARCount, reduceTilingKey.loopInnerARCount, __VA_ARGS__)
+#define GEN_REDUCE_TILING_KEY(result, reduceTilingKey, ...)                                   \
+    result = GET_TPL_TILING_KEY(reduceTilingKey.isContiguous, reduceTilingKey.batchInvariant, \
+                                reduceTilingKey.patternID, reduceTilingKey.loopARCount,       \
+                                reduceTilingKey.loopInnerARCount, __VA_ARGS__)
 #endif

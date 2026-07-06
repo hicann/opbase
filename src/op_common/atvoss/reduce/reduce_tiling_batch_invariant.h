@@ -42,10 +42,10 @@ void ReduceOpTiling::ComputeRFirst(const uint64_t* shape)
     uint64_t ubBlockSize = compileInfo_->ubBlockSize / dSize;
     uint64_t cacheSize = compileInfo_->cacheLineSize / dSize;
     uint64_t bBlockNum = basicBlock_ * Ratio() / opDag_.maxInputBytes;
-    //AR和尾轴为R且尾轴R大于64，ub内不需要预留cacheline大小的空间；其余场景预留cacheline大小空间
+    // AR和尾轴为R且尾轴R大于64，ub内不需要预留cacheline大小的空间；其余场景预留cacheline大小空间
     needReserveA_ = !(Pattern::ID == PATTERN_AR || (!Pattern::TailA && shape[Pattern::Dim - 1] > TAIL_R_THRES));
     OP_LOGD(context_, "needReserveA is %d", needReserveA_);
-    //尾轴为A时预留cachesize+ubBlockSize大小的空间，因为kernel侧尾轴A可能按照cacheSize + ubBlockSize对齐
+    // 尾轴为A时预留cachesize+ubBlockSize大小的空间，因为kernel侧尾轴A可能按照cacheSize + ubBlockSize对齐
     uint64_t maxRInUB = needReserveA_ ? bBlockNum / (cacheSize + ubBlockSize) : bBlockNum;
     uint64_t innerR = 1;
     int32_t startR = Pattern::TailA ? Pattern::Dim - AXES_STEP : Pattern::Dim - CONST1;
@@ -71,6 +71,19 @@ void ReduceOpTiling::ComputeRFirst(const uint64_t* shape)
     }
 
     uint64_t ubFactorR = maxRInUB / innerR;
+    // 如果R能被均匀切分且大于1/2ub内最大的R，则均匀切分，减少补pad
+    if (!isPrime(shape[iRCut])) {
+        uint64_t maxStep = maxRInUB / 2 / innerR;
+        for (uint64_t i = ubFactorR; i >= maxStep; i--) {
+            if (shape[iRCut] % i == 0) {
+                ubFactorR = i;
+                break;
+            }
+        }
+    }
+    if (iRCut == Pattern::Dim - 1) {
+        ubFactorR = FloorAlign(ubFactorR, ubBlockSize);
+    }
     innerR = innerR * ubFactorR;
 
     uint64_t outerR = CeilDiv(shape[iRCut], ubFactorR);
@@ -150,7 +163,7 @@ void ReduceOpTiling::ComputeAWithRFullLoad(const uint64_t* shape)
     for (int32_t iA = startA; iA >= endA; iA -= AXES_STEP) {
         outerA *= shape[iA];
     }
-    OP_LOGD(context_, "outerA is %lu",outerA);
+    OP_LOGD(context_, "outerA is %lu", outerA);
     int32_t iA;
     for (iA = startA; iA >= endA; iA -= AXES_STEP) {
         uint64_t axisLen = shape[iA];
@@ -160,10 +173,9 @@ void ReduceOpTiling::ComputeAWithRFullLoad(const uint64_t* shape)
             uint64_t tmpS = (iA == Pattern::Dim - 1) ? CeilAlign(s, ubBlockSize) : s;
             uint64_t tmpInnerA = innerA * tmpS;
             uint64_t tmpOuterA = outerA / axisLen * CeilDiv(axisLen, tmpS);
-            double rate =
-                static_cast<double>(tmpOuterA) / static_cast<double>(CeilAlign(tmpOuterA, compileInfo_->vectorCoreNum));
-            bool isContinue =
-                (tmpInnerA * innerR <= bBlockNum && tmpInnerA <= maxInnerA);
+            double rate = static_cast<double>(tmpOuterA) /
+                          static_cast<double>(CeilAlign(tmpOuterA, compileInfo_->vectorCoreNum));
+            bool isContinue = (tmpInnerA * innerR <= bBlockNum && tmpInnerA <= maxInnerA);
             if (isContinue) {
                 if (tmpInnerA <= cacheSize) {
                     maxStep = tmpS;
@@ -201,9 +213,8 @@ void ReduceOpTiling::SetTilingDataBatchInvariant(const uint64_t* shape)
     tilingData_->coreNum = static_cast<int32_t>(compileInfo_->vectorCoreNum);
 
     if (tilingData_->groupR > 1) {
-        OP_CHECK_IF(
-            context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return);
+        OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return);
     }
 
     for (int32_t i = 0; i < MAX_DIM; i++) {
@@ -221,10 +232,27 @@ void ReduceOpTiling::SetTilingDataBatchInvariant(const uint64_t* shape)
     } else {
         tilingData_->factorACntPerCore = CeilDiv(unitA_.outer, FloorDiv(compileInfo_->vectorCoreNum, groupR));
     }
-    uint32_t realCore =
-        CeilDiv(unitA_.outer, tilingData_->factorACntPerCore) * CeilDiv(unitR_.outer, tilingData_->factorRCntPerCore);
+    uint32_t realCore = CeilDiv(unitA_.outer, tilingData_->factorACntPerCore) *
+                        CeilDiv(unitR_.outer, tilingData_->factorRCntPerCore);
     tilingData_->realCoreNum = realCore;
     context_->SetBlockDim(realCore);
+}
+
+inline bool ReduceOpTiling::isPrime(uint64_t num)
+{
+    if (num <= CONST1)
+        return false;
+    if (num == CONST2 || num == CONST3)
+        return true;
+    if (num % CONST2 == 0 || num % CONST3 == 0)
+        return false;
+
+    for (uint64_t i = CONST5; i * i <= num; i += CONST6) {
+        if (num % i == 0 || num % (i + CONST2) == 0) {
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace Base
