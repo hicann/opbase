@@ -392,6 +392,15 @@ public:
         }
     }
 
+    __aicore__ inline uint64_t CalculateCopyOutAddr(int32_t axis)
+    {
+        uint64_t addrOffset = 0;
+        for (int32_t i = axis; i < Dim; i += CONST2) {
+            addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
+        }
+        return addrOffset;
+    }
+
     __aicore__ inline uint64_t CalculateCopyOutGroupAddr(int32_t axis, int32_t innerA)
     {
         int32_t blockId = GetBlockIdx();
@@ -406,8 +415,7 @@ public:
         return (blockId % this->tiling_->groupR) *
                    Ops::Base::CeilAlign(this->tiling_->outSize, static_cast<uint64_t>(AuxBase::VL_ELEMS)) +
                (blockId / this->tiling_->groupR % axisStep) * this->ubFactorA_ * innerA +
-               (blockId / (this->tiling_->groupR * axisStep)) * this->tiling_->shape[axis] * innerA +
-               addrOffset;
+               (blockId / (this->tiling_->groupR * axisStep)) * this->tiling_->shape[axis] * innerA + addrOffset;
     }
 
     template <class T, class V>

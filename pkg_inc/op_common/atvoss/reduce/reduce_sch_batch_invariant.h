@@ -22,10 +22,10 @@ namespace Base {
 namespace ReduceOpTmpl {
 template <auto LoopInfo, class ReduceSch, bool IsStageOne, class OpDag = void>
 struct ReduceSchAuxBatchInvariant
-    : public ReduceSchAuxBase<
-          LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAuxBatchInvariant<LoopInfo, ReduceSch, IsStageOne, OpDag>> {
-    using AuxBase = ReduceSchAuxBase<
-        LoopInfo, ReduceSch, IsStageOne, OpDag, ReduceSchAuxBatchInvariant<LoopInfo, ReduceSch, IsStageOne, OpDag>>;
+    : public ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
+                              ReduceSchAuxBatchInvariant<LoopInfo, ReduceSch, IsStageOne, OpDag>> {
+    using AuxBase = ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
+                                     ReduceSchAuxBatchInvariant<LoopInfo, ReduceSch, IsStageOne, OpDag>>;
     using InDType = typename AuxBase::InDType;
 
 public:
@@ -40,11 +40,12 @@ public:
     } iterAddr_[Dim];
 
 public:
-    __aicore__ inline ReduceSchAuxBatchInvariant(
-        ReduceSch* sch, GlobalTensor<uint8_t>* input, GlobalTensor<uint8_t>* output, GlobalTensor<uint8_t>* workspace,
-        const ReduceOpTilingData* tiling) :
-        ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
-                           ReduceSchAuxBatchInvariant<LoopInfo, ReduceSch, IsStageOne, OpDag>>(sch, input, output, workspace, tiling)
+    __aicore__ inline ReduceSchAuxBatchInvariant(ReduceSch* sch, GlobalTensor<uint8_t>* input,
+                                                 GlobalTensor<uint8_t>* output, GlobalTensor<uint8_t>* workspace,
+                                                 const ReduceOpTilingData* tiling)
+        : ReduceSchAuxBase<LoopInfo, ReduceSch, IsStageOne, OpDag,
+                           ReduceSchAuxBatchInvariant<LoopInfo, ReduceSch, IsStageOne, OpDag>>(sch, input, output,
+                                                                                               workspace, tiling)
     {
         for (uint64_t i = 0; i < Dim; i++) {
             iterAddr_[i].stride = this->tiling_->shape[i];
@@ -81,7 +82,7 @@ public:
             }
 
             this->loopRStartIndex_ = blockId / this->tiling_->groupR * this->tiling_->factorRTotalCnt +
-                                blockId % this->tiling_->groupR * this->tiling_->factorRCntPerCore;
+                                     blockId % this->tiling_->groupR * this->tiling_->factorRCntPerCore;
             this->loopREndIndex_ = this->loopRStartIndex_ + this->tiling_->factorRCntPerCore;
             uint64_t maxRCnt = (blockId / this->tiling_->groupR + 1) * this->tiling_->factorRTotalCnt;
             uint64_t totalCnt = this->tiling_->factorATotalCnt * this->tiling_->factorRTotalCnt;
@@ -217,9 +218,8 @@ public:
     template <class V, class S>
     __aicore__ inline void CopyOutGroup(V& view, S& shape)
     {
-        static_assert(
-            IsSameType<typename AuxBase::PromoteDType, typename AuxBase::DataType>::value,
-            "group copy out dtype must be same with pre dag out.");
+        static_assert(IsSameType<typename AuxBase::PromoteDType, typename AuxBase::DataType>::value,
+                      "group copy out dtype must be same with pre dag out.");
         SliceView<CONST2> newView;
         int32_t blockId = GetBlockIdx();
         uint64_t outLen = 1;
@@ -238,7 +238,8 @@ public:
             addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
         }
         newView.addr = (blockId % this->tiling_->groupR) *
-                           Ops::Base::CeilAlign(this->tiling_->outSize, static_cast<uint64_t>(AuxBase::VL_ELEMS)) + addrOffset;
+                           Ops::Base::CeilAlign(this->tiling_->outSize, static_cast<uint64_t>(AuxBase::VL_ELEMS)) +
+                       addrOffset;
 
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
         LocalTensor<typename AuxBase::PromoteDType> outTensor;
@@ -381,8 +382,8 @@ public:
             for (int32_t i = 1; i < Dim; i++) {
                 view.axisSize = i + 1;
                 view.axis[i].start = iterAddr_[axis - 1].start;
-                view.axis[i].repeat =
-                    GetRepeatStride<LoopInfo>(axis - 1, iterAddr_, this->tiling_, view.axis[i].srcStride);
+                view.axis[i].repeat = GetRepeatStride<LoopInfo>(axis - 1, iterAddr_, this->tiling_,
+                                                                view.axis[i].srcStride);
                 view.axis[i].idx = axis - 1;
                 view.axis[i].isAxisA = IsAxisA<AuxBase::Pattern::FirstA>(view.axis[i].idx);
                 if (view.axis[i].idx <= 0) {
@@ -481,6 +482,15 @@ public:
                 }
             }
         }
+    }
+
+    __aicore__ inline uint64_t CalculateCopyOutAddr(int32_t axis)
+    {
+        uint64_t addrOffset = 0;
+        for (int32_t i = axis; i < Dim; i += CONST2) {
+            addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
+        }
+        return addrOffset;
     }
 
     template <class T, class V>
