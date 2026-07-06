@@ -254,6 +254,7 @@ private:
     ge::graphStatus GetShapeInfo()
     {
         auto outStorageShape = context_->GetOutputShape(0);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, outStorageShape);
         outShape = Ops::Base::EnsureNotScalar(outStorageShape->GetStorageShape());
         // If inShapes is not empty, it indicates that an operator has already performed custom settings.
         if (!inShapes.empty()) {
