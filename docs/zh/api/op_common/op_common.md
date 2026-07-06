@@ -2,10 +2,10 @@
 
 - **[op\_common接口列表](op_common_interface_list.md)**  
 
-- **[log](log.md)**  
+- **[log](log/log.md)**  
 
-- **[math](math.md)**  
+- **[math](math/math.md)**  
 
-- **[platform](platform.md)**  
+- **[platform](platform/platform.md)**  
 
-- **[infershape](infershape.md)**  
+- **[infershape](infershape/infershape.md)**  

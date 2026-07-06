@@ -2,7 +2,7 @@
 
 本章是调用CANN API过程中依赖的公共Meta接口，如创建/释放aclTensor、aclScalar、aclIntArray等。
 
-**头文件说明**：调用本章接口时请按实际情况include依赖的头文件，头文件路径为\$\{INSTALL\_DIR\}/include目录。其中\$\{INSTALL\_DIR\}请替换为CANN软件安装后的文件存储路径。若安装Ascend-cann-toolkit软件包，以root安装举例，安装后文件存储路径为`/usr/local/Ascend/cann`。
+**头文件说明**：调用本章接口时，请按实际情况include依赖的头文件，一般定义在`${INSTALL_DIR}/include`目录。其中\$\{INSTALL\_DIR\}表示为CANN软件安装后的路径，以root安装举例，安装后路径为`/usr/local/Ascend/cann`。
 
 | 接口 | 说明 | 所属头文件 |
 | --- | --- | --- |

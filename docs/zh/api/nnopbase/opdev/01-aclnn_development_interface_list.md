@@ -1,14 +1,20 @@
-# aclnn开发接口列表
+# nnopbase接口列表
 
-无论是CANN内置算子或自定义算子，均可通过aclnn API（也称为[Level2层接口](#l2)）直调算子，无需提供IR（Intermediate Representation）定义。
+无论是CANN内置算子或自定义算子（例如Transformer、NN类），均可通过aclnn API（也称为[Level2层接口](#l2)）实现底层算子调用。
 
-为实现aclnn API调用算子，本章提供了**开发aclnn API**依赖的**底层框架能力接口**（也称为nnopbase接口）和**基础张量操作接口**（也称为[Level0层接口](#l0)）。
+**针对开发aclnn API场景**，本章提供开发过程中依赖的底层**框架能力接口**和**基础张量操作接口**（也称为[Level0层接口](#l0)）。
 
-- **框架能力接口**：提供实现aclnn API的基础能力接口，比如算子执行器（opExecutor）处理、数据类型/格式/shape等操作，具体如[表1](#table1)所示；还包括常用类和宏，具体参见[表2](#table2)、[表3](#table3)。
-- **基础张量操作接口**：提供实现aclnn API的基础张量操作接口，比如Tensor数据类型转换、shape重构等，具体如[表4](#table4)所示。
-- **头文件说明**：调用本章接口时，请按实际情况include依赖的头文件，头文件路径为\$\{INSTALL\_DIR\}/include目录，其中\$\{INSTALL\_DIR\}请替换为CANN软件安装后的存储路径。以rooty用户安装为例，安装后文件存储路径为`/usr/local/Ascend/cann`。
+- **框架能力接口**：
 
-## 框架能力接口列表
+  提供实现aclnn API的基础能力接口，比如算子执行器（opExecutor）处理、数据类型/格式/shape等操作，具体如[表1](#table1)所示；还包括常用类和宏，具体参见[表2](#table2)、[表3](#table3)。
+
+- **基础张量操作接口**：
+
+  提供实现aclnn API的基础张量操作接口，比如Tensor数据类型转换、shape重构等，具体如[表4](#table4)所示。
+
+## 框架能力接口
+
+**头文件说明**：调用本章接口时，请按实际情况include依赖的头文件，一般定义在`${INSTALL_DIR}/include`目录。其中\$\{INSTALL\_DIR\}表示为CANN软件安装后的路径，以root安装举例，安装后路径为`/usr/local/Ascend/cann`。
 
 **表 1**  接口列表 <a id="table1"></a>
 
@@ -123,7 +129,7 @@
 >   }
 >   ```
 
-## 基础张量操作接口列表  <a id="table4"></a>
+## 基础张量操作接口  <a id="table4"></a>
 
 **表 4**  接口列表
 
@@ -185,7 +191,7 @@
     >   aclnnXxxGetWorkspaceSize(...)
     >   aclnnXxx(...)
     >   aclnnXxx(...)
-    >    ```
+    >   ```
 
 - **原地算子接口**
 

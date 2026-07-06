@@ -30,19 +30,20 @@ Docs目录结构说明如下：
 
 ### API类文档
 
-opbase API是所有算子库依赖的基础框架API，其提供基础的调度框架和公共依赖项。
+opbase库里的API是所有算子库依赖的框架API，其提供各类算子基础调度框架和公共能力（例如日志获取、Tiling开发相关接口等）。
 
-| 分类 |  头文件 | 说明 |
+| 分类 | 说明 | 头文件 |
 | ------------- |-------|-------|
-| [aclnn Meta API](zh/api/nnopbase/aclnn/00_aclnn_api_list.md) |定义在项目`include/nnopbase/aclnn`目录下的头文件。|调用算子或aclnn API时，提供nnopbase框架基础接口、结构体等，包括aclTensor/aclScalar等对象的创建/释放、各类属性信息的获取和设置等。|
-| [opdev API](zh/api/nnopbase/opdev/00_opdev_api_list.md) |定义在项目`include/nnopbase/opdev`目录下的头文件。|开发算子或aclnn API时，提供nnopbase框架调度和管理类接口，包括aclnn缓存、workspace复用等场景。|
-| [op_common API](zh/api/op_common/00_op_common_list.md) |定义在项目`pkg_inc/op_common`目录下的头文件。|调用或开发算子时，提供op_common框架公共日志等能力，如Metadef、Log日志等。|
+| [aclnn公共接口](zh/api/nnopbase/aclnn/00_aclnn_api_list.md) |调用aclnn API时，依赖框架基础API、结构体等Meta API，例如aclTensor/aclScalar等对象的创建/释放、各类属性信息的获取和设置等。|`${INSTALL_DIR}/include/aclnn/acl_meta.h`|
+| [nnopbase接口](zh/api/nnopbase/opdev/00_opdev_api_list.md) |开发aclnn API时，依赖框架公共调度类和管理类接口，例如aclnn缓存、workspace复用等场景。|`${INSTALL_DIR}/include/aclnn/opdev/*.h`|
+| [op_common接口](zh/api/op_common/00_op_common_list.md) |调用或开发算子时，提供op_common框架公共日志等能力，如Metadef、Log日志等。|`${INSTALL_DIR}/include/op_common/*.h`|
+
+调用opbase API时，需include依赖的头文件，引用路径如上表。其中`${INSTALL_DIR}`请替换为CANN软件安装后存储路径，以root用户为例，安装后默认路径为`/usr/local/Ascend/cann`。
 
 ### 更多文档
 
 | 文档                                                         | 说明                                                         |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [标准算子精度标准](zh/ops_precision_standard/commercial_standard.md) | 面向基于标准工程开发的算子，提供符合**商用交付准则**的算子精度规范。 |
 | [生态算子精度标准](zh/ops_precision_standard/experimental_standard.md) | 面向基于简易工程开发的算子，提供符合**生态开源贡献准则**的算子精度规范。 |
 
 ## 附录
