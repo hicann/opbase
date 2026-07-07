@@ -77,13 +77,12 @@ public:
         }
     }
 
-    __aicore__ inline void ComputeIterAddress(int32_t axis, uint64_t step, uint64_t stepSize, uint64_t sliceStepSize,
-                                              uint64_t sliceShapeFactor, uint64_t sliceNumFactor)
+    __aicore__ inline void ComputeIterAddress(int32_t axis, uint64_t step, uint64_t stepSize, uint64_t sliceShapeFactor,
+                                              uint64_t sliceNumFactor)
     {
         auto temp = step;
         auto curInSliceShape = temp % stepSize;
-        temp = temp / stepSize;
-        auto curInSliceNum = temp % sliceStepSize;
+        auto curInSliceNum = temp / stepSize;
         iterAddr_[axis].start = curInSliceShape * sliceShapeFactor;
         iterAddr_[axis].sliceStart = curInSliceNum * sliceNumFactor;
         iterAddr_[axis].stride = this->tiling_->sliceShape[axis] - iterAddr_[axis].start;
@@ -119,7 +118,12 @@ public:
             auto factorsR = ComputeSliceFactors(this->ubFactorR_, this->tiling_->sliceShape[axisR]);
             sliceShapeFactorR_ = factorsR.sliceShapeFactor;
             sliceNumFactorR_ = factorsR.sliceNumFactor;
-        } else {
+        } else if constexpr (LoopInfo->loopRCount > 0) {
+ 	        constexpr auto axisR = LoopInfo->loopRAxis[LoopInfo->loopRCount - 1];
+ 	        auto factorsR = ComputeSliceFactors(this->ubFactorR_, this->tiling_->sliceShape[axisR]);
+ 	        sliceShapeFactorR_ = factorsR.sliceShapeFactor;
+ 	        sliceNumFactorR_ = factorsR.sliceNumFactor;
+ 	    } else {
             sliceShapeFactorR_ = this->ubFactorR_;
             sliceNumFactorR_ = 1;
         }
@@ -202,10 +206,9 @@ public:
         if constexpr (LoopAIdx != 0) {
             constexpr auto axis = LoopInfo->loopAAxis[LoopAIdx - 1];
             if constexpr (LoopAIdx == LoopInfo->loopACount) {
-                ComputeIterAddress(axis, step, this->loopAAxisStep_, this->loopAAxisSliceStep_,
-                                   sliceShapeFactorA_, sliceNumFactorA_);
+                ComputeIterAddress(axis, step, this->loopAAxisStep_, sliceShapeFactorA_, sliceNumFactorA_);
                 if constexpr (LoopAIdx > 0) {
-                    CalculateIterA<LoopAIdx - 1>(step / this->loopAAxisStep_);
+                    CalculateIterA<LoopAIdx - 1>(step / this->loopAAxisStep_ / this->loopAAxisSliceStep_);
                 }
             } else {
                 iterAddr_[axis].start = step % this->tiling_->shape[axis];
@@ -334,8 +337,7 @@ public:
         if constexpr (LoopInnerRIdx != 0) {
             constexpr auto axis = LoopInfo->loopInnerRAxis[LoopInnerRIdx - 1];
             if constexpr (LoopInnerRIdx == LoopInfo->loopInnerRCount) {
-                ComputeIterAddress(axis, basicBlockIdx, this->loopRAxisStep_, this->loopRAxisSliceStep_,
-                                   sliceShapeFactorR_, sliceNumFactorR_);
+                ComputeIterAddress(axis, basicBlockIdx, this->loopRAxisStep_, sliceShapeFactorR_, sliceNumFactorR_);
                 CalculateInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / this->loopRAxisStep_);
             } else {
                 iterAddr_[axis].start = basicBlockIdx % this->tiling_->shape[axis];
@@ -353,16 +355,14 @@ public:
             for (auto idx = LoopInfo->loopRCount - 1; idx > -1; --idx) {
                 if (idx == LoopInfo->loopRCount - 1) {
                     constexpr auto axis = LoopInfo->loopRAxis[LoopInfo->loopRCount - 1];
-                    ComputeIterAddress(axis, temp, this->loopRAxisStep_, this->loopRAxisSliceStep_,
-                                       sliceShapeFactorR_, sliceNumFactorR_);
+                    ComputeIterAddress(axis, temp, this->loopRAxisStep_, sliceShapeFactorR_, sliceNumFactorR_);
                     temp = temp / this->loopRAxisStep_;
                     temp = temp / this->loopRAxisSliceStep_;
                 } else {
                     auto axis = LoopInfo->loopRAxis[idx];
                     if (IsLoopSpliteAAxis<LoopInfo>(axis)) {
                         // axis both in AAxis and RAxis
-                        ComputeIterAddress(axis, temp, this->loopAAxisStep_, this->loopAAxisSliceStep_,
-                                           sliceShapeFactorA_, sliceNumFactorA_);
+                        ComputeIterAddress(axis, temp, this->loopAAxisStep_, sliceShapeFactorA_, sliceNumFactorA_);
                         temp = temp / this->loopAAxisStep_;
                         temp = temp / this->loopAAxisSliceStep_;
                     } else {
@@ -544,6 +544,23 @@ public:
                 }
             }
         }
+    }
+
+    __aicore__ inline uint64_t CalculateCopyOutAddr(int32_t axis)
+    {
+        uint64_t addrOffset = 0;
+        auto aAxis = LoopInfo->loopAAxis[LoopInfo->loopACount - 1];
+        for (int32_t i = axis; i < Dim; i += CONST2) {
+            if (i == aAxis) {
+                addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
+                if (this->tiling_->sliceNum[i] != 1) {
+                    addrOffset += iterAddr_[i].sliceStart * this->tiling_->sliceShape[i];
+                }
+            } else {
+                addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
+            }
+        }
+        return addrOffset;
     }
 
     __aicore__ inline uint64_t CalculateCopyOutGroupAddr(int32_t axis, int32_t innerA)

@@ -620,13 +620,8 @@ public:
     __aicore__ inline void PostReduce(int32_t aIndex, V& view, S& shape)
     {
         constexpr int32_t axis = Pattern::FirstA ? 0 : 1;
-        uint64_t addrOffset = 0;
-        for (int32_t i = axis; i < Dim; i += CONST2) {
-            addrOffset += static_cast<Derived*>(this)->iterAddr_[i].start * tiling_->dstStride[i];
-        }
-
         SliceView<CONST2> newView;
-        newView.addr = addrOffset;
+        newView.addr = static_cast<Derived*>(this)->CalculateCopyOutAddr(axis);
         S newShape;
         newShape.value[0] = 1;
         uint64_t outLen = 1;
