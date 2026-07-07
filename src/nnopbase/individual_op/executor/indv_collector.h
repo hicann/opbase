@@ -97,7 +97,8 @@ NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const Nnopba
 const char* NnopbaseCollectorGetStaticKernelBin(const NnopbaseChar* const opType, const uint64_t key,
                                                 const NnopbaseUChar* verbose, const uint32_t verbLen,
                                                 const NnopbaseCoreNum* const coreNum = nullptr);
-aclnnStatus NnopbaseCollectorGetStaticKernelPathAndReadConfig(NnopbaseBinCollector* const collector);
+aclnnStatus NnopbaseCollectorGetStaticKernelPathAndReadConfig(NnopbaseBinCollector* const collector,
+                                                              const std::string& basePath = "");
 aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo);
 void NnopbaseSplitStr(const std::string& configPath, const std::string& pattern, std::vector<std::string>& subPaths);
 aclnnStatus NnopbaseCollectorReadDebugKernelOpInfoConfig(NnopbaseBinCollector* const collector,
@@ -116,7 +117,7 @@ aclnnStatus NnopbaseCollectorOpRegInfoInit(NnopbaseRegInfo* regInfo, const Nnopb
 aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json& binInfo, NnopbaseJsonInfo& jsonInfo);
 
 aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollector* const collector, const NnopbaseChar* const opType);
-aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollector* const collector);
+aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollector* const collector, const std::string& basePath);
 aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo& jsonInfo);
 void SetExtraKernelInfoToBin(const NnopbaseJsonInfo& jsonInfo, std::unique_ptr<NnopbaseBinInfo>& binInfo);
 

@@ -22,6 +22,7 @@ aclOpExecutor* PTAGetExecCache(uint64_t hash, uint64_t* workspaceSize);
 aclOpExecutor* PTAFindExecCache(uint8_t* buf, size_t len, uint64_t* workspaceSize);
 
 aclnnStatus aclnnReselectStaticKernel();
+aclnnStatus aclnnReselectStaticKernelWithPath(const char* staticKernelPath);
 
 aclnnStatus InitSystemConfig(const char* configPath); // Init
 

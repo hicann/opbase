@@ -454,7 +454,7 @@ static inline void NnopbaseExecutorSetCollector(NnopbaseExecutor* executor, Nnop
     executor->collector = collector;
 }
 
-void NnopbaseReloadStaticBinJsonInfos(void);
+void NnopbaseReloadStaticBinJsonInfos(const char* basePath);
 aclnnStatus NnopbaseExecutorConvertScalarType(std::vector<uint8_t>& scalarValue, const aclScalar* scalar,
                                               ge::DataType dtype, const size_t offset);
 aclnnStatus NnopbaseSetUnContiguousExecutorRepeatable(NnopbaseExecutor* executor);

@@ -15,6 +15,8 @@
 #include "opdev/shape_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
+#include "opdev/op_log.h"
+#include "opdev/op_errno.h"
 #include "individual_op_api.h"
 #include "executor/indv_executor.h"
 #include "kernel_utils.h"
@@ -22,6 +24,7 @@
 #include "kernel_mgr.h"
 #include "dlopen_api.h"
 #include "op_dfx_internal.h"
+#include "file_utils.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -488,10 +491,30 @@ aclnnStatus aclGetRawTensorAddr(const aclTensor* tensor, void** addr)
 
 aclnnStatus aclnnReselectStaticKernel()
 {
-    OP_LOGI("start reselect static kernel.");
+    OP_LOGI("Start reselect static kernel.");
     op::internal::ReinitOpCacheManager();
     op::internal::gKernelMgr.ReloadStaticBinJson();
-    NnopbaseReloadStaticBinJsonInfos();
+    NnopbaseReloadStaticBinJsonInfos(nullptr);
+    return OK;
+}
+
+// realPath.c_str() 为局部指针，下游 ReloadStaticBinJson / NnopbaseReloadStaticBinJsonInfos
+// 必须同步消费，不得异步持有
+aclnnStatus aclnnReselectStaticKernelWithPath(const char* staticKernelPath)
+{
+    if (staticKernelPath == nullptr) {
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Input staticKernelPath is nullptr.");
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
+    std::string realPath = op::RealPath(staticKernelPath);
+    if (realPath.empty()) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Invalid static kernel path: %s.", staticKernelPath);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    OP_LOGI("Start reselect static kernel, input path: %s, real path: %s", staticKernelPath, realPath.c_str());
+    op::internal::ReinitOpCacheManager();
+    op::internal::gKernelMgr.ReloadStaticBinJson(realPath.c_str());
+    NnopbaseReloadStaticBinJsonInfos(realPath.c_str());
     return OK;
 }
 

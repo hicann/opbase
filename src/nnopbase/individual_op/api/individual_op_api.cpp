@@ -275,11 +275,15 @@ aclnnStatus NnopbaseInit()
     return OK;
 }
 
-void NnopbaseReloadStaticBinJsonInfos(void)
+void NnopbaseReloadStaticBinJsonInfos(const char* basePath)
 {
     OP_LOGI("NnopbaseReloadStaticBinJsonInfos start.");
     NnopbaseExecutorClearSet(&g_nnopbaseSpaceSet);
-    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollector);
+    std::string staticKernelBasePath = "";
+    if (basePath != nullptr) {
+        staticKernelBasePath = std::string(basePath);
+    }
+    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollector, staticKernelBasePath);
     if (ret != OK) {
         OP_LOGW("Failed to reload static kernel information.");
     } else {
