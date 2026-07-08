@@ -33,6 +33,11 @@ using namespace nnopbase;
 
 namespace {
 constexpr char const *OP_TILING_SO_SUFFIX = ".so";
+constexpr char* ERR_REASON_FOR_OPP_PACKAGE = "1.The operator package is not installed. "
+                                             "2.The operator package is damaged. "
+                                             "3.The binary_info_config.json file is damaged or does not exist. "
+                                             "4.The user does not have sufficient permissions and the "
+                                             "binary_info_config.json file in the operator package fails to be read";
 constexpr size_t MAX_BIN_KEY_MULTIPLIER = 4UL;
 static const std::vector<std::string> OPS_PATH_VEC = {
     "ops_math",
@@ -339,33 +344,36 @@ void NnopbaseSplitStr(const std::string &configPath, const string &pattern, std:
 
 aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string &hostEnvOs, std::string &hostEnvCpu)
 {
-    const NnopbaseChar *ascendHomePath = nullptr;
+    const NnopbaseChar* ascendHomePath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, ascendHomePath);
-    OP_CHECK(ascendHomePath != nullptr,
-        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE(
-            "NnopbaseGetCurEnvPackageOsAndCpuType", "ASCEND_HOME_PATH"),
-        return ACLNN_ERR_PARAM_NULLPTR);
+    if (ascendHomePath == nullptr) {
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Finding platform configuration file scene.info",
+                                                              "ASCEND_HOME_PATH");
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
     std::string modelPath = ascendHomePath;
-    std::string sceneV1 = modelPath + "/share/info/opbase/" + SCENE;
-    OP_LOGI("Try to extract os and cpu info from %s.", sceneV1.c_str());
-    std::ifstream ifs(sceneV1);
+    std::string sceneInfoPath = modelPath + "/share/info/opbase/" + SCENE;
+    OP_LOGI("Try to extract os and cpu info from %s.", sceneInfoPath.c_str());
+    std::ifstream ifs(sceneInfoPath);
     if (!ifs.good()) {
         ifs.close();
-        OP_LOGW("Failed to get %s, trying another path.", sceneV1.c_str());
+        OP_LOGW("Failed to get %s, trying another path.", sceneInfoPath.c_str());
         const NnopbaseChar* oppPathEnv = nullptr;
         MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
         OP_CHECK(oppPathEnv != nullptr,
-            OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE(
-                "NnopbaseGetCurEnvPackageOsAndCpuType", "ASCEND_OPP_PATH"),
-            return ACLNN_ERR_PARAM_NULLPTR);
+                 OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Finding platform configuration file scene.info",
+                                                                       "ASCEND_OPP_PATH"),
+                 return ACLNN_ERR_PARAM_NULLPTR);
         NNOPBASE_ASSERT_NOTNULL_RETVAL(oppPathEnv);
         modelPath = oppPathEnv;
-        std::string sceneV2 = modelPath + "/" + SCENE;
-        ifs.open(sceneV2);
+        sceneInfoPath = modelPath + "/" + SCENE;
+        ifs.open(sceneInfoPath);
     }
-    CHECK_COND(
-        ifs.good(), ACLNN_ERR_PARAM_INVALID,
-        "Failed to read scene.info, please check if the opp package is installed!");
+    if (!ifs.good()) {
+        std::string errMsg = "[Errno " + std::to_string(errno) + "] " + std::generic_category().message(errno);
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_OPEN(sceneInfoPath.c_str(), errMsg.c_str());
+        return ACLNN_ERR_INNER;
+    }
     std::string line;
     while (std::getline(ifs, line)) {
         NnopbaseTrim(line, '\r');
@@ -1069,7 +1077,7 @@ aclnnStatus NnopbaseCollecterConvertStaticVerbKey(const NnopbaseChar *const strK
                         isAppend = false;
                     }
                 }
-                if (bitNum == 16) { // 16 is hexadecimal
+                if (bitNum == 16) {                           // 16 is hexadecimal
                     if (start == -1) {
                         start = static_cast<int32_t>(i) - 15; // 15 is bitNum -1
                     }
@@ -1352,7 +1360,10 @@ aclnnStatus NnopbaseCollecterGetDebugKernelPathAndReadConfig(NnopbaseBinCollecte
 {
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
     const std::string basePath = GetBuiltInBasePath(oppImplVersion);
-    NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
+    // Debug算子库为可选项，算子公共路径为空不中断流程
+    if (basePath.empty()) {
+        return OK;
+    };
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     const std::string &binaryInfoPath = basePath + "/debug_kernel/config/" + socVersion +
                                         "/binary_info_config.json";
@@ -1398,29 +1409,34 @@ aclnnStatus NnopbaseCollecterDeleteStaticBins(NnopbaseRegInfo *regInfo)
     return OK;
 }
 
-aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter)
+aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter* const collecter, const std::string& basePath)
 {
     if (collecter == nullptr) {
-        OP_LOGD("collector is nullptr.");
+        OP_LOGD("collecter is nullptr.");
         return OK;
     }
     // reload static kernel info
-    return NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter);
+    return NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter, basePath);
 }
 
-aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter)
+aclnnStatus NnopbaseCollecterGetStaticKernelPathAndReadConfig(NnopbaseBinCollecter *const collecter,
+    const std::string& basePath)
 {
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
-    const std::string basePath = GetBuiltInBasePath(oppImplVersion);
-    NNOPBASE_ASSERT_TRUE_RETVAL(!basePath.empty());
+    std::string staticPackageBasePath = basePath.empty() ? GetBuiltInBasePath(oppImplVersion) : basePath;
+    // 静态算子库为可选项，算子公共路径为空不中断流程
+    if (staticPackageBasePath.empty()) {
+        return OK;
+    };
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-    const std::string &binaryInfoPath = basePath + "/static_kernel/ai_core/config/" + socVersion +
+    const std::string& binaryInfoPath = staticPackageBasePath + "/static_kernel/ai_core/config/" + socVersion +
                                         "/binary_info_config.json";
     OP_LOGI("Start read binary_info_config.json for static kernel. Path: %s", binaryInfoPath.c_str());
     // 若不存在静态kernel的目录，会在NnopbaseReadJsonConfig里面的realpath判断返回error，不打error日志
     nlohmann::json binaryInfoConfig;
     if (NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig) == OK) {
-        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterReadStaticKernelOpInfoConfig(collecter, binaryInfoConfig, basePath, oppImplVersion));
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollecterReadStaticKernelOpInfoConfig(collecter, binaryInfoConfig,
+                                                                                staticPackageBasePath, oppImplVersion));
     }
     return OK;
 }
@@ -1495,7 +1511,7 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
     int32_t builtInStartIndex = -1;
     NnopbaseGetBasePath(collecter, basePath, builtInStartIndex);
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
-    
+
     if (basePath.size() > 0) {
         (void)(NnopbaseLoadTilingSo(basePath));
     }
@@ -1508,19 +1524,20 @@ aclnnStatus NnopbaseCollecterWork(NnopbaseBinCollecter *const collecter)
 
     (void)NnopbaseCollecterGetStaticKernelPathAndReadConfig(collecter);
     const aclnnStatus retForStaticBinaryInfo = NnopbaseCollecterGetStaticBinaryInfo(collecter);
-    if (retForStaticBinaryInfo != OK) {
-        CHECK_COND((basePath.size() >= 1), ACLNN_ERR_PARAM_INVALID,
-            "May not set ASCEND_OPP_PATH or ASCEND_CUSTOM_OPP_PATH in env!");
+    if (retForStaticBinaryInfo != OK && basePath.empty()) {
+        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE(
+            "Reading binary_info_config.json file in the operator packages",
+            "ASCEND_OPP_PATH or ASCEND_CUSTOM_OPP_PATH");
+        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND;
     }
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadStaticKernelEnd);
-    
-    const aclnnStatus retForDynamicKernelInfo =
-        NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath, builtInStartIndex);
+
+    const aclnnStatus retForDynamicKernelInfo = NnopbaseCollecterGetDynamicKernelPathAndReadConfig(collecter, basePath,
+                                                                                                   builtInStartIndex);
     RecordNnopbaseInitTime(collecter, NnopbaseCollectorTimeIdx::kLoadDynamicKernelEnd);
-    CHECK_COND(
-        (retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK), ACLNN_ERR_PARAM_INVALID,
-        "Failed to get path and read binary_info_config.json, "
-        "please check if the opp_kernel package is installed!");
+    OP_CHECK((retForStaticBinaryInfo == OK) || (retForDynamicKernelInfo == OK),
+        OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE("binary_info_config.json", ERR_REASON_FOR_OPP_PACKAGE),
+        return ACLNN_ERR_INNER_LOAD_JSON_FAILED);
     OP_LOGI("[NnopbaseCollecter] Collecter work end.");
     return OK;
 }

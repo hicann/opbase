@@ -77,18 +77,26 @@ OpKernel *KernelMgr::GetKernel(uint32_t opType)
 
 aclnnStatus KernelMgr::LoadStaticBinJson()
 {
-    string oppRealPath;
-    auto ret = GetOppKernelPath(oppRealPath);
-    OP_CHECK(
-        ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-        OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading static bin json", "ASCEND_OPP_PATH"),
-        return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
-    string configJsonPath = oppRealPath;
-    auto &knlLib = OpKernelLib::GetInstance();
+    staticConfigJson_.clear();
+
+    string staticKernelBasePath;
+    if (!customStaticKernelBasePath_.empty()) {
+        // 路径已在 aclnnReselectStaticKernelWithPath 入口做过 RealPath 校验
+        OP_LOGI("Load static bin json from custom base path: %s", customStaticKernelBasePath_.c_str());
+        staticKernelBasePath = customStaticKernelBasePath_;
+        customStaticKernelBasePath_.clear();
+    } else {
+        auto ret = GetOppKernelPath(staticKernelBasePath);
+        OP_CHECK(ret == ACLNN_SUCCESS && !staticKernelBasePath.empty(),
+                OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading static bin json", "ASCEND_OPP_PATH"),
+                return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
+    }
+    string configJsonPath = staticKernelBasePath;
+    auto& knlLib = OpKernelLib::GetInstance();
     configJsonPath.append(STATIC_CONFIG_JSON_PATH);
     configJsonPath.append(knlLib.GetSocPath());
     configJsonPath.append(STATIC_CONFIG_FILE_NAME);
-    staticBinAndJsonDir_ = oppRealPath;
+    staticBinAndJsonDir_ = staticKernelBasePath;
     staticBinAndJsonDir_.append(STATIC_BIN_AND_JSON_DIR_PATH);
     ifstream f(configJsonPath);
     try {

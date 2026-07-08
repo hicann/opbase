@@ -345,7 +345,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_get_path_and_read_config_fail) {
     int32_t ret = NnopbaseCollecterInit(bin_collecter);
     ASSERT_EQ(ret, OK);
     ret = NnopbaseCollecterWork(bin_collecter);
-    ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(ret, ACLNN_ERR_INNER_LOAD_JSON_FAILED);
     if (!ret) {
         CollecterClean(bin_collecter);
     }
@@ -359,7 +359,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_get_base_path_fail) {
     int32_t ret = NnopbaseCollecterInit(bin_collecter);
     ASSERT_EQ(ret, OK);
     ret = NnopbaseCollecterWork(bin_collecter);
-    ASSERT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(ret, ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     if (!ret) {
         CollecterClean(bin_collecter);
     }
@@ -417,7 +417,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_find_regInfoInTbl_nullptr) {
 TEST_F(NnopbaseCollecterUnitTest, test_read_json_fail_1) {
     std::string binaryInfoPath = "";
     nlohmann::json binaryInfoConfig;
-    ASSERT_EQ(NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseReadJsonConfig(binaryInfoPath, binaryInfoConfig), ACLNN_ERR_INNER_LOAD_JSON_FAILED);
 }
 
 TEST_F(NnopbaseCollecterUnitTest, test_read_op_json_fail) {
@@ -427,7 +427,7 @@ TEST_F(NnopbaseCollecterUnitTest, test_read_op_json_fail) {
     system(("echo 'test json' > " + path_json_config).c_str());
 
     nlohmann::json binaryInfoConfig;
-    ASSERT_EQ(NnopbaseReadJsonConfig(path_json_config, binaryInfoConfig), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseReadJsonConfig(path_json_config, binaryInfoConfig), ACLNN_ERR_INNER_LOAD_JSON_FAILED);
 }
 
 TEST_F(NnopbaseCollecterUnitTest, test_read_config_file_empty) {

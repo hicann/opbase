@@ -455,7 +455,7 @@ static inline void NnopbaseExecutorSetCollecter(NnopbaseExecutor *executor, Nnop
     executor->collecter = collecter;
 }
 
-void NnopbaseReloadStaticBinJsonInfos(void);
+void NnopbaseReloadStaticBinJsonInfos(const char* basePath);
 aclnnStatus NnopbaseExecutorConvertScalarType(std::vector<uint8_t> &scalarValue, const aclScalar *scalar,
                                               ge::DataType dtype, const size_t offset);
 aclnnStatus NnopbaseSetAuxOpExecutorRepeatable(NnopbaseExecutor *executor);

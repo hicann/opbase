@@ -288,11 +288,12 @@ aclnnStatus NnopbaseInit()
     return OK;
 }
 
-void NnopbaseReloadStaticBinJsonInfos(void)
+void NnopbaseReloadStaticBinJsonInfos(const char* basePath)
 {
     OP_LOGI("NnopbaseReloadStaticBinJsonInfos start.");
     NnopbaseExecutorClearSet(&g_nnopbaseSpaceSet);
-    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollecter);
+    std::string staticKernelBasePath = (basePath != nullptr) ? std::string(basePath) : "";
+    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollecter, staticKernelBasePath);
     if (ret != OK) {
         OP_LOGW("Failed to reload static kernel information.");
     } else {
@@ -376,9 +377,13 @@ aclnnStatus NnopbaseRunForWorkspace(void *executor, uint64_t *workspaceLen)
 
 aclnnStatus NnopbaseRunWithWorkspace(void *executor, aclrtStream stream, void *workspace, uint64_t workspaceLen)
 {
-    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
-    if (workspaceLen > 0U) {
-        NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(workspace, ACLNN_ERR_PARAM_NULLPTR);
+    if (executor == nullptr) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_NULL_POINTER("Calling the second-phase API of aclnn", "executor");
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
+    if (workspaceLen > 0U && workspace == nullptr) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_NULL_POINTER("Calling the second-phase API of aclnn", "workspace");
+        return ACLNN_ERR_PARAM_NULLPTR;
     }
 
     NnopbaseExecutor *nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
@@ -389,7 +394,7 @@ aclnnStatus NnopbaseRunWithWorkspace(void *executor, aclrtStream stream, void *w
     if (workspaceLen < nnopExecutor->workspaces.length) {
         std::string workspaceLenStr = std::to_string(workspaceLen);
         std::string reason = "The passed workspace size " + workspaceLenStr + \
-            " does not meet the workspace size " + \
+            " does not meet the minimum workspace size " + \
             std::to_string(nnopExecutor->workspaces.length) + " actually required by the operator";
         OP_LOGE_FOR_INVALID_ARGUMENT_WITHOUT_SOLUTION(workspaceLenStr.c_str(), "workspaceLen",
             reason.c_str());

@@ -114,16 +114,25 @@ public:
         }
     }
 
-    void ReloadStaticBinJson()
+    void ReloadStaticBinJson(const char* basePath = nullptr)
     {
+        if (basePath != nullptr) {
+            customStaticKernelBasePath_ = basePath;
+        } else {
+            customStaticKernelBasePath_.clear();
+        }
         loadStaticBinJsonFlag_.Reset();
         for (size_t i = 0; i < kernel_.size(); i++) {
             initStaticKernelFlags_[i].Reset();
         }
     }
-
+ 	 
 private:
     KernelMgr(){};
+
+    // 由 aclnnReselectStaticKernelWithPath 入口 RealPath 校验后写入；空串表示用内置 OPP 路径；
+    // LoadStaticBinJson 读取后立即清空（一次性消费）
+    std::string customStaticKernelBasePath_;
 
     aclnnStatus ParseStaticKernelConfig(uint32_t opType);
 

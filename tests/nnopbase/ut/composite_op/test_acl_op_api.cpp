@@ -10,6 +10,7 @@
  
 #include "aclnn/aclnn_base.h"
 #include "aclnn/acl_meta.h"
+#include "dlopen_api.h"
 #include "gtest/gtest.h"
 #include <memory>
 #include <vector>
@@ -650,4 +651,22 @@ TEST_F(AclOpApiTest, DumpOpTensors)
     aclDestroyTensor(input1);
     aclDestroyTensor(input2);
     aclDestroyTensor(output1);
+}
+
+TEST_F(AclOpApiTest, ReselectStaticKernelWithPath_NullptrReturnError)
+{
+    aclnnStatus ret = aclnnReselectStaticKernelWithPath(nullptr);
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
+}
+
+TEST_F(AclOpApiTest, ReselectStaticKernelWithPath_EmptyStringReturnError)
+{
+    aclnnStatus ret = aclnnReselectStaticKernelWithPath("");
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(AclOpApiTest, ReselectStaticKernelWithPath_InvalidPathReturnError)
+{
+    aclnnStatus ret = aclnnReselectStaticKernelWithPath("/tmp/this_path_should_not_exist_xxx");
+    EXPECT_EQ(ret, ACLNN_ERR_PARAM_INVALID);
 }

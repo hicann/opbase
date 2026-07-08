@@ -710,8 +710,11 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor *executor, const Nnopbas
     }
     if (executor->regInfo == nullptr) {
         std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
-        std::string errMsg = "SoC version " + socVersion +\
-        " verification failed. This SoC is not configured through the AddConfig API of the OpDef class";
+        std::string errMsg = "1.SoC version " + socVersion +
+            " verification failed. This SoC is not configured through the AddConfig API of the OpDef class. ";
+        errMsg += "2.The binary_info_config.json file to which the " + std::string(opType) + " operator belongs fails to "
+ 	             "be loaded because the file is damaged or does not exist or the user does not have sufficient permissions. ";
+        errMsg += "3.The operator package to which the " + std::string(opType) + " operator belongs is not installed";
         OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
         return ACLNN_ERR_PARAM_NULLPTR;
     }

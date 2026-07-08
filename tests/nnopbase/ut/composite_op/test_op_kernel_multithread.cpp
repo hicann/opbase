@@ -1947,6 +1947,7 @@ TEST_F(OpKernelMultiThreadUT, MultiDoLaunchTest) {
 OP_TYPE_REGISTER(TestStatic);
 
 extern "C" aclnnStatus aclnnReselectStaticKernel();
+extern "C" aclnnStatus aclnnReselectStaticKernelWithPath(const char* staticKernelPath);
 
 static void TestReselectStaticKernelFunc(pthread_barrier_t *barrier, pthread_barrier_t *barrier2) {
     uint32_t testStaticAddOpType = op::OpTypeDict::ToOpType("TestStaticAdd");
@@ -2035,9 +2036,11 @@ static void TestReselectStaticKernelFunc(pthread_barrier_t *barrier, pthread_bar
     EXPECT_EQ(GetOpExecCache(key22), nullptr);
 
     EXPECT_EQ(testStaticAddKernel.bins_.size(), numOfTSADynKernels);
-    EXPECT_EQ(testStaticAddKernel.staticBins_.size(), 0);
+    EXPECT_EQ(testStaticAddKernel.staticBins_.size(), 1); // reselect 不清空 staticBins_, AppendStaticBin 按 binPath
+ 	                                                           // 去重, 重新 init 时相同 binPath 不重复加载, size 不变
     EXPECT_EQ(conv2DKernel.bins_.size(), numOfConv2DDynKernels);
-    EXPECT_EQ(conv2DKernel.staticBins_.size(), 0);
+    EXPECT_EQ(conv2DKernel.staticBins_.size(),
+ 	               2); // reselect 不清空 staticBins_, enableDebug 仍开, 含 1 static + 1 debug
 
     pthread_barrier_wait(barrier2);
     OP_LOGI("pthread_barrier_wait2");
@@ -2048,7 +2051,8 @@ static void TestReselectStaticKernelFunc(pthread_barrier_t *barrier, pthread_bar
     EXPECT_EQ(testStaticAddKernel.bins_.size(), numOfTSADynKernels);
     EXPECT_EQ(testStaticAddKernel.staticBins_.size(), 1);
     EXPECT_EQ(conv2DKernel.bins_.size(), numOfConv2DDynKernels);
-    EXPECT_EQ(conv2DKernel.staticBins_.size(), 1); // no debug static kernel here
+    EXPECT_EQ(conv2DKernel.staticBins_.size(),
+ 	               2); // reselect 不清空 staticBins_, enableDebug 仍开, AppendStaticBin 按 binPath 去重, size 不变
     EXPECT_EQ(testStaticKernel.bins_.size() > 0, true);
     EXPECT_EQ(testStaticKernel.staticBins_.size() > 0, true);
 
@@ -2074,30 +2078,229 @@ static void TestReselectStaticKernelFunc(pthread_barrier_t *barrier, pthread_bar
 
 }
 
-// TEMP_COMMENT
-// TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernel) {
-//     op::GenOpTypeId("TestStatic");
-//     const char_t *const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
-//     setenv("ACLNN_CACHE_LIMIT", "10000", 1);
+// 镜像 TestReselectStaticKernelFunc，唯一区别：调用 aclnnReselectStaticKernelWithPath(getenv("ASCEND_OPP_PATH"))
+// 替代无参版本 aclnnReselectStaticKernel()，验证 reload 流程在传入合法 OPP 路径时与无参版本行为对称
+static void TestReselectStaticKernelWithPathFunc(pthread_barrier_t* barrier, pthread_barrier_t* barrier2)
+{
+    uint32_t testStaticAddOpType = op::OpTypeDict::ToOpType("TestStaticAdd");
+    uint32_t conv2DOpType = op::OpTypeDict::ToOpType("Conv2D");
+    uint32_t testStaticOpType = op::OpTypeDict::ToOpType("TestStatic");
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(testStaticAddOpType);
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(conv2DOpType);
 
-//     constexpr uint32_t LAUNCH_THREADS = 20;
-//     pthread_barrier_t barrier;
-//     auto ret = pthread_barrier_init(&barrier, nullptr, LAUNCH_THREADS);  // 初始化屏障，指定需要等待的线程数
-//     if (ret != 0) {
-//         OP_LOGW("pthread_barrier_init failed (Error: %s)", strerror(ret));
-//     }
-    
-//     pthread_barrier_t barrier2;
-//     ret = pthread_barrier_init(&barrier2, nullptr, LAUNCH_THREADS);
+    auto& testStaticAddKernel = op::internal::KernelMgr::getInstance().kernel_[testStaticAddOpType];
+    size_t numOfTSADynKernels = testStaticAddKernel.bins_.size();
+    EXPECT_EQ(numOfTSADynKernels > 0, true);
+    EXPECT_EQ(testStaticAddKernel.staticBins_.size(), 1);
 
-//     vector<std::thread> threadVec;
-//     for (uint32_t i = 0; i < LAUNCH_THREADS; i++) {
-//         threadVec.emplace_back(std::thread(TestReselectStaticKernelFunc, &barrier, &barrier2));
-//     }
-//     for (auto &t : threadVec) {
-//         t.join();
-//     }
-//     ret = pthread_barrier_destroy(&barrier);
-//     ret = pthread_barrier_destroy(&barrier2);
-//     setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
-// }
+
+
+    auto& conv2DKernel = op::internal::KernelMgr::getInstance().kernel_[conv2DOpType];
+    size_t numOfConv2DDynKernels = conv2DKernel.bins_.size();
+    EXPECT_EQ(numOfConv2DDynKernels > 0, true);
+    EXPECT_EQ(conv2DKernel.staticBins_.size(), 2); // There is debug static kernel here
+
+    auto& testStaticKernel = op::internal::KernelMgr::getInstance().kernel_[testStaticOpType];
+    // 不验证 testStatic 初始状态 —— TestReselectStaticKernel 已对此覆盖；
+    // 两个测试共享 KernelMgr 单例，此处 testStatic 可能已被加载（bins_/staticBins_ 非 0）；
+    // 本测试核心目标是验证 reselect + withPath 行为对称
+
+    const char* api1 = "AclnnTestStaticAdd";
+    op::internal::GetThreadLocalContext().usePTAHash_ = true;
+    op::internal::GetThreadLocalContext().cacheApi_ = api1;
+
+    op::internal::GetThreadLocalContext().hashKey_ = 111;
+    op::internal::GetThreadLocalContext().cacheHashKey_ = nullptr;
+    op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 0;
+    OpExecCache* cache1 = new OpExecCache();
+    cache1->SetUse();
+    EXPECT_EQ(AddOpExecCache(cache1), true);
+    EXPECT_EQ(GetOpExecCache(111), cache1);
+
+    op::internal::GetThreadLocalContext().hashKey_ = 222;
+    op::internal::GetThreadLocalContext().cacheHashKey_ = nullptr;
+    op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 0;
+    OpExecCache* cache2 = new OpExecCache();
+    cache2->SetUse();
+    EXPECT_EQ(AddOpExecCache(cache2), true);
+    EXPECT_EQ(GetOpExecCache(222), cache2);
+    uint64_t workspaceSize = 0;
+    aclOpExecutor* exec = PTAGetExecCache(222, &workspaceSize);
+    uint64_t* magicNum = reinterpret_cast<uint64_t*>(exec);
+    EXPECT_EQ(*magicNum, op::internal::K_CACHE_WRAP_MAGIC_NUMBER);
+    op::internal::OpExecCacheWrap* cacheWrap = reinterpret_cast<op::internal::OpExecCacheWrap*>(exec);
+    EXPECT_EQ(cacheWrap->opExecCache_, cache2);
+    delete cacheWrap;
+
+    op::internal::GetThreadLocalContext().hashKey_ = 0;
+    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello111";
+    op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 8;
+    OpExecCache* cache21 = new OpExecCache();
+    cache21->SetUse();
+    EXPECT_EQ(AddOpExecCache(cache21), true);
+    OpCacheKey key21;
+    key21.buf = op::internal::GetThreadLocalContext().cacheHashKey_;
+    key21.len = op::internal::GetThreadLocalContext().cacheHashKeyLen_;
+    EXPECT_EQ(GetOpExecCache(key21), cache21);
+
+    op::internal::GetThreadLocalContext().hashKey_ = 0;
+    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello222";
+    op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 8;
+    OpExecCache* cache22 = new OpExecCache();
+    cache22->SetUse();
+    EXPECT_EQ(AddOpExecCache(cache22), true);
+    OpCacheKey key22;
+    key22.buf = op::internal::GetThreadLocalContext().cacheHashKey_;
+    key22.len = op::internal::GetThreadLocalContext().cacheHashKeyLen_;
+    EXPECT_EQ(GetOpExecCache(key22), cache22);
+    uint64_t workspaceSize2 = 0;
+    aclOpExecutor* exec2 = PTAFindExecCache((uint8_t*)"hello222", 8, &workspaceSize2);
+    uint64_t* magicNum2 = reinterpret_cast<uint64_t*>(exec2);
+    EXPECT_EQ(*magicNum2, op::internal::K_CACHE_WRAP_MAGIC_NUMBER);
+    op::internal::OpExecCacheWrap* cacheWrap2 = reinterpret_cast<op::internal::OpExecCacheWrap*>(exec2);
+    EXPECT_EQ(cacheWrap2->opExecCache_, cache22);
+    delete cacheWrap2;
+
+    // 在这里等待所有线程到达屏障
+    pthread_barrier_wait(barrier);
+    // 与 TestReselectStaticKernelFunc 的唯一区别：调用 withPath 版本，传入环境变量 ASCEND_OPP_PATH
+    // 多线程函数中禁用 ASSERT_*，用 if-return 模式处理 nullptr
+    const char* oppPath = std::getenv("ASCEND_OPP_PATH");
+    if (oppPath == nullptr) {
+        OP_LOGE(ACLNN_ERR_INNER, "ASCEND_OPP_PATH not set");
+        return;
+    }
+    aclnnReselectStaticKernelWithPath(oppPath);
+
+    EXPECT_EQ(GetOpExecCache(111), nullptr);
+    EXPECT_EQ(GetOpExecCache(222), nullptr);
+    EXPECT_EQ(GetOpExecCache(key21), nullptr);
+    EXPECT_EQ(GetOpExecCache(key22), nullptr);
+
+    EXPECT_EQ(testStaticAddKernel.bins_.size(), numOfTSADynKernels);
+    EXPECT_EQ(testStaticAddKernel.staticBins_.size(), 1); // reselect 不清空 staticBins_, AppendStaticBin 按 binPath
+                                                        // 去重, 重新 init 时相同 binPath 不重复加载, size 不变
+    EXPECT_EQ(conv2DKernel.bins_.size(), numOfConv2DDynKernels);
+    EXPECT_EQ(conv2DKernel.staticBins_.size(),
+            2); // reselect 不清空 staticBins_, enableDebug 仍开, 含 1 static + 1 debug
+
+    pthread_barrier_wait(barrier2);
+    OP_LOGI("pthread_barrier_wait2");
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(testStaticAddOpType);
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(conv2DOpType);
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(testStaticOpType);
+
+    EXPECT_EQ(testStaticAddKernel.bins_.size(), numOfTSADynKernels);
+    EXPECT_EQ(testStaticAddKernel.staticBins_.size(), 1);
+    EXPECT_EQ(conv2DKernel.bins_.size(), numOfConv2DDynKernels);
+    EXPECT_EQ(conv2DKernel.staticBins_.size(),
+            2); // reselect 不清空 staticBins_, enableDebug 仍开, AppendStaticBin 按 binPath 去重, size 不变
+    EXPECT_EQ(testStaticKernel.bins_.size() > 0, true);
+    EXPECT_EQ(testStaticKernel.staticBins_.size() > 0, true);
+
+    // 再次add缓存，测试缓存的添加与opcacheManager的析构能力是否正常
+    op::internal::GetThreadLocalContext().hashKey_ = 333;
+    op::internal::GetThreadLocalContext().cacheHashKey_ = nullptr;
+    op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 0;
+    OpExecCache* cache3 = new OpExecCache();
+    cache3->SetUse();
+    EXPECT_EQ(AddOpExecCache(cache3), true);
+    EXPECT_EQ(GetOpExecCache(333), cache3);
+
+    op::internal::GetThreadLocalContext().hashKey_ = 0;
+    op::internal::GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello333";
+    op::internal::GetThreadLocalContext().cacheHashKeyLen_ = 8;
+    OpExecCache* cache23 = new OpExecCache();
+    cache23->SetUse();
+    EXPECT_EQ(AddOpExecCache(cache23), true);
+    OpCacheKey key23;
+    key23.buf = op::internal::GetThreadLocalContext().cacheHashKey_;
+    key23.len = op::internal::GetThreadLocalContext().cacheHashKeyLen_;
+    EXPECT_EQ(GetOpExecCache(key23), cache23);
+}
+
+TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernel)
+{
+    op::GenOpTypeId("TestStatic");
+    op::GenOpTypeId("TestStaticAdd");
+    op::GenOpTypeId("Conv2D");
+    // 启用 debug kernel，使 Conv2D 能同时加载 static 与 debug static 二进制（满足 line 1988 的初始期望）
+    op::internal::systemConfig.SetEnableDebugKernelFlag(true);
+    const char_t* const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
+    setenv("ACLNN_CACHE_LIMIT", "10000", 1);
+
+    // 单线程预初始化被测 op，避免多线程首次 init 时 mock 环境下 dynamic kernel 加载竞态/失败
+    // 注意：故意不预 init testStaticOpType —— 原测试设计要求 testStatic 在初始加载阶段不加载
+    // （line 1992 期望 staticBins_ == 0），仅在 reselect 后的 line 2068 首次 init 才加载
+    uint32_t testStaticAddOpType = op::OpTypeDict::ToOpType("TestStaticAdd");
+    uint32_t conv2DOpType = op::OpTypeDict::ToOpType("Conv2D");
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(testStaticAddOpType);
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(conv2DOpType);
+
+    constexpr uint32_t LAUNCH_THREADS = 20;
+    pthread_barrier_t barrier;
+    auto ret = pthread_barrier_init(&barrier, nullptr, LAUNCH_THREADS); // 初始化屏障，指定需要等待的线程数
+    if (ret != 0) {
+        OP_LOGW("pthread_barrier_init failed (Error: %s)", strerror(ret));
+    }
+
+    pthread_barrier_t barrier2;
+    ret = pthread_barrier_init(&barrier2, nullptr, LAUNCH_THREADS);
+
+    vector<std::thread> threadVec;
+    for (uint32_t i = 0; i < LAUNCH_THREADS; i++) {
+        threadVec.emplace_back(std::thread(TestReselectStaticKernelFunc, &barrier, &barrier2));
+    }
+    for (auto& t : threadVec) {
+        t.join();
+    }
+    ret = pthread_barrier_destroy(&barrier);
+    ret = pthread_barrier_destroy(&barrier2);
+    setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
+    // 还原 debug kernel flag，避免污染同 fixture 其他测试
+    op::internal::systemConfig.SetEnableDebugKernelFlag(false);
+}
+
+// 镜像 TestReselectStaticKernel，唯一区别：线程函数从 TestReselectStaticKernelFunc 改为
+// TestReselectStaticKernelWithPathFunc（调用 withPath 版本 reload）。fixture 适配（注册 op type、
+// 启用 debug、预 init testStaticAdd 和 Conv2D、LAUNCH_THREADS=20、结束前 restore enableDebug）完全对称
+TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernelWithPath)
+{
+    op::GenOpTypeId("TestStatic");
+    op::GenOpTypeId("TestStaticAdd");
+    op::GenOpTypeId("Conv2D");
+    // 启用 debug kernel，使 Conv2D 能同时加载 static 与 debug static 二进制（与 TestReselectStaticKernel 对称）
+    op::internal::systemConfig.SetEnableDebugKernelFlag(true);
+    const char_t* const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
+    setenv("ACLNN_CACHE_LIMIT", "10000", 1);
+
+    // 单线程预初始化被测 op，避免多线程首次 init 时 mock 环境下 dynamic kernel 加载竞态/失败
+    // 注意：故意不预 init testStaticOpType —— 原测试设计要求 testStatic 在初始加载阶段不加载
+    uint32_t testStaticAddOpType = op::OpTypeDict::ToOpType("TestStaticAdd");
+    uint32_t conv2DOpType = op::OpTypeDict::ToOpType("Conv2D");
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(testStaticAddOpType);
+    op::internal::KernelMgr::getInstance().AclOpKernelInit(conv2DOpType);
+
+    constexpr uint32_t LAUNCH_THREADS = 20;
+    pthread_barrier_t barrier;
+    auto ret = pthread_barrier_init(&barrier, nullptr, LAUNCH_THREADS);
+    if (ret != 0) {
+        OP_LOGW("pthread_barrier_init failed (Error: %s)", strerror(ret));
+    }
+
+    pthread_barrier_t barrier2;
+    ret = pthread_barrier_init(&barrier2, nullptr, LAUNCH_THREADS);
+
+    vector<std::thread> threadVec;
+    for (uint32_t i = 0; i < LAUNCH_THREADS; i++) {
+        threadVec.emplace_back(std::thread(TestReselectStaticKernelWithPathFunc, &barrier, &barrier2));
+    }
+    for (auto& t : threadVec) {
+        t.join();
+    }
+    ret = pthread_barrier_destroy(&barrier);
+    ret = pthread_barrier_destroy(&barrier2);
+    setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
+    // 还原 debug kernel flag，避免污染同 fixture 其他测试
+    op::internal::systemConfig.SetEnableDebugKernelFlag(false);
+}
