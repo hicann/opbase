@@ -383,7 +383,8 @@ aclnnStatus NnopbaseRunWithWorkspace(void* executor, aclrtStream stream, void* w
             nnopExecutor->opType, workspaceLen, nnopExecutor, nnopExecutor->workspaces.length);
     if (workspaceLen < nnopExecutor->workspaces.length) {
         std::string workspaceLenStr = std::to_string(workspaceLen);
-        std::string reason = "The passed workspace size " + workspaceLenStr + " does not meet the workspace size " +
+        std::string reason = "The passed workspace size " + workspaceLenStr +
+                             " does not meet the minimum workspace size " +
                              std::to_string(nnopExecutor->workspaces.length) + " actually required by the operator";
         OP_LOGE_FOR_INVALID_ARGUMENT_WITHOUT_SOLUTION(workspaceLenStr.c_str(), "workspaceLen", reason.c_str());
         return ACLNN_ERR_PARAM_INVALID;
