@@ -161,8 +161,6 @@
     ```bash
     # 查看CANN toolkit包版本信息（默认路径安装），WebIDE场景下将/usr/local替换为/home/developer
     cat /usr/local/Ascend/cann/${arch}-linux/ascend_toolkit_install.info
-    # 查看CANN ops包版本信息（默认路径安装），WebIDE场景下将/usr/local替换为/home/developer
-    cat /usr/local/Ascend/cann/${arch}-linux/ascend_ops_install.info
     ```
 
 ## 环境变量配置
