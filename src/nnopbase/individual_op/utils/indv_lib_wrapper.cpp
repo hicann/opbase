@@ -52,8 +52,9 @@ void* ApiWrapper::GetFunc(const char* funcName)
     const std::lock_guard<std::mutex> lk(mutex_);
     if (!hasInit_) {
         if (openSo("libopapi_math.so") != OK) {
-            std::string errMsg = "Failed to enable the AutoContiguous() function. Check whether the ops_math operator package"
-                " is installed and whether libopapi_math.so is under environment variable LD_LIBRARY_PATH";
+            std::string
+                errMsg = "Failed to call the AutoContiguous API. Check whether the ops_math operator package"
+                         " is installed and whether libopapi_math.so is under environment variable LD_LIBRARY_PATH";
             OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
             return nullptr;
         }
@@ -76,17 +77,11 @@ void* ApiWrapper::GetFunc(const char* funcName)
     return nullptr;
 }
 
-aclnnStatus ApiWrapper::LoadFunctions()
-{
-    return OK;
-}
+aclnnStatus ApiWrapper::LoadFunctions() { return OK; }
 
 ApiWrapper::ApiWrapper() = default;
 
-ApiWrapper::~ApiWrapper()
-{
-    closeSo();
-}
+ApiWrapper::~ApiWrapper() { closeSo(); }
 
 IndvMc2ClientWrapper& IndvMc2ClientWrapper::GetInstance(void)
 {
@@ -134,8 +129,7 @@ IndvMc2ClientWrapper::~IndvMc2ClientWrapper()
 
 aclnnStatus IndvMc2ClientWrapper::LoadFunctions()
 {
-    hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>(
-        "HcclAllocComResourceByTiling");
+    hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>("HcclAllocComResourceByTiling");
     NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
     return OK;
 }
@@ -352,8 +346,7 @@ IndvHcclWrapper::~IndvHcclWrapper()
 
 aclnnStatus IndvHcclWrapper::LoadFunctions()
 {
-    hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>(
-        "HcclAllocComResourceByTiling");
+    hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>("HcclAllocComResourceByTiling");
     NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
     hcclGetAicpuOpStreamAndNotifyHandle = LoadFunction<HcclGetAicpuOpStreamAndNotifyFunc>(
         "HcclGetAicpuOpStreamAndNotify");
@@ -442,10 +435,7 @@ void NnopbaseSoLoader::closeSo()
 
 NnopbaseSoLoader::NnopbaseSoLoader() = default;
 
-NnopbaseSoLoader::~NnopbaseSoLoader()
-{
-    closeSo();
-}
+NnopbaseSoLoader::~NnopbaseSoLoader() { closeSo(); }
 
 IndvRtsWrapper* IndvRtsWrapper::GetInstance(void)
 {
@@ -471,7 +461,7 @@ aclnnStatus IndvRtsWrapper::AclrtBinarySetExceptionCallback(void* binHandle, voi
     return OK;
 }
 
-IndvRtsWrapper::IndvRtsWrapper() {};
+IndvRtsWrapper::IndvRtsWrapper(){};
 
 IndvRtsWrapper::~IndvRtsWrapper()
 {

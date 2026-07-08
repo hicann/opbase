@@ -367,9 +367,13 @@ aclnnStatus NnopbaseRunForWorkspace(void* executor, uint64_t* workspaceLen)
 
 aclnnStatus NnopbaseRunWithWorkspace(void* executor, aclrtStream stream, void* workspace, uint64_t workspaceLen)
 {
-    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_PARAM_NULLPTR);
-    if (workspaceLen > 0U) {
-        NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(workspace, ACLNN_ERR_PARAM_NULLPTR);
+    if (executor == nullptr) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_NULL_POINTER("Calling the second-phase API of aclnn", "executor");
+        return ACLNN_ERR_PARAM_NULLPTR;
+    }
+    if (workspaceLen > 0U && workspace == nullptr) {
+        OP_LOGE_FOR_INVALID_ARGUMENT_NULL_POINTER("Calling the second-phase API of aclnn", "workspace");
+        return ACLNN_ERR_PARAM_NULLPTR;
     }
 
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
