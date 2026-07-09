@@ -2041,3 +2041,81 @@ TEST_F(OpKernelUT, ParseStaticDynUBufSize_OverflowValue)
     EXPECT_EQ(ret, ACLNN_SUCCESS);
     EXPECT_EQ(kernelBin->GetStaticKernelDynUBufSize(), 0);
 }
+
+TEST_F(OpKernelUT, testGetSocPathConsistentAcrossCalls)
+{
+    OpKernelLib opKnlLib;
+    const std::string first = opKnlLib.GetSocPath();
+    const std::string second = opKnlLib.GetSocPath();
+    const std::string third = opKnlLib.GetSocPath();
+    EXPECT_EQ(first, second);
+    EXPECT_EQ(first, third);
+}
+
+TEST_F(OpKernelUT, testGetCustomOppFilePaths)
+{
+    const std::string mockDir = OP_API_COMMON_UT_SRC_DIR;
+    const std::string defaultCustomPath = mockDir + "/custom";
+
+    // 分支 1: env 未设置
+    unsetenv("ASCEND_CUSTOM_OPP_PATH");
+    {
+        OpKernelLib opKnlLib;
+        const std::vector<std::string> result = opKnlLib.GetCustomOppFilePaths();
+        EXPECT_EQ(result.size(), 0U);
+    }
+
+    // 分支 2: 默认（mock/custom 提供 1 个 json）
+    setenv("ASCEND_CUSTOM_OPP_PATH", defaultCustomPath.c_str(), 1);
+    {
+        OpKernelLib opKnlLib;
+        const std::vector<std::string> result = opKnlLib.GetCustomOppFilePaths();
+        EXPECT_GE(result.size(), 1U);
+        bool found = false;
+        for (const auto& path : result) {
+            if (path.find("aic-custom-ops-info.json") != std::string::npos) {
+                found = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(found);
+    }
+
+    // 分支 3: 多路径（mock/custom + mock/merge_priority/custom_opp）
+    const std::string altCustomPath = mockDir + "/merge_priority/custom_opp";
+    const std::string multiPath = defaultCustomPath + ":" + altCustomPath;
+    setenv("ASCEND_CUSTOM_OPP_PATH", multiPath.c_str(), 1);
+    {
+        OpKernelLib opKnlLib;
+        const std::vector<std::string> result = opKnlLib.GetCustomOppFilePaths();
+        EXPECT_GE(result.size(), 2U);
+    }
+
+    // 分支 4: dir 不存在
+    setenv("ASCEND_CUSTOM_OPP_PATH", "./nonexistent_custom_opp_path", 1);
+    {
+        OpKernelLib opKnlLib;
+        const std::vector<std::string> result = opKnlLib.GetCustomOppFilePaths();
+        EXPECT_EQ(result.size(), 0U);
+    }
+
+    // 还原 main.cpp 默认 env
+    setenv("ASCEND_CUSTOM_OPP_PATH", defaultCustomPath.c_str(), 1);
+}
+
+TEST_F(OpKernelUT, Initialize_MergePriority_CustomOppWinsOverVendorsAndBuiltin)
+{
+    const std::string mockDir = OP_API_COMMON_UT_SRC_DIR;
+    const std::string oppPath = mockDir + "/merge_priority/opp";
+    const std::string customPath = mockDir + "/merge_priority/custom_opp";
+    setenv("ASCEND_OPP_PATH", oppPath.c_str(), 1);
+    setenv("ASCEND_CUSTOM_OPP_PATH", customPath.c_str(), 1);
+
+    OpKernelLib opKnlLib;
+    ASSERT_EQ(opKnlLib.Initialize(), 0);
+    EXPECT_EQ(opKnlLib.allKernelsJson_["AvgPool2D"]["opFile"]["value"].get<std::string>(), "from_custom_opp");
+
+    // 还原 main.cpp 默认 env
+    setenv("ASCEND_OPP_PATH", mockDir.c_str(), 1);
+    setenv("ASCEND_CUSTOM_OPP_PATH", (mockDir + "/custom").c_str(), 1);
+}

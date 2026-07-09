@@ -9,7 +9,10 @@
  */
 
 #include "op_kernel_lib.h"
+
 #include <fstream>
+#include <algorithm>
+
 #include "utils/string_utils.h"
 #include "file_utils.h"
 #include "opdev/op_log.h"
@@ -108,7 +111,7 @@ static map<string, string> socOpMap = {
 
 const std::string& OpKernelLib::GetSocPath()
 {
-    if (initFlag_ && !socPath_.empty()) {
+    if (!socPath_.empty()) {
         return socPath_;
     }
 
@@ -159,7 +162,7 @@ const std::vector<std::string>& OpKernelLib::GetCustomImplPath()
     for (const auto& str : strs) {
         const std::string implPath = str + CUSTOM_IMPL_PATH_SUFFIX;
         const std::string realImplPath = RealPath(implPath);
-        OP_LOGD("custom impl path: %s, real path: %s", implPath.c_str(), realImplPath.c_str());
+        OP_LOGI("custom impl path: %s, real path: %s", implPath.c_str(), realImplPath.c_str());
         if (realImplPath != "") {
             customImplPath_.emplace_back(realImplPath);
         }
@@ -250,7 +253,7 @@ const std::vector<std::string> OpKernelLib::GetVendorNames() const
     return vendorNames;
 }
 
-const std::vector<std::string> OpKernelLib::GetConfigFilePaths()
+const std::vector<std::string> OpKernelLib::GetBuiltInFilePaths()
 {
     std::vector<std::string> configFilePaths;
     std::vector<std::string> configFileNames;
@@ -285,12 +288,12 @@ const std::vector<std::string> OpKernelLib::GetConfigFilePaths()
     return configFilePaths;
 }
 
-const std::vector<std::string> OpKernelLib::GetCustomFilePaths()
+const std::vector<std::string> OpKernelLib::GetOppVendorsFilePaths()
 {
-    std::vector<std::string> customFilePaths;
+    std::vector<std::string> oppVendorsFilePaths;
     const char* oppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPath);
-    OP_CHECK(oppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH is null."), return customFilePaths);
+    OP_CHECK(oppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH is null."), return oppVendorsFilePaths);
 
     const std::string oppPathStr = oppPath;
     const std::vector<std::string> vendorNames = GetVendorNames();
@@ -300,7 +303,7 @@ const std::vector<std::string> OpKernelLib::GetCustomFilePaths()
         std::vector<std::string> customFileNames;
         std::string realCustomFileDir = RealPath(customFileDir);
         if (realCustomFileDir == "") {
-            OP_LOGW("custom file dir is null.");
+            OP_LOGW("custom file dir [%s] is null, skip vendor [%s].", customFileDir.c_str(), vendorName.c_str());
             continue;
         }
         OP_CHECK_NO_RETURN(ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
@@ -308,10 +311,43 @@ const std::vector<std::string> OpKernelLib::GetCustomFilePaths()
         for (const auto& fileName : customFileNames) {
             const std::string customFilePath = customFileDir + fileName;
             const std::string realCustomFilePath = RealPath(customFilePath);
-            OP_CHECK_NO_RETURN(realCustomFilePath == "", customFilePaths.emplace_back(realCustomFilePath));
+            if (realCustomFilePath.empty()) {
+                OP_LOGW("Skip path [%s], real path is empty.", customFilePath.c_str());
+            } else {
+                oppVendorsFilePaths.emplace_back(realCustomFilePath);
+            }
         }
     }
-    return customFilePaths;
+    return oppVendorsFilePaths;
+}
+
+const std::vector<std::string> OpKernelLib::GetCustomOppFilePaths()
+{
+    std::vector<std::string> customOppFilePaths;
+    const std::vector<std::string>& customImplPaths = GetCustomImplPath();
+    for (const auto& element : customImplPaths) {
+        // element 来自 RealPath(str + CUSTOM_IMPL_PATH_SUFFIX)，尾部斜杠行为不确定，
+        // 显式补 '/' 兼容 mmRealPath 是否保留尾部斜杠两种实现
+        const std::string customFileDir = element + "/" + KERNEL_CONFIG_SUFFIX + GetSocPath();
+        std::string realCustomFileDir = RealPath(customFileDir);
+        if (realCustomFileDir.empty()) {
+            OP_LOGW("custom opp file dir [%s] is null, skip.", customFileDir.c_str());
+            continue;
+        }
+        std::vector<std::string> customFileNames;
+        OP_CHECK_NO_RETURN(ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
+                           OP_LOGW("Failed to read dir: %s", customFileDir.c_str()));
+        for (const auto& fileName : customFileNames) {
+            const std::string customFilePath = customFileDir + fileName;
+            const std::string realCustomFilePath = RealPath(customFilePath);
+            if (realCustomFilePath.empty()) {
+                OP_LOGW("Skip path [%s], real path is empty.", customFilePath.c_str());
+            } else {
+                customOppFilePaths.emplace_back(realCustomFilePath);
+            }
+        }
+    }
+    return customOppFilePaths;
 }
 
 aclnnStatus OpKernelLib::Initialize()
@@ -321,12 +357,14 @@ aclnnStatus OpKernelLib::Initialize()
         OP_LOGD("OpKernelLib has been initialized.");
         return ACLNN_SUCCESS;
     }
-    std::vector<std::string> opKernelLibFilePaths = GetCustomFilePaths();
-    std::vector<std::string> configFilePaths = GetConfigFilePaths();
-    opKernelLibFilePaths.insert(opKernelLibFilePaths.end(), configFilePaths.begin(), configFilePaths.end());
+    std::vector<std::string> customOppFilePaths = GetCustomOppFilePaths();
+    std::vector<std::string> oppVendorsFilePaths = GetOppVendorsFilePaths();
+    std::vector<std::string> opKernelLibFilePaths = GetBuiltInFilePaths();
+    opKernelLibFilePaths.insert(opKernelLibFilePaths.begin(), oppVendorsFilePaths.begin(), oppVendorsFilePaths.end());
+    opKernelLibFilePaths.insert(opKernelLibFilePaths.begin(), customOppFilePaths.begin(), customOppFilePaths.end());
     std::reverse(opKernelLibFilePaths.begin(), opKernelLibFilePaths.end());
     for (const auto& filePath : opKernelLibFilePaths) {
-        OP_LOGD("OpKernelLib start parse json file: %s.", filePath.c_str());
+        OP_LOGI("OpKernelLib start parse json file: %s.", filePath.c_str());
         try {
             std::ifstream f(filePath);
             allKernelsJson_.merge_patch(Json::parse(f));
