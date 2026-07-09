@@ -21,6 +21,7 @@
 #include "utils/indv_base.h"
 #include "utils/indv_debug_assert.h"
 #include "utils/indv_path.h"
+#include "utils/thread_var_container.h"
 #include "indv_bininfo.h"
 #include "utils/indv_soc.h"
 #include "indv_executor.h"
@@ -1422,21 +1423,25 @@ aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo)
     return OK;
 }
 
-aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollector* const collector, const std::string& basePath)
+aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollector* const collector)
 {
     if (collector == nullptr) {
         OP_LOGD("collector is nullptr.");
         return OK;
     }
     // reload static kernel info
-    return NnopbaseCollectorGetStaticKernelPathAndReadConfig(collector, basePath);
+    return NnopbaseCollectorGetStaticKernelPathAndReadConfig(
+        collector, nnopbase::utils::ThreadVarContainer::GetStaticKernelBasePathInThread());
 }
 
 aclnnStatus NnopbaseCollectorGetStaticKernelPathAndReadConfig(NnopbaseBinCollector* const collector,
                                                               const std::string& basePath)
 {
     gert::OppImplVersionTag oppImplVersion = gert::OppImplVersionTag::kVersionEnd;
-    std::string staticPackageBasePath = basePath.empty() ? GetBuiltInBasePath(oppImplVersion) : basePath;
+    std::string staticPackageBasePath = GetBuiltInBasePath(oppImplVersion);
+    if (!basePath.empty()) {
+        staticPackageBasePath = basePath;
+    }
     // 静态算子库为可选项，算子公共路径为空不中断流程
     if (staticPackageBasePath.empty()) {
         return OK;
@@ -1538,7 +1543,8 @@ aclnnStatus NnopbaseCollectorWork(NnopbaseBinCollector* const collector)
     }
     RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadDebugKernelEnd);
 
-    (void)NnopbaseCollectorGetStaticKernelPathAndReadConfig(collector);
+    (void)NnopbaseCollectorGetStaticKernelPathAndReadConfig(
+        collector, nnopbase::utils::ThreadVarContainer::GetStaticKernelBasePathInThread());
     const aclnnStatus retForStaticBinaryInfo = NnopbaseCollectorGetStaticBinaryInfo(collector);
     if (retForStaticBinaryInfo != OK && basePath.empty()) {
         OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE(

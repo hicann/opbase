@@ -10,6 +10,7 @@
 #include <cstdio>
 #include "utils/indv_types.h"
 #include "executor/indv_collector.h"
+#include "executor/indv_executor.h"
 #include "executor/indv_bininfo.h"
 #include <gtest/gtest.h>
 #include <string.h>
@@ -18,6 +19,7 @@
 #include <stdio.h>
 #include "utils/file_faker.h"
 #include "utils/indv_soc.h"
+#include "utils/thread_var_container.h"
 #include "register/op_binary_resource_manager.h"
 #include "mockcpp/mockcpp.hpp"
 
@@ -58,6 +60,14 @@ TEST_F(NnopbaseCollectorUnitTest, test_collector_init_ok)
     int32_t ret = NnopbaseCollectorInit(bin_collector);
     ASSERT_EQ(ret, OK);
     delete bin_collector;
+}
+
+TEST_F(NnopbaseCollectorUnitTest, test_thread_static_kernel_base_path)
+{
+    nnopbase::utils::ThreadVarContainer::SetStaticKernelBasePathInThread("/tmp/static_kernel_path");
+    ASSERT_EQ(nnopbase::utils::ThreadVarContainer::GetStaticKernelBasePathInThread(), "/tmp/static_kernel_path");
+    nnopbase::utils::ThreadVarContainer::SetStaticKernelBasePathInThread("");
+    ASSERT_EQ(nnopbase::utils::ThreadVarContainer::GetStaticKernelBasePathInThread(), "");
 }
 
 TEST_F(NnopbaseCollectorUnitTest, test_get_soc_version_ok)

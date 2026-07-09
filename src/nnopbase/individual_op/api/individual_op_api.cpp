@@ -283,7 +283,8 @@ void NnopbaseReloadStaticBinJsonInfos(const char* basePath)
     if (basePath != nullptr) {
         staticKernelBasePath = std::string(basePath);
     }
-    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollector, staticKernelBasePath);
+    nnopbase::utils::ThreadVarContainer::SetStaticKernelBasePathInThread(staticKernelBasePath);
+    auto ret = NnopbaseRefreshStaticKernelInfos(gBinCollector);
     if (ret != OK) {
         OP_LOGW("Failed to reload static kernel information.");
     } else {

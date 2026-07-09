@@ -9,11 +9,14 @@
  */
 
 #include "thread_var_container.h"
+#include <mutex>
 #include <thread>
 #include "op_def.h"
 #include "indv_lib_wrapper.h"
 
 static thread_local uint32_t mc2RankId = 0U;
+static thread_local std::string staticKernelBasePath;
+static std::mutex staticKernelBasePathMutex;
 namespace nnopbase {
 namespace utils {
 aclnnStatus ThreadVarContainer::SetCurMc2RankIdInThread(HcclComm commHandle)
@@ -29,6 +32,20 @@ uint32_t ThreadVarContainer::GetCurMc2RankIdInThread()
 {
     OP_LOGD("Current mc2RankId is %u.", mc2RankId);
     return mc2RankId;
+}
+
+void ThreadVarContainer::SetStaticKernelBasePathInThread(const std::string& staticKernelBasePathValue)
+{
+    const std::lock_guard<std::mutex> lock(staticKernelBasePathMutex);
+    OP_LOGD("Set static kernel base path to %s.", staticKernelBasePathValue.c_str());
+    staticKernelBasePath = staticKernelBasePathValue;
+}
+
+std::string ThreadVarContainer::GetStaticKernelBasePathInThread()
+{
+    const std::lock_guard<std::mutex> lock(staticKernelBasePathMutex);
+    OP_LOGD("Get static kernel base path %s.", staticKernelBasePath.c_str());
+    return staticKernelBasePath;
 }
 } // namespace utils
 } // namespace nnopbase
