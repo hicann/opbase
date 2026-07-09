@@ -105,7 +105,7 @@ aclnnStatus NnopbaseCollecterOpRegInfoInit(NnopbaseRegInfo *regInfo, const Nnopb
 aclnnStatus NnopbaseUpdateStaticJsonInfo(nlohmann::json &binInfo, NnopbaseJsonInfo &jsonInfo);
 
 aclnnStatus NnopbaseUpdateStaticBinJsonInfos(NnopbaseBinCollecter *const collecter, const NnopbaseChar *const opType);
-aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter, const std::string &basePath);
+aclnnStatus NnopbaseRefreshStaticKernelInfos(NnopbaseBinCollecter *const collecter);
 aclnnStatus UpdateStaticJsonExtraInfo(NnopbaseJsonInfo &jsonInfo);
 void SetExtraKernelInfoToBin(const NnopbaseJsonInfo &jsonInfo, std::unique_ptr<NnopbaseBinInfo> &binInfo);
 

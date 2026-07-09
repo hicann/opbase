@@ -10,6 +10,7 @@
 
 #ifndef THREAD_VAR_CONTAINER_H_
 #define THREAD_VAR_CONTAINER_H_
+#include <string>
 #include "aclnn/acl_meta.h"
 #include "hccl/base.h"
 namespace nnopbase {
@@ -18,6 +19,8 @@ class ThreadVarContainer {
 public:
     static aclnnStatus SetCurMc2RankIdInThread(HcclComm commHandle);
     static uint32_t GetCurMc2RankIdInThread();
+    static void SetStaticKernelBasePathInThread(const std::string& staticKernelBasePath);
+    static std::string GetStaticKernelBasePathInThread();
 };
 }
 }
