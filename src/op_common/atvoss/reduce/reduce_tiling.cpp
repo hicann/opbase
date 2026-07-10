@@ -53,12 +53,18 @@ static bool CheckAllReduce(gert::TilingContext* context, int32_t outIdx)
 
 static bool CheckIsContiguous(ReduceOpInputParam& opInput)
 {
-    bool isContiguous{false};
+    bool isContiguous{true};
     for (size_t i = 0; i < opInput.shape.size(); i++) {
         if (i != opInput.shape.size() - 1) {
             isContiguous = (opInput.dimStrides[i] == opInput.dimStrides[i + 1] * opInput.shape[i + 1]);
+            if (!isContiguous) {
+                break;
+            }
         } else {
             isContiguous = (opInput.dimStrides[i] == 1UL);
+            if (!isContiguous) {
+                break;
+            }
         }
     }
     return isContiguous;
@@ -152,9 +158,8 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
     OP_CHECK_IF((GetInputShape(context, inputIdx, opInput.shape) == ge::GRAPH_FAILED),
                 OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        (GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
-        OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -1122,9 +1127,9 @@ void ReduceOpTiling::SetTilingKey()
     tilingKey_.loopARCount = static_cast<uint32_t>(aCount * CONST10 + rCount);
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * CONST10 + innerRCount);
     tilingKey_.isContiguous = CheckIsContiguous(opInput_);
-    OP_LOGI(
-        context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, isBatchInvariant:%d", tilingKey_.patternID,
-        tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0, tilingKey_.batchInvariant ? 1 : 0);
+    OP_LOGI(context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, isBatchInvariant:%d",
+            tilingKey_.patternID, tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0,
+            tilingKey_.batchInvariant ? 1 : 0);
 }
 
 void ReduceOpTiling::GetTilingKey(ReduceTilingKey& key) { key = tilingKey_; }
