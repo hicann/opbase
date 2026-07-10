@@ -19,7 +19,7 @@ class ThreadVarContainer {
 public:
     static aclnnStatus SetCurMc2RankIdInThread(HcclComm commHandle);
     static uint32_t GetCurMc2RankIdInThread();
-    static void SetStaticKernelBasePathInThread(const std::string& staticKernelBasePath);
+    static void SetStaticKernelBasePathInThread(const std::string& staticKernelBasePathValue);
     static std::string GetStaticKernelBasePathInThread();
 };
 }
