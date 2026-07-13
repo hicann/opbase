@@ -54,13 +54,19 @@ static bool CheckAllReduce(gert::TilingContext* context, int32_t outIdx)
 }
 
 static bool CheckIsContiguous(ReduceOpInputParam& opInput)
-{   
-    bool isContiguous{false};
+{
+    bool isContiguous{true};
     for (size_t i = 0; i < opInput.shape.size(); i++) {
         if (i != opInput.shape.size() - 1) {
             isContiguous = (opInput.dimStrides[i] == opInput.dimStrides[i + 1] * opInput.shape[i + 1]);
+            if (!isContiguous) {
+                break;
+            }
         } else {
             isContiguous = (opInput.dimStrides[i] == 1UL);
+            if (!isContiguous) {
+                break;
+            }
         }
     }
     return isContiguous;
