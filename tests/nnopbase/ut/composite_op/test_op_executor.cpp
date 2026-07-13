@@ -438,48 +438,102 @@ TEST_F(OpExecutorTest, phase1ParamCheckTest)
     delete ptr;
 }
 
-static void L2Phase2Func(const char* apiName, aclOpExecutor* executor, const int64_t configVal)
+static void L2Phase2Func(const char* apiName, aclOpExecutor* executor, int32_t expectedLevel)
 {
     std::cout << "phase2 thread id: " << std::this_thread::get_id() << std::endl;
     InitL2Phase2Context(apiName, executor);
-    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (configVal == 1));
-    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (configVal == 1));
+    EXPECT_EQ(executor->GetOpConfigInfo().deterministicLevel_, expectedLevel);
+    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_, expectedLevel);
+    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (expectedLevel >= 1));
+    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (expectedLevel >= 1));
 }
 
 TEST_F(OpExecutorTest, DeterministicTest)
 {
-    std::cout << "phase1 thread id: " << std::this_thread::get_id() << std::endl;
     const char* apiName = "aclnnArgsort";
-    int64_t deterministicValue = 0;
-    aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicValue);
-    std::cout << "deterministic value: " << deterministicValue << std::endl;
 
-    aclOpExecutor* executor = nullptr;
-    InitL2Phase1Context(apiName, &executor);
-    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (deterministicValue == 1));
-    auto uniqueExecutor = CREATE_EXECUTOR();
-    uniqueExecutor.ReleaseTo(&executor);
-    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (deterministicValue == 1));
+    // 子用例 1：level=0（关闭）
+    {
+        aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 0);
+        aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 0);
+        aclOpExecutor* executor = nullptr;
+        InitL2Phase1Context(apiName, &executor);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_, 0);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, false);
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        uniqueExecutor.ReleaseTo(&executor);
+        EXPECT_EQ(executor->GetOpConfigInfo().deterministicLevel_, 0);
+        EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, false);
+        std::thread t(L2Phase2Func, apiName, executor, 0);
+        t.join();
+        delete executor;
+    }
 
-    std::thread t(L2Phase2Func, apiName, executor, deterministicValue);
-    t.join();
-    delete executor;
+    // 子用例 2：level=1（仅确定性，consistency=0 不升级）
+    {
+        aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 1);
+        aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 0);
+        aclOpExecutor* executor = nullptr;
+        InitL2Phase1Context(apiName, &executor);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_, 1);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, true);
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        uniqueExecutor.ReleaseTo(&executor);
+        EXPECT_EQ(executor->GetOpConfigInfo().deterministicLevel_, 1);
+        EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, true);
+        std::thread t(L2Phase2Func, apiName, executor, 1);
+        t.join();
+        delete executor;
+    }
 
-    executor = nullptr;
-    deterministicValue = (deterministicValue == 0) ? 1 : 0;
-    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, deterministicValue);
-    InitL2Phase1Context(apiName, &executor);
-    EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, (deterministicValue == 1));
-    auto uniqueExecutor2 = CREATE_EXECUTOR();
-    uniqueExecutor2.ReleaseTo(&executor);
-    EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, (deterministicValue == 1));
+    // 子用例 3：level=2（强一致性，新 runtime 直接返回）
+    {
+        aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 2);
+        aclOpExecutor* executor = nullptr;
+        InitL2Phase1Context(apiName, &executor);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_, 2);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, true);
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        uniqueExecutor.ReleaseTo(&executor);
+        EXPECT_EQ(executor->GetOpConfigInfo().deterministicLevel_, 2);
+        EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, true);
+        std::thread t(L2Phase2Func, apiName, executor, 2);
+        t.join();
+        delete executor;
+    }
 
-    std::thread t2(L2Phase2Func, apiName, executor, deterministicValue);
-    t2.join();
-    delete executor;
+    // 子用例 4：老 runtime 回退路径（deterministic=1 + consistency=1 → 升级为 2）
+    {
+        aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 1);
+        aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 1);
+        aclOpExecutor* executor = nullptr;
+        InitL2Phase1Context(apiName, &executor);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_, 2);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, true);
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        uniqueExecutor.ReleaseTo(&executor);
+        EXPECT_EQ(executor->GetOpConfigInfo().deterministicLevel_, 2);
+        EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, true);
+        std::thread t(L2Phase2Func, apiName, executor, 2);
+        t.join();
+        delete executor;
+    }
 
-    deterministicValue = (deterministicValue == 0) ? 1 : 0;
-    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, deterministicValue);
+    // 子用例 5：level=3（batch 一致性，新 runtime 路径）
+    {
+        aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3);
+        aclOpExecutor* executor = nullptr;
+        InitL2Phase1Context(apiName, &executor);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_, 3);
+        EXPECT_EQ(op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_, true);
+        auto uniqueExecutor = CREATE_EXECUTOR();
+        uniqueExecutor.ReleaseTo(&executor);
+        EXPECT_EQ(executor->GetOpConfigInfo().deterministicLevel_, 3);
+        EXPECT_EQ(executor->GetOpConfigInfo().isDeterministicOn_, true);
+        std::thread t(L2Phase2Func, apiName, executor, 3);
+        t.join();
+        delete executor;
+    }
 }
 
 // ============================================================================

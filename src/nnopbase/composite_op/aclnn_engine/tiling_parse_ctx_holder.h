@@ -36,16 +36,6 @@ class TilingParseCtxHolder {
 public:
     AsyncAnyValue* GetCompiledInfoStruct() const { return &tilingParseCtxValue_[kCompileInfoStruct]; }
 
-    AsyncAnyValue* GetDeterministic() const
-    {
-        *PtrCastTo<int32_t>(Deterministic_.data.inplace) = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ?
-                                                               1 :
-                                                               0;
-        return const_cast<AsyncAnyValue*>(&Deterministic_);
-    }
-
-    AsyncAnyValue* GetDeterministicLevel() const { return const_cast<AsyncAnyValue*>(&DeterministicLevel_); }
-
     uint32_t GetCoreNum() const { return coreNum_; }
 
     ~TilingParseCtxHolder();
@@ -100,8 +90,6 @@ private:
     static constexpr size_t MAX_COMPILE_INFO_STRUCT_SIZE = 32 * 1024;
     aclnnOpInfoRecord::OpKernelInfo opKernelInfo_{"", 0};
     uint32_t coreNum_{0};
-    mutable AsyncAnyValue Deterministic_;
-    AsyncAnyValue DeterministicLevel_;
 };
 
 } // namespace op::internal

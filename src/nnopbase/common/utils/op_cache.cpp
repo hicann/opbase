@@ -489,8 +489,8 @@ void AddOpConfigInfoToBuf()
                               tlsData->threadLocalContext.opConfigInfo_.aivNum_);
         *PtrCastTo<ThreadCoreNum>(tlsData->hashBuf + tlsData->hashOffset) = coreNum;
         tlsData->hashOffset += sizeof(ThreadCoreNum);
-        bool deterministic = tlsData->threadLocalContext.opConfigInfo_.isDeterministicOn_;
-        OpCacheAdd1Byte(&deterministic, tlsData->hashBuf, tlsData->hashOffset);
+        uint8_t deterministicLevel = tlsData->threadLocalContext.opConfigInfo_.deterministicLevel_;
+        OpCacheAdd1Byte(&deterministicLevel, tlsData->hashBuf, tlsData->hashOffset);
     }
 }
 
@@ -735,7 +735,7 @@ void AddParamToBuf(char* c)
     AddParamToBuf(constPtr);
 };
 
-void AddParamToBuf() {};
+void AddParamToBuf(){};
 
 std::size_t OpCacheKeyHash::operator()(const OpCacheKey& key) const { return MurmurHash(key.buf, key.len); }
 

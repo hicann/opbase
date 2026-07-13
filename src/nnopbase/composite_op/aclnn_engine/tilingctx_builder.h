@@ -191,7 +191,9 @@ private:
     constexpr static size_t tilingOutputNum_ = kOutputNum;
     KernelRunContext* tilingCtx_{nullptr};
     AsyncAnyValue* tilingCtxValue_{nullptr};
-    AsyncAnyValue platformInfoValue_;
+    AsyncAnyValue platformInfoValue_{};
+    AsyncAnyValue deterministicValue_{};
+    AsyncAnyValue deterministicLevelValue_{};
     std::unique_ptr<uint8_t[]> workspaceSizeVec_;
 
     // Dynamic capacity management

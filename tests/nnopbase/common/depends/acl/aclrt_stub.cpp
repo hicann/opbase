@@ -261,12 +261,15 @@ aclError aclrtCacheLastTaskOpInfo(const void* const infoPtr, size_t infoSize)
 }
 
 int64_t gDeterministicNew = 0;
+int64_t gStrongConsistencyNew = 0;
 
 EXTERN_C
 aclError aclrtSetSysParamOpt(aclSysParamOpt opt, int64_t value)
 {
     if (opt == ACL_OPT_DETERMINISTIC) {
         gDeterministicNew = value;
+    } else if (opt == ACL_OPT_STRONG_CONSISTENCY) {
+        gStrongConsistencyNew = value;
     }
     return ACL_SUCCESS;
 }
@@ -276,6 +279,8 @@ aclError aclrtGetSysParamOpt(aclSysParamOpt opt, int64_t* value)
 {
     if (opt == ACL_OPT_DETERMINISTIC) {
         *value = gDeterministicNew;
+    } else if (opt == ACL_OPT_STRONG_CONSISTENCY) {
+        *value = gStrongConsistencyNew;
     }
     return ACL_SUCCESS;
 }

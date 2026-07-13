@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -199,11 +199,17 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder* kernelCt
     UpdateThradLocalPlatformInfo(platformInfo, coreNum, cubeCoreNum, vectorCoreNum);
     platformInfoValue_.data.pointer = platformInfo;
 
+    *PtrCastTo<int32_t>(deterministicValue_.data.inplace) = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ?
+                                                                1 :
+                                                                0;
+    *PtrCastTo<int32_t>(
+        deterministicLevelValue_.data.inplace) = GetThreadLocalContext().opConfigInfo_.deterministicLevel_;
+
     tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = tilingParseCtx->GetCompiledInfoStruct();
     tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = &platformInfoValue_;
     tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = tilingParseCtx->GetDeterministic();
-    tilingCtx_->values[tilingInputNum - 1] = tilingParseCtx->GetDeterministicLevel();
+    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = &deterministicValue_;
+    tilingCtx_->values[tilingInputNum - 1] = &deterministicLevelValue_;
     FinalizeTilingCtx(tilingInputNum);
 
     OP_LOGI("Update op tiling ctx. input[%zu], output[%zu], compiled Info %p, deterministic %d, deterministicLevel %d, "

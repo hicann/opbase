@@ -995,6 +995,36 @@ aclnnStatus CommonOpExecutorRun(void* workspace, uint64_t workspaceSize, aclOpEx
     return res;
 }
 
+namespace {
+// 从 ACL runtime 获取确定性计算 level
+// ACL_OPT_DETERMINISTIC 取值含义：
+//   0 = 关闭
+//   1 = 开启确定性计算
+//   2 = 开启强一致性（前向包含 1）
+//   3 = 开启 batch 一致性（前向包含 2）
+// 兼容老 runtime：当返回值为 1 时（老 runtime 仅返回 0/1），二次获取
+// ACL_OPT_STRONG_CONSISTENCY 确认是否实际应为 level 2
+int64_t GetDeterministicLevelFromRt()
+{
+    int64_t deterministicLevel = 0;
+    aclError aclRet = aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicLevel);
+    OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, deterministicLevel = 0;
+                       OP_LOGW("can not get system param deterministic, ret= %d.", aclRet));
+
+    if (deterministicLevel == 1) {
+        int64_t consistency = 0;
+        aclError consistencyRet = aclrtGetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, &consistency);
+        OP_CHECK_NO_RETURN(consistencyRet == ACL_SUCCESS, consistency = 0;
+                           OP_LOGW("can not get system param strong consistency, ret= %d.", consistencyRet));
+        if (consistency == 1) {
+            deterministicLevel = 2;
+            OP_LOGI("Upgrade deterministic level from 1 to 2, because strong consistency is on.");
+        }
+    }
+    return deterministicLevel;
+}
+} // namespace
+
 void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** executor)
 {
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
@@ -1009,14 +1039,12 @@ void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** ex
     opTlsCtx.opConfigInfo_.aivNum_ = controlCoreNum;
     opTlsCtx.opConfigInfo_.isOpDumpEnable_ = op::internal::IsDumpEnable();
 
-    int64_t determinConfig = 0;
-    aclError aclRet = aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &determinConfig);
-    OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, determinConfig = 0;
-                       OP_LOGW("can not get system param deterministic, ret= %d.", aclRet));
-    opTlsCtx.opConfigInfo_.isDeterministicOn_ = (determinConfig == 1);
-    OP_LOGI("aic num: %u, aiv num: %u, is deterministic on: %d, is op dump enable: %d", opTlsCtx.opConfigInfo_.aicNum_,
-            opTlsCtx.opConfigInfo_.aivNum_, opTlsCtx.opConfigInfo_.isDeterministicOn_,
-            opTlsCtx.opConfigInfo_.isOpDumpEnable_);
+    int64_t deterministicLevel = GetDeterministicLevelFromRt();
+    opTlsCtx.opConfigInfo_.deterministicLevel_ = static_cast<uint8_t>(deterministicLevel);
+    opTlsCtx.opConfigInfo_.isDeterministicOn_ = (deterministicLevel >= 1);
+    OP_LOGI("aic num: %u, aiv num: %u, deterministic level: %d, is deterministic on: %d, is op dump enable: %d",
+            opTlsCtx.opConfigInfo_.aicNum_, opTlsCtx.opConfigInfo_.aivNum_, opTlsCtx.opConfigInfo_.deterministicLevel_,
+            opTlsCtx.opConfigInfo_.isDeterministicOn_, opTlsCtx.opConfigInfo_.isOpDumpEnable_);
 }
 
 void InitL2Phase2Context([[maybe_unused]] const char* l2Name, aclOpExecutor* executor)
