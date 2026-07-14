@@ -44,6 +44,7 @@ target_include_directories(nnopbase BEFORE  PRIVATE
     ${TOP_DIR}/metadef/inc/external/
     ${TOP_DIR}/metadef/inc/
     ${TOP_DIR}/hcomm/pkg_inc/
+    ${TOP_DIR}/hcomm/pkg_inc/legacy/
     ${TOP_DIR}/hcomm/include/
     ${TOP_DIR}/air/graph_metadef/third_party/transformer/inc/
     ${TOP_DIR}/abl/libc_sec/src/
