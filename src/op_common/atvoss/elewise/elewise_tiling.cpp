@@ -139,7 +139,7 @@ ge::graphStatus ElewiseBaseTiling::GetPlatformInfo()
 }
 
 void ElewiseBaseTiling::AdaptEleBaseTilingData(const ElewiseTilingData& elewiseTilingData,
-                                               EleBaseTilingData& eleBaseTilingData)
+                                               EleBaseTilingData& eleBaseTilingData) const
 {
     OP_LOGD("ElewiseTiling", "Enter AdaptEleBaseTilingData.");
     eleBaseTilingData.scheMode = GetScheMode();
@@ -201,9 +201,9 @@ ge::graphStatus ElewiseBaseTiling::AdaptEleBaseTilingData32B(const ElewiseTiling
     return ge::GRAPH_SUCCESS;
 }
 
-int64_t ElewiseBaseTiling::GetScheMode() { return DEFAULT_SCHEMODE; }
+int64_t ElewiseBaseTiling::GetScheMode() const { return DEFAULT_SCHEMODE; }
 
-int64_t ElewiseBaseTiling::GetBlockDim() { return numBlocks; }
+int64_t ElewiseBaseTiling::GetBlockDim() const { return numBlocks; }
 
 } // namespace Base
 } // namespace Ops

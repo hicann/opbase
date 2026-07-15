@@ -95,15 +95,15 @@ public:
 
     template <typename T>
     void SetScalar(T value);
-    int64_t GetBlockDim();
+    int64_t GetBlockDim() const;
     int64_t GetNumBlocks();
 
 private:
-    int64_t GetScheMode();
+    int64_t GetScheMode() const;
     ge::graphStatus GetPlatformInfo();
     template <bool CheckShape = true>
     ge::graphStatus GetShapeInfo();
-    void AdaptEleBaseTilingData(const ElewiseTilingData& elewiseTilingData, EleBaseTilingData& eleBaseTilingData);
+    void AdaptEleBaseTilingData(const ElewiseTilingData& elewiseTilingData, EleBaseTilingData& eleBaseTilingData) const;
     void AdaptEleBaseTilingData16B(const ElewiseTilingData& elewiseTilingData,
                                    EleBaseTilingData16B& eleBaseTilingData16B);
     ge::graphStatus AdaptEleBaseTilingData24B(const ElewiseTilingData& elewiseTilingData);
@@ -253,8 +253,7 @@ ge::graphStatus ElewiseBaseTiling::DoTiling(ElewiseTilingData& elewiseTilingData
 }
 
 template <typename OpDag, bool CheckShape>
-ge::graphStatus ElewiseBaseTiling::DoTiling(EleBaseTilingData& eleTilingDataV2, int64_t extraSize,
-                                            int64_t extraBufferNum)
+ge::graphStatus ElewiseBaseTiling::DoTiling(EleBaseTilingData& eleTilingData, int64_t extraSize, int64_t extraBufferNum)
 {
     ElewiseTilingData elewiseTilingData;
     auto status = DoTiling<OpDag, CheckShape>(elewiseTilingData, extraSize, extraBufferNum);
@@ -262,7 +261,7 @@ ge::graphStatus ElewiseBaseTiling::DoTiling(EleBaseTilingData& eleTilingDataV2, 
         OP_LOGE(context_, "Do elewise tiling failed.");
         return ge::GRAPH_FAILED;
     }
-    AdaptEleBaseTilingData(elewiseTilingData, eleTilingDataV2);
+    AdaptEleBaseTilingData(elewiseTilingData, eleTilingData);
     return ge::GRAPH_SUCCESS;
 }
 
