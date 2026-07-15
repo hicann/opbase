@@ -218,4 +218,9 @@ install(FILES ${CMAKE_BINARY_DIR}/version.opbase.info
     COMPONENT opbase
 )
 
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/opp_builtin/__init__.py
+    DESTINATION opp/built-in/op_impl/ai_core/tbe/impl
+    COMPONENT opbase
+)
+
 set_cann_cpack_config(opbase SHARE_INFO_NAME opbase ENABLE_DEVICE "${ENABLE_BUILD_DEVICE}")
