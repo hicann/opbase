@@ -76,6 +76,7 @@ struct ReduceOpDagParam {
 struct ReduceOpInputParam {
     uint32_t reservedSize = 0;
     uint32_t reservedNode = 0;
+    bool isTailAOne = 0;
     ge::DataType inputDtype = ge::DT_UNDEFINED;
     ge::DataType promoteDtpye = ge::DT_UNDEFINED;
     std::vector<int64_t> axes;

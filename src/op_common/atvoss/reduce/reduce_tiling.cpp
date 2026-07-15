@@ -70,6 +70,17 @@ static bool CheckIsContiguous(ReduceOpInputParam& opInput)
     return isContiguous;
 }
 
+static bool checkTailAIsOne(ReduceOpInputParam& opInput)
+{
+    int32_t len = opInput.shape.size();
+    auto iter = std::find(opInput.axes.begin(), opInput.axes.end(), len - 1);
+    if (opInput.shape[len - 1] == 1 && iter == opInput.axes.end()) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 ge::graphStatus GetInputShape(gert::TilingContext* context, int32_t idx, std::vector<int64_t>& shape)
 {
     auto xInput = context->GetInputShape(idx);
@@ -176,7 +187,11 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
                 OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF((GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
                 OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
-    if (CheckAllReduce(context, outIdx) && CheckIsContiguous(opInput)) {
+    // batch一致性场景，尾轴是A且为1时置为1，用来标识这个尾轴1不能被去掉
+    if (context->GetDeterministicLevel() == 2) {
+        opInput.isTailAOne = checkTailAIsOne(opInput);
+    }
+    if (CheckAllReduce(context, outIdx) && CheckIsContiguous(opInput) && !opInput.isTailAOne) {
         // all reduce 场景不读取const data
         opInput.axes.resize(opInput.shape.size());
         for (size_t i = 0; i < opInput.shape.size(); i++) {
@@ -352,6 +367,7 @@ ge::graphStatus ReduceOpTiling::PreProcessOptionalParam()
 // elimniate dim and axes where dim = 1
 void ReduceOpTiling::EliminateOne(uint64_t* viewShape, int64_t* viewStride, int32_t& shapeSize)
 {
+    bool contiguousFlag = CheckIsContiguous(opInput_);
     int32_t dstIdx = 1; // shape中第一个数给了1, 跳过第一个数
     for (size_t i = 0; i < opInput_.axes.size(); i++) {
         // 前面补了一维，所有的axes需要加1
@@ -366,7 +382,9 @@ void ReduceOpTiling::EliminateOne(uint64_t* viewShape, int64_t* viewStride, int3
         } else {
             isContiguous = (opInput_.dimStrides[i] == 1UL);
         }
-        if (opInput_.shape[i] != 1L || !isContiguous) {
+        // 连续场景、开启batch一致性、尾轴为A且为1时，不消除该1轴
+        if (((i == opInput_.shape.size() - 1) && opInput_.isTailAOne && contiguousFlag) || opInput_.shape[i] != 1L ||
+            !isContiguous) {
             viewShape[dstIdx] = opInput_.shape[i];
             viewStride[dstIdx] = opInput_.dimStrides[i];
             if (iter != opInput_.axes.end()) {
@@ -545,6 +563,7 @@ void ReduceOpTiling::PadDimOne(uint64_t* shape)
 void ReduceOpTiling::TransformShape(uint64_t* shape, int64_t* viewStride, int32_t& shapeSize)
 {
     shape[0] = 1UL;
+
     EliminateOne(shape, viewStride, shapeSize);
 
     PadDimForNonContiguous(shape, viewStride, shapeSize);
