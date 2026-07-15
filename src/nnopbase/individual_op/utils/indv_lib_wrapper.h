@@ -105,6 +105,14 @@ public:
     aclnnStatus HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, uint32_t* topoType);
     aclnnStatus HcclGetHcclBuffer(HcclComm comm, void** buffer, uint64_t* size);
     aclnnStatus HcclGetRankSize(HcclComm comm, uint32_t* rankSize);
+    aclnnStatus HcclGetCommName(HcclComm comm, char* commName);
+    aclnnStatus HcclGetUnfoldThread(HcclComm comm, uint64_t* threadHandle);
+    aclnnStatus HcclAcquireUnfoldThread(HcclComm comm, uint64_t* threadHandle);
+    aclnnStatus HcclSaveUnfoldThread(HcclComm comm, const char* unfoldCtxTag, uint64_t threadHandle);
+    aclnnStatus HcclStreamAcquireWithThread(HcclComm comm, uint64_t threadHandle, aclrtStream* stream);
+    aclnnStatus HcclThreadAcquireWithStream(HcclComm comm, aclrtStream stream, uint32_t notifyNum, uint64_t* thread);
+    aclnnStatus HcommThreadNotifyRecordOnThread(uint64_t thread, uint64_t dstThread, uint32_t dstNotifyIdx);
+    aclnnStatus HcommThreadNotifyWaitOnThread(uint64_t thread, uint32_t notifyIdx, uint32_t timeOut);
 
 private:
     using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void*, void*, void**);
@@ -119,6 +127,34 @@ private:
     using HcclRankGraphGetRankSizeByLayerFunc = HcclResult (*)(HcclComm, uint32_t, uint32_t*);
     using HcclRankGraphGetTopoTypeByLayerFunc = HcclResult (*)(HcclComm, uint32_t, uint32_t*);
     using HcclGetHcclBufferFunc = HcclResult (*)(HcclComm, void**, uint64_t*);
+    using HcclGetCommNameFunc = HcclResult (*)(HcclComm, char*);
+    using HcclEngineCtxGetFunc = HcclResult (*)(HcclComm, const char*, int32_t, void**, uint64_t*);
+    using HcclThreadResGetInfoFunc = HcclResult (*)(HcclComm, uint64_t, int32_t, uint32_t, void**);
+    using HcclThreadAcquireWithStreamFunc = HcclResult (*)(HcclComm, int32_t, aclrtStream, uint32_t, uint64_t*);
+    using HcommThreadNotifyRecordOnThreadFunc = int32_t (*)(uint64_t, uint64_t, uint32_t);
+    using HcommThreadNotifyWaitOnThreadFunc = int32_t (*)(uint64_t, uint32_t, uint32_t);
+    // 与hcomm侧hcomm_res_defs.h的ThreadType::THREAD_TYPE_TS保持一致
+    static constexpr int32_t NNOPBASE_THREAD_TYPE_TS = 0;
+    // 与hcomm侧hcomm_res_defs.h的CommAbiHeader/ThreadConfig二进制布局保持一致
+    // ThreadConfig带magicWord校验，申请线程前必须经NnopbaseThreadConfigInit初始化，否则hccl侧会报magicWord mismatch
+    static constexpr uint32_t NNOPBASE_THREAD_CONFIG_MAGIC_WORD = 0x0f0f0f2f;
+    static constexpr uint32_t NNOPBASE_THREAD_CONFIG_VERSION = 1U;
+    struct NnopbaseCommAbiHeader {
+        uint32_t version;
+        uint32_t magicWord;
+        uint32_t size;
+        uint32_t reserved;
+    };
+    struct NnopbaseThreadConfig {
+        NnopbaseCommAbiHeader header;
+        uint16_t notifyNumPerThread;
+        uint8_t reserved[14];
+    };
+    static bool NnopbaseThreadConfigInit(NnopbaseThreadConfig* config, uint32_t num);
+    using HcclThreadAcquireWithConfigFunc = HcclResult (*)(HcclComm, int32_t, uint32_t, int32_t,
+                                                           const NnopbaseThreadConfig*, uint64_t*);
+    using HcclEngineCtxCreateFunc = HcclResult (*)(HcclComm, const char*, int32_t, uint64_t, void**);
+    using HcclGetNotifyNumInThreadFunc = HcclResult (*)(HcclComm, uint64_t, int32_t, uint32_t*);
 
     IndvHcclWrapper(void);
     ~IndvHcclWrapper() override;
@@ -138,6 +174,15 @@ private:
     HcclRankGraphGetRankSizeByLayerFunc hcclRankGraphGetRankSizeByLayerHandle = nullptr;
     HcclRankGraphGetTopoTypeByLayerFunc hcclRankGraphGetTopoTypeByLayerHandle = nullptr;
     HcclGetHcclBufferFunc hcclGetHcclBufferHandle = nullptr;
+    HcclGetCommNameFunc hcclGetCommNameHandle = nullptr;
+    HcclEngineCtxGetFunc hcclEngineCtxGetHandle = nullptr;
+    HcclThreadResGetInfoFunc hcclThreadResGetInfoHandle = nullptr;
+    HcclThreadAcquireWithStreamFunc hcclThreadAcquireWithStreamHandle = nullptr;
+    HcommThreadNotifyRecordOnThreadFunc hcommThreadNotifyRecordOnThreadHandle = nullptr;
+    HcommThreadNotifyWaitOnThreadFunc hcommThreadNotifyWaitOnThreadHandle = nullptr;
+    HcclThreadAcquireWithConfigFunc hcclThreadAcquireWithConfigHandle = nullptr;
+    HcclEngineCtxCreateFunc hcclEngineCtxCreateHandle = nullptr;
+    HcclGetNotifyNumInThreadFunc hcclGetNotifyNumInThreadHandle = nullptr;
 };
 
 class NnopbaseSoLoader {

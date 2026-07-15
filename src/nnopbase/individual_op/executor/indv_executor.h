@@ -125,6 +125,7 @@ typedef struct {
     rtAicpuArgsEx_t aicpuArgs;
     rtFusionArgsEx_t fusionArgs;
     std::vector<aclrtStream> aicpuStream;
+    std::vector<uint64_t> aicpuThread;
     std::vector<std::pair<aclrtStream, aclrtStream>> aicpuNotify;
     aclOpExecutor *inUnContExe;
     aclOpExecutor *viewCopyExe;

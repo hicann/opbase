@@ -44,12 +44,14 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, aclrtStream cons
 {
     executor->contextAddr.clear();
     executor->aicpuStream.clear();
+    executor->aicpuThread.clear();
     executor->aicpuNotify.clear();
     for (HcclComm commHandle : executor->mc2OpCfg.hcomHandle) {
         void *contextAddr = nullptr;
         if (commHandle == nullptr) {
             executor->contextAddr.push_back(contextAddr);
             executor->aicpuStream.push_back(nullptr);
+            executor->aicpuThread.push_back(0U);
             executor->aicpuNotify.push_back(std::make_pair(nullptr, nullptr));
             continue;
         }
@@ -73,10 +75,19 @@ aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor *executor, aclrtStream cons
         aclrtStream aicpuStream = nullptr;
         aclrtStream notify[NNOPBASE_MC2_NOTIFY_COUNT] = {};
         if (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
-            NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclGetAicpuOpStreamAndNotify(
-                commHandle, &aicpuStream, NNOPBASE_MC2_NOTIFY_COUNT, notify));
+            if (nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch()) {
+                uint64_t threadHandle = 0U;
+                NNOPBASE_ASSERT_OK_RETVAL(
+                    nnopbase::IndvHcclWrapper::GetInstance().HcclGetUnfoldThread(commHandle, &threadHandle));
+                executor->aicpuThread.push_back(threadHandle);
+                NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclStreamAcquireWithThread(
+                    commHandle, threadHandle, &aicpuStream));
+            } else {
+                NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcclGetAicpuOpStreamAndNotify(
+                    commHandle, &aicpuStream, NNOPBASE_MC2_NOTIFY_COUNT, notify));
+                executor->aicpuNotify.push_back(std::make_pair(notify[0], notify[1]));
+            }
             executor->aicpuStream.push_back(aicpuStream);
-            executor->aicpuNotify.push_back(std::make_pair(notify[0], notify[1]));
         }
         OP_LOGI("Executor is %p, stream is %p, commHandle is %p, get contextAddr is %p, get aicpuStream is %p, notify[0] is %p, notify[1] is %p.",
             executor, stream, commHandle, contextAddr, aicpuStream, notify[0], notify[1]);
@@ -152,6 +163,30 @@ aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor *const executor, aclrtStream 
         }
     }
     OP_LOGI("Launch kernel by KFC mode successfully.");
+    return OK;
+}
+
+aclnnStatus NnopbaseLaunchKFCTaskA5(NnopbaseExecutor* const executor, aclrtStream stream)
+{
+    OP_LOGI("Launch kernel by A5 KFC mode.");
+
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddCapture(stream, executor->aicpuStream));
+    if (executor->aicpuStream[0] != nullptr) {
+        const uint64_t unfoldThread = executor->aicpuThread[0];
+        HcclComm comm = executor->mc2OpCfg.hcomHandle[0];
+        auto& wrapper = nnopbase::IndvHcclWrapper::GetInstance();
+
+        // unfold线程在获取展开流时已保存，主流线程由stream现取
+        uint64_t mainThread = 0U;
+        uint32_t notifyNum = 61U;
+        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcclThreadAcquireWithStream(comm, stream, notifyNum, &mainThread));
+
+        // 主流线程record进unfold线程的notify槽位，unfold线程等待自身槽位，等价于原跨流同步语义
+        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcommThreadNotifyWaitOnThread(unfoldThread, 0, UINT32_MAX));
+        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcommThreadNotifyRecordOnThread(mainThread, unfoldThread, 0));
+    }
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAicpuKernelLaunch(executor));
+    OP_LOGI("Launch kernel by A5 KFC mode successfully.");
     return OK;
 }
 
@@ -326,7 +361,11 @@ static aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor *const executor, aclrtS
 
 static aclnnStatus NnopbaseMC2KernelAicpu(NnopbaseExecutor *executor, aclrtStream stream)
 {
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseLaunchKFCTask(executor, stream));
+    if (nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch()) {
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseLaunchKFCTaskA5(executor, stream));
+    } else {
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseLaunchKFCTask(executor, stream));
+    }
     return NnopbaseExecutorKernelLaunch(executor, stream);
 }
 

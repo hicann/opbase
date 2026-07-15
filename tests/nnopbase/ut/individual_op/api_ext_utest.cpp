@@ -3217,10 +3217,7 @@ HcclResult HcclGetHcclBufferException(HcclComm comm, void** buffer, uint64_t* si
     return HCCL_E_PARA;
 }
 
-HcclResult HcclGetRankSizeException(HcclComm comm, uint32_t *rankSize)
-{
-    return HCCL_E_PARA;
-}
+HcclResult HcclGetRankSizeException(HcclComm comm, uint32_t* rankSize) { return HCCL_E_PARA; }
 
 HcclResult HcclGetCcuTaskInfoNormal(HcclComm comm, void* fusionArgs, void* ccuTaskGroup)
 {
@@ -3278,6 +3275,101 @@ HcclResult HcclGetRankSizeNormal(HcclComm comm, uint32_t *rankSize)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclGetCommNameNormal(HcclComm comm, char* commName)
+{
+    if (commName != nullptr) {
+        commName[0] = '\0';
+    }
+    return HCCL_SUCCESS;
+}
+
+static uint64_t g_hcclUnfoldThreadHandle = 1U;
+
+HcclResult HcclEngineCtxGetNormal(HcclComm comm, const char* ctxTag, int32_t engine, void** ctx, uint64_t* size)
+{
+    // 返回一个非空ctx，命中HcclGetUnfoldThread中"展开流线程已存在"的快速路径
+    if (ctx != nullptr) {
+        *ctx = &g_hcclUnfoldThreadHandle;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclThreadResGetInfoNormal(HcclComm comm, uint64_t thread, int32_t resType, uint32_t infoLen, void** info)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclThreadAcquireWithStreamNormal(HcclComm comm, int32_t engine, aclrtStream stream, uint32_t notifyNum,
+                                             uint64_t* thread)
+{
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommThreadNotifyRecordOnThreadNormal(uint64_t thread, uint64_t dstThread, uint32_t dstNotifyIdx) { return 0; }
+
+int32_t HcommThreadNotifyWaitOnThreadNormal(uint64_t thread, uint32_t notifyIdx, uint32_t timeOut) { return 0; }
+
+HcclResult HcclThreadAcquireWithConfigNormal(HcclComm comm, int32_t engine, uint32_t threadNum, int32_t type,
+                                             const void* config, uint64_t* threads)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclEngineCtxCreateNormal(HcclComm comm, const char* ctxTag, int32_t engine, uint64_t size, void** ctx)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetNotifyNumInThreadNormal(HcclComm comm, uint64_t thread, int32_t engine, uint32_t* notifyNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCommNameException(HcclComm comm, char* commName)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclEngineCtxGetException(HcclComm comm, const char* ctxTag, int32_t engine, void** ctx, uint64_t* size)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclEngineCtxCreateException(HcclComm comm, const char* ctxTag, int32_t engine, uint64_t size, void** ctx)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclThreadResGetInfoException(HcclComm comm, uint64_t thread, int32_t resType, uint32_t infoLen, void** info)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclThreadAcquireWithStreamException(HcclComm comm, int32_t engine, aclrtStream stream, uint32_t notifyNum, uint64_t* thread)
+{
+    return HCCL_E_PARA;
+}
+
+HcclResult HcclThreadAcquireWithConfigException(HcclComm comm, int32_t engine, uint32_t threadNum, int32_t type, const void* config, uint64_t* threads)
+{
+    return HCCL_E_PARA;
+}
+
+int32_t HcommThreadNotifyRecordOnThreadException(uint64_t thread, uint64_t dstThread, uint32_t dstNotifyIdx)
+{
+    return 1;
+}
+
+int32_t HcommThreadNotifyWaitOnThreadException(uint64_t thread, uint32_t notifyIdx, uint32_t timeOut)
+{
+    return 1;
+}
+
+HcclResult HcclGetNotifyNumInThreadException(HcclComm comm, uint64_t thread, int32_t engine, uint32_t* notifyNum)
+{
+    return HCCL_E_PARA;
+}
+
 class MmpaExceptionStub : public Adx::MmpaStub {
 public:
     void *mmDlsym(void *handle, const char *funcName)
@@ -3302,6 +3394,25 @@ public:
             return (void *)HcclGetHcclBufferException;
         } else if (strncmp(funcName, "HcclGetRankSize", strlen("HcclGetRankSize")) == 0) {
             return (void *)HcclGetRankSizeException;
+        } else if (strncmp(funcName, "HcclGetCommName", strlen("HcclGetCommName")) == 0) {
+            return (void *)HcclGetCommNameException;
+        } else if (strncmp(funcName, "HcclEngineCtxGet", strlen("HcclEngineCtxGet")) == 0) {
+            return (void *)HcclEngineCtxGetException;
+        } else if (strncmp(funcName, "HcclEngineCtxCreate", strlen("HcclEngineCtxCreate")) == 0) {
+            return (void *)HcclEngineCtxCreateException;
+        } else if (strncmp(funcName, "HcclThreadResGetInfo", strlen("HcclThreadResGetInfo")) == 0) {
+            return (void *)HcclThreadResGetInfoException;
+        } else if (strncmp(funcName, "HcclThreadAcquireWithStream", strlen("HcclThreadAcquireWithStream")) == 0) {
+            return (void *)HcclThreadAcquireWithStreamException;
+        } else if (strncmp(funcName, "HcclThreadAcquireWithConfig", strlen("HcclThreadAcquireWithConfig")) == 0) {
+            return (void *)HcclThreadAcquireWithConfigException;
+        } else if (strncmp(funcName, "HcommThreadNotifyRecordOnThread", strlen("HcommThreadNotifyRecordOnThread")) ==
+                   0) {
+            return (void *)HcommThreadNotifyRecordOnThreadException;
+        } else if (strncmp(funcName, "HcommThreadNotifyWaitOnThread", strlen("HcommThreadNotifyWaitOnThread")) == 0) {
+            return (void *)HcommThreadNotifyWaitOnThreadException;
+        } else if (strncmp(funcName, "HcclGetNotifyNumInThread", strlen("HcclGetNotifyNumInThread")) == 0) {
+            return (void *)HcclGetNotifyNumInThreadException;
         } else {
             return nullptr;
         }
@@ -3340,6 +3451,25 @@ class MmpaNormalStub : public Adx::MmpaStub {
             return (void *)HcclGetRankSizeNormal;
         } else if (strncmp(funcName, "HcclGetHcclBuffer", strlen("HcclGetHcclBuffer")) == 0) {
             return (void *)HcclGetHcclBufferNormal;
+        } else if (strncmp(funcName, "HcclGetCommName", strlen("HcclGetCommName")) == 0) {
+            return (void *)HcclGetCommNameNormal;
+        } else if (strncmp(funcName, "HcclEngineCtxGet", strlen("HcclEngineCtxGet")) == 0) {
+            return (void *)HcclEngineCtxGetNormal;
+        } else if (strncmp(funcName, "HcclEngineCtxCreate", strlen("HcclEngineCtxCreate")) == 0) {
+            return (void *)HcclEngineCtxCreateNormal;
+        } else if (strncmp(funcName, "HcclThreadResGetInfo", strlen("HcclThreadResGetInfo")) == 0) {
+            return (void *)HcclThreadResGetInfoNormal;
+        } else if (strncmp(funcName, "HcclThreadAcquireWithStream", strlen("HcclThreadAcquireWithStream")) == 0) {
+            return (void *)HcclThreadAcquireWithStreamNormal;
+        } else if (strncmp(funcName, "HcclThreadAcquireWithConfig", strlen("HcclThreadAcquireWithConfig")) == 0) {
+            return (void *)HcclThreadAcquireWithConfigNormal;
+        } else if (strncmp(funcName, "HcommThreadNotifyRecordOnThread", strlen("HcommThreadNotifyRecordOnThread")) ==
+                   0) {
+            return (void *)HcommThreadNotifyRecordOnThreadNormal;
+        } else if (strncmp(funcName, "HcommThreadNotifyWaitOnThread", strlen("HcommThreadNotifyWaitOnThread")) == 0) {
+            return (void *)HcommThreadNotifyWaitOnThreadNormal;
+        } else if (strncmp(funcName, "HcclGetNotifyNumInThread", strlen("HcclGetNotifyNumInThread")) == 0) {
+            return (void *)HcclGetNotifyNumInThreadNormal;
         } else {
             return nullptr;
         }
