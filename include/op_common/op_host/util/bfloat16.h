@@ -37,7 +37,7 @@ struct bfloat16 {
     // value; some TF kernels use T() as a zero value.
     bfloat16() : value(ZERO_VALUE) {}
 
-    bfloat16(float v) { value = round_to_bfloat16(v).value; }
+    bfloat16(float v) : value(round_to_bfloat16(v).value) {}
 
     // Following the convention of numpy, converting between complex and
     // float will lead to loss of imag value.

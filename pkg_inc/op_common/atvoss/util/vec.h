@@ -202,7 +202,11 @@ struct Cast : public ElemwiseUnaryOP<R, T> {
         AscendC::Cast(dst, src, static_cast<AscendC::RoundMode>(roundMode), count);
 #endif
     }
-    __aicore__ inline Cast(R& dst, T& scalar, int count) { dst = static_cast<R>(scalar); }
+    __aicore__ inline Cast(R& dst, T& scalar, int count)
+    {
+        (void)count;
+        dst = static_cast<R>(scalar);
+    }
 };
 
 template <class T>

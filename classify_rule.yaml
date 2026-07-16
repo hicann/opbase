@@ -59,15 +59,42 @@ HPTG2@ops-base:
       non_delivery: null
       open_source: null
 
+VC1@ops-base:
+  src:
+    release:
+      style:
+        - ops-base/pkg_inc/op_common/atvoss/elewise/
+        - ops-base/src/op_common/atvoss/elewise/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code: null
+      non_delivery: null
+      open_source: null
+
 VC2@ops-base:
   src:
     release:
       style:
-        - ops-base/pkg_inc/op_common/atvoss/
+        - ops-base/pkg_inc/op_common/atvoss/reduce/
+        - ops-base/pkg_inc/op_common/atvoss/util/
         - ops-base/pkg_inc/op_common/op_kernel/
         - ops-base/include/op_common/op_kernel/
-        - ops-base/src/op_common/atvoss/
+        - ops-base/src/op_common/atvoss/reduce/
         - ops-base/include/op_common/op_host/
+      opensource_style: null
+      kernel_style: null
+    unrelease:
+      test_code: null
+      non_delivery: null
+      open_source: null
+
+HPTG1@ops-base:
+  src:
+    release:
+      style:
+        - ops-base/pkg_inc/op_common/atvoss/broadcast/
+        - ops-base/src/op_common/atvoss/broadcast/
       opensource_style: null
       kernel_style: null
     unrelease:
