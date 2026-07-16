@@ -37,11 +37,9 @@ struct EleSclar<ElemOp, true> {
     using T = void;
 };
 
-template <
-    bool isContiguous, bool batchInvariant, uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount,
-    class OpDag>
-class ReduceSch
-{
+template <bool isContiguous, bool batchInvariant, uint32_t PatternID, uint32_t LoopARCount, uint32_t LoopInnerARCount,
+          class OpDag>
+class ReduceSch {
 public:
     constexpr static ReduceSchLoopInfo SchLoopInfo = GetSchLoopInfo<PatternID, LoopARCount, LoopInnerARCount>();
     using Pattern = typename __reducePattern::GetPattern<SchLoopInfo.patternID>::T;
@@ -260,10 +258,12 @@ public:
         } else if constexpr (isContiguous && batchInvariant) {
             groupTiling.ubFactorA = tiling_->resultBlock / sizeof(DataType);
             groupTiling.factorACntPerCore = Ops::Base::CeilDiv(groupTiling.factorATotalCnt,
-                                                           static_cast<uint64_t>(tiling_->realCoreNum));
-            using SchTypeR = ReduceSchAuxBatchInvariant<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+                                                               static_cast<uint64_t>(tiling_->realCoreNum));
+            using SchTypeR = ReduceSchAuxBatchInvariant<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
+                                                        OpDag>;
             SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
-            using SchTypeA = ReduceSchAuxBatchInvariant<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>, false, OpDag>;
+            using SchTypeA = ReduceSchAuxBatchInvariant<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>,
+                                                        false, OpDag>;
             SchTypeA groupOp(this, input_, output_, &workspace_, &groupTiling);
 
             op.Process(args...);
@@ -271,7 +271,8 @@ public:
             groupOp.Process(args...);
         } else {
             SetGroupTilingNonContiguous(groupTiling);
-            using SchTypeR = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true, OpDag>;
+            using SchTypeR = ReduceSchAuxNonContiguous<&SchLoopInfo, std::remove_reference_t<decltype(*this)>, true,
+                                                       OpDag>;
             SchTypeR op(this, input_, &workspace_, &workspace_, tiling_);
             using SchTypeA = ReduceSchAuxNonContiguous<&groupSchLoopInfo, std::remove_reference_t<decltype(*this)>,
                                                        false, OpDag>;
@@ -599,7 +600,11 @@ public:
     __aicore__ inline void ComputeAux(const LocalTensor<T>& src, S& shape, Args... args)
     {
         LocalTensor<T> dst = resBuf_.template ReinterpretCast<T>();
-        reduceOp_->template Compute<Pattern>(shape, dst, src);
+        if constexpr (isBatchInvariant) {
+            reduceOp_->template ComputeBatchInvariant<Pattern>(shape, dst, src);
+        } else {
+            reduceOp_->template Compute<Pattern>(shape, dst, src);
+        }
     }
 
     template <class Pattern, class T, class S>

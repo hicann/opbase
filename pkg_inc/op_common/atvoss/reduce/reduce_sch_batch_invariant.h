@@ -469,8 +469,8 @@ public:
         if (view.isBlockAligned != 1) {
             value = Ops::Base::CeilAlign(static_cast<uint64_t>(value), UB_BLOCK / sizeof(T));
         }
-        if (value <= AuxBase::VL_ELEMS) {
-            value = Ops::Base::CeilAlign(value, static_cast<int64_t>(AuxBase::VL_ELEMS)) + UB_BLOCK / sizeof(T);
+        if (value <= AuxBase::VL_ELEMS / 2) {
+            value = Ops::Base::CeilAlign(value, static_cast<int64_t>(AuxBase::VL_ELEMS / 2)) + UB_BLOCK / sizeof(T);
         }
         for (uint64_t i = 1; i < view.axisSize; i++) {
             if (!view.axis[i].isAxisA) {

@@ -197,9 +197,14 @@ public:
                 // normal R轴全载, 使用A轴索引开pingpong
                 pingPong = aIndex & 1;
                 idx = (aIndex / CONST2) & 1;
-            } else {
+            } else if constexpr (!ReduceSch::isBatchInvariant) {
                 pingPong = ((i - bisectionTail_) & 1);
                 idx = (preIdx + (i - bisectionTail_) / CONST2) & 1;
+            } else {
+                int32_t rCount = static_cast<int32_t>(bisectionPos_ - bisectionTail_);
+                int32_t linearIdx = aIndex * rCount + static_cast<int32_t>(i - bisectionTail_);
+                pingPong = linearIdx & 1;
+                idx = (linearIdx / CONST2) & 1;
             }
             PreReduce(view, shape, padParam, i, idx, pingPong);
             ReduceCompute(view, shape, padParam, idx, pingPong);

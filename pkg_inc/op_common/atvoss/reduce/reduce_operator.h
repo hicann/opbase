@@ -46,6 +46,8 @@ constexpr int32_t REDUCE_OP_SUM = 1;
 constexpr int32_t REDUCE_OP_PROD = 2;
 constexpr int32_t REDUCE_OP_MIN = 3;
 constexpr int32_t REDUCE_OP_MAX = 4;
+constexpr uint32_t U16_STRIDE = 65535;
+constexpr uint16_t REGULAR_FOLD_NUM = 2;
 
 template <typename T>
 struct Signed2Unsigned {
@@ -99,6 +101,40 @@ __aicore__ inline uint16_t CalcFolds(int32_t base)
     }
     return folds;
 }
+
+__aicore__ inline uint16_t FindClosestPowerOfTwo(uint32_t dimR)
+{
+    uint32_t r = 0;
+    while (dimR > 1) {
+        dimR >>= 1;
+        r++;
+    }
+    return r;
+}
+
+#if defined(__NPU_ARCH__) &&                                                                                      \
+        ((__NPU_ARCH__ == 3510) || (__NPU_ARCH__ == 5102) || (__NPU_ARCH__ == 3003) || (__NPU_ARCH__ == 3113)) || \
+    defined(__ASC_NPU_HOST__)
+__aicore__ constexpr inline int32_t CeilDivision(int32_t num1, int32_t num2)
+{
+    if (num2 == 0) {
+        return 0;
+    }
+#if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1 || !defined(SPLIT_CORE_VEC)
+    return (num1 + num2 - 1) / num2;
+#else
+    return get_repeat_ceiling(num1, num2);
+#endif
+}
+#else
+__aicore__ inline int32_t CeilDivision(int32_t num1, int32_t num2)
+{
+    if (num2 == 0) {
+        return 0;
+    }
+    return (num1 + num2 - 1) / num2;
+}
+#endif
 
 template <bool IsBlockPad, const AscendC::MicroAPI::RegTrait& Trait, typename InputT, typename T, class S, class P>
 __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, P& padding)
@@ -610,8 +646,8 @@ public:
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimR; // 1 / dimR
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimA; // 1 / dimA
             AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp0;
-            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp1; // idx0 % dimA * dimR
-            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp2; // idx0 % dimA
+            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp1;    // idx0 % dimA * dimR
+            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp2;    // idx0 % dimA
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregCastFloat;
             AscendC::MicroAPI::RegTensor<DIndex, Trait> idx0;
             AscendC::MicroAPI::RegTensor<DIndex, Trait> idx1;
@@ -1427,6 +1463,28 @@ public:
         AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::RA, true>(dst, src, srcShape, false);
     }
 
+    template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
+    __aicore__ inline void ComputeBatchInvariant(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
+                                                 const LocalTensor<PromteT>& src)
+    {
+        uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
+        AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
+    }
+
+    template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
+    __aicore__ inline void ComputeBatchInvariant(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
+                                                 const LocalTensor<PromteT>& src)
+    {
+        if constexpr (!IsB64<PromteT>()) {
+            ReduceRAImpl<PromteT, AscendC::MicroAPI::RegTraitNumOne>((__ubuf__ PromteT*)dst.GetPhyAddr(),
+                                                                     (__ubuf__ PromteT*)src.GetPhyAddr(),
+                                                                     shape.value[1], shape.value[0]);
+        } else {
+            uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
+            AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::RA, true>(dst, src, srcShape, false);
+        }
+    }
+
     template <class Pattern, class S>
     __aicore__ inline void UpdateCache(const LocalTensor<PromteT>& ubDst, const LocalTensor<PromteT>& ubSrc,
                                        int64_t index, S& shape)
@@ -1459,6 +1517,577 @@ public:
         U paddingValue = 0;
         return paddingValue;
     }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    static __simd_vf__ inline void ReduceRAOverVLVFImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint16_t dimA,
+                                                        uint32_t dimR, uint32_t mainR, uint32_t tailR,
+                                                        uint16_t loopANum, uint16_t loopANumFinal, uint16_t folds,
+                                                        uint16_t avgFolds, uint16_t foldZero, uint16_t foldOne,
+                                                        uint16_t foldTwo, uint16_t foldThree)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        uint16_t needInplaceAdd = tailR > 0 ? 1 : 0;
+        uint16_t noNeedCopy = mainR > 1 ? 0 : 1;
+        uint16_t mainTimes = folds / avgFolds;
+        // Process vlSize axisA each time
+        uint32_t inplaceA = dimA;
+        uint32_t processA = dimA;
+        uint32_t tailA = dimA;
+        uint32_t copyA = dimA;
+        uint32_t dtypeSize = sizeof(T);
+        uint32_t aTailOffset = mainR * dimA;
+
+        __ubuf__ T* addr;
+        addr = srcAddr;
+        AscendC::MicroAPI::RegTensor<T, Trait> vregMain;
+        AscendC::MicroAPI::RegTensor<T, Trait> vregTail;
+        AscendC::MicroAPI::MaskReg mask;
+        for (uint16_t i = 0; i < noNeedCopy; i++) {
+            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(inplaceA);
+                AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + loopA * vlSize + aTailOffset);
+                AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vlSize, vregMain, mask);
+            }
+            return;
+        }
+        // Process mainR and tailR
+        for (uint16_t i = 0; i < needInplaceAdd; i++) {
+            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(inplaceA);
+                for (uint16_t loopR = 0; loopR < static_cast<uint16_t>(tailR); loopR++) {
+                    AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopA * vlSize + loopR * dimA);
+                    AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + loopA * vlSize + aTailOffset + loopR * dimA);
+                    AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, mask);
+                    AscendC::MicroAPI::StoreAlign(addr + loopA * vlSize + loopR * dimA, vregMain, mask);
+                }
+            }
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+        }
+
+        // MainFolds need 16 register
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg0;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg1;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg2;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg3;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg4;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg5;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg6;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg7;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg8;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg9;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg10;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg11;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg12;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg13;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg14;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg15;
+
+        // Process main folds
+        uint16_t loopRNum = mainR;
+        for (uint16_t loopMain = 0; loopMain < mainTimes; loopMain++) {
+            loopRNum = loopRNum >> avgFolds;
+            uint32_t mainA = dimA;
+            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(mainA);
+                __ubuf__ T* tmpSrcAddr = addr + loopA * vlSize;
+                for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
+                    // L0
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg2, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg3, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg4, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg5, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg6, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg7, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg8, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg9, tmpSrcAddr,
+                                                                                                      dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg10,
+                                                                                                      tmpSrcAddr, dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg11,
+                                                                                                      tmpSrcAddr, dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg12,
+                                                                                                      tmpSrcAddr, dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg13,
+                                                                                                      tmpSrcAddr, dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg14,
+                                                                                                      tmpSrcAddr, dimA);
+                    AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg15,
+                                                                                                      tmpSrcAddr, dimA);
+                    // L1
+                    AscendC::MicroAPI::Add(vreg0, vreg0, vreg8, mask);
+                    AscendC::MicroAPI::Add(vreg1, vreg1, vreg9, mask);
+                    AscendC::MicroAPI::Add(vreg2, vreg2, vreg10, mask);
+                    AscendC::MicroAPI::Add(vreg3, vreg3, vreg11, mask);
+                    AscendC::MicroAPI::Add(vreg4, vreg4, vreg12, mask);
+                    AscendC::MicroAPI::Add(vreg5, vreg5, vreg13, mask);
+                    AscendC::MicroAPI::Add(vreg6, vreg6, vreg14, mask);
+                    AscendC::MicroAPI::Add(vreg7, vreg7, vreg15, mask);
+                    // L2
+                    AscendC::MicroAPI::Add(vreg0, vreg0, vreg4, mask);
+                    AscendC::MicroAPI::Add(vreg1, vreg1, vreg5, mask);
+                    AscendC::MicroAPI::Add(vreg2, vreg2, vreg6, mask);
+                    AscendC::MicroAPI::Add(vreg3, vreg3, vreg7, mask);
+                    // L3
+                    AscendC::MicroAPI::Add(vreg0, vreg0, vreg2, mask);
+                    AscendC::MicroAPI::Add(vreg1, vreg1, vreg3, mask);
+                    // L4
+                    AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+                    AscendC::MicroAPI::StoreAlign(addr + loopA * vlSize + loopR * dimA, vreg0, mask);
+                }
+            }
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+        }
+
+        // Process tail folds
+        for (uint16_t i = 0; i < foldOne; i++) {
+            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(tailA);
+                // L0
+                AscendC::MicroAPI::LoadAlign(vreg0, addr + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg1, addr + dimA + loopA * vlSize);
+                // L1
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vlSize, vreg0, mask);
+            }
+        }
+
+        for (uint16_t i = 0; i < foldTwo; i++) {
+            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(tailA);
+                // L0
+                AscendC::MicroAPI::LoadAlign(vreg0, addr + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg1, addr + dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg2, addr + 2 * dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg3, addr + 3 * dimA + loopA * vlSize);
+                // L1
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg2, mask);
+                AscendC::MicroAPI::Add(vreg1, vreg1, vreg3, mask);
+                // L2
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vlSize, vreg0, mask);
+            }
+        }
+
+        for (uint16_t i = 0; i < foldThree; i++) {
+            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(tailA);
+                // L0
+                AscendC::MicroAPI::LoadAlign(vreg0, addr + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg1, addr + dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg2, addr + 2 * dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg3, addr + 3 * dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg4, addr + 4 * dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg5, addr + 5 * dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg6, addr + 6 * dimA + loopA * vlSize);
+                AscendC::MicroAPI::LoadAlign(vreg7, addr + 7 * dimA + loopA * vlSize);
+                // L1
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg4, mask);
+                AscendC::MicroAPI::Add(vreg1, vreg1, vreg5, mask);
+                AscendC::MicroAPI::Add(vreg2, vreg2, vreg6, mask);
+                AscendC::MicroAPI::Add(vreg3, vreg3, vreg7, mask);
+                // L2
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg2, mask);
+                AscendC::MicroAPI::Add(vreg1, vreg1, vreg3, mask);
+                // L3
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vlSize, vreg0, mask);
+            }
+        }
+
+        // Reduce to 1
+        for (uint16_t i = 0; i < foldZero; i++) {
+            for (uint16_t loopA = 0; loopA < loopANumFinal; loopA++) {
+                mask = AscendC::MicroAPI::UpdateMask<T, Trait>(processA);
+                AscendC::MicroAPI::LoadAlign(vreg0, addr + loopA * vlSize);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vlSize, vreg0, mask);
+            }
+        }
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    __aicore__ inline void ReduceRAOverVLImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint16_t dimA, uint32_t dimR)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        uint32_t mainR = MainR(dimR, false, vlSize);
+        uint32_t tailR = dimR - mainR;
+
+        uint16_t loopANum = Ops::Base::CeilDiv(dimA, vlSize);
+        // move by fold zero only if R axis is 1
+        uint16_t loopANumFinal = loopANum;
+        if (mainR == 1) {
+            ReduceCopyOutImpl<T>(dstAddr, srcAddr, dimA);
+            return;
+        }
+
+        uint16_t folds = CalcFolds(mainR);
+        uint16_t avgFolds = BASE_FOLD;
+        uint16_t tailFolds = folds % avgFolds;
+        uint16_t foldZero = (tailFolds == 0) ? 1 : 0;
+        uint16_t foldOne = (tailFolds == FOLD1) ? 1 : 0;
+        uint16_t foldTwo = (tailFolds == FOLD2) ? 1 : 0;
+        uint16_t foldThree = (tailFolds == FOLD3) ? 1 : 0;
+
+        ReduceRAOverVLVFImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR, mainR, tailR, loopANum, loopANumFinal, folds,
+                                       avgFolds, foldZero, foldOne, foldTwo, foldThree);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    static __simd_vf__ inline void ReduceRALessThanVLDimR1VFImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr,
+                                                                 uint32_t dimA, uint32_t dimR)
+    {
+        AscendC::MicroAPI::RegTensor<T, Trait> vregTmp;
+        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<T, Trait>(dimA);
+        AscendC::MicroAPI::LoadAlign(vregTmp, srcAddr);
+        AscendC::MicroAPI::StoreAlign(dstAddr, vregTmp, mask);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    static __simd_vf__ inline void ReduceRALessThanVLVFImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA,
+                                                            uint32_t dimR, uint32_t mainR, uint32_t tailR,
+                                                            uint16_t folds, uint16_t avgFolds, uint16_t foldZero,
+                                                            uint16_t foldOne, uint16_t foldTwo, uint16_t foldThree)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        uint16_t needInplaceAdd = tailR > 0 ? 1 : 0;
+        uint16_t mainTimes = folds / avgFolds;
+        // Process vlSize axisA each time
+        uint32_t processA = dimA;
+        uint32_t dtypeSize = sizeof(T);
+        uint32_t aTailOffset = mainR * dimA;
+        uint32_t copyNum = (mainR - tailR) * dimA;
+        uint32_t tailNum = tailR * dimA;
+        uint16_t loopRNum = mainR;
+
+        __ubuf__ T* addr;
+        AscendC::MicroAPI::MaskReg mask;
+        mask = AscendC::MicroAPI::UpdateMask<T, Trait>(processA);
+        AscendC::MicroAPI::MaskReg counterMask;
+        addr = srcAddr;
+
+        AscendC::MicroAPI::RegTensor<T, Trait> vregMain;
+        AscendC::MicroAPI::RegTensor<T, Trait> vregTail;
+        // Process mainR and tailR
+        for (uint16_t i = 0; i < needInplaceAdd; i++) {
+            uint16_t tailRepeat = CeilDivision(tailNum, vlSize);
+            for (uint16_t loopTail = 0; loopTail < tailRepeat; loopTail++) {
+                counterMask = AscendC::MicroAPI::UpdateMask<T, Trait>(tailNum);
+                AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopTail * vlSize);
+                AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + aTailOffset + loopTail * vlSize);
+                AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, counterMask);
+                AscendC::MicroAPI::StoreAlign(addr + loopTail * vlSize, vregMain, counterMask);
+            }
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+        }
+
+        // MainFolds need 16 register
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg0;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg1;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg2;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg3;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg4;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg5;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg6;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg7;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg8;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg9;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg10;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg11;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg12;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg13;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg14;
+        AscendC::MicroAPI::RegTensor<T, Trait> vreg15;
+
+        // Process main folds
+        for (uint16_t loopMain = 0; loopMain < mainTimes; loopMain++) {
+            loopRNum = loopRNum >> avgFolds;
+            auto tmpSrcAddr = addr;
+            for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
+                // L0
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg2, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg3, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg4, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg5, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg6, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg7, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg8, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg9, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg10, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg11, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg12, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg13, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg14, tmpSrcAddr,
+                                                                                                  dimA);
+                AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg15, tmpSrcAddr,
+                                                                                                  dimA);
+                // L1
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg8, mask);
+                AscendC::MicroAPI::Add(vreg1, vreg1, vreg9, mask);
+                AscendC::MicroAPI::Add(vreg2, vreg2, vreg10, mask);
+                AscendC::MicroAPI::Add(vreg3, vreg3, vreg11, mask);
+                AscendC::MicroAPI::Add(vreg4, vreg4, vreg12, mask);
+                AscendC::MicroAPI::Add(vreg5, vreg5, vreg13, mask);
+                AscendC::MicroAPI::Add(vreg6, vreg6, vreg14, mask);
+                AscendC::MicroAPI::Add(vreg7, vreg7, vreg15, mask);
+                // L2
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg4, mask);
+                AscendC::MicroAPI::Add(vreg1, vreg1, vreg5, mask);
+                AscendC::MicroAPI::Add(vreg2, vreg2, vreg6, mask);
+                AscendC::MicroAPI::Add(vreg3, vreg3, vreg7, mask);
+                // L3
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg2, mask);
+                AscendC::MicroAPI::Add(vreg1, vreg1, vreg3, mask);
+                // L4
+                AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+                AscendC::MicroAPI::StoreAlign(addr + loopR * dimA, vreg0, mask);
+            }
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+        }
+
+        // Process tail folds
+        for (uint16_t i = 0; i < foldOne; i++) {
+            // L0
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, addr, dimA);
+            // L1
+            AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+            AscendC::MicroAPI::StoreAlign(dstAddr, vreg0, mask);
+        }
+
+        for (uint16_t i = 0; i < foldTwo; i++) {
+            // L0
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg2, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg3, addr, dimA);
+            // L1
+            AscendC::MicroAPI::Add(vreg0, vreg0, vreg2, mask);
+            AscendC::MicroAPI::Add(vreg1, vreg1, vreg3, mask);
+            // L2
+            AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+            AscendC::MicroAPI::StoreAlign(dstAddr, vreg0, mask);
+        }
+
+        for (uint16_t i = 0; i < foldThree; i++) {
+            // L0
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg0, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg1, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg2, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg3, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg4, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg5, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg6, addr, dimA);
+            AscendC::MicroAPI::LoadAlign<T, AscendC::MicroAPI::PostLiteral::POST_MODE_UPDATE>(vreg7, addr, dimA);
+            // L1
+            AscendC::MicroAPI::Add(vreg0, vreg0, vreg4, mask);
+            AscendC::MicroAPI::Add(vreg1, vreg1, vreg5, mask);
+            AscendC::MicroAPI::Add(vreg2, vreg2, vreg6, mask);
+            AscendC::MicroAPI::Add(vreg3, vreg3, vreg7, mask);
+            // L2
+            AscendC::MicroAPI::Add(vreg0, vreg0, vreg2, mask);
+            AscendC::MicroAPI::Add(vreg1, vreg1, vreg3, mask);
+            // L3
+            AscendC::MicroAPI::Add(vreg0, vreg0, vreg1, mask);
+            AscendC::MicroAPI::StoreAlign(dstAddr, vreg0, mask);
+        }
+
+        // Reduce to 1
+        for (uint16_t i = 0; i < foldZero; i++) {
+            AscendC::MicroAPI::LoadAlign(vreg0, addr);
+            AscendC::MicroAPI::StoreAlign(dstAddr, vreg0, mask);
+        }
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    __aicore__ inline void ReduceRALessThanVLImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA,
+                                                  uint32_t dimR)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        uint32_t mainR = MainR(dimR, false, vlSize);
+        uint32_t tailR = dimR - mainR;
+        if (dimR == 1) {
+            ReduceRALessThanVLDimR1VFImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR);
+            return;
+        }
+
+        uint16_t folds = CalcFolds(mainR);
+        uint16_t avgFolds = BASE_FOLD;
+        uint16_t tailFolds = folds % avgFolds;
+        uint16_t foldZero = (tailFolds == 0) ? 1 : 0;
+        uint16_t foldOne = (tailFolds == FOLD1) ? 1 : 0;
+        uint16_t foldTwo = (tailFolds == FOLD2) ? 1 : 0;
+        uint16_t foldThree = (tailFolds == FOLD3) ? 1 : 0;
+
+        ReduceRALessThanVLVFImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR, mainR, tailR, folds, avgFolds, foldZero,
+                                           foldOne, foldTwo, foldThree);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    static __simd_vf__ inline void ReduceRAConcatDimR1VFImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA,
+                                                             uint32_t dimR)
+    {
+        AscendC::MicroAPI::RegTensor<T, Trait> vregTmp;
+        AscendC::MicroAPI::MaskReg mask = AscendC::MicroAPI::UpdateMask<T, Trait>(dimA);
+        AscendC::MicroAPI::LoadAlign(vregTmp, srcAddr);
+        AscendC::MicroAPI::StoreAlign(dstAddr, vregTmp, mask);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    static __simd_vf__ inline void ReduceRAConcatDimR2VFImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA,
+                                                             uint32_t dimR)
+    {
+        AscendC::MicroAPI::RegTensor<T, Trait> vregMain;
+        AscendC::MicroAPI::RegTensor<T, Trait> vregTail;
+        uint32_t maskScalar = dimA;
+        AscendC::MicroAPI::MaskReg counterMask = AscendC::MicroAPI::UpdateMask<T, Trait>(maskScalar);
+        AscendC::MicroAPI::LoadAlign(vregMain, srcAddr);
+        AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + dimA);
+        AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, counterMask);
+        AscendC::MicroAPI::StoreAlign(dstAddr, vregMain, counterMask);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    static __simd_vf__ inline void ReduceRAConcatVFImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA,
+                                                        uint32_t dimR, uint16_t foldTime, uint32_t mainR,
+                                                        uint32_t tailR)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        uint16_t needInplaceAdd = tailR > 0 ? 1 : 0;
+        // Process vlSize axisA each time
+        uint32_t processA = dimA;
+        uint32_t dtypeSize = sizeof(T);
+        uint32_t aTailOffset = mainR * dimA;
+        // do mainR-tailR copy, do tailR binary op
+        uint32_t copyNum = (mainR - tailR) * dimA;
+        uint32_t tailNum = tailR * dimA;
+        uint16_t loopDataNum = mainR * dimA;
+
+        __ubuf__ T* addr;
+        AscendC::MicroAPI::MaskReg fullMask;
+        fullMask = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
+        AscendC::MicroAPI::MaskReg counterMask;
+        addr = srcAddr;
+
+        AscendC::MicroAPI::RegTensor<T, Trait> vregMain;
+        AscendC::MicroAPI::RegTensor<T, Trait> vregTail;
+        // Process mainR and tailR
+        for (uint16_t i = 0; i < needInplaceAdd; i++) {
+            uint16_t tailRepeat = CeilDivision(tailNum, vlSize);
+            for (uint16_t loopTail = 0; loopTail < tailRepeat; loopTail++) {
+                counterMask = AscendC::MicroAPI::UpdateMask<T, Trait>(tailNum);
+                AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopTail * vlSize);
+                AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + aTailOffset + loopTail * vlSize);
+                AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, counterMask);
+                AscendC::MicroAPI::StoreAlign(addr + loopTail * vlSize, vregMain, counterMask);
+            }
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+        }
+
+        for (uint16_t fold = 0; fold < foldTime; fold++) {
+            mainR = mainR >> 1;
+            uint32_t foldDataNum = mainR * dimA;
+            uint16_t foldRepeat = CeilDivision(foldDataNum, vlSize);
+            for (uint16_t i = 0; i < foldRepeat; i++) {
+                AscendC::MicroAPI::LoadAlign(vregMain, addr + i * vlSize);
+                AscendC::MicroAPI::LoadAlign(vregTail, addr + foldDataNum + i * vlSize);
+                AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, fullMask);
+                AscendC::MicroAPI::StoreAlign(addr + i * vlSize, vregMain, fullMask);
+            }
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+        }
+
+        // final fold is less than vl, no repeat
+        uint32_t maskScalar = dimA;
+        counterMask = AscendC::MicroAPI::UpdateMask<T, Trait>(maskScalar);
+        AscendC::MicroAPI::LoadAlign(vregMain, addr);
+        AscendC::MicroAPI::LoadAlign(vregTail, addr + dimA);
+        AscendC::MicroAPI::Add(vregMain, vregMain, vregTail, counterMask);
+        AscendC::MicroAPI::StoreAlign(dstAddr, vregMain, counterMask);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    __aicore__ inline void ReduceRAConcatImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA, uint32_t dimR)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        uint16_t foldTime = FindClosestPowerOfTwo(dimR);
+        uint32_t mainR = 1 << foldTime;
+        // last fold not in main loop, main R == 1 will not enter main loop
+        foldTime = foldTime - 1;
+        uint32_t tailR = dimR - mainR;
+
+        if (dimR == 1) {
+            ReduceRAConcatDimR1VFImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR);
+            return;
+        } else if (dimR == 2) {
+            ReduceRAConcatDimR2VFImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR);
+            return;
+        }
+
+        ReduceRAConcatVFImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR, foldTime, mainR, tailR);
+    }
+
+    template <class T, const AscendC::MicroAPI::RegTrait& Trait>
+    __aicore__ inline void ReduceRAImpl(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t dimA, uint32_t dimR)
+    {
+        constexpr uint16_t vlSize = VL_LEN / sizeof(T);
+        if (dimA <= vlSize / REGULAR_FOLD_NUM || dimA > U16_STRIDE) {
+            ReduceRAConcatImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR);
+        } else if (dimA <= vlSize) {
+            ReduceRALessThanVLImpl<T, Trait>(dstAddr, srcAddr, dimA, dimR);
+        } else {
+            ReduceRAOverVLImpl<T, Trait>(dstAddr, srcAddr, static_cast<uint16_t>(dimA), dimR);
+        }
+    }
+
+    template <class T>
+    static __simd_vf__ inline void ReduceCopyOutImpl(__ubuf__ T* dst, __ubuf__ T* src, const uint32_t calCount)
+    {
+        uint16_t repeatElm = VL_LEN;
+        uint32_t sreg = calCount * sizeof(T);
+        uint16_t repeatTime = CeilDivision(sreg, repeatElm);
+        AscendC::MicroAPI::MaskReg preg;
+        AscendC::MicroAPI::RegTensor<uint8_t> srcReg;
+        for (uint16_t i = 0; i < repeatTime; ++i) {
+            preg = AscendC::MicroAPI::UpdateMask<uint8_t>(sreg);
+            AscendC::MicroAPI::LoadAlign(srcReg, (__ubuf__ uint8_t*)src + i * repeatElm);
+            AscendC::MicroAPI::StoreAlign((__ubuf__ uint8_t*)dst + i * repeatElm, srcReg, preg);
+        }
+    }
+
 #endif
 };
 
