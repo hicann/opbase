@@ -2455,10 +2455,9 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
     // SOC version will be restored by SocVersionGuard destructor
     ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
-    const size_t kfcArgsFmtOffset = ((NnopbaseExecutor*)executor)->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset *
-                                    sizeof(void*);
+    // END类型默认走A5 AICPU路径，hcclDesc写在aicpuArgs.args起始处（见NnopbaseCopyMC2ParamDesc）
     NnopbaseHcclCommParamDesc* desc = reinterpret_cast<NnopbaseHcclCommParamDesc*>(
-        (NnopbaseUChar*)(((NnopbaseExecutor*)executor)->fusionArgs.args) + kfcArgsFmtOffset);
+        ((NnopbaseExecutor*)executor)->aicpuArgs.args);
     ASSERT_EQ(desc->groupNum, 1U);
     ASSERT_EQ(desc->version, 1U);
     ASSERT_EQ(desc->hasFfts, 0U);
@@ -2561,10 +2560,9 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
     // SOC version will be restored by SocVersionGuard destructor
     ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
-    const size_t kfcArgsFmtOffset = ((NnopbaseExecutor*)executor)->fusionArgs.aicpuArgs[0].kfcArgsFmtOffset *
-                                    sizeof(void*);
+    // END类型默认走A5 AICPU路径，hcclDesc写在aicpuArgs.args起始处（见NnopbaseCopyMC2ParamDesc）
     NnopbaseHcclCommParamDesc* desc = reinterpret_cast<NnopbaseHcclCommParamDesc*>(
-        (NnopbaseUChar*)(((NnopbaseExecutor*)executor)->fusionArgs.args) + kfcArgsFmtOffset);
+        ((NnopbaseExecutor*)executor)->aicpuArgs.args);
     ASSERT_EQ(desc->groupNum, 1U);
     ASSERT_EQ(desc->version, 1U);
     ASSERT_EQ(desc->hasFfts, 0U);
