@@ -748,16 +748,17 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor* executor, NnopbaseBinInfo* 
         return OK;
     }
 
-    if (binInfo->bin == nullptr && NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen) != OK) {
-        std::string errMsg = "1.The file does not exist. 2.The file is damaged. 3.The user does not have the read permission";
+    if (binInfo->bin == nullptr &&
+        NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen) != OK) {
+        std::string
+            errMsg = "1.The file does not exist. 2.The file is damaged. 3.The user does not have the read permission";
         OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binInfo->binPath.c_str(), errMsg.c_str());
         return ACLNN_ERR_INNER_OP_FILE_INVALID;
     }
 
     const std::string socVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseReadKernelJsonFile(binInfo, executor->collector->oppPath, socVersion));
-    if (executor->mc2OpCfg.isMc2 &&
-        nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
+    if (executor->mc2OpCfg.isMc2 && nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch()) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseMC2DynamicKernelRegister(executor->collector->useCoreTypeMagic, binInfo));
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAclrtBinaryLoad(executor->collector->useCoreTypeMagic, binInfo));
     } else {
@@ -986,8 +987,9 @@ aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor* executor, NnopbaseParamChe
     if (IsParamMatchSupportInfo(executor, supportList, mode)) {
         return OK;
     } else {
-        std::string errMsg = "The dtype or format of the actual input or output parameter of the operator "
-            "is inconsistent with that defined in the operator prototype OpDef, details of parameter are ";
+        std::string
+            errMsg = "The dtype or format of the actual input or output parameter of the operator "
+                     "is inconsistent with that defined in the operator prototype OpDef, details of parameter are ";
         NnopbaseAddTensorsInfo(executor->args->inputs, errMsg);
         errMsg += ", ";
         NnopbaseAddTensorsInfo(executor->args->outputs, errMsg);
