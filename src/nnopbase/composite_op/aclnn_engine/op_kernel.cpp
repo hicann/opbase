@@ -562,10 +562,9 @@ aclnnStatus OpKernelBin::InitTilingParseCtx()
     ThreadCoreNum key(GetThreadLocalContext().opConfigInfo_.aicNum_, GetThreadLocalContext().opConfigInfo_.aivNum_);
     auto f = [&ret, &key, this]() {
         auto p = std::make_unique<TilingParseCtxHolder>();
-        if (p->BuildTilingParseCtx(
-                opType_, OpRunContextMgr::GetOpTilingFuncs(opType_), binJson_.GetVar(), SocContext::GetPlatformInfo(),
-                aclnnOpInfoRecord::OpCompilerOption(keyAndDetail_.implMode, keyAndDetail_.deterministicFlag),
-                aclnnOpInfoRecord::OpKernelInfo(binPath_, static_cast<int8_t>(binType_))) != OK) {
+        if (p->BuildTilingParseCtx(opType_, OpRunContextMgr::GetOpTilingFuncs(opType_), binJson_.GetVar(),
+                                   SocContext::GetPlatformInfo(), keyAndDetail_.implMode,
+                                   aclnnOpInfoRecord::OpKernelInfo(binPath_, static_cast<int8_t>(binType_))) != OK) {
             ret = ACLNN_ERR_RUNTIME_ERROR;
             return;
         }

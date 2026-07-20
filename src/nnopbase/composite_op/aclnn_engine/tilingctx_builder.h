@@ -25,6 +25,7 @@
 #include "opdev/op_dfx.h"
 #include "kernel_context_holder.h"
 #include "tiling_parse_ctx_holder.h"
+#include "thread_local_context.h"
 #include "op_dfx_internal.h"
 
 namespace op {
@@ -133,12 +134,14 @@ public:
     {
         gert::TilingContext* ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);
         if (op::internal::GetOpProfilingRecordArgFlag()) {
-            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s.",
-                    tilingParseCtx->GetCompileOptions().deterministic,
-                    tilingParseCtx->GetCompileOptions().impl_mode.c_str(), tilingParseCtx->GetOpKernelInfo()->bin_type,
-                    tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
-            aclnnOpInfoRecord::OpInfoSerialize(ctx, tilingParseCtx->GetCompileOptions(),
-                                               tilingParseCtx->GetOpKernelInfo());
+            auto opCompilerOpt = aclnnOpInfoRecord::OpCompilerOption(
+                tilingParseCtx->GetOpImplModeStr(), GetThreadLocalContext().opConfigInfo_.deterministicLevel_);
+            OP_LOGI("Call OpInfoSerialize, deterministic level %d, impl mode %s. kernel info %d %s.",
+                    opCompilerOpt.deterministic, opCompilerOpt.impl_mode.c_str(),
+                    tilingParseCtx->GetOpKernelInfo()->bin_type, tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
+            OP_CHECK_NO_RETURN(
+                aclnnOpInfoRecord::OpInfoSerialize(ctx, opCompilerOpt, tilingParseCtx->GetOpKernelInfo()) == 0,
+                OP_LOGW("OpInfoSerialize return failed!"));
         }
         return ctx;
     };

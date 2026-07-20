@@ -38,7 +38,7 @@ static const std::string NNOPBASE_MEMSET_OP_NAME = "MemSet";
 
 typedef struct {
     DList head;
-    bool isVist;
+    bool isVisit;
 } BinInfoBucket;
 
 typedef struct {
@@ -94,6 +94,11 @@ struct NnopbaseCoreNum {
     uint32_t aivNum = 0U;
 };
 
+struct StaticKernelPlatformInfo {
+    NnopbaseCoreNum coreNum;
+    int8_t deterministicLevel = -1;
+};
+
 struct StaticKernelJsonRunInfo {
     uint32_t aicpuNumBlocks = 0U;
     uint32_t numBlocks = 0U;
@@ -108,8 +113,8 @@ struct StaticKernelJsonRunInfo {
 };
 
 struct ExtraKernelDesc {
-    std::unique_ptr<NnopbaseCoreNum> coreNum = nullptr;
-    std::unique_ptr<StaticKernelJsonRunInfo> runInfo = nullptr;
+    std::unique_ptr<StaticKernelPlatformInfo> platformInfo = nullptr; // 编译静态kernel时的平台描述
+    std::unique_ptr<StaticKernelJsonRunInfo> runInfo = nullptr;       // 静态kernel的运行数据描述
 };
 
 typedef struct {

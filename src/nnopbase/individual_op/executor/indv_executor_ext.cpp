@@ -36,12 +36,13 @@ void PrintTime(const NnopbaseExecutor* const executor, const char* const info, c
 {
     unsigned long time = 0U;
     if (startIndex < NnopbaseTimeIdx::kNum && endIndex < NnopbaseTimeIdx::kNum &&
-        executor->timeStamp.tp[endIndex].tv_nsec != 0) {
-        if (executor->timeStamp.tp[startIndex].tv_sec != executor->timeStamp.tp[endIndex].tv_sec) {
+        executor->dfx.timeStamp.tp[endIndex].tv_nsec != 0) {
+        if (executor->dfx.timeStamp.tp[startIndex].tv_sec != executor->dfx.timeStamp.tp[endIndex].tv_sec) {
             // 1000000000 for time stamp
-            time = executor->timeStamp.tp[endIndex].tv_nsec + 1000000000 - executor->timeStamp.tp[startIndex].tv_nsec;
+            time = executor->dfx.timeStamp.tp[endIndex].tv_nsec + 1000000000 -
+                   executor->dfx.timeStamp.tp[startIndex].tv_nsec;
         } else {
-            time = executor->timeStamp.tp[endIndex].tv_nsec - executor->timeStamp.tp[startIndex].tv_nsec;
+            time = executor->dfx.timeStamp.tp[endIndex].tv_nsec - executor->dfx.timeStamp.tp[startIndex].tv_nsec;
         }
     }
     OP_EVENT("Nnopbase time %s : %f us", info, time / 1000.0); // 1000.0 for time us
@@ -75,26 +76,22 @@ void NnopbaseExecutorClearAttrs(NnopbaseAttrs* attrs)
 
 void NnopbaseExecutorReset(NnopbaseExecutor* executor)
 {
+    executor->dfx.Reset();
     executor->isOutEmpty = false;
     executor->workspaces.num = 0U;
     executor->hasTiling = true;
     executor->ownArgs.enableCache = true;
     executor->userHandle = nullptr;
-    executor->mc2OpCfg.isMc2 = false;
-    executor->contextAddr.clear();
-    executor->mc2OpCfg.hcomHandle.clear();
+    executor->mc2.ClearRuntimeState();
     executor->inUnContExe = nullptr;
     executor->viewCopyExe = nullptr;
     executor->inUncontWsSize = 0U;
-    executor->aicpuStream.clear();
-    executor->aicpuNotify.clear();
     executor->repeatFlag = false;
     executor->hasMemset = false;
     executor->formatCheckOption = kNnopbaseDefault;
-    executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_END;
     executor->isCachedArgs = false;
     executor->matchArgsV2 = false;
-    executor->deterministic = false;
+    executor->deterministicLevel = 0U;
 }
 } // namespace
 
@@ -280,11 +277,7 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor* executor, const NnopbaseOpInf
 
     executor->hasMemset = false;
     executor->args = nullptr;
-    executor->tilingKey = nullptr;
-    executor->numBlocks = nullptr;
-    executor->needAtomic = nullptr;
-    executor->scheMode = nullptr;
-    executor->dynUbufSize = nullptr;
+    executor->tiling.Init();
     executor->collector = nullptr;
     executor->workspaces.num = 0U;
     executor->workspaces.length = 0U;
@@ -294,26 +287,18 @@ aclnnStatus NnopbaseExecutorInit(NnopbaseExecutor* executor, const NnopbaseOpInf
     executor->binInfoKey.bufLen = 0U;
     executor->hasTiling = true;
     executor->isWork = false;
-    executor->tilingId = nullptr;
-    executor->supportList = nullptr;
-    executor->socSupportList = nullptr;
-    executor->socSupportListLen = 0U;
+    executor->dfx.Init();
+    executor->opCompatibility = {};
     executor->opTypeId = 0U;
     executor->poolIndex = -1;
     executor->userHandle = nullptr;
     executor->isOutEmpty = false;
-    executor->mc2OpCfg.isMc2 = false;
+    executor->mc2.Reset();
     executor->inUnContExe = nullptr;
     executor->viewCopyExe = nullptr;
     executor->inUncontWsSize = 0U;
-    executor->itemId = 0U;
-    executor->aicpuItemId = 0U;
-    executor->memsetItemId = 0U;
-    executor->aicpuStream.clear();
-    executor->aicpuNotify.clear();
     executor->repeatFlag = false;
     executor->formatCheckOption = kNnopbaseDefault;
-    executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_END;
     (void)NnopbaseTilingContextInit(executor);
     return OK;
 }
@@ -350,12 +335,10 @@ void NnopbaseExecutorDeInit(NnopbaseExecutor* executor)
 {
     NnopbaseExecutorDeInitAttrsCaches(executor);
     NnopbaseTilingContextDeInit(executor);
-    if (executor->socSupportListOwned) {
-        delete[] executor->socSupportList;
+    if (executor->opCompatibility.ownsSupportedSocList) {
+        delete[] executor->opCompatibility.supportedSocList;
     }
-    executor->socSupportList = nullptr;
-    executor->socSupportListLen = 0U;
-    executor->socSupportListOwned = false;
+    executor->opCompatibility = {};
     FREE(executor->opType);
 }
 
@@ -393,20 +376,20 @@ void NnopbaseExecutorFixCache(NnopbaseExecutor* executor)
 // NnopbaseInit内部调用，调用前已保证设置锁
 aclnnStatus NnopbaseExecutorSetGlobalConfig()
 {
-    g_nnopbaseSysCfgParams.enableTimeStamp = nnopbase::EnableNnopbaseTimeStamp(); // 是否开启性能打点
-    g_nnopbaseSysCfgParams.enableArgsCache = nnopbase::EnableNnopbaseArgsCache(); // 是否开启args(tiling)缓存
-    g_nnopbaseSysCfgParams.deterministic = nnopbase::GetGlobalDeterministic();    // 确定性设置
+    g_nnopbaseSysCfgParams.enableTimeStamp = nnopbase::EnableNnopbaseTimeStamp();   // 是否开启性能打点
+    g_nnopbaseSysCfgParams.enableArgsCache = nnopbase::EnableNnopbaseArgsCache();   // 是否开启args(tiling)缓存
+    g_nnopbaseSysCfgParams.deterministicLevel = nnopbase::GetGlobalDeterministic(); // 确定性设置
     g_nnopbaseSysCfgParams.implMode = nnopbase::NnopbaseGetImplMode(
-        g_nnopbaseSysCfgParams.precision); // 高性能/高精度模式设置
+        g_nnopbaseSysCfgParams.precision);                                          // 高性能/高精度模式设置
     NNOPBASE_ASSERT_OK_RETVAL(
-        nnopbase::NnopbaseSetOverFlowAddr(g_nnopbaseSysCfgParams.overflowAddr)); // 设置溢出检测地址
+        nnopbase::NnopbaseSetOverFlowAddr(g_nnopbaseSysCfgParams.overflowAddr));    // 设置溢出检测地址
     g_nnopbaseSysCfgParams.enableDebugKernel = nnopbase::GetDebugKernel();
 
-    OP_LOGD("Set global config timeStamp enable = %d, argsCache enable = %d, deterministic = %d,"
+    OP_LOGD("Set global config timeStamp enable = %d, argsCache enable = %d, deterministicLevel = %d,"
             "precision = %d, overflowAddr = %p, debugKernel = %d.",
             g_nnopbaseSysCfgParams.enableTimeStamp, g_nnopbaseSysCfgParams.enableArgsCache,
-            g_nnopbaseSysCfgParams.deterministic, g_nnopbaseSysCfgParams.precision, g_nnopbaseSysCfgParams.overflowAddr,
-            g_nnopbaseSysCfgParams.enableDebugKernel);
+            g_nnopbaseSysCfgParams.deterministicLevel, g_nnopbaseSysCfgParams.precision,
+            g_nnopbaseSysCfgParams.overflowAddr, g_nnopbaseSysCfgParams.enableDebugKernel);
     return OK;
 }
 
@@ -499,7 +482,7 @@ aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor* executor)
 {
     executor->hasMemset = executor->args->binInfo->isStaticShape ? true : executor->args->tilingInfo.needAtomic;
     if (executor->hasMemset) {
-        // 构造tilingContext
+        // 构造 memset tiling 上下文
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseBuildMemsetTilingContext(executor));
         NNOPBASE_ASSERT_OK_RETVAL(NnopnbaseMemsetTiling(executor));
     }
@@ -509,7 +492,7 @@ aclnnStatus NnopbaseExecutorInsertMemsetOp(NnopbaseExecutor* executor)
 static inline void NnopbaseExecutorPreportMemsetProfiling(const NnopbaseExecutor* const executor, uint32_t numBlocks,
                                                           const uint32_t taskType, const uint64_t launchBeginTime)
 {
-    NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->memsetItemId);
+    NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->dfx.memsetItemId);
     NnopbaseReportMemsetAdditionInfo(executor, numBlocks, taskType, launchBeginTime + 1U);
     return;
 }
@@ -620,7 +603,7 @@ aclnnStatus NnopbaseLaunchMemsetTask(NnopbaseExecutor* executor, aclrtStream str
 void NnopbaseExecutorReportProfiling(NnopbaseExecutor* const executor, uint32_t numBlocks, const uint32_t taskType,
                                      const uint64_t launchBeginTime, aclrtStream stream)
 {
-    NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->itemId);
+    NnopbaseInnerReportLaunchInfo(launchBeginTime, executor->dfx.itemId);
     NnopbaseReportAdditionInfo(executor, numBlocks, taskType, launchBeginTime + 1U);
     NnopbaseReportAttrAndHostInfo(executor, launchBeginTime + 1U);
     NnopbaseReportCacheOpInfo(executor, numBlocks, taskType, stream);
@@ -663,7 +646,8 @@ void PrintNnopbaseAllTimeStampInfo(NnopbaseExecutor* const executor)
         PrintTime(executor, "before launch", NnopbaseTimeIdx::kRunWithWsStart, NnopbaseTimeIdx::kBeforeLaunch);
         PrintTime(executor, "launch", NnopbaseTimeIdx::kBeforeLaunch, NnopbaseTimeIdx::kAfterLaunch);
         PrintTime(executor, "after launch", NnopbaseTimeIdx::kAfterLaunch, NnopbaseTimeIdx::kRunWithWsEnd);
-        (void)memset_s(executor->timeStamp.tp, sizeof(executor->timeStamp.tp), 0, sizeof(executor->timeStamp.tp));
+        (void)memset_s(executor->dfx.timeStamp.tp, sizeof(executor->dfx.timeStamp.tp), 0,
+                       sizeof(executor->dfx.timeStamp.tp));
     }
 }
 
@@ -702,8 +686,10 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor* executor, const Nnopbas
         std::string
             errMsg = "1.SoC version " + socVersion +
                      " verification failed. This SoC is not configured through the AddConfig API of the OpDef class. ";
-        errMsg += "2.The binary_info_config.json file to which the " + std::string(opType) + " operator belongs fails to "
-            "be loaded because the file is damaged or does not exist or the user does not have sufficient permissions. ";
+        errMsg += "2.The binary_info_config.json file to which the " + std::string(opType) +
+                  " operator belongs fails to "
+                  "be loaded because the file is damaged or does not exist or the user does not have sufficient "
+                  "permissions. ";
         errMsg += "3.The operator package to which the " + std::string(opType) + " operator belongs is not installed";
         OP_LOGE_FOR_EXECUTION_ERROR_WITHOUT_SOLUTION(errMsg.c_str());
         return ACLNN_ERR_PARAM_NULLPTR;
@@ -714,16 +700,16 @@ aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor* executor, const Nnopbas
         NNOPBASE_ASSERT_TRUE_RETVAL(strcpy_s(executor->opType, len + 1U, opType) == EOK);
         executor->opTypeHash = hashKey;
     }
-    executor->itemId = MsprofGetHashId(opType, len);
+    executor->dfx.itemId = MsprofGetHashId(opType, len);
     const std::string aicpuOpType = std::string(opType) + NNOPBASE_MC2_AICPU_SUFFIX;
-    executor->aicpuItemId = MsprofGetHashId(&aicpuOpType[0], aicpuOpType.length());
-    executor->memsetItemId = MsprofGetHashId(&NNOPBASE_MEMSET_OP_NAME[0], NNOPBASE_MEMSET_OP_NAME.length());
+    executor->dfx.aicpuItemId = MsprofGetHashId(&aicpuOpType[0], aicpuOpType.length());
+    executor->dfx.memsetItemId = MsprofGetHashId(&NNOPBASE_MEMSET_OP_NAME[0], NNOPBASE_MEMSET_OP_NAME.length());
     OP_LOGI("OpType is %s, hashKey is %lu, item id is %lu, aicpu item id is %lu, memset item id is %lu.", opType,
-            hashKey, executor->itemId, executor->aicpuItemId, executor->memsetItemId);
+            hashKey, executor->dfx.itemId, executor->dfx.aicpuItemId, executor->dfx.memsetItemId);
     return OK;
 }
 
-NnopbaseUChar* NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar* verKey, const NnopbaseUChar* addr)
+NnopbaseUChar* NnopbaseExecutor8ByteCopy(const size_t totalSize, NnopbaseUChar* verKey, const NnopbaseUChar* addr)
 {
     const size_t length = totalSize / 8U;
     if (length != 0) {
@@ -925,17 +911,16 @@ aclnnStatus NnopbaseSetMc2Tiling(NnopbaseExecutor* executor, const char* const g
 {
     HcclComm commHandle = nullptr;
     NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::IndvHcclWrapper::GetInstance().HcomGetCommHandleByGroup(group, &commHandle));
-    executor->mc2OpCfg.hcomHandle.push_back(commHandle);
+    executor->mc2.commHandles.push_back(commHandle);
     NNOPBASE_ASSERT_RTOK_RETVAL(nnopbase::utils::ThreadVarContainer::SetCurMc2RankIdInThread(commHandle));
     return OK;
 }
 
-void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* executor)
+static NnopbaseUChar* NnopbaseInitDynamicKeyBuffer(NnopbaseExecutor* const executor,
+                                                   const NnopbaseTensors* const inputs,
+                                                   const NnopbaseTensors* const outputs)
 {
     NnopbaseUChar* verKey = nullptr;
-    NnopbaseTensors* inputs = &executor->ownArgs.inputs;
-    NnopbaseTensors* outputs = &executor->ownArgs.outputs;
-    // verb key format: op_type/Deterministic,Precision/input num/output num/tensor desc...
     if (executor->binInfoKey.verbose.empty()) {
         const uint32_t len = inputs->requiredCnt * NNOPBASE_VERKEY_TENSOR_DESC_NUM +
                              inputs->dynamicNum * NNOPBASE_VERKEY_TENSOR_DESC_NUM +
@@ -951,45 +936,55 @@ void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* executor)
     } else {
         verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
     }
-    verKey = NnopbaseAppend1Byte(verKey, static_cast<NnopbaseUChar>(executor->deterministic));
-    verKey = NnopbaseAppend1Byte(verKey, g_nnopbaseSysCfgParams.precision);
-    OP_LOGI("Verbose opType is %s, deterministic value is %d, highPrecision value is %d, verboseLen is %u",
-            executor->regInfo->key.opType.c_str(), executor->deterministic, g_nnopbaseSysCfgParams.precision,
-            executor->binInfoKey.len);
+    return verKey;
+}
 
-    for (uint32_t i = 0U; i < inputs->paramDescs.count; i++) {
-        if (inputs->paramDescs.instances[i].cfgNum == 0) {
+static NnopbaseUChar* NnopbaseAppendDynamicKeyHead(const NnopbaseExecutor* const executor, NnopbaseUChar* verKey)
+{
+    uint8_t determinLevel = (executor->deterministicLevel == 0U) ? 0U : 1U;
+    verKey = NnopbaseAppend1Byte(verKey, static_cast<NnopbaseUChar>(determinLevel));
+    verKey = NnopbaseAppend1Byte(verKey, g_nnopbaseSysCfgParams.precision);
+    OP_LOGI("Verbose opType is %s, determinLevel is %d, highPrecision is %d, verboseLen is %u",
+            executor->regInfo->key.opType.c_str(), executor->deterministicLevel, g_nnopbaseSysCfgParams.precision,
+            executor->binInfoKey.len);
+    return verKey;
+}
+
+static NnopbaseUChar* NnopbaseAppendDynamicTensorsKey(const NnopbaseExecutor* const executor, NnopbaseUChar* verKey,
+                                                      const NnopbaseTensors* const tensors, const char* const ioType)
+{
+    for (uint32_t i = 0U; i < tensors->paramDescs.count; i++) {
+        if (tensors->paramDescs.instances[i].cfgNum == 0) {
             continue;
         }
-        const uint32_t startIndex = inputs->paramDescs.instances[i].startIndex;
+        const uint32_t startIndex = tensors->paramDescs.instances[i].startIndex;
         verKey = NnopbaseAppend1Byte(
-            verKey, static_cast<NnopbaseUChar>(inputs->extTensors[startIndex].rt2Tensor.GetDataType()));
+            verKey, static_cast<NnopbaseUChar>(tensors->extTensors[startIndex].rt2Tensor.GetDataType()));
         verKey = NnopbaseAppend1Byte(
-            verKey, static_cast<NnopbaseUChar>(inputs->extTensors[startIndex].rt2Tensor.GetStorageFormat()));
-        OP_LOGI("Op %s input[%u] datatype is %s, format is %s.", executor->opType, startIndex,
-                op::ToString(inputs->extTensors[startIndex].rt2Tensor.GetDataType()).GetString(),
-                op::ToString(inputs->extTensors[startIndex].rt2Tensor.GetStorageFormat()).GetString());
+            verKey, static_cast<NnopbaseUChar>(tensors->extTensors[startIndex].rt2Tensor.GetStorageFormat()));
+        OP_LOGI("Op %s %s[%u] datatype is %s, format is %s.", executor->opType, ioType, startIndex,
+                op::ToString(tensors->extTensors[startIndex].rt2Tensor.GetDataType()).GetString(),
+                op::ToString(tensors->extTensors[startIndex].rt2Tensor.GetStorageFormat()).GetString());
     }
-    for (uint32_t i = 0U; i < outputs->paramDescs.count; i++) {
-        if (outputs->paramDescs.instances[i].cfgNum == 0) {
-            continue;
-        }
-        const uint32_t startIndex = outputs->paramDescs.instances[i].startIndex;
-        verKey = NnopbaseAppend1Byte(
-            verKey, static_cast<NnopbaseUChar>(outputs->extTensors[startIndex].rt2Tensor.GetDataType()));
-        verKey = NnopbaseAppend1Byte(
-            verKey, static_cast<NnopbaseUChar>(outputs->extTensors[startIndex].rt2Tensor.GetStorageFormat()));
-        OP_LOGI("Op %s output[%u] datatype is %s, format is %s.", executor->opType, startIndex,
-                op::ToString(outputs->extTensors[startIndex].rt2Tensor.GetDataType()).GetString(),
-                op::ToString(outputs->extTensors[startIndex].rt2Tensor.GetStorageFormat()).GetString());
-    }
+    return verKey;
+}
+
+void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* const executor)
+{
+    const NnopbaseTensors* const inputs = &executor->ownArgs.inputs;
+    const NnopbaseTensors* const outputs = &executor->ownArgs.outputs;
+    // verb key format: op_type/Deterministic,Precision/input num/output num/tensor desc...
+    NnopbaseUChar* verKey = NnopbaseInitDynamicKeyBuffer(executor, inputs, outputs);
+    verKey = NnopbaseAppendDynamicKeyHead(executor, verKey);
+    verKey = NnopbaseAppendDynamicTensorsKey(executor, verKey, inputs, "input");
+    verKey = NnopbaseAppendDynamicTensorsKey(executor, verKey, outputs, "output");
     executor->binInfoKey.len = static_cast<uint32_t>(verKey - &(executor->binInfoKey.verbose[0U]));
     OP_LOGI("Op %s binInfoKey size %u", executor->opType, executor->binInfoKey.len);
     executor->binInfoKey.hashKey = NnopbaseHashBinary(&(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len) %
                                    NNOPBASE_NORM_MAX_BIN_BUCKETS;
 }
 
-bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* executor)
+bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* const executor)
 {
     NnopbaseExecutorGenDynamicKey(executor);
     executor->args->binInfo = NnopbaseCollectorFindBinInfo(
@@ -997,10 +992,10 @@ bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* executor)
     return executor->args->binInfo != nullptr;
 }
 
-NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, NnopbaseTensors* tensors, size_t tensorNum,
-                                             bool usingStride)
+NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, const NnopbaseTensors* const tensors,
+                                             const size_t tensorNum, const bool usingStride)
 {
-    NnopbaseUChar* addr;
+    const NnopbaseUChar* addr;
     size_t length;
     for (size_t i = 0U; i < tensorNum; i++) {
         if (tensors->extTensors[i].isNull) {
@@ -1032,7 +1027,7 @@ NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, NnopbaseTens
             verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(tensors->extTensors[i].rt2Tensor.GetOffset()));
         }
         if (tensors->extTensors[i].valueDepend) {
-            addr = op::internal::PtrCastTo<NnopbaseUChar>(tensors->extTensors[i].rt2Tensor.GetAddr());
+            addr = op::internal::PtrCastTo<const NnopbaseUChar>(tensors->extTensors[i].rt2Tensor.GetAddr());
             const auto dtype = tensors->extTensors[i].rt2Tensor.GetDataType();
             length = tensors->extTensors[i].rt2Tensor.GetSize();
             const size_t typeSize = op::TypeSize(dtype);
@@ -1045,7 +1040,7 @@ NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, NnopbaseTens
     return verKey;
 }
 
-NnopbaseUChar* NnopbaseExecutorGenAttrsKey(NnopbaseAttrs* attrs, NnopbaseUChar* verKey)
+NnopbaseUChar* NnopbaseExecutorGenAttrsKey(const NnopbaseAttrs* const attrs, NnopbaseUChar* verKey)
 {
     const NnopbaseUChar* addr = nullptr;
     size_t length = 0;
@@ -1073,6 +1068,45 @@ NnopbaseUChar* NnopbaseExecutorGenAttrsKey(NnopbaseAttrs* attrs, NnopbaseUChar* 
     return verKey;
 }
 
+static size_t NnopbaseComputeStaticTensorsKeySize(const NnopbaseTensors* const tensors, const size_t tensorNum,
+                                                  const bool usingStride, const bool withValueDepend)
+{
+    size_t len = 0U;
+    for (size_t i = 0U; i < tensorNum; i++) {
+        if (tensors->extTensors[i].isNull) {
+            len += sizeof(uint64_t); // '_' 占位
+            continue;
+        }
+        if (tensors->extTensors[i].isRequired || tensors->extTensors[i].isOptional) {
+            len += NNOPBASE_DTYPE_AND_FORMAT_SIZE;
+        }
+        const GertShape& shape = tensors->extTensors[i].rt2Tensor.GetStorageShape();
+        len += shape.GetDimNum() * sizeof(uint64_t);
+        if (usingStride) {
+            len += tensors->extTensors[i].rt2Tensor.GetStride().GetDimNum() * sizeof(uint64_t) + sizeof(uint64_t);
+        }
+        if (withValueDepend && tensors->extTensors[i].valueDepend) {
+            len += (tensors->extTensors[i].rt2Tensor.GetSize() /
+                    (op::TypeSize(tensors->extTensors[i].rt2Tensor.GetDataType()))) *
+                   sizeof(uint64_t);
+        }
+    }
+    return len;
+}
+
+static size_t NnopbaseComputeStaticAttrsKeySize(const NnopbaseAttrs* const attrs)
+{
+    size_t len = 0U;
+    for (size_t i = 0U; i < attrs->num; i++) {
+        if (!attrs->attrs[i].addr.isVector) {
+            NnopbaseExecutorGet8ByteSize(attrs->attrs[i].addr.size, op::internal::PtrCastTo<uint32_t>(&len));
+        } else {
+            len += (attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize) * sizeof(uint64_t);
+        }
+    }
+    return len;
+}
+
 size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor* const executor, bool usingStride)
 {
     const NnopbaseTensors* const inputs = &executor->ownArgs.inputs;
@@ -1082,58 +1116,46 @@ size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor* const executor,
     OP_LOGD("Op %s after add [optype, deterministic and precision or performance], length is %zu.", executor->opType,
             len);
     const size_t inputTensorNum = static_cast<size_t>(inputs->nonDynamicCnt + inputs->dynamicCnt);
-    for (size_t i = 0U; i < inputTensorNum; i++) {
-        if (inputs->extTensors[i].isNull) {
-            len += sizeof(uint64_t); // '_' 占位
-            continue;
-        }
-        if (inputs->extTensors[i].isRequired || inputs->extTensors[i].isOptional) {
-            len += NNOPBASE_DTYPE_AND_FORMAT_SIZE;
-        }
-        const GertShape& shape = inputs->extTensors[i].rt2Tensor.GetStorageShape();
-        len += shape.GetDimNum() * sizeof(uint64_t);
-        if (usingStride) {
-            len += inputs->extTensors[i].rt2Tensor.GetStride().GetDimNum() * sizeof(uint64_t) + sizeof(uint64_t);
-        }
-        if (inputs->extTensors[i].valueDepend) {
-            len += (inputs->extTensors[i].rt2Tensor.GetSize() /
-                    (op::TypeSize(inputs->extTensors[i].rt2Tensor.GetDataType()))) *
-                   sizeof(uint64_t);
-        }
-    }
+    len += NnopbaseComputeStaticTensorsKeySize(inputs, inputTensorNum, usingStride, true);
     OP_LOGD("Op %s after add input, length is %zu.", executor->opType, len);
     const size_t outputTensorNum = outputs->nonDynamicCnt + outputs->dynamicCnt;
-    for (size_t i = 0U; i < outputTensorNum; i++) {
-        if (outputs->extTensors[i].isNull) {
-            len += sizeof(uint64_t);
-            continue;
-        }
-        if (outputs->extTensors[i].isRequired || outputs->extTensors[i].isOptional) {
-            len += sizeof(uint64_t) * 2U; // 2 = dtype&format
-        }
-        const GertShape& shape = outputs->extTensors[i].rt2Tensor.GetStorageShape();
-        len += shape.GetDimNum() * sizeof(uint64_t);
-        if (usingStride) {
-            len += outputs->extTensors[i].rt2Tensor.GetStride().GetDimNum() * sizeof(uint64_t) + sizeof(uint64_t);
-        }
-    }
+    len += NnopbaseComputeStaticTensorsKeySize(outputs, outputTensorNum, usingStride, false);
     OP_LOGD("Op %s after add output, length is %zu.", executor->opType, len);
-    for (size_t i = 0U; i < attrs->num; i++) {
-        if (!attrs->attrs[i].addr.isVector) {
-            NnopbaseExecutorGet8ByteSize(attrs->attrs[i].addr.size, op::internal::PtrCastTo<uint32_t>(&len));
-        } else {
-            len += (attrs->attrs[i].addr.size / attrs->attrs[i].addr.elementSize) * sizeof(uint64_t);
-        }
-    }
+    len += NnopbaseComputeStaticAttrsKeySize(attrs);
     OP_LOGD("Op %s after add attr, length is %zu.", executor->opType, len);
     return len;
 }
 
-aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* executor, bool usingStride)
+static NnopbaseUChar* NnopbaseInitStaticKeyBuffer(NnopbaseExecutor* const executor, const size_t len)
 {
-    NnopbaseTensors* inputs = &executor->ownArgs.inputs;
-    NnopbaseAttrs* attrs = &executor->attrs;
-    NnopbaseTensors* outputs = &executor->ownArgs.outputs;
+    NnopbaseUChar* verKey = nullptr;
+    if (len > executor->binInfoKey.bufLen) {
+        executor->binInfoKey.verbose = std::vector<NnopbaseUChar>(len + NNOPBASE_REPLAY_VERKEY_EXT_BUF_LEN, '\0');
+        verKey = &(executor->binInfoKey.verbose[0U]);
+        executor->binInfoKey.bufLen = static_cast<uint32_t>(len) + NNOPBASE_REPLAY_VERKEY_EXT_BUF_LEN;
+        verKey = NnopbaseAppendBinary(verKey, static_cast<size_t>(executor->binInfoKey.bufLen),
+                                      &(executor->regInfo->key.opType[0U]), executor->regInfo->key.opType.size());
+    } else {
+        verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
+    }
+    return verKey;
+}
+
+static NnopbaseUChar* NnopbaseAppendStaticKeyHead(const NnopbaseExecutor* const executor, NnopbaseUChar* verKey)
+{
+    uint64_t deterministicLevel = (executor->deterministicLevel == 0U) ? 0U : 1U;
+    verKey = NnopbaseAppend8Byte(verKey, deterministicLevel);
+    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.precision));
+    OP_LOGI("Op %s HighPrecision is %d, Deterministic is %d, binInfoKey length is %u.", executor->opType,
+            g_nnopbaseSysCfgParams.precision, deterministicLevel, executor->binInfoKey.bufLen);
+    return verKey;
+}
+
+aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* const executor, const bool usingStride)
+{
+    const NnopbaseTensors* const inputs = &executor->ownArgs.inputs;
+    const NnopbaseAttrs* const attrs = &executor->attrs;
+    const NnopbaseTensors* const outputs = &executor->ownArgs.outputs;
     /*
         when usingStride = false:
             verb key format = op_type/Deterministic/Precision/{dtype, format, (shape)}/.../attr binary
@@ -1147,21 +1169,8 @@ aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* executor, bool usingS
         return ACLNN_ERR_PARAM_INVALID;
     }
 
-    NnopbaseUChar* verKey = nullptr;
-    if (len > executor->binInfoKey.bufLen) {
-        executor->binInfoKey.verbose = std::vector<NnopbaseUChar>(len + NNOPBASE_REPLAY_VERKEY_EXT_BUF_LEN, '\0');
-        verKey = &(executor->binInfoKey.verbose[0U]);
-        executor->binInfoKey.bufLen = static_cast<uint32_t>(len) + NNOPBASE_REPLAY_VERKEY_EXT_BUF_LEN;
-        verKey = NnopbaseAppendBinary(verKey, static_cast<size_t>(executor->binInfoKey.bufLen),
-                                      &(executor->regInfo->key.opType[0U]), executor->regInfo->key.opType.size());
-    } else {
-        verKey = &(executor->binInfoKey.verbose[0U]) + executor->regInfo->key.opType.size();
-    }
-    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(executor->deterministic));
-    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(g_nnopbaseSysCfgParams.precision));
-    OP_LOGI("Op %s HighPrecision value is %d, Deterministic value is %d, binInfoKey length is %u.", executor->opType,
-            g_nnopbaseSysCfgParams.precision, executor->deterministic, executor->binInfoKey.bufLen);
-
+    NnopbaseUChar* verKey = NnopbaseInitStaticKeyBuffer(executor, len);
+    verKey = NnopbaseAppendStaticKeyHead(executor, verKey);
     const size_t inputTensorNum = inputs->nonDynamicCnt + inputs->dynamicCnt;
     verKey = NnopbaseExecutorGenTensorsKey(verKey, inputs, inputTensorNum, usingStride);
     const size_t outputTensorNum = static_cast<size_t>(outputs->nonDynamicCnt + outputs->dynamicCnt);

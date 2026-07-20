@@ -20,7 +20,7 @@ aclnnStatus NnopbaseAicpuKernelLaunch(NnopbaseExecutor* const executor);
 void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr);
 aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor* const executor, aclrtStream stream);
 aclnnStatus NnopbaseLaunchKFCTaskA5(NnopbaseExecutor* const executor, aclrtStream stream);
-aclnnStatus NnopbaseExecutorGetMc2Num(NnopbaseExecutor* executor, aclrtStream const stream,
+aclnnStatus NnopbaseExecutorGetMc2Num(NnopbaseExecutor* const executor, aclrtStream const stream,
                                       NnopbaseExecutorArgsAddr* argsAddr, uint32_t* mc2Num);
 aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor* const executor, aclrtStream const stream);
 aclnnStatus NnopbaseMC2KernelLaunch(NnopbaseExecutor* executor, aclrtStream stream);

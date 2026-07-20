@@ -31,7 +31,7 @@ public:
         }
         const std::lock_guard<std::mutex> lk(mutex);
         ReleaseFixedCache(args);
-        args->isVist = false;
+        args->isVisit = false;
     }
 
     void FixCache(NnopbaseExecutorArgs* const args);

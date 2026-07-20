@@ -996,22 +996,34 @@ TEST_F(NnopbaseExecutorUnitTest, ExecutorSetOverflowAddrUndef)
 TEST_F(NnopbaseExecutorUnitTest, ExecutorSetDeterministicClose)
 {
     const int64_t configVal = 0;
-    aclrtCtxSetSysParamOpt(ACL_OPT_DETERMINISTIC, configVal);
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, configVal);
     NnopbaseExecutorSetGlobalConfig();
-    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministic, false);
+    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministicLevel, 0U);
 }
 
 TEST_F(NnopbaseExecutorUnitTest, ExecutorSetDeterministicOpen)
 {
     int64_t configVal = 1;
-    aclrtCtxSetSysParamOpt(ACL_OPT_DETERMINISTIC, configVal);
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, configVal);
+    aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 0);
     NnopbaseExecutorSetGlobalConfig();
-    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministic, true);
+    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministicLevel, 1U);
 
     configVal = 0;
-    aclrtCtxSetSysParamOpt(ACL_OPT_DETERMINISTIC, configVal);
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, configVal);
     NnopbaseExecutorSetGlobalConfig();
-    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministic, false);
+    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministicLevel, 0U);
+}
+
+TEST_F(NnopbaseExecutorUnitTest, ExecutorSetDeterministicStrongConsistency)
+{
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 1);
+    aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 1);
+    NnopbaseExecutorSetGlobalConfig();
+    ASSERT_EQ(g_nnopbaseSysCfgParams.deterministicLevel, 2U);
+
+    aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 0);
+    aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 0);
 }
 
 TEST_F(NnopbaseExecutorUnitTest, ExecutorSetImplMode)
@@ -1185,14 +1197,15 @@ TEST_F(NnopbaseExecutorUnitTest, TestExecutorInit)
     GetExecutor(executor);
     ASSERT_NE(executor, nullptr);
     ASSERT_EQ(executor->args, nullptr);
-    ASSERT_EQ(executor->tilingKey, nullptr);
-    ASSERT_EQ(executor->numBlocks, nullptr);
+    ASSERT_EQ(executor->tiling.tilingKey, nullptr);
+    ASSERT_EQ(executor->tiling.numBlocks, nullptr);
+    ASSERT_EQ(executor->tiling.aicpuNumBlocks, nullptr);
     ASSERT_EQ(executor->workspaces.num, 0);
     ASSERT_EQ(executor->binInfoKey.len, 0);
     ASSERT_EQ(executor->binInfoKey.bufLen, 0);
     ASSERT_EQ(executor->hasTiling, true);
     ASSERT_EQ(executor->isWork, false);
-    ASSERT_EQ(executor->tilingId, nullptr);
+    ASSERT_EQ(executor->dfx.tilingId, nullptr);
     NnopbaseExecutorGcSpace((void*)executor->space);
     NnopbaseExecutorDeInit(executor);
     delete executor;
@@ -1353,7 +1366,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseCacheMatchArgs)
 
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().MatchArgs(executor), false);
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().CreateArgs(executor), OK);
-    executor->args->isVist = false;
+    executor->args->isVisit = false;
     NnopbaseBinInfo binInfo;
     binInfo.isStaticShape = false;
     executor->args->binInfo = &binInfo;
@@ -1381,7 +1394,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseCacheNoMatchArgs)
 
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().MatchArgs(executor1), false);
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().CreateArgs(executor1), OK);
-    executor1->args->isVist = false;
+    executor1->args->isVisit = false;
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().MatchArgs(executor2), false);
 
     NnopbaseExecutorGcSpace((void*)space);
@@ -1407,7 +1420,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseExceededMaxNum)
     for (auto& iter : nnopbase::ArgsPool::GetInstance().argsMap) {
         for (auto& args : iter.second) {
             if (args != nullptr) {
-                args->isVist = false;
+                args->isVisit = false;
             }
         }
     }
@@ -1443,7 +1456,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseOneCacheNum)
     nnopbase::ArgsPool::GetInstance().Finalize();
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().MatchArgs(executor1), false);
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().CreateArgs(executor1), OK);
-    executor1->args->isVist = false;
+    executor1->args->isVisit = false;
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().MatchArgs(executor2), OK);
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().CreateArgs(executor2), OK);
 
@@ -2084,7 +2097,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseNotCacheMatchArgs)
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().MatchArgs(executor), false);
     ASSERT_EQ(nnopbase::ArgsPool::GetInstance().CreateArgs(executor), OK);
     auto& args = executor->ownArgs;
-    executor->args->isVist = false;
+    executor->args->isVisit = false;
     NnopbaseBinInfo binInfo;
     binInfo.isStaticShape = false;
     executor->args->binInfo = &binInfo;
@@ -2265,13 +2278,13 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
     ASSERT_NE(executor, nullptr);
 
     executor->opType = strdup("test_op");
-    executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
-    executor->mc2OpCfg.isMc2 = true;
+    executor->mc2.serverType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
+    executor->mc2.enabled = true;
     executor->collector = new NnopbaseBinCollector;
     executor->collector->isMc2FusionLaunch = false;
     executor->args = new NnopbaseExecutorArgs;
     executor->argsExt.hostInputInfoNum = 1U;
-    executor->aicpuArgs.hostInputInfoNum = 1U;
+    executor->mc2.aicpuArgs.hostInputInfoNum = 1U;
     NnopbaseHcclCommParamDesc paramDesc = {0, 0, 0, 0, 0};
     NnopbaseExecutorArgsAddr argsAddr = {nullptr, nullptr, nullptr, nullptr, &paramDesc};
     argsAddr.ptr = executor->args->argsBuf.data() + 2 * sizeof(void*);
@@ -2279,7 +2292,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
     argsAddr.aicpuHostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr +
                                                                                 sizeof(aclrtPlaceHolderInfo));
     argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
-    executor->aicpuArgs.args = argsAddr.ptr;
+    executor->mc2.aicpuArgs.args = argsAddr.ptr;
     executor->argsExt.args = op::internal::PtrCastTo<void>(argsAddr.ptr + sizeof(void*));
 
     NnopbaseUChar* soNamePtr = argsAddr.hostInputData;
@@ -2307,13 +2320,13 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     ASSERT_NE(executor, nullptr);
 
     executor->opType = strdup("test_op");
-    executor->mc2OpCfg.sType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
-    executor->mc2OpCfg.isMc2 = true;
+    executor->mc2.serverType = NNOPBASE_HCCL_SERVER_TYPE_AICPU;
+    executor->mc2.enabled = true;
     executor->collector = new NnopbaseBinCollector;
     executor->collector->isMc2FusionLaunch = false;
     executor->args = new NnopbaseExecutorArgs;
     executor->argsExt.hostInputInfoNum = 1U;
-    executor->aicpuArgs.hostInputInfoNum = 1U;
+    executor->mc2.aicpuArgs.hostInputInfoNum = 1U;
     NnopbaseHcclCommParamDesc paramDesc = {0, 0, 0, 0, 0};
     NnopbaseExecutorArgsAddr argsAddr = {nullptr, nullptr, nullptr, nullptr, &paramDesc};
     argsAddr.ptr = executor->args->argsBuf.data() + 2 * sizeof(void*);
@@ -2321,7 +2334,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     argsAddr.aicpuHostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr +
                                                                                 sizeof(aclrtPlaceHolderInfo));
     argsAddr.hostInputInfo = op::internal::PtrCastTo<aclrtPlaceHolderInfo>(argsAddr.ptr);
-    executor->aicpuArgs.args = argsAddr.ptr;
+    executor->mc2.aicpuArgs.args = argsAddr.ptr;
     executor->argsExt.args = op::internal::PtrCastTo<void>(argsAddr.ptr + sizeof(void*));
     auto oriSocVersion = nnopbase::IndvSoc::GetInstance().GetCurSocVersion();
     struct SocVersionGuard {

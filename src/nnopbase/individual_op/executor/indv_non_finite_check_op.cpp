@@ -127,7 +127,7 @@ aclnnStatus NnopbaseNonFiniteCheckRunForWorkspaceSize(const std::vector<const Ge
 
     // 添加维测信息
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddTilingId(*executor, &tilingId));
-    NnopbaseExecutorAddSupportList(*executor, &supportList, socSupportList, socSupportListLen);
+    NnopbaseExecutorAddSupportList((*executor)->opCompatibility, &supportList, socSupportList, socSupportListLen);
 
     // 执行一阶段流程
     const aclnnStatus ret = NnopbaseExecutorRunForWorkspace(*executor, workspaceSize);

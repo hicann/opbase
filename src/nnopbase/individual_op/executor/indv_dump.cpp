@@ -420,8 +420,8 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor* const executor)
         OP_LOGI("ArgExceptionDump is enabled.");
         uint32_t atomicIndex = 0U;
         size_t mc2ContextNum = 0U;
-        if (executor->mc2OpCfg.isMc2) {
-            mc2ContextNum = executor->contextAddr.size();
+        if (executor->mc2.enabled) {
+            mc2ContextNum = executor->mc2.contextAddrs.size();
         }
         const uint32_t addrNum = executor->args->inputs.num + executor->args->inputs.dynamicNum +
                                  executor->args->outputs.num + executor->args->outputs.dynamicNum +
@@ -447,8 +447,8 @@ aclnnStatus NnopbaseArgsExceptionDumpAddr(NnopbaseExecutor* const executor)
             *sizeInfoAddr |= inputOffset;
         }
         sizeInfoAddr++;
-        if (executor->mc2OpCfg.isMc2) {
-            for (size_t i = 0U; i < executor->contextAddr.size(); i++) {
+        if (executor->mc2.enabled) {
+            for (size_t i = 0U; i < executor->mc2.contextAddrs.size(); i++) {
                 *sizeInfoAddr = 32ULL; // 只打印context结构体的前32字节
                 sizeInfoAddr++;
             }

@@ -10,6 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <array>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <stdlib.h>
@@ -98,8 +99,8 @@ static void TilingCtxBuildUTCase1()
 
     const char* p = std::getenv("ASCEND_OPP_PATH");
     EXPECT_NE(p, nullptr);
-    op::internal::KeyAndDetail key;
-    key.key = "hahaha";
+    op::internal::KeyAndDetail keyDetail;
+    keyDetail.key = "hahaha";
     size_t hashKey = 125;
     char jsonPath[1024];
     char binPath[1024];
@@ -112,7 +113,7 @@ static void TilingCtxBuildUTCase1()
                "Axpy_233851a3505389e43928a8bba133a74d_high_performance.o",
                p);
 
-    op::internal::OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, key, hashKey,
+    op::internal::OpKernelBin kernelBin(opType, jsonPath, jsonPath, binPath, keyDetail, hashKey,
                                         op::internal::BinType::DYNAMIC_BIN, false, false);
     EXPECT_EQ(kernelBin.InitTilingParseCtx(), ACLNN_SUCCESS);
 
@@ -365,57 +366,135 @@ static void SetCoreNumTestAiCore()
 {
     nlohmann::json mixAiCore = {{"coreType", "AiCore"}};
     fe::PlatFormInfos* plat = &op::internal::SocContext::platformInfo_;
+    auto& cfg = op::internal::GetThreadLocalContext().opConfigInfo_;
+    // 保存主线程 thread_local 旧值，用例结束后恢复，避免污染后续主线程用例
+    uint32_t oldAic = cfg.aicNum_;
+    uint32_t oldAiv = cfg.aivNum_;
+    uint32_t oldPlatCoreNum = plat->GetCoreNum();
+
+    // 设置可控的 aic/aiv，按 SetCoreNum 分支语义独立推导期望值；随机值用 1 + 余数，避免 0 引入额外分支
+    auto tidVal = static_cast<uint32_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+    uint32_t testAic = 1U + (tidVal % 19U);
+    uint32_t testAiv = 1U + ((tidVal + 1U) % 19U);
+    OP_LOGI("SetCoreNumTestAiCore testAic: %u, testAiv: %u", testAic, testAiv);
+    cfg.aicNum_ = testAic;
+    cfg.aivNum_ = testAiv;
+
+    // coreType="AiCore" 走 SetCoreNum 的 else 分支：coreNum = cubeCoreNum = aicNum_
     uint32_t coreNum = 0;
     op::internal::SetCoreNum(mixAiCore, plat, coreNum);
-    sleep(1);
-    uint32_t currCoreNum = plat->GetCoreNum();
-    EXPECT_EQ(currCoreNum, 0);
+    EXPECT_EQ(coreNum, testAic);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    EXPECT_EQ(plat->GetCoreNum(), testAic);
+
+    cfg.aicNum_ = oldAic;
+    cfg.aivNum_ = oldAiv;
+    plat->SetCoreNum(oldPlatCoreNum);
 }
 
 static void SetCoreNumTestMIX()
 {
     nlohmann::json mixMIX = {{"coreType", "MIX"}};
     fe::PlatFormInfos* plat = &op::internal::SocContext::platformInfo_;
+    auto& cfg = op::internal::GetThreadLocalContext().opConfigInfo_;
+    uint32_t oldAic = cfg.aicNum_;
+    uint32_t oldAiv = cfg.aivNum_;
+    uint32_t oldPlatCoreNum = plat->GetCoreNum();
+
+    auto tidVal = static_cast<uint32_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+    uint32_t testAic = 1U + (tidVal % 19U);
+    uint32_t testAiv = 1U + ((tidVal + 1U) % 19U);
+    OP_LOGI("SetCoreNumTestMIX testAic: %u, testAiv: %u", testAic, testAiv);
+    cfg.aicNum_ = testAic;
+    cfg.aivNum_ = testAiv;
+
+    // coreType="MIX" 且 json 无 taskRation：CalcMixCoreNum 返回 vectorCoreNum = aivNum_
     uint32_t coreNum = 0;
     op::internal::SetCoreNum(mixMIX, plat, coreNum);
-    sleep(1);
-    uint32_t currCoreNum = plat->GetCoreNum();
-    EXPECT_EQ(currCoreNum, 0);
+    EXPECT_EQ(coreNum, testAiv);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    EXPECT_EQ(plat->GetCoreNum(), testAiv);
+
+    cfg.aicNum_ = oldAic;
+    cfg.aivNum_ = oldAiv;
+    plat->SetCoreNum(oldPlatCoreNum);
 }
 
 static void SetCoreNumTestVectorCore()
 {
     nlohmann::json mixVector = {{"coreType", "VectorCore"}};
     fe::PlatFormInfos* plat = &op::internal::SocContext::platformInfo_;
+    auto& cfg = op::internal::GetThreadLocalContext().opConfigInfo_;
+    uint32_t oldAic = cfg.aicNum_;
+    uint32_t oldAiv = cfg.aivNum_;
+    uint32_t oldPlatCoreNum = plat->GetCoreNum();
+
+    auto tidVal = static_cast<uint32_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+    uint32_t testAic = 1U + (tidVal % 19U);
+    uint32_t testAiv = 1U + ((tidVal + 1U) % 19U);
+    OP_LOGI("SetCoreNumTestVectorCore testAic: %u, testAiv: %u", testAic, testAiv);
+    cfg.aicNum_ = testAic;
+    cfg.aivNum_ = testAiv;
+
+    // coreType="VectorCore"：coreNum = vectorCoreNum = aivNum_
     uint32_t coreNum = 0;
     op::internal::SetCoreNum(mixVector, plat, coreNum);
-    sleep(1);
-    uint32_t currCoreNum = plat->GetCoreNum();
-    EXPECT_EQ(currCoreNum, 0);
+    EXPECT_EQ(coreNum, testAiv);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    EXPECT_EQ(plat->GetCoreNum(), testAiv);
+
+    cfg.aicNum_ = oldAic;
+    cfg.aivNum_ = oldAiv;
+    plat->SetCoreNum(oldPlatCoreNum);
 }
 
 static void SetCoreNumTestAIV()
 {
     nlohmann::json mixAIV = {{"coreType", "MIX_AIV"}};
     fe::PlatFormInfos* plat = &op::internal::SocContext::platformInfo_;
+    auto& cfg = op::internal::GetThreadLocalContext().opConfigInfo_;
+    uint32_t oldAic = cfg.aicNum_;
+    uint32_t oldAiv = cfg.aivNum_;
+    uint32_t oldPlatCoreNum = plat->GetCoreNum();
+
+    auto tidVal = static_cast<uint32_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+    uint32_t testAic = 1U + (tidVal % 19U);
+    uint32_t testAiv = 1U + ((tidVal + 1U) % 19U);
+    OP_LOGI("SetCoreNumTestAIV testAic: %u, testAiv: %u", testAic, testAiv);
+    cfg.aicNum_ = testAic;
+    cfg.aivNum_ = testAiv;
+
+    // 主线程 npuArch 已首次定型为 DAV_RESV（!= DAV_2002），coreType="MIX_AIV" 走 else 分支：coreNum = aicNum_
     uint32_t coreNum = 0;
     op::internal::SetCoreNum(mixAIV, plat, coreNum);
-    sleep(1);
-    uint32_t currCoreNum = plat->GetCoreNum();
-    EXPECT_EQ(currCoreNum, 0);
+    EXPECT_EQ(coreNum, testAic);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    EXPECT_EQ(plat->GetCoreNum(), testAic);
+
+    cfg.aicNum_ = oldAic;
+    cfg.aivNum_ = oldAiv;
+    plat->SetCoreNum(oldPlatCoreNum);
 }
 
-static void SetCoreNumTest310PMIXAIV()
+// 310P 场景的纯线程内逻辑：假定调用线程的 npuArch 已由调用方保证为 DAV_2002
+static void SetCoreNumTest310PMIXAIVImpl()
 {
     nlohmann::json mixAIV = {{"coreType", "MIX_AIV"}};
     fe::PlatFormInfos* plat = &op::internal::SocContext::platformInfo_;
-    PlatformInfoStub::GetInstance()->SetSoCVersion("Ascend310P", "Ascend310P3");
+    auto& cfg = op::internal::GetThreadLocalContext().opConfigInfo_;
+    auto tidVal = static_cast<uint32_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+    uint32_t testAic = 1U + (tidVal % 19U);
+    uint32_t testAiv = 1U + ((tidVal + 1U) % 19U);
+    OP_LOGI("SetCoreNumTest310PMIXAIV testAic: %u, testAiv: %u", testAic, testAiv);
+    cfg.aicNum_ = testAic;
+    cfg.aivNum_ = testAiv;
+
+    // DAV_2002 + MIX_AIV 分支：coreNum = vectorCoreNum + cubeCoreNum = aivNum_ + aicNum_
     uint32_t coreNum = 0;
     op::internal::SetCoreNum(mixAIV, plat, coreNum);
-    sleep(1);
-    uint32_t currCoreNum = plat->GetCoreNum();
-    EXPECT_EQ(currCoreNum, 0);
-    PlatformInfoStub::GetInstance()->Reset();
+    EXPECT_EQ(coreNum, testAic + testAiv);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    EXPECT_EQ(plat->GetCoreNum(), testAic + testAiv);
 }
 
 TEST_F(TilingCtxBuildUT, TilingCtxBuildUT_AttrTypes)
@@ -481,12 +560,31 @@ TEST_F(TilingCtxBuildUT, TilingCtxBuildUT_AttrTypes)
     op::DestroyOpArgContext(ctx);
 }
 
+TEST_F(TilingCtxBuildUT, TilingCtxBuildUTCase1) { TilingCtxBuildUTCase1(); }
+TEST_F(TilingCtxBuildUT, TilingCtxBuildUTCase2) { TilingCtxBuildUTCase2(); }
+TEST_F(TilingCtxBuildUT, TilingCtxBuildUTCase3) { TilingCtxBuildUTCase3(); }
+TEST_F(TilingCtxBuildUT, GetTilingResFromCacheCase) { GetTilingResFromCacheCase(); }
+TEST_F(TilingCtxBuildUT, TilingParseCtxHolderFreeTest) { TilingParseCtxHolderFreeTest(); }
+TEST_F(TilingCtxBuildUT, SetCoreNumTestAiCore) { SetCoreNumTestAiCore(); }
+TEST_F(TilingCtxBuildUT, SetCoreNumTestMIX) { SetCoreNumTestMIX(); }
+TEST_F(TilingCtxBuildUT, SetCoreNumTestVectorCore) { SetCoreNumTestVectorCore(); }
+TEST_F(TilingCtxBuildUT, SetCoreNumTestAIV) { SetCoreNumTestAIV(); }
+TEST_F(TilingCtxBuildUT, SetCoreNumTest310PMIXAIV)
+{
+    // 主线程 npuArch 已首次定型为 DAV_RESV，必须新起线程让其首次定型时读到 ASCEND_NPU_ARCH=2002
+    setenv("ASCEND_NPU_ARCH", "2002", 1);
+    std::thread t(&SetCoreNumTest310PMIXAIVImpl);
+    t.join();
+    // 环境变量是进程级，必须清理，避免污染后续新线程的 npuArch 定型
+    unsetenv("ASCEND_NPU_ARCH");
+}
+
 TEST_F(TilingCtxBuildUT, TilingCtxMultiThreadTest)
 {
+    // 移除 SetCoreNumTest310PMIXAIV：该用例依赖 setenv 控制环境变量，不适合作为多线程并发对象
     vector<Functional> funVec = {TilingCtxBuildUTCase1,     TilingCtxBuildUTCase2,        TilingCtxBuildUTCase3,
                                  GetTilingResFromCacheCase, TilingParseCtxHolderFreeTest, SetCoreNumTestAiCore,
-                                 SetCoreNumTestMIX,         SetCoreNumTestVectorCore,     SetCoreNumTestAIV,
-                                 SetCoreNumTest310PMIXAIV};
+                                 SetCoreNumTestMIX,         SetCoreNumTestVectorCore,     SetCoreNumTestAIV};
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(0, funVec.size() - 1);
@@ -498,6 +596,22 @@ TEST_F(TilingCtxBuildUT, TilingCtxMultiThreadTest)
     for (int i = 0; i < threadCount; i++) {
         threadVec[i].join();
     }
+}
+
+TEST_F(TilingCtxBuildUT, SetCoreNumTest310PMIXAIVMultiThread)
+{
+    // 主线程派生工作线程前设置环境变量，所有工作线程首次 GetCurrentPlatformInfo 时定型为 DAV_2002
+    setenv("ASCEND_NPU_ARCH", "2002", 1);
+    constexpr uint64_t threadCount = 100;
+    vector<std::thread> threadVec;
+    for (uint64_t i = 0; i < threadCount; i++) {
+        threadVec.emplace_back(std::thread(&SetCoreNumTest310PMIXAIVImpl));
+    }
+    for (uint64_t i = 0; i < threadCount; i++) {
+        threadVec[i].join();
+    }
+    // 全部 join 后清理，避免污染后续新线程的 npuArch 定型
+    unsetenv("ASCEND_NPU_ARCH");
 }
 
 static void TilingCtxBuildLaunchOneThread(op::internal::OpKernelBin* opKernelBin, pthread_barrier_t* barrier)
@@ -578,11 +692,11 @@ TEST_F(TilingCtxBuildUT, TilingCtxMultiThreadTest2)
             std::cout << "pthread_barrier_init failed, error code: " << ret << std::endl;
         }
         vector<std::thread> threadVec;
-        for (int i = 0; i < BARRIER_THREAD_COUNT; i++) {
+        for (int j = 0; j < BARRIER_THREAD_COUNT; j++) {
             threadVec.emplace_back(std::thread(TilingCtxBuildLaunchOneThread, fakeBin, &barrier));
         }
-        for (int i = 0; i < BARRIER_THREAD_COUNT; i++) {
-            threadVec[i].join();
+        for (int k = 0; k < BARRIER_THREAD_COUNT; k++) {
+            threadVec[k].join();
         }
         ret = pthread_barrier_destroy(&barrier); // 销毁屏障
         if (ret != 0) {

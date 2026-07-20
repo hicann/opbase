@@ -80,7 +80,7 @@ size_t CacheKeyBuilder::CalculateCacheKeyLenV1(NnopbaseExecutor* executor)
     ++keyLen; // append '/'
     keyLen += sizeof(uint32_t);
     ++keyLen; // append '/'
-    keyLen += sizeof(bool);
+    keyLen += sizeof(uint8_t);
     return keyLen;
 }
 
@@ -136,7 +136,7 @@ void CacheKeyBuilder::GenerateCacheArgsKeyV1(NnopbaseExecutor* executor)
         NnopbaseAppendBinary(key, sizeof(uint32_t), &mc2RankId, sizeof(uint32_t)));
     key = NnopbaseAppend1Byte(key, '/');
     key = op::internal::PtrCastTo<NnopbaseUChar>(
-        NnopbaseAppendBinary(key, sizeof(bool), &(executor->deterministic), sizeof(bool)));
+        NnopbaseAppendBinary(key, sizeof(uint8_t), &(executor->deterministicLevel), sizeof(uint8_t)));
     executor->ownArgs.seed = NnopbaseHashBinary(executor->ownArgs.inputKey.data(), executor->ownArgs.keyLen);
 }
 
@@ -196,16 +196,16 @@ NnopbaseUChar* CacheKeyBuilder::AppendCoreNum(NnopbaseExecutorArgs* args, const 
     return key;
 }
 
-NnopbaseUChar* CacheKeyBuilder::AppendDeterministic(NnopbaseExecutorArgs* args, const bool* deterministic)
+NnopbaseUChar* CacheKeyBuilder::AppendDeterministicLevel(NnopbaseExecutorArgs* args, const uint8_t* deterministicLevel)
 {
     NnopbaseUChar* key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
     key = AppendPlaceHolder(args, key);
-    EnsureCapacity(args, sizeof(bool));
+    EnsureCapacity(args, sizeof(uint8_t));
     key = op::internal::PtrCastTo<NnopbaseUChar>(args->inputKey.data() + args->keyLen);
     key = op::internal::PtrCastTo<NnopbaseUChar>(
-        NnopbaseAppendBinary(key, args->remainKeyLen, deterministic, sizeof(bool)));
-    args->keyLen += sizeof(bool);
-    args->remainKeyLen -= sizeof(bool);
+        NnopbaseAppendBinary(key, args->remainKeyLen, deterministicLevel, sizeof(uint8_t)));
+    args->keyLen += sizeof(uint8_t);
+    args->remainKeyLen -= sizeof(uint8_t);
     return key;
 }
 

@@ -79,7 +79,7 @@ struct NnopbaseTimeStamp {
 
 typedef struct {
     void* overflowAddr;
-    bool deterministic;
+    uint8_t deterministicLevel;
     NnopbaseUChar precision;
     bool enableArgsCache;
     bool enableTimeStamp;

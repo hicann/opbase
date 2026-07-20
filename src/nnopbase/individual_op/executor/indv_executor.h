@@ -65,7 +65,7 @@ struct NnopbaseExecutorArgs {
     size_t keyLen = 0U;
     size_t seed = 0U;
     size_t tilingDataOffset = NNOPBASE_TILING_DATA_OFFSET;
-    bool isVist = false;
+    bool isVisit = false;
     bool enableCache = true; // 缓存是否启用的开关
     std::vector<uint8_t> memsetArgs;
     std::vector<uint64_t> dfxInfo;
@@ -81,22 +81,94 @@ struct NnopbaseExecutorArgs {
     size_t remainKeyLen = NNOPBASE_MAX_ARGS_KEY_LEN;
 };
 
-typedef struct {
-    bool isMc2 = false;
-    NnopbaseHcclServerType sType;
-    std::vector<HcclComm> hcomHandle;
-} NnopbaseMc2OpCfg;
+struct NnopbaseMc2Execution {
+    bool enabled = false;
+    NnopbaseHcclServerType serverType = NNOPBASE_HCCL_SERVER_TYPE_END;
+    std::vector<HcclComm> commHandles;
+    std::vector<void*> contextAddrs;
+    rtAicpuArgsEx_t aicpuArgs{};
+    rtFusionArgsEx_t fusionArgs{};
+    std::vector<aclrtStream> aicpuStreams;
+    std::vector<uint64_t> aicpuThreads;
+    std::vector<std::pair<aclrtStream, aclrtStream>> aicpuNotifies;
+
+    void ClearRuntimeState()
+    {
+        enabled = false;
+        serverType = NNOPBASE_HCCL_SERVER_TYPE_END;
+        commHandles.clear();
+        contextAddrs.clear();
+        aicpuStreams.clear();
+        aicpuThreads.clear();
+        aicpuNotifies.clear();
+    }
+
+    void Reset()
+    {
+        ClearRuntimeState();
+        aicpuArgs = {};
+        fusionArgs = {};
+    }
+};
+
+struct NnopbaseTilingState {
+    uint64_t* tilingKey = nullptr;
+    uint32_t* numBlocks = nullptr;
+    bool* needAtomic = nullptr;
+    uint32_t* scheMode = nullptr;
+    uint32_t* dynUbufSize = nullptr;
+    uint32_t* aicpuNumBlocks = nullptr;
+    NnopbaseKernelRunContextExt contextExt{};
+
+    void Init()
+    {
+        tilingKey = nullptr;
+        numBlocks = nullptr;
+        needAtomic = nullptr;
+        scheMode = nullptr;
+        dynUbufSize = nullptr;
+        aicpuNumBlocks = nullptr;
+        contextExt = {};
+    }
+};
+
+struct NnopbaseDfxState {
+    NnopbaseDfxId* tilingId = nullptr;
+    uint64_t itemId = 0U;
+    uint64_t aicpuItemId = 0U;
+    uint64_t memsetItemId = 0U;
+    aclnnOpInfoRecord::OpKernelInfo opKernelInfo{"", 0};
+    NnopbaseTimeStamp timeStamp{};
+
+    void Init()
+    {
+        tilingId = nullptr;
+        itemId = 0U;
+        aicpuItemId = 0U;
+        memsetItemId = 0U;
+        opKernelInfo = aclnnOpInfoRecord::OpKernelInfo("", 0);
+        timeStamp = {};
+    }
+
+    void Reset()
+    {
+        tilingId = nullptr;
+        opKernelInfo = aclnnOpInfoRecord::OpKernelInfo("", 0);
+    }
+};
+
+struct NnopbaseOpCompatibility {
+    OpSupportList* paramSupportList = nullptr;
+    uint32_t* supportedSocList = nullptr;
+    uint32_t supportedSocCount = 0U;
+    bool ownsSupportedSocList = false;
+};
 
 typedef struct {
     uint64_t magicNum = NNOPBASE_EXECUTOR_MAGIC_NUMBER; // 首8字节标识该executor类型属于nnopbase不可更改顺序
     bool repeatFlag;
     NnopbaseAttrs attrs;
-    uint64_t* tilingKey;
-    uint32_t* numBlocks;
-    bool* needAtomic;
-    uint32_t* scheMode;
-    uint32_t* dynUbufSize;
-    uint32_t* aicpuNumBlocks;
+    NnopbaseTilingState tiling;
     NnopbaseExecutorArgs* args;
     NnopbaseExecutorArgs ownArgs;
     NnopbaseBinCollector* collector;
@@ -107,42 +179,27 @@ typedef struct {
     uint64_t opTypeHash;
     BinInfoKey binInfoKey;
     NnopbaseRTArgsExt argsExt;
-    NnopbaseKernelRunContextExt contextExt;
     aclrtStream stream;
     bool hasTiling;
     bool isWork;
-    NnopbaseDfxId* tilingId;
-    OpSupportList* supportList;
-    uint32_t* socSupportList;
-    uint32_t socSupportListLen;
-    bool socSupportListOwned = false;
+    NnopbaseDfxState dfx;
+    NnopbaseOpCompatibility opCompatibility;
     uint32_t opTypeId;
     int32_t poolIndex;
     void* userHandle;
     bool isOutEmpty;
     bool isZeroEleOutputLaunch = false;
-    std::vector<void*> contextAddr;
-    rtAicpuArgsEx_t aicpuArgs;
-    rtFusionArgsEx_t fusionArgs;
-    std::vector<aclrtStream> aicpuStream;
-    std::vector<uint64_t> aicpuThread;
-    std::vector<std::pair<aclrtStream, aclrtStream>> aicpuNotify;
+    NnopbaseMc2Execution mc2;
     aclOpExecutor* inUnContExe;
     aclOpExecutor* viewCopyExe;
     size_t inUncontWsSize;
-    uint64_t itemId;
-    uint64_t aicpuItemId;
-    uint64_t memsetItemId;
-    aclnnOpInfoRecord::OpKernelInfo opKernelInfo{"", 0};
-    NnopbaseTimeStamp timeStamp{};
     std::vector<uint8_t> outputShapeData;
     bool hasMemset;
     NnopbaseFormatCheckOption formatCheckOption;
-    NnopbaseMc2OpCfg mc2OpCfg;
     bool matchArgsV2 = false; // 兼容之前的缓存匹配流程，true表示走的新流程，匹配的时候不用再重新生成key
     bool isCachedArgs = false;
     NnopbaseCoreNum coreNum{0, 0};
-    bool deterministic = false;
+    uint8_t deterministicLevel = 0U;
     NnopbaseParamCheckMode paramCheckMode = NnopbaseParamCheckMode::kCheckEnd;
 } NnopbaseExecutor;
 
@@ -169,7 +226,7 @@ struct NnopbaseExecutorSpace {
 
 typedef struct {
     std::vector<NnopbaseExecutorSpace*> spaces;
-    bool isVist;
+    bool isVisit;
 } NnopbaseExecutorSpaceSet;
 
 typedef struct {
@@ -204,30 +261,30 @@ void NnopbaseExecutorDeInit(NnopbaseExecutor* executor);
 void StreamMapClear(aclrtStream stream);
 aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor* executor,
                                     NnopbaseParamCheckMode mode = NnopbaseParamCheckMode::kCheckRequiredIo);
-aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* executor, bool usingStride = false);
-void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* executor);
+aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* const executor, const bool usingStride = false);
+void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* const executor);
 size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor* const executor, bool usingStride = false);
-NnopbaseUChar* NnopbaseExecutorGenAttrsKey(NnopbaseAttrs* attrs, NnopbaseUChar* verKey);
-NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, NnopbaseTensors* tensors, size_t tensorNum,
-                                             bool usingStride = false);
-bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor* executor);
-NnopbaseUChar* NnopbaseExecutor8ByteCopy(size_t totalSize, NnopbaseUChar* verKey, const NnopbaseUChar* addr);
+NnopbaseUChar* NnopbaseExecutorGenAttrsKey(const NnopbaseAttrs* const attrs, NnopbaseUChar* verKey);
+NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, const NnopbaseTensors* const tensors,
+                                             const size_t tensorNum, const bool usingStride = false);
+bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor* const executor);
+NnopbaseUChar* NnopbaseExecutor8ByteCopy(const size_t totalSize, NnopbaseUChar* verKey, const NnopbaseUChar* addr);
 aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor* executor);
 
 // prepare args for launch
 void** NnopbaseExecutorPrepareNullTensors(const NnopbaseExecutor* const executor, void** addr, size_t* tensorIndex);
-aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor* executor, aclrtStream const stream);
-void** NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor* executor, void** addr,
-                                              NnopbaseExecutorArgsAddr* argsAddr);
-void** NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor* executor, void** addr,
-                                               NnopbaseExecutorArgsAddr* argsAddr);
+aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor* const executor, aclrtStream const stream);
+void** NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor* const executor, void** addr,
+                                              NnopbaseExecutorArgsAddr* const argsAddr);
+void** NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor* const executor, void** addr,
+                                               NnopbaseExecutorArgsAddr* const argsAddr);
 
 aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseExecutorGcSpace(void* data);
 aclnnStatus NnopbaseExecutorClearSpace(NnopbaseExecutorSpace* space);
 aclnnStatus NnopbaseExecutorSetRegInfo(NnopbaseExecutor* executor, const NnopbaseChar* opType);
 
-bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* executor);
+bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* const executor);
 
 // add io
 struct NnopbaseTensorIoOptions {
@@ -255,9 +312,9 @@ aclnnStatus NnopbaseExecutorRunWithWorkspace(NnopbaseExecutor* executor, aclrtSt
 aclnnStatus NnopbaseExecutorRunForWorkspace(NnopbaseExecutor* executor, uint64_t* workspaceLen);
 void NnopbaseExecutorClear(NnopbaseExecutor* executor);
 
-size_t NnopbaseCalcArgsSize(NnopbaseExecutor* executor, const size_t tilingDataSize);
-void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* executor);
-aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr,
+size_t NnopbaseCalcArgsSize(NnopbaseExecutor* const executor, const size_t tilingDataSize);
+void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* const executor);
+aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, NnopbaseExecutorArgsAddr* const argsAddr,
                                            const uint32_t workspaceNum);
 bool NnopbaseMatchArgsCache(NnopbaseExecutor* executor, size_t& seed);
 aclnnStatus NnopbaseCreateExecutorArgs(NnopbaseExecutor* executor, const size_t seed);
@@ -307,7 +364,7 @@ aclnnStatus NnopbaseExecutorGetCoreTypeAndTaskRation(NnopbaseExecutor* executor,
 aclnnStatus NnopbaseSetMc2Tiling(NnopbaseExecutor* executor, const char* const group);
 static inline void NnopbaseExecutorSetHcclServerType(NnopbaseExecutor* executor, NnopbaseHcclServerType sType)
 {
-    executor->mc2OpCfg.sType = sType;
+    executor->mc2.serverType = sType;
 }
 
 aclnnStatus NnopbaseSetRefTensorAddr(NnopbaseExecutor* executor, const size_t index, const void* const addr,
@@ -348,7 +405,7 @@ inline bool NnopbaseSkipKernelLaunch(const NnopbaseExecutor* executor)
 inline void RecordNnopbaseTime(NnopbaseExecutor* const executor, const size_t index)
 {
     if (g_nnopbaseSysCfgParams.enableTimeStamp) {
-        clock_gettime(CLOCK_MONOTONIC, &(executor->timeStamp.tp[index]));
+        clock_gettime(CLOCK_MONOTONIC, &(executor->dfx.timeStamp.tp[index]));
     }
 }
 
@@ -377,15 +434,17 @@ inline const NnopbaseWorkspaceSizes* NnopbaseGetWorkspacesSizesFromArgs(const Nn
 
 static inline void NnopbaseExecutorAddTilingId(NnopbaseExecutor* executor, NnopbaseDfxId* tilingId)
 {
-    executor->tilingId = tilingId;
+    executor->dfx.tilingId = tilingId;
 }
 
-static inline void NnopbaseExecutorAddSupportList(NnopbaseExecutor* executor, OpSupportList* supportList,
-                                                  uint32_t* socSupportList, size_t socSupportListLen)
+static inline void NnopbaseExecutorAddSupportList(NnopbaseOpCompatibility& opCompatibility, OpSupportList* supportList,
+                                                  uint32_t* socSupportList, size_t socSupportListLen,
+                                                  bool ownsSupportedSocList = false)
 {
-    executor->supportList = supportList;
-    executor->socSupportList = socSupportList;
-    executor->socSupportListLen = socSupportListLen;
+    opCompatibility.paramSupportList = supportList;
+    opCompatibility.supportedSocList = socSupportList;
+    opCompatibility.supportedSocCount = static_cast<uint32_t>(socSupportListLen);
+    opCompatibility.ownsSupportedSocList = ownsSupportedSocList;
 }
 
 static inline void NnopbaseExecutorAddOpTypeId(NnopbaseExecutor* executor, const uint32_t opTypeId)
@@ -437,13 +496,13 @@ static inline void NnopbaseExecutorReleaseRefContiguousTensors(NnopbaseExecutor*
     executor->args->inputs.unContiguousTensors.refContTensorList = nullptr;
 }
 
-static inline void NnopbaseExecutorSpaceSetInit(NnopbaseExecutorSpaceSet* set) { set->isVist = false; }
+static inline void NnopbaseExecutorSpaceSetInit(NnopbaseExecutorSpaceSet* set) { set->isVisit = false; }
 static inline void NnopbaseExecutorAddSpaceToSet(NnopbaseExecutorSpaceSet* set, NnopbaseExecutorSpace* space)
 {
-    while (!__sync_bool_compare_and_swap(&set->isVist, false, true))
+    while (!__sync_bool_compare_and_swap(&set->isVisit, false, true))
         ;
     set->spaces.push_back(space);
-    set->isVist = false;
+    set->isVisit = false;
 }
 
 void NnopbaseExecutorClearSet(NnopbaseExecutorSpaceSet* set);

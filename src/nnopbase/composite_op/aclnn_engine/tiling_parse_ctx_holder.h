@@ -42,10 +42,10 @@ public:
 
     aclnnStatus BuildTilingParseCtx(uint32_t opType, const gert::OpImplKernelRegistry::OpImplFunctions* tilingFuncs,
                                     const nlohmann::json& opJson, fe::PlatFormInfos* platformInfo,
-                                    const aclnnOpInfoRecord::OpCompilerOption& compileOptions,
+                                    const std::string& opImplModeStr,
                                     const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo);
 
-    const aclnnOpInfoRecord::OpCompilerOption& GetCompileOptions() const;
+    const std::string& GetOpImplModeStr() const;
 
     const aclnnOpInfoRecord::OpKernelInfo* GetOpKernelInfo() const;
 
@@ -84,7 +84,7 @@ private:
 
     std::string kernelName_;
     std::string opTypeStr_;
-    aclnnOpInfoRecord::OpCompilerOption compileOptions_{"", false};
+    std::string opImplModeStr_;
     ComputeNodeInfo dummyComputeNodeInfo_;
     KernelExtendInfo dummyKernelInfo_;
     static constexpr size_t MAX_COMPILE_INFO_STRUCT_SIZE = 32 * 1024;

@@ -52,7 +52,7 @@ extern NnopbaseBinCollector* gBinCollector;
 aclnnStatus NnopbaseCollectorWork(NnopbaseBinCollector* const collector);
 NnopbaseBinInfo* NnopbaseCollectorFindBinInfo(NnopbaseRegInfo* const regInfo, const size_t hashKey,
                                               const NnopbaseUChar* const verbose, const uint32_t verbLen,
-                                              const NnopbaseCoreNum* const coreNum = nullptr);
+                                              const StaticKernelPlatformInfo* const platformInfo = nullptr);
 void NnopbaseCollectorInsertBinInfo(NnopbaseRegInfo* const regInfo, NnopbaseBinInfo* binInfo);
 aclnnStatus NnopbaseCollectorAddBinInfo(const string& key, NnopbaseRegInfo* const regInfo,
                                         const NnopbaseJsonInfo& jsonInfo, const NnopbaseUChar* const verbose,
@@ -96,7 +96,7 @@ NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const Nnopba
                                              const int64_t* const vDepend, const bool usingStride);
 const char* NnopbaseCollectorGetStaticKernelBin(const NnopbaseChar* const opType, const uint64_t key,
                                                 const NnopbaseUChar* verbose, const uint32_t verbLen,
-                                                const NnopbaseCoreNum* const coreNum = nullptr);
+                                                const StaticKernelPlatformInfo* const platformInfo = nullptr);
 aclnnStatus NnopbaseCollectorGetStaticKernelPathAndReadConfig(NnopbaseBinCollector* const collector,
                                                               const std::string& basePath = "");
 aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo);
@@ -133,7 +133,7 @@ static inline void NnopbaseCollectorInitBinTbl(BinTbl* binTbl)
 {
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
         DoubleListInit(&binTbl->buckets[i].head);
-        binTbl->buckets[i].isVist = false;
+        binTbl->buckets[i].isVisit = false;
     }
 }
 

@@ -25,7 +25,7 @@ struct NnopbaseRTArgsExt {
     uint16_t hostInputInfoNum;              // hostInputInfo num
 };
 
-std::vector<aclrtPlaceHolderInfo> NnopbaseGetRTSPlaceHolder(NnopbaseRTArgsExt* argsExt);
+std::vector<aclrtPlaceHolderInfo> NnopbaseGetRTSPlaceHolder(NnopbaseRTArgsExt* const argsExt);
 
 void NnopbaseGetIrIndex(const NnopbaseParamDesc& paramDesc, const size_t index, size_t& irIndex, size_t& relativeIndex);
 

@@ -67,7 +67,7 @@ void ArgsPool::Finalize()
 
 bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* executor)
 {
-    if (args->isVist) {
+    if (args->isVisit) {
         OP_LOGI("Op %s seed %zu args %p is visited.", executor->opType, args->seed, args);
         return false;
     }
@@ -80,7 +80,7 @@ bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* e
         executor->args = args;
         executor->hasTiling = (!args->binInfo->isStaticShape);
         executor->isCachedArgs = true;
-        args->isVist = true;
+        args->isVisit = true;
         Get(executor->args);
         OP_LOGI("Op %s match args cache successfully, seed is %zu, key len is %zu.", executor->opType, args->seed,
                 args->keyLen);
@@ -128,7 +128,7 @@ aclnnStatus ArgsPool::CreateArgs(NnopbaseExecutor* executor)
             const std::lock_guard<std::mutex> lk(mutex);
             (void)argsMap[executor->ownArgs.seed].emplace_back(args.release());
             executor->args = argsMap[executor->ownArgs.seed].back();
-            executor->args->isVist = true;
+            executor->args->isVisit = true;
             RecordNnopbaseTime(executor, NnopbaseTimeIdx::kCreateCacheEnd);
             Put(executor->args);
         }
@@ -175,7 +175,7 @@ void ArgsPool::Put(NnopbaseExecutorArgs* const args)
 {
     while ((argsCache.size() >= maxCacheNum) && (!cacheList.empty())) {
         const auto& tmp = cacheList.back();
-        if (tmp->isVist) {
+        if (tmp->isVisit) {
             OP_LOGW("The number of args cached has reached %zu, but the oldest args %p seed %zu is in use! "
                     "Can't delete args!",
                     maxCacheNum, tmp, tmp->seed);

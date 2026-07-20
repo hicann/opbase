@@ -24,7 +24,16 @@ using namespace op;
 using namespace std;
 using namespace op::internal;
 
-class OpExecutorTest : public testing::Test {};
+class OpExecutorTest : public testing::Test {
+protected:
+    void TearDown() override
+    {
+        aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 0);
+        aclrtSetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, 0);
+        op::internal::GetThreadLocalContext().opConfigInfo_.deterministicLevel_ = 0;
+        op::internal::GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ = false;
+    }
+};
 
 TEST_F(OpExecutorTest, TestOpExecutor)
 {

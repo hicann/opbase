@@ -37,7 +37,7 @@ static inline void NnopbaseComputeNodeInfoDeInit(NnopbaseComputeNodeInfoExt* nod
 
 static inline size_t NnopbaseComputeNodeCalcLen(NnopbaseExecutor* executor)
 {
-    NnopbaseComputeNodeInfo* node = executor->contextExt.nodeExt.node;
+    NnopbaseComputeNodeInfo* node = executor->tiling.contextExt.nodeExt.node;
     size_t size = node->irInputsNum * sizeof(NnopbaseAnchorInstanceInfo) +
                   node->irOutputsNum * sizeof(NnopbaseAnchorInstanceInfo) +
                   (node->outputsNum + node->inputsNum) * sizeof(NnopbaseCompileTimeTensorDesc) +
@@ -62,7 +62,7 @@ aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor* executor);
 
 static inline aclnnStatus NnopbaseTilingBuildOpAttrs(NnopbaseExecutor* executor)
 {
-    return NnopbaseComputeNodeAttrsUpdt(&executor->contextExt.nodeExt, &executor->attrs);
+    return NnopbaseComputeNodeAttrsUpdt(&executor->tiling.contextExt.nodeExt, &executor->attrs);
 }
 #ifdef __cplusplus
 }

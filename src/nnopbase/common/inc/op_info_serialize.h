@@ -15,14 +15,14 @@
 
 namespace aclnnOpInfoRecord {
 struct OpCompilerOption {
-    explicit OpCompilerOption(const std::string& impl_mode_v, bool deterministic_v = true)
+    explicit OpCompilerOption(const std::string& impl_mode_v, uint8_t deterministic_v = true)
         : impl_mode(impl_mode_v), deterministic(deterministic_v)
     {}
-    explicit OpCompilerOption(const char* impl_mode_v, bool deterministic_v = true)
+    explicit OpCompilerOption(const char* impl_mode_v, uint8_t deterministic_v = true)
         : impl_mode(impl_mode_v), deterministic(deterministic_v)
     {}
     std::string impl_mode;
-    bool deterministic;
+    uint8_t deterministic;
 };
 
 struct OpKernelInfo {

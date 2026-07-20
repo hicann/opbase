@@ -21,7 +21,7 @@ public:
     static NnopbaseUChar* AppendPlaceHolder(NnopbaseExecutorArgs* args, NnopbaseUChar* key);
     static NnopbaseUChar* AppendCoreNum(NnopbaseExecutorArgs* args, const NnopbaseCoreNum* coreNum);
     static NnopbaseUChar* AppendMc2RankId(NnopbaseExecutorArgs* args, const uint32_t* rankId);
-    static NnopbaseUChar* AppendDeterministic(NnopbaseExecutorArgs* args, const bool* deterministic);
+    static NnopbaseUChar* AppendDeterministicLevel(NnopbaseExecutorArgs* args, const uint8_t* deterministicLevel);
     static void AppendValueDependTensor(NnopbaseExecutorArgs* args, const void* addr, const uint64_t dim,
                                         const uint64_t dataLen, ge::DataType dType);
     static void AppendScalar(NnopbaseExecutorArgs* args, const aclScalar* scalar, const uint32_t index,

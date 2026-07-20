@@ -513,6 +513,20 @@ TEST_F(NnopbaseCacheKeyUnitTest, NnopbaseV2CacheKeyNullTensor)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
+TEST_F(NnopbaseCacheKeyUnitTest, NnopbaseV2CacheKeyAppendsRawDeterministicLevel)
+{
+    NnopbaseExecutorArgs args;
+    args.keyLen = 0U;
+    args.remainKeyLen = 1U;
+    const uint8_t deterministicLevel = 2U;
+
+    (void)Indv::CacheKeyBuilder::AppendDeterministicLevel(&args, &deterministicLevel);
+
+    ASSERT_EQ(args.keyLen, sizeof(uint8_t) + 1U);
+    ASSERT_EQ(args.inputKey[0], kSeparator);
+    ASSERT_EQ(args.inputKey[1], deterministicLevel);
+}
+
 // ===== V2 path: IntArray input is value-dependent; raw bytes are appended =====
 TEST_F(NnopbaseCacheKeyUnitTest, NnopbaseV2CacheKeyIntArray)
 {

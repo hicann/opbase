@@ -13,6 +13,7 @@
 #include "executor/indv_executor.h"
 #include "executor/indv_bininfo.h"
 #include <gtest/gtest.h>
+#include <memory>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -68,6 +69,43 @@ TEST_F(NnopbaseCollectorUnitTest, test_thread_static_kernel_base_path)
     ASSERT_EQ(nnopbase::utils::ThreadVarContainer::GetStaticKernelBasePathInThread(), "/tmp/static_kernel_path");
     nnopbase::utils::ThreadVarContainer::SetStaticKernelBasePathInThread("");
     ASSERT_EQ(nnopbase::utils::ThreadVarContainer::GetStaticKernelBasePathInThread(), "");
+}
+
+TEST_F(NnopbaseCollectorUnitTest, StaticKernelMatchChecksDeterministicLevelAfterSameKey)
+{
+    NnopbaseRegInfo regInfo;
+    regInfo.key.opType = "StaticDeterministicTest";
+    NnopbaseCollectorInitBinTbl(&regInfo.binTbl);
+
+    const NnopbaseUChar verbose[] = {'s', 'a', 'm', 'e', '_', 's', 'i', 'm', 'p', 'l', 'i', 'f', 'i', 'e', 'd'};
+    const uint32_t verboseLen = sizeof(verbose);
+
+    NnopbaseBinInfo binLevel1;
+    NnopbaseBinInfoInit(&binLevel1);
+    ASSERT_EQ(NnopbaseBinInfoSetOpBinInfoKey(&binLevel1, verbose, verboseLen), OK);
+    binLevel1.extraKernelDesc = std::make_shared<ExtraKernelDesc>();
+    binLevel1.extraKernelDesc->platformInfo = std::make_unique<StaticKernelPlatformInfo>();
+    binLevel1.extraKernelDesc->platformInfo->coreNum = {24U, 48U};
+    binLevel1.extraKernelDesc->platformInfo->deterministicLevel = 1;
+
+    NnopbaseBinInfo binLevel2;
+    NnopbaseBinInfoInit(&binLevel2);
+    ASSERT_EQ(NnopbaseBinInfoSetOpBinInfoKey(&binLevel2, verbose, verboseLen), OK);
+    binLevel2.extraKernelDesc = std::make_shared<ExtraKernelDesc>();
+    binLevel2.extraKernelDesc->platformInfo = std::make_unique<StaticKernelPlatformInfo>();
+    binLevel2.extraKernelDesc->platformInfo->coreNum = {24U, 48U};
+    binLevel2.extraKernelDesc->platformInfo->deterministicLevel = 2; // 2表示强一致性
+
+    NnopbaseCollectorInsertBinInfo(&regInfo, &binLevel1);
+    NnopbaseCollectorInsertBinInfo(&regInfo, &binLevel2);
+
+    StaticKernelPlatformInfo runtimeLevel2{{24U, 48U}, 2};
+    EXPECT_EQ(NnopbaseCollectorFindBinInfo(&regInfo, binLevel1.binInfoKey.hashKey, verbose, verboseLen, &runtimeLevel2),
+              &binLevel2);
+
+    StaticKernelPlatformInfo runtimeLevel3{{24U, 48U}, 3};
+    EXPECT_EQ(NnopbaseCollectorFindBinInfo(&regInfo, binLevel1.binInfoKey.hashKey, verbose, verboseLen, &runtimeLevel3),
+              nullptr);
 }
 
 TEST_F(NnopbaseCollectorUnitTest, test_get_soc_version_ok)

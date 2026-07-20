@@ -70,9 +70,9 @@ static inline void DoubleListRemove(DoubleListNode* node, DList* list)
     list->count--;
 }
 
-static inline int DoubleListIsEmpty(DList* list) { return list->node.next == &(list->node); }
+static inline int DoubleListIsEmpty(const DList* const list) { return list->node.next == &(list->node); }
 
-static inline unsigned int DoubleListCount(DList* list) { return list->count; }
+static inline unsigned int DoubleListCount(const DList* const list) { return list->count; }
 
 #ifdef __cplusplus
 }

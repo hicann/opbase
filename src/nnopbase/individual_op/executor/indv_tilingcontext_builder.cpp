@@ -119,8 +119,8 @@ static inline size_t NnopbaseKernelRunContextLen(const uint32_t num)
 
 void NnopbaseTilingBuildOpInputs(NnopbaseExecutor* executor)
 {
-    NnopbaseAsyncAnyValue** values = executor->contextExt.context->values;
-    NnopbaseCompileTimeTensorDesc* inputTd = executor->contextExt.nodeExt.inputTdStart;
+    NnopbaseAsyncAnyValue** values = executor->tiling.contextExt.context->values;
+    NnopbaseCompileTimeTensorDesc* inputTd = executor->tiling.contextExt.nodeExt.inputTdStart;
     for (uint32_t i = 0; i < executor->args->inputs.num; i++) {
         if (!executor->args->inputs.extTensors[i].isNull) {
             NnopbaseCompileTimeTensorDesc* td = inputTd + i;
@@ -140,8 +140,8 @@ void NnopbaseTilingBuildOpInputs(NnopbaseExecutor* executor)
 
 void NnopbaseTilingBuildOpOutputs(NnopbaseExecutor* executor)
 {
-    NnopbaseCompileTimeTensorDesc* outputTd = executor->contextExt.nodeExt.outputTdStart;
-    NnopbaseAsyncAnyValue** values = &executor->contextExt.context->values[executor->args->inputs.num];
+    NnopbaseCompileTimeTensorDesc* outputTd = executor->tiling.contextExt.nodeExt.outputTdStart;
+    NnopbaseAsyncAnyValue** values = &executor->tiling.contextExt.context->values[executor->args->inputs.num];
     const uint32_t count = executor->args->outputs.num;
     for (uint32_t i = 0; i < count; i++) {
         if (!executor->args->outputs.extTensors[i].isNull) {
@@ -164,40 +164,40 @@ void NnopbaseTilingBuildOpOutputs(NnopbaseExecutor* executor)
 // 若无动态输入，在不需要重新刷新，有动态输入场景需要重新刷新
 static void NnopbaseTilingSetContextOutputStep1(NnopbaseExecutor* const executor)
 {
-    NnopbaseAsyncAnyValue** values = executor->contextExt.context->values;
-    size_t index = executor->contextExt.context->input_size;
+    NnopbaseAsyncAnyValue** values = executor->tiling.contextExt.context->values;
+    size_t index = executor->tiling.contextExt.context->input_size;
     /* kOutputTilingKey. */
-    executor->tilingKey = op::internal::PtrCastTo<uint64_t>(values[index]->data.inplace);
+    executor->tiling.tilingKey = op::internal::PtrCastTo<uint64_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
     /* kOutputBlockDim. */
-    executor->numBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->tiling.numBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
     /* kOutputAtomicCleanFlag. */
-    executor->needAtomic = op::internal::PtrCastTo<bool>(values[index]->data.inplace);
+    executor->tiling.needAtomic = op::internal::PtrCastTo<bool>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     /* 4 for OutputTilingData, OutputWorkspace, OutputTilingCond, OutputScheduleMode. */
     index += 4U;
     /* kOutputScheduleMode. */
-    executor->scheMode = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->tiling.scheMode = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
     /* kOutputLocalMemorySize. */
-    executor->dynUbufSize = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->tiling.dynUbufSize = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
     index++;
-    executor->aicpuNumBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
+    executor->tiling.aicpuNumBlocks = op::internal::PtrCastTo<uint32_t>(values[index]->data.inplace);
     values[index]->deleter = nullptr;
 }
 
 // 设置TilingData和Workspace，实际内存放在tilingInfo里，value里的addr保存
 static void NnopbaseTilingSetContextOutputStep2(NnopbaseExecutor* const executor)
 {
-    NnopbaseAsyncAnyValue** values = executor->contextExt.context->values;
+    NnopbaseAsyncAnyValue** values = executor->tiling.contextExt.context->values;
     auto& tilingInfo = executor->args->tilingInfo;
     // 3 for tilingkey, numBlocks, atomic
-    size_t index = executor->contextExt.context->input_size + 3U;
+    size_t index = executor->tiling.contextExt.context->input_size + 3U;
     /* kOutputTilingData. */
     values[index]->data.pointer = op::internal::PtrCastTo<void>(tilingInfo.tilingData);
     values[index]->deleter = nullptr;
@@ -212,9 +212,9 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
     if (!g_nnopbasePlatformMgr.isInit) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit());
     }
-    NnopbaseAsyncAnyValue** values = executor->contextExt.context->values;
+    NnopbaseAsyncAnyValue** values = executor->tiling.contextExt.context->values;
     // executor->args->inputs.nonDynamicCnt > executor->args->inputs.requiredCnt for option input
-    if ((!executor->contextExt.hasPrepared) || executor->args->inputs.hasDynamic ||
+    if ((!executor->tiling.contextExt.hasPrepared) || executor->args->inputs.hasDynamic ||
         executor->args->outputs.hasDynamic ||
         (executor->args->inputs.nonDynamicCnt > executor->args->inputs.requiredCnt)) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseTilingContextUpdtPrepare(executor));
@@ -230,22 +230,22 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
         values[index]->deleter = nullptr;
         index++;
         /* kInputsDeterministic. */
-        values[index]->data.pointer = reinterpret_cast<void*>(executor->deterministic);
+        values[index]->data.pointer = reinterpret_cast<void*>(executor->deterministicLevel);
         values[index]->deleter = nullptr;
         NnopbaseTilingSetContextOutputStep1(executor);
-        executor->contextExt.hasPrepared = true;
+        executor->tiling.contextExt.hasPrepared = true;
     }
     /* kInputsPlatformInfo. */
     uint32_t platformInfIndex = executor->args->inputs.num + executor->args->outputs.num + 1U;
     values[platformInfIndex]->data.pointer = static_cast<void*>(g_nnopbasePlatformMgr.infos.get());
     values[platformInfIndex]->deleter = nullptr;
 
-    *(executor->tilingKey) = 0U;
-    *(executor->numBlocks) = 0U;
-    *(executor->scheMode) = 0U;
-    *(executor->needAtomic) = false;
-    *(executor->aicpuNumBlocks) = 0U;
-    *(executor->dynUbufSize) = 0U;
+    *(executor->tiling.tilingKey) = 0U;
+    *(executor->tiling.numBlocks) = 0U;
+    *(executor->tiling.scheMode) = 0U;
+    *(executor->tiling.needAtomic) = false;
+    *(executor->tiling.aicpuNumBlocks) = 0U;
+    *(executor->tiling.dynUbufSize) = 0U;
     NnopbaseTilingSetContextOutputStep2(executor);
     NnopbaseTilingBuildOpInputs(executor);
     NnopbaseTilingBuildOpOutputs(executor);
@@ -280,7 +280,7 @@ aclnnStatus NnopbaseInitContext(NnopbaseKernelRunContextExt* contextExt, const u
 
 aclnnStatus NnopbaseTilingContextInit(NnopbaseExecutor* executor)
 {
-    NnopbaseKernelRunContextExt* contextExt = &executor->contextExt;
+    NnopbaseKernelRunContextExt* contextExt = &executor->tiling.contextExt;
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseComputeNodeInfoInit(&contextExt->nodeExt));
     const uint32_t num = NnopbaseGetKernelRunContextValuesInitNum(executor);
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseInitContext(contextExt, num));
@@ -290,8 +290,8 @@ aclnnStatus NnopbaseTilingContextInit(NnopbaseExecutor* executor)
 
 void NnopbaseTilingContextDeInit(NnopbaseExecutor* executor)
 {
-    FREE(executor->contextExt.context);
-    NnopbaseComputeNodeInfoDeInit(&executor->contextExt.nodeExt);
+    FREE(executor->tiling.contextExt.context);
+    NnopbaseComputeNodeInfoDeInit(&executor->tiling.contextExt.nodeExt);
 }
 
 aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueInfo>& initValues,
@@ -455,7 +455,7 @@ aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor* executor)
         values[index]->deleter = nullptr;
         index++;
         /* kInputsDeterministic. */
-        values[index]->data.pointer = reinterpret_cast<void*>(executor->deterministic);
+        values[index]->data.pointer = reinterpret_cast<void*>(executor->deterministicLevel);
         values[index]->deleter = nullptr;
 
         NnopbaseSetMemsetTilingKeyAndNumBlocks(executor);
@@ -551,7 +551,7 @@ aclnnStatus NnopbaseBuildAndRunMemsetTilingParse(std::shared_ptr<MemsetOpInfo>& 
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->tiling_parse);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(opImpl->tiling);
     CHECK_COND(NnopbaseSetMemsetTilingContext(memsetInfo, opImpl->compile_info_creator()) == OK, ACLNN_ERR_INNER,
-               "Failed to set tilingContext for MemSet operator.");
+               "Failed to set tiling for MemSet operator.");
 
     memsetInfo->tilingFunc = reinterpret_cast<TilingFun>(opImpl->tiling);
     auto ret = opImpl->tiling_parse(op::internal::PtrCastTo<gert::KernelContext>(memsetInfo->tilingParseContext));

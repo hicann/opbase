@@ -142,7 +142,7 @@ void SetCoreNum(const Json& opJson, fe::PlatFormInfos* platformInfo, uint32_t& c
 aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(uint32_t opType,
                                                       const gert::OpImplKernelRegistry::OpImplFunctions* tilingFuncs,
                                                       const Json& opJson, fe::PlatFormInfos* platformInfo,
-                                                      const aclnnOpInfoRecord::OpCompilerOption& compileOptions,
+                                                      const std::string& opImplModeStr,
                                                       const aclnnOpInfoRecord::OpKernelInfo& opKernelInfo)
 {
     if (tilingFuncs == nullptr) {
@@ -161,7 +161,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(uint32_t opType,
     }
 
     opTypeStr_ = OpTypeDict::ToString(opType).GetString();
-    compileOptions_ = compileOptions;
+    opImplModeStr_ = opImplModeStr;
     opKernelInfo_ = opKernelInfo;
     SetCoreNum(opJson, platformInfo, coreNum_);
     tilingParseInfo_.platformInfo_ = platformInfo;
@@ -228,7 +228,7 @@ aclnnStatus TilingParseCtxHolder::BuildTilingParseCtx(uint32_t opType,
     return ACLNN_SUCCESS;
 }
 
-const aclnnOpInfoRecord::OpCompilerOption& TilingParseCtxHolder::GetCompileOptions() const { return compileOptions_; }
+const std::string& TilingParseCtxHolder::GetOpImplModeStr() const { return opImplModeStr_; }
 
 const aclnnOpInfoRecord::OpKernelInfo* TilingParseCtxHolder::GetOpKernelInfo() const { return &opKernelInfo_; }
 

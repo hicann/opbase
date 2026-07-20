@@ -2884,7 +2884,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessWithAiCPU)
     ASSERT_NE(executor, nullptr);
 
     NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
-    ASSERT_EQ(((NnopbaseExecutor*)executor)->mc2OpCfg.sType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    ASSERT_EQ(((NnopbaseExecutor*)executor)->mc2.serverType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     ASSERT_EQ(NnopbaseSetMc2(executor), OK);
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();
@@ -2914,7 +2914,7 @@ TEST_F(NnopbaseUnitTest, NnopbaseSetMc2SuccessForascend950WithAiCPU)
     } socGuard{oriSocVersion};
     SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND950);
     ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
-    ASSERT_EQ(((NnopbaseExecutor*)executor)->mc2OpCfg.sType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
+    ASSERT_EQ(((NnopbaseExecutor*)executor)->mc2.serverType, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
     ASSERT_EQ(NnopbaseSetMc2(executor), OK);
 
     // SOC version will be restored by SocVersionGuard destructor

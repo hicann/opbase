@@ -918,7 +918,8 @@ aclnnStatus NnopbaseAddSupportList(void* executor, OpSupportList* list, uint32_t
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(list);
-    NnopbaseExecutorAddSupportList((NnopbaseExecutor*)executor, list, socSupportList, socSupportListLen);
+    NnopbaseExecutorAddSupportList(PtrCastTo<NnopbaseExecutor>(executor)->opCompatibility, list, socSupportList,
+                                   socSupportListLen);
     return OK;
 }
 
@@ -974,9 +975,11 @@ aclnnStatus NnopbaseAddSocNameList(void* executor, OpSupportList* list, const ch
     }
     NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseCheckCurrentSocMatch(socNameList, socNameListLen));
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
-    if (nnopExecutor->socSupportList != nullptr &&
-        nnopExecutor->socSupportListLen == static_cast<uint32_t>(socNameListLen) && nnopExecutor->socSupportListOwned) {
-        NnopbaseExecutorAddSupportList(nnopExecutor, list, nnopExecutor->socSupportList, socNameListLen);
+    auto& opCompatibility = nnopExecutor->opCompatibility;
+    if (opCompatibility.supportedSocList != nullptr &&
+        opCompatibility.supportedSocCount == static_cast<uint32_t>(socNameListLen) &&
+        opCompatibility.ownsSupportedSocList) {
+        NnopbaseExecutorAddSupportList(opCompatibility, list, opCompatibility.supportedSocList, socNameListLen, true);
         return OK;
     }
     const auto& indvSoc = nnopbase::IndvSoc::GetInstance();
@@ -985,11 +988,11 @@ aclnnStatus NnopbaseAddSocNameList(void* executor, OpSupportList* list, const ch
                 MAX_SOC_NAME_LIST_LEN);
         return ACLNN_ERR_PARAM_INVALID;
     }
-    if (nnopExecutor->socSupportListOwned) {
-        delete[] nnopExecutor->socSupportList;
+    if (opCompatibility.ownsSupportedSocList) {
+        delete[] opCompatibility.supportedSocList;
     }
-    nnopExecutor->socSupportList = nullptr;
-    nnopExecutor->socSupportListOwned = false;
+    opCompatibility.supportedSocList = nullptr;
+    opCompatibility.ownsSupportedSocList = false;
     auto* enumList = new (std::nothrow) uint32_t[socNameListLen];
     NNOPBASE_ASSERT_NOTNULL_RETVAL(enumList);
     for (size_t i = 0U; i < socNameListLen; i++) {
@@ -1000,10 +1003,7 @@ aclnnStatus NnopbaseAddSocNameList(void* executor, OpSupportList* list, const ch
         }
     }
     NnopbaseConvertSocNamesToEnums(indvSoc, socNameList, socNameListLen, enumList);
-    nnopExecutor->socSupportList = enumList;
-    nnopExecutor->socSupportListLen = static_cast<uint32_t>(socNameListLen);
-    nnopExecutor->socSupportListOwned = true;
-    NnopbaseExecutorAddSupportList(nnopExecutor, list, enumList, socNameListLen);
+    NnopbaseExecutorAddSupportList(opCompatibility, list, enumList, socNameListLen, true);
     return OK;
 }
 
@@ -1134,9 +1134,10 @@ const NnopbaseChar* NnopbaseFindStaticKernel(const aclTensor* tensors[], const N
                                             staticRuntimeInfo->implMode, staticRuntimeInfo->deterMode, valueDepend,
                                             true);
 
-    NnopbaseCoreNum coreNum{staticRuntimeInfo->aicNum, staticRuntimeInfo->aivNum};
+    StaticKernelPlatformInfo platformInfo{{staticRuntimeInfo->aicNum, staticRuntimeInfo->aivNum},
+                                          static_cast<int8_t>(staticRuntimeInfo->deterMode)};
     auto simplifiedKey = NnopbaseCollectorGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                                             uint32_t(verKey1 - verbose), &coreNum);
+                                                             uint32_t(verKey1 - verbose), &platformInfo);
     if (simplifiedKey != nullptr) {
         return simplifiedKey;
     } else {
@@ -1146,7 +1147,7 @@ const NnopbaseChar* NnopbaseFindStaticKernel(const aclTensor* tensors[], const N
                                                 staticRuntimeInfo->implMode, staticRuntimeInfo->deterMode, valueDepend,
                                                 false);
         return NnopbaseCollectorGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                                   uint32_t(verKey2 - verbose), &coreNum);
+                                                   uint32_t(verKey2 - verbose), &platformInfo);
     }
 }
 
@@ -1163,7 +1164,7 @@ aclnnStatus NnopbaseGetStreamAndEvent(const aclrtStream stream, aclrtStream* sub
 aclnnStatus NnopbaseSetMc2(void* const executor)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
-    ((NnopbaseExecutor*)executor)->mc2OpCfg.isMc2 = true;
+    ((NnopbaseExecutor*)executor)->mc2.enabled = true;
     bool needLoadDavidHcclApi = nnopbase::IndvSoc::GetInstance().SupportMc2FusionLaunch();
     if (needLoadDavidHcclApi) {
         const static aclnnStatus retVal = nnopbase::IndvMc2ClientWrapper::GetInstance().IndvMc2ClientWrapperInit(
@@ -1181,10 +1182,10 @@ aclnnStatus NnopbaseSetMc2(void* const executor)
 aclnnStatus NnopbaseSetHcomGroup(void* const executor, char* const group)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
-    CHECK_COND(((NnopbaseExecutor*)executor)->mc2OpCfg.isMc2, ACLNN_ERR_PARAM_INVALID,
+    CHECK_COND(((NnopbaseExecutor*)executor)->mc2.enabled, ACLNN_ERR_PARAM_INVALID,
                "Failed to set Hcom group for %s, group is %p.", ((NnopbaseExecutor*)executor)->opType, group);
     if ((group == nullptr) || strcmp(group, "") == 0) {
-        ((NnopbaseExecutor*)executor)->mc2OpCfg.hcomHandle.push_back(nullptr);
+        ((NnopbaseExecutor*)executor)->mc2.commHandles.push_back(nullptr);
     } else {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSetMc2Tiling(((NnopbaseExecutor*)executor), group));
     }
@@ -1283,7 +1284,7 @@ bool NnopbaseMatchArgs(void* executor, uint64_t* workspaceLen)
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     RecordNnopbaseTime(nnopExecutor, NnopbaseTimeIdx::kGetWsStart);
     nnopbase::NnopbaseGetCoreNum(&nnopExecutor->coreNum.aicNum, &nnopExecutor->coreNum.aivNum);
-    nnopExecutor->deterministic = nnopbase::GetGlobalDeterministic();
+    nnopExecutor->deterministicLevel = static_cast<uint8_t>(nnopbase::GetGlobalDeterministic());
     NnopbaseUpdatePlatformInfo(nnopExecutor);
     if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         nnopExecutor->ownArgs.enableCache = false;
@@ -1298,7 +1299,7 @@ bool NnopbaseMatchArgs(void* executor, uint64_t* workspaceLen)
     key = Indv::CacheKeyBuilder::AppendCoreNum(&nnopExecutor->ownArgs, &nnopExecutor->coreNum);
     uint32_t mc2RankId = nnopbase::utils::ThreadVarContainer::GetCurMc2RankIdInThread();
     key = Indv::CacheKeyBuilder::AppendMc2RankId(&nnopExecutor->ownArgs, &mc2RankId);
-    key = Indv::CacheKeyBuilder::AppendDeterministic(&nnopExecutor->ownArgs, &(nnopExecutor->deterministic));
+    key = Indv::CacheKeyBuilder::AppendDeterministicLevel(&nnopExecutor->ownArgs, &(nnopExecutor->deterministicLevel));
     nnopExecutor->ownArgs.seed = NnopbaseHashBinary(PtrCastTo<NnopbaseUChar>(nnopExecutor->ownArgs.inputKey.data()),
                                                     nnopExecutor->ownArgs.keyLen);
     if (nnopbase::ArgsPool::GetInstance().MatchArgs(nnopExecutor)) {

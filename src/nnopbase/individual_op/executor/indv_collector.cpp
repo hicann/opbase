@@ -168,17 +168,26 @@ std::string GetOpSoPackageName(const std::string& path)
     return "built-in";
 }
 
-bool MatchBinWithCoreNum(const NnopbaseBinInfo* const binInfo, const NnopbaseCoreNum* const coreNum)
+bool MatchBinWithPlatformInfo(const NnopbaseBinInfo* const binInfo, const StaticKernelPlatformInfo* const platformInfo)
 {
     // 不具备校验的条件或未开启校验，直接返回匹配成功
-    if (coreNum == nullptr || binInfo->extraKernelDesc == nullptr || binInfo->extraKernelDesc->coreNum == nullptr) {
+    if (platformInfo == nullptr || binInfo->extraKernelDesc == nullptr ||
+        binInfo->extraKernelDesc->platformInfo == nullptr) {
         return true;
     }
-    const auto& binCoreNum = binInfo->extraKernelDesc->coreNum;
+    const auto& binPlatformInfo = binInfo->extraKernelDesc->platformInfo;
+    const auto& binCoreNum = binInfo->extraKernelDesc->platformInfo->coreNum;
+    const auto& coreNum = platformInfo->coreNum;
     OP_LOGD("Match static bin with runtime coreNum[%u, %u], while coreNum of candidate static kernel is [%u, %u].",
-            coreNum->aicNum, coreNum->aivNum, binCoreNum->aicNum, binCoreNum->aivNum);
+            coreNum.aicNum, coreNum.aivNum, binCoreNum.aicNum, binCoreNum.aivNum);
     // 控核场景必须保证aic/aiv核数与当前核数相等
-    return (binCoreNum->aivNum == coreNum->aivNum) && ((binCoreNum->aicNum == coreNum->aicNum));
+    bool coreEqual = (binCoreNum.aivNum == coreNum.aivNum) && ((binCoreNum.aicNum == coreNum.aicNum));
+    // 如果静态kernel描述符里包含了deterministicLevel，做强校验
+    if (binPlatformInfo->deterministicLevel != -1) {
+        return (binPlatformInfo->deterministicLevel == platformInfo->deterministicLevel) && coreEqual;
+    } else {
+        return coreEqual;
+    }
 }
 } // namespace
 
@@ -202,7 +211,8 @@ NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const Nnopba
 {
     verKey = NnopbaseAppendBinary(verKey, NNOPBASE_MAX_STATICKEY_LEN, &(regInfoKey->opType[0U]),
                                   regInfoKey->opType.size());
-    verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(deterMin));
+    uint64_t determinLevel = (deterMin == 0U) ? 0U : 1U;
+    verKey = NnopbaseAppend8Byte(verKey, determinLevel);
     verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(implMode));
     OP_LOGI("Get deterministic is %ld, high precision is %ld", deterMin, implMode);
 
@@ -291,14 +301,14 @@ NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const Nnopba
 
 const NnopbaseChar* NnopbaseCollectorGetStaticKernelBin(const NnopbaseChar* const opType, const uint64_t key,
                                                         const NnopbaseUChar* verbose, const uint32_t verbLen,
-                                                        const NnopbaseCoreNum* const coreNum)
+                                                        const StaticKernelPlatformInfo* const platformInfo)
 {
     NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(gBinCollector, opType, key);
     if (regInfo == nullptr) {
         return nullptr;
     }
     const size_t hashKey = NnopbaseHashBinary(verbose, static_cast<size_t>(verbLen)) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
-    const NnopbaseBinInfo* binInfo = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, verbLen, coreNum);
+    const NnopbaseBinInfo* binInfo = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, verbLen, platformInfo);
     if (binInfo == nullptr) {
         return nullptr;
     }
@@ -659,7 +669,7 @@ aclnnStatus NnopbaseCollectorGcRegInfo(void* data)
     NnopbaseRegInfo* regInfo = op::internal::PtrCastTo<NnopbaseRegInfo>(data);
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
         BinInfoBucket* bucket = &regInfo->binTbl.buckets[i];
-        if (bucket->isVist) {
+        if (bucket->isVisit) {
             return ACLNN_SUCCESS;
         }
         DList* const head = &bucket->head;
@@ -683,7 +693,7 @@ aclnnStatus NnopbaseCollectorGcRegInfo(void* data)
 void SetExtraKernelInfoToBin(const NnopbaseJsonInfo& jsonInfo, std::unique_ptr<NnopbaseBinInfo>& binInfo)
 {
     auto& runInfo = jsonInfo.extraKernelDesc.runInfo;
-    auto& coreNum = jsonInfo.extraKernelDesc.coreNum;
+    auto& platformInfo = jsonInfo.extraKernelDesc.platformInfo;
     if (runInfo != nullptr) {
         if (binInfo->extraKernelDesc == nullptr) {
             binInfo->extraKernelDesc = std::make_shared<ExtraKernelDesc>();
@@ -700,16 +710,16 @@ void SetExtraKernelInfoToBin(const NnopbaseJsonInfo& jsonInfo, std::unique_ptr<N
             binInfo->extraKernelDesc->runInfo->tilingKey, binInfo->extraKernelDesc->runInfo->clearAtomic,
             binInfo->extraKernelDesc->runInfo->workspaceSizesNum);
     }
-    if (coreNum != nullptr) {
+    if (platformInfo != nullptr) {
         if (binInfo->extraKernelDesc == nullptr) {
             binInfo->extraKernelDesc = std::make_shared<ExtraKernelDesc>();
             NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc);
         }
-        binInfo->extraKernelDesc->coreNum = std::make_unique<NnopbaseCoreNum>(*coreNum);
-        NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc->coreNum);
+        binInfo->extraKernelDesc->platformInfo = std::make_unique<StaticKernelPlatformInfo>(*platformInfo);
+        NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc->platformInfo);
         OP_LOGI("Update platformInfo of %s json to binInfo, number of aic blocks is %u, number of aiv blocks is %u",
-                jsonInfo.opType.c_str(), binInfo->extraKernelDesc->coreNum->aicNum,
-                binInfo->extraKernelDesc->coreNum->aivNum);
+                jsonInfo.opType.c_str(), binInfo->extraKernelDesc->platformInfo->coreNum.aicNum,
+                binInfo->extraKernelDesc->platformInfo->coreNum.aivNum);
     }
 }
 
@@ -723,7 +733,7 @@ aclnnStatus NnopbaseCollectorAddBinInfo(const string& key, NnopbaseRegInfo* cons
     if (jsonInfo.isStaticShape) {
         size_t hashKey = NnopbaseHashBinary(verbose, len) % NNOPBASE_NORM_MAX_BIN_BUCKETS;
         NnopbaseBinInfo* findBin = NnopbaseCollectorFindBinInfo(regInfo, hashKey, verbose, len,
-                                                                jsonInfo.extraKernelDesc.coreNum.get());
+                                                                jsonInfo.extraKernelDesc.platformInfo.get());
         if (findBin != nullptr) {
             OP_LOGI("%s binInfo already exists, no need to add.", regInfo->key.opType.c_str());
             return OK;
@@ -811,17 +821,22 @@ void UpdatePlatformInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json
     try {
         if (staticKernelJsonConfig.contains("platformInfo")) {
             auto& platformInfo = staticKernelJsonConfig["platformInfo"];
-            kernelDesc.coreNum = std::make_unique<NnopbaseCoreNum>();
-            if (kernelDesc.coreNum == nullptr) {
+            kernelDesc.platformInfo = std::make_unique<StaticKernelPlatformInfo>();
+            if (kernelDesc.platformInfo == nullptr) {
                 return;
             }
-            kernelDesc.coreNum->aicNum = platformInfo["cubeCoreCnt"].get<uint32_t>();
-            kernelDesc.coreNum->aivNum = platformInfo["vectorCoreCnt"].get<uint32_t>();
-            OP_LOGI("Parse platformInfo successfully, aicNum is %u, aivNum is %u", kernelDesc.coreNum->aicNum,
-                    kernelDesc.coreNum->aivNum);
+            auto& coreNum = kernelDesc.platformInfo->coreNum;
+            coreNum.aicNum = platformInfo["cubeCoreCnt"].get<uint32_t>();
+            coreNum.aivNum = platformInfo["vectorCoreCnt"].get<uint32_t>();
+            if (platformInfo.contains("deterministicLevel")) {
+                kernelDesc.platformInfo->deterministicLevel = platformInfo["deterministicLevel"].get<int8_t>();
+            }
+            OP_LOGI("Parse platformInfo successfully, aicNum is %u, aivNum is %u, determinisitic level is %d.",
+                    kernelDesc.platformInfo->coreNum.aicNum, kernelDesc.platformInfo->coreNum.aivNum,
+                    kernelDesc.platformInfo->deterministicLevel);
         }
     } catch (const nlohmann::json::exception& e) {
-        kernelDesc.coreNum = nullptr;
+        kernelDesc.platformInfo = nullptr;
         OP_LOGW("Failed to read static kernel json file of platformInfo, reason: %s", e.what());
     }
     return;
@@ -854,20 +869,20 @@ void NnopbaseCollectorInsertBinInfo(NnopbaseRegInfo* const regInfo, NnopbaseBinI
     const size_t key = binInfo->binInfoKey.hashKey;
     const uint32_t keyLen = binInfo->binInfoKey.len;
     OP_LOGI("%s insert bin key is %zu, key len is %u", regInfo->key.opType.c_str(), key, keyLen);
-    while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[key].isVist, false, true)) {
+    while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[key].isVisit, false, true)) {
         /* nothing to do */
     };
     DList* const head = &regInfo->binTbl.buckets[key].head;
     DoubleListNodeInit(&binInfo->dllNode);
     DoubleListAppend(&binInfo->dllNode, head);
     binInfo->regInfo = regInfo;
-    regInfo->binTbl.buckets[key].isVist = false;
+    regInfo->binTbl.buckets[key].isVisit = false;
 }
 
 // 一样的key，会优先选择先放入hash表的
 NnopbaseBinInfo* NnopbaseCollectorFindBinInfo(NnopbaseRegInfo* const regInfo, const size_t hashKey,
                                               const NnopbaseUChar* const verbose, const uint32_t verbLen,
-                                              const NnopbaseCoreNum* const coreNum)
+                                              const StaticKernelPlatformInfo* const platformInfo)
 {
     OP_LOGI("Start find binInfo, opType is %s, hashKey is %zu, verbLen is %u.", regInfo->key.opType.c_str(), hashKey,
             verbLen);
@@ -875,7 +890,7 @@ NnopbaseBinInfo* NnopbaseCollectorFindBinInfo(NnopbaseRegInfo* const regInfo, co
         OP_LOGE(ACLNN_ERR_INNER, "HashKey[%zu] is too large, please check.", hashKey);
         return nullptr;
     }
-    while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[hashKey].isVist, false, true)) {
+    while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[hashKey].isVisit, false, true)) {
         /* nothing to do */
     };
     const DList* const head = &regInfo->binTbl.buckets[hashKey].head;
@@ -896,13 +911,13 @@ NnopbaseBinInfo* NnopbaseCollectorFindBinInfo(NnopbaseRegInfo* const regInfo, co
                 break;
             }
         }
-        if (i == verbLen && MatchBinWithCoreNum(binInfo, coreNum)) {
-            regInfo->binTbl.buckets[hashKey].isVist = false;
+        if (i == verbLen && MatchBinWithPlatformInfo(binInfo, platformInfo)) {
+            regInfo->binTbl.buckets[hashKey].isVisit = false;
             OP_LOGI("Found %s binInfo, hashKey is %zu.", regInfo->key.opType.c_str(), hashKey);
             return binInfo;
         }
     }
-    regInfo->binTbl.buckets[hashKey].isVist = false;
+    regInfo->binTbl.buckets[hashKey].isVisit = false;
     OP_LOGI("There is no available %s binInfo for hashKey %zu.", regInfo->key.opType.c_str(), hashKey);
     return nullptr;
 }
@@ -1399,13 +1414,13 @@ aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo)
     OP_LOGD("Start find static binInfo, opType is %s, hashKey is %zu.", regInfo->key.opType.c_str(),
             regInfo->key.hashKey);
     for (size_t i = 0U; i < NNOPBASE_NORM_MAX_BIN_BUCKETS; i++) {
-        while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[i].isVist, false, true)) {
+        while (!__sync_bool_compare_and_swap(&regInfo->binTbl.buckets[i].isVisit, false, true)) {
             /* nothing to do */
         };
         BinInfoBucket* bucket = &regInfo->binTbl.buckets[i];
         DList* const head = &bucket->head;
         if (head->count == 0U) {
-            regInfo->binTbl.buckets[i].isVist = false;
+            regInfo->binTbl.buckets[i].isVisit = false;
             continue;
         }
         OP_LOGD("Start to delete OpType %s binTable [%zu], cur Number is %u.", opType.c_str(), i, head->count);
@@ -1418,7 +1433,7 @@ aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo)
                 NnopbaseBinInfoDestroy(&binInfo);
             }
         }
-        regInfo->binTbl.buckets[i].isVist = false;
+        regInfo->binTbl.buckets[i].isVisit = false;
     }
     return OK;
 }

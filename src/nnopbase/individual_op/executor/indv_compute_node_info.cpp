@@ -52,12 +52,12 @@ aclnnStatus NnopbaseComputeNodeAttrsUpdt(NnopbaseComputeNodeInfoExt* nodeExt, Nn
 
 aclnnStatus NnopbaseComputeNodeInfoUpdt(NnopbaseExecutor* executor)
 {
-    NnopbaseComputeNodeInfoExt* nodeExt = &executor->contextExt.nodeExt;
+    NnopbaseComputeNodeInfoExt* nodeExt = &executor->tiling.contextExt.nodeExt;
     NnopbaseComputeNodeInfo* node = nodeExt->node;
     const size_t count = static_cast<size_t>(executor->args->inputs.paramDescs.count);
     const size_t outputIrNum = static_cast<size_t>(executor->args->outputs.paramDescs.count);
 
-    if (!executor->contextExt.hasPrepared) {
+    if (!executor->tiling.contextExt.hasPrepared) {
         node->nodeType = executor->opType;
         node->nodeName = executor->opType;
         node->irInputsNum = count;
@@ -129,13 +129,13 @@ aclnnStatus NnopbaseComputeNodeInfoInit(NnopbaseComputeNodeInfoExt* nodeExt)
 
 aclnnStatus NnopbaseTilingContextUpdtPrepare(NnopbaseExecutor* executor)
 {
-    NnopbaseKernelRunContext* const context = executor->contextExt.context;
+    NnopbaseKernelRunContext* const context = executor->tiling.contextExt.context;
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseComputeNodeInfoUpdt(executor));
     context->input_size = static_cast<size_t>(executor->args->inputs.num + executor->args->outputs.num +
                                               static_cast<uint32_t>(kInputsAppendEnd));
     context->output_size = gert::TilingContext::kOutputNum;
     context->output_start = &context->values[context->input_size];
-    context->compute_node_info = executor->contextExt.nodeExt.node;
+    context->compute_node_info = executor->tiling.contextExt.nodeExt.node;
     return OK;
 }
 

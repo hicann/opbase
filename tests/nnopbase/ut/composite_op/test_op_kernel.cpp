@@ -487,6 +487,8 @@ TEST_F(OpKernelUT, LaunchArgCacheTest)
         }
     }
     op::DestroyOpArgContext(ctx2);
+    // 恢复全局开关，避免污染后续用例
+    opProfilingSwitch.recordOpArgFlag = false;
 }
 
 TEST_F(OpKernelUT, ReportOpAttrInfoTest)
@@ -852,6 +854,8 @@ TEST_F(OpKernelUT, TestDoLaunchWithSplitAicAndAiv)
         }
     }
     op::DestroyOpArgContext(ctx2);
+    // 恢复全局开关，避免污染后续用例
+    opProfilingSwitch.recordOpArgFlag = false;
 }
 
 TEST_F(OpKernelUT, NoKernelBinTest)

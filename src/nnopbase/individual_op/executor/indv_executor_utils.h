@@ -46,12 +46,23 @@ inline bool EnableNnopbaseArgsCache()
     return disAbleArgsCache == nullptr ? true : strcmp(disAbleArgsCache, "1") != 0; // 1表示开启
 }
 
-inline bool GetGlobalDeterministic()
+inline int64_t GetGlobalDeterministic()
 {
-    int64_t value = 0;                                                          // 0表示非确定性
-    const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_DETERMINISTIC, &value); // SYS_OPT_DETERMINISTIC
-    OP_LOGD("Get system param deterministic ret = %d.", ret);
-    return (value == 1); // 1表示确定性
+    int64_t deterministicLevel = 0;                                                       // 0表示非确定性
+    const aclError ret = aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicLevel); // SYS_OPT_DETERMINISTIC
+    OP_CHECK_NO_RETURN(ret == ACL_SUCCESS, deterministicLevel = 0;
+                       OP_LOGW("Failed to get deterministic from system, ret= %d.", ret));
+    if (deterministicLevel == 1) {
+        int64_t consistency = 0;
+        aclError consistencyRet = aclrtGetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, &consistency);
+        OP_CHECK_NO_RETURN(consistencyRet == ACL_SUCCESS, consistency = 0;
+                           OP_LOGW("Failed to get consistency from system, ret= %d.", consistencyRet));
+        if (consistency == 1) {
+            deterministicLevel = 2; // 2表示强一致性
+        }
+    }
+    OP_LOGI("determinisic level of system is %lld", deterministicLevel);
+    return deterministicLevel;
 }
 
 inline void NnopbaseGetCoreNum(uint32_t* const aicNum, uint32_t* const aivNum)
@@ -96,7 +107,7 @@ inline bool GetDebugKernel()
     int64_t value = 0;                                                                // 0表示不开启debug kernel
     const aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &value); // SYS_OPT_ENABLE_DEBUG_KERNEL = 1
     OP_LOGD("Get system param debug kernel ret = %d.", ret);
-    return (value == 1); // 1表示开启debug kernel
+    return (value == 1);                                                              // 1表示开启debug kernel
 }
 
 static inline void NnopbaseSetDtypeAndSize(const aclIntArray* array, GertTensor* rt2Tensor)

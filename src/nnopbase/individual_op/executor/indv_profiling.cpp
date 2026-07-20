@@ -167,10 +167,10 @@ void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlo
     NnopbaseEncodeMixOpNumBlocks(executor, numBlocks);
 
     uint32_t totalNum = executor->args->inputs.num + executor->args->outputs.num;
-    uint64_t itemId = executor->itemId;
+    uint64_t itemId = executor->dfx.itemId;
     if (taskType == MSPROF_GE_TASK_TYPE_AI_CPU) {
         totalNum = 0U;
-        itemId = executor->aicpuItemId;
+        itemId = executor->dfx.aicpuItemId;
     }
     size_t totalSize = sizeof(op::internal::CacheOpInfoBasic) + sizeof(MsrofTensorData) * totalNum;
     void* buffer = malloc(totalSize);
@@ -213,7 +213,7 @@ static void NnopbaseBuildSingleProfTensorInfo(NnopbaseExecutor* const executor, 
     tensorInfo.dataLen = static_cast<uint32_t>(sizeof(MsprofTensorInfo));
     auto profTensorData = op::internal::PtrCastTo<MsprofTensorInfo>(tensorInfo.data);
 
-    profTensorData->opName = executor->itemId;
+    profTensorData->opName = executor->dfx.itemId;
     profTensorData->tensorNum = tensorNum;
     for (size_t k = 0UL; k < static_cast<size_t>(tensorNum); ++k) {
         const size_t tensorIndex = (index * static_cast<size_t>(MSPROF_GE_TENSOR_DATA_NUM)) + k;
@@ -257,7 +257,7 @@ void NnopbaseReportContextIdInfo(const NnopbaseExecutor* const executor, const u
     auto contextIdInfo = op::internal::PtrCastTo<MsprofContextIdInfo>(info.data);
     contextIdInfo->ctxIdNum = 1U;
     contextIdInfo->ctxIds[0] = 0U;
-    contextIdInfo->opName = executor->itemId;
+    contextIdInfo->opName = executor->dfx.itemId;
     (void)MsprofReportAdditionalInfo(static_cast<uint32_t>(true), &info,
                                      static_cast<uint32_t>(sizeof(MsprofAdditionalInfo)));
     OP_LOGD("OP [%s] has reported contextid info.", executor->opType);
@@ -308,7 +308,7 @@ void NnopbaseReportAdditionInfo(void* const executor, uint32_t numBlocks, uint32
         }
         OP_LOGI("[Cann Profiling] node type is %s, taskType is %u", opExecutor->opType, taskType);
         if (op::internal::opProfilingSwitch.additionInfoFlag) {
-            const uint64_t typeHash = opExecutor->itemId;
+            const uint64_t typeHash = opExecutor->dfx.itemId;
             MsprofCompactInfo nodeBasicInfo{};
             NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
             (void)MsprofReportCompactInfo(static_cast<uint32_t>(true), &nodeBasicInfo,
@@ -325,7 +325,7 @@ void NnopbaseReportMemsetAdditionInfo(const NnopbaseExecutor* const executor, ui
     if (op::internal::opProfilingSwitch.reportFlag || op::internal::opProfilingSwitch.kernelLaunchFlag) {
         OP_LOGI("[Cann Profiling] node type is MemSet, taskType is %u", taskType);
         if (op::internal::opProfilingSwitch.additionInfoFlag) {
-            const uint64_t typeHash = executor->memsetItemId;
+            const uint64_t typeHash = executor->dfx.memsetItemId;
             MsprofCompactInfo nodeBasicInfo{};
             NnopbaseBuildNodeBasicInfo(numBlocks, {typeHash, typeHash}, taskType, nodeBasicInfo, timeStamp);
             (void)MsprofReportCompactInfo(static_cast<uint32_t>(true), &nodeBasicInfo,
@@ -480,7 +480,7 @@ static void NnopbaseReportAttrInfo(const NnopbaseExecutor* const executor, const
 {
     std::string attrStr = NnopbaseGetAttrVal(executor->attrs);
     if (!attrStr.empty()) {
-        NnopbaseReportInfo(attrStr, executor->itemId, timeStamp);
+        NnopbaseReportInfo(attrStr, executor->dfx.itemId, timeStamp);
     }
 }
 
@@ -541,7 +541,7 @@ static void NnopbaseReportHostInfo(const NnopbaseExecutor* const executor, const
 {
     std::string inputStr = NnopbaseGetHostInfoStr(executor->args->inputs);
     if (!inputStr.empty()) {
-        NnopbaseReportInfo(inputStr, executor->itemId, timeStamp);
+        NnopbaseReportInfo(inputStr, executor->dfx.itemId, timeStamp);
     }
 }
 

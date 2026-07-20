@@ -245,11 +245,13 @@ public:
     {
         if (op::internal::GetOpProfilingRecordArgFlag()) {
             gert::TilingContext* ctx = opRunCtx_.UpdateTilingCtx(opType, opJson, inputs, outputs, attrs);
-            bool isDeterministicOn = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_;
-            auto opts = aclnnOpInfoRecord::OpCompilerOption(implMode, isDeterministicOn);
-            OP_LOGI("Call ExeOptInfoStat, option %d %s. kernel info %d %s, deterministic is %d.", opts.deterministic,
-                    opts.impl_mode.c_str(), kernelInfo.bin_type, kernelInfo.bin_info.c_str(), isDeterministicOn);
-            aclnnOpInfoRecord::OpInfoSerialize(ctx, opts, &kernelInfo);
+            auto opCompilerOpt = aclnnOpInfoRecord::OpCompilerOption(
+                implMode, GetThreadLocalContext().opConfigInfo_.deterministicLevel_);
+            OP_LOGI("Call OpInfoSerialize, deterministic level %d, impl mode %s. kernel info %d %s.",
+                    opCompilerOpt.deterministic, opCompilerOpt.impl_mode.c_str(), kernelInfo.bin_type,
+                    kernelInfo.bin_info.c_str());
+            OP_CHECK_NO_RETURN(aclnnOpInfoRecord::OpInfoSerialize(ctx, opCompilerOpt, &kernelInfo) == 0,
+                               OP_LOGW("OpInfoSerialize return failed!"));
         }
     }
 

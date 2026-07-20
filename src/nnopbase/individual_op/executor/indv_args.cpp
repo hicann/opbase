@@ -15,7 +15,7 @@
 static inline NnopbaseUChar* NnopbasePrepareDimInfo(NnopbaseUChar* addr, const GertShape& shape)
 {
     const int64_t shapeSize = shape.GetShapeSize();
-    if (shapeSize > 0) { // 非空tensor场景
+    if (shapeSize > 0) {    // 非空tensor场景
         const size_t dimNum = shape.GetDimNum();
         if (dimNum == 0U) { // Scalar场景相当于shape={1}的tensor
             addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, 1ULL);
@@ -73,13 +73,13 @@ static void NnopbaseExecutorPrepareIOSize(const NnopbaseExecutor* const executor
 
 static void NnopbaseExecutorSetDfxInfo(const NnopbaseExecutor* const executor)
 {
-    size_t startIndex = executor->mc2OpCfg.hcomHandle.size();
+    size_t startIndex = executor->mc2.commHandles.size();
     NnopbaseUChar* addr = op::internal::PtrCastTo<NnopbaseUChar>(&(executor->args->dfxInfo[startIndex]));
     const auto workspacesSizes = NnopbaseGetWorkspacesSizesFromArgs(executor->args);
     const uint32_t workspaceNum = workspacesSizes->GetSize() == 0UL ? 1U :
                                                                       static_cast<uint32_t>(workspacesSizes->GetSize());
     uint32_t oomNum = executor->args->inputs.paramDescs.count + executor->args->outputs.paramDescs.count +
-                      workspaceNum + executor->mc2OpCfg.hcomHandle.size();
+                      workspaceNum + executor->mc2.commHandles.size();
     if (executor->args->outputs.outPutShapeSize != 0U) {
         oomNum += 1U;
     }
@@ -142,7 +142,7 @@ static void NnopbaseExecutorGetOutputShapeInfoSize(const NnopbaseTensors& tensor
     }
 }
 
-void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* executor)
+void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* const executor)
 {
     // workspace num为0时，args中需要占位
     const auto workspacesSizes = NnopbaseGetWorkspacesSizesFromArgs(executor->args);
@@ -152,7 +152,7 @@ void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* executor)
     NnopbaseExecutorGetInputShapeInfoSize(executor->args->inputs, space);
     NnopbaseExecutorGetOutputShapeInfoSize(executor->args->outputs, executor->args->outputs.outPutShapeMap, space);
     space += (executor->args->inputs.paramDescs.count + executor->args->outputs.paramDescs.count + workspaceNum +
-              executor->mc2OpCfg.hcomHandle.size());
+              executor->mc2.commHandles.size());
     if (executor->args->outputs.outPutShapeSize != 0U) {
         space += 1U;
     }
@@ -161,18 +161,18 @@ void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* executor)
     NnopbaseExecutorSetDfxInfo(executor);
 }
 
-aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr,
+aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, NnopbaseExecutorArgsAddr* const argsAddr,
                                            const uint32_t workspaceNum)
 {
     if (executor->args->dfxInfo.empty()) {
         NnopbaseExecutorPrepareDfxInfo(executor);
     }
-    for (size_t i = 0U; i < executor->contextAddr.size(); i++) {
+    for (size_t i = 0U; i < executor->mc2.contextAddrs.size(); i++) {
         executor->args->dfxInfo[i] = 32U;
     }
     if (executor->args->binInfo->oomFlag) {
         uint32_t oomSize = (executor->args->inputs.paramDescs.count + executor->args->outputs.paramDescs.count +
-                            workspaceNum + executor->contextAddr.size()) *
+                            workspaceNum + executor->mc2.contextAddrs.size()) *
                            sizeof(void*);
         if (executor->args->outputs.outPutShapeSize != 0U) {
             oomSize += sizeof(void*);
@@ -221,12 +221,12 @@ static void NnopbaseExecutorGetDynamicTensorSize(NnopbaseTensors& tensors)
     }
 }
 
-size_t NnopbaseCalcArgsSize(NnopbaseExecutor* executor, const size_t tilingDataSize)
+size_t NnopbaseCalcArgsSize(NnopbaseExecutor* const executor, const size_t tilingDataSize)
 {
     // mc2算子多了个NnopbaseHcclCommParamDesc、hcomHandle.size()个context addr
-    const size_t mc2Size = executor->mc2OpCfg.isMc2 ? executor->mc2OpCfg.hcomHandle.size() * sizeof(void*) +
-                                                          sizeof(NnopbaseHcclCommParamDesc) :
-                                                      0U;
+    const size_t mc2Size = executor->mc2.enabled ?
+                               executor->mc2.commHandles.size() * sizeof(void*) + sizeof(NnopbaseHcclCommParamDesc) :
+                               0U;
     const size_t irNum = static_cast<size_t>(executor->args->inputs.paramDescs.count +
                                              executor->args->outputs.paramDescs.count);
     // tiling前workspace先按最大申请，input, output, workspaces, 3 for tiling, overflow, ctrlAddr
@@ -234,7 +234,7 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor* executor, const size_t tilingDataS
     executor->args->tilingDataOffset = argsLen;
     if (executor->args->outputs.outPutShapeSize != 0U) {
         executor->args->tilingDataOffset += sizeof(void*);
-        argsLen += sizeof(void*) * 2; // 2 is outputshape and oom
+        argsLen += sizeof(void*) * 2;                                          // 2 is outputshape and oom
     }
     argsLen += (irNum + NNOPBASE_NORM_MAX_WORKSPACE_NUMS + 1) * sizeof(void*); // oom, 1 is for automicIndex
     if (executor->hasTiling) {
@@ -243,24 +243,24 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor* executor, const size_t tilingDataS
         argsLen += (tilingDataSize + executor->args->inputs.dynamicSize + executor->args->outputs.dynamicSize);
     }
     if ((executor->args->inputs.hostInputNum > 0) || executor->args->inputs.hasDynamic ||
-        executor->args->outputs.hasDynamic || (executor->mc2OpCfg.isMc2 && executor->hasTiling)) {
+        executor->args->outputs.hasDynamic || (executor->mc2.enabled && executor->hasTiling)) {
         executor->argsExt.hostInputInfoNum = executor->args->inputs.hostInputNum +
                                              static_cast<uint16_t>(executor->args->inputs.dynamicNum +
                                                                    executor->args->outputs.dynamicNum);
         // MC2算子aicore和aicpu各一份hostInfo
-        const size_t hostInfoNum = executor->mc2OpCfg.isMc2 ? 2U : 1U;
+        const size_t hostInfoNum = executor->mc2.enabled ? 2U : 1U;
         const size_t alignHostInputSize = ((executor->args->inputs.hostInputSize + NNOPBASE_SEVENS_BYTES) /
                                            NNOPBASE_EIGHT_BYTES) *
                                           NNOPBASE_EIGHT_BYTES;
         argsLen += (executor->argsExt.hostInputInfoNum * sizeof(rtHostInputInfo_t) * hostInfoNum) + alignHostInputSize;
-        if (executor->mc2OpCfg.isMc2 && executor->hasTiling) {
+        if (executor->mc2.enabled && executor->hasTiling) {
             argsLen += sizeof(rtHostInputInfo_t); // aicpuArgs需要存tilingdata hostinfo
         }
     }
-    if (executor->mc2OpCfg.isMc2) {
+    if (executor->mc2.enabled) {
         argsLen += NNOPBASE_AICPU_PARAM_LEN * 2; // 2 is soname/kernelname
         argsLen += (strlen(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX.length());
-        if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
+        if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType)) {
             argsLen += sizeof(NnopbaseHcclCommParamDesc); // 82上parsmdesc组在args最后
         }
     }
@@ -268,8 +268,9 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor* executor, const size_t tilingDataS
     return argsLen;
 }
 
-static void NnopbaseExecutorEncodeDynamicTensors(NnopbaseExecutorArgsAddr* argsAddr, NnopbaseExecutor* const executor,
-                                                 void** dynamicIOAddr, const NnopbaseParamInstance* paramInstance)
+static void NnopbaseExecutorEncodeDynamicTensors(NnopbaseExecutorArgsAddr* const argsAddr,
+                                                 NnopbaseExecutor* const executor, void** const dynamicIOAddr,
+                                                 const NnopbaseParamInstance* const paramInstance)
 {
     NnopbaseUChar** dynamicIOData = &argsAddr->hostInputData;
     aclrtPlaceHolderInfo** dynamicIOInfo = &argsAddr->hostInputInfo;
@@ -309,10 +310,10 @@ static void NnopbaseExecutorEncodeDynamicTensors(NnopbaseExecutorArgsAddr* argsA
     (*dynamicIOInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) - args);
     (*dynamicIOInfo)->dataOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(*dynamicIOAddr) - args);
     (*dynamicIOInfo)++;
-    if ((executor->mc2OpCfg.isMc2) &&
-        (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType))) {
+    if ((executor->mc2.enabled) &&
+        (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType))) {
         aclrtPlaceHolderInfo** aicpuHostInputInfo = &argsAddr->aicpuHostInputInfo;
-        const NnopbaseUChar* const aicpuArgs = (NnopbaseUChar*)executor->aicpuArgs.args;
+        const NnopbaseUChar* const aicpuArgs = (NnopbaseUChar*)executor->mc2.aicpuArgs.args;
         (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>(
             op::internal::PtrCastTo<NnopbaseUChar>(dynamicIOAddr) - aicpuArgs);
         (*aicpuHostInputInfo)->dataOffset = static_cast<uint32_t>(
@@ -349,10 +350,10 @@ static inline void NnopbaseExecutorEncodeHostInput(const NnopbaseExecutor* const
     *inputAddr = *hostInputData;
     (*hostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(inputAddr) - args);
     (*hostInputInfo)->dataOffset = static_cast<uint32_t>((*hostInputData) - args);
-    if ((executor->mc2OpCfg.isMc2) &&
-        (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType))) {
+    if ((executor->mc2.enabled) &&
+        (!nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType))) {
         aclrtPlaceHolderInfo** aicpuHostInputInfo = &argsAddr->aicpuHostInputInfo;
-        const NnopbaseUChar* const aicpuArgs = (NnopbaseUChar*)executor->aicpuArgs.args;
+        const NnopbaseUChar* const aicpuArgs = (NnopbaseUChar*)executor->mc2.aicpuArgs.args;
         (*aicpuHostInputInfo)->addrOffset = static_cast<uint32_t>(op::internal::PtrCastTo<NnopbaseUChar>(inputAddr) -
                                                                   aicpuArgs);
         (*aicpuHostInputInfo)->dataOffset = static_cast<uint32_t>((*hostInputData) - aicpuArgs);
@@ -363,8 +364,8 @@ static inline void NnopbaseExecutorEncodeHostInput(const NnopbaseExecutor* const
     (*hostInputData) += size;
 }
 
-void** NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor* executor, void** addr,
-                                              NnopbaseExecutorArgsAddr* argsAddr)
+void** NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor* const executor, void** addr,
+                                              NnopbaseExecutorArgsAddr* const argsAddr)
 {
     const NnopbaseUChar* const args = (NnopbaseUChar*)executor->argsExt.args;
     NnopbaseUChar** hostInputData = &argsAddr->hostInputData;
@@ -399,8 +400,8 @@ void** NnopbaseExecutorPrepareInputsParamsExt(NnopbaseExecutor* executor, void**
     return addr;
 }
 
-void** NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor* executor, void** addr,
-                                               NnopbaseExecutorArgsAddr* argsAddr)
+void** NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor* const executor, void** addr,
+                                               NnopbaseExecutorArgsAddr* const argsAddr)
 {
     const NnopbaseUChar* const args = (NnopbaseUChar*)executor->argsExt.args;
     NnopbaseUChar** hostInputData = &argsAddr->hostInputData;
@@ -429,7 +430,7 @@ void** NnopbaseExecutorPrepareOutputsParamsExt(NnopbaseExecutor* executor, void*
     return addr;
 }
 
-std::vector<aclrtPlaceHolderInfo> NnopbaseGetRTSPlaceHolder(NnopbaseRTArgsExt* argsExt)
+std::vector<aclrtPlaceHolderInfo> NnopbaseGetRTSPlaceHolder(NnopbaseRTArgsExt* const argsExt)
 {
     std::vector<aclrtPlaceHolderInfo> hostInputInfoPtr;
     if (argsExt->hasTiling != 0) {
