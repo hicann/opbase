@@ -395,55 +395,6 @@ install_git() {
     fi
 }
 
-install_googletest() {
-    local gtest_ver="release-1.11.0"
-    local gtest_install_prefix="/usr/local"
-    echo -e "\n==== Checking googletest ===="
-
-    if pkg-config --exists gtest 2>/dev/null; then
-        echo "googletest has been installed"
-        return
-    fi
-
-    if [[ -f "${gtest_install_prefix}/lib/libgtest.a" ]] || [[ -f "${gtest_install_prefix}/lib64/libgtest.a" ]]; then
-        echo "googletest has been installed"
-        return
-    fi
-
-    echo "Installing googletest ${gtest_ver}..."
-    local tmp_dir=$(mktemp -d)
-    local orig_dir=$(pwd)
-    trap "rm -rf ${tmp_dir}" EXIT
-
-    if ! curl -fsSL "https://github.com/google/googletest/archive/refs/tags/${gtest_ver}.tar.gz" -o "${tmp_dir}/googletest.tar.gz"; then
-        echo "Warning: Failed to download googletest, skipping. You can install it manually later."
-        rm -rf "${tmp_dir}"
-        trap - EXIT
-        cd "${orig_dir}"
-        return
-    fi
-
-    tar -xzf "${tmp_dir}/googletest.tar.gz" -C "${tmp_dir}"
-    local src_dir="${tmp_dir}/googletest-${gtest_ver#release-}"
-    if [[ ! -d "$src_dir" ]]; then
-        src_dir=$(find "${tmp_dir}" -maxdepth 1 -type d -name "googletest*" | head -1)
-    fi
-
-    mkdir -p "${src_dir}/build" && cd "${src_dir}/build"
-    cmake .. -DCMAKE_INSTALL_PREFIX="${gtest_install_prefix}" -DBUILD_SHARED_LIBS=OFF
-    make -j$(nproc 2>/dev/null || echo 1)
-    sudo make install
-
-    cd "${orig_dir}"
-    rm -rf "${tmp_dir}"
-    trap - EXIT
-
-    if [[ -f "${gtest_install_prefix}/lib/libgtest.a" ]] || [[ -f "${gtest_install_prefix}/lib64/libgtest.a" ]]; then
-        echo "googletest installed successfully (${gtest_ver})"
-    else
-        echo "Warning: googletest installation may have failed. UT tests require googletest."
-    fi
-}
 
 main() {
     echo "===================================================="
@@ -458,7 +409,6 @@ main() {
     install_patch
     install_dos2unix
     install_git
-    install_googletest
 
     echo -e "===================================================="
     echo "All dependencies installed successfully!"

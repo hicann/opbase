@@ -27,12 +27,6 @@
 bash install_deps.sh
 ```
 
-安装完上述依赖后，可通过项目根目录requirements.txt继续安装python三方库依赖，命令如下。
-
-```bash
-pip3 install -r requirements.txt
-```
-
 ### 安装第三方依赖
 
 > **说明**：对于CANNLab或Docker环境，默认联网，编译过程中会自动下载第三方依赖，无需手动安装，可跳过本章操作。
@@ -58,8 +52,11 @@ pip3 install -r requirements.txt
     进入项目根目录，执行如下编译命令：
 
     ```bash
-    bash build.sh
+    bash build.sh --pkg [-j${n}]
+    # 如：bash build.sh --pkg -j16
     ```
+
+    - -j（可选）：指定编译线程数，默认值为8，加快编译速度；若超过CPU核心数会自动调整为CPU核心数。
 
     若提示如下信息，则说明编译成功。
 
@@ -111,7 +108,8 @@ pip3 install -r requirements.txt
       请在本项目根目录创建`third_party`目录（若有则无需创建），将第三方软件拷贝到该指定目录。此时编译命令与联网编译命令一致：
 
       ```bash
-      bash build.sh
+      bash build.sh --pkg [-j${n}]
+      # 如：bash build.sh --pkg -j16
       ```
 
     - **自定义目录**
@@ -125,8 +123,9 @@ pip3 install -r requirements.txt
       此时在联网编译命令基础上额外增加`--cann_3rd_lib_path=${cann_3rd_lib_path}`用于指定第三方软件路径。假设路径为`/path/cann_3rd_lib_path`，编译命令如下：
 
       ```bash
-      bash build.sh --cann_3rd_lib_path=${cann_3rd_lib_path}
-      # bash build.sh --cann_3rd_lib_path=/path/cann_3rd_lib_path
+      bash build.sh --pkg --cann_3rd_lib_path=${cann_3rd_lib_path} [-j${n}]
+      # bash build.sh --pkg --cann_3rd_lib_path=/path/cann_3rd_lib_path -j16
+      # bash build.sh --pkg --cann_3rd_lib_path=/path/cann_3rd_lib_path
       ```
 
 3. **安装/卸载算子包**

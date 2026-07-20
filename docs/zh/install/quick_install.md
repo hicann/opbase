@@ -139,12 +139,6 @@
     bash install_deps.sh
     ```
 
-    安装完后，再通过项目根目录requirements.txt继续安装python三方库依赖，命令如下。
-
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-
 ## 环境验证
 
 安装完CANN包后，需验证环境和驱动是否正常。

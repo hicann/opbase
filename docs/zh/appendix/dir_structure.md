@@ -53,7 +53,6 @@
 ├── LICENSE                                             # 项目开源许可证信息
 ├── OAT.xml                                             # 配置脚本，代码仓工具使用，用于检查License是否规范
 ├── README.md                                           # 项目工程总介绍文档
-├── requirements.txt                                    # 项目的第三方依赖包
 ├── SECURITY.md                                         # 项目安全声明文件
 └── version.info                                        # 项目版本信息
 ```

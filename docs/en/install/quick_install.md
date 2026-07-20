@@ -137,13 +137,6 @@ You can use a project script to automate the installation of these dependencies.
     ```bash
     bash install_deps.sh
     ```
-    
-    After the installation is complete, install Python third-party dependencies based on `requirements.txt` in the project root directory.
-
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-
 ## Environment Verification
 
 After installing the CANN package, verify that the environment and driver are normal.
