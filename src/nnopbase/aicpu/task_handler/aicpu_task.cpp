@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <memory>
+
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/aicpu/aicpu_kernel_launcher.h"
 #include "aicpu_engine_struct.h"
@@ -55,7 +57,56 @@ void GetValidInputVec(const op::FVector<const aclTensor*> &in, op::FVector<const
         out.emplace_back(t);
     }
 }
+
+class AiCpuOneShotKernelLauncher : public KernelLauncher {
+public:
+    AiCpuOneShotKernelLauncher(uint32_t optype,
+                               op::CoreType coreType,
+                               const aclOpExecutor *opExe,
+                               op::internal::ProfilingInfoId &profilingInfoId,
+                               std::unique_ptr<AicpuTask> task,
+                               OpArgContext *opArgCtx)
+        : KernelLauncher(optype, coreType, opExe, profilingInfoId),
+          task_(std::move(task)),
+          args_(opArgCtx)
+    {}
+
+    ~AiCpuOneShotKernelLauncher() override
+    {
+        OP_LOGI("Destroy one-shot aicpu launcher, opType=%u, task_alive=%d, args_alive=%d.",
+            opType_, task_ != nullptr, args_ != nullptr);
+        if (args_) {
+            op::DestroyOpArgContext(args_);
+            args_ = nullptr;
+        }
+    }
+
+    aclnnStatus Launch() override
+    {
+        AICPU_ASSERT_NOTNULL_RETVAL(task_);
+        auto ret = task_->SetIoTensors(const_cast<aclOpExecutor *>(executor_), args_);
+        if (ret != OK) {
+            return ret;
+        }
+        ret = task_->Run(const_cast<aclOpExecutor *>(executor_), executor_->GetStream());
+        return ret;
+    }
+
+    internal::OpKernelBin *GetBin() override { return nullptr; }
+
+    bool CheckRepeatable([[maybe_unused]] const std::unordered_map<const aclStorage *, const aclStorage *> &relation,
+        [[maybe_unused]] const std::vector<const aclStorage *> &oriStorage) override
+    {
+        return false;
+    }
+
+private:
+    std::unique_ptr<AicpuTask> task_;
+    OpArgContext *args_{nullptr};
+};
 } // namespace
+
+std::unique_ptr<AicpuTask> TakePendingOverflowTask(AicpuTask *task);
 
 aclnnStatus AicpuTfTask::Init(const FVector<const aclTensor *> &inputs, const FVector<aclTensor *> &outputs,
                               const AicpuAttrs &attrs)
@@ -337,9 +388,17 @@ aclnnStatus CreatAicpuKernelLauncher(uint32_t opType, op::internal::AicpuTaskSpa
     auto task = space.GetOrCreateTask(executor, attrNames, args);
     CHECK_RET(task != nullptr, ACLNN_ERR_INNER);
     op::internal::ProfilingInfoId profilingInfoId;
-    auto *launcher = new op::internal::AiCpuKernelLauncher{
-        opType, op::AI_CPU, executor, profilingInfoId, task, args};
-    executor->AbandonCache();
+    auto overflowTask = TakePendingOverflowTask(task);
+    op::KernelLauncher *launcher = nullptr;
+    if (overflowTask != nullptr) {
+        executor->AbandonCache(true);
+        launcher = new AiCpuOneShotKernelLauncher{
+            opType, op::AI_CPU, executor, profilingInfoId, std::move(overflowTask), args};
+    } else {
+        executor->AbandonCache();
+        launcher = new op::internal::AiCpuKernelLauncher{
+            opType, op::AI_CPU, executor, profilingInfoId, task, args};
+    }
     executor->AddToKernelLauncherList(launcher);
     op::internal::BuildGraph(executor->GetGraph(), opType, *args->GetOpArg(op::OP_INPUT_ARG),
                              *args->GetOpArg(op::OP_OUTPUT_ARG), *args->GetOpArg(op::OP_WORKSPACE_ARG));
