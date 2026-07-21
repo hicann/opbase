@@ -25,6 +25,8 @@
 #include "dlopen_api.h"
 #include "op_dfx_internal.h"
 #include "file_utils.h"
+#include "bridge_pool.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,6 +94,10 @@ aclnnStatus aclDestroyTensor(const aclTensor* tensor)
     if (tensor == nullptr) {
         return OK;
     }
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclTensor*>(tensor))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(tensor));
+    }
     delete tensor;
     return OK;
 }
@@ -100,6 +106,10 @@ aclnnStatus aclDestroyScalar(const aclScalar* scalar)
 {
     if (scalar == nullptr) {
         return OK;
+    }
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclScalar*>(scalar))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(scalar));
     }
     delete scalar;
     return OK;
@@ -110,6 +120,10 @@ aclnnStatus aclDestroyIntArray(const aclIntArray* array)
     if (array == nullptr) {
         return OK;
     }
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclIntArray*>(array))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+    }
     delete array;
     return OK;
 }
@@ -118,6 +132,10 @@ aclnnStatus aclDestroyFloatArray(const aclFloatArray* array)
 {
     if (array == nullptr) {
         return OK;
+    }
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclFloatArray*>(array))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
     }
     delete array;
     return OK;
@@ -128,6 +146,10 @@ aclnnStatus aclDestroyBoolArray(const aclBoolArray* array)
     if (array == nullptr) {
         return OK;
     }
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclBoolArray*>(array))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+    }
     delete array;
     return OK;
 }
@@ -136,6 +158,11 @@ aclnnStatus aclDestroyTensorList(const aclTensorList* array)
 {
     if (array == nullptr) {
         return OK;
+    }
+    // 仅对外层 list 指针本身做一次预检；元素由循环内 aclDestroyTensor 各自覆盖
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclTensorList*>(array))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
     }
     for (uint64_t i = 0; i < array->Size(); i++) {
         aclDestroyTensor((*array)[i]);
@@ -148,6 +175,11 @@ aclnnStatus aclDestroyScalarList(const aclScalarList* array)
 {
     if (array == nullptr) {
         return OK;
+    }
+    // 仅对外层 list 指针本身做一次预检；元素由循环内 aclDestroyScalar 各自覆盖
+    if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
+        op::internal::CheckDoubleFree(const_cast<aclScalarList*>(array))) {
+        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
     }
     for (uint64_t i = 0; i < array->Size(); i++) {
         aclDestroyScalar((*array)[i]);

@@ -27,6 +27,7 @@
 #include "op_cache_internal.h"
 #include "kernel_utils.h"
 #include "thread_local_context.h"
+#include "op_dfx_internal.h"
 #include "dlopen_api.h"
 
 using namespace op::internal;
@@ -1027,6 +1028,7 @@ int64_t GetDeterministicLevelFromRt()
 
 void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** executor)
 {
+    InitAclnnDebugSwitch();
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
     opTlsCtx.logInfo_.l2ApiName = l2Name;
     opTlsCtx.logInfo_.l2SequenceCounter = op::internal::OpGetLogSequence();

@@ -14,11 +14,13 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <limits>
 #include <mutex>
+#include <new>
 #include <numeric>
 #include <type_traits>
 #include <vector>
@@ -111,6 +113,8 @@ private:
         }
 
         BlockStore::BlockHeader* head = static_cast<BlockStore::BlockHeader*>(p);
+        // std::malloc 不调用构造函数，需 placement new 初始化 magic_ 等非静态成员数据初始化
+        new (head) BlockStore::BlockHeader;
         head->userTag_ = SYS_TAG;
         head->cacheExt_ = BlockStore::NOT_IN_CACHE;
         return head + 1;
@@ -141,6 +145,8 @@ private:
             void* block = std::malloc(sizeof(BlockStore::BlockHeader) + store->GetBlockSize());
             if (block) {
                 BlockStore::BlockHeader* head = static_cast<BlockStore::BlockHeader*>(block);
+                // std::malloc 不调用构造函数，需 placement new 初始化 magic_ 等非静态成员数据初始化
+                new (head) BlockStore::BlockHeader;
                 head->userTag_ = SYS_TAG;
                 addrList[n++] = head + 1;
             } else {
@@ -211,7 +217,7 @@ private:
      * @brief Block size and count of BlockStore
      */
     struct BlockDesc {
-        BlockDesc(size_t s, size_t c) : size(s), count(c) {};
+        BlockDesc(size_t s, size_t c) : size(s), count(c){};
         size_t size{0};
         size_t count{0};
     };
@@ -295,6 +301,9 @@ public:
 
     static void CacheFree(void* block) { return get_instance().CacheFreeImpl(block); }
 
+    // 返回当前线程 BlockCache 实例地址，供 CheckDoubleFree 判定 block 活跃态使用
+    static uintptr_t CurrentThreadCacheAddr() { return reinterpret_cast<uintptr_t>(&get_instance()); }
+
     OpSpinlock guard_;
 
 private:
@@ -323,6 +332,8 @@ private:
                 break;
             }
             BlockStore::BlockHeader* head = static_cast<BlockStore::BlockHeader*>(block);
+            // std::malloc 不调用构造函数，需 placement new 初始化 magic_ 等非静态成员数据初始化
+            new (head) BlockStore::BlockHeader;
             head->userTag_ = BlockPool::SYS_TAG;
             addrList[n++] = head + 1;
         }

@@ -10,6 +10,7 @@
 
 #ifndef OP_DFX_INTERNAL_H_
 #define OP_DFX_INTERNAL_H_
+#include <atomic>
 #include "profiling/aprof_pub.h"
 #include "op_dfx_util.h"
 #include "op_cache_internal.h"
@@ -163,6 +164,11 @@ void PrepareL2DumpTensor(std::vector<Adx::TensorInfoV2>& dumpTensors, const std:
 // OpProfilingSwitch 线程安全访问辅助函数 (仅针对 recordOpArgFlag)
 bool GetOpProfilingRecordArgFlag();
 void SetOpProfilingRecordArgFlag(bool value);
+
+extern std::atomic<bool> g_aclnnDebugEnabled;
+
+void InitAclnnDebugSwitch();
+inline bool IsAclnnDebugEnabled() { return g_aclnnDebugEnabled.load(std::memory_order_relaxed); }
 
 #ifdef __cplusplus
 extern "C" {
