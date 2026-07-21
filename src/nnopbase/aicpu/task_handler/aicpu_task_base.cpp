@@ -8,6 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <array>
+#include <exception>
+#include <memory>
+
 #include "opdev/aicpu/aicpu_task.h"
 #include "aicpu_engine_struct.h"
 #include "aclnn/aclnn_base.h"
@@ -20,10 +24,62 @@ namespace op {
 namespace internal {
 namespace {
 constexpr size_t kMaxTotalHostLen = 1024U;
+constexpr size_t kDefaultAicpuCacheLimit = 32768U; // 2 GiB / 64 KiB per cached task.
+
+size_t ReadAicpuCacheLimit()
+{
+    constexpr uint32_t kBufLen = 32U;
+    std::array<char, kBufLen> buf = {};
+    auto ret = mmGetEnv("ACLNN_AICPU_CACHE_LIMIT", &buf[0U], kBufLen);
+    if (ret != EN_OK) {
+        return kDefaultAicpuCacheLimit;
+    }
+    for (const char* p = buf.data(); *p != '\0'; ++p) {
+        if (*p < '0' || *p > '9') {
+            OP_LOGW("Env variable ACLNN_AICPU_CACHE_LIMIT[%s] is invalid! must be a number!", buf.data());
+            return kDefaultAicpuCacheLimit;
+        }
+    }
+    try {
+        const size_t cacheLimit = std::stoull(buf.data());
+        return cacheLimit;
+    } catch (const std::exception&) {
+        OP_LOGW("Env variable ACLNN_AICPU_CACHE_LIMIT[%s] is invalid! must be a number!", buf.data());
+        return kDefaultAicpuCacheLimit;
+    }
 }
+
+const size_t kAicpuCacheLimit = ReadAicpuCacheLimit();
+
+thread_local std::unique_ptr<AicpuTask> gPendingOverflowTask = nullptr;
+
+AicpuTask* SavePendingOverflowTask(std::unique_ptr<AicpuTask> task)
+{
+    if (gPendingOverflowTask != nullptr) {
+        OP_LOGW("Discard stale pending overflow aicpu task.");
+    }
+    gPendingOverflowTask = std::move(task);
+    return gPendingOverflowTask.get();
+}
+} // namespace
 AicpuTimeStamp gAicpuTimeStamp = {};
 std::set<AicpuTaskSpace*> gAicpuTaskSpaceSet;
 std::mutex gAicpuTaskSpaceMutex_;
+
+std::unique_ptr<AicpuTask> TakePendingOverflowTask(AicpuTask* task)
+{
+    if (task == nullptr) {
+        return nullptr;
+    }
+    if (gPendingOverflowTask == nullptr) {
+        return nullptr;
+    }
+    if (gPendingOverflowTask.get() != task) {
+        OP_LOGW("Take pending overflow aicpu task skipped, pending task does not match.");
+        return nullptr;
+    }
+    return std::move(gPendingOverflowTask);
+}
 
 void aclnnAicpuFinalize()
 {
@@ -45,7 +101,11 @@ void aclnnAicpuFinalize()
 void SaveAicpuTaskSpace(void* aicpuTaskSpace)
 {
     const std::lock_guard<std::mutex> lk(gAicpuTaskSpaceMutex_);
-    gAicpuTaskSpaceSet.insert((AicpuTaskSpace*)aicpuTaskSpace);
+    const size_t oldSize = gAicpuTaskSpaceSet.size();
+    const auto insertRet = gAicpuTaskSpaceSet.insert((AicpuTaskSpace*)aicpuTaskSpace);
+    if (insertRet.second) {
+        OP_LOGI("Save aicpu task space, old_size=%zu, new_size=%zu.", oldSize, gAicpuTaskSpaceSet.size());
+    }
 }
 
 bool EnableAicpuTimeStamp()
@@ -341,6 +401,13 @@ AicpuTask* AicpuTaskSpace::GetOrCreateTask(aclOpExecutor* executor, const FVecto
     FVector<const aclTensor*> inputs;
     FVector<aclTensor*> outputs;
     CreateTensorList(executor, *args->GetOpArg(op::OP_INPUT_ARG), inputs);
+    auto cacheTaskNum = [this]() {
+        size_t taskNum = 0U;
+        for (const auto& item : hashMap_) {
+            taskNum += item.second.size();
+        }
+        return taskNum;
+    };
     auto task = FindTask(executor, args, inputs);
     if (task != nullptr) {
         return task;
@@ -380,10 +447,23 @@ AicpuTask* AicpuTaskSpace::GetOrCreateTask(aclOpExecutor* executor, const FVecto
     if (deviceCacheSize > executor->workspaceDeviceAicpuMem_) {
         executor->workspaceDeviceAicpuMem_ = deviceCacheSize;
     }
-    hashMap_[seed].emplace_back(std::move(uniqueTask));
-    task = hashMap_[seed].back().get();
     hasInit_ = true;
-    OP_LOGI("Create %s task success, cache_size=%lu.", opType_.c_str(), executor->workspaceDeviceAicpuMem_);
+    const size_t cachedTaskNum = cacheTaskNum();
+    if (cachedTaskNum < kAicpuCacheLimit) {
+        hashMap_[seed].emplace_back(std::move(uniqueTask));
+        task = hashMap_[seed].back().get();
+        OP_LOGI("Create %s task success, total=%zu, cache_size=%lu.", opType_.c_str(), cachedTaskNum + 1U,
+                executor->workspaceDeviceAicpuMem_);
+        return task;
+    }
+
+    task = SavePendingOverflowTask(std::move(uniqueTask));
+    if (task == nullptr) {
+        OP_LOGE(ACLNN_ERR_INNER, "Create %s overflow task failed.", opType_.c_str());
+        return nullptr;
+    }
+    OP_LOGI("Create %s task success without cache, cache full: total=%zu, max=%zu, cache_size=%lu.", opType_.c_str(),
+            cachedTaskNum, kAicpuCacheLimit, executor->workspaceDeviceAicpuMem_);
     return task;
 }
 
