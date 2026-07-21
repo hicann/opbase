@@ -24,6 +24,7 @@
 #include "adv_api/math/cos.h"
 #include "adv_api/math/atan.h"
 #include "adv_api/math/erf.h"
+#include "adv_api/math/erfc.h"
 #include "adv_api/math/fmod.h"
 #include "adv_api/math/power.h"
 #include "adv_api/math/axpy.h"
@@ -259,6 +260,16 @@ struct Erf : public ElemwiseUnaryOP<T, T, 0, 0, true> {
 #ifdef __CCE_AICORE__
         static constexpr AscendC::ErfConfig config = {AscendC::ErfAlgo::SUBSECTION_POLYNOMIAL_APPROXIMATION};
         AscendC::Erf<T, false, config>(dst, src, count);
+#endif
+    }
+};
+
+template <class T>
+struct Erfc : public ElemwiseUnaryOP<T, T, 0, 0, true> {
+    __aicore__ inline Erfc(LocalTensor<T>& dst, LocalTensor<T>& src, int count)
+    {
+#ifdef __CCE_AICORE__
+        AscendC::Erfc<T, false>(dst, src, count);
 #endif
     }
 };
