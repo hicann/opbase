@@ -77,12 +77,13 @@ public:
         }
     }
 
-    __aicore__ inline void ComputeIterAddress(int32_t axis, uint64_t step, uint64_t stepSize, uint64_t sliceShapeFactor,
-                                              uint64_t sliceNumFactor)
+    __aicore__ inline void ComputeIterAddress(int32_t axis, uint64_t step, uint64_t stepSize, uint64_t sliceStepSize,
+                                              uint64_t sliceShapeFactor, uint64_t sliceNumFactor)
     {
         auto temp = step;
         auto curInSliceShape = temp % stepSize;
-        auto curInSliceNum = temp / stepSize;
+        temp /= stepSize;
+        auto curInSliceNum = temp % sliceStepSize;
         iterAddr_[axis].start = curInSliceShape * sliceShapeFactor;
         iterAddr_[axis].sliceStart = curInSliceNum * sliceNumFactor;
         iterAddr_[axis].stride = this->tiling_->sliceShape[axis] - iterAddr_[axis].start;
@@ -206,7 +207,8 @@ public:
         if constexpr (LoopAIdx != 0) {
             constexpr auto axis = LoopInfo->loopAAxis[LoopAIdx - 1];
             if constexpr (LoopAIdx == LoopInfo->loopACount) {
-                ComputeIterAddress(axis, step, this->loopAAxisStep_, sliceShapeFactorA_, sliceNumFactorA_);
+                ComputeIterAddress(axis, step, this->loopAAxisStep_, this->loopAAxisSliceStep_, sliceShapeFactorA_,
+                                   sliceNumFactorA_);
                 if constexpr (LoopAIdx > 0) {
                     CalculateIterA<LoopAIdx - 1>(step / this->loopAAxisStep_ / this->loopAAxisSliceStep_);
                 }
@@ -337,8 +339,10 @@ public:
         if constexpr (LoopInnerRIdx != 0) {
             constexpr auto axis = LoopInfo->loopInnerRAxis[LoopInnerRIdx - 1];
             if constexpr (LoopInnerRIdx == LoopInfo->loopInnerRCount) {
-                ComputeIterAddress(axis, basicBlockIdx, this->loopRAxisStep_, sliceShapeFactorR_, sliceNumFactorR_);
-                CalculateInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / this->loopRAxisStep_);
+                ComputeIterAddress(axis, basicBlockIdx, this->loopRAxisStep_, this->loopRAxisSliceStep_,
+                                   sliceShapeFactorR_, sliceNumFactorR_);
+                CalculateInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / this->loopRAxisStep_ /
+                                                       this->loopRAxisSliceStep_);
             } else {
                 iterAddr_[axis].start = basicBlockIdx % this->tiling_->shape[axis];
                 iterAddr_[axis].stride = 1;
@@ -355,14 +359,16 @@ public:
             for (auto idx = LoopInfo->loopRCount - 1; idx > -1; --idx) {
                 if (idx == LoopInfo->loopRCount - 1) {
                     constexpr auto axis = LoopInfo->loopRAxis[LoopInfo->loopRCount - 1];
-                    ComputeIterAddress(axis, temp, this->loopRAxisStep_, sliceShapeFactorR_, sliceNumFactorR_);
+                    ComputeIterAddress(axis, temp, this->loopRAxisStep_, this->loopRAxisSliceStep_, sliceShapeFactorR_,
+                                       sliceNumFactorR_);
                     temp = temp / this->loopRAxisStep_;
                     temp = temp / this->loopRAxisSliceStep_;
                 } else {
                     auto axis = LoopInfo->loopRAxis[idx];
                     if (IsLoopSpliteAAxis<LoopInfo>(axis)) {
                         // axis both in AAxis and RAxis
-                        ComputeIterAddress(axis, temp, this->loopAAxisStep_, sliceShapeFactorA_, sliceNumFactorA_);
+                        ComputeIterAddress(axis, temp, this->loopAAxisStep_, this->loopAAxisSliceStep_,
+                                           sliceShapeFactorA_, sliceNumFactorA_);
                         temp = temp / this->loopAAxisStep_;
                         temp = temp / this->loopAAxisSliceStep_;
                     } else {
