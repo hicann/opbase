@@ -259,7 +259,7 @@ int32_t OpInfoSerialize(const gert::TilingContext* ctx, const aclnnOpInfoRecord:
         }
         AddPlatformInfoToJson(jsonDebug, ctx);
         jsonDebug["impl_mode"] = opt.impl_mode;
-        jsonDebug["deterministic"] = (opt.deterministic == 0U) ? "true" : "false";
+        jsonDebug["deterministic"] = (opt.deterministic == 0U) ? "false" : "true";
         jsonDebug["deterministic_level"] = opt.deterministic;
         std::lock_guard<std::mutex> lck(g_opInfoStatisticsLck);
         AddJsonToOpInfoCompile(jsonDebug); // dump json for compile, not needed "bin_type" and "bin_info"

@@ -214,7 +214,7 @@ NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const Nnopba
     uint64_t determinLevel = (deterMin == 0U) ? 0U : 1U;
     verKey = NnopbaseAppend8Byte(verKey, determinLevel);
     verKey = NnopbaseAppend8Byte(verKey, static_cast<uint64_t>(implMode));
-    OP_LOGI("Get deterministic is %ld, high precision is %ld", deterMin, implMode);
+    OP_LOGI("Get deterministic is %llu, high precision is %lld", determinLevel, implMode);
 
     std::vector<bool> valueDepend(tensorNumInfo->numTensors, false);
     for (int64_t i = 0; i < tensorNumInfo->numValueDepend; i++) {
@@ -717,9 +717,11 @@ void SetExtraKernelInfoToBin(const NnopbaseJsonInfo& jsonInfo, std::unique_ptr<N
         }
         binInfo->extraKernelDesc->platformInfo = std::make_unique<StaticKernelPlatformInfo>(*platformInfo);
         NNOPBASE_ASSERT_NOTNULL(binInfo->extraKernelDesc->platformInfo);
-        OP_LOGI("Update platformInfo of %s json to binInfo, number of aic blocks is %u, number of aiv blocks is %u",
-                jsonInfo.opType.c_str(), binInfo->extraKernelDesc->platformInfo->coreNum.aicNum,
-                binInfo->extraKernelDesc->platformInfo->coreNum.aivNum);
+        OP_LOGI(
+            "Update platformInfo of %s json to binInfo, aic blocks is %u, aiv blocks is %u, deterministic level is %d.",
+            jsonInfo.opType.c_str(), binInfo->extraKernelDesc->platformInfo->coreNum.aicNum,
+            binInfo->extraKernelDesc->platformInfo->coreNum.aivNum,
+            binInfo->extraKernelDesc->platformInfo->deterministicLevel);
     }
 }
 
