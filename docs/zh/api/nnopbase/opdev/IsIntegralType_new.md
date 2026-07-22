@@ -1,7 +1,5 @@
 # IsIntegralType
 
-**须知：该接口后续版本会废弃，请使用最新[IsIntegralType](IsIntegralType_new.md)接口**
-
 ## 功能说明
 
 判断输入的数据类型是否为整数类型，包括Int8、Int16、Int32、Int64、Uint8、Uint16、Uint32、Uint64。

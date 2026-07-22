@@ -1,7 +1,5 @@
 # IsComplexType
 
-**须知：该接口后续版本会废弃，请使用最新[IsComplexType](IsComplexType_new.md)接口**
-
 ## 功能说明
 
 判断输入的数据类型是否为复数类，包括Complex128、Complex64、Complex32。

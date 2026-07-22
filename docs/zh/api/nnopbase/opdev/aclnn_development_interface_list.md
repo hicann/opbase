@@ -42,7 +42,7 @@
 | [shape_utils](shape_utils.md) | 提供了shape相关的基础操作，例如shape打印等。 | aclnn/opdev/shape_utils.h |
 | [small_vector](small_vector.md) | 详细介绍了SmallVector类，该类为aclnn中实现的高效vector数据结构，主要针对已知数据量较小的场景。 | aclnn/opdev/small_vector.h |
 | [tensor_view_utils](tensor_view_utils.md) | 提供了对于View类的基础操作，例如判断aclTensor是否连续等。 | aclnn/opdev/tensor_view_utils.h |
-| [data_type_utils](data_type_utils-6.md) | 提供了DataType相关的基础接口，例如判断指定DataType是否为整数类型等。 | aclnn/opdev/op_common/data_type_utils.h |
+| [data_type_utils](data_type_utils-6.md) | 提供了DataType相关的基础接口，例如判断指定DataType是否为整数类型等。 | aclnn/opdev/op_common/data_type_utils.h<br>**须知：该接口后续版本会废弃，请使用aclnn/opdev/data_type_utils.h定义的接口替换** |
 | [aicpu_args_handler](aicpu_args_handler.md) | 提供了AI CPU相关的组合计算任务的处理逻辑，例如拼接计算任务相关的参数等。 | aclnn/opdev/aicpu/aicpu_args_handler.h |
 | [aicpu_ext_info_handle](aicpu_ext_info_handle.md) | 提供了AI CPU相关的计算任务拓展参数的处理逻辑，例如拼接解析拓展参数的接口。 | aclnn/opdev/aicpu/aicpu_ext_info_handle.h |
 | [aicpu_task](aicpu_task.md) | 提供了AI CPU任务设置、下发等逻辑，例如设置调用哪个AI CPU算子，设置算子输入、输出等接口。 | aclnn/opdev/aicpu/aicpu_task.h |

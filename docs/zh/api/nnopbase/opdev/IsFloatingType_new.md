@@ -1,10 +1,8 @@
 # IsFloatingType
 
-**须知：该接口后续版本会废弃，请使用最新[IsFloatingType](IsFloatingType_new.md)接口**
-
 ## 功能说明
 
-判断输入的数据类型是否为浮点类型，包括Float64（即Double）、Float32（即Float）、BFloat16、Float16。
+判断输入的数据类型是否为浮点类型，包括Float64（即Double）、Float32（即Float）、BFloat16、Float16，以及HiFloat8、Float8E5M2、Float8E4M3FN、Float8E8M0、Float6E3M2、Float6E2M3、Float4E2M1、Float4E1M2。
 
 ## 函数原型
 

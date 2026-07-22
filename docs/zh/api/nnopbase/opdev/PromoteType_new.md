@@ -1,7 +1,5 @@
 # PromoteType
 
-**须知：该接口后续版本会废弃，请使用最新[PromoteType](PromoteType_new.md)接口**
-
 ## 功能说明
 
 不同数据类型参数进行运算时，推导应该将类型提升到何种数据类型进行计算。例如float16与float32进行运算，应该将float16先提升至float32后再做运算。

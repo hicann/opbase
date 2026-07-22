@@ -42,6 +42,6 @@
 
 - **[tensor\_view\_utils](tensor_view_utils.md)**  
 
-- **[op\_common相关接口](op_common_related_interface.md)**  
+- **[op\_common相关接口（废弃）](op_common_related_interface.md)**  
 
 - **[aicpu相关接口](aicpu_related_interface.md)**  

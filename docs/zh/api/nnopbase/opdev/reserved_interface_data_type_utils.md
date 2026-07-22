@@ -9,3 +9,4 @@
 | ToDataType(const std::string &dataTypeStr) | 将给定的字符串转换为op::DataType（即ge::DataType）。 |
 | CalcShapeBytes(int64_t size, DataType dataType, bool ceil=false) | 用给定的shape大小和dtype计算总大小。 |
 | CheckType(const DataType dtype, const std::initializer_list\<DataType\> &valid_types) | 检查data type是否在给定的列表中 |
+| ToString(const std::initializer_list\<DataType\> &dataTypes) | 将一组 DataType 数据类型列表序列化为形如 [DT_FLOAT,DT_INT32,] 的方括号字符串 |

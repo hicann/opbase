@@ -60,6 +60,12 @@
   - [TypeSize](TypeSize.md)
   - [ToOpDataType](ToOpDataType.md)
   - [ToAclDataType](ToAclDataType.md)
+  - [CanCast](CanCast_new.md)
+  - [IsComplexType](IsComplexType_new.md)
+  - [IsFloatingType](IsFloatingType_new.md)
+  - [IsIntegralType](IsIntegralType_new.md)
+  - [IsIntegralType（含bool）](IsIntegralType_bool_new.md)
+  - [PromoteType](PromoteType_new.md)
   - [预留接口](reserved_interface_data_type_utils.md)
 
 - [format\_utils](format_utils.md)
@@ -129,8 +135,8 @@
   - [IsContiguous](IsContiguous.md)
   - [预留接口](reserved_interface_tensor_view_utils.md)
 
-- [op\_common相关接口](op_common_related_interface.md)
-  - [data\_type\_utils](data_type_utils-6.md)
+- [op\_common相关接口（废弃）](op_common_related_interface.md)
+  - [data\_type\_utils（废弃）](data_type_utils-6.md)
     - [IsComplexType](IsComplexType.md)
     - [IsFloatingType](IsFloatingType.md)
     - [IsIntegralType](IsIntegralType.md)
