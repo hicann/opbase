@@ -227,6 +227,27 @@ OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpI
  */
 OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
                                          int32_t axesIdx, int32_t outIdx);
+/*
+ * \brief get operator input param with input idx, if axes idx is constant input, use this interface
+ * @param context
+ *  ge tiling context
+ *
+ * @param opInput
+ *  return value, operator input param
+ *
+ * @param inputIdx
+ *  reduce operator input idx
+ *
+ * @param axesIdx
+ *  reduce operator axes input idx
+ *
+ * @param outIdx
+ *  reduce operator reduce output idx
+ * @param key
+ *  reduce operator tilingkey
+ */
+OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
+                                         int32_t axesIdx, int32_t outIdx, ReduceTilingKey& key);
 } // namespace ReduceOpTmpl
 
 class OPBASE_API ReduceOpTiling {

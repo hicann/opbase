@@ -73,7 +73,8 @@ static bool CheckIsContiguous(ReduceOpInputParam& opInput)
 static bool checkTailAIsOne(ReduceOpInputParam& opInput)
 {
     int32_t len = opInput.shape.size();
-    auto iter = std::find(opInput.axes.begin(), opInput.axes.end(), len - 1);
+    auto iter = std::find_if(opInput.axes.begin(), opInput.axes.end(),
+                             [len](int64_t axis) { return axis == len - 1 || axis == -1; });
     if (opInput.shape[len - 1] == 1 && iter == opInput.axes.end()) {
         return 1;
     } else {
@@ -187,11 +188,7 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
                 OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
     OP_CHECK_IF((GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
                 OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
-    // batch一致性场景，尾轴是A且为1时置为1，用来标识这个尾轴1不能被去掉
-    if (context->GetDeterministicLevel() == 2) {
-        opInput.isTailAOne = checkTailAIsOne(opInput);
-    }
-    if (CheckAllReduce(context, outIdx) && CheckIsContiguous(opInput) && !opInput.isTailAOne) {
+    if (CheckAllReduce(context, outIdx) && CheckIsContiguous(opInput)) {
         // all reduce 场景不读取const data
         opInput.axes.resize(opInput.shape.size());
         for (size_t i = 0; i < opInput.shape.size(); i++) {
@@ -210,6 +207,44 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
         }
         OP_CHECK_IF((status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes const input failed"),
                     return ge::GRAPH_FAILED);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
+                              int32_t axesIdx, int32_t outIdx, ReduceTilingKey& key)
+{
+    ge::DataType axesDtype;
+    ge::graphStatus status = GetInputDtype(context, axesIdx, axesDtype);
+    OP_CHECK_IF((status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetInputDtype(context, inputIdx, opInput.inputDtype) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetInputShape(context, inputIdx, opInput.shape) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
+    if (axesDtype == ge::DT_INT32) {
+        status = GetConstInputData<int32_t>(context, axesIdx, opInput.axes);
+    } else if (axesDtype == ge::DT_INT64) {
+        status = GetConstInputData<int64_t>(context, axesIdx, opInput.axes);
+    } else {
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "axes", Ops::Base::ToString(axesDtype).c_str(),
+                                              "only support const input dtype in [int32, int64]");
+        status = ge::GRAPH_FAILED;
+    }
+    OP_CHECK_IF((status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes const input failed"),
+                return ge::GRAPH_FAILED);
+    // batch一致性场景，尾轴是A且为1时置为1，用来标识这个尾轴1不能被去掉
+    if (key.batchInvariant) {
+        opInput.isTailAOne = checkTailAIsOne(opInput);
+    }
+    if (CheckAllReduce(context, outIdx) && CheckIsContiguous(opInput) && !opInput.isTailAOne) {
+        // all reduce 场景不读取const data
+        opInput.axes.resize(opInput.shape.size());
+        for (size_t i = 0; i < opInput.shape.size(); i++) {
+            opInput.axes[i] = i;
+        }
     }
     return ge::GRAPH_SUCCESS;
 }
