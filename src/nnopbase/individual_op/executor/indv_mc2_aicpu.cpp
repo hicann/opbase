@@ -13,6 +13,8 @@
 #include "runtime/runtime/rt_model.h"
 #include "utils/indv_soc.h"
 
+#include <cstdint>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,6 +27,33 @@ constexpr uint8_t NNOPBASE_MC2_NOTIFY_COUNT = 2;
 constexpr uint16_t NNOPBASE_HCCL_DEFAULT_TIME = 1836;
 
 namespace {
+size_t NnopbaseAlignToEightBytes(const size_t size)
+{
+    return ((size + NNOPBASE_SEVENS_BYTES) / NNOPBASE_EIGHT_BYTES) * NNOPBASE_EIGHT_BYTES;
+}
+
+aclnnStatus NnopbaseCheckMC2ParamBuffer(const NnopbaseExecutor* const executor,
+                                        const NnopbaseExecutorArgsAddr* const argsAddr, const size_t requiredSize)
+{
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(argsAddr);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(argsAddr->hostInputData);
+
+    const uintptr_t argsBufStart = reinterpret_cast<uintptr_t>(executor->args->argsBuf.data());
+    const uintptr_t argsBufEnd = argsBufStart + executor->args->argsBuf.size();
+    const uintptr_t hostInputData = reinterpret_cast<uintptr_t>(argsAddr->hostInputData);
+    CHECK_COND((hostInputData >= argsBufStart) && (hostInputData <= argsBufEnd), ACLNN_ERR_PARAM_INVALID,
+               "MC2 hostInputData is out of argsBuf, argsBuf start is %p, argsBuf size is %zu, hostInputData is %p.",
+               executor->args->argsBuf.data(), executor->args->argsBuf.size(), argsAddr->hostInputData);
+
+    const size_t remainingSize = argsBufEnd - hostInputData;
+    CHECK_COND(remainingSize >= requiredSize, ACLNN_ERR_PARAM_INVALID,
+               "MC2 argsBuf remaining size is insufficient, remaining size is %zu, required size is %zu.",
+               remainingSize, requiredSize);
+    return OK;
+}
+
 aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor* executor, HcclComm comm, void* stream, void* tilingData,
                                            void** commCtx)
 {
@@ -224,7 +253,7 @@ void NnopbaseCopyMC2ParamDesc(NnopbaseExecutor* executor, NnopbaseExecutorArgsAd
                                        NNOPBASE_AICPU_PARAM_LEN * 3U;
 }
 
-void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr)
+aclnnStatus NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAddr* argsAddr)
 {
     NnopbaseUChar* args = nullptr;
     if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType)) {
@@ -238,7 +267,16 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAd
     bool isA5AiCpu = nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2.serverType);
     const NnopbaseUChar* pSoName = isA5AiCpu ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
     const NnopbaseUChar* pKernelName = isA5AiCpu ? NNOPBASE_MC2_SERVER_KERNEL_NAME : NNOPBASE_MC2_AICPU_KERNEL_NAME;
+    const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
+    const bool enableCcuLaunch = nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType);
+    const size_t opNameDataLen = enableCcuLaunch ? NnopbaseAlignToEightBytes(opName.length()) : opName.length();
+    size_t requiredSize = NNOPBASE_AICPU_PARAM_LEN * 2U + opNameDataLen;
+    if (enableCcuLaunch) {
+        requiredSize += sizeof(NnopbaseHcclCommParamDesc);
+    }
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCheckMC2ParamBuffer(executor, argsAddr, requiredSize));
 
+    const NnopbaseUChar* const soNameAddr = argsAddr->hostInputData;
     for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pSoName[i]);
     }
@@ -250,24 +288,32 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecutorArgsAd
         executor->mc2.aicpuArgs.kernelNameAddrOffset = static_cast<uint16_t>(argsAddr->hostInputData - args);
     }
 
+    const NnopbaseUChar* const aicpuKernelNameAddr = argsAddr->hostInputData;
     for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pKernelName[i]);
     }
 
-    const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
-    OP_CHECK(memcpy_s(argsAddr->hostInputData, opName.length(), &opName[0], opName.length()) == EOK,
-             OP_LOGW("Failed to execute memcpy_s for aicpu opName, opName is %s, length %zu.", opName.c_str(),
-                     opName.length()),
-             return);
+    const NnopbaseUChar* const apiNameAddr = argsAddr->hostInputData;
+    const size_t remainingSize = reinterpret_cast<uintptr_t>(executor->args->argsBuf.data()) +
+                                 executor->args->argsBuf.size() - reinterpret_cast<uintptr_t>(argsAddr->hostInputData);
+    auto ret = memcpy_s(argsAddr->hostInputData, remainingSize, opName.data(), opName.length());
+    if (ret != EOK) {
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to execute memcpy_s for aicpu opName, opName is %s, length %zu, ret is %d.",
+                opName.c_str(), opName.length(), ret);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    OP_LOGI("MC2 params are soName[%s], apiName[%.*s], aicpuKernelName[%s].", reinterpret_cast<const char*>(soNameAddr),
+            static_cast<int32_t>(opName.length()), reinterpret_cast<const char*>(apiNameAddr),
+            reinterpret_cast<const char*>(aicpuKernelNameAddr));
 
-    if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType)) {
-        const size_t opLen = ((opName.length() + 7) / 8) * 8;
-        argsAddr->hostInputData += opLen;
-        return NnopbaseCopyDavidMC2ParamDesc(executor, argsAddr);
+    if (enableCcuLaunch) {
+        argsAddr->hostInputData += opNameDataLen;
+        NnopbaseCopyDavidMC2ParamDesc(executor, argsAddr);
     } else {
         argsAddr->hostInputData += opName.length();
-        return NnopbaseCopyMC2ParamDesc(executor, argsAddr);
+        NnopbaseCopyMC2ParamDesc(executor, argsAddr);
     }
+    return OK;
 }
 
 static aclnnStatus NnopbaseGetAicpuTimeout(uint32_t* time)

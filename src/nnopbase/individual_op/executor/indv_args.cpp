@@ -259,9 +259,12 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor* const executor, const size_t tilin
     }
     if (executor->mc2.enabled) {
         argsLen += NNOPBASE_AICPU_PARAM_LEN * 2; // 2 is soname/kernelname
-        argsLen += (strlen(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX.length());
+        const size_t mc2OpNameLen = strlen(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX.length();
         if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType)) {
+            argsLen += ((mc2OpNameLen + NNOPBASE_SEVENS_BYTES) / NNOPBASE_EIGHT_BYTES) * NNOPBASE_EIGHT_BYTES;
             argsLen += sizeof(NnopbaseHcclCommParamDesc); // 82上parsmdesc组在args最后
+        } else {
+            argsLen += mc2OpNameLen;
         }
     }
     OP_LOGI("Op[%s] argsLen is %zu", executor->opType, argsLen);

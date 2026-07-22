@@ -764,7 +764,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor* const executor, a
                                                        op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args)) +
                                  NNOPBASE_PARAM_EXT_LEN + static_cast<uint32_t>(sizeof(aclrtPlaceHolderInfo));
     if (executor->mc2.enabled) {
-        NnopbasePrepareMC2Params(executor, &argsAddr);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbasePrepareMC2Params(executor, &argsAddr));
     }
 
     CHECK_COND((argsAddr.hostInputData <= &executor->args->argsBuf.back()), ACLNN_ERR_PARAM_INVALID,
