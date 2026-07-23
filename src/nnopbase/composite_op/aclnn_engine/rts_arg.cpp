@@ -790,19 +790,22 @@ static void UpdateDFXInfoDumpAndTilingData(rtArgs_t &rtArg, const LaunchArgCache
 {
     size_t dumpSize = launchCache->GetDFXInfoCacheSize();
     OP_CHECK(dumpSize != 0, OP_LOGW("DFX info size is 0, no need to update"), return );
+    uint32_t dumpElemCount = static_cast<uint32_t>(dumpSize / sizeof(uint64_t));
     uint64_t dfxInfoDumpIndex = 0;
-    void *newDFXInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpSize, dfxInfoDumpIndex);
-    OP_CHECK(newDFXInfoDumpAddr != nullptr,
-        OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %zu", dumpSize), return );
-    OP_CHECK(memcpy_s(newDFXInfoDumpAddr, dumpSize, dfxInfoCache, dumpSize) == EOK, OP_LOGW("Failed to memcpy."),
-        return );
+    void *newDFXInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
+    OP_CHECK(
+        newDFXInfoDumpAddr != nullptr,
+        OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount), return);
+    OP_CHECK(
+        memcpy_s(newDFXInfoDumpAddr, dumpSize, dfxInfoCache, dumpSize) == EOK, OP_LOGW("Failed to memcpy."), return);
     size_t dfxInfoOffset = launchCache->GetDFXInfoOffsetInTilingData();
     *PtrCastTo<uint64_t>(PtrShift(rtArg.args, rtArg.tilingDataOffset + dfxInfoOffset)) = dfxInfoDumpIndex;
     uint32_t *atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
-    OP_LOGI("dump request space: %zu, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), "
+    OP_LOGI(
+        "dump size: %zu, elem count: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), "
         "DFX info offset in tiling data: %zu, print dfx info dump: %d",
-        dumpSize, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1], dfxInfoOffset,
-        PrintAICErrorDFXInfo(newDFXInfoDumpAddr, launchCache->GetLaunchArgNum(), dumpSize));
+        dumpSize, dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1],
+        dfxInfoOffset, PrintAICErrorDFXInfo(newDFXInfoDumpAddr, launchCache->GetLaunchArgNum(), dumpSize));
 }
 
 aclnnStatus LaunchArgCache::UpdateFunctionHandle(KernelLaunchConfig& launchCfg)

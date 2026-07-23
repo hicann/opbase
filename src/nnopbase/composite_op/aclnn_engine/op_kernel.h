@@ -389,10 +389,12 @@ public:
         }
 
         size_t dumpSize = argInfo.GetDFXInfoDumpSize();
+        uint32_t dumpElemCount = static_cast<uint32_t>(dumpSize / sizeof(uint64_t));
         uint64_t dfxInfoDumpIndex = 0;
-        void *dfxInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpSize, dfxInfoDumpIndex);
-        OP_CHECK(dfxInfoDumpAddr != nullptr,
-            OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %zu", dumpSize),
+        void *dfxInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
+        OP_CHECK(
+            dfxInfoDumpAddr != nullptr,
+            OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount),
             return ACLNN_ERR_INNER_NULLPTR);
         aclnnStatus ret = AppendAICErrorDFXInfoToDump(allArg, argNum, dfxInfoDumpAddr, dumpSize);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to dump failed!"), return ret);
@@ -404,9 +406,11 @@ public:
         argInfo.UpdateTilingDataLen(tilingData->data_size_);
 
         uint32_t *atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
-        OP_LOGI("Dump addr: %p, space: %zu, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), print dfx info dump: %d",
-            dfxInfoDumpAddr, dumpSize, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1],
-            op::internal::PrintAICErrorDFXInfo(dfxInfoDumpAddr, argNum, dumpSize));
+        OP_LOGI(
+            "Dump addr: %p, dump size: %zu, elem count: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), "
+            "print dfx info dump: %d",
+            dfxInfoDumpAddr, dumpSize, dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0],
+            atomicIndexU32Type[1], op::internal::PrintAICErrorDFXInfo(dfxInfoDumpAddr, argNum, dumpSize));
         return ACLNN_SUCCESS;
     }
 
