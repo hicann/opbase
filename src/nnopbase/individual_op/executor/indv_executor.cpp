@@ -717,7 +717,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor *executor, aclrtSt
     executor->argsExt.argsSize = static_cast<uint32_t>(argsAddr.ptr - op::internal::PtrCastTo<NnopbaseUChar>(executor->argsExt.args))
         + NNOPBASE_PARAM_EXT_LEN + static_cast<uint32_t>(sizeof(aclrtPlaceHolderInfo));
     if (executor->mc2OpCfg.isMc2) {
-        NnopbasePrepareMC2Params(executor, &argsAddr);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbasePrepareMC2Params(executor, &argsAddr));
     }
 
     CHECK_COND((argsAddr.hostInputData <= &executor->args->argsBuf.back()),

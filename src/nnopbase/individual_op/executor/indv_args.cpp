@@ -256,10 +256,13 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor *executor, const size_t tilingDataS
         }
     }
     if (executor->mc2OpCfg.isMc2) {
-        argsLen += NNOPBASE_AICPU_PARAM_LEN * 2;  // 2 is soname/kernelname
-        argsLen += (strlen(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX.length());
+        argsLen += NNOPBASE_AICPU_PARAM_LEN * 2; // 2 is soname/kernelname
+        const size_t mc2OpNameLen = strlen(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX.length();
         if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
+            argsLen += ((mc2OpNameLen + NNOPBASE_SEVENS_BYTES) / NNOPBASE_EIGHT_BYTES) * NNOPBASE_EIGHT_BYTES;
             argsLen += sizeof(NnopbaseHcclCommParamDesc); // 82上parsmdesc组在args最后
+        } else {
+            argsLen += mc2OpNameLen;
         }
     }
     OP_LOGI("Op[%s] argsLen is %zu", executor->opType, argsLen);

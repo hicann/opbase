@@ -2253,7 +2253,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccess)
     executor->argsExt.args = op::internal::PtrCastTo<void>(argsAddr.ptr + sizeof(void *));
 
     NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
-    NnopbasePrepareMC2Params(executor, &argsAddr);
+    ASSERT_EQ(NnopbasePrepareMC2Params(executor, &argsAddr), OK);
     std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBASE_AICPU_PARAM_LEN);
     const std::string expected_soName = "libccl_kernel.so" + std::string(NNOPBASE_AICPU_PARAM_LEN - std::strlen("libccl_kernel.so"), '\0');
     ASSERT_EQ(soName, expected_soName);
@@ -2300,7 +2300,7 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbasePrepareMC2ParamsSuccessForascend950With
     SetSocVersion(nnopbase::OPS_SUBPATH_ASCEND950);
     ASSERT_EQ(nnopbase::IndvSoc::GetInstance().GetCurSocVersion(), nnopbase::OPS_SUBPATH_ASCEND950);
     NnopbaseUChar *soNamePtr = argsAddr.hostInputData;
-    NnopbasePrepareMC2Params(executor, &argsAddr);
+    ASSERT_EQ(NnopbasePrepareMC2Params(executor, &argsAddr), OK);
     std::string soName(reinterpret_cast<char*>(soNamePtr), NNOPBASE_AICPU_PARAM_LEN);
     const std::string expected_soName = "libmc2_server.so" + std::string(NNOPBASE_AICPU_PARAM_LEN - std::strlen("libmc2_server.so"), '\0');
     ASSERT_EQ(soName, expected_soName);

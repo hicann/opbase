@@ -25,6 +25,11 @@ constexpr uint8_t NNOPBASE_MC2_NOTIFY_COUNT = 2;
 constexpr uint16_t NNOPBASE_HCCL_DEFAULT_TIME = 1836;
 
 namespace {
+size_t NnopbaseAlignToEightBytes(const size_t size)
+{
+    return ((size + NNOPBASE_SEVENS_BYTES) / NNOPBASE_EIGHT_BYTES) * NNOPBASE_EIGHT_BYTES;
+}
+
 aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor *executor, HcclComm comm, void *stream, void *tilingData,
     void **commCtx)
 {
@@ -229,7 +234,7 @@ void NnopbaseCopyMC2ParamDesc(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
         executor->argsExt.argsSize + sizeof(NnopbaseHcclCommParamDesc) + NNOPBASE_AICPU_PARAM_LEN * 3U;
 }
 
-void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
+aclnnStatus NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAddr *argsAddr)
 {
     NnopbaseUChar *args = nullptr;
     if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
@@ -245,7 +250,10 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
                                                                       NNOPBASE_MC2_AICPU_SO_NAME;
     const NnopbaseUChar *pKernelName = isA5AiCpu ? NNOPBASE_MC2_SERVER_KERNEL_NAME :
                                                                           NNOPBASE_MC2_AICPU_KERNEL_NAME;
-
+    const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
+    const bool enableCcuLaunch = nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType);
+    const size_t opNameDataLen = enableCcuLaunch ? NnopbaseAlignToEightBytes(opName.length()) : opName.length();
+    const NnopbaseUChar* const soNameAddr = argsAddr->hostInputData;
     for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pSoName[i]);
     }
@@ -255,26 +263,27 @@ void NnopbasePrepareMC2Params(NnopbaseExecutor *executor, NnopbaseExecutorArgsAd
     } else {
         executor->aicpuArgs.kernelNameAddrOffset = static_cast<uint16_t>(argsAddr->hostInputData - args);
     }
-
+    const NnopbaseUChar* const aicpuKernelNameAddr = argsAddr->hostInputData;
     for (size_t i = 0U; i < NNOPBASE_AICPU_PARAM_LEN; i++) {
         argsAddr->hostInputData = NnopbaseAppend1Byte(argsAddr->hostInputData, pKernelName[i]);
     }
-
-    const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
-    OP_CHECK(
-        memcpy_s(argsAddr->hostInputData, opName.length(), &opName[0], opName.length()) == EOK,
-        OP_LOGW(
-            "Failed to execute memcpy_s for aicpu opName, opName is %s, length %zu.", opName.c_str(), opName.length()),
-        return);
-
-    if (nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2OpCfg.sType)) {
-        const size_t opLen = ((opName.length() + 7) / 8) * 8;
-        argsAddr->hostInputData += opLen;
-        return NnopbaseCopyDavidMC2ParamDesc(executor, argsAddr);
-    } else {
-        argsAddr->hostInputData += opName.length();
-        return NnopbaseCopyMC2ParamDesc(executor, argsAddr);
+    const NnopbaseUChar* const apiNameAddr = argsAddr->hostInputData;
+    auto ret = memcpy_s(argsAddr->hostInputData, opName.length(), opName.data(), opName.length());
+    if (ret != EOK) {
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to execute memcpy_s for aicpu opName, opName is %s, length %zu, ret is %d.",
+                opName.c_str(), opName.length(), ret);
+        return ACLNN_ERR_PARAM_INVALID;
     }
+    OP_LOGI("MC2 params are soName[%s], apiName[%.*s], aicpuKernelName[%s].", reinterpret_cast<const char*>(soNameAddr),
+            static_cast<int32_t>(opName.length()), reinterpret_cast<const char*>(apiNameAddr),
+            reinterpret_cast<const char*>(aicpuKernelNameAddr));
+    argsAddr->hostInputData += opNameDataLen;
+    if (enableCcuLaunch) {
+        NnopbaseCopyDavidMC2ParamDesc(executor, argsAddr);
+    } else {
+        NnopbaseCopyMC2ParamDesc(executor, argsAddr);
+    }
+    return OK;
 }
 
 static aclnnStatus NnopbaseGetAicpuTimeout(uint32_t *time)
