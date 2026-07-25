@@ -176,6 +176,24 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
 }
 
 ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
+                              ReduceTilingKey& key)
+{
+    OP_CHECK_IF((GetInputDtype(context, inputIdx, opInput.inputDtype) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF((GetInputShape(context, inputIdx, opInput.shape) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input shape failed"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF((GetInputStride(context, inputIdx, opInput.dimStrides) == ge::GRAPH_FAILED),
+                OP_LOGE(context, "ReduceOpTmpl get input stride failed"), return ge::GRAPH_FAILED);
+    // batch一致性场景，尾轴是A且为1时置为1，用来标识这个尾轴1不能被去掉
+    if (key.batchInvariant) {
+        opInput.isTailAOne = checkTailAIsOne(opInput);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
                               int32_t axesIdx, int32_t outIdx)
 {
     ge::DataType axesDtype;

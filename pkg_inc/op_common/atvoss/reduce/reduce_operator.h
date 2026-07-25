@@ -436,7 +436,8 @@ class ReduceMaxOp : public ReduceOp<PromteT> {
 public:
     __aicore__ inline ReduceMaxOp() {}
 #ifdef __CCE_AICORE__
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -444,7 +445,8 @@ public:
         ReduceMax<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
     }
 
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -507,7 +509,8 @@ class ReduceMinOp : public ReduceOp<PromteT> {
 public:
     __aicore__ inline ReduceMinOp() {}
 #ifdef __CCE_AICORE__
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -515,7 +518,8 @@ public:
         ReduceMin<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
     }
 
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -580,7 +584,8 @@ class ReduceProdOp : public ReduceOp<PromteT> {
 public:
     __aicore__ inline ReduceProdOp() {}
 #ifdef __CCE_AICORE__
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -602,7 +607,8 @@ public:
         }
     }
 
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -1447,7 +1453,8 @@ class ReduceSumOp : public ReduceOp<PromteT> {
 public:
     __aicore__ inline ReduceSumOp() {}
 #ifdef __CCE_AICORE__
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
@@ -1455,27 +1462,12 @@ public:
         AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
     }
 
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
+    template <class Pattern, bool isBatchInvariant,
+              typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
     __aicore__ inline void Compute(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
                                    const LocalTensor<PromteT>& src)
     {
-        uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
-        AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::RA, true>(dst, src, srcShape, false);
-    }
-
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::AR>::Type* dummpy = nullptr>
-    __aicore__ inline void ComputeBatchInvariant(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                                 const LocalTensor<PromteT>& src)
-    {
-        uint32_t srcShape[2] = {static_cast<uint32_t>(shape.value[0]), static_cast<uint32_t>(shape.value[1])};
-        AscendC::ReduceSum<PromteT, AscendC::Pattern::Reduce::AR, true>(dst, src, srcShape, false);
-    }
-
-    template <class Pattern, typename IsSameV<Pattern, __reducePattern::RA>::Type* dummpy = nullptr>
-    __aicore__ inline void ComputeBatchInvariant(ReduceOpTmpl::Shape<2>& shape, const LocalTensor<PromteT>& dst,
-                                                 const LocalTensor<PromteT>& src)
-    {
-        if constexpr (!IsB64<PromteT>()) {
+        if constexpr (isBatchInvariant && !IsB64<PromteT>()) {
             ReduceRAImpl<PromteT, AscendC::MicroAPI::RegTraitNumOne>((__ubuf__ PromteT*)dst.GetPhyAddr(),
                                                                      (__ubuf__ PromteT*)src.GetPhyAddr(),
                                                                      shape.value[1], shape.value[0]);

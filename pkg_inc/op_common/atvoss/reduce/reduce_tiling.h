@@ -209,6 +209,21 @@ OPBASE_API ge::graphStatus GetInputDtype(gert::TilingContext* context, int32_t i
 OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx);
 
 /*
+ * \brief get operator input param with input idx, if axes idx is not constant input and support batchinvariant, use
+ * this interface
+ * @param context
+ *  ge tiling context
+ *
+ * @param opInput
+ *  return value, operator input param
+ *
+ * @param inputIdx
+ *  reduce operator input idx
+ */
+OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
+                                         ReduceTilingKey& key);
+
+/*
  * \brief get operator input param with input idx, if axes idx is constant input, use this interface
  * @param context
  *  ge tiling context
@@ -228,7 +243,8 @@ OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpI
 OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
                                          int32_t axesIdx, int32_t outIdx);
 /*
- * \brief get operator input param with input idx, if axes idx is constant input, use this interface
+ * \brief get operator input param with input idx, if axes idx is constant input and support batchinvariant, use this
+ * interface
  * @param context
  *  ge tiling context
  *

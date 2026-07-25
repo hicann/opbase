@@ -600,11 +600,7 @@ public:
     __aicore__ inline void ComputeAux(const LocalTensor<T>& src, S& shape, Args... args)
     {
         LocalTensor<T> dst = resBuf_.template ReinterpretCast<T>();
-        if constexpr (isBatchInvariant) {
-            reduceOp_->template ComputeBatchInvariant<Pattern>(shape, dst, src);
-        } else {
-            reduceOp_->template Compute<Pattern>(shape, dst, src);
-        }
+        reduceOp_->template Compute<Pattern, isBatchInvariant>(shape, dst, src);
     }
 
     template <class Pattern, class T, class S>
