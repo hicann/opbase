@@ -131,6 +131,8 @@ set(aicpu_headers_src
     ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_context.h
     ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_types.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_kernel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_kernel_register.h
     ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cust_op/cust_cpu_utils.h
     )
 install(FILES ${aicpu_headers_src}
