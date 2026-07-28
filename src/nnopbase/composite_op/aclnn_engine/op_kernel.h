@@ -1361,7 +1361,7 @@ public:
         int64_t implMode = ToIndex(GetCurrentImplMode());
         OP_LOGD("tensor size %zu; dynamic index %s, dynamic count %s. Attr size %zu.", tensors.size(),
                 IntegerVecToString(dynamicIndex).c_str(), IntegerVecToString(dynamicCount).c_str(), attrsVec.size());
-        int64_t determinConfig = GetThreadLocalContext().opConfigInfo_.isDeterministicOn_ ? 1 : 0;
+        int64_t determinConfig = GetThreadLocalContext().opConfigInfo_.deterministicLevel_;
         OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
                 implMode, determinConfig, tensors.size(), dynamicCount.size(), attrsVec.size(),
                 valueDependIndex_.size());

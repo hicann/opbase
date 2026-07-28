@@ -184,6 +184,9 @@ bool MatchBinWithPlatformInfo(const NnopbaseBinInfo* const binInfo, const Static
     bool coreEqual = (binCoreNum.aivNum == coreNum.aivNum) && ((binCoreNum.aicNum == coreNum.aicNum));
     // 如果静态kernel描述符里包含了deterministicLevel，做强校验
     if (binPlatformInfo->deterministicLevel != -1) {
+        OP_LOGD(
+            "Match static bin with deterministic level %d, while deterministic level of candidate static kernel is %d.",
+            binPlatformInfo->deterministicLevel, platformInfo->deterministicLevel);
         return (binPlatformInfo->deterministicLevel == platformInfo->deterministicLevel) && coreEqual;
     } else {
         return coreEqual;
