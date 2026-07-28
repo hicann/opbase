@@ -33,6 +33,7 @@ jobs:
           key: |
             ${{ env.obs_path }}/pr_filelist.txt
             ${{ env.obs_path }}/pr_filelist_mod.txt
+            ${{ env.obs_path }}/ut.sh
           path: ${{ steps.process_checkout.outputs.path }}
       -
         name: redis-cache
@@ -46,7 +47,7 @@ jobs:
           export ut_type=${{ inputs.ut_type }}
           export ASCEND_3RD_LIB_PATH=/home/jenkins/opensource
           export GIT_TARGET_BRANCH=${{ env.TARGET_BRANCH }}
-          bash .gitcode/scripts/ut.sh
+          bash ut.sh
       -
         name: ut_cov
         identifier: ut_cov
