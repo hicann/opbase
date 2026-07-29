@@ -27,7 +27,7 @@
 | max() | 返回Float6E3M2数据类型的最大有限值。 |
 | epsilon() | 返回Float6E3M2数据类型的机器epsilon值。 |
 | round_error() | 返回Float6E3M2数据类型的最大舍入误差。 |
-| infinity() | 返回Float6E3M2数据类型的最大值（无无穷大表示，返回最大有限值）。 |
-| quiet_NaN() | 返回Float6E3M2数据类型的quiet NaN值（无NaN表示，返回零值）。 |
-| signaling_NaN() | 返回Float6E3M2数据类型的signaling NaN值。 |
+| infinity() | 返回Float6E3M2数据类型的最大有限值（该数据类型无无穷大值）。 |
+| quiet_NaN() | 返回Float6E3M2数据类型的零值（该数据类型无quiet NaN值）。 |
+| signaling_NaN() | 返回Float6E3M2数据类型的零值（该数据类型无signaling NaN值）。 |
 | denorm_min() | 返回Float6E3M2数据类型的最小正非规格化值。 |

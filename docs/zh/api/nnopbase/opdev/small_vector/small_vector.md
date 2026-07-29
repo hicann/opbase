@@ -35,7 +35,7 @@
 | rend() | 返回一个反向迭代器，指向SmallVector容器中第一个元素之前的元素，该元素被视为其反向结束。 |
 | crend() | 返回一个const反向迭代器，指向SmallVector容器中第一个元素之前的元素，该元素被视为其反向结束。 |
 | size() | 返回SmallVector容器中元素的个数。 |
-| reserve(const size_type new_cap) | 当new_cap大于已分配容量，则更改容器容量，要求为SmallVector容器的元素分配的存储空间的容量至少足以容纳返回已分配存储容量的大小个元素。 |
+| reserve(const size_type new_cap) | 当new_cap大于当前已分配容量时，扩容使容器容量至少为new_cap；若new_cap不大于当前容量则不做任何操作。该接口仅改变容量，不影响已有元素个数。 |
 | capacity() | 返回已分配存储容量的大小。 |
 | insert(const_iterator const pos, const T &value) | 在SmallVector容器指定位置前插入元素。 |
 | insert(const_iterator const pos, T &&value) | 在SmallVector容器指定位置前插入value元素，value是浅拷贝。 |
@@ -57,7 +57,7 @@
 | CopyRange(T *iter, InputIt first, const InputIt last) | 拷贝[first, last)范围内存到迭代器iter位置。 |
 | MoveFrom(SmallVector &other) | 从other容器拷贝内存到当前容器。 |
 | CheckOutOfRange(const size_type index) | 检查index是否超出容器范围。 |
-| ExpandCap(const size_type range_begin, const size_type range_len) | 先申请一块新的内存，大小为原容器容量加上range_len大小，新容量不足原容量2倍则按2倍扩容。在原SmallVector容器range_begin的位置拓展range_len大小的内存，并拷贝到新内存中，释放原容器内存。 |
+| ExpandCap(const size_type range_begin, const size_type range_len) | 将容器容量扩至原容量2倍与当前元素数加range_len的较大值，并在range_begin位置腾出range_len大小的插入空间，不改变已有元素个数，返回指向range_begin位置的迭代器。 |
 | ExpandSize(const size_type range_begin, const size_type range_len) | 在SmallVector容器中，range_begin的位置，拓展range_len大小的内存。 |
 | Expand(const size_type range_begin, const size_type range_len) | 拓展SmallVector容器内存，若拓展后大于容器最大容量，按ExpandCap方式拓展，否则按ExpandSize方式拓展。 |
 | Shrink(const size_type range_begin, const size_type range_end) | 在SmallVector容器中，删掉从range_begin到range_end之间的内存。 |

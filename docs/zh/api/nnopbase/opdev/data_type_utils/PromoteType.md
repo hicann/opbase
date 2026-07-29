@@ -1,7 +1,5 @@
 # PromoteType
 
-**须知：该接口后续版本会废弃，请使用最新[PromoteType](../data_type_utils/PromoteType.md)接口**
-
 ## 功能说明
 
 不同数据类型参数进行运算时，推导应该将类型提升到何种数据类型进行计算。例如float16与float32进行运算，应该将float16先提升至float32后再做运算。
@@ -30,10 +28,11 @@ ge::DataType PromoteType(ge::DataType type_a, ge::DataType type_b)
 ## 调用示例
 
 ```cpp
-// 判断dtype是否可以与Float32计算，不能则返回
-void Func(const DataType dtype) {
+// 校验dtype是否可以与Float32计算，不能则提前返回
+void Func(const ge::DataType dtype) {
     if (PromoteType(dtype, DT_FLOAT) == DT_UNDEFINED) {
         return;
     }
+    // 后续执行算子计算逻辑
 }
 ```

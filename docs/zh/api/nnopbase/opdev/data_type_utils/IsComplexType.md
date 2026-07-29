@@ -1,7 +1,5 @@
 # IsComplexType
 
-**须知：该接口后续版本会废弃，请使用最新[IsComplexType](../data_type_utils/IsComplexType.md)接口**
-
 ## 功能说明
 
 判断输入的数据类型是否为复数类，包括Complex128、Complex64、Complex32。
@@ -29,10 +27,11 @@ bool IsComplexType(const ge::DataType type)
 ## 调用示例
 
 ```cpp
-// 判断dtype不为复数类型时，返回
-void Func(const DataType dtype) {
+// 校验dtype是否为复数类型，不是则提前返回
+void Func(const ge::DataType dtype) {
     if (!IsComplexType(dtype)) {
         return;
     }
+    // 后续执行算子计算逻辑
 }
 ```

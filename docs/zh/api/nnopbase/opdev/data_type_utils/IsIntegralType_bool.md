@@ -1,7 +1,5 @@
 # IsIntegralType（含bool）
 
-**须知：该接口后续版本会废弃，请使用最新[IsIntegralType（含bool）](../data_type_utils/IsIntegralType_bool.md)接口**
-
 ## 功能说明
 
 判断输入的数据类型是否为整数类型，包括Int8、Int16、Int32、Int64、Uint8、Uint16、Uint32、Uint64。
@@ -32,10 +30,11 @@ bool IsIntegralType(const ge::DataType type, const bool include_bool)
 ## 调用示例
 
 ```cpp
-// 判断dtype不为整数类型时，返回，注意bool也是整数类型
+// 校验dtype是否为整数类型（含bool），不是则提前返回
 void Func(const ge::DataType type) {
     if (!IsIntegralType(type, true)) {
         return;
     }
+    // 后续执行算子计算逻辑
 }
 ```

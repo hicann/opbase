@@ -29,5 +29,5 @@
 | round_error() | 返回Float8E5M2数据类型的最大舍入误差。 |
 | infinity() | 返回Float8E5M2数据类型的无穷大值。 |
 | quiet_NaN() | 返回Float8E5M2数据类型的quiet NaN值。 |
-| signaling_NaN() | 返回Float8E5M2数据类型的signaling NaN值。 |
+| signaling_NaN() | 返回Float8E5M2数据类型的quiet NaN值（该数据类型无signaling NaN值）。 |
 | denorm_min() | 返回Float8E5M2数据类型的最小正非规格化值。 |
