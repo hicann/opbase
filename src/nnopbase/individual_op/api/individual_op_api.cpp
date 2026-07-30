@@ -1285,6 +1285,7 @@ bool NnopbaseMatchArgs(void* executor, uint64_t* workspaceLen)
     RecordNnopbaseTime(nnopExecutor, NnopbaseTimeIdx::kGetWsStart);
     nnopbase::NnopbaseGetCoreNum(&nnopExecutor->coreNum.aicNum, &nnopExecutor->coreNum.aivNum);
     nnopExecutor->deterministicLevel = static_cast<uint8_t>(nnopbase::GetGlobalDeterministic());
+    nnopExecutor->deterministic = nnopExecutor->deterministicLevel == 0U ? false : true;
     NnopbaseUpdatePlatformInfo(nnopExecutor);
     if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         nnopExecutor->ownArgs.enableCache = false;

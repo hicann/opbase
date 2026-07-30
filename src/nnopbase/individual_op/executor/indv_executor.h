@@ -199,6 +199,7 @@ typedef struct {
     bool matchArgsV2 = false; // 兼容之前的缓存匹配流程，true表示走的新流程，匹配的时候不用再重新生成key
     bool isCachedArgs = false;
     NnopbaseCoreNum coreNum{0, 0};
+    bool deterministic = false;
     uint8_t deterministicLevel = 0U;
     NnopbaseParamCheckMode paramCheckMode = NnopbaseParamCheckMode::kCheckEnd;
 } NnopbaseExecutor;

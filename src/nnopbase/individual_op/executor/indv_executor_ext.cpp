@@ -92,6 +92,7 @@ void NnopbaseExecutorReset(NnopbaseExecutor* executor)
     executor->isCachedArgs = false;
     executor->matchArgsV2 = false;
     executor->deterministicLevel = 0U;
+    executor->deterministic = false;
 }
 } // namespace
 

@@ -213,6 +213,8 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit());
     }
     NnopbaseAsyncAnyValue** values = executor->tiling.contextExt.context->values;
+    OP_LOGD("During tiling, deterministic is %d. deterministic level is %u.", executor->deterministic,
+            executor->deterministicLevel);
     // executor->args->inputs.nonDynamicCnt > executor->args->inputs.requiredCnt for option input
     if ((!executor->tiling.contextExt.hasPrepared) || executor->args->inputs.hasDynamic ||
         executor->args->outputs.hasDynamic ||
@@ -230,7 +232,11 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
         values[index]->deleter = nullptr;
         index++;
         /* kInputsDeterministic. */
-        values[index]->data.pointer = reinterpret_cast<void*>(executor->deterministicLevel);
+        *op::internal::PtrCastTo<int32_t>(values[index]->data.inplace) = executor->deterministic ? 1 : 0;
+        values[index]->deleter = nullptr;
+        index++;
+        *op::internal::PtrCastTo<int32_t>(values[index]->data.inplace) = static_cast<int32_t>(
+            executor->deterministicLevel);
         values[index]->deleter = nullptr;
         NnopbaseTilingSetContextOutputStep1(executor);
         executor->tiling.contextExt.hasPrepared = true;
@@ -325,8 +331,8 @@ aclnnStatus NnopbaseMemsetTilingContextInit(const std::vector<NnopbaseInitValueI
                                                                  startIndex, desc->instances[i].num));
     }
 
-    // 4 for tiling compile info parsed struct,platform,tilingfunc,deterministic
-    contextExt->context->input_size = node->inputsNum + 4;
+    // 5 for tiling compile info parsed struct,platform,tilingfunc,deterministic,deterministic level
+    contextExt->context->input_size = node->inputsNum + static_cast<uint32_t>(kInputsAppendEnd);
     contextExt->context->output_size = gert::TilingContext::kOutputNum;
     contextExt->context->output_start = contextExt->context->values + contextExt->context->input_size;
     contextExt->context->compute_node_info = node;
@@ -455,9 +461,13 @@ aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor* executor)
         values[index]->deleter = nullptr;
         index++;
         /* kInputsDeterministic. */
-        values[index]->data.pointer = reinterpret_cast<void*>(executor->deterministicLevel);
+        *op::internal::PtrCastTo<int32_t>(values[index]->data.inplace) = executor->deterministic ? 1 : 0;
         values[index]->deleter = nullptr;
+        index++;
 
+        *op::internal::PtrCastTo<int32_t>(values[index]->data.inplace) = static_cast<int32_t>(
+            executor->deterministicLevel);
+        values[index]->deleter = nullptr;
         NnopbaseSetMemsetTilingKeyAndNumBlocks(executor);
         contextExt->hasPrepared = true;
     }

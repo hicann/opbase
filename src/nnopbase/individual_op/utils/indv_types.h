@@ -52,6 +52,7 @@ enum InputsAppend {
     kInputsPlatformInfo,
     kInputsTilingFunc,
     kInputsDeterministic,
+    kInputsDeterministicLevel,
     kInputsAppendEnd
 };
 
