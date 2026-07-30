@@ -71,7 +71,6 @@ set(LATEST_MANGER_FILES
     ${CANN_CMAKE_DIR}/scripts/install/check_version_required.awk
 )
 set(CONF_FILES
-    ${CANN_CMAKE_DIR}/scripts/package/cfg/path.cfg
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nnopbase/common/op_info_record/dump_tool_config.ini
 )
 install(FILES ${CMAKE_BINARY_DIR}/version.opbase.info
@@ -225,4 +224,4 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/opp_builtin/__i
     COMPONENT opbase
 )
 
-set_cann_cpack_config(opbase SHARE_INFO_NAME opbase ENABLE_DEVICE "${ENABLE_BUILD_DEVICE}")
+set_cann_cpack_config(opbase SHARE_INFO_NAME opbase ENABLE_DEVICE "${ENABLE_BUILD_DEVICE}" PACKAGE_TYPE "${PACKAGE_TYPE}")

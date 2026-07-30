@@ -29,6 +29,8 @@ usage() {
     echo "    --make_clean "
     echo "                   Make clean and delete related file"
     echo "    --pkg          Build run package"
+    echo "    --pkg-type=<TYPE>"
+    echo "                   Specify package type (TYPE options: run/rpm/deb/all), Default: run"
     echo "    --build-type=<TYPE>"
     echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
     echo "    --cann_3rd_lib_path=<PATH>"
@@ -40,6 +42,14 @@ usage() {
     echo "    --cov          Enable code coverage for unit tests"
     echo "    --asan         Enable AddressSanitizer"
     echo ""
+}
+
+check_pkg_type() {
+    local pkg_type="$1"
+    if [[ "$pkg_type" != "run" && "$pkg_type" != "rpm" && "$pkg_type" != "deb" && "$pkg_type" != "all" ]]; then
+        echo "[ERROR] --pkg-type only supports run/rpm/deb/all, got: $pkg_type"
+        exit 1
+    fi
 }
 
 parse_cmake_extra_args() {
@@ -78,6 +88,9 @@ checkopts() {
     BUILD_MODE=""
     ENABLE_COVERAGE="off"
     ENABLE_PKG_ASAN="off"
+    ENABLE_PKG="off"
+    PACKAGE_TYPE="run"
+    PACKAGE_TYPE_SET=FALSE
     CMAKE_EXTRA_ARGS=()
     if [[ -n "${ASCEND_HOME_PATH}" ]]; then
         echo "env exists ASCEND_HOME_PATH : ${ASCEND_HOME_PATH}"
@@ -89,7 +102,7 @@ checkopts() {
     CANN_3RD_LIB_PATH="${BASEPATH}/third_party"
 
     # Process the options
-    parsed_args=$(getopt -a -o j:hvusO: -l help,verbose,cov,make_clean,build-type:,noexec,pkg,asan,cann_3rd_lib_path:,extra-cmake-args: -- "$@") || {
+    parsed_args=$(getopt -a -o j:hvusO: -l help,verbose,cov,make_clean,build-type:,noexec,pkg,asan,cann_3rd_lib_path:,extra-cmake-args:,pkg-type: -- "$@") || {
     usage
     exit 1
     }
@@ -145,7 +158,14 @@ checkopts() {
         shift 2
         ;;
         --pkg)
+        ENABLE_PKG="on"
         shift
+        ;;
+        --pkg-type)
+        PACKAGE_TYPE="$2"
+        check_pkg_type "${PACKAGE_TYPE}"
+        PACKAGE_TYPE_SET=TRUE
+        shift 2
         ;;
         --asan)
         ENABLE_PKG_ASAN="on"
@@ -162,12 +182,55 @@ checkopts() {
         ;;
     esac
     done
+
+    if [[ "$PACKAGE_TYPE_SET" == "TRUE" && "$ENABLE_PKG" != "on" ]]; then
+        echo "[ERROR] --pkg-type can only be used with --pkg"
+        exit 1
+    fi
 }
 
 mk_dir() {
     local create_dir="$1"
     mkdir -pv "${create_dir}"
     echo "created ${create_dir}"
+}
+
+find_rpm_deb_package() {
+    if [[ "$PACKAGE_TYPE" == "run" ]]; then
+        return 0
+    fi
+    find "${BUILD_PATH}" -type f -name "cann-opbase*.${PACKAGE_TYPE}" | sort
+}
+
+clean_rpm_deb_package() {
+    if [[ "$PACKAGE_TYPE" == "run" ]]; then
+        return 0
+    fi
+    local package_files=()
+    while IFS= read -r package_file; do
+        package_files+=("${package_file}")
+    done < <(find_rpm_deb_package)
+    if [[ ${#package_files[@]} -eq 0 ]]; then
+        return 0
+    fi
+    for package_file in "${package_files[@]}"; do
+        rm -f "${package_file}"
+        echo "[INFO] Removed stale package artifact: ${package_file}"
+    done
+}
+
+collect_rpm_deb_package() {
+    if [[ "$PACKAGE_TYPE" == "run" ]]; then
+        return 0
+    fi
+    local package_files=()
+    while IFS= read -r package_file; do
+        package_files+=("${package_file}")
+    done < <(find_rpm_deb_package)
+    for package_file in "${package_files[@]}"; do
+        cp -f "${package_file}" "${BUILD_OUT_PATH}/"
+        echo "[INFO] Package artifact copied to ${BUILD_OUT_PATH}/$(basename "${package_file}")"
+    done
 }
 
 # ops_base build start
@@ -222,6 +285,10 @@ build_ops_base() {
     if [ ! -d "${BUILD_OUT_PATH}" ]; then
         mkdir -p "${BUILD_OUT_PATH}"
     fi
+
+    local cmake_pkg_type="${PACKAGE_TYPE}"
+    [[ "${PACKAGE_TYPE}" == "all" ]] && cmake_pkg_type="run"
+
     CMAKE_ARGS="\
     -DENABLE_UT=${ENABLE_UT} \
     -DENABLE_ST=${ENABLE_ST} \
@@ -232,20 +299,40 @@ build_ops_base() {
     -DBUILD_MODE=${BUILD_MODE} \
     -DENABLE_PKG_ASAN=${ENABLE_PKG_ASAN} \
     -DENABLE_COVERAGE=${ENABLE_COVERAGE} \
+    -DPACKAGE_TYPE=${cmake_pkg_type} \
     -DCMAKE_INSTALL_PREFIX=${BUILD_OUT_PATH}"
 
     cmake_generate_make "${BASEPATH}" "${BUILD_PATH}" "${CMAKE_ARGS}"
 
-    make ${VERBOSE} -j${THREAD_NUM} package
+    if [[ "${PACKAGE_TYPE}" == "all" ]]; then
+        local saved_pkg_type="${PACKAGE_TYPE}"
+        for PACKAGE_TYPE in run rpm deb; do
+            clean_rpm_deb_package
+            cmake -DPACKAGE_TYPE="${PACKAGE_TYPE}" "${BUILD_PATH}" > /dev/null 2>&1
+            make ${VERBOSE} -j${THREAD_NUM} package
+            if [ $? -ne 0 ]; then
+                echo "[ERROR] target:package (${PACKAGE_TYPE}) build failed!"
+                exit 1
+            fi
+            collect_rpm_deb_package
+        done
+        PACKAGE_TYPE="${saved_pkg_type}"
+    else
+        clean_rpm_deb_package
+        make ${VERBOSE} -j${THREAD_NUM} package
+        if [ 0 -ne $? ]; then
+            echo "execute command: make ${VERBOSE} -j${THREAD_NUM} package failed."
+            return 1
+        fi
+        collect_rpm_deb_package
+    fi
 
     # make package
-    if [ 0 -ne $? ]; then
-        echo "execute command: make ${VERBOSE} -j${THREAD_NUM} && make package failed."
-        return 1
-    fi
-    if [ ! -f ${BUILD_OUT_PATH}/cann*.run ];then
-        echo "package ops_base run failed"
-        return 1
+    if [[ "${PACKAGE_TYPE}" == "run" || "${PACKAGE_TYPE}" == "all" ]]; then
+        if [ ! -f ${BUILD_OUT_PATH}/cann*.run ];then
+            echo "package ops_base run failed"
+            return 1
+        fi
     fi
 
     echo "ops_base build success!"

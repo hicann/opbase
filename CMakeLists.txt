@@ -4,6 +4,13 @@ project(opbase VERSION 1.0.0)
 init_cann_project()
 add_cann_target_options()
 
+set(PACKAGE_TYPE "run" CACHE STRING "package type: run/rpm/deb/all")
+set_property(CACHE PACKAGE_TYPE PROPERTY STRINGS run rpm deb all)
+set(SUPPORTED_PACKAGE_TYPES run rpm deb all)
+if(NOT PACKAGE_TYPE IN_LIST SUPPORTED_PACKAGE_TYPES)
+  message(FATAL_ERROR "PACKAGE_TYPE only supports run/rpm/deb/all, got: ${PACKAGE_TYPE}")
+endif()
+
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     message(STATUS "Build opbase with dependency cann pkgs installed")
     option(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG "Build opbase with dependency cann pkgs installed" TRUE)
