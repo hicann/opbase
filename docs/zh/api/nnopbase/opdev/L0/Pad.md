@@ -58,5 +58,5 @@ const aclTensor* Pad(const aclTensor* self, const aclTensor* paddings, aclOpExec
 
 ```cpp
 //调用l0op::Pad对self进行补维
-l0op::Pad(self, paddingsTensor, executor);
+l0op::Pad(self, paddings, executor);
 ```

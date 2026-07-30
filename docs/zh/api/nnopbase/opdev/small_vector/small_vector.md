@@ -38,7 +38,7 @@
 | reserve(const size_type new_cap) | 当new_cap大于当前已分配容量时，扩容使容器容量至少为new_cap；若new_cap不大于当前容量则不做任何操作。该接口仅改变容量，不影响已有元素个数。 |
 | capacity() | 返回已分配存储容量的大小。 |
 | insert(const_iterator const pos, const T &value) | 在SmallVector容器指定位置前插入元素。 |
-| insert(const_iterator const pos, T &&value) | 在SmallVector容器指定位置前插入value元素，value是浅拷贝。 |
+| insert(const_iterator const pos, T &&value) | 在SmallVector容器指定位置前插入value元素。 |
 | insert(const_iterator const pos, const size_type count, const T &value) | 在SmallVector容器指定位置前插入count个值为value的元素。 |
 | insert(const_iterator const pos, const InputIt first, const InputIt last) | 将指定元素范围[first, last)中的元素复制并插入到SmallVector容器指定位置前。 |
 | insert(const_iterator const pos, const std::initializer_list\<T\> value_list) | 在SmallVector容器指定位置前插入T类型对象数组的所有元素。 |
@@ -46,7 +46,7 @@
 | erase(const_iterator const pos) | 删除SmallVector容器指定位置的一个元素。 |
 | erase(const_iterator const first, const_iterator const last) | 删除SmallVector容器指定范围[first, last)的元素。 |
 | push_back(const T &value) | 在SmallVector容器末尾加上一个元素。 |
-| push_back(T &&value) | 在SmallVector容器末尾加上元素value元素，value元素是浅拷贝。 |
+| push_back(T &&value) | 在SmallVector容器末尾加上元素value元素。 |
 | emplace_back(Args &&...args) | 在SmallVector容器末尾插入一个元素，该元素是通过args参数直接构造出来的。 |
 | pop_back() | 删除SmallVector容器最后一个元素。 |
 | resize(const size_type count) | 调整SmallVector容器大小为count。如果count小于当前容器大小，则取前count个元素，否则在容器后面使用默认构造函数增加相应的元素。 |

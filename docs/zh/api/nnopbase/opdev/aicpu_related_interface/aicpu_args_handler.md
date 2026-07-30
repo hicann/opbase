@@ -39,5 +39,5 @@
 | AicpuTfArgsHandler(const std::string &opType, const std::string &nodeName, const uint32_t ioNum, const bool needDeviceExt) | AI CPU Tensorflow算子框架参数管理类。 |
 | GenTfArgs(const FVector<const aclTensor *> &inputs, const FVector<aclTensor*> &outputs, const AicpuAttrs &attrs, STR_FWK_OP_KERNEL &fwkOpKernel, std::string &taskInfo) | 生成CANN算子args中nodedef及head信息。 |
 | BuildTfArgs(STR_FWK_OP_KERNEL &fwkOpKernel, const std::string &taskInfo, const size_t extInfoSize) | 封装Tensorflow算子args中参数。 |
-| GenNodeDef(const FVector<const aclTensor *> &inputs, const AicpuAttrs &attrs, ge::Buffer &nodeDefBytes) | 生成算子的描述符信息，包含输入、输出的地址和shape等信息。 |
+| GenNodeDef(const FVector<const aclTensor *> &inputs, const AicpuAttrs &attrs, ge::Buffer &nodeDefBytes) | 生成算子的描述符信息，包含输入、输出shape及属性等信息。 |
 | UpdateKernelId() | 更新args中的Kernel字段，用于匹配Device侧的Kernel Cache。 |

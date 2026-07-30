@@ -14,7 +14,7 @@ OP_OUTPUT(x...)
 
 | 参数 | 输入/输出 | 说明 |
 | --- | --- | --- |
-| x... | 输入 | 输出的aclTensor和aclTensorList。 |
+| x... | 输入 | 算子输出的aclTensor和aclTensorList。 |
 
 ## 约束说明
 

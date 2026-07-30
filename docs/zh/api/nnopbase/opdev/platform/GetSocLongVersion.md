@@ -2,7 +2,7 @@
 
 ## 功能说明
 
-获取AI处理器的长型号信息，格式形如Ascend_xxxyy_。
+获取AI处理器的长型号信息，格式形如“Ascendxxxyy”。
 
 ## 函数原型
 
@@ -27,7 +27,7 @@ const std::string &GetSocLongVersion()
 ```cpp
 void func() {
     // Ascendxxx请替换为实际版本型号
-    if (GetCurrentPlatformInfo().GetSocLongVersion() != "Ascendxxx") {
+    if (GetCurrentPlatformInfo().GetSocLongVersion() != "Ascendxxxyy") {
         return;
     }
 }

@@ -53,6 +53,6 @@ const aclTensor *ReFormat(const aclTensor *x, const op::Format &format, aclOpExe
 
 ```cpp
 // 将输入reformat成NCHW格式
-auto reformatInput = l0op::ReFormat(unsqueezedInput, Format::FORMAT_NCHW);
+auto reformatInput = l0op::ReFormat(unsqueezedInput, op::Format::FORMAT_NCHW);
 CHECK_RET(reformatInput != nullptr, nullptr);
 ```

@@ -1,6 +1,6 @@
 # OpImplMode
 
-OpImplMode类表示算子的精度模式，具体定义如下：
+OpImplMode枚举类表示算子的精度模式，具体定义如下：
 
 ```cpp
 enum class OpImplMode : uint32_t {

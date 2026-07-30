@@ -16,7 +16,7 @@ const PlatformInfo &GetCurrentPlatformInfo()
 
 ## 返回值说明
 
-返回PlatformInfo。
+返回PlatformInfo的引用。
 
 ## 约束说明
 

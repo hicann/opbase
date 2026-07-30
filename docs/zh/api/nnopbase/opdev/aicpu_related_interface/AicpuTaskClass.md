@@ -46,7 +46,7 @@ protected:
 | 属性名 | 属性类型 | 默认值 | 属性说明 |
 | --- | --- | --- | --- |
 | opType_ | const std::string | "" | Task对应的AI CPU算子名。 |
-| UnknownType_ | const ge::UnknowShapeOpType | 0 | 标识算子shape是基类，具体类型UnknowShapeOpType。 |
+| unknownType_ | const ge::UnknowShapeOpType | 0 | 标识算子shape是基类，具体类型UnknowShapeOpType。 |
 | argsHandle_ | std::unique_ptr\<AicpuArgsHandler\> | null | 管理task封装参数的对象。 |
 | extInfoHandle_ | std::unique_ptr\<AicpuExtInfoHandler\> | null | 管理task封装拓展参数的对象。 |
 | launchId_ | uint64_t | 0 | 用于profiling采集的任务下发id。 |

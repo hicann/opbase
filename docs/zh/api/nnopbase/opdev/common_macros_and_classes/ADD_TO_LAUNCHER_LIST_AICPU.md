@@ -24,7 +24,6 @@ ADD_TO_LAUNCHER_LIST_AICPU(KERNEL_NAME, attrNames, opArgs...)
 - 如下接口是上述宏定义会调用到的关联接口。
 
     ```text
-    如下接口是上述宏定义会调用到的关联接口。
     OP_ATTR_NAMES
     OP_INPUT(x...)
     OP_OUTPUT(x...)

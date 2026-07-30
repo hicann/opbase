@@ -31,7 +31,7 @@ const aclTensor *ConvertToTensor(const aclScalar *value, DataType dataType)
 ```
 
 ```cpp
-template<typename T> 
+template<typename T>
 const aclTensor *ConvertToTensor(const T *value, uint64_t size, DataType dataType)
 ```
 
@@ -88,20 +88,20 @@ const aclTensor *ConvertToTensor(const T *value, uint64_t size, DataType dataTyp
 | value | aclBf16Array类型，内部存储bfloat16数据 |
 | dataType | 支持的数据类型：DT_FLOAT、DT_FLOAT16、DT_BF16、DT_INT8、DT_INT16、DT_UINT16、DT_UINT8、DT_INT32、DT_INT64、DT_UINT32、DT_UINT64、DT_BOOL、DT_DOUBLE |
 
-#### 接口6: `ConvertToTensor(const T *value, uint64_t size, DataType dataType)`
+#### 接口6: `ConvertToTensor(const aclScalar *value, DataType dataType)`
+
+| 参数 | 数据类型约束 |
+| --- | --- |
+| value | aclScalar类型，支持的数据类型包括：DT_BOOL、DT_INT8、DT_UINT8、DT_INT16、DT_UINT16、DT_INT32、DT_UINT32、DT_INT64、DT_UINT64、DT_FLOAT、DT_DOUBLE、DT_FLOAT16、DT_BF16、DT_COMPLEX64、DT_COMPLEX128、DT_FLOAT8_E5M2、DT_FLOAT8_E4M3FN、DT_FLOAT8_E8M0、DT_FLOAT6_E3M2、DT_FLOAT6_E2M3、DT_FLOAT4_E2M1、DT_FLOAT4_E1M2、DT_HIFLOAT8 |
+| dataType | 支持的数据类型：DT_BOOL、DT_INT8、DT_UINT8、DT_INT16、DT_UINT16、DT_INT32、DT_UINT32、DT_INT64、DT_UINT64、DT_FLOAT、DT_DOUBLE、DT_FLOAT16、DT_BF16、DT_COMPLEX64、DT_COMPLEX128、DT_FLOAT8_E5M2、DT_FLOAT8_E4M3FN、DT_FLOAT8_E8M0、DT_FLOAT6_E3M2、DT_FLOAT6_E2M3、DT_FLOAT4_E2M1、DT_FLOAT4_E1M2、DT_HIFLOAT8 |
+
+#### 接口7: `ConvertToTensor(const T *value, uint64_t size, DataType dataType)`
 
 | 参数 | 数据类型约束 |
 | --- | --- |
 | value | 模板类型T支持：int64_t、uint64_t、int32_t、uint32_t、int8_t、uint8_t、int16_t、uint16_t、float、double、bool、char、op::bfloat16、op::fp16_t |
 | size | uint64_t类型，表示元素个数 |
 | dataType | 支持的数据类型：DT_FLOAT、DT_FLOAT16、DT_BF16、DT_INT8、DT_INT16、DT_UINT16、DT_UINT8、DT_INT32、DT_INT64、DT_UINT32、DT_UINT64、DT_BOOL、DT_DOUBLE |
-
-#### 接口7: `ConvertToTensor(const aclScalar *value, DataType dataType)`
-
-| 参数 | 数据类型约束 |
-| --- | --- |
-| value | aclScalar类型，支持的数据类型包括：DT_BOOL、DT_INT8、DT_UINT8、DT_INT16、DT_UINT16、DT_INT32、DT_UINT32、DT_INT64、DT_UINT64、DT_FLOAT、DT_DOUBLE、DT_FLOAT16、DT_BF16、DT_COMPLEX64、DT_COMPLEX128、DT_FLOAT8_E5M2、DT_FLOAT8_E4M3FN、DT_FLOAT8_E8M0、DT_FLOAT6_E3M2、DT_FLOAT6_E2M3、DT_FLOAT4_E2M1、DT_FLOAT4_E1M2、DT_HIFLOAT8 |
-| dataType | 支持的数据类型：DT_BOOL、DT_INT8、DT_UINT8、DT_INT16、DT_UINT16、DT_INT32、DT_UINT32、DT_INT64、DT_UINT64、DT_FLOAT、DT_DOUBLE、DT_FLOAT16、DT_BF16、DT_COMPLEX64、DT_COMPLEX128、DT_FLOAT8_E5M2、DT_FLOAT8_E4M3FN、DT_FLOAT8_E8M0、DT_FLOAT6_E3M2、DT_FLOAT6_E2M3、DT_FLOAT4_E2M1、DT_FLOAT4_E1M2、DT_HIFLOAT8 |
 
 ## 调用示例
 

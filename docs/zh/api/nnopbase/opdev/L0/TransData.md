@@ -53,7 +53,7 @@ const aclTensor *TransData(const aclTensor *x, op::Format dstPrimaryFormat, int6
 ## 调用示例
 
 ```cpp
-// 将输出的格式从NC1HWC0转换成NCHW
-auto transGradInput = l0op::TransData(gradInputNC1HWC0, Format::FORMAT_NCHW, params.groups, executor);
+// 将张量格式从NC1HWC0转换成NCHW
+auto transGradInput = l0op::TransData(gradInputNC1HWC0, op::Format::FORMAT_NCHW, params.groups, executor);
 CHECK_RET(transGradInput != nullptr, ACLNN_ERR_INNER_NULLPTR);
 ```

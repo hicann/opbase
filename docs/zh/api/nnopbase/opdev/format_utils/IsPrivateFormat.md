@@ -27,7 +27,7 @@ format为私有格式返回true，否则返回false。
 ## 调用示例
 
 ```cpp
-// 判断当input的storage format为私有格式时，返回
+// 当input的storage format为私有格式时，返回true
 void Func(const aclTensor *input) {
     if (IsPrivateFormat(input->GetStorageFormat())) {
         return;

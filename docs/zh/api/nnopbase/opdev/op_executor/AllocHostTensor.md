@@ -9,7 +9,7 @@
 - **根据不同的输入信息组合，申请一个host侧tensor**
 
     ```cpp
-    aclTensor *AllocHostTensor(const op::Shape &shape, op::DataType datatype, op::Format format = op::Format::FORMAT_ND)
+    aclTensor *AllocHostTensor(const op::Shape &shape, op::DataType dataType, op::Format format = op::Format::FORMAT_ND)
     ```
 
     ```cpp

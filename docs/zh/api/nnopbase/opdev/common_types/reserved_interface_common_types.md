@@ -18,8 +18,8 @@
 | SetAddr(void *addr) | 设置Storage表示的片上内存地址指针。 |
 | SetWorkspaceOffset(uint64_t offset) | 当Storage表示一块workspace时，设置其有效数据在device存储内存的偏移。 |
 | GetWorkspaceOffset() | 当Storage表示一块workspace时，获取其有效数据在device存储内存的偏移。 |
-| SetFromWorkspace(bool fromWorkspace) | 设置Storage是否表示一块workspace。 |
-| SetFromWorkspace(bool from_workspace) | 设置aclTensor表示一块workspace。 |
+| SetFromWorkspace(bool fromWorkspace) | aclStorage::SetFromWorkspace，设置Storage是否表示一块workspace。 |
+| SetFromWorkspace(bool from_workspace) | aclTensor::SetFromWorkspace，设置aclTensor表示一块workspace。 |
 | IsFromWorkspace() | 获取Storage是否表示一块workspace。 |
 | SetExtend(void *extend) | 设置extend成员变量内容。 |
 | GetExtend() | 获取extend成员变量内容。 |
@@ -31,7 +31,7 @@
 | ToString() | 获取aclArray内容的打印字符串。 |
 | aclArray(const T *value, uint64_t size) | aclArray构造函数，aclArray用于描述一个host侧数组。 |
 | aclTensor(aclTensor &&other) | 禁止aclTensor的该类构造函数。 |
-| GetTensor() | 获取aclTensor中保存的gert::Tensor。<br> 说明： gert::Tensor介绍参见中。 |
+| GetTensor() | 获取aclTensor中保存的gert::Tensor。 |
 | GetStorageAddr() | 获取aclTensor内部aclStorage指向的片上内存指针。 |
 | GetStorage() | 获取aclTensor内部的aclStorage。 |
 | GetViewOffset() | 获取aclTensor的ViewOffset。 |
