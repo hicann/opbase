@@ -27,3 +27,10 @@ if [ -d "${devlib_dir}/${stub_src_rel}" ] && [ "$(id -u)" -eq 0 ]; then
     done
     [ $_writable -eq 0 ] && chmod u-w "${devlib_dir}" 2>/dev/null || true
 fi
+
+# create empty opp/vendors directory
+opp_vendors_dir="${INSTALL_PATH}/opp/vendors"
+if [ ! -d "${opp_vendors_dir}" ]; then
+    mkdir -p "${opp_vendors_dir}"
+    chmod 555 "${opp_vendors_dir}" 2>/dev/null || true
+fi

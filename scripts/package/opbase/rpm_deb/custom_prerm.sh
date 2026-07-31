@@ -24,3 +24,9 @@ for lib in ${STUB_LIBS}; do
         [ $_writable -eq 0 ] && chmod u-w "${devlib_dir}" 2>/dev/null || true
     fi
 done
+
+# remove empty opp/vendors directory
+opp_vendors_dir="${INSTALL_PATH}/opp/vendors"
+if [ -d "${opp_vendors_dir}" ] && [ -z "$(ls -A "${opp_vendors_dir}")" ]; then
+    rmdir "${opp_vendors_dir}" 2>/dev/null || true
+fi
