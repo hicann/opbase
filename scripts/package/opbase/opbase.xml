@@ -43,9 +43,123 @@
         <os_version>$(OS_VER)</os_version>
         <arch>$(ARCH)</arch>
     </generate_info>
-    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc" install_path="$(TARGET_ENV)/pkg_inc" install_type="all"> 
-        <file value="aicpu_common" install_mod="550" entity="true"/> 
-        <file value="op_common" install_mod="550" entity="true"/>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/common" install_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/common" install_type="all">
+        <file value="async_cpu_kernel.h" install_mod="550"/>
+        <file value="async_event_util.h" install_mod="550"/>
+        <file value="cpu_context.h" install_mod="550"/>
+        <file value="cpu_kernel_cache.h" install_mod="550"/>
+        <file value="cpu_kernel.h" install_mod="550"/>
+        <file value="cpu_kernel_register.h" install_mod="550"/>
+        <file value="cpu_kernel_utils.h" install_mod="550"/>
+        <file value="cpu_types.h" install_mod="550"/>
+        <file value="device_cpu_kernel.h" install_mod="550"/>
+        <file value="device.h" install_mod="550"/>
+        <file value="device_sharder.h" install_mod="550"/>
+        <file value="eigen_threadpool_embedding.h" install_mod="550"/>
+        <file value="eigen_threadpool.h" install_mod="550"/>
+        <file value="host_sharder.h" install_mod="550"/>
+        <file value="kernel_cache.h" install_mod="550"/>
+        <file value="node_def_builder.h" install_mod="550"/>
+        <file value="notification.h" install_mod="550"/>
+        <file value="session_cache.h" install_mod="550"/>
+        <file value="sharder.h" install_mod="550"/>
+        <file value="thread_ctx.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cpu_proto" install_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cpu_proto" install_type="all">
+        <file value="attr_value_impl.h" install_mod="550"/>
+        <file value="cpu_attr_value.h" install_mod="550"/>
+        <file value="cpu_node_def.h" install_mod="550"/>
+        <file value="cpu_tensor.h" install_mod="550"/>
+        <file value="cpu_tensor_shape.h" install_mod="550"/>
+        <file value="node_def_impl.h" install_mod="550"/>
+        <file value="tensor_impl.h" install_mod="550"/>
+        <file value="tensor_shape_impl.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cust_op" install_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cust_op" install_type="all">
+        <file value="cust_cpu_utils.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/utils" install_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/utils" install_type="all">
+        <file value="bcast.h" install_mod="550"/>
+        <file value="eigen_tensor.h" install_mod="550"/>
+        <file value="kernel_util.h" install_mod="550"/>
+        <file value="log.h" install_mod="550"/>
+        <file value="log_weak.h" install_mod="550"/>
+        <file value="status.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast" install_type="all">
+        <file value="broadcast_base_struct.h" install_mod="550"/>
+        <file value="broadcast_sch_base.h" install_mod="550"/>
+        <file value="broadcast_sch.h" install_mod="550"/>
+        <file value="broadcast_sch_nddma.h" install_mod="550"/>
+        <file value="broadcast_sch_one_dim_advance.h" install_mod="550"/>
+        <file value="broadcast_sch_one_dim.h" install_mod="550"/>
+        <file value="broadcast_sch_ub_broadcast.h" install_mod="550"/>
+        <file value="broadcast_sch_util.h" install_mod="550"/>
+        <file value="broadcast_tiling_base.h" install_mod="550"/>
+        <file value="broadcast_tiling.h" install_mod="550"/>
+        <file value="broadcast_tiling_noncontiguous.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/last_transpose" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/last_transpose" install_type="all">
+        <file value="broadcast_sch_base_last_transpose.h" install_mod="550"/>
+        <file value="broadcast_sch_last_transpose.h" install_mod="550"/>
+        <file value="broadcast_sch_util_last_transpose.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/nlast_transpose" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/nlast_transpose" install_type="all">
+        <file value="broadcast_sch_base_nlast_transpose_naddma.h" install_mod="550"/>
+        <file value="broadcast_sch_nlast_transpose_nddma.h" install_mod="550"/>
+        <file value="broadcast_sch_nlast_transpose_ub_broadcast_base.h" install_mod="550"/>
+        <file value="broadcast_sch_nlast_transpose_ub_broadcast.h" install_mod="550"/>
+        <file value="broadcast_sch_util_nlast_transpose_naddma.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/transpose" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/transpose" install_type="all">
+        <file value="broadcast_sch_base_transpose.h" install_mod="550"/>
+        <file value="broadcast_sch_nddma_transpose.h" install_mod="550"/>
+        <file value="broadcast_utils_transpose.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/elewise" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/elewise" install_type="all">
+        <file value="elewise_base_struct.h" install_mod="550"/>
+        <file value="elewise_sch_16b.h" install_mod="550"/>
+        <file value="elewise_sch.h" install_mod="550"/>
+        <file value="elewise_sch_with_scalar.h" install_mod="550"/>
+        <file value="elewise_tiling.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/reduce" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/reduce" install_type="all">
+        <file value="reduce_operator.h" install_mod="550"/>
+        <file value="reduce_sch_aux_base.h" install_mod="550"/>
+        <file value="reduce_sch_aux.h" install_mod="550"/>
+        <file value="reduce_sch_aux_non_contiguous.h" install_mod="550"/>
+        <file value="reduce_sch_aux_util.h" install_mod="550"/>
+        <file value="reduce_sch_batch_invariant.h" install_mod="550"/>
+        <file value="reduce_sch.h" install_mod="550"/>
+        <file value="reduce_tensor_empty.h" install_mod="550"/>
+        <file value="reduce_tensor_move.h" install_mod="550"/>
+        <file value="reduce_tiling_data.h" install_mod="550"/>
+        <file value="reduce_tiling.h" install_mod="550"/>
+        <file value="reduce_tiling_key_decl_batch_invariant.h" install_mod="550"/>
+        <file value="reduce_tiling_key_decl.h" install_mod="550"/>
+        <file value="reduce_tiling_key_decl_non_contiguous.h" install_mod="550"/>
+        <file value="reduce_tiling_key_sel_batch_invariant.h" install_mod="550"/>
+        <file value="reduce_tiling_key_sel.h" install_mod="550"/>
+        <file value="reduce_tiling_key_sel_non_contiguous.h" install_mod="550"/>
+        <file value="reduce_util.h" install_mod="550"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/util" install_path="$(TARGET_ENV)/pkg_inc/op_common/atvoss/util" install_type="all">
+        <file value="aux1.h" install_mod="550"/>
+        <file value="aux2.h" install_mod="550"/>
+        <file value="broadcast_utils.h" install_mod="550"/>
+        <file value="buffer.h" install_mod="550"/>
+        <file value="dag.h" install_mod="550"/>
+        <file value="dfx.h" install_mod="550"/>
+        <file value="elems.h" install_mod="550"/>
+        <file value="kernel_basic_intf_apt.h" install_mod="550"/>
+        <file value="kernel_micro_intf_apt.h" install_mod="550"/>
+        <file value="kernel_vec_intf_apt.h" install_mod="550"/>
+        <file value="log.h" install_mod="550"/>
+        <file value="loopbuf.h" install_mod="550"/>
+        <file value="node.h" install_mod="550"/>
+        <file value="placeholder.h" install_mod="550"/>
+        <file value="sync.h" install_mod="550"/>
+        <file value="vec.h" install_mod="550"/>
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/conf" install_path="$(TARGET_ENV)/conf" install_type="all">
         <file value="dump_tool_config.ini" install_mod="550" entity="true"/>
@@ -185,6 +299,21 @@
         <path value="$(TARGET_ENV)/include/aicpu_common" install_mod="550"/>
         <path value="$(TARGET_ENV)/include/aicpu" install_mod="550"/>
         <path value="$(TARGET_ENV)/pkg_inc/op_common" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/aicpu_common" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/aicpu_common/context" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/aicpu_common/context/common" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cpu_proto" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cust_op" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/aicpu_common/context/utils" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/last_transpose" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/nlast_transpose" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/broadcast/noncontiguous/transpose" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/elewise" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/reduce" install_mod="550"/>
+        <path value="$(TARGET_ENV)/pkg_inc/op_common/atvoss/util" install_mod="550"/>
         <path value="$(TARGET_ENV)/include/aclnn" install_mod="550"/>
         <path value="$(TARGET_ENV)/include/aclnn/opdev" install_mod="550"/>
         <path value="$(TARGET_ENV)/include/aclnn/opdev/op_common" install_mod="550"/>
