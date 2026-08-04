@@ -55,7 +55,7 @@ jobs:
             export WORKSPACE=${{ steps.process_checkout.outputs.path }}
             cd ${{ steps.process_checkout.outputs.path }}
             export task_name=${{ inputs.task_name }}
-            export GIT_TARGET_BRANCH=${{ env.TARGET_BRANCH }}
+            export TARGET_BRANCH=${{ env.TARGET_BRANCH }}
             export ASCEND_3RD_LIB_PATH=/home/jenkins/opensource
             BuildAccelerate bash compile.sh
           AC_SERVER_IP: ${{ vars.AC_SERVER_IP }}
