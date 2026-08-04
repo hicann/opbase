@@ -10,6 +10,7 @@
 
 #ifndef CPU_KERNELS_CONTEXT_H
 #define CPU_KERNELS_CONTEXT_H
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>

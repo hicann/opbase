@@ -11,6 +11,7 @@
 #ifndef OP_API_OP_API_COMMON_SRC_UTILS_FILE_UTILS_H
 #define OP_API_OP_API_COMMON_SRC_UTILS_FILE_UTILS_H
 
+#include <cstdint>
 #include <string>
 #include <memory>
 #include <vector>

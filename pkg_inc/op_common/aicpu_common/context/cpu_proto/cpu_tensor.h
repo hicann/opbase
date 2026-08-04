@@ -10,6 +10,7 @@
 
 #ifndef CPU_KERNEL_TENSOR_H
 #define CPU_KERNEL_TENSOR_H
+#include <cstdint>
 #include <memory>
 
 #include "cpu_tensor_shape.h"

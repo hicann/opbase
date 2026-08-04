@@ -10,6 +10,7 @@
 
 #ifndef CPU_KERNEL_ATTR_VALUE_H
 #define CPU_KERNEL_ATTR_VALUE_H
+#include <cstdint>
 #include <string>
 #include <vector>
 

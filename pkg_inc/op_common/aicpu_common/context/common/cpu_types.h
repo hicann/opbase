@@ -11,6 +11,7 @@
 #ifndef CPU_KERNEL_TYPES_H
 #define CPU_KERNEL_TYPES_H
 
+#include <cstdint>
 #include <map>
 
 namespace aicpu {
