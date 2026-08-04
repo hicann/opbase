@@ -78,7 +78,7 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
 {
     staticConfigJson_.clear();
 
-    string staticKernelBasePath;
+    std::string staticKernelBasePath;
     if (!customStaticKernelBasePath_.empty()) {
         // 路径已在 aclnnReselectStaticKernelWithPath 入口做过 RealPath 校验
         OP_LOGI("Load static bin json from custom base path: %s", customStaticKernelBasePath_.c_str());
@@ -90,18 +90,21 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
                  OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Loading static bin json", "ASCEND_OPP_PATH"),
                  return ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND);
     }
-    string configJsonPath = staticKernelBasePath;
+    std::string configJsonPath = staticKernelBasePath;
     auto& knlLib = OpKernelLib::GetInstance();
     configJsonPath.append(STATIC_CONFIG_JSON_PATH);
     configJsonPath.append(knlLib.GetSocPath());
     configJsonPath.append(STATIC_CONFIG_FILE_NAME);
     staticBinAndJsonDir_ = staticKernelBasePath;
     staticBinAndJsonDir_.append(STATIC_BIN_AND_JSON_DIR_PATH);
-    ifstream f(configJsonPath);
+    std::string realConfigJsonPath = RealPath(configJsonPath);
+    OP_CHECK(!realConfigJsonPath.empty(),
+             OP_LOGW("static kernel config json is not exist, path: %s", configJsonPath.c_str()), return ACLNN_SUCCESS);
+    ifstream f(realConfigJsonPath);
     try {
         staticConfigJson_ = nlohmann::json::parse(f);
     } catch (nlohmann::json::exception& e) {
-        OP_LOGW("Cannot parse static json for config file [%s] because %s.", configJsonPath.c_str(), e.what());
+        OP_LOGW("Cannot parse static json for config file [%s] because %s.", realConfigJsonPath.c_str(), e.what());
         return ACLNN_SUCCESS;
     }
     return ACLNN_SUCCESS;
