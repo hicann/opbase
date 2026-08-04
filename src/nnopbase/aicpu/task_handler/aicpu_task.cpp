@@ -228,8 +228,8 @@ aclnnStatus AicpuTfTask::Run(aclOpExecutor* executor, aclrtStream stream)
 aclnnStatus AicpuCCTask::GetKernelNameAndSoName(std::string& kernelSoName)
 {
     if (JsonLoadManger::FindAndGetInCustomRegistry(opType_, kernelSoName, functionName_)) {
-        OP_LOGI("The Operator %s found in custom registry: kernel so name is %s, function name is %s.", opType_.c_str(),
-                kernelSoName.c_str(), functionName_.c_str());
+        OP_LOGI("The Operator %s found in package registry: kernel so name is %s, function name is %s.",
+                opType_.c_str(), kernelSoName.c_str(), functionName_.c_str());
         std::string kernelSoPath = "";
         AICPU_ASSERT_OK_RETVAL(JsonLoadManger::LoadAicpuCustBinaryFromJson(opType_, kernelSoName, kernelSoPath));
         aicpuBinHandle_ = JsonLoadManger::GetAicpuCustBinaryHandle(kernelSoPath);

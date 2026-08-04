@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
 #include <set>
 #include "aicpu_json_load_manager.h"
 #include <fstream>
@@ -25,11 +26,20 @@ const std::string kAicpuOpsFileEnvPath = "/built-in/op_impl/aicpu/aicpu_kernel/c
 const std::string kTfOpsFileEnvPath = "/built-in/op_impl/aicpu/tf_kernel/config/tf_kernel.json";
 const std::string kAicpuCustJsonFilePath = "/op_impl/cpu/config/cust_aicpu_kernel.json";
 const std::string kAicpuCustOpsFilePath = "/op_impl/cpu/aicpu_kernel/impl/";
+const std::string kAicpuBuiltinJsonDir = "/built-in/op_impl/aicpu/config";
+const std::string kAicpuBuiltinOpsFilePath = "/built-in/op_impl/aicpu/kernel/";
 constexpr size_t SOC_VERSION_LEN = 128U;
 constexpr int kMaxFileSizeLimit = INT_MAX;
 const std::string kSplitSeparator = ":";
 const std::string kCustOpsBlacklistVendorName = "custom_aicpu_ops";
 const std::string kCustOpsBlacklistSoName = "libcust_cpu_kernels.so";
+
+const std::string& GetKernelSoDir(const JsonLoadManger::OpPackageType packageType)
+{
+    static const std::string kCustomKernelSoDir = kAicpuCustOpsFilePath;
+    static const std::string kBuiltinKernelSoDir = kAicpuBuiltinOpsFilePath;
+    return (packageType == JsonLoadManger::OpPackageType::BUILTIN) ? kBuiltinKernelSoDir : kCustomKernelSoDir;
+}
 } // namespace
 
 bool JsonLoadManger::hasAicpuLoadBin_ = false;
@@ -45,9 +55,9 @@ std::mutex JsonLoadManger::custMutex_ = std::mutex();
 bool JsonLoadManger::aicpuCustLoadFlag_ = false;
 std::mutex JsonLoadManger::aicpuCustBinLoadMutex_ = std::mutex();
 std::mutex JsonLoadManger::bufferCacheMutex_ = std::mutex();
-std::vector<std::pair<std::string, nlohmann::json>> JsonLoadManger::custOpJsonInfo_ = {};
+std::vector<JsonLoadManger::OpJsonFileInfo> JsonLoadManger::custOpJsonInfo_ = {};
 std::map<std::string, OpFullInfo> JsonLoadManger::customOpsInfos_ = {};
-std::map<std::string, std::string> JsonLoadManger::custRegisterInfos_ = {};
+std::map<std::string, JsonLoadManger::OpRegisterInfo> JsonLoadManger::custRegisterInfos_ = {};
 std::map<std::string, JsonLoadManger::CustomBinManager> JsonLoadManger::customBinhandleInfos_ = {};
 std::map<std::string, std::shared_ptr<std::vector<char>>> JsonLoadManger::bufferCache_ = {};
 
@@ -151,33 +161,40 @@ aclnnStatus JsonLoadManger::LoadAicpuCustBinaryFromJson(const std::string& opTyp
                                                         std::string& kernelSoPath)
 {
     std::unique_lock<std::mutex> lk(aicpuCustBinLoadMutex_);
-    const std::string custRegisterPath = custRegisterInfos_[opType];
-    kernelSoPath = custRegisterPath + kAicpuCustOpsFilePath + kernelSoName;
+    auto iter = custRegisterInfos_.find(opType);
+    if (iter == custRegisterInfos_.end()) {
+        OP_LOGE(ACLNN_ERR_INNER, "The operator %s not found in package registry.", opType.c_str());
+        return ACLNN_ERR_INNER;
+    }
+
+    const auto& registerInfo = iter->second;
+    kernelSoPath = registerInfo.opsRootPath + GetKernelSoDir(registerInfo.packageType) + kernelSoName;
     if (customBinhandleInfos_[kernelSoPath].hasLoad) {
-        OP_LOGI("The custom kernel so %s has loaded, no need to reload.", kernelSoPath.c_str());
+        OP_LOGI("The package kernel so %s has loaded, no need to reload.", kernelSoPath.c_str());
         return ACLNN_SUCCESS;
     }
     AICPU_ASSERT_OK_RETVAL(LoadBinaryFromJson(kernelSoPath, customBinhandleInfos_[kernelSoPath].binHandle, true));
     customBinhandleInfos_[kernelSoPath].hasLoad = true;
-    OP_LOGI("The custom kernel so %s load successfully.", kernelSoPath.c_str());
+    OP_LOGI("The package kernel so %s load successfully.", kernelSoPath.c_str());
     return ACLNN_SUCCESS;
 }
 
-bool JsonLoadManger::ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath)
+bool JsonLoadManger::ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath,
+                                      const OpPackageType packageType)
 {
     std::ifstream ifs(customJsonPath);
     if (!ifs.is_open()) {
-        OP_LOGW("Open custom op impl %s failed, do next operator repository.", customJsonPath.c_str());
+        OP_LOGW("Open operator impl %s failed, do next operator repository.", customJsonPath.c_str());
         return false;
     }
     nlohmann::json custOpInfoFile;
     if (OpsJsonFile::Instance().ParseUnderPath(customJsonPath, custOpInfoFile) != ACLNN_SUCCESS) {
-        OP_LOGW("Parse custom json file[%s] failed.", customJsonPath.c_str());
+        OP_LOGW("Parse operator json file[%s] failed.", customJsonPath.c_str());
         return false;
     }
-    OP_LOGI("Custom operator repository name is %s, custom operator info file = %s", opsRegisterName.c_str(),
+    OP_LOGI("Operator repository name is %s, operator info file = %s", opsRegisterName.c_str(),
             custOpInfoFile.dump().c_str());
-    custOpJsonInfo_.emplace_back(std::pair<std::string, nlohmann::json>(opsRegisterName, custOpInfoFile));
+    custOpJsonInfo_.emplace_back(OpJsonFileInfo{opsRegisterName, custOpInfoFile, packageType});
     return true;
 }
 
@@ -213,11 +230,32 @@ bool JsonLoadManger::ReadCustOpInfoFromJsonFile(const std::string& path)
     for (size_t i = 0; i < customPathSize; i++) {
         customJsonPath = customOppPath[i] + kAicpuCustJsonFilePath;
         OP_LOGI("Custom operator repository json path is %s.", customJsonPath.c_str());
-        if (!ReadCustJsonFile(customOppPath[i], customJsonPath)) {
+        if (!ReadCustJsonFile(customOppPath[i], customJsonPath, OpPackageType::CUSTOM)) {
             continue;
         }
     }
     OP_LOGI("Custom operator repository file size is %zu.", custOpJsonInfo_.size());
+    return true;
+}
+
+bool JsonLoadManger::ReadBuiltinOpInfoFromJsonFile(const std::string& oppPath)
+{
+    const std::string configDir = oppPath + kAicpuBuiltinJsonDir;
+    std::vector<std::string> jsonFilePaths;
+    GetFilesWithSuffix(configDir, ".json", jsonFilePaths);
+    if (jsonFilePaths.empty()) {
+        OP_LOGI("Builtin operator config dir %s is empty.", configDir.c_str());
+        return false;
+    }
+    std::sort(jsonFilePaths.begin(), jsonFilePaths.end());
+
+    for (const auto& jsonPath : jsonFilePaths) {
+        OP_LOGI("Builtin operator repository json path is %s.", jsonPath.c_str());
+        if (!ReadCustJsonFile(oppPath, jsonPath, OpPackageType::BUILTIN)) {
+            continue;
+        }
+    }
+    OP_LOGI("Builtin operator repository file size is %zu.", custOpJsonInfo_.size());
     return true;
 }
 
@@ -226,46 +264,54 @@ aclnnStatus JsonLoadManger::CustJsonLoadAndParse()
 {
     std::unique_lock<std::mutex> lk(custMutex_);
     if (aicpuCustLoadFlag_) {
-        OP_LOGI("The custom operator repository has already been loaded.");
+        OP_LOGI("The operator repository has already been loaded.");
         return ACLNN_SUCCESS;
     }
-    aicpuCustLoadFlag_ = true;
     const char* customPathEnv = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_CUSTOM_OPP_PATH, customPathEnv);
-    // If ASCEND_CUSTOM_OPP_PATH is not set, it indicates there are no custom operators, return directly.
     if (customPathEnv == nullptr) {
         OP_LOGI("Custom operator environment variable ASCEND_CUSTOM_OPP_PATH is not set.");
-        return ACLNN_SUCCESS;
+    } else {
+        std::string pathEnv = std::string(customPathEnv);
+        if (!ReadCustOpInfoFromJsonFile(pathEnv)) {
+            OP_LOGW("Failed to read custom operator info from json file.");
+        }
     }
-    std::string pathEnv = std::string(customPathEnv);
-    // Failed to read custom operator json
-    if (!ReadCustOpInfoFromJsonFile(pathEnv)) {
-        OP_LOGW("Failed to read custom operator info from json file.");
-        return ACLNN_SUCCESS;
+    const char* oppPathEnv = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
+    if (oppPathEnv == nullptr) {
+        OP_LOGI("Builtin operator environment variable ASCEND_OPP_PATH is not set.");
+    } else {
+        std::string oppPath = std::string(oppPathEnv);
+        if (!ReadBuiltinOpInfoFromJsonFile(oppPath)) {
+            OP_LOGW("Failed to read builtin operator info from json file.");
+        }
     }
-    // Parse custom operator information
-    return ParseCustOpInfo();
+    (void)ParseCustOpInfo();
+    aicpuCustLoadFlag_ = true;
+    return ACLNN_SUCCESS;
 }
 
 aclnnStatus JsonLoadManger::ParseCustOpInfo()
 {
     for (auto iter = custOpJsonInfo_.cbegin(); iter != custOpJsonInfo_.cend(); ++iter) {
-        if (iter->second.find(kConfigOpInfos) == iter->second.end()) {
-            OP_LOGW("The custom operator json file does not contain 'op_infos'.");
-            return ACLNN_SUCCESS;
+        if (iter->opJson.find(kConfigOpInfos) == iter->opJson.end()) {
+            OP_LOGW("The operator json file does not contain 'op_infos'.");
+            continue;
         }
         try {
-            OpInfoDescs infoDesc = iter->second;
-            FillCustOpInfos(iter->first, infoDesc);
+            OpInfoDescs infoDesc = iter->opJson;
+            FillCustOpInfos(iter->opsRegisterName, infoDesc, iter->packageType);
         } catch (const nlohmann::json::exception& e) {
-            OP_LOGW("Failed to parse custom operator json file %s : %s.", iter->second.dump().c_str(), e.what());
-            return ACLNN_SUCCESS;
+            OP_LOGW("Failed to parse operator json file %s : %s.", iter->opJson.dump().c_str(), e.what());
+            continue;
         }
     }
     return ACLNN_SUCCESS;
 }
 
-void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc)
+void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc,
+                                     const OpPackageType packageType)
 {
     if (!opsRegisterName.empty() && opsRegisterName.back() == '/') {
         opsRegisterName.pop_back();
@@ -281,11 +327,25 @@ void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDe
             continue;
         }
 
-        if (dirName == kCustOpsBlacklistVendorName && opDesc.opInfo.kernelSo == kCustOpsBlacklistSoName) {
+        if ((packageType == OpPackageType::CUSTOM) && (dirName == kCustOpsBlacklistVendorName) &&
+            (opDesc.opInfo.kernelSo == kCustOpsBlacklistSoName)) {
             OP_LOGI("vendor name[%s] and so name[%s] are in blacklist, skip to insert customer ops info. "
                     "ops register name is %s, op type is %s.",
                     dirName.c_str(), opDesc.opInfo.kernelSo.c_str(), opsRegisterName.c_str(), opDesc.opType.c_str());
             continue;
+        }
+
+        if (packageType == OpPackageType::BUILTIN) {
+            if (opDesc.opInfo.kernelSo.empty()) {
+                OP_LOGW("Builtin operator kernel so name is empty, skip op type %s.", opDesc.opType.c_str());
+                continue;
+            }
+            const std::string kernelSoPath = opsRegisterName + kAicpuBuiltinOpsFilePath + opDesc.opInfo.kernelSo;
+            if (RealPath(kernelSoPath).empty()) {
+                OP_LOGW("Builtin operator so path %s is invalid, skip op type %s.", kernelSoPath.c_str(),
+                        opDesc.opType.c_str());
+                continue;
+            }
         }
 
         if (customOpsInfos_.find(opDesc.opType) != customOpsInfos_.end()) {
@@ -296,12 +356,14 @@ void JsonLoadManger::FillCustOpInfos(std::string opsRegisterName, const OpInfoDe
             if (!ret.second) {
                 OP_LOGW("Failed to insert operator [%s] and its information.", opDesc.opType.c_str());
             }
-            custRegisterInfos_.emplace(std::pair<std::string, std::string>(opDesc.opType, opsRegisterName));
-            OP_LOGI("Reading custom operator json file: operator type is %s, operator register name is %s.",
-                    opDesc.opType.c_str(), opsRegisterName.c_str());
+            custRegisterInfos_.emplace(
+                std::pair<std::string, OpRegisterInfo>(opDesc.opType, OpRegisterInfo{opsRegisterName, packageType}));
+            OP_LOGI(
+                "Reading operator json file: operator type is %s, operator register name is %s, package type is %u.",
+                opDesc.opType.c_str(), opsRegisterName.c_str(), static_cast<uint32_t>(packageType));
         }
     }
-    OP_LOGI("The number of elements in the custom operator registry container is %zu.", custRegisterInfos_.size());
+    OP_LOGI("The number of elements in the operator registry container is %zu.", custRegisterInfos_.size());
     return;
 }
 
@@ -310,13 +372,13 @@ bool JsonLoadManger::FindAndGetInCustomRegistry(const std::string& opType, std::
 {
     auto iter = customOpsInfos_.find(opType);
     if (iter == customOpsInfos_.end()) {
-        OP_LOGI("The operator %s not found in custom registry.", opType.c_str());
+        OP_LOGI("The operator %s not found in operator registry.", opType.c_str());
         return false;
     }
     kernelSo = iter->second.kernelSo;
     functionName = iter->second.functionName;
-    OP_LOGI("Found custom operator %s from the custom operator information library %s with function name %s.",
-            opType.c_str(), kernelSo.c_str(), functionName.c_str());
+    OP_LOGI("Found operator %s from the operator information library %s with function name %s.", opType.c_str(),
+            kernelSo.c_str(), functionName.c_str());
     return true;
 }
 

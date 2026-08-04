@@ -34,6 +34,19 @@ public:
         bool hasLoad;
         aclrtBinHandle binHandle;
     } CustomBinManager;
+    enum class OpPackageType {
+        CUSTOM = 0,
+        BUILTIN = 1,
+    };
+    struct OpJsonFileInfo {
+        std::string opsRegisterName;
+        nlohmann::json opJson;
+        OpPackageType packageType;
+    };
+    struct OpRegisterInfo {
+        std::string opsRootPath;
+        OpPackageType packageType;
+    };
 
     static aclrtBinHandle GetAicpuCustBinaryHandle(const std::string& kernelSoPath)
     {
@@ -53,9 +66,12 @@ private:
     JsonLoadManger& operator=(JsonLoadManger&&) = delete;
     static aclnnStatus LoadBinaryFromJson(const std::string& opsPath, aclrtBinHandle& binHandle,
                                           const bool isCust = false);
-    static bool ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath);
+    static bool ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath,
+                                 const OpPackageType packageType);
     static bool ReadCustOpInfoFromJsonFile(const std::string& path);
-    static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc);
+    static bool ReadBuiltinOpInfoFromJsonFile(const std::string& oppPath);
+    static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc,
+                                const OpPackageType packageType);
     static aclnnStatus ParseCustOpInfo();
     static bool ReadBytesFromBinaryFile(const std::string& fileName, std::vector<char>& buffer);
     static std::shared_ptr<std::vector<char>> GetOrCreateBuffer(const std::string& filePath);
@@ -72,12 +88,12 @@ private:
     static std::mutex custMutex_;
     static std::mutex aicpuCustBinLoadMutex_;
     static std::mutex bufferCacheMutex_;
-    // Custom operator package repository
-    static std::vector<std::pair<std::string, nlohmann::json>> custOpJsonInfo_;
+    // AICPU package repository, including custom and builtin json packages.
+    static std::vector<OpJsonFileInfo> custOpJsonInfo_;
     // store operator's name and detailed information
     static std::map<std::string, OpFullInfo> customOpsInfos_;
     // store operator's name and operator's register
-    static std::map<std::string, std::string> custRegisterInfos_;
+    static std::map<std::string, OpRegisterInfo> custRegisterInfos_;
     static std::map<std::string, CustomBinManager> customBinhandleInfos_;
     static std::map<std::string, std::shared_ptr<std::vector<char>>> bufferCache_; // 文件路径到buffer的映射
 };
