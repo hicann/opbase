@@ -11,22 +11,38 @@
 # -----------------------------------------------------------------------------------------------------------
 import urllib.request
 import os
+import sys
+import logging
+
+logging.basicConfig(stream=sys.stdout,
+                    format='[%(asctime)s] [%(lineno)s] %(levelname)s: %(message)s',
+                    level=logging.INFO)
 
 
 def down_files_native(url_list):
     current_dir = os.path.dirname(os.path.abspath(__file__))
+    failed_urls = []
 
     for url in url_list:
 
         file_name = url.split('/')[-1]
-        
+
         if not file_name:
             file_name = "downloaded_file"
-        
+
         # 将下载的文件保存到脚本所在目录
         file_path = os.path.join(current_dir, file_name)
-        
-        urllib.request.urlretrieve(url, file_path)
+
+        try:
+            urllib.request.urlretrieve(url, file_path)
+            logging.info("Successfully downloaded %s", url)
+        except OSError as ex:
+            logging.error("Failed to download %s, error: %s", url, ex)
+            failed_urls.append(url)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+    return failed_urls
 
 if __name__ == "__main__":
     my_urls = [
@@ -37,7 +53,12 @@ if __name__ == "__main__":
         "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz",
         ("https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/abseil-cpp/"
         "abseil-cpp-20230802.1.tar.gz"),
-        "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-041.tar.gz"
+        "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-046.tar.gz"
     ]
-    
-    down_files_native(my_urls)
+
+    failed_downloads = down_files_native(my_urls)
+
+    if failed_downloads:
+        logging.error("Third-party library download failed, failed urls: %s",
+                      failed_downloads)
+        sys.exit(1)
