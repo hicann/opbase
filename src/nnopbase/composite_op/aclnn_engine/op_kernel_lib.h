@@ -108,8 +108,9 @@ private:
     nlohmann::json allKernelsJson_;
     std::array<KernelLibInfo, MAX_OP_TYPE_COUNT> kernelLibInfos_; // op_type_id to KernelLib
     const std::vector<std::string> GetVendorNames() const;
-    const std::vector<std::string> GetConfigFilePaths();
-    const std::vector<std::string> GetCustomFilePaths();
+    const std::vector<std::string> GetBuiltInFilePaths();
+    const std::vector<std::string> GetOppVendorsFilePaths();
+    const std::vector<std::string> GetCustomOppFilePaths();
 };
 } // namespace internal
 } // namespace op
