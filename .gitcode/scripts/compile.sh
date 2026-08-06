@@ -19,6 +19,7 @@ if [[ "${task_name}" =~ Compile_Ascend_X86_ubuntu24 ]]; then
   sudo update-alternatives --set gcc /usr/bin/gcc-14
   sed -i "1i set(CMAKE_EXPORT_COMPILE_COMMANDS ON)" "CMakeLists.txt"
 fi
+rm -rf /home/jenkins/opensource/json
 source /home/jenkins/Ascend/cann/bin/setenv.bash
 bash build.sh --cann_3rd_lib_path=/home/jenkins/opensource -j16
 echo "exec cmd: [bash build.sh --cann_3rd_lib_path=/home/jenkins/opensource -j16]"

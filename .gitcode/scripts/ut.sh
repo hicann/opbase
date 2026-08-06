@@ -12,5 +12,6 @@ set -e
 set -o pipefail
 sudo update-alternatives --set gcc /usr/bin/gcc-14
 gcc --version
+rm -rf /home/jenkins/opensource/json
 source /home/jenkins/Ascend/cann/bin/setenv.bash
 bash build.sh -u -j16
