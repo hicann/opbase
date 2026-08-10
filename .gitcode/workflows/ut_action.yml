@@ -54,7 +54,7 @@ jobs:
           cd ${{ steps.process_checkout.outputs.path }}
           export ut_type=${{ inputs.ut_type }}
           export ASCEND_3RD_LIB_PATH=/home/jenkins/opensource
-          export GIT_TARGET_BRANCH=${{ env.TARGET_BRANCH }}
+          export TARGET_BRANCH=${{ env.TARGET_BRANCH }}
           bash ut.sh
       -
         name: ut_cov

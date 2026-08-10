@@ -10,7 +10,9 @@
 # -----------------------------------------------------------------------------------------------------------
 set -e
 set -o pipefail
-sudo update-alternatives --set gcc /usr/bin/gcc-14
+if [ "${TARGET_BRANCH}" != 9.0.0 ]; then
+    sudo update-alternatives --set gcc /usr/bin/gcc-14
+fi
 gcc --version
 rm -rf /home/jenkins/opensource/json
 source /home/jenkins/Ascend/cann/bin/setenv.bash
