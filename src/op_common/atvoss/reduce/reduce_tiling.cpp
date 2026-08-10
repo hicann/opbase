@@ -176,7 +176,7 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
 }
 
 ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
-                              ReduceTilingKey& key)
+                              const ReduceTilingKey& key)
 {
     OP_CHECK_IF((GetInputDtype(context, inputIdx, opInput.inputDtype) == ge::GRAPH_FAILED),
                 OP_LOGE(context, "ReduceOpTmpl get input dtype failed"), return ge::GRAPH_FAILED);
@@ -230,7 +230,7 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
 }
 
 ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
-                              int32_t axesIdx, int32_t outIdx, ReduceTilingKey& key)
+                              int32_t axesIdx, int32_t outIdx, const ReduceTilingKey& key)
 {
     ge::DataType axesDtype;
     ge::graphStatus status = GetInputDtype(context, axesIdx, axesDtype);

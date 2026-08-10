@@ -238,7 +238,7 @@ void ReduceOpTiling::SetTilingDataBatchInvariant(const uint64_t* shape)
     context_->SetBlockDim(realCore);
 }
 
-inline bool ReduceOpTiling::isPrime(uint64_t num)
+inline bool ReduceOpTiling::isPrime(uint64_t num) const
 {
     if (num <= CONST1)
         return false;

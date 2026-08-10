@@ -19,7 +19,6 @@
 #include <memory>
 #include "exe_graph/runtime/tiling_context.h"
 #include "ascendc/host_api/tiling/template_argument.h"
-#include "tiling/platform/platform_ascendc.h"
 #include "op_common/atvoss/util/dag.h"
 #include "op_common/atvoss/reduce/reduce_tiling_data.h"
 #include "op_common/log/log.h"
@@ -221,7 +220,7 @@ OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpI
  *  reduce operator input idx
  */
 OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
-                                         ReduceTilingKey& key);
+                                         const ReduceTilingKey& key);
 
 /*
  * \brief get operator input param with input idx, if axes idx is constant input, use this interface
@@ -263,7 +262,7 @@ OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpI
  *  reduce operator tilingkey
  */
 OPBASE_API ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& opInput, int32_t inputIdx,
-                                         int32_t axesIdx, int32_t outIdx, ReduceTilingKey& key);
+                                         int32_t axesIdx, int32_t outIdx, const ReduceTilingKey& key);
 } // namespace ReduceOpTmpl
 
 class OPBASE_API ReduceOpTiling {
@@ -434,7 +433,7 @@ protected:
 
     void GetTilingKey(ReduceTilingKey& key);
 
-    bool isPrime(uint64_t num);
+    bool isPrime(uint64_t num) const;
 
 protected:
     gert::TilingContext* context_{nullptr};
