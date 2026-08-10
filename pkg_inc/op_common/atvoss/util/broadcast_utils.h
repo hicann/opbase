@@ -103,11 +103,11 @@ __aicore__ inline int64_t BroadcastFuseAxes(const int64_t (&totalDims)[N], int64
 }
 
 template <typename T, std::size_t N>
-__aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNddmaConfigWithoutLoop(
+__aicore__ inline AscendC::NdDmaParams<T, NDDMA_MAX_DIMS> BroadcastSetNddmaConfigWithoutLoop(
     const int64_t (&outputDims)[N], const int64_t (&outputStrides)[N], const int64_t (&inputStrides)[N],
     int64_t shapeLen, int64_t ubSplitSize, int64_t ubSplitAxis)
 {
-    AscendC::MultiCopyLoopInfo<NDDMA_MAX_DIMS> loopInfo;
+    AscendC::NdDmaLoopInfo<NDDMA_MAX_DIMS> loopInfo;
     int64_t axisInsideUb = NDDMA_MAX_DIMS - (shapeLen - ubSplitAxis);
     for (int64_t i = 0; i < axisInsideUb; i++) {
         loopInfo.loopSize[NDDMA_MAX_DIMS - 1 - i] = 1;
@@ -126,16 +126,16 @@ __aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNddmaC
     }
 
     T constValue = 0;
-    AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> paramsMain = {loopInfo, constValue};
+    AscendC::NdDmaParams<T, NDDMA_MAX_DIMS> paramsMain = {loopInfo, constValue};
     return paramsMain;
 }
 
 template <typename T, std::size_t N>
-__aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNddmaConfigWithLoop(
+__aicore__ inline AscendC::NdDmaParams<T, NDDMA_MAX_DIMS> BroadcastSetNddmaConfigWithLoop(
     const int64_t (&outputDims)[N], const int64_t (&outputStrides)[N], const int64_t (&inputStrides)[N],
     int64_t shapeLen, int64_t ubSplitAxis)
 {
-    AscendC::MultiCopyLoopInfo<NDDMA_MAX_DIMS> loopInfo;
+    AscendC::NdDmaLoopInfo<NDDMA_MAX_DIMS> loopInfo;
     for (uint64_t i = 0; i < NDDMA_MAX_DIMS; i++) {
         loopInfo.loopSize[NDDMA_MAX_DIMS - 1 - i] = outputDims[i + shapeLen - NDDMA_MAX_DIMS];
         loopInfo.loopSrcStride[NDDMA_MAX_DIMS - 1 - i] = inputStrides[i + shapeLen - NDDMA_MAX_DIMS];
@@ -143,7 +143,7 @@ __aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNddmaC
     }
 
     T constValue = 0;
-    AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> paramsMain = {loopInfo, constValue};
+    AscendC::NdDmaParams<T, NDDMA_MAX_DIMS> paramsMain = {loopInfo, constValue};
     return paramsMain;
 }
 
@@ -173,8 +173,8 @@ __aicore__ inline void BroadcastNddmaWithoutLoop(AscendC::GlobalTensor<T1>& inpu
 {
     int64_t gmOffset = BroadcastGetGmOffset(axesIndices, inputStrides, ubSplitAxis, ubFormer);
     if (outputStrides[ubSplitAxis] != inputStrides[ubSplitAxis]) {
-        static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
-        AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithoutLoop<T1>(
+        static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
+        AscendC::NdDmaParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithoutLoop<T1>(
             outputDims, outputStrides, inputStrides, shapeLen, ubSplitSize, ubSplitAxis);
         if constexpr (AscendC::IsSameType<T1, T2>::value) {
             AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor, inputGm[gmOffset], paramsMain);
@@ -206,8 +206,8 @@ __aicore__ inline void BroadcastNddmaWithLoop(AscendC::GlobalTensor<T1>& inputGm
 {
     int64_t gmOffset = BroadcastGetGmOffset(axesIndices, inputStrides, ubSplitAxis, ubFormer);
     if (outputStrides[ubSplitAxis] != inputStrides[ubSplitAxis]) {
-        static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
-        AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithLoop<T1>(
+        static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
+        AscendC::NdDmaParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithLoop<T1>(
             outputDims, outputStrides, inputStrides, shapeLen, ubSplitAxis);
         int64_t nddmaIndices[NDDMA_THROW_DIMS] = {0};
         int64_t nddmaProduct = BroadcastFuseAxes(outputDims, ubSplitAxis + 1, shapeLen - NDDMA_MAX_DIMS) * ubSplitSize;
@@ -278,8 +278,8 @@ __aicore__ inline void BroadcastNddmaWithLoopContiguousFuseAxis(
         outputStrides2[newCount - 1] = outputStrides[count];
         inputStrides2[newCount - 1] = inputStrides[count];
 
-        static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
-        AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithLoop<T1>(
+        static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
+        AscendC::NdDmaParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithLoop<T1>(
             outputDims2, outputStrides2, inputStrides2, shapeLen, ubSplitAxis);
         int64_t nddmaIndices[NDDMA_THROW_DIMS] = {0};
         int64_t nddmaProduct = BroadcastFuseAxes(outputDims2, ubSplitAxis, shapeLen - NDDMA_MAX_DIMS);

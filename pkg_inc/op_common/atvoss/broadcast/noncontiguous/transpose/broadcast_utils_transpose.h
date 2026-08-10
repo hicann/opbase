@@ -24,9 +24,9 @@ __aicore__ inline void BroadcastNddmaNonContiguousWithoutLoop(
     int64_t ubSplitAxis, int64_t shapeLen, int64_t ubSplitSize, int64_t ubFormer)
 {
     int64_t gmOffset = BroadcastGetGmOffset(axesIndices, inputStrides, ubSplitAxis, ubFormer);
-    static constexpr AscendC::MultiCopyConfig config = {
+    static constexpr AscendC::NdDmaConfig config = {
         false, 0, 0, false}; // 设定 config参数，用于指定brc操作的pad填充具体值，设置后就无须设置Lp和Rp
-    AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithoutLoop<T1>(
+    AscendC::NdDmaParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithoutLoop<T1>(
         outputDims, outputStrides, inputStrides, shapeLen, ubSplitSize,
         ubSplitAxis); // 设定用于DataCopy搬运的param，主要包含loopSize(每个dim具体处理的元素数量)、loopSrcStride和loopDstStride,后面两个中包含brc和tra信息
     if constexpr (AscendC::IsSameType<T1, T2>::value) {
@@ -55,8 +55,8 @@ __aicore__ inline void BroadcastNddmaNonContiguousWithLoop(
     int64_t ubSplitAxis, int64_t shapeLen, int64_t ubSplitSize, int64_t ubFormer)
 {
     int64_t gmOffset = BroadcastGetGmOffset(axesIndices, inputStrides, ubSplitAxis, ubFormer);
-    static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
-    AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithLoop<T1>(
+    static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
+    AscendC::NdDmaParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNddmaConfigWithLoop<T1>(
         outputDims, outputStrides, inputStrides, shapeLen, ubSplitAxis);
     int64_t nddmaIndices[NDDMA_THROW_DIMS] = {0};
     int64_t nddmaProduct = BroadcastFuseAxes(outputDims, ubSplitAxis + 1, shapeLen - NDDMA_MAX_DIMS) *

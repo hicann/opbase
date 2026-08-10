@@ -85,11 +85,11 @@ __aicore__ inline int64_t CalAfterUbSplitAxisLen(const int64_t (&Dim)[N], int64_
 }
 
 template <typename T, std::size_t N>
-__aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNlastTransposeNddmaConfigWithoutLoop(
+__aicore__ inline AscendC::NdDmaParams<T, NDDMA_MAX_DIMS> BroadcastSetNlastTransposeNddmaConfigWithoutLoop(
     const int64_t (&outputDims)[N], const int64_t (&outputStrides)[N], const int64_t (&outputStridesWithPad)[N],
     const int64_t (&inputStrides)[N], int64_t shapeLen, int64_t ubSplitSize, int64_t ubSplitAxis)
 {
-    AscendC::MultiCopyLoopInfo<NDDMA_MAX_DIMS> loopInfo;
+    AscendC::NdDmaLoopInfo<NDDMA_MAX_DIMS> loopInfo;
     int64_t axisInsideUb = NDDMA_MAX_DIMS - (shapeLen - ubSplitAxis);
     for (int64_t i = 0; i < axisInsideUb; i++) {
         loopInfo.loopSize[NDDMA_MAX_DIMS - 1 - i] = 1;
@@ -113,7 +113,7 @@ __aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> BroadcastSetNlastT
         loopInfo.loopDstStride[NDDMA_MAX_DIMS - 1 - i] = outputStridesWithPad[ubSplitAxis + i - axisInsideUb];
     }
     T constValue = 0;
-    AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS> paramsMain = {loopInfo, constValue};
+    AscendC::NdDmaParams<T, NDDMA_MAX_DIMS> paramsMain = {loopInfo, constValue};
     return paramsMain;
 }
 
@@ -238,8 +238,8 @@ __aicore__ inline void BroadcastNlastTransposeNddmaWithoutLoop(
     if (inputStrides[ubSplitAxis] == 0 ||
         (outputStrides[ubSplitAxis] != CalAfterUbSplitAxisLen(inputDim, shapeLen, ubSplitAxis))) {
         // NDDMA
-        static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
-        AscendC::MultiCopyParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNlastTransposeNddmaConfigWithoutLoop<T1>(
+        static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
+        AscendC::NdDmaParams<T1, NDDMA_MAX_DIMS> paramsMain = BroadcastSetNlastTransposeNddmaConfigWithoutLoop<T1>(
             outputDims, outputStrides, outputStridesWithPad, inputStrides, shapeLen, ubSplitSize, ubSplitAxis);
         if constexpr (AscendC::IsSameType<T1, T2>::value) {
             AscendC::DataCopy<T1, NDDMA_MAX_DIMS, config>(outputTensor, inputGm[gmOffset], paramsMain);

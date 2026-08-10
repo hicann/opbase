@@ -288,9 +288,9 @@ protected:
         // Set getBuf
         GetTensor<TPosition::VECIN>(bufId);
         if (tilingData_->inputStrides[input::Pos][tilingData_->shapeLen - 1] != 1) {
-            static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
+            static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
             // 只支持最多3维，所以直接使用不需要循环的nddma即可。
-            AscendC::MultiCopyParams<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE>
+            AscendC::NdDmaParams<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE>
                 paramsMain = BroadcastSetNddmaConfigWithoutLoop<inputType>(
                     tilingData_->outputDims, tilingData_->outputStridesWithPad, tilingData_->inputStrides[input::Pos],
                     tilingData_->shapeLen, tilingData_->ubSplitAxis, notLastUBSplitSize, lastUBSplitSize);

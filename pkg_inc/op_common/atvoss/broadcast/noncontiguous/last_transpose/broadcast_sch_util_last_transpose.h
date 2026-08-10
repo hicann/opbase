@@ -49,11 +49,11 @@ __aicore__ inline int64_t BroadcastFuseAxesWithPad(const int64_t (&totalDims)[N]
 }
 
 template <typename T, std::size_t N>
-__aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> BroadcastSetNddmaConfigWithoutLoop(
+__aicore__ inline AscendC::NdDmaParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> BroadcastSetNddmaConfigWithoutLoop(
     const int64_t (&outputDims)[N], const int64_t (&outputStridesWithPad)[N], const int64_t (&inputStrides)[N],
     int64_t shapeLen, int64_t ubSplitAxis, int64_t ubSplitSize, int64_t lastDimFactor)
 {
-    AscendC::MultiCopyLoopInfo<NDDMA_MAX_DIMS_LAST_TRANSPOSE> loopInfo;
+    AscendC::NdDmaLoopInfo<NDDMA_MAX_DIMS_LAST_TRANSPOSE> loopInfo;
     int64_t axisInsideUb = NDDMA_MAX_DIMS_LAST_TRANSPOSE - (shapeLen - ubSplitAxis);
 
     // 高位直接设置 loopSize为1
@@ -88,7 +88,7 @@ __aicore__ inline AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> Bro
     }
 
     T constValue = 0;
-    AscendC::MultiCopyParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> paramsMain = {loopInfo, constValue};
+    AscendC::NdDmaParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> paramsMain = {loopInfo, constValue};
     return paramsMain;
 }
 

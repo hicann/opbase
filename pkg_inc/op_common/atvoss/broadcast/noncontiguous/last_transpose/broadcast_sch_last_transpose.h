@@ -169,8 +169,8 @@ protected:
             if (tilingData->inputBrcStrides[copyInBrcCount][tilingData->ubSplitAxis] == 0 ||
                 tilingData->outputStrides[tilingData->ubSplitAxis] != inputUBSize ||
                 tilingData->inputBrcStrides[copyInBrcCount][tilingData->shapeLen - 1] != 1) {
-                static constexpr AscendC::MultiCopyConfig config = {false, 0, 0, false};
-                AscendC::MultiCopyParams<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE>
+                static constexpr AscendC::NdDmaConfig config = {false, 0, 0, false};
+                AscendC::NdDmaParams<inputType, NDDMA_MAX_DIMS_LAST_TRANSPOSE>
                     paramsMain = BroadcastSetNddmaConfigWithoutLoop<inputType>(
                         tilingData->outputDims, tilingData->outputStridesWithPad,
                         tilingData->inputBrcStrides[copyInBrcCount], tilingData->shapeLen, tilingData->ubSplitAxis,
