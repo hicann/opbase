@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
 #include <array>
 #include <exception>
 #include <memory>
@@ -24,29 +25,23 @@ namespace op {
 namespace internal {
 namespace {
 constexpr size_t kMaxTotalHostLen = 1024U;
-constexpr size_t kDefaultAicpuCacheLimit = 32768U; // 2 GiB / 64 KiB per cached task.
+constexpr size_t kDefaultAicpuCacheLimit = 10000U;
+constexpr size_t kMaxAicpuCacheLimit = 10000000U;
 
 size_t ReadAicpuCacheLimit()
 {
-    constexpr uint32_t kBufLen = 32U;
-    std::array<char, kBufLen> buf = {};
-    auto ret = mmGetEnv("ACLNN_AICPU_CACHE_LIMIT", &buf[0U], kBufLen);
-    if (ret != EN_OK) {
-        return kDefaultAicpuCacheLimit;
-    }
-    for (const char* p = buf.data(); *p != '\0'; ++p) {
-        if (*p < '0' || *p > '9') {
-            OP_LOGW("Env variable ACLNN_AICPU_CACHE_LIMIT[%s] is invalid! must be a number!", buf.data());
-            return kDefaultAicpuCacheLimit;
+    const char* cacheLimit = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ACLNN_CACHE_LIMIT, cacheLimit);
+    size_t c = kDefaultAicpuCacheLimit;
+    if (cacheLimit != nullptr) {
+        try {
+            c = std::stoull(cacheLimit);
+        } catch (const std::exception& e) {
+            OP_LOGW("Env variable ACLNN_CACHE_LIMIT[%s] is invalid! must be a number!", cacheLimit);
         }
     }
-    try {
-        const size_t cacheLimit = std::stoull(buf.data());
-        return cacheLimit;
-    } catch (const std::exception&) {
-        OP_LOGW("Env variable ACLNN_AICPU_CACHE_LIMIT[%s] is invalid! must be a number!", buf.data());
-        return kDefaultAicpuCacheLimit;
-    }
+    c = std::min(c, kMaxAicpuCacheLimit);
+    return c;
 }
 
 const size_t kAicpuCacheLimit = ReadAicpuCacheLimit();
