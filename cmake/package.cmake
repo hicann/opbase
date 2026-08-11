@@ -224,4 +224,20 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/opp_builtin/__i
     COMPONENT opbase
 )
 
+set(fusion_config_src ${CMAKE_CURRENT_SOURCE_DIR}/scripts/fusion_config)
+install(FILES
+        ${fusion_config_src}/fusion_pass/config/fusion_config.json
+        ${fusion_config_src}/fusion_pass/config/support_fusion_pass.json
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/plugin/opskernel/fusion_pass/config
+    COMPONENT opbase
+)
+install(FILES ${fusion_config_src}/fusion_rules/ai_core/built_in_graph_rules.json
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/plugin/opskernel/fusion_rules/ai_core
+    COMPONENT opbase
+)
+install(FILES ${fusion_config_src}/fusion_rules/vector_core/built_in_graph_rules.json
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64/plugin/opskernel/fusion_rules/vector_core
+    COMPONENT opbase
+)
+
 set_cann_cpack_config(opbase SHARE_INFO_NAME opbase ENABLE_DEVICE "${ENABLE_BUILD_DEVICE}" PACKAGE_TYPE "${PACKAGE_TYPE}")

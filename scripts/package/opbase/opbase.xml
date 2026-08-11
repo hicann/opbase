@@ -271,6 +271,16 @@
         <file value="op_fallback.h" install_mod="550"/>
         <file value="op_fallback_internal.h" install_mod="550"/>
     </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_pass/config" install_path="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_pass/config" install_type="all">
+        <file value="fusion_config.json" install_mod="550" install_softlink="opp/lib64/plugin/opskernel/fusion_pass/config/fusion_config.json"/>
+        <file value="support_fusion_pass.json" install_mod="550" install_softlink="opp/lib64/plugin/opskernel/fusion_pass/config/support_fusion_pass.json"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules/ai_core" install_path="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules/ai_core" install_type="all">
+        <file value="built_in_graph_rules.json" install_mod="550" install_softlink="opp/lib64/plugin/opskernel/fusion_rules/ai_core/built_in_graph_rules.json"/>
+    </file_info>
+    <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules/vector_core" install_path="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules/vector_core" install_type="all">
+        <file value="built_in_graph_rules.json" install_mod="550" install_softlink="opp/lib64/plugin/opskernel/fusion_rules/vector_core/built_in_graph_rules.json"/>
+    </file_info>
 
     <block_info dependtree="false" dst_path="" block_conf_path="ascend">
         <block name="EngineeringCommon"/>
@@ -296,6 +306,23 @@
         <path value="runtime" install_mod="750"/>
         <path value="runtime/include" install_mod="550"/>
         <path value="runtime/include/aclnn" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_pass" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_pass/config" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_pass/vector_core" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules/ai_core" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel/fusion_rules/vector_core" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin/opskernel" install_mod="550"/>
+        <path value="$(TARGET_ENV)/lib64/plugin" install_mod="550"/>
+        <path value="opp/lib64" install_mod="550"/>
+        <path value="opp/lib64/plugin" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel/fusion_pass" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel/fusion_pass/config" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel/fusion_pass/vector_core" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel/fusion_rules" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel/fusion_rules/ai_core" install_mod="550"/>
+        <path value="opp/lib64/plugin/opskernel/fusion_rules/vector_core" install_mod="550"/>
         <path value="$(TARGET_ENV)/include/aicpu_common" install_mod="550"/>
         <path value="$(TARGET_ENV)/include/aicpu" install_mod="550"/>
         <path value="$(TARGET_ENV)/pkg_inc/op_common" install_mod="550"/>
