@@ -320,6 +320,7 @@ const NnopbaseChar* NnopbaseCollectorGetStaticKernelBin(const NnopbaseChar* cons
 }
 
 aclnnStatus NnopbaseCollectorSetTiling(const NnopbaseJsonInfo& jsonInfo, TilingFun* const tiling,
+                                       GenSimplifiedKeyFun* const genSimplifiedKey,
                                        gert::OppImplVersionTag oppImplVersion)
 {
     auto& registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(oppImplVersion);
@@ -328,10 +329,12 @@ aclnnStatus NnopbaseCollectorSetTiling(const NnopbaseJsonInfo& jsonInfo, TilingF
     if (opImpl != nullptr) {
         // check null at executor, some op no rt2 tiling
         *tiling = reinterpret_cast<TilingFun>(opImpl->tiling);
+        *genSimplifiedKey = reinterpret_cast<GenSimplifiedKeyFun>(opImpl->gen_simplifiedkey);
         OP_LOGI("Get opImpl of %s successfully.", jsonInfo.opType.c_str());
     } else {
         OP_LOGW("Failed to get opImpl of %s, opImpl is nullptr.", jsonInfo.opType.c_str());
         *tiling = nullptr;
+        *genSimplifiedKey = nullptr;
     }
     return OK;
 }
@@ -575,7 +578,8 @@ NnopbaseRegInfo* NnopbaseCollectorFindRegInfoInTbl(const NnopbaseBinCollector* c
 aclnnStatus NnopbaseCollectorOpRegInfoInit(NnopbaseRegInfo* regInfo, const NnopbaseJsonInfo& jsonInfo,
                                            const uint64_t hashKey, gert::OppImplVersionTag oppImplVersion)
 {
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorSetTiling(jsonInfo, &regInfo->tiling, oppImplVersion));
+    NNOPBASE_ASSERT_OK_RETVAL(
+        NnopbaseCollectorSetTiling(jsonInfo, &regInfo->tiling, &regInfo->genSimplifiedKey, oppImplVersion));
     regInfo->key.opType = jsonInfo.opType;
     regInfo->isActive = true;
     regInfo->key.hashKey = hashKey;
@@ -642,8 +646,11 @@ aclnnStatus NnopbaseCollectorAddRepoInfo(NnopbaseBinCollector* const collector, 
     const size_t binKeyLen = key.size() * MAX_BIN_KEY_MULTIPLIER;
     std::vector<NnopbaseUChar> binKey(binKeyLen, '\0');
     uint32_t keySize = 0U;
-    OP_LOGD("Check %s attribute, static shape[%s], customized[%s].", jsonInfo.opType.c_str(),
-            jsonInfo.isStaticShape ? "true" : "false", jsonInfo.customizedSimplifiedKey ? "true" : "false");
+    OP_LOGD("Check attributes of operator %s, static shape is %s, customizedSimplifiedKey is %s, "
+            "genSimplifiedKey is %s.",
+            jsonInfo.opType.c_str(), jsonInfo.isStaticShape ? "true" : "false",
+            jsonInfo.customizedSimplifiedKey ? "true" : "false",
+            regInfo->genSimplifiedKey != nullptr ? "registered" : "not registered");
     if (jsonInfo.isStaticShape) {
         regInfo->hasStaticShapeBin = true;
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorConvertStaticVerbKey(key.c_str(), &(binKey[0U]), &keySize));

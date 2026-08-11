@@ -12,6 +12,7 @@
 #include "executor/indv_collector.h"
 #include "executor/indv_executor.h"
 #include "executor/indv_bininfo.h"
+#include "executor/indv_executor_utils.h"
 #include <gtest/gtest.h>
 #include <memory>
 #include <string.h>
@@ -389,10 +390,12 @@ TEST_F(NnopbaseCollectorUnitTest, test_get_tiling_func_ok)
 TEST_F(NnopbaseCollectorUnitTest, test_get_tilingFunc_null)
 {
     TilingFun tiling;
+    GenSimplifiedKeyFun genSimplifiedKey;
     NnopbaseJsonInfo jsonInfo;
     jsonInfo.opType = "Add";
-    ASSERT_EQ(NnopbaseCollectorSetTiling(jsonInfo, &tiling, gert::OppImplVersionTag::kOpp), OK);
+    ASSERT_EQ(NnopbaseCollectorSetTiling(jsonInfo, &tiling, &genSimplifiedKey, gert::OppImplVersionTag::kOpp), OK);
     ASSERT_EQ(tiling, nullptr);
+    ASSERT_EQ(genSimplifiedKey, nullptr);
 }
 
 TEST_F(NnopbaseCollectorUnitTest, test_load_tilingso_fail)
@@ -668,4 +671,32 @@ TEST_F(NnopbaseCollectorUnitTest, test_read_custom_opapi_path_failed)
     std::vector<std::string> basePath;
     NnopbaseGetCustomOpApiPath(basePath);
     ASSERT_EQ(basePath.size(), 0);
+}
+
+// TC01 [场景: SetTiling 阶段 genSimplifiedKey 函数指针为空]
+// StubCustomOpNoGen 的 json 标了 simplifiedKeyMode=2，但 space_registry_stub 故意不为它注册
+// InitGenSimplifiedKeyFunc。mode=2 与 gen 缺失是合法组合，加载期须识别出模式、gen 保持 nullptr，
+// 且不中断整个加载流程。
+TEST_F(NnopbaseCollectorUnitTest, test_customized_set_gen_key_null)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+    NnopbaseBinCollector* collector = new NnopbaseBinCollector;
+    ASSERT_NE(collector, nullptr);
+    ASSERT_EQ(NnopbaseCollectorInit(collector), OK);
+    // gen 缺失不应中断加载
+    ASSERT_EQ(NnopbaseCollectorWork(collector), OK);
+
+    const char* opType = "StubCustomOpNoGen";
+    const uint64_t hashKey = static_cast<uint64_t>(NnopbaseHashBinary(
+                                 op::internal::PtrCastTo<const NnopbaseUChar>(opType), strlen(opType))) %
+                             NNOPBASE_NORM_MAX_BIN_BUCKETS;
+    NnopbaseRegInfo* regInfo = NnopbaseCollectorFindRegInfoInTbl(collector, opType, hashKey);
+    ASSERT_NE(regInfo, nullptr);
+    ASSERT_TRUE(regInfo->customizedSimplifiedKey);
+    // opImpl 存在但 gen_simplifiedkey 未注册，SetTiling 取出后仍为 nullptr
+    ASSERT_EQ(regInfo->genSimplifiedKey, nullptr);
+
+    CollectorClean(collector);
+    delete collector;
+    NnopbaseUnsetEnvAndClearFolder();
 }

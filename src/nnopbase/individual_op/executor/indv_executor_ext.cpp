@@ -985,12 +985,96 @@ void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* const executor)
                                    NNOPBASE_NORM_MAX_BIN_BUCKETS;
 }
 
+aclnnStatus NnopbaseExecutorGenCustomizedDynamicKey(NnopbaseExecutor* const executor)
+{
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->regInfo);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->opType);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args);
+    if (executor->regInfo->genSimplifiedKey == nullptr) {
+        OP_LOGW("Failed to generate simplifiedKey, genSimplifiedKey function is nullptr.");
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseTilingContextBuild(executor));
+
+    const size_t opTypeLen = strlen(executor->opType);
+    NnopbaseUChar* verbKey = nullptr;
+    if (executor->binInfoKey.verbose.empty()) {
+        executor->binInfoKey.verbose = std::vector<NnopbaseUChar>(NNOPBASE_VEB_KEY_LEN, '\0');
+        verbKey = &(executor->binInfoKey.verbose[0U]);
+        executor->binInfoKey.bufLen = static_cast<uint32_t>(NNOPBASE_VEB_KEY_LEN);
+        verbKey = NnopbaseAppendBinary(verbKey, static_cast<size_t>(NNOPBASE_VEB_KEY_LEN), executor->opType, opTypeLen);
+    } else {
+        verbKey = &(executor->binInfoKey.verbose[0U]) + opTypeLen;
+    }
+    verbKey = NnopbaseAppendDynamicKeyHead(executor, verbKey);
+
+    char simplifiedKey[NNOPBASE_CUS_KEY_LEN] = {'\0'};
+    auto ret = executor->regInfo->genSimplifiedKey(
+        op::internal::PtrCastTo<gert::TilingContext>(executor->tiling.contextExt.context), simplifiedKey);
+    if (ret != ge::GRAPH_SUCCESS) {
+        OP_LOGW("Failed to generate simplifiedKey, ret is %u.", ret);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+    const size_t writtenLen = static_cast<size_t>(verbKey - &(executor->binInfoKey.verbose[0U]));
+    const size_t remainLen = static_cast<size_t>(executor->binInfoKey.bufLen) - writtenLen;
+    verbKey = NnopbaseAppendBinary(verbKey, remainLen, simplifiedKey, strlen(simplifiedKey));
+
+    executor->binInfoKey.len = static_cast<uint32_t>(verbKey - &(executor->binInfoKey.verbose[0U]));
+    executor->binInfoKey.hashKey = NnopbaseHashBinary(&(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len) %
+                                   NNOPBASE_NORM_MAX_BIN_BUCKETS;
+
+    OP_LOGI("Generate customizedKey verbose key successfully, simplifiedKey is %s, key length is %u, "
+            "hashKey is %zu.",
+            simplifiedKey, executor->binInfoKey.len, executor->binInfoKey.hashKey);
+    return OK;
+}
+
+static bool NnopbaseExecutorFindBinInfoByCustomizedKey(NnopbaseExecutor* executor)
+{
+    const aclnnStatus ret = NnopbaseExecutorGenCustomizedDynamicKey(executor);
+    if (ret != OK) {
+        OP_LOGW("Failed to generate customizedKey verbose key, ret is %d, try to find dynamic kernel by "
+                "tensor descriptor.",
+                ret);
+        return false;
+    }
+    executor->args->binInfo = NnopbaseCollectorFindBinInfo(
+        executor->regInfo, executor->binInfoKey.hashKey, &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len);
+    if (executor->args->binInfo != nullptr) {
+        return true;
+    }
+    OP_LOGW("Failed to find dynamic kernel by customizedKey, try to find by tensor descriptor.");
+    return false;
+}
+
 bool NnopbaseExecutorGetDynamicBinInfo(NnopbaseExecutor* const executor)
 {
+    const bool isCustomizedKey = executor->regInfo->customizedSimplifiedKey;
+    if (isCustomizedKey && NnopbaseExecutorFindBinInfoByCustomizedKey(executor)) {
+        OP_LOGI("Find dynamic kernel by customizedKey successfully, hashKey is %zu, key length is %u.",
+                executor->binInfoKey.hashKey, executor->binInfoKey.len);
+        return true;
+    }
+
+    if (isCustomizedKey) {
+        executor->binInfoKey.verbose = std::vector<NnopbaseUChar>();
+        executor->binInfoKey.len = 0U;
+        executor->binInfoKey.bufLen = 0U;
+        executor->binInfoKey.hashKey = 0U;
+    }
+
     NnopbaseExecutorGenDynamicKey(executor);
     executor->args->binInfo = NnopbaseCollectorFindBinInfo(
         executor->regInfo, executor->binInfoKey.hashKey, &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len);
-    return executor->args->binInfo != nullptr;
+    if (executor->args->binInfo == nullptr) {
+        OP_LOGW("Failed to find dynamic kernel by %s.",
+                isCustomizedKey ? "either customizedKey or tensor descriptor" : "tensor descriptor");
+        return false;
+    }
+    OP_LOGI("Find dynamic kernel by tensor descriptor successfully, hashKey is %zu, key length is %u.",
+            executor->binInfoKey.hashKey, executor->binInfoKey.len);
+    return true;
 }
 
 NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, const NnopbaseTensors* const tensors,

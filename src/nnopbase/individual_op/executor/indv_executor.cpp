@@ -933,6 +933,7 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor* executor)
 {
     // create args
     NNOPBASE_ASSERT_OK_RETVAL(nnopbase::ArgsPool::GetInstance().CreateArgs(executor));
+    executor->tiling.contextExt.hasBuilt = false;
     if ((executor->paramCheckMode != NnopbaseParamCheckMode::kCheckEnd) &&
         (CheckSocVersionAndParam(executor, executor->paramCheckMode) != OK)) {
         return ACLNN_ERR_PARAM_INVALID;

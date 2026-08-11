@@ -91,10 +91,14 @@ ge::graphStatus TilingParseFuncStub(gert::KernelContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
+// 框架传给genSimplifiedKey的key缓冲大小。本文件是metadef的桩，不便反向依赖nnopbase内部头，
+// 故就地定义，取值须与NNOPBASE_CUS_KEY_LEN一致
+constexpr size_t GEN_SIMPLIFIED_KEY_BUF_LEN = 256U;
+
 ge::graphStatus GenSimplifiedKeyFuncStub(gert::TilingContext* context, ge::char_t* simplilfiedKey)
 {
     const char* source = "diy,99";
-    strcpy_s(simplilfiedKey, 100, source);
+    strcpy_s(simplilfiedKey, GEN_SIMPLIFIED_KEY_BUF_LEN, source);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -163,6 +167,15 @@ void InitKernelRegistryImplFunc()
     InitGenSimplifiedKeyFunc("MemSetV2", GenSimplifiedKeyFuncStub);
     InitOpImplFunc("TestDavidCustom", AtomicTilingFuncStub);
     InitOpImplFunc("NativeSparseAttention", Rt2TilingFuncStub);
+    // StubCustomOp: customizedKey模式，genSimplifiedKey产出后缀simplifiedKey "diy,99"
+    InitOpImplFunc("StubCustomOp", TilingFuncStub);
+    InitGenSimplifiedKeyFunc("StubCustomOp", GenSimplifiedKeyFuncStub);
+    // StubCustomOpNoGen: customizedKey模式但故意不注册genSimplifiedKey，用于加载期gen指针为空场景
+    InitOpImplFunc("StubCustomOpNoGen", TilingFuncStub);
+    // StubMixKeyOp: 内置包声明 mode=2、自定义包声明 mode=0。gen 产出的 "diy,99" 与内置包 json 的
+    // "diy,zzz" 不匹配，故 customizedKey 必然未命中而回落
+    InitOpImplFunc("StubMixKeyOp", TilingFuncStub);
+    InitGenSimplifiedKeyFunc("StubMixKeyOp", GenSimplifiedKeyFuncStub);
 }
 
 void InitSpaceRegistryOpImpl()

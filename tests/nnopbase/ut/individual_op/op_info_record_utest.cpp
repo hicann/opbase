@@ -33,7 +33,7 @@ protected:
     {
         aclnnOpInfoRecord::Path confDir = aclnnOpInfoRecord::LibPath::Instance().GetInstallParentPath().Append("conf");
         ASSERT_TRUE(confDir.CreateDirectory(true));
-        std::ifstream src("../../../../tests/nnopbase/common/depends/conf/dump_tool_config.ini", std::ios::binary);
+        std::ifstream src(NNOPBASE_UT_DEPENDS_DIR "/conf/dump_tool_config.ini", std::ios::binary);
         ASSERT_TRUE(src.is_open());
         aclnnOpInfoRecord::Path confFile = confDir.Concat("dump_tool_config.ini");
         std::ofstream dst(confFile.GetString(), std::ios::binary);
@@ -63,10 +63,10 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoEmptyBinInfo)
 TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize)
 {
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
-    aclnnOpInfoRecord::OpKernelInfo kernelInfo(
-        "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
-        "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
-        0);
+    aclnnOpInfoRecord::OpKernelInfo kernelInfo(OP_API_COMMON_UT_SRC_DIR
+                                               "/built-in/op_impl/ai_core/tbe/kernel/ascend910/axpy/"
+                                               "Axpy_233851a3505389e43928a8bba133a74d_high_performance.json",
+                                               0);
     op::Shape shape{33, 15, 1, 48};
     auto self = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
     auto other = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
@@ -93,7 +93,7 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize_without_supportInfo)
 {
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo(
-        "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
+        OP_API_COMMON_UT_SRC_DIR "/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
     gert::TilingContext ctx;
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(&ctx, opt, &kernelInfo), -1);
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), 0);
@@ -101,10 +101,10 @@ TEST_F(OpInfoRecordUtest, Utest_OpInfoSerialize_without_supportInfo)
 
 TEST_F(OpInfoRecordUtest, Utest_OpInfoPathEqual)
 {
-    std::string dependPath = "../../../../tests/nnopbase/common/depends/";
+    std::string dependPath = NNOPBASE_UT_DEPENDS_DIR "/";
     aclnnOpInfoRecord::Path pathA = aclnnOpInfoRecord::Path(dependPath);
     aclnnOpInfoRecord::Path pathB = aclnnOpInfoRecord::Path(dependPath);
-    std::string configPath = "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/";
+    std::string configPath = OP_API_COMMON_UT_SRC_DIR "/built-in/op_impl/ai_core/tbe/kernel/config/";
     aclnnOpInfoRecord::Path pathC = aclnnOpInfoRecord::Path(configPath);
     EXPECT_EQ(pathA == pathB, true);
     EXPECT_EQ(pathA == pathC, false);

@@ -264,6 +264,7 @@ aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor* executor,
                                     NnopbaseParamCheckMode mode = NnopbaseParamCheckMode::kCheckRequiredIo);
 aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* const executor, const bool usingStride = false);
 void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* const executor);
+aclnnStatus NnopbaseExecutorGenCustomizedDynamicKey(NnopbaseExecutor* const executor);
 size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor* const executor, bool usingStride = false);
 NnopbaseUChar* NnopbaseExecutorGenAttrsKey(const NnopbaseAttrs* const attrs, NnopbaseUChar* verKey);
 NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, const NnopbaseTensors* const tensors,

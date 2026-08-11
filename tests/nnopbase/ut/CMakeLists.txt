@@ -208,9 +208,12 @@ target_compile_definitions(nnopbase_utest PRIVATE google=ascend_private)
 
 set(NNOPBASE_LLT_MOCK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../mock)
 get_filename_component(NNOPBASE_LLT_MOCK_DIR "${NNOPBASE_LLT_MOCK_DIR}" ABSOLUTE)
+set(NNOPBASE_LLT_DEPENDS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../common/depends)
+get_filename_component(NNOPBASE_LLT_DEPENDS_DIR "${NNOPBASE_LLT_DEPENDS_DIR}" ABSOLUTE)
 target_compile_definitions(nnopbase_utest
   PRIVATE
     OP_API_COMMON_UT_SRC_DIR=\"${NNOPBASE_LLT_MOCK_DIR}\"
+    NNOPBASE_UT_DEPENDS_DIR=\"${NNOPBASE_LLT_DEPENDS_DIR}\"
 )
 
 if(ENABLE_COVERAGE)

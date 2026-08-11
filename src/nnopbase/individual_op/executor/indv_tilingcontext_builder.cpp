@@ -209,6 +209,10 @@ static void NnopbaseTilingSetContextOutputStep2(NnopbaseExecutor* const executor
 
 aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
 {
+    if (executor->tiling.contextExt.hasBuilt) {
+        OP_LOGI("Tiling context has been built, skip building it again.");
+        return OK;
+    }
     if (!g_nnopbasePlatformMgr.isInit) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorPlatFormInfosInit());
     }
@@ -253,12 +257,14 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
     *(executor->tiling.aicpuNumBlocks) = 0U;
     *(executor->tiling.dynUbufSize) = 0U;
     NnopbaseTilingSetContextOutputStep2(executor);
+
     NnopbaseTilingBuildOpInputs(executor);
     NnopbaseTilingBuildOpOutputs(executor);
 
     if (executor->attrs.num > 0LU) {
-        return NnopbaseTilingBuildOpAttrs(executor);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseTilingBuildOpAttrs(executor));
     }
+    executor->tiling.contextExt.hasBuilt = true;
     return OK;
 }
 
@@ -281,6 +287,7 @@ aclnnStatus NnopbaseInitContext(NnopbaseKernelRunContextExt* contextExt, const u
         context->values[i] = value + i;
     }
     contextExt->hasPrepared = false;
+    contextExt->hasBuilt = false;
     return OK;
 }
 

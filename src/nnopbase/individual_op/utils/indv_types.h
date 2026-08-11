@@ -78,6 +78,7 @@ static constexpr int32_t NNOPBASE_TILING_DATA_STRUCT_SIZE = sizeof(NnopbaseTilin
 
 typedef unsigned int (*TilingFun)(gert::TilingContext*);
 typedef unsigned int(TilingFunPrototype)(gert::TilingContext*);
+typedef ge::graphStatus (*GenSimplifiedKeyFun)(gert::TilingContext*, ge::char_t*);
 
 #ifdef __cplusplus
 }

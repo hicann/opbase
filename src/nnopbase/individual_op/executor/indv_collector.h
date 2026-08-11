@@ -87,6 +87,7 @@ void NnopbaseGetOppPath(NnopbaseBinCollector* const collector,
 aclnnStatus NnopbaseGetCurEnvPackageOsAndCpuType(std::string& hostEnvOs, std::string& hostEnvCpu);
 aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath);
 aclnnStatus NnopbaseCollectorSetTiling(const NnopbaseJsonInfo& jsonInfo, TilingFun* const tiling,
+                                       GenSimplifiedKeyFun* const genSimplifiedKey,
                                        gert::OppImplVersionTag oppImplVersion);
 bool NnopbaseReadConfigFile(const std::string& configPath, std::vector<std::string>& subPath);
 NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const NnopbaseRegInfoKey* const regInfoKey,

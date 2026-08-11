@@ -426,6 +426,48 @@ int32_t NnopbaseCreateStubOpInfoConfig(const std::string& filePath, const std::s
     fprintf(file, (binPathPrefix + "/1971_for_mix_unnormal2.o\"\n").c_str());
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
+    fprintf(file, "    },\n");
+
+    // StubCustomOp（customizedKey模式，用于customizedKey动态bin查找测试）
+    fprintf(file, "    \"StubCustomOp\": {\n");
+    fprintf(file, "        \"dynamicRankSupport\": true,\n");
+    fprintf(file, "        \"simplifiedKeyMode\": 2,\n");
+    fprintf(file, "        \"binaryList\": [\n");
+    fprintf(file, "            {\n");
+    fprintf(file, "                \"coreType\": 0,\n");
+    fprintf(file, "                \"simplifiedKey\": [\"StubCustomOp/d=0,p=0/diy,99\"],\n");
+    fprintf(file, (binPath + "ascend910/kernel_bninference_d_dync_main.o\"\n").c_str());
+    fprintf(file, "            }\n");
+    fprintf(file, "        ]\n");
+    fprintf(file, "    },\n");
+
+    // StubCustomOpNoGen（customizedKey模式但未注册genSimplifiedKey，用于加载期gen指针为空场景）
+    fprintf(file, "    \"StubCustomOpNoGen\": {\n");
+    fprintf(file, "        \"dynamicRankSupport\": true,\n");
+    fprintf(file, "        \"simplifiedKeyMode\": 2,\n");
+    fprintf(file, "        \"binaryList\": [\n");
+    fprintf(file, "            {\n");
+    fprintf(file, "                \"coreType\": 0,\n");
+    fprintf(file, "                \"simplifiedKey\": [\"StubCustomOpNoGen/d=0,p=0/diy,99\"],\n");
+    fprintf(file, (binPath + "ascend910/kernel_bninference_d_dync_main.o\"\n").c_str());
+    fprintf(file, "            }\n");
+    fprintf(file, "        ]\n");
+    fprintf(file, "    },\n");
+
+    // StubMixKeyOp（内置包声明 mode=2）。同名算子在自定义包中声明 mode=0，见
+    // CreateCustomStubOpInfoConfig。自定义包先加载、内置包后加载，故 binTbl 内两种索引共存，
+    // 且 regInfo->customizedSimplifiedKey 被内置包覆写为 true。
+    // 此处后缀 "diy,zzz" 与桩 gen 产出的 "diy,99" 不一致，保证 customizedKey 必然未命中。
+    fprintf(file, "    \"StubMixKeyOp\": {\n");
+    fprintf(file, "        \"dynamicRankSupport\": true,\n");
+    fprintf(file, "        \"simplifiedKeyMode\": 2,\n");
+    fprintf(file, "        \"binaryList\": [\n");
+    fprintf(file, "            {\n");
+    fprintf(file, "                \"coreType\": 0,\n");
+    fprintf(file, "                \"simplifiedKey\": [\"StubMixKeyOp/d=0,p=0/diy,zzz\"],\n");
+    fprintf(file, (binPath + "ascend910/kernel_bninference_d_dync_main.o\"\n").c_str());
+    fprintf(file, "            }\n");
+    fprintf(file, "        ]\n");
     fprintf(file, "    }\n");
     fprintf(file, "}\n");
 
@@ -592,6 +634,20 @@ int32_t CreateCustomStubOpInfoConfig(const std::string& filePath, const std::str
     fprintf(file, "                                    \"custom_op1/d=0,p=0/0,2/0,2/0,2/0,2\"],\n");
     fprintf(file, (binPathPrefix + "/kernel_custom_op1_dync_main.o\"\n").c_str());
     ;
+    fprintf(file, "            }\n");
+    fprintf(file, "        ]\n");
+    fprintf(file, "    },\n");
+
+    // StubMixKeyOp（自定义包声明 mode=0，与内置包的 mode=2 同名）。此处的动态键索引先入 binTbl，
+    // 供 customizedKey 未命中后回落命中，详见内置包侧注释。
+    fprintf(file, "    \"StubMixKeyOp\": {\n");
+    fprintf(file, "        \"dynamicRankSupport\": true,\n");
+    fprintf(file, "        \"simplifiedKeyMode\": 0,\n");
+    fprintf(file, "        \"binaryList\": [\n");
+    fprintf(file, "            {\n");
+    fprintf(file, "                \"coreType\": 0,\n");
+    fprintf(file, "                \"simplifiedKey\": [\"StubMixKeyOp/d=0,p=0/0,2/0,2/0,2/0,2\"],\n");
+    fprintf(file, (binPathPrefix + "/kernel_custom_op1_dync_main.o\"\n").c_str());
     fprintf(file, "            }\n");
     fprintf(file, "        ]\n");
     fprintf(file, "    }\n");

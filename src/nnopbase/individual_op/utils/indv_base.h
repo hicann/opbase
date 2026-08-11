@@ -34,6 +34,8 @@ static constexpr int32_t NNOPBASE_NORM_DEF_TENSOR_NUMS = 100;
 static constexpr size_t NNOPBASE_NORM_MAX_BIN_BUCKETS = 1024U;
 static constexpr size_t NNOPBASE_SOC_VERSION_MAX = 50U;
 static constexpr size_t NNOPBASE_VEB_KEY_LEN = 1024U;
+// 算子genSimplifiedKey可写入的最大长度，取值须与composite_op侧MAX_CUSTOMIZED_SIMPLIFIED_KEY_LEN一致
+static constexpr size_t NNOPBASE_CUS_KEY_LEN = 256U;
 static constexpr uint32_t NNOPBASE_STATIC_VEB_KEY_LEN = 512U;
 
 constexpr size_t NNOPBASE_BLOCK_NUM = 75U;
@@ -103,6 +105,8 @@ typedef struct {
     NnopbaseComputeNodeInfoExt nodeExt;
     uint32_t contextLen;
     bool hasPrepared;
+    // customizedKey模式查找bin时会提前构造tilingContext，标记本次调用是否已构造，避免DoTiling重复构造
+    bool hasBuilt;
 } NnopbaseKernelRunContextExt;
 
 typedef gert::TypedContinuousVector<size_t> NnopbaseWorkspaceSizes;

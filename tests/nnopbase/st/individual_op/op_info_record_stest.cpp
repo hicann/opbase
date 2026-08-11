@@ -30,7 +30,7 @@ protected:
 
 TEST_F(OpInfoRecordStest, Stest_OpInfoEmptyBinInfo)
 {
-    std::string path = "../../../../tests/nnopbase/common/depends/";
+    std::string path = NNOPBASE_UT_DEPENDS_DIR "/";
     MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
     MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath)
         .stubs()
@@ -44,14 +44,14 @@ TEST_F(OpInfoRecordStest, Stest_OpInfoEmptyBinInfo)
 
 TEST_F(OpInfoRecordStest, Stest_OpInfoSerializeFailed)
 {
-    std::string path = "../../../../tests/nnopbase/common/depends/";
+    std::string path = NNOPBASE_UT_DEPENDS_DIR "/";
     MOCKER(mmAccess2).stubs().will(returnValue(EN_OK));
     MOCKER_CPP(&aclnnOpInfoRecord::LibPath::GetInstallParentPath)
         .stubs()
         .will(returnValue(aclnnOpInfoRecord::Path(path)));
     aclnnOpInfoRecord::OpCompilerOption opt("", 0);
     aclnnOpInfoRecord::OpKernelInfo kernelInfo(
-        "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
+        OP_API_COMMON_UT_SRC_DIR "/built-in/op_impl/ai_core/tbe/kernel/config/ascend910/add_n.json", 0);
     gert::TilingContext ctx;
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoSerialize(&ctx, opt, &kernelInfo), -1);
     EXPECT_EQ(aclnnOpInfoRecord::OpInfoDump(), 0);
@@ -59,10 +59,10 @@ TEST_F(OpInfoRecordStest, Stest_OpInfoSerializeFailed)
 
 TEST_F(OpInfoRecordStest, Stest_OpInfoPathEqual)
 {
-    std::string dependPath = "../../../../tests/nnopbase/common/depends/";
+    std::string dependPath = NNOPBASE_UT_DEPENDS_DIR "/";
     aclnnOpInfoRecord::Path pathA = aclnnOpInfoRecord::Path(dependPath);
     aclnnOpInfoRecord::Path pathB = aclnnOpInfoRecord::Path(dependPath);
-    std::string configPath = "../../../../tests/nnopbase/mock/built-in/op_impl/ai_core/tbe/kernel/config/";
+    std::string configPath = OP_API_COMMON_UT_SRC_DIR "/built-in/op_impl/ai_core/tbe/kernel/config/";
     aclnnOpInfoRecord::Path pathC = aclnnOpInfoRecord::Path(configPath);
     EXPECT_EQ(pathA == pathB, true);
     EXPECT_EQ(pathA == pathC, false);

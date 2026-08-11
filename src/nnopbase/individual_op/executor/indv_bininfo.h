@@ -53,6 +53,7 @@ typedef struct {
 typedef struct {
     NnopbaseRegInfoKey key;
     TilingFun tiling;
+    GenSimplifiedKeyFun genSimplifiedKey = nullptr;
     DoubleListNode dllNode;
     BinTbl binTbl;
     bool isActive;
