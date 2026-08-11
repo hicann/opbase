@@ -875,8 +875,13 @@ bool operator==(const OpCacheKey &lhs, const OpCacheKey &rhs)
         return false;
     }
     OpCacheKey key = cache->GetOpCacheKey();
-    return lhs.len == key.len &&
-           (memcmp(PtrCastTo<char>(lhs.buf), PtrCastTo<char>(key.buf), lhs.len) == 0);
+    // 防御：任一侧 buf 为空或 len 为 0 视为无效，避免 memcmp 解引用空指针
+    if (lhs.buf == nullptr || lhs.len == 0 || key.buf == nullptr || key.len == 0) {
+        OP_LOGW("op cache key is invalid, lhs buf is null: %d, lhs len: %zu, key buf is null: %d, key len: %zu",
+                lhs.buf == nullptr, lhs.len, key.buf == nullptr, key.len);
+        return false;
+    }
+    return lhs.len == key.len && (memcmp(PtrCastTo<char>(lhs.buf), PtrCastTo<char>(key.buf), lhs.len) == 0);
 }
 
 OpExecCache::OpExecCache()
@@ -1131,10 +1136,7 @@ void OpExecCache::MarkOpCacheInvalid()
 {
     OP_CHECK(!(CanUse()), OP_LOGI("OpExecCache has been can used, cant change to invalid."), return);
     hashKey_ = 0;
-    if (key_.buf) {
-        delete[] key_.buf;
-        key_.buf = nullptr;
-    }
+    // 不释放/置空 buf 仅置 len 为 0，避免 operator== 跨线程读到 buf 为空而 len 非 0 的中间态导致崩溃
     key_.len = 0;
     OP_LOGI("key_.len %zu", key_.len);
 }
