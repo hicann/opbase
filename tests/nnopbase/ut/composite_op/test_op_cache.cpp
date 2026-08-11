@@ -11,9 +11,12 @@
 #include "gtest/gtest.h"
 // #include "mockcpp/mockcpp.hpp"
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <stdlib.h>
+#include <thread>
 
 #include "acl/acl.h"
 #include "aclnn/acl_meta.h"
@@ -1187,4 +1190,119 @@ static void OpCacheUseCountTestFunc() {
 TEST_F(OpCacheUt, DisableOpCacheUseCountTest) {
     std::thread t(OpCacheUseCountTestFunc);
     t.join();
+}
+
+// 复现 OpCacheKey 多线程竞态：主线程反复 GetOpExecCache 查找（经 operator== 读 exec->key_），
+// 线程 B 反复重建 key_ 后 MarkOpCacheInvalid（写 exec->key_）。
+// patch 前：MarkOpCacheInvalid 的 delete[] key_.buf; key_.buf=nullptr 与 operator== 读 key_ 并发，
+// 中间态 buf 为空但 len 非 0，memcmp 解引用空指针崩溃；patch 后不崩。
+TEST_F(OpCacheUt, OpCacheKeyRaceConditionTest)
+{
+    constexpr int64_t KEY_LEN = 7;
+    auto keyBuf = reinterpret_cast<uint8_t*>(const_cast<char*>("racekey"));
+
+    InitPTACacheThreadLocal();
+    SetPTACacheHashKey(keyBuf, KEY_LEN);
+    auto cache = new OpExecCache();
+    cache->SetCacheBuf(GetCacheBuf());
+    // 不调 SetUse：保持 canUse_ 为 false，使 MarkOpCacheInvalid 内 CanUse() 返回 false 从而真正执行失效
+    ASSERT_TRUE(AddOpExecCache(cache));
+
+    OpCacheKey findKey(keyBuf, KEY_LEN);
+
+    std::atomic<bool> stop{false};
+    // 线程 B：循环重建 key_ 后失效，持续制造 buf 有效变空指针的中间态
+    std::thread threadB([&]() {
+        InitPTACacheThreadLocal();
+        SetPTACacheHashKey(keyBuf, KEY_LEN);
+        while (!stop.load()) {
+            cache->InitOpCacheKey();
+            cache->MarkOpCacheInvalid();
+        }
+    });
+
+    // 主线程：循环查找，经 operator== -> GetOpCacheKey 读 exec->key_
+    auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() < end) {
+        GetOpExecCache(findKey);
+    }
+    stop.store(true);
+    threadB.join();
+
+    RemoveExecCache(cache);
+    UnInitPTACacheThreadLocal();
+}
+
+// 复现 AddOpExecCache 中 cache2_.find 调 operator== 的多线程竞态（实际 coredump 场景）：
+// 线程 A 反复 AddOpExecCache，其 cache2_.find 遍历到容器内 targetCache 调 operator== 读 exec->key_；
+// 线程 B 反复 InitOpCacheKey + MarkOpCacheInvalid（真实失效流程），持续制造 buf 有效变 nullptr 的中间态。
+// patch 后：operator== 防御 buf 为空/len 为 0 返回 false 不崩，且 OP_LOGW 日志可观测到竞态真实发生
+// （日志打印 key len 为 0，说明 find 在 MarkOpCacheInvalid 失效 targetCache 期间被调用）。
+// patch 前：该路径因 AddOpExecCache 每次 new OpExecCache 导致 find 频率较低，未稳定复现 SIGSEGV；
+// 同源竞态在 OpCacheKeyRaceConditionTest（GetOpExecCache 高频 find）中已稳定复现崩溃。
+// 注意：UT 默认 cacheLimit_ 为 1，需在新线程构造 manager 前通过环境变量调大，否则 cache 满直接返回走不到 find。
+TEST_F(OpCacheUt, AddOpExecCacheRaceConditionTest)
+{
+    constexpr int64_t KEY_LEN = 7;
+    auto keyBuf = reinterpret_cast<uint8_t*>(const_cast<char*>("racekey"));
+
+    // 保存并调大 cacheLimit，新线程首次访问 manager 时按新值构造
+    const char* const originLimit = std::getenv("ACLNN_CACHE_LIMIT");
+    setenv("ACLNN_CACHE_LIMIT", "100", 1);
+
+    std::atomic<OpExecCache*> targetCachePtr{nullptr};
+    std::atomic<bool> stop{false};
+
+    // 线程 A：构造大 cacheLimit 的 manager，预入 targetCache（指针共享给线程 B），再反复 AddOpExecCache 触发 find
+    std::thread threadA([&]() {
+        InitPTACacheThreadLocal();
+        SetPTACacheHashKey(keyBuf, KEY_LEN);
+        auto targetCache = new OpExecCache();
+        targetCache->SetCacheBuf(GetCacheBuf());
+        if (AddOpExecCache(targetCache)) {
+            targetCachePtr.store(targetCache);
+        } else {
+            delete targetCache;
+        }
+
+        while (!stop.load()) {
+            auto newCache = new OpExecCache();
+            // AddOpExecCache 内 cache2_.find 遍历到 targetCache 调 operator== 读 exec->key_
+            // 注意：AddOpExecCache 返回 false 时内部已 delete exec，这里不可重复 delete
+            (void)AddOpExecCache(newCache);
+        }
+        // 不主动 RemoveExecCache：避免与线程 B 的 InitOpCacheKey 并发释放导致 double free，
+        // targetCache 留在本线程 manager，线程结束时由 manager 析构统一清理（此时线程 B 已 join）
+        UnInitPTACacheThreadLocal();
+    });
+
+    // 线程 B：等 targetCache 就绪后，反复重建 key_ 后真实失效，持续制造 buf 有效变空指针的中间态
+    std::thread threadB([&]() {
+        InitPTACacheThreadLocal();
+        SetPTACacheHashKey(keyBuf, KEY_LEN);
+        OpExecCache* cache = nullptr;
+        while (!stop.load()) {
+            if (cache == nullptr) {
+                cache = targetCachePtr.load();
+                continue;
+            }
+            cache->InitOpCacheKey();
+            cache->MarkOpCacheInvalid();
+        }
+        UnInitPTACacheThreadLocal();
+    });
+
+    auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() < end) {
+        std::this_thread::yield();
+    }
+    stop.store(true);
+    threadA.join();
+    threadB.join();
+
+    if (originLimit != nullptr) {
+        setenv("ACLNN_CACHE_LIMIT", originLimit, 1);
+    } else {
+        unsetenv("ACLNN_CACHE_LIMIT");
+    }
 }
