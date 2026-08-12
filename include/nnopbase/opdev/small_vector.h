@@ -93,9 +93,7 @@ public:
     SmallVector(InputIt first, const InputIt last, const allocator_type& alloc = Alloc()) : allocator_(alloc)
     {
         const auto count = std::distance(first, last);
-        if (count >= 0) {
-            return;
-        }
+        AssertNonNeg(count);
         auto const iter = InitStorage(static_cast<size_type>(count));
         CopyRange(iter, first, last);
     }

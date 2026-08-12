@@ -382,6 +382,7 @@ TEST_F(OpExecutorTest, DSAKernelLauncherUnNormalTaskType)
     auto attr = OP_ATTR(alpha);
     auto ws = OP_WORKSPACE(out);
     auto ctx = op::MakeOpArgContext(input, output, attr, ws);
+    op::GenOpTypeId("Axpy"); // ensure OpTypeDict is initialized so ToOpType/ToString work in isolation
     uint32_t opType = op::OpTypeDict::ToOpType("Axpy");
 
     DSA_TASK_TYPE unNormalDsaTaskType = static_cast<DSA_TASK_TYPE>(100); // > enum DSA_TASK_TYPE
@@ -391,7 +392,10 @@ TEST_F(OpExecutorTest, DSAKernelLauncherUnNormalTaskType)
                                  *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG),
                                  *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
     EXPECT_EQ(ret, ACLNN_SUCCESS);
-    // op::DestroyOpArgContext(ctx);
+    aclDestroyTensor(self);
+    aclDestroyTensor(other);
+    aclDestroyTensor(out);
+    op::DestroyOpArgContext(ctx);
 }
 
 TEST_F(OpExecutorTest, phase2ParamCheckTest)
