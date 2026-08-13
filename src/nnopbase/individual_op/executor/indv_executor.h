@@ -21,6 +21,7 @@
 #include "indv_bininfo.h"
 #include "indv_collector.h"
 #include "indv_args.h"
+#include "indv_mc2.h"
 #include "aclnn/acl_meta.h"
 #include "op_info_serialize.h"
 #include "profiling/prof_common.h"
@@ -47,8 +48,6 @@ static constexpr size_t NNOPBASE_MAX_ARGS_KEY_LEN = 10240U;
 static constexpr size_t NNOPBASE_SEVENS_BYTES = 7U;
 static constexpr size_t NNOPBASE_EIGHT_BYTES = 8U;
 static constexpr int32_t INFO_TYPE_CORE_NUM = 3;
-static constexpr size_t NNOPBASE_AICPU_PARAM_LEN = 32U;
-static const std::string NNOPBASE_MC2_AICPU_SUFFIX = "Mc2AicpuKernel";
 constexpr size_t NNOPBASE_BLOCK_SIZE = 32U;
 constexpr int32_t INDV_LAUNCH_KERNEL_RTS_DYN_UBUF_SIZE = 2;
 
@@ -79,36 +78,6 @@ struct NnopbaseExecutorArgs {
     bool hasTiling = true;
     bool hasMemset = false;
     size_t remainKeyLen = NNOPBASE_MAX_ARGS_KEY_LEN;
-};
-
-struct NnopbaseMc2Execution {
-    bool enabled = false;
-    NnopbaseHcclServerType serverType = NNOPBASE_HCCL_SERVER_TYPE_END;
-    std::vector<HcclComm> commHandles;
-    std::vector<void*> contextAddrs;
-    rtAicpuArgsEx_t aicpuArgs{};
-    rtFusionArgsEx_t fusionArgs{};
-    std::vector<aclrtStream> aicpuStreams;
-    std::vector<uint64_t> aicpuThreads;
-    std::vector<std::pair<aclrtStream, aclrtStream>> aicpuNotifies;
-
-    void ClearRuntimeState()
-    {
-        enabled = false;
-        serverType = NNOPBASE_HCCL_SERVER_TYPE_END;
-        commHandles.clear();
-        contextAddrs.clear();
-        aicpuStreams.clear();
-        aicpuThreads.clear();
-        aicpuNotifies.clear();
-    }
-
-    void Reset()
-    {
-        ClearRuntimeState();
-        aicpuArgs = {};
-        fusionArgs = {};
-    }
 };
 
 struct NnopbaseTilingState {

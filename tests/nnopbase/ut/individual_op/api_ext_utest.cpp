@@ -3169,7 +3169,12 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseRunSuccessWithUnContiguousTensor)
 class NnopbaseLibWrapperUnitTest : public testing::Test {
 protected:
     void SetUp() { setenv("ASCEND_C", "1", 1); }
-    void TearDown() { unsetenv("ASCEND_C"); }
+    void TearDown()
+    {
+        unsetenv("ASCEND_C");
+        nnopbase::IndvSoc::GetInstance().Reset();
+        Adx::MmpaStub::GetInstance()->UnInstall();
+    }
 };
 
 static int x = 2;
@@ -3455,6 +3460,35 @@ public:
 };
 
 MmpaNormalStub mmpaNormallStub;
+
+uint32_t CcuKernelLaunchNormal(HcclComm comm, void* opResCtx) { return 0U; }
+
+class Mc2ClientStub : public Adx::MmpaStub {
+public:
+    void* mmDlsym(void* handle, const char* funcName)
+    {
+        if (std::string(funcName) == "HcclAllocComResourceByTiling") {
+            return reinterpret_cast<void*>(HcclAllocComResourceNormal);
+        }
+        if (std::string(funcName) == "CcuKernelLaunch") {
+            ccuKernelLaunchRequested = true;
+            return reinterpret_cast<void*>(CcuKernelLaunchNormal);
+        }
+        return nullptr;
+    }
+
+    bool ccuKernelLaunchRequested = false;
+};
+
+TEST_F(NnopbaseLibWrapperUnitTest, CcuKernelLaunchSymbolIsLoaded)
+{
+    Mc2ClientStub mmpaStub;
+    Adx::MmpaStub::GetInstance()->Install(&mmpaStub);
+
+    EXPECT_EQ(nnopbase::IndvMc2ClientWrapper::GetInstance().IndvMc2ClientWrapperInit("libmc2_client.so"), OK);
+    EXPECT_TRUE(mmpaStub.ccuKernelLaunchRequested);
+    EXPECT_EQ(nnopbase::IndvMc2ClientWrapper::GetInstance().CcuKernelLaunch(nullptr, nullptr), OK);
+}
 
 TEST_F(NnopbaseLibWrapperUnitTest, NnopbaseHcclLibException)
 {

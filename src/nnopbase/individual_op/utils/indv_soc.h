@@ -53,7 +53,7 @@ public:
     bool SupportL0ExceptionDump(void) const;
     bool IsCouplingArch(void) const;
     bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType);
-    bool NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType);
+    bool NnopbaseUseA5Mc2Client(const NnopbaseHcclServerType sType);
     uint32_t* GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const;
     uint32_t GetSocEnum();
     bool IsSupportedSocName(const std::string& name) const;

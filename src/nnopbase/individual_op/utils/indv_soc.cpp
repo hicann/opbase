@@ -89,15 +89,16 @@ bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType)
     return isEnableCcuLaunch;
 }
 
-bool IndvSoc::NnopbaseSupportA5AiCpu(const NnopbaseHcclServerType sType)
+bool IndvSoc::NnopbaseUseA5Mc2Client(const NnopbaseHcclServerType sType)
 {
     const std::string& curSocVersion = GetCurSocVersion();
     const bool isSupportFusionLaunch = SupportMc2FusionLaunch();
-    const bool isSupportA5AiCpu = (isSupportFusionLaunch && ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) ||
-                                                             (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU)));
-    OP_LOGD("NnopbaseSupportA5AiCpu check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, isSupportA5AiCpu=%d",
-            curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, isSupportA5AiCpu);
-    return isSupportA5AiCpu;
+    const bool useA5Mc2Client = (isSupportFusionLaunch && ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) ||
+                                                           (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU) ||
+                                                           (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU)));
+    OP_LOGD("NnopbaseUseA5Mc2Client check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, useA5Mc2Client=%d",
+            curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, useA5Mc2Client);
+    return useA5Mc2Client;
 }
 
 uint32_t* IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const

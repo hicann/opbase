@@ -11,6 +11,7 @@
 #ifndef INDV_LIB_WRAPPER_H_
 #define INDV_LIB_WRAPPER_H_
 
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -71,14 +72,26 @@ private:
 
 class IndvMc2ClientWrapper : public NnopBaseLoadSo {
 public:
+    // Function-specific result contract for mc2_client resource allocation. It must not be propagated as aclnnStatus.
+    enum class HcclAllocComResourceResult {
+        SUCCESS,
+        ALGORITHM_NOT_SUPPORTED,
+        FAILED,
+    };
+
     static IndvMc2ClientWrapper& GetInstance(void);
 
     // 调用端必须保证不多线程调用
     aclnnStatus IndvMc2ClientWrapperInit(const char* loadSoPath);
-    aclnnStatus HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData, void** commContext);
+    HcclAllocComResourceResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData,
+                                                           void** commContext);
+    aclnnStatus CcuKernelLaunch(HcclComm comm, void* opResCtx);
 
 private:
     using HcclAllocComResourceByTilingFunc = HcclResult (*)(HcclComm, void*, void*, void**);
+    // CcuKernelLaunch is resolved dynamically. Keep only its stable return-value ABI here to avoid a CCU header
+    // dependency in opbase.
+    using CcuKernelLaunchFunc = uint32_t (*)(HcclComm, void*);
 
     IndvMc2ClientWrapper(void);
     ~IndvMc2ClientWrapper() override;
@@ -86,6 +99,7 @@ private:
     aclnnStatus LoadFunctions() override;
 
     HcclAllocComResourceByTilingFunc hcclAllocComResourceByTilingHandle = nullptr;
+    CcuKernelLaunchFunc ccuKernelLaunchHandle = nullptr;
 };
 
 class IndvHcclWrapper : public NnopBaseLoadSo {

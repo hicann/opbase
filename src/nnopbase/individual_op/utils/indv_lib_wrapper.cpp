@@ -93,6 +93,7 @@ IndvMc2ClientWrapper& IndvMc2ClientWrapper::GetInstance(void)
 aclnnStatus IndvMc2ClientWrapper::IndvMc2ClientWrapperInit(const char* loadSoPath)
 {
     hcclAllocComResourceByTilingHandle = nullptr;
+    ccuKernelLaunchHandle = nullptr;
     closeSo();
     aclnnStatus ret = openSo(loadSoPath);
     if (ret != OK) {
@@ -103,17 +104,41 @@ aclnnStatus IndvMc2ClientWrapper::IndvMc2ClientWrapperInit(const char* loadSoPat
     return OK;
 }
 
-aclnnStatus IndvMc2ClientWrapper::HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* TilingData,
-                                                               void** commContext)
+IndvMc2ClientWrapper::HcclAllocComResourceResult IndvMc2ClientWrapper::HcclAllocComResourceByTiling(
+    HcclComm comm, void* stream, void* TilingData, void** commContext)
 {
-    NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
+    static constexpr uint32_t HCCL_ALGORITHM_NOT_SUPPORTED = 1042U;
+    if (hcclAllocComResourceByTilingHandle == nullptr) {
+        OP_LOGE(ACLNN_ERR_INNER, "HcclAllocComResourceByTiling function of the mc2_client module is not loaded.");
+        return HcclAllocComResourceResult::FAILED;
+    }
 
-    HcclResult ret = hcclAllocComResourceByTilingHandle(comm, stream, TilingData, commContext);
+    const HcclResult ret = hcclAllocComResourceByTilingHandle(comm, stream, TilingData, commContext);
+    if (static_cast<uint32_t>(ret) == HCCL_ALGORITHM_NOT_SUPPORTED) {
+        return HcclAllocComResourceResult::ALGORITHM_NOT_SUPPORTED;
+    }
     if (ret != HCCL_SUCCESS) {
         OP_LOGE(ACLNN_ERR_INNER,
                 "Failed to invoke the HcclAllocComResourceByTiling "
                 "function of the mc2_client module, ret = %d, comm = %p.",
                 ret, comm);
+        return HcclAllocComResourceResult::FAILED;
+    }
+
+    return HcclAllocComResourceResult::SUCCESS;
+}
+
+aclnnStatus IndvMc2ClientWrapper::CcuKernelLaunch(HcclComm comm, void* opResCtx)
+{
+    static constexpr uint32_t KERNEL_LAUNCH_SUCCESS = 0U;
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(ccuKernelLaunchHandle);
+
+    uint32_t ret = ccuKernelLaunchHandle(comm, opResCtx);
+    if (ret != KERNEL_LAUNCH_SUCCESS) {
+        OP_LOGE(ACLNN_ERR_INNER,
+                "Failed to invoke the CcuKernelLaunch "
+                "function of the mc2_client module, ret = %u, comm = %p, opResCtx = %p.",
+                ret, comm, opResCtx);
         return ACLNN_ERR_INNER;
     }
 
@@ -125,6 +150,7 @@ IndvMc2ClientWrapper::IndvMc2ClientWrapper(void) {}
 IndvMc2ClientWrapper::~IndvMc2ClientWrapper()
 {
     hcclAllocComResourceByTilingHandle = nullptr;
+    ccuKernelLaunchHandle = nullptr;
     closeSo();
 }
 
@@ -132,6 +158,8 @@ aclnnStatus IndvMc2ClientWrapper::LoadFunctions()
 {
     hcclAllocComResourceByTilingHandle = LoadFunction<HcclAllocComResourceByTilingFunc>("HcclAllocComResourceByTiling");
     NNOPBASE_ASSERT_NOTNULL_RETVAL(hcclAllocComResourceByTilingHandle);
+    ccuKernelLaunchHandle = LoadFunction<CcuKernelLaunchFunc>("CcuKernelLaunch");
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(ccuKernelLaunchHandle);
     return OK;
 }
 

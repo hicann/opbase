@@ -12,19 +12,13 @@
 #include "utils/thread_var_container.h"
 #include "runtime/runtime/rt_model.h"
 #include "utils/indv_soc.h"
+#include <cstddef>
 
 #include <cstdint>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-const NnopbaseUChar NNOPBASE_MC2_AICPU_SO_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"libccl_kernel.so"};
-const NnopbaseUChar NNOPBASE_MC2_AICPU_KERNEL_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"RunAicpuKfcSrvLaunch"};
-const NnopbaseUChar NNOPBASE_MC2_SERVER_SO_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"libmc2_server.so"};
-const NnopbaseUChar NNOPBASE_MC2_SERVER_KERNEL_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"Mc2ServerKernel"};
-constexpr uint8_t NNOPBASE_MC2_NOTIFY_COUNT = 2;
-constexpr uint16_t NNOPBASE_HCCL_DEFAULT_TIME = 1836;
 
 namespace {
 size_t NnopbaseAlignToEightBytes(const size_t size)
@@ -54,18 +48,58 @@ aclnnStatus NnopbaseCheckMC2ParamBuffer(const NnopbaseExecutor* const executor,
     return OK;
 }
 
+bool NnopbaseReadCcuOpType(const void* opResCtx, uint32_t* opType)
+{
+    if ((opResCtx == nullptr) || (opType == nullptr)) {
+        return false;
+    }
+
+    *opType = NNOPBASE_CCU_INVALID_OP_TYPE;
+    const auto opTypeAddr = op::internal::PtrCastTo<const uint8_t>(opResCtx) + offsetof(NnopbaseCcuOpResCtx, opType);
+    const aclError ret = aclrtMemcpy(opType, sizeof(uint32_t), opTypeAddr, sizeof(uint32_t), ACL_MEMCPY_DEVICE_TO_HOST);
+    if (ret != ACL_SUCCESS) {
+        OP_LOGW("Read ccu opType failed, opResCtx is %p, ret is %d.", opResCtx, ret);
+        return false;
+    }
+    return *opType != NNOPBASE_CCU_INVALID_OP_TYPE;
+}
+
+bool NnopbaseIsCcuSplitLaunchOp(const NnopbaseExecutor* executor)
+{
+    if ((executor == nullptr) || executor->mc2.contextAddrs.empty() || executor->mc2.commHandles.empty()) {
+        return false;
+    }
+
+    if ((executor->mc2.contextAddrs[0] == nullptr) || (executor->mc2.commHandles[0] == nullptr)) {
+        OP_LOGI("Skip ccu split launch, contextAddr[0] is %p, hcomHandle[0] is %p.", executor->mc2.contextAddrs[0],
+                executor->mc2.commHandles[0]);
+        return false;
+    }
+
+    if (executor->mc2.fallback) {
+        OP_LOGI("Skip ccu split launch, mc2 falling back to hccl module.");
+        return false;
+    }
+    return true;
+}
+
 aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor* executor, HcclComm comm, void* stream, void* tilingData,
                                            void** commCtx)
 {
-    const bool supportA5AiCpu = nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2.serverType);
-    OP_LOGI("Nnopbase MC2 alloc resource route, sType[%d], supportA5AiCpu[%d].", executor->mc2.serverType,
-            supportA5AiCpu);
-    if (supportA5AiCpu) {
-        return nnopbase::IndvMc2ClientWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData,
-                                                                                          commCtx);
-    } else {
-        return nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData, commCtx);
+    const bool useA5Mc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseA5Mc2Client(executor->mc2.serverType);
+    OP_LOGI("Nnopbase MC2 alloc resource route, sType[%d], useA5Mc2Client[%d].", executor->mc2.serverType,
+            useA5Mc2Client);
+    if (useA5Mc2Client) {
+        using AllocResult = nnopbase::IndvMc2ClientWrapper::HcclAllocComResourceResult;
+        const AllocResult result = nnopbase::IndvMc2ClientWrapper::GetInstance().HcclAllocComResourceByTiling(
+            comm, stream, tilingData, commCtx);
+        if (result != AllocResult::ALGORITHM_NOT_SUPPORTED) {
+            return result == AllocResult::SUCCESS ? OK : ACLNN_ERR_INNER;
+        }
+        executor->mc2.fallback = true;
+        OP_LOGI("The mc2_client module does not support the current algorithm; falling back to the HCCL module.");
     }
+    return nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData, commCtx);
 }
 } // namespace
 
@@ -264,9 +298,10 @@ aclnnStatus NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecuto
         executor->mc2.aicpuArgs.soNameAddrOffset = static_cast<uint32_t>(argsAddr->hostInputData - args);
     }
 
-    bool isA5AiCpu = nnopbase::IndvSoc::GetInstance().NnopbaseSupportA5AiCpu(executor->mc2.serverType);
-    const NnopbaseUChar* pSoName = isA5AiCpu ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
-    const NnopbaseUChar* pKernelName = isA5AiCpu ? NNOPBASE_MC2_SERVER_KERNEL_NAME : NNOPBASE_MC2_AICPU_KERNEL_NAME;
+    const bool useA5Mc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseA5Mc2Client(executor->mc2.serverType);
+    const NnopbaseUChar* pSoName = useA5Mc2Client ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
+    const NnopbaseUChar* pKernelName =
+        useA5Mc2Client ? NNOPBASE_MC2_SERVER_KERNEL_NAME : NNOPBASE_MC2_AICPU_KERNEL_NAME;
     const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     const bool enableCcuLaunch = nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType);
     const size_t opNameDataLen = enableCcuLaunch ? NnopbaseAlignToEightBytes(opName.length()) : opName.length();
@@ -385,6 +420,23 @@ aclnnStatus NnopbaseFusionKernelLaunch(NnopbaseExecutor* const executor, aclrtSt
     return OK;
 }
 
+aclnnStatus NnopbaseCcuKernelLaunch(NnopbaseExecutor* const executor, rtStream_t const stream)
+{
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+
+    // commHandles，contextAddrs已经由上层调用确保非空
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->mc2.commHandles[0]);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->mc2.contextAddrs[0]);
+
+    NNOPBASE_ASSERT_OK_RETVAL(nnopbase::IndvMc2ClientWrapper::GetInstance().CcuKernelLaunch(
+        executor->mc2.commHandles[0], executor->mc2.contextAddrs[0]));
+
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorKernelLaunch(executor, stream));
+
+    OP_LOGI("Op %s ccu split launch successfully.", executor->opType);
+    return OK;
+}
+
 static aclnnStatus NnopbaseMC2KernelMTE(NnopbaseExecutor* executor, aclrtStream stream)
 {
     return NnopbaseExecutorKernelLaunch(executor, stream);
@@ -392,6 +444,9 @@ static aclnnStatus NnopbaseMC2KernelMTE(NnopbaseExecutor* executor, aclrtStream 
 
 static aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor* const executor, aclrtStream stream)
 {
+    if (NnopbaseIsCcuSplitLaunchOp(executor)) {
+        return NnopbaseCcuKernelLaunch(executor, stream);
+    }
     return NnopbaseFusionKernelLaunch(executor, stream);
 }
 
