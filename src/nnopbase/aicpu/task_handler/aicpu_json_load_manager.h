@@ -69,6 +69,7 @@ private:
     static bool ReadCustJsonFile(const std::string& opsRegisterName, const std::string& customJsonPath,
                                  const OpPackageType packageType);
     static bool ReadCustOpInfoFromJsonFile(const std::string& path);
+    static bool GetCustomOppPathFromVendors(std::string& customOppPath);
     static bool ReadBuiltinOpInfoFromJsonFile(const std::string& oppPath);
     static void FillCustOpInfos(std::string opsRegisterName, const OpInfoDescs& infoDesc,
                                 const OpPackageType packageType);

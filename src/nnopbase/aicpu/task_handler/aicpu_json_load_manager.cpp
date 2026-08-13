@@ -259,6 +259,69 @@ bool JsonLoadManger::ReadBuiltinOpInfoFromJsonFile(const std::string& oppPath)
     return true;
 }
 
+bool JsonLoadManger::GetCustomOppPathFromVendors(std::string& customOppPath)
+{
+    const char* oppPathEnv = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, oppPathEnv);
+    if ((oppPathEnv == nullptr) || (std::string(oppPathEnv) == "")) {
+        OP_LOGI("ASCEND_OPP_PATH is not set or empty, cannot derive custom opp path.");
+        return false;
+    }
+    const std::string oppPath = std::string(oppPathEnv);
+    const std::string configPath = oppPath + "/vendors/config.ini";
+    const std::string realConfigPath = RealPath(configPath);
+    if (!realConfigPath.empty()) {
+        OP_LOGI("config.ini real path [%s].", realConfigPath.c_str());
+        std::ifstream ifs(realConfigPath);
+        if (!ifs.is_open()) {
+            OP_LOGW("Failed to open config.ini at [%s].", realConfigPath.c_str());
+        } else {
+            std::string line = "";
+            std::vector<std::string> vendorNames;
+            while (std::getline(ifs, line)) {
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
+                if (line.empty() || (line.find('#') == 0U)) {
+                    continue;
+                }
+                if (line.find("priority") != std::string::npos) {
+                    const size_t posOfEqual = line.find('=');
+                    if (posOfEqual != std::string::npos) {
+                        const std::string value = line.substr(posOfEqual + 1U);
+                        SplitLine(value, ",", vendorNames);
+                    }
+                    break;
+                }
+            }
+            for (const auto& vendor : vendorNames) {
+                std::string trimmed = vendor;
+                size_t start = trimmed.find_first_not_of(" \t");
+                size_t end = trimmed.find_last_not_of(" \t");
+                if (start == std::string::npos) {
+                    continue;
+                }
+                trimmed = trimmed.substr(start, end - start + 1U);
+                const std::string vendorPath = oppPath + "/vendors/" + trimmed;
+                const std::string custJsonPath = vendorPath + kAicpuCustJsonFilePath;
+                OP_LOGI("Checking vendor %s cust json path: %s", trimmed.c_str(), custJsonPath.c_str());
+                if (RealPath(custJsonPath).empty()) {
+                    OP_LOGI("Vendor %s has no cust_aicpu_kernel.json, skip.", trimmed.c_str());
+                    continue;
+                }
+                if (!customOppPath.empty()) {
+                    customOppPath += kSplitSeparator;
+                }
+                customOppPath += vendorPath;
+            }
+        }
+    }
+    if (!customOppPath.empty()) {
+        OP_LOGI("Derived custom opp path from ASCEND_OPP_PATH: %s", customOppPath.c_str());
+    }
+    return !customOppPath.empty();
+}
+
 // Read custom operator json file and store it
 aclnnStatus JsonLoadManger::CustJsonLoadAndParse()
 {
@@ -269,12 +332,21 @@ aclnnStatus JsonLoadManger::CustJsonLoadAndParse()
     }
     const char* customPathEnv = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_CUSTOM_OPP_PATH, customPathEnv);
-    if (customPathEnv == nullptr) {
-        OP_LOGI("Custom operator environment variable ASCEND_CUSTOM_OPP_PATH is not set.");
-    } else {
+    if ((customPathEnv != nullptr) && (std::string(customPathEnv) != "")) {
         std::string pathEnv = std::string(customPathEnv);
+        OP_LOGI("Use ASCEND_CUSTOM_OPP_PATH for custom operator loading.");
         if (!ReadCustOpInfoFromJsonFile(pathEnv)) {
             OP_LOGW("Failed to read custom operator info from json file.");
+        }
+    } else {
+        std::string pathEnv = "";
+        if (GetCustomOppPathFromVendors(pathEnv)) {
+            OP_LOGI("Fallback to vendors path derived from ASCEND_OPP_PATH.");
+            if (!ReadCustOpInfoFromJsonFile(pathEnv)) {
+                OP_LOGW("Failed to read custom operator info from json file.");
+            }
+        } else {
+            OP_LOGI("ASCEND_CUSTOM_OPP_PATH not set and no valid custom opp path derived from ASCEND_OPP_PATH.");
         }
     }
     const char* oppPathEnv = nullptr;

@@ -81,6 +81,7 @@ set(NNOPBASE_TEST_HEADER_FILES
     ${OPS_BASE_PATH}/src/nnopbase/individual_op/
     ${OPS_BASE_PATH}/src/nnopbase/individual_op/api
     ${OPS_BASE_PATH}/src/nnopbase/individual_op/utils
+    ${OPS_BASE_PATH}/src/nnopbase/aicpu/task_handler/
     ${OPS_BASE_PATH}/include/
     ${OPS_BASE_PATH}/include/nnopbase/
     ${OPS_BASE_PATH}/include/nnopbase/opdev/
