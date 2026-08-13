@@ -24,6 +24,7 @@ struct OpConfigInfo {
         isDeterministicOn_ = rhs.isDeterministicOn_;
         isOpDumpEnable_ = rhs.isOpDumpEnable_;
         deterministicLevel_ = rhs.deterministicLevel_;
+        usePcieAddr = rhs.usePcieAddr;
     }
     OpConfigInfo& operator=(const OpConfigInfo& rhs)
     {
@@ -33,6 +34,7 @@ struct OpConfigInfo {
             isDeterministicOn_ = rhs.isDeterministicOn_;
             isOpDumpEnable_ = rhs.isOpDumpEnable_;
             deterministicLevel_ = rhs.deterministicLevel_;
+            usePcieAddr = rhs.usePcieAddr;
         }
         return *this;
     }
@@ -42,7 +44,8 @@ struct OpConfigInfo {
     bool isDeterministicOn_{false};
     bool isOpDumpEnable_{false};
     uint8_t deterministicLevel_{0};
-    uint8_t reserved[5] = {0};
+    bool usePcieAddr{false};
+    uint8_t reserved[4] = {0};
 };
 
 } // namespace op

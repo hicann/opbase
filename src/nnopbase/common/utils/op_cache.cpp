@@ -22,6 +22,7 @@
 #include "kernel_utils.h"
 #include "op_dfx_internal.h"
 #include "op_cache_internal.h"
+#include "op_feature_internal.h"
 #include "thread_local_context.h"
 #include "opdev/op_cache_container.h"
 #include "lock_free_queue.h"
@@ -168,6 +169,7 @@ void ResetCacheThreadLocal()
     tlsData->tensorLabelMap.clear();
     tlsData->tensorLabelNum = 0;
     tlsData->tensorLabelList.clear();
+    tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = false;
 }
 
 void UnInitPTACacheThreadLocal()
@@ -189,6 +191,7 @@ void InitPTACacheThreadLocal()
     tlsData->tensorLabelMap.clear();
     tlsData->tensorLabelNum = 0;
     tlsData->tensorLabelList.clear();
+    tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = false;
 }
 
 void AddTensorAddrToCachedList(void* addr)
@@ -202,6 +205,9 @@ void AddTensorAddrToCachedList(void* addr)
         tlsCachedTensorList.at(tlsCachedTensorListSize) = addr;
     }
     tlsCachedTensorListSize++;
+    if (op::internal::IsPcieThroughEnabled() && op::internal::IsTensorAddrInPcieRange(addr)) {
+        tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = true;
+    }
 }
 
 void SetPTAHashKey(uint64_t hash)
@@ -237,6 +243,7 @@ void InitExecutorCacheThreadLocal()
     tlsData->tensorLabelMap.clear();
     tlsData->tensorLabelNum = 0;
     tlsData->tensorLabelList.clear();
+    tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = false;
 }
 
 static void AddAclTensorToCachedList(const aclTensor* tensor, OpCacheThreadLocalData* tlsData)
@@ -266,6 +273,9 @@ static void AddAclTensorToCachedList(const aclTensor* tensor, OpCacheThreadLocal
         tlsData->tensorLabelList.push_back(index);
     } else {
         tlsData->tensorLabelList.push_back(it->second);
+    }
+    if (op::internal::IsPcieThroughEnabled() && op::internal::IsTensorAddrInPcieRange(tensor->GetStorageAddr())) {
+        tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = true;
     }
 }
 
@@ -1256,6 +1266,10 @@ void OpExecCacheManager::DeleteCache1()
 
 OpExecCache* OpExecCacheManager::GetOpExecCache(uint64_t hash)
 {
+    if (g_opCacheTlsData.threadLocalContext.opConfigInfo_.usePcieAddr) {
+        OP_LOGI("Skip cache get, current op has tensor using PCIe addr");
+        return nullptr;
+    }
     std::lock_guard<std::mutex> guard(lock_);
     auto it = cache_.find(hash);
     if (it == cache_.end()) {
@@ -1270,6 +1284,10 @@ OpExecCache* OpExecCacheManager::GetOpExecCache(uint64_t hash)
 
 OpExecCache* OpExecCacheManager::GetOpExecCache(OpCacheKey& key)
 {
+    if (g_opCacheTlsData.threadLocalContext.opConfigInfo_.usePcieAddr) {
+        OP_LOGI("Skip cache get, current op has tensor using PCIe addr");
+        return nullptr;
+    }
     std::lock_guard<std::mutex> guard(lock_);
     auto it = cache2_.find(key);
     if (it == cache2_.end()) {
@@ -1306,6 +1324,11 @@ size_t OpExecCacheManager::GetCacheSizeLimit()
 
 bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
 {
+    if (g_opCacheTlsData.threadLocalContext.opConfigInfo_.usePcieAddr) {
+        OP_LOGI("Skip cache add, current op has tensor using PCIe addr");
+        delete exec;
+        return false;
+    }
     if (!exec->IsOpCacheValid()) {
         delete exec;
         return false;

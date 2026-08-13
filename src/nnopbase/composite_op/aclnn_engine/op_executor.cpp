@@ -25,6 +25,7 @@
 #include "kernel_workspace.h"
 #include "shape_inference.h"
 #include "op_cache_internal.h"
+#include "op_feature_internal.h"
 #include "kernel_utils.h"
 #include "thread_local_context.h"
 #include "op_dfx_internal.h"
@@ -1029,6 +1030,7 @@ int64_t GetDeterministicLevelFromRt()
 void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** executor)
 {
     InitAclnnDebugSwitch();
+    OP_CHECK_NO_RETURN(op::internal::InitPcieThroughInfo() == ACLNN_SUCCESS, OP_LOGW("InitPcieThroughInfo failed"));
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
     opTlsCtx.logInfo_.l2ApiName = l2Name;
     opTlsCtx.logInfo_.l2SequenceCounter = op::internal::OpGetLogSequence();
