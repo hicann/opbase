@@ -107,7 +107,7 @@ static map<string, string> socOpMap = {
     {"Ascend910_9382", "ascend910_93/"}, {"Ascend910_9362", "ascend910_93/"}, {"Ascend310P1", "ascend310p/"},
     {"Ascend310P3", "ascend310p/"},      {"Ascend310P5", "ascend310p/"},      {"Ascend310P7", "ascend310p/"},
     {"Ascend310B1", "ascend310b/"},      {"Ascend310B4", "ascend310b/"},      {"Ascend610Lite", "ascend610lite/"},
-    {"KirinX90", "kirinx90/"},           {"Kirin9030", "kirin9030/"}};
+    {"KirinX90", "kirinx90/"},           {"Kirin9030", "kirin9030/"},         {"Ascend910_9363", "ascend910_93/"}};
 
 const std::string& OpKernelLib::GetSocPath()
 {
