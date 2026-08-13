@@ -87,20 +87,42 @@ inline void* GetOpApiLibHandler(const char* libName)
     return handler;
 }
 
-inline void* GetAclnnArrdByApiName(const char* apiName)
+inline void* GetAclnnAddrByApiName(const char* apiName)
 {
-    std::vector<std::string> libs = {"libaclnn_ops_infer.so", "libaclnn_ops_train.so", "libaclnn_math.so",
-                                     "libaclnn_rand.so",      "libaclnn_sparse.so",    "libaclnn_fft.so"};
-    for (const auto& libName : libs) {
-        static auto libHandler = GetOpApiLibHandler(libName.c_str());
-        if (libHandler != nullptr) {
-            auto funcAddr = GetOpApiFuncAddrInLib(libHandler, libName.c_str(), apiName);
-            if (funcAddr != nullptr) {
-                return funcAddr;
-            }
+    if (apiName == nullptr || apiName[0] == '\0') {
+        OP_LOGE("aclnnfallback", "apiName is null or empty.");
+        return nullptr;
+    }
+
+    // 进程生命周期内只构造一次，避免每次调用创建向量
+    static const std::vector<std::string> libs = {
+        "libopapi_math.so",        "libopapi_nn.so",  "libopapi_cv.so",
+        "libopapi_transformer.so", "libopapi_oam.so", "libopapi_ras.so",
+    };
+
+    // 首次调用统一加载全部库句柄并缓存，后续调用只做 dlsym 查找
+    static const std::vector<std::pair<std::string, void*>> libCache = []() {
+        std::vector<std::pair<std::string, void*>> tmp;
+        tmp.reserve(libs.size());
+        for (const auto& name : libs) {
+            void* h = GetOpApiLibHandler(name.c_str());
+            tmp.emplace_back(name, h);
+        }
+        return tmp;
+    }();
+
+    for (const auto& item : libCache) {
+        const auto& libName = item.first;
+        void* handler = item.second;
+        if (!handler)
+            continue;
+        auto funcAddr = GetOpApiFuncAddrInLib(handler, libName.c_str(), apiName);
+        if (funcAddr) {
+            return funcAddr;
         }
     }
-    OP_LOGE("aclnnfallback", "api %s can't find in any aclnn lib.", apiName);
+
+    OP_LOGE("aclnnfallback", "api %s can't find in any opapi lib.", apiName);
     return nullptr;
 }
 
@@ -121,8 +143,8 @@ inline void* GetOpApiFuncAddr(const char* apiName)
             return funcAddr;
         }
     }
-    OP_LOGD("aclnnfallback", "opapi lib is not exist,will use aclnn lib.");
-    return GetAclnnArrdByApiName(apiName);
+    OP_LOGD("aclnnfallback", "opapi lib is not exist,will use opapi domain libs.");
+    return GetAclnnAddrByApiName(apiName);
 }
 
 inline aclDataType GetConvertType(const gert::Tensor* ge_tensor)
