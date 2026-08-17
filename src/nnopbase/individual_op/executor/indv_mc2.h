@@ -31,8 +31,6 @@ static constexpr NnopbaseUChar NNOPBASE_MC2_SERVER_SO_NAME[NNOPBASE_AICPU_PARAM_
 static constexpr NnopbaseUChar NNOPBASE_MC2_SERVER_KERNEL_NAME[NNOPBASE_AICPU_PARAM_LEN] = {"Mc2ServerKernel"};
 static constexpr uint8_t NNOPBASE_MC2_NOTIFY_COUNT = 2U;
 static constexpr uint16_t NNOPBASE_HCCL_DEFAULT_TIME = 1836U;
-static constexpr uint32_t NNOPBASE_HCCL_ALG_MAX_NUM = 8U;
-static constexpr uint32_t NNOPBASE_CCU_INVALID_OP_TYPE = static_cast<uint32_t>(HCCL_CMD_INVALID);
 
 struct NnopbaseMc2Execution {
     bool enabled = false;
@@ -64,28 +62,6 @@ struct NnopbaseMc2Execution {
         aicpuArgs = {};
         fusionArgs = {};
     }
-};
-
-struct NnopbaseCcuAlgInfo {
-    uint64_t offset;
-    uint64_t opParam;
-};
-
-struct NnopbaseCcuOpResCtx {
-    uint64_t version;
-    uint64_t workSpace;
-    uint64_t workSpaceSize;
-    uint64_t rankId;
-    uint64_t rankSize;
-    NnopbaseCcuAlgInfo algInfo[NNOPBASE_HCCL_ALG_MAX_NUM];
-    uint64_t xnAddr;
-    uint64_t ckeAddr;
-    uint64_t sprAddr;
-    uint64_t res[NNOPBASE_HCCL_ALG_MAX_NUM];
-    uint64_t resCtx;
-    uint32_t opType[NNOPBASE_HCCL_ALG_MAX_NUM];
-    uint32_t algorithmType[NNOPBASE_HCCL_ALG_MAX_NUM];
-    bool isKfc[NNOPBASE_HCCL_ALG_MAX_NUM];
 };
 
 #endif // INDV_MC2_H_

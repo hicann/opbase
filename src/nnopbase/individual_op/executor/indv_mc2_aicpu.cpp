@@ -48,22 +48,6 @@ aclnnStatus NnopbaseCheckMC2ParamBuffer(const NnopbaseExecutor* const executor,
     return OK;
 }
 
-bool NnopbaseReadCcuOpType(const void* opResCtx, uint32_t* opType)
-{
-    if ((opResCtx == nullptr) || (opType == nullptr)) {
-        return false;
-    }
-
-    *opType = NNOPBASE_CCU_INVALID_OP_TYPE;
-    const auto opTypeAddr = op::internal::PtrCastTo<const uint8_t>(opResCtx) + offsetof(NnopbaseCcuOpResCtx, opType);
-    const aclError ret = aclrtMemcpy(opType, sizeof(uint32_t), opTypeAddr, sizeof(uint32_t), ACL_MEMCPY_DEVICE_TO_HOST);
-    if (ret != ACL_SUCCESS) {
-        OP_LOGW("Read ccu opType failed, opResCtx is %p, ret is %d.", opResCtx, ret);
-        return false;
-    }
-    return *opType != NNOPBASE_CCU_INVALID_OP_TYPE;
-}
-
 bool NnopbaseIsCcuSplitLaunchOp(const NnopbaseExecutor* executor)
 {
     if ((executor == nullptr) || executor->mc2.contextAddrs.empty() || executor->mc2.commHandles.empty()) {
