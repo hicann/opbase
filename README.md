@@ -1,5 +1,7 @@
 # opbase
 
+[English](./README_en.md) | 简体中文
+
 ## 🔥Latest News
 
 - [2025/12] 支持kirinx90，支持离线编译。

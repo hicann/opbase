@@ -1,5 +1,7 @@
 # opbase
 
+[简体中文](./README.md) | English
+
 ## 🔥Latest News
 
 - [2025/12] Supported KirinX90 and offline compilation.
