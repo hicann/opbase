@@ -172,6 +172,23 @@ static void NnopbaseSaveParamDesc(NnopbaseTensors* dstTensors, NnopbaseTensors* 
     }
 }
 
+static void NnopbaseUpdateOutputShapeTensorMap(NnopbaseTensors* dstTensors, const NnopbaseTensors* tensors)
+{
+    if (dstTensors->outPutShapeMap.empty() && tensors->outPutShapeMap.empty()) {
+        return;
+    }
+
+    for (const auto& item : tensors->outPutShapeMap) {
+        const auto old = dstTensors->outPutShapeMap.find(item.first);
+        aclTensor* oldTensor = old == dstTensors->outPutShapeMap.end() ? nullptr : old->second;
+        if (oldTensor != item.second) {
+            OP_LOGD("Update output shape tensor[%u] from %p to %p.", item.first, oldTensor, item.second);
+        }
+    }
+    // Cached args outlive caller-owned aclTensor objects, so refresh these pointers on every cache hit.
+    dstTensors->outPutShapeMap = tensors->outPutShapeMap;
+}
+
 aclnnStatus NnopbaseSaveCachedTensor(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors, bool isInput)
 {
     NnopbaseSaveParamDesc(dstTensors, tensors);
@@ -262,6 +279,7 @@ aclnnStatus NnopbaseUpdateOutputAddr(NnopbaseTensors* dstTensors, NnopbaseTensor
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateDynamicTensors(dstTensors, tensors, i));
         }
     }
+    NnopbaseUpdateOutputShapeTensorMap(dstTensors, tensors);
     return OK;
 }
 
@@ -346,6 +364,7 @@ aclnnStatus UpdateArgsIoAddr(NnopbaseTensors* dstTensors, NnopbaseTensors* tenso
         OP_LOGI("After update dst tensor[%u] addr is %p, src tensor addr is %p.", i,
                 dstTensors->extTensors[i].rt2Tensor.GetAddr(), tensors->extTensors[i].rt2Tensor.GetAddr());
     }
+    NnopbaseUpdateOutputShapeTensorMap(dstTensors, tensors);
     return OK;
 }
 

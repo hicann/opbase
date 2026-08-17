@@ -1614,6 +1614,42 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSetShapeAndAddrSuccess)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
+TEST_F(NnopbaseExecutorUnitTest, CacheHitUpdatesOutputShapeTensorMap)
+{
+    std::vector<int64_t> shape = {1};
+    aclTensor* firstOutput0 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                              aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* firstOutput1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                              aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* currentOutput0 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                                aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    aclTensor* currentOutput1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                                aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    ASSERT_NE(firstOutput0, nullptr);
+    ASSERT_NE(firstOutput1, nullptr);
+    ASSERT_NE(currentOutput0, nullptr);
+    ASSERT_NE(currentOutput1, nullptr);
+
+    NnopbaseTensors cachedOutputs{};
+    NnopbaseTensors currentOutputs{};
+    cachedOutputs.outPutShapeMap = {{0U, firstOutput0}, {1U, firstOutput1}};
+    currentOutputs.outPutShapeMap = {{0U, currentOutput0}, {1U, currentOutput1}};
+
+    ASSERT_EQ(NnopbaseUpdateOutputAddr(&cachedOutputs, &currentOutputs), OK);
+    EXPECT_EQ(cachedOutputs.outPutShapeMap.at(0U), currentOutput0);
+    EXPECT_EQ(cachedOutputs.outPutShapeMap.at(1U), currentOutput1);
+
+    cachedOutputs.outPutShapeMap = {{0U, firstOutput0}, {1U, firstOutput1}};
+    ASSERT_EQ(UpdateArgsIoAddr(&cachedOutputs, &currentOutputs), OK);
+    EXPECT_EQ(cachedOutputs.outPutShapeMap.at(0U), currentOutput0);
+    EXPECT_EQ(cachedOutputs.outPutShapeMap.at(1U), currentOutput1);
+
+    aclDestroyTensor(firstOutput0);
+    aclDestroyTensor(firstOutput1);
+    aclDestroyTensor(currentOutput0);
+    aclDestroyTensor(currentOutput1);
+}
+
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseMultiThreadForMatchCache)
 {
     NnopbaseExecutor* executor = nullptr;

@@ -1379,6 +1379,7 @@ aclnnStatus NnopbaseExecutorRefreshOutputShape(NnopbaseExecutor* executor)
             newShape.SetDim(i, hostData[i + 1]);
         }
         hostData += dimsize;
+        OP_LOGD("Refresh output[%u] shape, tensor=%p.", it->first, it->second);
         it->second->SetStorageShape(newShape);
         it->second->SetOriginalShape(newShape);
         it->second->SetViewShape(newShape);
