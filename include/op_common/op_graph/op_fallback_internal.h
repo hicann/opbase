@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "aclnn/aclnn_base.h"
+#include "exe_graph/runtime/op_execute_prepare_context.h"
+#include "exe_graph/runtime/op_execute_launch_context.h"
 #include "exe_graph/runtime/tensor.h"
 #include "op_common/log/log.h"
 
@@ -36,10 +38,16 @@ using _aclCreateTensor = aclTensor* (*)(const int64_t* view_dims, uint64_t view_
                                         const int64_t* storage_dims, uint64_t storage_dims_num, void* tensor_data);
 
 using _aclCreateScalar = aclScalar* (*)(void* value, aclDataType data_type);
+using _aclCreateIntArray = aclIntArray* (*)(const int64_t* value, uint64_t size);
+using _aclCreateFloatArray = aclFloatArray* (*)(const float* value, uint64_t size);
+using _aclCreateBoolArray = aclBoolArray* (*)(const bool* value, uint64_t size);
 using _aclCreateTensorList = aclTensorList* (*)(const aclTensor* const* value, uint64_t size);
 
 using _aclDestroyTensor = int (*)(const aclTensor* tensor);
 using _aclDestroyScalar = int (*)(const aclScalar* scalar);
+using _aclDestroyIntArray = int (*)(const aclIntArray* array);
+using _aclDestroyFloatArray = int (*)(const aclFloatArray* array);
+using _aclDestroyBoolArray = int (*)(const aclBoolArray* array);
 using _aclDestroyTensorList = int (*)(const aclTensorList* array);
 
 using ResetCacheThreadLocal = void (*)();
@@ -340,6 +348,77 @@ auto ConvertToOpApiFunc(const Tuple& params, void* opApiAddr) -> typename std::e
 {
     static constexpr auto size = std::tuple_size<Tuple>::value;
     return ConvertToOpApiFunc(params, opApiAddr, std_utils::make_index_sequence<size>{});
+}
+
+// ---- 2stage fallback 内部实现 ----
+
+using OpApiAnyValueDeleter = void (*)(void*);
+typedef struct {
+    void* pointer;
+    OpApiAnyValueDeleter deleter;
+} OpApiAnyValue;
+
+using OpApiFunc2Stage = int (*)(void*, uint64_t, aclOpExecutor*, const aclrtStream);
+struct OpApiParams {
+    std::vector<OpApiAnyValue> converted_params;
+    aclOpExecutor* executor = nullptr;
+    OpApiFunc2Stage op_api_func = nullptr;
+};
+
+inline void Collect(aclTensor* p, std::vector<OpApiAnyValue>& params)
+{
+    static auto aclDestroyTensor = GET_OP_API_FUNC(aclDestroyTensor);
+    OP_CHECK_IF(aclDestroyTensor == nullptr, OP_LOGE("aclnnfallback", "aclDestroyTensor is null"), return);
+    params.emplace_back(OpApiAnyValue{p, [](void* param) { aclDestroyTensor(static_cast<aclTensor*>(param)); }});
+}
+
+inline void Collect(aclScalar* p, std::vector<OpApiAnyValue>& params)
+{
+    static auto aclDestroyScalar = GET_OP_API_FUNC(aclDestroyScalar);
+    OP_CHECK_IF(aclDestroyScalar == nullptr, OP_LOGE("aclnnfallback", "aclDestroyScalar is null"), return);
+    params.emplace_back(OpApiAnyValue{p, [](void* param) { aclDestroyScalar(static_cast<aclScalar*>(param)); }});
+}
+
+inline void Collect(aclIntArray* p, std::vector<OpApiAnyValue>& params)
+{
+    static auto aclDestroyIntArray = GET_OP_API_FUNC(aclDestroyIntArray);
+    OP_CHECK_IF(aclDestroyIntArray == nullptr, OP_LOGE("aclnnfallback", "aclDestroyIntArray is null"), return);
+    params.emplace_back(OpApiAnyValue{p, [](void* param) { aclDestroyIntArray(static_cast<aclIntArray*>(param)); }});
+}
+
+inline void Collect(aclBoolArray* p, std::vector<OpApiAnyValue>& params)
+{
+    static auto aclDestroyBoolArray = GET_OP_API_FUNC(aclDestroyBoolArray);
+    OP_CHECK_IF(aclDestroyBoolArray == nullptr, OP_LOGE("aclnnfallback", "aclDestroyBoolArray is null"), return);
+    params.emplace_back(OpApiAnyValue{p, [](void* param) { aclDestroyBoolArray(static_cast<aclBoolArray*>(param)); }});
+}
+
+inline void Collect(aclTensorList* p, std::vector<OpApiAnyValue>& params)
+{
+    static auto aclDestroyTensorList = GET_OP_API_FUNC(aclDestroyTensorList);
+    OP_CHECK_IF(aclDestroyTensorList == nullptr, OP_LOGE("aclnnfallback", "aclDestroyTensorList is null"), return);
+    params.emplace_back(
+        OpApiAnyValue{p, [](void* param) { aclDestroyTensorList(static_cast<aclTensorList*>(param)); }});
+}
+
+template <typename T>
+void Collect(T value, std::vector<OpApiAnyValue>& params)
+{
+    (void)value;
+    params.emplace_back(OpApiAnyValue{nullptr, nullptr});
+}
+
+template <typename Tuple, size_t... I>
+void CallCollect(Tuple t, std_utils::index_sequence<I...>, std::vector<OpApiAnyValue>& params)
+{
+    (void)std::initializer_list<int>{(Collect(std::get<I>(t), params), 0)...};
+}
+
+template <typename Tuple>
+void CollectConvertedTypes(Tuple& t, std::vector<OpApiAnyValue>& params)
+{
+    static constexpr auto size = std::tuple_size<Tuple>::value;
+    CallCollect(t, std_utils::make_index_sequence<size>{}, params);
 }
 
 } // namespace fallback
