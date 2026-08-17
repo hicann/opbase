@@ -199,6 +199,12 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions* op
     return AclrtStub::GetInstance()->aclrtBinaryLoadFromFile(binPath, options, binHandle);
 }
 
+aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
+{
+    (void)binHandle;
+    return ACL_SUCCESS;
+}
+
 aclError aclrtRegisterCpuFunc(const aclrtBinHandle handle, const char* funcName, const char* kernelName,
                               aclrtFuncHandle* funcHandle)
 {
@@ -335,6 +341,15 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t* value)
 {
     if (value != nullptr) {
         *value = 24U;
+    }
+    return ACL_SUCCESS;
+}
+
+aclError aclsysGetVersionNum(char* pkgName, int32_t* versionNum)
+{
+    (void)pkgName;
+    if (versionNum != nullptr) {
+        *versionNum = 0;
     }
     return ACL_SUCCESS;
 }

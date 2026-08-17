@@ -177,12 +177,9 @@ target_link_libraries(nnopbase_utest PRIVATE
     -Wl,--no-as-needed
     op_tiling_ut_so_stub_rt2.0
     op_proto_so_ut_stub_rt2.0
-    ${ASCEND_HOME_PATH}/lib64/libruntime.so
     ${ASCEND_HOME_PATH}/lib64/libunified_dlog.so
-    ${ASCEND_HOME_PATH}/lib64/libascend_dump.so
     ${ASCEND_HOME_PATH}/lib64/libc_sec.so
     ${ASCEND_HOME_PATH}/lib64/libexe_graph.so
-    ${ASCEND_HOME_PATH}/lib64/libacl_rt.so
     ${ASCEND_HOME_PATH}/lib64/libmetadef.so
     ${ASCEND_HOME_PATH}/lib64/liberror_manager.so
     ${ASCEND_HOME_PATH}/lib64/libopp_registry.so

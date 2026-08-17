@@ -27,10 +27,6 @@
 #include "lib_path.h"
 #include "nlohmann/json.hpp"
 
-namespace Adx {
-int32_t AdumpSaveToFile(const char* data, size_t dataLen, const char* filename, SaveType type) { return 0; }
-} // namespace Adx
-
 class OpInfoRecordUtest : public testing::Test {
 protected:
     virtual void SetUp()

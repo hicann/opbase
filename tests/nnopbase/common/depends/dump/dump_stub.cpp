@@ -15,6 +15,25 @@ namespace Adx {
 thread_local std::shared_ptr<DumpStub> DumpStub::instance_;
 thread_local DumpStub* DumpStub::fake_instance_;
 
+int32_t AdumpRegisterCallback(uint32_t moduleId, AdumpCallback enableFunc, AdumpCallback disableFunc)
+{
+    (void)moduleId;
+    (void)enableFunc;
+    (void)disableFunc;
+    return 0;
+}
+
+void AdumpPrintSetConfig(const AdumpPrintConfig& config) { (void)config; }
+
+int32_t AdumpSaveToFile(const char* data, size_t dataLen, const char* filename, SaveType type)
+{
+    (void)data;
+    (void)dataLen;
+    (void)filename;
+    (void)type;
+    return 0;
+}
+
 int32_t AdumpDumpTensorV2(const std::string& opType, const std::string& opName,
                           const std::vector<TensorInfoV2>& tensors, aclrtStream stream)
 {
