@@ -112,6 +112,18 @@ __aicore__ inline uint16_t FindClosestPowerOfTwo(uint32_t dimR)
     return r;
 }
 
+__aicore__ inline uint16_t LogBase2(uint16_t n)
+{
+    if (n <= 0) {
+        return 0;
+    }
+    uint16_t result = 0;
+    while (n >>= 1) {
+        result++;
+    }
+    return result;
+}
+
 #if defined(__NPU_ARCH__) &&                                                                                      \
         ((__NPU_ARCH__ == 3510) || (__NPU_ARCH__ == 5102) || (__NPU_ARCH__ == 3003) || (__NPU_ARCH__ == 3113)) || \
     defined(__ASC_NPU_HOST__)
@@ -770,13 +782,12 @@ public:
 
     template <typename T, const AscendC::MicroAPI::RegTrait& Trait>
     __aicore__ inline void ReduceARFoldBase(
-        __ubuf__ T* dstAddr, __ubuf__ T* srcAddr, const int32_t dimR, uint32_t maskElems, uint16_t blkElems,
-        const uint16_t vLElems, const uint16_t loopANum, uint16_t fold1, uint16_t fold2, uint16_t fold3,
-        uint16_t isBlkRepeat, uint16_t blkRepeats, AscendC::MicroAPI::MaskReg& mask,
-        AscendC::MicroAPI::RegTensor<T, Trait>& vreg0, AscendC::MicroAPI::RegTensor<T, Trait>& vreg1,
-        AscendC::MicroAPI::RegTensor<T, Trait>& vreg2, AscendC::MicroAPI::RegTensor<T, Trait>& vreg3,
-        AscendC::MicroAPI::RegTensor<T, Trait>& vreg4, AscendC::MicroAPI::RegTensor<T, Trait>& vreg5,
-        AscendC::MicroAPI::RegTensor<T, Trait>& vreg6, AscendC::MicroAPI::RegTensor<T, Trait>& vreg7)
+        __ubuf__ T* srcAddr, const int32_t dimR, const uint16_t vLElems, const uint16_t loopANum, uint16_t fold1,
+        uint16_t fold2, uint16_t fold3, AscendC::MicroAPI::MaskReg& mask, AscendC::MicroAPI::RegTensor<T, Trait>& vreg0,
+        AscendC::MicroAPI::RegTensor<T, Trait>& vreg1, AscendC::MicroAPI::RegTensor<T, Trait>& vreg2,
+        AscendC::MicroAPI::RegTensor<T, Trait>& vreg3, AscendC::MicroAPI::RegTensor<T, Trait>& vreg4,
+        AscendC::MicroAPI::RegTensor<T, Trait>& vreg5, AscendC::MicroAPI::RegTensor<T, Trait>& vreg6,
+        AscendC::MicroAPI::RegTensor<T, Trait>& vreg7)
     {
         for (uint16_t i = 0; i < fold1; i++) {
             mask = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
@@ -828,30 +839,14 @@ public:
                 AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR, vreg0, mask);
             }
         }
-        AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE, AscendC::MicroAPI::MemType::VEC_LOAD>();
-
-        mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(maskElems);
-        for (uint16_t i = 0; i < isBlkRepeat; i++) {
-            for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_BLK>(vreg0, srcAddr + loopA * dimR);
-                for (uint16_t loopR = 0; loopR < blkRepeats; loopR++) {
-                    AscendC::MicroAPI::DataCopy<T, AscendC::MicroAPI::LoadDist::DIST_BLK>(
-                        vreg1, srcAddr + loopA * dimR + blkElems + blkElems * loopR);
-                    AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                }
-                AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR, vreg0, mask);
-            }
-            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
-                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
-        }
     }
 
     template <typename DIndex, const AscendC::MicroAPI::RegTrait& Trait>
     __aicore__ inline void ReduceAR(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR,
                                     int32_t mainR, int32_t outerR, int32_t innerR)
     {
-        constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
-        constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
+        constexpr uint16_t vLElems = VL_LEN / sizeof(PromteT);
+        constexpr uint16_t blkElems = BLOCK_SIZE / sizeof(PromteT);
         if (outerR == 1 && innerR <= static_cast<int32_t>(blkElems * CONST2) &&
             dimA >= static_cast<int32_t>(vLElems / CONST2)) {
             if constexpr (IsSameType<PromteT, int32_t>::value || IsSameType<PromteT, uint32_t>::value ||
@@ -876,11 +871,9 @@ public:
         const uint16_t fold1 = tailFolds == FOLD1 ? 1 : 0;
         const uint16_t fold2 = tailFolds == FOLD2 ? 1 : 0;
         const uint16_t fold3 = tailFolds == FOLD3 ? 1 : 0;
-        const uint16_t rNum = mainR < vLElems ? mainR : vLElems;
-        const int16_t blkRepeats = rNum / blkElems - 1;
-        const uint16_t isBlkRepeat = blkRepeats > 0 ? 1 : 0;
-        const uint16_t reservedR = rNum < blkElems ? rNum : blkElems;
         const uint16_t loopANum = dimA;
+        const uint16_t eleCount = mainR >= vLElems ? vLElems : mainR;
+        const uint16_t repeatTime = LogBase2(eleCount);
 
         __VEC_SCOPE__
         {
@@ -974,28 +967,26 @@ public:
                                                AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
-            ReduceARFoldBase<PromteT, Trait>(dstAddr, srcAddr, dimR, blkElems, blkElems, vLElems, loopANum, fold1,
-                                             fold2, fold3, isBlkRepeat, blkRepeats, mask, vreg0, vreg1, vreg2, vreg3,
-                                             vreg4, vreg5, vreg6, vreg7);
+            ReduceARFoldBase<PromteT, Trait>(srcAddr, dimR, vLElems, loopANum, fold1, fold2, fold3, mask, vreg0, vreg1,
+                                             vreg2, vreg3, vreg4, vreg5, vreg6, vreg7);
 
             // Reduce to 1
-            uint32_t sreg1 = 1U;
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+            uint32_t sreg1 = mainR;
             mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(sreg1);
+            AscendC::MicroAPI::RegTensor<PromteT, Trait> tempOne;
+            AscendC::MicroAPI::Duplicate(tempOne, 1);
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::Duplicate(vreg0, 1);
-                for (uint16_t loopR = 0; loopR < reservedR; loopR++) {
-                    if constexpr (sizeof(PromteT) == CONST2) {
-                        AscendC::MicroAPI::DataCopy<PromteT, AscendC::MicroAPI::LoadDist::DIST_BRC_B16>(
-                            vreg1, srcAddr + loopA * dimR + loopR);
-                    } else {
-                        AscendC::MicroAPI::DataCopy<PromteT, AscendC::MicroAPI::LoadDist::DIST_BRC_B32>(
-                            vreg1, srcAddr + loopA * dimR + loopR);
-                    }
-                    AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
+                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::Select(vreg0, vreg0, tempOne, mask);
+                for (uint16_t i = 0; i < repeatTime; i++) {
+                    AscendC::MicroAPI::DeInterleave(vreg1, vreg0, vreg0, tempOne);
+                    AscendC::MicroAPI::Mul(vreg0, vreg1, vreg0, fullMask);
                 }
-                AscendC::MicroAPI::DataCopyUnAlign((__ubuf__ PromteT*&)dstAddr, vreg0, uDst, 1);
+                DataCopyUnAlign(dstAddr, vreg0, uDst, 1);
             }
-            AscendC::MicroAPI::DataCopyUnAlignPost((__ubuf__ PromteT*&)dstAddr, uDst, 0);
+            AscendC::MicroAPI::DataCopyUnAlignPost(dstAddr, uDst, 0);
         }
     }
 
@@ -1003,8 +994,8 @@ public:
     __aicore__ inline void ReduceARI64(__ubuf__ PromteT* dstAddr, __ubuf__ PromteT* srcAddr, int32_t dimA, int32_t dimR,
                                        int32_t mainR, int32_t outerR, int32_t innerR)
     {
-        constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
-        constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
+        constexpr uint16_t vLElems = VL_LEN / sizeof(float);
+        constexpr uint16_t blkElems = BLOCK_SIZE / sizeof(float);
         if (outerR == 1 && innerR <= static_cast<int32_t>(blkElems * CONST2) &&
             dimA >= static_cast<int32_t>(vLElems / CONST2)) {
             return ReduceARLessBlockI64<DIndex, float, Trait>(dstAddr, srcAddr, dimA, dimR, innerR);
@@ -1023,11 +1014,9 @@ public:
         const uint16_t tailFolds = folds % BASE_FOLD_I64;
         const uint16_t fold1 = tailFolds == FOLD1 ? 1 : 0;
         const uint16_t fold2 = tailFolds == FOLD2 ? 1 : 0;
-        const uint16_t rNum = mainR < vLElems ? mainR : vLElems;
-        const int16_t blkRepeats = rNum / blkElems - 1;
-        const uint16_t isBlkRepeat = blkRepeats > 0 ? 1 : 0;
-        const uint16_t reservedR = rNum < blkElems ? rNum : blkElems;
         const uint16_t loopANum = dimA;
+        const uint16_t eleCount = mainR >= vLElems ? vLElems : mainR;
+        const uint16_t repeatTime = LogBase2(eleCount);
 
         __VEC_SCOPE__
         {
@@ -1096,22 +1085,24 @@ public:
                                                AscendC::MicroAPI::MemType::VEC_LOAD>();
             }
 
-            ReduceARFoldBase<PromteT, Trait>(dstAddr, srcAddr, dimR, blkElems, blkElems, vLElems, loopANum, fold1,
-                                             fold2, 0, isBlkRepeat, blkRepeats, mask, vreg0, vreg1, vreg2, vreg3, vreg4,
-                                             vreg5, vreg6, vreg7);
+            ReduceARFoldBase<PromteT, Trait>(srcAddr, dimR, vLElems, loopANum, fold1, fold2, 0, mask, vreg0, vreg1,
+                                             vreg2, vreg3, vreg4, vreg5, vreg6, vreg7);
 
             // Reduce to 1
-            uint32_t sreg1 = 1U;
+            AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
+                                           AscendC::MicroAPI::MemType::VEC_LOAD>();
+            uint32_t sreg1 = mainR;
             mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(sreg1);
+            AscendC::MicroAPI::RegTensor<PromteT, Trait> tempOne;
+            AscendC::MicroAPI::Duplicate(tempOne, 1);
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::Duplicate(vreg0, 1);
-                for (uint16_t loopR = 0; loopR < reservedR; loopR++) {
-                    auto src = srcAddr + loopA * dimR + loopR;
-                    AscendC::MicroAPI::DataCopyUnAlignPre(uSrc, src);
-                    AscendC::MicroAPI::DataCopyUnAlign(vreg1, uSrc, src, 1);
-                    AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
+                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::Select(vreg0, vreg0, tempOne, mask);
+                for (uint16_t i = 0; i < repeatTime; i++) {
+                    AscendC::MicroAPI::DeInterleave(vreg1, vreg0, vreg0, tempOne);
+                    AscendC::MicroAPI::Mul(vreg0, vreg1, vreg0, fullMask);
                 }
-                AscendC::MicroAPI::DataCopyUnAlign(dstAddr, vreg0, uDst, 1);
+                DataCopyUnAlign(dstAddr, vreg0, uDst, 1);
             }
             AscendC::MicroAPI::DataCopyUnAlignPost(dstAddr, uDst, 0);
         }
@@ -1424,7 +1415,7 @@ public:
         constexpr uint16_t vLElems = IsB64<PromteT>() ? VL_LEN / sizeof(float) : VL_LEN / sizeof(PromteT);
         constexpr uint16_t blkElems = IsB64<PromteT>() ? BLOCK_SIZE / sizeof(float) : BLOCK_SIZE / sizeof(PromteT);
         if constexpr (!Pattern::TailA) {
-            if (padding.burstPaddingRepeat == 1U && shape.innerR <= blkElems * CONST2 &&
+            if (shape.outerR == 1 && padding.burstPaddingRepeat == 1U && shape.innerR <= blkElems * CONST2 &&
                 shape.value[0] >= vLElems / CONST2) {
                 return;
             }
