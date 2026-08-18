@@ -84,3 +84,58 @@
 | FloorAlign\<T\>(T a, T b) | kernel侧向下对齐。 |
 | GetUbBlockSize() | kernel侧获取UB block单元大小（32bytes）。 |
 | GetVRegSize() | kernel侧获取向量寄存器大小。 |
+| aclOpExecutor | acl算子执行器结构体类型。 |
+| aclTensor | acl张量结构体类型。 |
+| aclScalar | acl标量结构体类型。 |
+| aclTensorList | acl张量列表结构体类型。 |
+| \_aclCreateTensor | aclCreateTensor接口的函数指针类型。 |
+| \_aclCreateScalar | aclCreateScalar接口的函数指针类型。 |
+| \_aclCreateIntArray | aclCreateIntArray接口的函数指针类型。 |
+| \_aclCreateFloatArray | aclCreateFloatArray接口的函数指针类型。 |
+| \_aclCreateBoolArray | aclCreateBoolArray接口的函数指针类型。 |
+| \_aclCreateTensorList | aclCreateTensorList接口的函数指针类型。 |
+| \_aclDestroyTensor | aclDestroyTensor接口的函数指针类型。 |
+| \_aclDestroyScalar | aclDestroyScalar接口的函数指针类型。 |
+| \_aclDestroyIntArray | aclDestroyIntArray接口的函数指针类型。 |
+| \_aclDestroyFloatArray | aclDestroyFloatArray接口的函数指针类型。 |
+| \_aclDestroyBoolArray | aclDestroyBoolArray接口的函数指针类型。 |
+| \_aclDestroyTensorList | aclDestroyTensorList接口的函数指针类型。 |
+| ResetCacheThreadLocal | ResetCacheThreadLocal接口的函数指针类型。 |
+| GET\_OP\_API\_FUNC(apiName) | 获取指定acl算子API的函数地址，并转换为对应的函数指针类型。 |
+| index\_sequence\<Is...\> | 编译期索引序列结构体模板。 |
+| make\_index\_sequence\_helper\<N, Is...\> | 编译期索引序列生成辅助结构体模板。 |
+| make\_index\_sequence\<N\> | 生成编译期索引序列的别名模板。 |
+| GetOpApiLibName() | 获取内置opapi算子库名称。 |
+| GetCustOpApiLibName() | 获取自定义算子opapi库名称。 |
+| GetOpApiFuncAddrInLib(void \*handler, const char \*libName, const char \*apiName) | 从指定动态库中按符号名查找函数地址。 |
+| GetOpApiLibHandler(const char \*libName) | 加载指定动态库并返回句柄。 |
+| GetAclnnAddrByApiName(const char \*apiName) | 遍历opapi领域库查找函数地址。 |
+| GetOpApiFuncAddr(const char \*apiName) | 依次从cust\_opapi库、opapi库、领域库中查找函数地址。 |
+| GetConvertType(const gert::Tensor \*ge\_tensor) | 将ge数据类型转换为acl数据类型。 |
+| ConvertType(const gert::Tensor \*ge\_tensor) | 将ge Tensor转换为acl Tensor。 |
+| ConvertType(std::vector\<const gert::Tensor \*\>\& ge\_tensorList) | 将ge Tensor列表转换为acl TensorList。 |
+| ConvertType(T value) | 通用类型转换模板，非Tensor类型原样返回。 |
+| ConvertScalarType(T value) | 将标量转换为acl Scalar。 |
+| Release(aclTensor \*p) | 释放acl Tensor。 |
+| Release(aclScalar \*p) | 释放acl Scalar。 |
+| Release(aclTensorList \*p) | 释放acl TensorList。 |
+| Release(T value) | 通用类型释放模板，非acl类型不做处理。 |
+| CallRelease(Tuple t, index\_sequence) | 展开tuple并逐个调用Release释放资源。 |
+| ReleaseConvertTypes(Tuple \&t) | 释放tuple中所有转换结果。 |
+| ConvertTypes(Ts\&... args) | 将多个ge类型参数转换为acl类型并打包为tuple。 |
+| call(Function f, Tuple t, index\_sequence) | 展开tuple参数并调用目标函数。 |
+| call(Function f, Tuple t) | 展开tuple参数并调用目标函数。 |
+| ConvertToOpApiFunc(params, opApiAddr, index\_sequence) | 将函数地址转换为与参数类型匹配的函数指针。 |
+| ConvertToOpApiFunc(params, opApiAddr) | 将函数地址转换为与参数类型匹配的函数指针。 |
+| OpApiAnyValueDeleter | 通用参数资源销毁函数指针类型。 |
+| OpApiAnyValue | 通用参数容器结构体，保存参数指针及其销毁器。 |
+| OpApiFunc2Stage | 两阶段Launch函数指针类型。 |
+| OpApiParams | 两阶段执行参数结构体，封装转换后的参数列表、算子执行器与Launch函数。 |
+| Collect(aclTensor \*p, std::vector\<OpApiAnyValue\>\& params) | 收集acl Tensor参数及其销毁器到参数列表。 |
+| Collect(aclScalar \*p, std::vector\<OpApiAnyValue\>\& params) | 收集acl Scalar参数及其销毁器到参数列表。 |
+| Collect(aclIntArray \*p, std::vector\<OpApiAnyValue\>\& params) | 收集acl IntArray参数及其销毁器到参数列表。 |
+| Collect(aclBoolArray \*p, std::vector\<OpApiAnyValue\>\& params) | 收集acl BoolArray参数及其销毁器到参数列表。 |
+| Collect(aclTensorList \*p, std::vector\<OpApiAnyValue\>\& params) | 收集acl TensorList参数及其销毁器到参数列表。 |
+| Collect(T value, std::vector\<OpApiAnyValue\>\& params) | 通用参数收集模板，非acl类型不做处理。 |
+| CallCollect(Tuple t, index\_sequence, std::vector\<OpApiAnyValue\>\& params) | 展开tuple并逐个调用Collect收集参数。 |
+| CollectConvertedTypes(Tuple \&t, std::vector\<OpApiAnyValue\>\& params) | 收集tuple中所有转换后的参数及其销毁器。 |

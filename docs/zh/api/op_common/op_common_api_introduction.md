@@ -308,6 +308,16 @@
     <td rowspan="1">op_common/op_host/infershape_reduce_util.h</td>
   </tr>
   <tr>
+    <td rowspan="2">op_graph</td>
+    <td><a href='op_graph/CANN_OPS_OPB_SYN_EXEC_ACLNN.md'>CANN_OPS_OPB_SYN_EXEC_ACLNN</a></td>
+    <td>Aclnn接口在图场景的通用执行接口（同步接口），内部串行调用两阶段执行。</td>
+    <td rowspan="2">op_common/op_graph/op_fallback.h</td>
+  </tr>
+  <tr>
+    <td><a href='op_graph/CANN_OPS_OPB_ASYN_EXEC_ACLNN.md'>CANN_OPS_OPB_ASYN_EXEC_ACLNN</a></td>
+    <td>Aclnn接口在图场景的通用执行接口（异步接口），内部调用了一阶段接口，并把二阶段注册给了GE的context</td>
+  </tr>
+  <tr>
     <td><a href='reserved_interface_op_common.md'>预留接口</a></td>
     <td>-</td>
     <td>预留接口，暂无需关注。</td>

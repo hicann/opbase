@@ -77,4 +77,8 @@
   - [InferShape4Elewise](infershape/InferShape4Elewise.md)
   - [InferShape4Reduce](infershape/InferShape4Reduce.md)
 
+- [op_graph](op_graph/op_graph.md)
+  - [CANN\_OPS\_OPB\_SYN\_EXEC\_ACLNN](op_graph/CANN_OPS_OPB_SYN_EXEC_ACLNN.md)
+  - [CANN\_OPS\_OPB\_ASYN\_EXEC\_ACLNN](op_graph/CANN_OPS_OPB_ASYN_EXEC_ACLNN.md)
+
 - [预留接口](reserved_interface_op_common.md)

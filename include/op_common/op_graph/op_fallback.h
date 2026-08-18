@@ -77,8 +77,6 @@ namespace fallback {
         (ret);                                                                                                       \
     })
 
-#define EXEC_OPAPI_CMD(aclnn_api, ...) CANN_OPS_OPB_SYN_EXEC_ACLNN(host_api_ctx, aclnn_api, ##__VA_ARGS__)
-
 #define CANN_OPS_OPB_ASYN_EXEC_ACLNN(ctx, aclnn_api, ...)                                                        \
     ({                                                                                                           \
         static auto ret = GRAPH_SUCCESS;                                                                         \
@@ -120,7 +118,6 @@ namespace fallback {
         } while (false);                                                                                         \
         (ret);                                                                                                   \
     })
-
 } // namespace fallback
 
 #endif // INC_OP_GRAPH_OP_FALLBACK_H_
