@@ -94,13 +94,51 @@ install(DIRECTORY ${pkg_inc_src}/
     FILE_PERMISSIONS
     OWNER_READ OWNER_EXECUTE
     GROUP_READ GROUP_EXECUTE
-    PATTERN "aicpu_common" EXCLUDE
 )
-set(aicpu_common ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common)
-install(DIRECTORY ${aicpu_common}/
+# aicpu_common 头文件源码已拆为两处：开源算子仓使用的在 include/op_common/aicpu_common 下，
+# 仅 opbase 内部使用的在 aicpu_common/ 下。装包时合并回同一目标路径，对下游保持不变。
+set(aicpu_common_public ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common)
+install(DIRECTORY ${aicpu_common_public}/
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu_common
     COMPONENT opbase
     FILE_PERMISSIONS
+    OWNER_READ OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+)
+# 私有头逐个列举，不能整目录安装：aicpu_common/ 下还有 .cc/.cpp/.proto/CMakeLists.txt，
+# 以及不属于对外交付集、原本就不打包的 cust_op/cust_dlog_record.h。
+set(aicpu_private_common_headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/async_cpu_kernel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/async_event_util.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/cpu_kernel_cache.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/device.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/device_sharder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/eigen_threadpool.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/eigen_threadpool_embedding.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/host_sharder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/kernel_cache.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/notification.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/session_cache.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/sharder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/common/thread_ctx.h
+)
+set(aicpu_private_cpu_proto_headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/cpu_proto/attr_value_impl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/cpu_proto/node_def_impl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/cpu_proto/tensor_impl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_common/context/cpu_proto/tensor_shape_impl.h
+)
+install(FILES ${aicpu_private_common_headers}
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu_common/context/common
+    COMPONENT opbase
+    PERMISSIONS
+    OWNER_READ OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+)
+install(FILES ${aicpu_private_cpu_proto_headers}
+    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu_common/context/cpu_proto
+    COMPONENT opbase
+    PERMISSIONS
     OWNER_READ OWNER_EXECUTE
     GROUP_READ GROUP_EXECUTE
 )
@@ -124,15 +162,15 @@ install(FILES $<TARGET_FILE:ascend_protobuf_static>
     COMPONENT opbase
 )
 
-set(aicpu_headers_src 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_attr_value.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor_shape.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cpu_proto/cpu_tensor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_context.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_types.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_kernel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/common/cpu_kernel_register.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_inc/op_common/aicpu_common/context/cust_op/cust_cpu_utils.h
+set(aicpu_headers_src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/cpu_proto/cpu_attr_value.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/cpu_proto/cpu_tensor_shape.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/cpu_proto/cpu_tensor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/common/cpu_context.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/common/cpu_types.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/common/cpu_kernel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/common/cpu_kernel_register.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common/context/cust_op/cust_cpu_utils.h
     )
 install(FILES ${aicpu_headers_src}
     DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/aicpu
@@ -178,12 +216,15 @@ install(DIRECTORY ${aclnnop_source}/
 )
 
 set(op_common_source ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common)
+# aicpu_common 已由上面的规则装到 pkg_inc/aicpu_common，此处必须排除，
+# 否则会在 include/op_common 下再产生一份冗余副本。
 install(DIRECTORY ${op_common_source}/
         DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/include/op_common
         COMPONENT opbase
         FILE_PERMISSIONS
         OWNER_READ OWNER_WRITE
         GROUP_READ GROUP_EXECUTE
+        PATTERN "aicpu_common" EXCLUDE
 )
 
 install(CODE "

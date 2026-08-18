@@ -48,13 +48,20 @@ set(nodedef_src_files
   ${CMAKE_CURRENT_SOURCE_DIR}/common/node_def_builder.cpp
 )
 
+# aicpu_common 头文件分两处存放：开源算子仓使用的在 include/op_common/aicpu_common/context 下，
+# 仅 opbase 内部使用的与对应 .cc 同级放在本目录下。
+set(AICPU_PUBLIC_INC ${CMAKE_CURRENT_SOURCE_DIR}/../../include/op_common/aicpu_common/context)
 add_library(aicpu_context_headers INTERFACE)
 target_include_directories(aicpu_context_headers INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/common
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cpu_proto
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/utils
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/op_common/aicpu_common/context/cust_op
+  ${CMAKE_CURRENT_SOURCE_DIR}/common
+  ${CMAKE_CURRENT_SOURCE_DIR}/cpu_proto
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils
+  ${CMAKE_CURRENT_SOURCE_DIR}/cust_op
+  ${AICPU_PUBLIC_INC}/common
+  ${AICPU_PUBLIC_INC}/cpu_proto
+  ${AICPU_PUBLIC_INC}/utils
+  ${AICPU_PUBLIC_INC}/cust_op
 )
 
 if(PRODUCT_SIDE STREQUAL "device")
