@@ -362,7 +362,7 @@ aclnnStatus AicpuCCTask::Run(aclOpExecutor* executor, aclrtStream stream)
 
     RecordAicpuTime(kShapeD2hCopyEnd);
     if (unknownType_ == ge::DEPEND_SHAPE_RANGE) {
-        OP_LOGI("op [%s] is 3th op\n", opType_.c_str());
+        OP_LOGI("op [%s] is a 3rd party op", opType_.c_str());
         AICPU_ASSERT_OK_RETVAL(extInfoHandle_->UpdateOutputShapeFromExtInfo(outputs_, stream));
     }
     OP_LOGI("Finish AicpuCCTask::Run, opType[%s]", opType_.c_str());

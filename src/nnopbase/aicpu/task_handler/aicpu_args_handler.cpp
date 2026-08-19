@@ -444,7 +444,7 @@ aclnnStatus SerializeNodeDefToBuffer(const aicpuops::NodeDef& nodeDef, const std
     // 保证序列化的接口的一致性
     outputStream.SetSerializationDeterministic(true);
     if (!(nodeDef.SerializeToCodedStream(&outputStream))) {
-        OP_LOGE(ACLNN_ERR_INNER, "The serialization from nodedef probuf to str failed, op[%s].", opType.c_str());
+        OP_LOGE(ACLNN_ERR_INNER, "The serialization from nodedef protobuf to str failed, op[%s].", opType.c_str());
         return ACLNN_ERR_INNER;
     }
     return OK;
@@ -603,7 +603,7 @@ aclnnStatus AicpuCCArgsHandler::GenCCArgs(const FVector<const aclTensor*>& input
     AICPU_ASSERT_OK_RETVAL(SerializeNodeDefToBuffer(nodeDef, opType_, buffer.get()));
     uint32_t nodeDefLen = static_cast<uint32_t>(nodeDef.ByteSizeLong());
     if (AddOverflow(paramLenth, nodeDefLen, paramLenth)) {
-        OP_LOGE(ACLNN_ERR_INNER, "Added overflow when paramLenth is [%u], nodeDefLen is [%u]", paramLenth, nodeDefLen);
+        OP_LOGE(ACLNN_ERR_INNER, "Added overflow when paramLength is [%u], nodeDefLen is [%u]", paramLenth, nodeDefLen);
         return ACLNN_ERR_INNER;
     }
     // Create task_args: AicpuParamHead + ioAddrs + customizedAttr

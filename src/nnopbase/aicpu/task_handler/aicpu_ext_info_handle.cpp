@@ -101,7 +101,7 @@ aclnnStatus AicpuExtInfoHandler::AppendExtInfoShape(const FVector<const aclTenso
         } else {
             inputs[index].type = tensors[index]->GetDataType();
         }
-        OP_LOGD("inputs %zu type is %d\n", index, inputs[index].type);
+        OP_LOGD("inputs %zu type is %d", index, inputs[index].type);
         auto& shape = tensors[index]->GetOriginalShape();
         AICPU_ASSERT_OK_RETVAL(UpdateShape(shape, &inputs[index]));
     }
