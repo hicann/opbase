@@ -25,7 +25,7 @@ namespace Base {
 
 constexpr static int32_t AXES_STEP = 2; // A轴和R轴循环遍历的步长
 constexpr static double THRES_HOLD = 0.95;
-constexpr static int32_t TAIL_R_THRES = 64;
+constexpr static uint64_t TAIL_R_THRES = 64;
 
 inline void AssembleUnit(ReduceTilingUnit& unit, int32_t idx, uint64_t inner, uint64_t outer, uint64_t step)
 {
