@@ -525,7 +525,7 @@ aclnnStatus RtsArg::FinalizeArg()
     rtArg_.argsSize = PtrOffset(rtArg_.args, rtsArgBuffer_->GetTilingHostDataCurEndAddr());
 
     // 打印RtsArg全部信息
-    OP_LOGI("TilingData ptr %p, tiling data data %p, tiling data size %zu, tiling data capacity %zu, "
+    OP_LOGI("TilingData ptr %p, tiling data buf %p, tiling data size %zu, tiling data capacity %zu, "
             "launch arg size %zu, launch arg capacity %zu, aligned tiling data len %zu, host data size %zu, "
             "tiling host dataSize %zu, tiling host data capacity %zu, rtArg_.args %p, hostAddr_ %p, "
             "args size %u, tiling data addr %p, tiling host data end addr %p",

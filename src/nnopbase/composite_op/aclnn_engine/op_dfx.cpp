@@ -1324,7 +1324,7 @@ void AddOutputTensorToThreadLocalCtx(aclTensorList* const t)
 op::OpDfxProfiler::OpDfxProfiler(const char* funcName)
 {
     // L2_DFX
-    OP_LOGI("OpDfxProfiler OpDfxProfiler start, %s", funcName);
+    OP_LOGI("OpDfxProfiler start, %s", funcName);
     profilingFlag_ = true;
     auto id = op::internal::CollectProfilingStr(funcName);
     PrepareProfiling(id);
@@ -1332,7 +1332,7 @@ op::OpDfxProfiler::OpDfxProfiler(const char* funcName)
 
 op::OpDfxProfiler::OpDfxProfiler(uint64_t id, DfxProfilingType type)
 {
-    OP_LOGI("OpDfxProfiler OpDfxProfiler start, %ld, %d", id, type);
+    OP_LOGI("OpDfxProfiler start, %ld, %d", id, type);
     // infershape, tiling, kernel_launch
     profilingFlag_ = true;
     if (type == DfxProfilingKernelLaunch) {
