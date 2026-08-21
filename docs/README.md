@@ -45,6 +45,7 @@ opbase库里的API是所有算子库依赖的框架API，其提供各类算子�
 | 文档                                                         | 说明                                                         |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | [生态算子精度标准](zh/ops_precision_standard/experimental_standard.md) | 面向基于简易工程开发的算子，提供符合**生态开源贡献准则**的算子精度规范。 |
+| [Nnopbase错误码](zh/error_code/Nnopbase-Errors/Nnopbase-Errors.md)/[Operator错误码](zh/error_code/Operator-Errors/Operator-Errors.md) |  面向算子运维与诊断场景，梳理常见算子错误码的格式定义、触发原因及解决方案。  |
 
 ## 附录
 
