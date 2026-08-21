@@ -419,10 +419,10 @@ public:
             copyInParams.dstStride = (view.axis[CONST1].dstStride - view.axis[CONST0].repeat) * sizeof(T) / UB_BLOCK;
             DataCopyPad(dst, src[view.addr], copyInParams, padParams);
         } else {
-            static constexpr MultiCopyConfig config = {false, 0, 0, false};
+            static constexpr NdDmaConfig config = {false, 0, 0, false};
             if constexpr (Pattern::Dim <= CONST4) {
                 if constexpr (Pattern::Dim == CONST3) {
-                    MultiCopyLoopInfo<CONST3> copyLoopInfo = {
+                    NdDmaLoopInfo<CONST3> copyLoopInfo = {
                         .loopSrcStride = {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride},
                         .loopDstStride = {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
                                           static_cast<uint32_t>(view.axis[CONST2].dstStride)},
@@ -431,10 +431,10 @@ public:
                                      static_cast<uint32_t>(view.axis[CONST2].repeat)},
                         .loopLpSize = {0, 0, 0},
                         .loopRpSize = {0, 0, 0}};
-                    MultiCopyParams<T, CONST3> params = {copyLoopInfo, 0};
+                    NdDmaParams<T, CONST3> params = {copyLoopInfo, 0};
                     DataCopy<T, CONST3, config>(dst, src[view.addr], params);
                 } else {
-                    MultiCopyLoopInfo<CONST4> copyLoopInfo = {
+                    NdDmaLoopInfo<CONST4> copyLoopInfo = {
                         .loopSrcStride = {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
                                           view.axis[CONST3].srcStride},
                         .loopDstStride = {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
@@ -446,11 +446,11 @@ public:
                                      static_cast<uint32_t>(view.axis[CONST3].repeat)},
                         .loopLpSize = {0, 0, 0, 0},
                         .loopRpSize = {0, 0, 0, 0}};
-                    MultiCopyParams<T, CONST4> params = {copyLoopInfo, 0};
+                    NdDmaParams<T, CONST4> params = {copyLoopInfo, 0};
                     DataCopy<T, CONST4, config>(dst, src[view.addr], params);
                 }
             } else {
-                MultiCopyLoopInfo<CONST5> copyLoopInfo = {
+                NdDmaLoopInfo<CONST5> copyLoopInfo = {
                     .loopSrcStride = {1, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
                                       view.axis[CONST3].srcStride, view.axis[CONST4].srcStride},
                     .loopDstStride = {1, static_cast<uint32_t>(view.axis[CONST1].dstStride),
@@ -464,7 +464,7 @@ public:
                                  static_cast<uint32_t>(view.axis[CONST4].repeat)},
                     .loopLpSize = {0, 0, 0, 0, 0},
                     .loopRpSize = {0, 0, 0, 0, 0}};
-                MultiCopyParams<T, CONST5> params = {copyLoopInfo, 0};
+                NdDmaParams<T, CONST5> params = {copyLoopInfo, 0};
                 for (uint64_t i = 0; i < view.axis[CONST7].repeat; i++) {
                     for (uint64_t j = 0; j < view.axis[CONST6].repeat; j++) {
                         for (uint64_t k = 0; k < view.axis[CONST5].repeat; k++) {
@@ -483,8 +483,8 @@ public:
     template <int32_t pos, class InnerPattern, class T, class V>
     __aicore__ inline void CopyInWithNddmaNonContiguous(const LocalTensor<T>& dst, const GlobalTensor<T>& src, V& view)
     {
-        static constexpr MultiCopyConfig config = {false, 0, 0, false};
-        MultiCopyLoopInfo<CONST5> copyLoopInfo = {
+        static constexpr NdDmaConfig config = {false, 0, 0, false};
+        NdDmaLoopInfo<CONST5> copyLoopInfo = {
             .loopSrcStride = {view.axis[CONST0].srcStride, view.axis[CONST1].srcStride, view.axis[CONST2].srcStride,
                               view.axis[CONST3].srcStride, view.axis[CONST4].srcStride},
             .loopDstStride = {static_cast<uint32_t>(view.axis[CONST0].dstStride),
@@ -499,7 +499,7 @@ public:
                          static_cast<uint32_t>(view.axis[CONST4].repeat)},
             .loopLpSize = {0, 0, 0, 0, 0},
             .loopRpSize = {0, 0, 0, 0, 0}};
-        MultiCopyParams<T, CONST5> params = {copyLoopInfo, 0};
+        NdDmaParams<T, CONST5> params = {copyLoopInfo, 0};
         for (uint64_t i = 0; i < view.axis[CONST7].repeat; i++) {
             for (uint64_t j = 0; j < view.axis[CONST6].repeat; j++) {
                 for (uint64_t k = 0; k < view.axis[CONST5].repeat; k++) {

@@ -245,22 +245,22 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                     maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
                 uint32_t noPadLen = noPadMask;
                 maskDump = AscendC::MicroAPI::UpdateMask<T, Trait>(noPadLen);
-                AscendC::MicroAPI::MaskNot(maskDump, maskDump, maskAll);
+                AscendC::MicroAPI::Not(maskDump, maskDump, maskAll);
                 for (uint16_t i = 0; i < rPaddingRepeat; i++) {
                     for (uint16_t j = 0; j < burstPaddingRepeat; j++) {
                         // 32B Align + Copy In
-                        AscendC::MicroAPI::DataCopy(
+                        AscendC::MicroAPI::LoadAlign(
                             vregPad, dstAddr + burstPaddingStartAlign + i * dimR + j * mainBurstLenAlign);
                         // Dump
                         vregTmp = vregPad;
                         AscendC::MicroAPI::Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vregTmp, padValue,
                                                                                                       maskDump);
-                        AscendC::MicroAPI::Copy(vregPad, vregTmp, maskDump);
+                        AscendC::MicroAPI::Move(vregPad, vregTmp, maskDump);
                         // Copy Out
                         uint32_t outLen = mainBurstLenAlign - burstPaddingStartAlign;
                         mask = AscendC::MicroAPI::UpdateMask<T, Trait>(outLen);
-                        AscendC::MicroAPI::DataCopy(dstAddr + burstPaddingStartAlign + i * dimR + j * mainBurstLenAlign,
-                                                    vregPad, mask);
+                        AscendC::MicroAPI::StoreAlign(
+                            dstAddr + burstPaddingStartAlign + i * dimR + j * mainBurstLenAlign, vregPad, mask);
                     }
                 }
             }
@@ -272,7 +272,7 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                     uint32_t scalar2 = burstPaddingRemainingLen;
                     for (uint16_t k = 0; k < burstVLRemainingRepeat; k++) {
                         mask = AscendC::MicroAPI::UpdateMask<T, Trait>(scalar2);
-                        AscendC::MicroAPI::DataCopy(
+                        AscendC::MicroAPI::StoreAlign(
                             dstAddr + burstPaddingRemainingStart + i * dimR + j * mainBurstLenAlign + k * vLElems, vreg,
                             mask);
                     }
@@ -287,19 +287,19 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                 maskAll = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             uint32_t noPadLen = noRPadMask;
             maskDump = AscendC::MicroAPI::UpdateMask<T, Trait>(noPadLen);
-            AscendC::MicroAPI::MaskNot(maskDump, maskDump, maskAll);
+            AscendC::MicroAPI::Not(maskDump, maskDump, maskAll);
             for (uint16_t i = 0; i < rPaddingRepeat; i++) {
                 // 32B Align + Copy In
-                AscendC::MicroAPI::DataCopy(vregPad, dstAddr + rPaddingStartAlign + i * dimR);
+                AscendC::MicroAPI::LoadAlign(vregPad, dstAddr + rPaddingStartAlign + i * dimR);
                 // Dump
                 vregTmp = vregPad;
                 AscendC::MicroAPI::Duplicate<T, AscendC::MicroAPI::MaskMergeMode::ZEROING, T>(vregTmp, padValue,
                                                                                               maskDump);
-                AscendC::MicroAPI::Copy(vregPad, vregTmp, maskDump);
+                AscendC::MicroAPI::Move(vregPad, vregTmp, maskDump);
                 // Copy Out
                 uint32_t outLen = rPaddingLenAlign - rPaddingStartAlign;
                 mask = AscendC::MicroAPI::UpdateMask<T, Trait>(outLen);
-                AscendC::MicroAPI::DataCopy(dstAddr + rPaddingStartAlign + i * dimR, vregPad, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + rPaddingStartAlign + i * dimR, vregPad, mask);
             }
         }
 
@@ -309,7 +309,8 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                 uint32_t maskR = rPaddingRemainingLen;
                 for (uint16_t j = 0; j < rVlRepeat; j++) {
                     mask = AscendC::MicroAPI::UpdateMask<T, Trait>(maskR);
-                    AscendC::MicroAPI::DataCopy(dstAddr + rPaddingRemainingStart + i * dimR + j * vLElems, vreg, mask);
+                    AscendC::MicroAPI::StoreAlign(dstAddr + rPaddingRemainingStart + i * dimR + j * vLElems, vreg,
+                                                  mask);
                 }
             }
         }
@@ -319,7 +320,7 @@ __aicore__ inline void PaddingARMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                 uint32_t maskA = aPaddingLen;
                 for (uint16_t j = 0; j < aVlRepeat; j++) {
                     mask = AscendC::MicroAPI::UpdateMask<T, Trait>(maskA);
-                    AscendC::MicroAPI::DataCopy(dstAddr + aPaddingStart + i * aPaddingLen + j * vLElems, vreg, mask);
+                    AscendC::MicroAPI::StoreAlign(dstAddr + aPaddingStart + i * aPaddingLen + j * vLElems, vreg, mask);
                 }
             }
         }
@@ -382,7 +383,7 @@ __aicore__ inline void PaddingRAMode(__ubuf__ T* dstAddr, T padValue, S& shape, 
                 uint32_t maskR = rPaddingLen;
                 for (uint16_t j = 0; j < rVlRepeat; j++) {
                     mask = AscendC::MicroAPI::UpdateMask<T, Trait>(maskR);
-                    AscendC::MicroAPI::DataCopy(dstAddr + rPaddingStart + i * rPaddingLen + j * vLElems, vreg, mask);
+                    AscendC::MicroAPI::StoreAlign(dstAddr + rPaddingStart + i * rPaddingLen + j * vLElems, vreg, mask);
                 }
             }
         }
@@ -416,17 +417,17 @@ __aicore__ inline void DoCaching(const LocalTensor<T>& ubDst, const LocalTensor<
 
     __VEC_SCOPE__
     {
-        __local_mem__ T* dst = (__local_mem__ T*)dstTensor.GetPhyAddr();
-        __local_mem__ T* cah = (__local_mem__ T*)dstTensor.GetPhyAddr() + cacheID * stride;
-        __local_mem__ T* src = (__local_mem__ T*)srcTensor.GetPhyAddr();
+        __ubuf__ T* dst = (__ubuf__ T*)dstTensor.GetPhyAddr();
+        __ubuf__ T* cah = (__ubuf__ T*)dstTensor.GetPhyAddr() + cacheID * stride;
+        __ubuf__ T* src = (__ubuf__ T*)srcTensor.GetPhyAddr();
         uint32_t sreg = static_cast<uint32_t>(dimA);
         AscendC::MicroAPI::RegTensor<T> aReg, bReg;
         AscendC::MicroAPI::MaskReg pMask;
         for (uint16_t i = 0; i < outerLoopTimes; ++i) { // outerLoopTimes是dimA的大小
             pMask = AscendC::MicroAPI::UpdateMask<T>(sreg);
-            AscendC::MicroAPI::DataCopy(aReg, (__local_mem__ T*)src + i * vLElems);
+            AscendC::MicroAPI::LoadAlign(aReg, (__ubuf__ T*)src + i * vLElems);
             for (uint16_t j = 0; j < innerLoopTimes; ++j) {
-                AscendC::MicroAPI::DataCopy(bReg, (__local_mem__ T*)dst + i * vLElems + j * innerLoopStride);
+                AscendC::MicroAPI::LoadAlign(bReg, (__ubuf__ T*)dst + i * vLElems + j * innerLoopStride);
                 if constexpr (Operator == REDUCE_OP_SUM) {
                     AscendC::MicroAPI::Add<T, AscendC::MicroAPI::MaskMergeMode::ZEROING>(aReg, aReg, bReg, pMask);
                 } else if constexpr (Operator == REDUCE_OP_PROD) {
@@ -437,7 +438,7 @@ __aicore__ inline void DoCaching(const LocalTensor<T>& ubDst, const LocalTensor<
                     AscendC::MicroAPI::Max<T, AscendC::MicroAPI::MaskMergeMode::ZEROING>(aReg, aReg, bReg, pMask);
                 }
             }
-            AscendC::MicroAPI::DataCopy((__local_mem__ T*)cah + i * vLElems, aReg, pMask);
+            AscendC::MicroAPI::StoreAlign((__ubuf__ T*)cah + i * vLElems, aReg, pMask);
         }
     }
 }
@@ -664,8 +665,8 @@ public:
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimR; // 1 / dimR
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregReciDimA; // 1 / dimA
             AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp0;
-            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp1;    // idx0 % dimA * dimR
-            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp2;    // idx0 % dimA
+            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp1; // idx0 % dimA * dimR
+            AscendC::MicroAPI::RegTensor<DIndex, Trait> vregTmp2; // idx0 % dimA
             AscendC::MicroAPI::RegTensor<DCast, Trait> vregCastFloat;
             AscendC::MicroAPI::RegTensor<DIndex, Trait> idx0;
             AscendC::MicroAPI::RegTensor<DIndex, Trait> idx1;
@@ -686,11 +687,11 @@ public:
                 paddingMask1 = AscendC::MicroAPI::UpdateMask<DIndex>(noPaddingLen);
                 paddingMask2 = AscendC::MicroAPI::UpdateMask<DIndex>(totalPaddingLen);
             }
-            AscendC::MicroAPI::MaskXor(paddingMask1, paddingMask1, paddingMask2, maskAll);
+            AscendC::MicroAPI::Xor(paddingMask1, paddingMask1, paddingMask2, maskAll);
             // padding unAlign part fo dimR to 1
             for (uint16_t i = 0; i < (uint16_t)dimA; i++) {
                 auto srcPaddingAddr = srcAddr + i * dimR + dimRFloorAlign;
-                DataCopy(srcPaddingAddr, vregAllOne, paddingMask1);
+                MicroAPI::StoreAlign(srcPaddingAddr, vregAllOne, paddingMask1);
             }
 
             // idx caculate = (idx // dimA) * (dimA * dimR) + (idx % dimA) * dimR + (k + idx % dimA) % dimR
@@ -716,7 +717,7 @@ public:
             AscendC::MicroAPI::Add(idx0, vregTmp0, vregTmp1, mask);  // idx0 % dimA % dimR + idx0 % dimA * dimR
 
             for (uint16_t i = 0; i < loopA; i++) {
-                AscendC::MicroAPI::DataCopyGather(
+                AscendC::MicroAPI::Gather(
                     vreg0, srcAddr, (AscendC::MicroAPI::RegTensor<typename Signed2Unsigned<DIndex>::Type>&)idx0, mask);
                 for (uint16_t j = 0; j < innerLoopR; j++) {
                     // k + idx % dimA
@@ -731,13 +732,13 @@ public:
                     // blockElems + (idx % dimA) * dimR + (k + idx % dimA) % dimR
                     AscendC::MicroAPI::Add(idx1, idx1, vregTmp1, mask);
                     AscendC::MicroAPI::Adds(idx1, idx1, i * blockElems, mask);
-                    AscendC::MicroAPI::DataCopyGather(
+                    AscendC::MicroAPI::Gather(
                         vreg1, srcAddr, (AscendC::MicroAPI::RegTensor<typename Signed2Unsigned<DIndex>::Type>&)idx1,
                         mask);
                     AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
                 }
                 AscendC::MicroAPI::Adds(idx0, idx0, blockElems, mask);
-                AscendC::MicroAPI::DataCopy((__ubuf__ PromteT*&)dstAddr + i * vLElems, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign((__ubuf__ PromteT*&)dstAddr + i * vLElems, vreg0, mask);
             }
         }
     }
@@ -766,16 +767,16 @@ public:
                 DIndex startIdx = i * vLElems;
                 AscendC::MicroAPI::Arange(idx0, startIdx);
                 AscendC::MicroAPI::Muls(idx0, idx0, static_cast<DIndex>(dimR), mask);
-                AscendC::MicroAPI::DataCopyGather(
+                AscendC::MicroAPI::Gather(
                     vreg0, srcAddr, (AscendC::MicroAPI::RegTensor<typename Signed2Unsigned<DIndex>::Type>&)idx0, mask);
                 for (uint16_t j = 0; j < innerLoopR; j++) {
                     AscendC::MicroAPI::Adds(idx1, idx0, (j + 1), mask);
-                    AscendC::MicroAPI::DataCopyGather(
+                    AscendC::MicroAPI::Gather(
                         vreg1, srcAddr, (AscendC::MicroAPI::RegTensor<typename Signed2Unsigned<DIndex>::Type>&)idx1,
                         mask);
                     AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
                 }
-                AscendC::MicroAPI::DataCopy((__ubuf__ PromteT*&)dstAddr + i * vLElems, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign((__ubuf__ PromteT*&)dstAddr + i * vLElems, vreg0, mask);
             }
         }
     }
@@ -792,40 +793,40 @@ public:
         for (uint16_t i = 0; i < fold1; i++) {
             mask = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg1, srcAddr + vLElems + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + vLElems + loopA * dimR);
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR, vreg0, mask);
             }
         }
 
         for (uint16_t i = 0; i < fold2; i++) {
             mask = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg1, srcAddr + vLElems + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg2, srcAddr + vLElems * 2 + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg3, srcAddr + vLElems * 3 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + vLElems + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + vLElems * 2 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + vLElems * 3 + loopA * dimR);
                 // L1
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg2, mask);
                 AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, mask);
                 // L2
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR, vreg0, mask);
             }
         }
 
         for (uint16_t i = 0; i < fold3; i++) {
             mask = AscendC::MicroAPI::CreateMask<T, AscendC::MicroAPI::MaskPattern::ALL, Trait>();
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg1, srcAddr + vLElems + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg2, srcAddr + vLElems * 2 + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg3, srcAddr + vLElems * 3 + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg4, srcAddr + vLElems * 4 + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg5, srcAddr + vLElems * 5 + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg6, srcAddr + vLElems * 6 + loopA * dimR);
-                AscendC::MicroAPI::DataCopy(vreg7, srcAddr + vLElems * 7 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + vLElems + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + vLElems * 2 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + vLElems * 3 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg4, srcAddr + vLElems * 4 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg5, srcAddr + vLElems * 5 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg6, srcAddr + vLElems * 6 + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg7, srcAddr + vLElems * 7 + loopA * dimR);
                 // L1
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg4, mask);
                 AscendC::MicroAPI::Mul(vreg1, vreg1, vreg5, mask);
@@ -836,7 +837,7 @@ public:
                 AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, mask);
                 // L3
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR, vreg0, mask);
             }
         }
     }
@@ -885,10 +886,10 @@ public:
                     uint32_t sreg0 = tailR;
                     for (uint16_t loopR = 0; loopR < inplaceRepeats; loopR++) {
                         mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(sreg0);
-                        AscendC::MicroAPI::DataCopy(vregMain, srcAddr + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vregTail, srcAddr + mainR + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + mainR + loopA * dimR + loopR * vLElems);
                         AscendC::MicroAPI::Mul(vregMain, vregMain, vregTail, mask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vregMain, mask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR + loopR * vLElems, vregMain, mask);
                     }
                 }
                 AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
@@ -913,8 +914,8 @@ public:
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg14;
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg15;
             AscendC::MicroAPI::MaskReg fullMask;
-            AscendC::MicroAPI::UnalignReg uDst;
-            AscendC::MicroAPI::UnalignReg uSrc;
+            AscendC::MicroAPI::UnalignRegForStore uDst;
+            AscendC::MicroAPI::UnalignRegForLoad uSrc;
 
             // Procsee main folds
             uint16_t loopRNum = base;
@@ -925,22 +926,22 @@ public:
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                     for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
                         // L0
-                        AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg1, srcAddr + offsetR + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg2, srcAddr + offsetR * 2 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg3, srcAddr + offsetR * 3 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg4, srcAddr + offsetR * 4 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg5, srcAddr + offsetR * 5 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg6, srcAddr + offsetR * 6 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg7, srcAddr + offsetR * 7 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg8, srcAddr + offsetR * 8 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg9, srcAddr + offsetR * 9 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg10, srcAddr + offsetR * 10 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg11, srcAddr + offsetR * 11 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg12, srcAddr + offsetR * 12 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg13, srcAddr + offsetR * 13 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg14, srcAddr + offsetR * 14 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg15, srcAddr + offsetR * 15 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + offsetR + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + offsetR * 2 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + offsetR * 3 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg4, srcAddr + offsetR * 4 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg5, srcAddr + offsetR * 5 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg6, srcAddr + offsetR * 6 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg7, srcAddr + offsetR * 7 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg8, srcAddr + offsetR * 8 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg9, srcAddr + offsetR * 9 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg10, srcAddr + offsetR * 10 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg11, srcAddr + offsetR * 11 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg12, srcAddr + offsetR * 12 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg13, srcAddr + offsetR * 13 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg14, srcAddr + offsetR * 14 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg15, srcAddr + offsetR * 15 + loopA * dimR + loopR * vLElems);
                         // L1
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg8, fullMask);
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg9, fullMask);
@@ -960,7 +961,7 @@ public:
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, fullMask);
                         // L3
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, fullMask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vreg0, fullMask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR + loopR * vLElems, vreg0, fullMask);
                     }
                 }
                 AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
@@ -978,15 +979,15 @@ public:
             AscendC::MicroAPI::RegTensor<PromteT, Trait> tempOne;
             AscendC::MicroAPI::Duplicate(tempOne, 1);
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR);
                 AscendC::MicroAPI::Select(vreg0, vreg0, tempOne, mask);
                 for (uint16_t i = 0; i < repeatTime; i++) {
                     AscendC::MicroAPI::DeInterleave(vreg1, vreg0, vreg0, tempOne);
                     AscendC::MicroAPI::Mul(vreg0, vreg1, vreg0, fullMask);
                 }
-                DataCopyUnAlign(dstAddr, vreg0, uDst, 1);
+                MicroAPI::StoreUnAlign(dstAddr, vreg0, uDst, 1);
             }
-            AscendC::MicroAPI::DataCopyUnAlignPost(dstAddr, uDst, 0);
+            AscendC::MicroAPI::StoreUnAlignPost(dstAddr, uDst, 0);
         }
     }
 
@@ -1028,10 +1029,10 @@ public:
                     uint32_t sreg0 = tailR;
                     for (uint16_t loopR = 0; loopR < inplaceRepeats; loopR++) {
                         mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(sreg0);
-                        AscendC::MicroAPI::DataCopy(vregMain, srcAddr + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vregTail, srcAddr + mainR + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + mainR + loopA * dimR + loopR * vLElems);
                         AscendC::MicroAPI::Mul(vregMain, vregMain, vregTail, mask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vregMain, mask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR + loopR * vLElems, vregMain, mask);
                     }
                 }
                 AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
@@ -1048,8 +1049,8 @@ public:
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg6;
             AscendC::MicroAPI::RegTensor<PromteT, Trait> vreg7;
             AscendC::MicroAPI::MaskReg fullMask;
-            AscendC::MicroAPI::UnalignReg uDst;
-            AscendC::MicroAPI::UnalignReg uSrc;
+            AscendC::MicroAPI::UnalignRegForStore uDst;
+            AscendC::MicroAPI::UnalignRegForLoad uSrc;
 
             // Procsee main folds
             uint16_t loopRNum = base;
@@ -1060,14 +1061,14 @@ public:
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                     for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
                         // L0
-                        AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg1, srcAddr + offsetR + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg2, srcAddr + offsetR * 2 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg3, srcAddr + offsetR * 3 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg4, srcAddr + offsetR * 4 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg5, srcAddr + offsetR * 5 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg6, srcAddr + offsetR * 6 + loopA * dimR + loopR * vLElems);
-                        AscendC::MicroAPI::DataCopy(vreg7, srcAddr + offsetR * 7 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + offsetR + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + offsetR * 2 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + offsetR * 3 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg4, srcAddr + offsetR * 4 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg5, srcAddr + offsetR * 5 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg6, srcAddr + offsetR * 6 + loopA * dimR + loopR * vLElems);
+                        AscendC::MicroAPI::LoadAlign(vreg7, srcAddr + offsetR * 7 + loopA * dimR + loopR * vLElems);
                         // L1
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg4, fullMask);
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg5, fullMask);
@@ -1078,7 +1079,7 @@ public:
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, fullMask);
                         // L3
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, fullMask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * dimR + loopR * vLElems, vreg0, fullMask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * dimR + loopR * vLElems, vreg0, fullMask);
                     }
                 }
                 AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
@@ -1096,15 +1097,15 @@ public:
             AscendC::MicroAPI::RegTensor<PromteT, Trait> tempOne;
             AscendC::MicroAPI::Duplicate(tempOne, 1);
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * dimR);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * dimR);
                 AscendC::MicroAPI::Select(vreg0, vreg0, tempOne, mask);
                 for (uint16_t i = 0; i < repeatTime; i++) {
                     AscendC::MicroAPI::DeInterleave(vreg1, vreg0, vreg0, tempOne);
                     AscendC::MicroAPI::Mul(vreg0, vreg1, vreg0, fullMask);
                 }
-                DataCopyUnAlign(dstAddr, vreg0, uDst, 1);
+                MicroAPI::StoreUnAlign(dstAddr, vreg0, uDst, 1);
             }
-            AscendC::MicroAPI::DataCopyUnAlignPost(dstAddr, uDst, 0);
+            AscendC::MicroAPI::StoreUnAlignPost(dstAddr, uDst, 0);
         }
     }
 
@@ -1121,19 +1122,19 @@ public:
         for (uint16_t i = 0; i < fold0; i++) {
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                 mask = AscendC::MicroAPI::UpdateMask<T, Trait>(processA);
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(dstAddr + loopA * vLElems, vreg0, mask);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * vLElems);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vLElems, vreg0, mask);
             }
         }
         for (uint16_t i = 0; i < fold1; i++) {
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                 mask = AscendC::MicroAPI::UpdateMask<T, Trait>(processA);
                 // L0
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg1, srcAddr + dimA + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + dimA + loopA * vLElems);
                 // L1
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                AscendC::MicroAPI::DataCopy(dstAddr + loopA * vLElems, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vLElems, vreg0, mask);
             }
         }
 
@@ -1141,16 +1142,16 @@ public:
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                 mask = AscendC::MicroAPI::UpdateMask<T, Trait>(processA);
                 // L0
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg1, srcAddr + dimA + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg2, srcAddr + dimA * 2 + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg3, srcAddr + dimA * 3 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + dimA + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + dimA * 2 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + dimA * 3 + loopA * vLElems);
                 // L1
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg2, mask);
                 AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, mask);
                 // L2
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                AscendC::MicroAPI::DataCopy(dstAddr + loopA * vLElems, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vLElems, vreg0, mask);
             }
         }
 
@@ -1158,14 +1159,14 @@ public:
             for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                 mask = AscendC::MicroAPI::UpdateMask<T, Trait>(processA);
                 // L0
-                AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg1, srcAddr + dimA + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg2, srcAddr + dimA * 2 + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg3, srcAddr + dimA * 3 + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg4, srcAddr + dimA * 4 + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg5, srcAddr + dimA * 5 + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg6, srcAddr + dimA * 6 + loopA * vLElems);
-                AscendC::MicroAPI::DataCopy(vreg7, srcAddr + dimA * 7 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + dimA + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + dimA * 2 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + dimA * 3 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg4, srcAddr + dimA * 4 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg5, srcAddr + dimA * 5 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg6, srcAddr + dimA * 6 + loopA * vLElems);
+                AscendC::MicroAPI::LoadAlign(vreg7, srcAddr + dimA * 7 + loopA * vLElems);
                 // L1
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg4, mask);
                 AscendC::MicroAPI::Mul(vreg1, vreg1, vreg5, mask);
@@ -1176,7 +1177,7 @@ public:
                 AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, mask);
                 // L3
                 AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                AscendC::MicroAPI::DataCopy(dstAddr + loopA * vLElems, vreg0, mask);
+                AscendC::MicroAPI::StoreAlign(dstAddr + loopA * vLElems, vreg0, mask);
             }
         }
     }
@@ -1216,10 +1217,10 @@ public:
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                     mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(inplaceA);
                     for (uint16_t loopR = 0; loopR < tailR; loopR++) {
-                        AscendC::MicroAPI::DataCopy(vregMain, srcAddr + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vregTail, srcAddr + mainR * dimA + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + mainR * dimA + loopA * vLElems + loopR * dimA);
                         AscendC::MicroAPI::Mul(vregMain, vregMain, vregTail, mask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * vLElems + loopR * dimA, vregMain, mask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * vLElems + loopR * dimA, vregMain, mask);
                     }
                 }
             }
@@ -1254,22 +1255,22 @@ public:
                     mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(mainA);
                     for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
                         // L0
-                        AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg1, srcAddr + offsetR + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg2, srcAddr + offsetR * 2 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg3, srcAddr + offsetR * 3 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg4, srcAddr + offsetR * 4 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg5, srcAddr + offsetR * 5 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg6, srcAddr + offsetR * 6 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg7, srcAddr + offsetR * 7 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg8, srcAddr + offsetR * 8 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg9, srcAddr + offsetR * 9 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg10, srcAddr + offsetR * 10 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg11, srcAddr + offsetR * 11 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg12, srcAddr + offsetR * 12 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg13, srcAddr + offsetR * 13 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg14, srcAddr + offsetR * 14 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg15, srcAddr + offsetR * 15 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + offsetR + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + offsetR * 2 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + offsetR * 3 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg4, srcAddr + offsetR * 4 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg5, srcAddr + offsetR * 5 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg6, srcAddr + offsetR * 6 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg7, srcAddr + offsetR * 7 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg8, srcAddr + offsetR * 8 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg9, srcAddr + offsetR * 9 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg10, srcAddr + offsetR * 10 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg11, srcAddr + offsetR * 11 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg12, srcAddr + offsetR * 12 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg13, srcAddr + offsetR * 13 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg14, srcAddr + offsetR * 14 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg15, srcAddr + offsetR * 15 + loopA * vLElems + loopR * dimA);
                         // L1
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg8, mask);
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg9, mask);
@@ -1289,7 +1290,7 @@ public:
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, mask);
                         // L3
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * vLElems + loopR * dimA, vreg0, mask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * vLElems + loopR * dimA, vreg0, mask);
                     }
                 }
                 AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
@@ -1335,10 +1336,10 @@ public:
                 for (uint16_t loopA = 0; loopA < loopANum; loopA++) {
                     mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(inplaceA);
                     for (uint16_t loopR = 0; loopR < tailR; loopR++) {
-                        AscendC::MicroAPI::DataCopy(vregMain, srcAddr + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vregTail, srcAddr + mainR * dimA + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vregMain, srcAddr + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vregTail, srcAddr + mainR * dimA + loopA * vLElems + loopR * dimA);
                         AscendC::MicroAPI::Mul(vregMain, vregMain, vregTail, mask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * vLElems + loopR * dimA, vregMain, mask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * vLElems + loopR * dimA, vregMain, mask);
                     }
                 }
             }
@@ -1365,14 +1366,14 @@ public:
                     mask = AscendC::MicroAPI::UpdateMask<PromteT, Trait>(mainA);
                     for (uint16_t loopR = 0; loopR < loopRNum; loopR++) {
                         // L0
-                        AscendC::MicroAPI::DataCopy(vreg0, srcAddr + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg1, srcAddr + offsetR + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg2, srcAddr + offsetR * 2 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg3, srcAddr + offsetR * 3 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg4, srcAddr + offsetR * 4 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg5, srcAddr + offsetR * 5 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg6, srcAddr + offsetR * 6 + loopA * vLElems + loopR * dimA);
-                        AscendC::MicroAPI::DataCopy(vreg7, srcAddr + offsetR * 7 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg0, srcAddr + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg1, srcAddr + offsetR + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg2, srcAddr + offsetR * 2 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg3, srcAddr + offsetR * 3 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg4, srcAddr + offsetR * 4 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg5, srcAddr + offsetR * 5 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg6, srcAddr + offsetR * 6 + loopA * vLElems + loopR * dimA);
+                        AscendC::MicroAPI::LoadAlign(vreg7, srcAddr + offsetR * 7 + loopA * vLElems + loopR * dimA);
                         // L1
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg4, mask);
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg5, mask);
@@ -1383,7 +1384,7 @@ public:
                         AscendC::MicroAPI::Mul(vreg1, vreg1, vreg3, mask);
                         // L3
                         AscendC::MicroAPI::Mul(vreg0, vreg0, vreg1, mask);
-                        AscendC::MicroAPI::DataCopy(srcAddr + loopA * vLElems + loopR * dimA, vreg0, mask);
+                        AscendC::MicroAPI::StoreAlign(srcAddr + loopA * vLElems + loopR * dimA, vreg0, mask);
                     }
                 }
                 AscendC::MicroAPI::LocalMemBar<AscendC::MicroAPI::MemType::VEC_STORE,
