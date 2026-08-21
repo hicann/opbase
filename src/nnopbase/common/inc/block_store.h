@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <cstddef>
 #include <cstring>
 #include <functional>
 #include <limits>
@@ -21,6 +22,7 @@
 #include <type_traits>
 #include <vector>
 #include <cstdint>
+#include "common_utils.h"
 
 namespace op {
 namespace internal {
@@ -58,8 +60,10 @@ public:
 
     /**
      * @brief Each block has a header
+     * 通过 alignas 保证 sizeof(BlockHeader) 为 STD_MAX_ALIGN 的整数倍，使 head + 1 返回的
+     * 用户地址满足 STD_MAX_ALIGN 对齐，避免自定义内存池破坏对象对齐契约。
      */
-    struct BlockHeader {
+    struct alignas(STD_MAX_ALIGN) BlockHeader {
         uint32_t magic_{MAGIC}; // magic header
         BlockIdx blockIdx_{-1}; // block index
         BlockIdx next_{-1};     // next free block index

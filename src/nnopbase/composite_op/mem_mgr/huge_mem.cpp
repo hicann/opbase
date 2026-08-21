@@ -10,6 +10,8 @@
 
 #include <mutex>
 #include <vector>
+#include "common_utils.h"
+#include "kernel_utils.h"
 #include "thread_local_context.h"
 #include "opdev/op_log.h"
 #include "opdev/op_cache.h"
@@ -264,6 +266,8 @@ void* GetAddr(const int32_t id, size_t size)
     if (id == op::kInvalidHugeMemIndexId || id >= kMaxHugeMemObjectNum) {
         return nullptr;
     }
+    // 入口对齐 size，保证 offset += size 累加后用户地址满足 STD_MAX_ALIGN 对齐。
+    size = AlignSize(size, STD_MAX_ALIGN);
     return gHugeMemPool[id].GetAddr(size);
 }
 

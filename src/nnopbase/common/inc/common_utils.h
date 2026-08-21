@@ -12,11 +12,17 @@
 #define OP_API_OP_API_COMMON_INC_COMMON_UTILS_H
 
 #include <atomic>
+#include <cstddef>
+#include <functional>
 #include <thread>
 #include "opdev/op_log.h"
 
 namespace op {
 namespace internal {
+
+// 平台自适应的基础对齐值：覆盖所有标量类型的最严格对齐要求（aarch64/x86_64 上为 16）。
+// 用于自定义内存池保证返回地址满足 C++ 标准对齐契约（alignof(std::max_align_t)）。
+constexpr size_t STD_MAX_ALIGN = alignof(std::max_align_t);
 
 constexpr uint32_t FLAG_NOT_EXECUTE = 0;
 constexpr uint32_t FLAG_EXECUTING = 1;
