@@ -506,7 +506,7 @@ ge::graphStatus DoBrodcastTiling(const BroadcastTilingParams& broadcastTilingPar
     if (iter != broadcastTilingParams.computeMap.end()) {
         computeParams = iter->second;
     } else {
-        OP_LOGE("BroadcastTiling", "can not find computeKey");
+        OP_LOGE("BroadcastTiling", "can not find computeKey: %lu", computeKey);
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(broadcastTilingParams.ubSize < computeParams.extraSize[0],

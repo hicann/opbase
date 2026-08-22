@@ -107,7 +107,7 @@ ge::graphStatus DoBrodcastTilingLastTranspose(const BroadcastTilingParams& broad
     if (iter != broadcastTilingParams.computeMap.end()) {
         computeParams = iter->second;
     } else {
-        OP_LOGE("BroadcastTiling", "can not find computeKey");
+        OP_LOGE("BroadcastTiling", "can not find computeKey: %lu", computeKey);
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(broadcastTilingParams.ubSize < computeParams.extraSize[0],
@@ -248,7 +248,7 @@ ge::graphStatus BroadcastTilingNLastTranspose(const BroadcastTilingParams& broad
     if (iter != broadcastTilingParams.computeMap.end()) {
         computeParams = iter->second;
     } else {
-        OP_LOGE("BroadcastTiling", "can not find computeKey");
+        OP_LOGE("BroadcastTiling", "can not find computeKey: %lu", computeKey);
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(broadcastTilingParams.ubSize < computeParams.extraSize[0],

@@ -145,7 +145,7 @@ public:
             status = DoBroadcastOpTiling(broadcastTilingParams);
         } else {
             if constexpr (OpDag::VecBrcSize > 0) {
-                OP_LOGE(context_, "Do broadcast tiling failed, VecBrc noncontigunous not supported.");
+                OP_LOGE(context_, "Do broadcast tiling failed, VecBrc noncontiguous not supported.");
                 return ge::GRAPH_FAILED;
             }
             status = DoNonContiguousBroadcastOpTiling(broadcastTilingParams);
