@@ -229,6 +229,7 @@
                 "MatmulToGemmOpFusionPass": "5105",
                 "MatmulCastFusionPass": "5110",
                 "MatMulBiasAddFusionPass": "5120",
+                "MatMulBiasAddOpenFusionPass": "5120",
                 "BatchMatMulV2ReshapeFusionPass": "5121",
                 "BatchMatMulV2ReduceFusionPass": "5122",
                 "AntiQuantMatMulFusionPass": "5123",
