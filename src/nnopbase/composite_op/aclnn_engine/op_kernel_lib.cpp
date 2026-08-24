@@ -82,8 +82,11 @@ aclnnStatus KernelLibInfo::Initialize(nlohmann::json& singleKernelJson)
 const string& KernelLibInfo::GetOpFile() const { return opFile_; }
 
 // ============================== OpKernelLib ====================================
-static std::unordered_map<std::string, std::string> socOpMapV2 = {
-    {"Ascend910_95", "ascend910_95/"}, {"Ascend950", "ascend950/"}, {"Ascend350", "ascend350/"}};
+static std::unordered_map<std::string, std::string> socOpMapV2 = {{"Ascend910B", "ascend910b/"},
+                                                                  {"Ascend910_93", "ascend910_93/"},
+                                                                  {"Ascend910_95", "ascend910_95/"},
+                                                                  {"Ascend950", "ascend950/"},
+                                                                  {"Ascend350", "ascend350/"}};
 
 static std::string emptyString = "";
 
@@ -98,6 +101,8 @@ static const std::string& GetSocPathV2(const std::string& soc)
     return emptyString;
 }
 
+// socOpMap 用于精确匹配 SocName，防止特殊命名的 SocName 被 socOpMapV2 前缀误匹配，key-value 不要轻易删除。
+// 例如 {"Ascend910B","ascend910/"}：无后缀的 Ascend910B 是910芯片，删后落入 socOpMapV2 前缀匹配会误取 ascend910b/。
 static map<string, string> socOpMap = {
     {"Ascend910A", "ascend910/"},        {"Ascend910B", "ascend910/"},        {"Ascend910ProA", "ascend910/"},
     {"Ascend910PremiumA", "ascend910/"}, {"Ascend910ProB", "ascend910/"},     {"Ascend910B1", "ascend910b/"},
