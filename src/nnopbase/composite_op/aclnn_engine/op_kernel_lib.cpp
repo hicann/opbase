@@ -268,7 +268,7 @@ const std::vector<std::string> OpKernelLib::GetBuiltInFilePaths()
     configFileDir.append(GetSocPath());
     OP_CHECK(ReadDirBySuffix(configFileDir, ".json", configFileNames) == ACLNN_SUCCESS,
              OP_LOGW("Failed to read dir: %s", configFileDir.c_str()), return configFilePaths);
-    OP_CHECK(!configFileNames.empty(), OP_LOGW("configFileNames is emtpy in %s", configFileDir.c_str()),
+    OP_CHECK(!configFileNames.empty(), OP_LOGW("configFileNames is empty in %s", configFileDir.c_str()),
              return configFilePaths);
     bool hasLegacyFile = false;
     std::string lebacyFileName;

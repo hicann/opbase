@@ -856,7 +856,7 @@ aclnnStatus OpKernel::ParseAttributes(const nlohmann::json& singleBinJson, strin
         /* Parse value for attributes. */
         auto value = attr.find(VALUE);
         if (value == attr.end()) {
-            OP_LOGE(ACLNN_ERR_INNER, "Attr %s does not contains value!", attrInfo.attrName.c_str());
+            OP_LOGE(ACLNN_ERR_INNER, "Attr %s does not contain value!", attrInfo.attrName.c_str());
             return ACLNN_ERR_INNER;
         }
 
@@ -1316,7 +1316,7 @@ aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json& binListJson)
             /* 1. Check name. */
             auto name = attr.find(NAME);
             if (name == attr.end() || name->is_null()) {
-                OP_LOGE(ACLNN_ERR_INNER, "Attr does not contains name!");
+                OP_LOGE(ACLNN_ERR_INNER, "Attr does not contain name!");
                 return ACLNN_ERR_INNER;
             }
 
@@ -1340,7 +1340,7 @@ aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json& binListJson)
             /* 2. Check value  */
             auto value = attr.find(VALUE);
             if (value == attr.end()) {
-                OP_LOGE(ACLNN_ERR_INNER, "Attr %s does not contains value!", attrInfo.attrName.c_str());
+            OP_LOGE(ACLNN_ERR_INNER, "Attr %s does not contain value!", attrInfo.attrName.c_str());
                 return ACLNN_ERR_INNER;
             }
 

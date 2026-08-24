@@ -103,7 +103,7 @@ TEST_F(CheckDoubleFreeUt, HugeMemRange_NotReported)
     void* addr = Allocate(64); // 大页场景
     ASSERT_NE(addr, nullptr);
     // 前导断言：确认已进入大页路径（避免用例名误导）
-    ASSERT_TRUE(op::internal::BlockPool::InHugeMemRange(addr)) << "测试前提：已进入大页路径";
+    ASSERT_TRUE(op::internal::BlockPool::InHugeMemRange(addr)) << "precondition: huge page path entered";
     EXPECT_FALSE(CheckDoubleFree(addr)); // 短路：大页 free 是 no-op
     // 仅调 ReleaseHugeMem 即可：其内部 FreeHugeMem 会读 poolIndex_ 归还 baseArray_ 后再置 -1。
     // 若先调 UnInitHugeMemThreadLocal 把 poolIndex_ 置 -1，FreeHugeMem 会因 id 无效早退，

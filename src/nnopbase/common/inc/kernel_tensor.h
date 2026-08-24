@@ -96,7 +96,7 @@ public:
     void SetOffset(uint64_t offset)
     {
         if (aclTensor_ == nullptr) {
-            OP_LOGW("aclTensor is null, cant no set workspace offset.");
+            OP_LOGW("aclTensor is null, can't set workspace offset.");
             return;
         }
         aclTensor_->SetWorkspaceOffset(offset);

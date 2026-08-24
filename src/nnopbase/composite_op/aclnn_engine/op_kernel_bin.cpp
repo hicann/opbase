@@ -85,7 +85,7 @@ void OpKernelBin::ParseStaticImplMode(const nlohmann::json& objJson)
         if (implModeIter != supportInfoIter->end()) {
             staticImplMode_ = implModeIter->get<std::string>();
         } else {
-            OP_LOGW("Static json can not implMode in %s", jsonPath_.c_str());
+            OP_LOGW("Static json can not find implMode in %s", jsonPath_.c_str());
             return;
         }
     } catch (const nlohmann::json::exception& e) {
@@ -184,7 +184,7 @@ void OpKernelBin::ParseKernelDfxConfig(const nlohmann::json& objJson)
 {
     auto debugOptionsConfig = objJson.find(DEBUG_OPTIONS);
     if (debugOptionsConfig == objJson.end() || !debugOptionsConfig->is_string()) {
-        OP_LOGI("Dont enable kernel dfx.");
+        OP_LOGI("Don't enable kernel dfx.");
         return;
     }
     const std::string debugOptionsConfigStr = debugOptionsConfig->get<std::string>();
@@ -213,7 +213,7 @@ uint64_t OpKernelBin::GetKernelDfxBufSize() const { return kernelDfxBufSize_; }
 
 void OpKernelBin::DumpWorkspaceData(aclrtStream stream, OpArgContext* args) const
 {
-    OP_CHECK(args != nullptr && args->ContainsOpArgType(op::OP_WORKSPACE_ARG), OP_LOGW("Dont has workspace"), return);
+    OP_CHECK(args != nullptr && args->ContainsOpArgType(op::OP_WORKSPACE_ARG), OP_LOGW("Don't have workspace"), return);
     auto& argList = *args->GetOpArg(op::OP_WORKSPACE_ARG);
     OP_CHECK((argList.count == 1), OP_LOGW("workspace must has only one value."), return);
     auto& arg = argList[0];

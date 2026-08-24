@@ -1268,7 +1268,7 @@ public:
     aclnnStatus Run(aclrtStream stream, OpArgContext* args)
     {
         if (bins_.empty()) {
-            OP_LOGE(ACLNN_ERR_INNER, "Op %s does not has any binary.", op::OpTypeDict::ToString(opType_).GetString());
+            OP_LOGE(ACLNN_ERR_INNER, "Op %s does not have any binary.", op::OpTypeDict::ToString(opType_).GetString());
             return ACLNN_ERR_INNER;
         }
         CHECK_RET(args != nullptr, ACLNN_ERR_PARAM_NULLPTR);
@@ -1288,7 +1288,7 @@ public:
     aclnnStatus GetWorkspace(size_t const*& size, size_t& num, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
         if (bins_.empty()) {
-            OP_LOGE(ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND, "Op %s does not has any binary.",
+            OP_LOGE(ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND, "Op %s does not have any binary.",
                     op::OpTypeDict::ToString(opType_).GetString());
             return ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND;
         }
@@ -1365,7 +1365,7 @@ public:
         OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
                 implMode, determinConfig, tensors.size(), dynamicCount.size(), attrsVec.size(),
                 valueDependIndex_.size());
-        OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u, determinisitcLevel %lld].",
+        OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u, deterministicLevel %lld].",
                 GetThreadLocalContext().opConfigInfo_.aicNum_, GetThreadLocalContext().opConfigInfo_.aivNum_,
                 determinConfig);
         NnopbaseStaticTensorNumInfo tensorNumInfo{
@@ -1427,7 +1427,7 @@ public:
         }
 
         if (maxKeyLength_ == 0) {
-            OP_LOGE(ACLNN_ERR_INNER, "Cannot find and bin for op %s.", op::OpTypeDict::ToString(opType_).GetString());
+            OP_LOGE(ACLNN_ERR_INNER, "Cannot find any bin for op %s.", op::OpTypeDict::ToString(opType_).GetString());
             return nullptr;
         }
 

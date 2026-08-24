@@ -1082,7 +1082,7 @@ OpCacheKey OpExecCache::GetOpCacheKey() const { return key_; }
 
 void OpExecCache::MarkOpCacheInvalid()
 {
-    OP_CHECK(!(CanUse()), OP_LOGI("OpExecCache has been can used, cant change to invalid."), return);
+    OP_CHECK(!(CanUse()), OP_LOGI("OpExecCache is in use, can't change to invalid."), return);
     hashKey_ = 0;
     // 不释放/置空 buf 仅置 len 为 0，避免 operator== 跨线程读到 buf 为空而 len 非 0 的中间态导致崩溃
     key_.len = 0;
@@ -1337,7 +1337,7 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
         bool ret = false;
         std::lock_guard<std::mutex> guard(lock_);
         if (cache_.size() >= cacheLimit_) {
-            OP_LOGW("op cache is full");
+            OP_LOGW("op cache is full, cache size %zu, limit %zu", cache_.size(), cacheLimit_);
             op::internal::GetThreadLocalContext().cacheHasFull_ = true;
             delete exec;
             return false;
@@ -1349,7 +1349,7 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
         }
 
         if (cache2_.size() >= cacheLimit_) {
-            OP_LOGW("op cache is full");
+            OP_LOGW("op cache2 is full, cache2 size %zu, limit %zu", cache2_.size(), cacheLimit_);
             ShrinkCache(K_CACHE_SHRINK_NUM, exec->GetShrinkList());
         }
         OpCacheKey key = exec->GetOpCacheKey();

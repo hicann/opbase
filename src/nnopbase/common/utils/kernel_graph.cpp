@@ -67,7 +67,7 @@ aclnnStatus KernelGraph::TopologicalSortBFS()
             for (auto& peer : tensor->GetPeerTensors()) {
                 auto topoId = peer->GetOwnerNode()->GetTopoId();
                 if (topoId >= static_cast<int64_t>(indegrees.size())) {
-                    OP_LOGE(ACLNN_ERR_INNER, "peer node's topo id %ld is larger thank the in-degree size %zu.", topoId,
+                    OP_LOGE(ACLNN_ERR_INNER, "peer node's topo id %ld is larger than the in-degree size %zu.", topoId,
                             indegrees.size());
                     return ACLNN_ERR_INNER;
                 }

@@ -31,7 +31,7 @@ extern "C" {
 int InitHugeMemThreadLocal([[maybe_unused]] void* arg, [[maybe_unused]] bool sync)
 {
     op::internal::GetThreadLocalContext().poolIndex_ = op::internal::GetAvaiablePoolIndex();
-    OP_LOGI("Hugemem trace: get avaiable pool index: %d", op::internal::GetThreadLocalContext().poolIndex_);
+    OP_LOGI("Hugemem trace: get available pool index: %d", op::internal::GetThreadLocalContext().poolIndex_);
     return 0;
 }
 

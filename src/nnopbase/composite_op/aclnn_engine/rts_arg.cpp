@@ -747,7 +747,7 @@ LaunchArgCache* RtsArg::DumpToCache()
         OP_LOGD("no op cache in context");
         return nullptr;
     }
-    OP_CHECK(!(cache->CanUse()), OP_LOGI("OpExecCache has been can used, cant dump to cache."), return nullptr);
+    OP_CHECK(!(cache->CanUse()), OP_LOGI("OpExecCache is in use, can't dump to cache."), return nullptr);
     size_t tilingDataLen = rtsArgBuffer_->GetTilingDataPtr()->data_size_;
     if (!cache->IsOpCacheValid() || tilingDataLen == 0 || tilingDataLen >= MAX_CACHE_TILING_SIZE) {
         OP_LOGI("hash key is zero, or don't has tiling, or tiling size bigger than cache limit, skip cache.");

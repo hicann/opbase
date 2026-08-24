@@ -247,7 +247,7 @@ int32_t RecordOpArgCallbacker::RecordOpArgDump([[maybe_unused]] uint64_t dumpSwi
     if (!GetOpProfilingRecordArgFlag()) {
         OP_LOGI("Record stop, start RecordOpArgDump");
         int32_t res = aclnnOpInfoRecord::OpInfoDump();
-        CHECK_COND(res == EOK, ACLNN_ERR_INNER, "OpInfoDump filed");
+        CHECK_COND(res == EOK, ACLNN_ERR_INNER, "OpInfoDump failed");
     }
     return 0;
 }

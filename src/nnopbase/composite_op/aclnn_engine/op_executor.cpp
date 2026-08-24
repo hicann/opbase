@@ -137,7 +137,7 @@ OpExecutorImpl::~OpExecutorImpl()
 void OpExecutorImpl::FinalizeCache()
 {
     if (opExecCache_ != nullptr) {
-        OP_CHECK(!(opExecCache_->CanUse()), OP_LOGI("OpExecCache has been can used, cant finalize cache."), return);
+        OP_CHECK(!(opExecCache_->CanUse()), OP_LOGI("OpExecCache is in use, can't finalize cache."), return);
         opExecCache_->Finalize();
         opExecCache_->SetUse();
     }
@@ -157,10 +157,10 @@ aclnnStatus OpExecutorImpl::SetRepeatable(const op::FVector<op::KernelLauncher*>
     OP_CHECK((repeatMode_ != RepeatMode::Unrepeatable),
              OP_LOGW("unrepeatable executor, find keyword MarkOpCacheInvalid in log."), return ACLNN_ERR_INNER;);
     OP_CHECK((hugeMemPoolIndex_ == op::kInvalidHugeMemIndexId),
-             OP_LOGW("cant set executor repeatable when use huge page mem."), return ACLNN_ERR_INNER;);
+             OP_LOGW("can't set executor repeatable when use huge page mem."), return ACLNN_ERR_INNER;);
 
     OP_CHECK((tensorRelation_.size() % K_PAIR_STORAGE_RELATION == 0),
-             OP_LOGW("size if tensor relation must be pair of tensor"), return ACLNN_ERR_INNER;);
+             OP_LOGW("size of tensor relation must be a pair of tensors"), return ACLNN_ERR_INNER;);
     // check tensor can repeat
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
     cachedStorageList_.assign(opTlsCtx.cachedStorageList_.begin(),
@@ -315,7 +315,7 @@ void OpExecutorImpl::OpExecCacheSetWorkspaceSize(uint64_t workspaceSize)
 
 void OpExecutorImpl::OpExecCacheSetCacheBuf(void* buf)
 {
-    OP_CHECK(!(opExecCache_->CanUse()), OP_LOGI("OpExecCache has been can used, cant change cache buf."), return);
+    OP_CHECK(!(opExecCache_->CanUse()), OP_LOGI("OpExecCache is in use, can't change cache buf."), return);
     opExecCache_->SetCacheBuf(buf);
 }
 } // namespace op
@@ -1069,7 +1069,7 @@ void InitL2Phase2Context([[maybe_unused]] const char* l2Name, aclOpExecutor* exe
 
 void InitL0Context(const char* profilingName, aclOpExecutor* executor)
 {
-    OP_CHECK_NO_RETURN(executor != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "executor cann't be nullptr."));
+    OP_CHECK_NO_RETURN(executor != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "executor can't be nullptr."));
     if (executor->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
         op::internal::OpLogInfo tmpLogInfo = executor->GetLogInfo();
         tmpLogInfo.l0Name = profilingName;

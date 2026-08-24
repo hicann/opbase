@@ -61,7 +61,7 @@ void AddParamToBuf(const T* addr, uint64_t size)
         return;
     }
     OP_CHECK(memcpy_s(g_hashBuf + hashOffset, K_HASH_BUF_SIZE - hashOffset, addr, size * sizeof(T)) == EOK,
-             OP_LOGW("Failed to memcpy in op cahce."),
+             OP_LOGW("Failed to memcpy in op cache."),
              ;);
     hashOffset += size * sizeof(T);
 };
@@ -93,7 +93,7 @@ void AddParamToBuf(const T& value)
         return;
     }
     OP_CHECK(memcpy_s(g_hashBuf + hashOffset, K_HASH_BUF_SIZE - hashOffset, &value, sizeof(T)) == EOK,
-             OP_LOGW("Failed to memcpy in op cahce."),
+             OP_LOGW("Failed to memcpy in op cache."),
              ;);
     hashOffset += sizeof(T);
 };

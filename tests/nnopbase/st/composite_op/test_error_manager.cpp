@@ -27,7 +27,7 @@ protected:
         int32_t eRes = error_message::ErrMgrInit(error_message::ErrorMessageMode::INTERNAL_MODE);
         OP_LOGI("Init%d", eRes);
         auto errMsg = error_message::GetErrMgrErrorMessage(); // clear error message container
-        OP_LOGI("clear error massage, cached error msg:\n%s", errMsg.get());
+        OP_LOGI("clear error message, cached error msg:\n%s", errMsg.get());
     }
 
     static void TearDownTestCase() {}

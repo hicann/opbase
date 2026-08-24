@@ -311,7 +311,7 @@ void KernelMgr::GetDirPath()
         std::vector<std::string> configImplPath = knlLib.GetConfigImplPath();
         if (!configImplPath.empty()) {
             for (const auto& element : configImplPath) {
-                OP_LOGI("add vector config.imi opp path: %s", element.c_str());
+                OP_LOGI("add vector config in opp path: %s", element.c_str());
                 customConfigDirs_.emplace_back(element + DYN_KERNEL_CONFIG_PATH + knlLib.GetSocPath());
                 customBinAndJsonDirs_.emplace_back(element + DYN_BIN_AND_JSON_PATH);
             }
