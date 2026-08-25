@@ -37,8 +37,8 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
     static std::once_flag flag[MAX_OP_TYPE_COUNT];
     aclnnStatus ret = ACLNN_SUCCESS;
     auto f = [&ret, &opType]() {
-        opInferShapeFuncs_[0] = nullptr;
-        opTilingFuncs_[0] = nullptr;
+        opInferShapeFuncs_[opType] = nullptr;
+        opTilingFuncs_[opType] = nullptr;
         ge::AscendString opTypeAscendStr = op::OpTypeDict::ToString(opType);
         const char* opTypeStr = opTypeAscendStr.GetString();
         gert::OppImplVersionTag oppVersionTag = GetOppImplVersion();
@@ -64,8 +64,7 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
                  opTilingFuncs_[opType] = defaultFuncs;
                  OP_LOGI("Op %s use auto tiling func", opTypeStr), return);
 
-        OP_LOGE_FOR_EXECUTION_TILING_ERROR("The tiling function does not exist");
-        ret = ACLNN_ERR_PARAM_NULLPTR;
+        OP_LOGW("Can't get tiling function of op %s", opTypeStr);
     };
 
     std::call_once(flag[opType], f);

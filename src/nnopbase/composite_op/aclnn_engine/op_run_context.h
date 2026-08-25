@@ -105,7 +105,7 @@ public:
 
     static aclnnStatus InferShape(uint32_t opType, OpArgList& inputs, OpArgList& outputs, OpArgList& attrs)
     {
-        CHECK_COND(InitOpFunctions(opType) == ACLNN_SUCCESS, ACLNN_SUCCESS, "InitOpFunctions failed");
+        (void)InitOpFunctions(opType);
         if (opInferShapeFuncs_[opType] == nullptr || opInferShapeFuncs_[opType]->infer_shape == nullptr) {
             OP_LOGE_FOR_EXECUTION_INFERSHAPE_ERROR("The inferShape function does not exist");
             return ACLNN_ERR_INNER;
