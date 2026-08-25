@@ -1028,15 +1028,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
 #define OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)                      \
     do {                                                                                                            \
         std::string _safe_entityName_(entityName);                                                                  \
-        std::string _safe_paramNames_(paramNames);                                                                  \
+        std::string _safe_paramName_(paramName);                                                                  \
         std::string _safe_incorrectSize_(incorrectSize);                                                            \
         std::string _safe_reason_(reason);                                                                          \
         OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
                                 "Parameter %s of %s has incorrect element nums %s. Reason: %s.",                    \
-                                _safe_paramNames_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), \
+                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), \
                                 _safe_reason_.c_str());                                                             \
-        const std::vector<const char*> msgKey = {"param_names", "op_name", "incorrect_size", "reason"};             \
-        const std::vector<const char*> msgvalue = {_safe_paramNames_.c_str(), _safe_entityName_.c_str(),            \
+        const std::vector<const char*> msgKey = {"paramName", "op_name", "incorrect_size", "reason"};             \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),            \
                                                    _safe_incorrectSize_.c_str(), _safe_reason_.c_str()};            \
         REPORT_PREDEFINED_ERR_MSG("EZ0038", msgKey, msgvalue);                                                      \
     } while (0)
