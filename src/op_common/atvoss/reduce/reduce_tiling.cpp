@@ -220,7 +220,7 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
         } else {
             OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "axes",
                                                   Ops::Base::ToString(axesDtype).c_str(),
-                                                  "only support const input dtype in [int32, int64]");
+                                                  "only supports const input dtype in [int32, int64]");
             status = ge::GRAPH_FAILED;
         }
         OP_CHECK_IF((status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes const input failed"),
@@ -248,7 +248,7 @@ ge::graphStatus GetInputParam(gert::TilingContext* context, ReduceOpInputParam& 
         status = GetConstInputData<int64_t>(context, axesIdx, opInput.axes);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "axes", Ops::Base::ToString(axesDtype).c_str(),
-                                              "only support const input dtype in [int32, int64]");
+                                              "only supports const input dtype in [int32, int64]");
         status = ge::GRAPH_FAILED;
     }
     OP_CHECK_IF((status == ge::GRAPH_FAILED), OP_LOGE(context, "ReduceOpTmpl get axes const input failed"),
@@ -945,7 +945,7 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
     if (compileInfo_->ubSize <= CACHE_BUF_SIZE + opInput_.reservedSize) {
         std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) +
                                 " is smaller than size: " + std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize) +
-                                ", not support";
+                                ", not supported";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
                                               std::to_string(compileInfo_->ubSize).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -982,7 +982,7 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
             std::string reasonMsg = "ubSize: " + std::to_string(compileInfo_->ubSize) + " is smaller than size: " +
                                     std::to_string(CACHE_BUF_SIZE + opInput_.reservedSize +
                                                    resultBlock_ * postBufferNum) +
-                                    " not support";
+                                    ", not supported";
             OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize",
                                                   std::to_string(compileInfo_->ubSize).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
@@ -993,7 +993,7 @@ ge::graphStatus ReduceOpTiling::CalcBasicBlock(const uint64_t* shape)
         basicBlock_ = FloorAlign(basicBlock_, compileInfo_->vRegSize);
     }
     if (basicBlock_ < compileInfo_->vRegSize) {
-        std::string reasonMsg = "basic block: " + std::to_string(basicBlock_) + " is too small, not support";
+        std::string reasonMsg = "basic block: " + std::to_string(basicBlock_) + " is too small, not supported";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "basicBlock",
                                               std::to_string(basicBlock_).c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -1045,7 +1045,7 @@ ge::graphStatus ReduceOpTiling::ComputeTiling(uint64_t* shape)
     // 5. 可选，针对R轴过小，UB内R轴全载，BasicBlock不能满载是，调整UB内A轴切分，上限为UB内二分缓存大小
     dimNum_ = Pattern::Dim;
     OP_CHECK_IF((CalcBasicBlock<Pattern>(shape) == ge::GRAPH_FAILED),
-                OP_LOGE(context_, "calc basic block failed, maybe unsupport ubsize"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_, "calc basic block failed, maybe unsupported ubsize"), return ge::GRAPH_FAILED);
     if (IsEmtpyTensor<Pattern>(shape)) {
         return ComputeEmptyTiling<Pattern>(shape);
     }
@@ -1244,7 +1244,7 @@ ge::graphStatus ReduceOpTiling::DoTilingMatchPattern(uint64_t* shape, int32_t sh
         case CONST9:
             return ComputeTiling<__reducePattern::ARARARARA>(shape);
         default:
-            OP_LOGE(context_, "unsupport pattern");
+            OP_LOGE(context_, "unsupported pattern");
             return ge::GRAPH_FAILED;
     }
 }
