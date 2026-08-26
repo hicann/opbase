@@ -9,6 +9,7 @@
  */
 
 #include <atomic>
+#include <sstream>
 #include "aclnn/aclnn_base.h"
 #include "opdev/format_utils.h"
 #include "opdev/data_type_utils.h"
@@ -26,10 +27,31 @@
 #include "op_dfx_internal.h"
 #include "file_utils.h"
 #include "bridge_pool.h"
+#include "op_feature_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static aclnnStatus aclCheckPcieAddrRefresh(const aclTensor* const tensor, const void* const addr,
+                                           const char* const paraName)
+{
+    if (!op::internal::IsPcieThroughEnabled()) {
+        return OK;
+    }
+    const bool oldAddrInPcie = op::internal::IsTensorAddrInPcieRange(tensor->GetStorageAddr());
+    const bool newAddrInPcie = op::internal::IsTensorAddrInPcieRange(addr);
+    if (oldAddrInPcie == newAddrInPcie) {
+        return OK;
+    }
+    std::ostringstream value;
+    value << addr;
+    std::ostringstream reason;
+    reason << "PCIe and non-PCIe addresses cannot be refreshed to each other, old tensor storage address is "
+           << tensor->GetStorageAddr();
+    OP_LOGE_FOR_INVALID_ARGUMENT_WITHOUT_SOLUTION(value.str().c_str(), paraName, reason.str().c_str());
+    return ACLNN_ERR_PARAM_INVALID;
+}
 
 aclTensor* aclCreateTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDataType dataType, const int64_t* stride,
                            int64_t offset, aclFormat format, const int64_t* storageDims, uint64_t storageDimsNum,
@@ -317,6 +339,7 @@ aclnnStatus aclInitTensor(aclTensor* tensor, const int64_t* viewDims, uint64_t v
     if (tensor == nullptr) {
         return ACLNN_ERR_PARAM_NULLPTR;
     }
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, tensorDataAddr, "tensorDataAddr") == OK, ACLNN_ERR_PARAM_INVALID);
     tensor->InitTensor(viewDims, viewDimsNum, dataType, stride, offset, format, storageDims, storageDimsNum,
                        tensorDataAddr);
     return OK;
@@ -326,8 +349,9 @@ aclnnStatus aclSetInputTensorAddr(aclOpExecutor* executor, [[maybe_unused]] cons
                                   void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
-    tensor->SetStorageAddr(addr);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
+    tensor->SetStorageAddr(addr);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t realIndex = index;
@@ -347,8 +371,9 @@ aclnnStatus aclSetOutputTensorAddr(aclOpExecutor* executor, [[maybe_unused]] con
                                    void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
-    tensor->SetStorageAddr(addr);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
+    tensor->SetStorageAddr(addr);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetOutputTensorAddr(executor, index, tensor->GetData());
@@ -373,8 +398,9 @@ aclnnStatus aclSetDynamicInputTensorAddr(aclOpExecutor* executor, size_t irIndex
 
     auto tensor = (*tensors)[relativeIndex];
     CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    tensor->SetStorageAddr(addr);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
+    tensor->SetStorageAddr(addr);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t tensorIrIndex = irIndex;
@@ -403,8 +429,9 @@ aclnnStatus aclSetDynamicOutputTensorAddr(aclOpExecutor* executor, size_t irInde
     auto tensor = (*tensors)[relativeIndex];
 
     CHECK_RET(tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    tensor->SetStorageAddr(addr);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
+    tensor->SetStorageAddr(addr);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetDynamicOutputTensorAddr(executor, irIndex, relativeIndex, tensor->GetData());
@@ -422,8 +449,9 @@ aclnnStatus aclSetTensorAddr(aclOpExecutor* executor, [[maybe_unused]] const siz
                              void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
-    tensor->SetStorageAddr(addr);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
+    tensor->SetStorageAddr(addr);
 
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
@@ -453,8 +481,10 @@ aclnnStatus aclSetDynamicTensorAddr(aclOpExecutor* executor, size_t irIndex, con
                relativeIndex, tensors->Size());
 
     auto tensor = (*tensors)[relativeIndex];
-    tensor->SetStorageAddr(addr);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
+    NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
+    tensor->SetStorageAddr(addr);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         size_t tensorIrIndex = 0U;
@@ -509,6 +539,7 @@ aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor* executor)
 aclnnStatus aclSetRawTensorAddr(aclTensor* tensor, void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_PARAM_NULLPTR);
+    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
     tensor->SetStorageAddr(addr);
     return OK;
 }
