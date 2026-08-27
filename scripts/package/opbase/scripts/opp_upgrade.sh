@@ -166,9 +166,6 @@ updateinstallinfo() {
     fi
 
     chmod 644 "${_target_install_dir}" 2> /dev/null
-    if [ "$(id -u)" != "0" ]; then
-        chmod 600 "${_target_install_dir}" 2> /dev/null
-    fi
 }
 
 updatefeatureandchipinfo() {
@@ -194,9 +191,6 @@ updatefeatureandchipinfo() {
     fi
  
     chmod 644 "${_target_install_dir}" 2> /dev/null
-    if [ "$(id -u)" != "0" ]; then
-        chmod 600 "${_target_install_dir}" 2> /dev/null
-    fi
 }
 
 updateinstallinfos() {
@@ -556,7 +550,7 @@ fi
 chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/scene.info" 2> /dev/null
 chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/version.info" 2> /dev/null
 chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/opp/version.info" 2> /dev/null
-chmod 600 "${install_version_dir}""/share/info/${ops_base_platform_dir}/ascend_install.info" 2> /dev/null
+chmod 644 "${install_version_dir}""/share/info/${ops_base_platform_dir}/ascend_install.info" 2> /dev/null
 
 if [ "${is_change_dir_mode}" = "true" ]; then
     chmod u-w "${_TARGET_INSTALL_PATH}" 2> /dev/null
