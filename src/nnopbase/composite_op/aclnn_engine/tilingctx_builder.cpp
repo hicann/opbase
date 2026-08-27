@@ -40,11 +40,33 @@ namespace internal {
 using BlockPool = internal::BlockPool;
 using OpImplFunctions = gert::OpImplKernelRegistry::OpImplFunctions;
 
-constexpr size_t TILING_INPUT_OTHER_NUM = 5;
-constexpr size_t TILING_PLATFORM_IDX = 4;
-constexpr size_t TILING_FUNC_IDX = 3;
-constexpr size_t DETERMINISTIC_IDX = 2;
 constexpr size_t GROWTH_FACTOR = 2;
+
+enum class TilingOtherInputIdx : size_t {
+    COMPILE_INFO = 0,
+    PLATFORM_INFO,
+    TILING_FUNC,
+    DETERMINISTIC,
+    DETERMINISTIC_LEVEL,
+    PCIE_THROUGH_FLAG,
+    // add new input definitions here
+    INPUT_NUM
+};
+constexpr size_t TILING_INPUT_OTHER_NUM = static_cast<size_t>(TilingOtherInputIdx::INPUT_NUM);
+
+namespace {
+inline void SetTilingOtherInput(KernelRunContext* ctx, TilingOtherInputIdx field, AsyncAnyValue* value)
+{
+    ctx->values[ctx->input_size - TILING_INPUT_OTHER_NUM + static_cast<size_t>(field)] = value;
+}
+
+template <typename T>
+inline T GetTilingOtherInputValue(KernelRunContext* ctx, TilingOtherInputIdx field)
+{
+    return *PtrCastTo<T>(
+        ctx->values[ctx->input_size - TILING_INPUT_OTHER_NUM + static_cast<size_t>(field)]->data.inplace);
+}
+} // anonymous namespace
 
 void TilingCtxHolder::BuildTilingCtx()
 {
@@ -145,10 +167,11 @@ aclnnStatus TilingCtxHolder::EnsureTilingCtxCapacity(size_t requiredCapacity)
     return ACLNN_SUCCESS;
 }
 
-size_t TilingCtxHolder::ResetTilingCtx(const KernelContextHolder* kernelCtx)
+aclnnStatus TilingCtxHolder::ResetTilingCtx(const KernelContextHolder* kernelCtx)
 {
     size_t requiredCapacity = kernelCtx->inputNum_ + kernelCtx->outputNum_ + TILING_INPUT_OTHER_NUM + tilingOutputNum_;
-    CHECK_RET_CODE(EnsureTilingCtxCapacity(requiredCapacity), "EnsureTilingCtxCapacity failed.");
+    CHECK_COND(EnsureTilingCtxCapacity(requiredCapacity) == ACLNN_SUCCESS, ACLNN_ERR_INNER,
+               "EnsureTilingCtxCapacity failed.");
 
     tilingData_->data_size_ = 0;
     tilingCtxValue_[kOutputTilingData].data.pointer = tilingData_;
@@ -164,16 +187,14 @@ size_t TilingCtxHolder::ResetTilingCtx(const KernelContextHolder* kernelCtx)
 
     size_t opInputNum = kernelCtx->inputNum_;
     size_t opOutputNum = kernelCtx->outputNum_;
-    size_t tilingInputNum = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
     tilingOutput_.inputNum_ = opInputNum;
     tilingOutput_.outputNum_ = opOutputNum;
 
-    tilingCtx_->input_size = tilingInputNum;
-    for (size_t i = 0; i < tilingInputNum - TILING_INPUT_OTHER_NUM; i++) {
+    tilingCtx_->input_size = opInputNum + opOutputNum + TILING_INPUT_OTHER_NUM;
+    for (size_t i = 0; i < opInputNum + opOutputNum; i++) {
         tilingCtx_->values[i] = &kernelCtx->opInArg_[i];
     }
-
-    return tilingInputNum;
+    return ACLNN_SUCCESS;
 }
 
 void TilingCtxHolder::FinalizeTilingCtx(size_t tilingInputNum)
@@ -190,7 +211,9 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder* kernelCt
     CHECK_COND(kernelCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "kernelCtx is NULL");
     CHECK_COND(tilingParseCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "tilingParseCtx is NULL");
 
-    size_t tilingInputNum = ResetTilingCtx(kernelCtx);
+    if (ResetTilingCtx(kernelCtx) != ACLNN_SUCCESS) {
+        return ACLNN_ERR_INNER;
+    }
 
     uint32_t coreNum = tilingParseCtx->GetCoreNum();
     uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
@@ -204,19 +227,23 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder* kernelCt
                                                                 0;
     *PtrCastTo<int32_t>(
         deterministicLevelValue_.data.inplace) = GetThreadLocalContext().opConfigInfo_.deterministicLevel_;
+    *PtrCastTo<bool>(pcieThroughFlagValue_.data.inplace) = GetThreadLocalContext().opConfigInfo_.usePcieAddr;
 
-    tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = tilingParseCtx->GetCompiledInfoStruct();
-    tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = &platformInfoValue_;
-    tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = &deterministicValue_;
-    tilingCtx_->values[tilingInputNum - 1] = &deterministicLevelValue_;
-    FinalizeTilingCtx(tilingInputNum);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::COMPILE_INFO, tilingParseCtx->GetCompiledInfoStruct());
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::PLATFORM_INFO, &platformInfoValue_);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::TILING_FUNC, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC, &deterministicValue_);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC_LEVEL, &deterministicLevelValue_);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::PCIE_THROUGH_FLAG, &pcieThroughFlagValue_);
+
+    FinalizeTilingCtx(tilingCtx_->input_size);
 
     OP_LOGI("Update op tiling ctx. input[%zu], output[%zu], compiled Info %p, deterministic %d, deterministicLevel %d, "
-            "tilingDataWrap: %p, coreNum: %u",
+            "pcie through flag: %d, tilingDataWrap: %p, coreNum: %u",
             kernelCtx->inputNum_, kernelCtx->outputNum_, tilingParseCtx->GetCompiledInfoStruct(),
-            *PtrCastTo<int32_t>(tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX]->data.inplace),
-            *PtrCastTo<int32_t>(tilingCtx_->values[tilingInputNum - 1]->data.inplace), tilingData_, coreNum);
+            GetTilingOtherInputValue<int32_t>(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC),
+            GetTilingOtherInputValue<int32_t>(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC_LEVEL),
+            GetTilingOtherInputValue<bool>(tilingCtx_, TilingOtherInputIdx::PCIE_THROUGH_FLAG), tilingData_, coreNum);
     return ACLNN_SUCCESS;
 }
 
@@ -224,14 +251,17 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder* kernelCt
 {
     CHECK_COND(kernelCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "kernelCtx is NULL");
 
-    size_t tilingInputNum = ResetTilingCtx(kernelCtx);
+    if (ResetTilingCtx(kernelCtx) != ACLNN_SUCCESS) {
+        return ACLNN_ERR_INNER;
+    }
 
-    tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = nullptr;
-    tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - 1] = nullptr;
-    FinalizeTilingCtx(tilingInputNum);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::COMPILE_INFO, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::PLATFORM_INFO, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::TILING_FUNC, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC_LEVEL, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::PCIE_THROUGH_FLAG, nullptr);
+    FinalizeTilingCtx(tilingCtx_->input_size);
     return ACLNN_SUCCESS;
 }
 
@@ -239,19 +269,22 @@ aclnnStatus TilingCtxHolder::UpdateTilingCtx(const KernelContextHolder* kernelCt
 {
     CHECK_COND(kernelCtx != nullptr, ACLNN_ERR_RUNTIME_ERROR, "kernelCtx is NULL");
 
-    size_t tilingInputNum = ResetTilingCtx(kernelCtx);
+    if (ResetTilingCtx(kernelCtx) != ACLNN_SUCCESS) {
+        return ACLNN_ERR_INNER;
+    }
 
     uint32_t coreNum = 0;
     fe::PlatFormInfos* platformInfo = SocContext::GetPlatformInfo();
     SetCoreNum(opJson, platformInfo, coreNum);
     platformInfoValue_.data.pointer = platformInfo;
 
-    tilingCtx_->values[tilingInputNum - TILING_INPUT_OTHER_NUM] = nullptr;
-    tilingCtx_->values[tilingInputNum - TILING_PLATFORM_IDX] = &platformInfoValue_;
-    tilingCtx_->values[tilingInputNum - TILING_FUNC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - DETERMINISTIC_IDX] = nullptr;
-    tilingCtx_->values[tilingInputNum - 1] = nullptr;
-    FinalizeTilingCtx(tilingInputNum);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::COMPILE_INFO, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::PLATFORM_INFO, &platformInfoValue_);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::TILING_FUNC, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::DETERMINISTIC_LEVEL, nullptr);
+    SetTilingOtherInput(tilingCtx_, TilingOtherInputIdx::PCIE_THROUGH_FLAG, nullptr);
+    FinalizeTilingCtx(tilingCtx_->input_size);
 
     OP_LOGI("Update static kernel tiling ctx. input[%zu], output[%zu], coreNum: %u", kernelCtx->inputNum_,
             kernelCtx->outputNum_, coreNum);

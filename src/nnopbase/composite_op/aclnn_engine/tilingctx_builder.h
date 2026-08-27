@@ -186,7 +186,7 @@ private:
 
     aclnnStatus EnsureTilingCtxCapacity(size_t requiredCapacity);
 
-    size_t ResetTilingCtx(const KernelContextHolder* kernelCtx);
+    aclnnStatus ResetTilingCtx(const KernelContextHolder* kernelCtx);
 
     void FinalizeTilingCtx(size_t tilingInputNum);
 
@@ -197,6 +197,7 @@ private:
     AsyncAnyValue platformInfoValue_{};
     AsyncAnyValue deterministicValue_{};
     AsyncAnyValue deterministicLevelValue_{};
+    AsyncAnyValue pcieThroughFlagValue_{};
     std::unique_ptr<uint8_t[]> workspaceSizeVec_;
 
     // Dynamic capacity management

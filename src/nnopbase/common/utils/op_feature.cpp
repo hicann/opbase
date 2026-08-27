@@ -10,22 +10,28 @@
 
 #include "op_feature_internal.h"
 
+#include <cinttypes>
 #include <cstdint>
 #include <mutex>
 #include <vector>
 
 #include "acl/acl_rt.h"
+#include "platform/soc_spec.h"
+#ifndef PRODUCT_SIDE_IS_DEVICE
+#include "version/runtime_version.h"
+#endif
 
 #include "aclnn/acl_meta.h"
 #include "opdev/platform.h"
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
 
+#define PKG_VERSION_NUM_9_2_0 90200000
+
 namespace op {
 namespace internal {
 
 namespace {
-// 与 rts 的 aclrtAddrRange 二进制布局一致，弱符号调用可直接用 PcieAddrRange* 接收
 struct PcieAddrRange {
     void* startAddr{nullptr};
     void* endAddr{nullptr};
@@ -34,14 +40,78 @@ struct PcieAddrRange {
 bool g_pcieThroughEnabled{false};
 std::vector<PcieAddrRange> g_pcieAddrRanges;
 std::once_flag g_pcieThroughOnceFlag;
+
+extern "C" {
+__attribute__((weak)) aclError aclrtHostGetDevicePointerAddrRange(PcieAddrRange* addrRange, uint32_t* count);
+}
+
+bool IsHostDeviceConnectWithPcie([[maybe_unused]] uint32_t deviceId)
+{
+#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+    int64_t hdConnectType = ACL_HOST_DEVICE_CONNECT_TYPE_UB;
+    auto ret = aclrtGetDeviceInfo(deviceId, ACL_DEV_ATTR_HD_CONNECT_TYPE, &hdConnectType);
+    if (ret != ACL_SUCCESS) {
+        OP_LOGW("Get HD_CONNECT_TYPE by aclrtGetDeviceInfo failed, return %d", static_cast<int32_t>(ret));
+        return false;
+    }
+    if (hdConnectType != ACL_HOST_DEVICE_CONNECT_TYPE_PCIE) {
+        OP_LOGI("HD connect type is %" PRId64 ", not PCIe", static_cast<int64_t>(hdConnectType));
+        return false;
+    }
+    return true;
+#else
+    OP_LOGW("Can't get host device connect type, because the runtime package version is lower than 9.2.0 when "
+            "compiling nnopbase");
+    return false;
+#endif
+}
+
+aclnnStatus GetPcieAddrRange([[maybe_unused]] std::vector<PcieAddrRange>& addrRanges)
+{
+#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+    addrRanges.clear();
+    if (aclrtHostGetDevicePointerAddrRange == nullptr) {
+        OP_LOGW("aclrtHostGetDevicePointerAddrRange symbol is not found");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+
+    uint32_t rangeCount = 0;
+    auto ret = aclrtHostGetDevicePointerAddrRange(nullptr, &rangeCount);
+    if (ret != ACL_SUCCESS) {
+        OP_LOGW("aclrtHostGetDevicePointerAddrRange failed to get range count, return %d", static_cast<int32_t>(ret));
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (rangeCount == 0U) {
+        OP_LOGI("PCIe addr range count is 0");
+        return ACLNN_SUCCESS;
+    }
+
+    addrRanges.resize(rangeCount);
+    ret = aclrtHostGetDevicePointerAddrRange(addrRanges.data(), &rangeCount);
+    if (ret != ACL_SUCCESS) {
+        OP_LOGW("aclrtHostGetDevicePointerAddrRange failed to get addr ranges, return %d", static_cast<int32_t>(ret));
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    return ACLNN_SUCCESS;
+#else
+    OP_LOGW(
+        "Can't get PCIe addr ranges, because the runtime package version is lower than 9.2.0 when compiling nnopbase");
+    return ACLNN_ERR_RUNTIME_ERROR;
+#endif
+}
+
 } // namespace
 
 aclnnStatus InitPcieThroughInfo()
 {
     static aclnnStatus initRet = ACLNN_SUCCESS;
-    std::call_once(g_pcieThroughOnceFlag, [&initRet]() {
+    std::call_once(g_pcieThroughOnceFlag, []() {
+        g_pcieThroughEnabled = false;
         NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-        OP_LOGI("NPU arch is %d", static_cast<int32_t>(npuArch));
+        if (npuArch != NpuArch::DAV_3510 && npuArch != NpuArch::DAV_9201 && npuArch != NpuArch::DAV_9202) {
+            OP_LOGI("Current NPU arch [%u] not support PCIe through.", static_cast<uint32_t>(npuArch));
+            return;
+        }
 
         int32_t deviceId = 0;
         auto aclRet = aclrtGetDevice(&deviceId);
@@ -51,14 +121,23 @@ aclnnStatus InitPcieThroughInfo()
             return;
         }
 
-        // 遗留项：HD connect 判断（aclrtGetDeviceInfo 兼容性问题）与地址段获取（接口未提供）暂注释
+        if (!IsHostDeviceConnectWithPcie(static_cast<uint32_t>(deviceId))) {
+            OP_LOGI("The connect type between host and device cannot be obtained, or the type is not PCIe, so disable "
+                    "PCIe through feature.");
+            return;
+        }
 
-        // 框架阶段：赋初始值用于性能验证，真实地址段待弱符号接口接入后填充
-        // 选用 0x1~0x2 这种不存在的极小地址段，保证真实 tensor 地址不会命中
-        g_pcieAddrRanges.resize(1);
-        g_pcieAddrRanges[0].startAddr = reinterpret_cast<void*>(0x1);
-        g_pcieAddrRanges[0].endAddr = reinterpret_cast<void*>(0x2);
+        if (GetPcieAddrRange(g_pcieAddrRanges) != ACLNN_SUCCESS || g_pcieAddrRanges.empty()) {
+            OP_LOGI("Can't get PCIe addr ranges, or the range count is 0, so disable PCIe through feature.");
+            return;
+        }
+
         g_pcieThroughEnabled = true;
+        OP_LOGI("PCIe through feature is enabled, addr range count is %zu", g_pcieAddrRanges.size());
+        for (size_t i = 0; i < g_pcieAddrRanges.size(); i++) {
+            OP_LOGI("PCIe addr range[%zu], startAddr %p, endAddr %p", i, g_pcieAddrRanges[i].startAddr,
+                    g_pcieAddrRanges[i].endAddr);
+        }
     });
     return initRet;
 }

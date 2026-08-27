@@ -81,6 +81,11 @@ target_link_libraries(nnopbase
 )
 
 target_compile_definitions(nnopbase PRIVATE google=ascend_private ACLNN_LOG_FMT_CHECK LOG_CPP)
+
+if(DEFINED PRODUCT_SIDE AND "${PRODUCT_SIDE}" STREQUAL "device")
+    target_compile_definitions(nnopbase PRIVATE PRODUCT_SIDE_IS_DEVICE=1)
+endif()
+
 target_compile_options(nnopbase PRIVATE
     -O2 -fno-common -Wextra -Wfloat-equal -D_FORTIFY_SOURCE=2)
 

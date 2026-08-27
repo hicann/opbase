@@ -205,7 +205,8 @@ void AddTensorAddrToCachedList(void* addr)
         tlsCachedTensorList.at(tlsCachedTensorListSize) = addr;
     }
     tlsCachedTensorListSize++;
-    if (op::internal::IsPcieThroughEnabled() && op::internal::IsTensorAddrInPcieRange(addr)) {
+    if (op::internal::IsPcieThroughEnabled() && !tlsData->threadLocalContext.opConfigInfo_.usePcieAddr &&
+        op::internal::IsTensorAddrInPcieRange(addr)) {
         tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = true;
     }
 }
@@ -274,7 +275,8 @@ static void AddAclTensorToCachedList(const aclTensor* tensor, OpCacheThreadLocal
     } else {
         tlsData->tensorLabelList.push_back(it->second);
     }
-    if (op::internal::IsPcieThroughEnabled() && op::internal::IsTensorAddrInPcieRange(tensor->GetStorageAddr())) {
+    if (op::internal::IsPcieThroughEnabled() && !tlsData->threadLocalContext.opConfigInfo_.usePcieAddr &&
+        op::internal::IsTensorAddrInPcieRange(tensor->GetStorageAddr())) {
         tlsData->threadLocalContext.opConfigInfo_.usePcieAddr = true;
     }
 }
