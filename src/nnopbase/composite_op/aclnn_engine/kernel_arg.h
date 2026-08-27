@@ -188,14 +188,15 @@ inline aclnnStatus GenKeyByAttrs(char*& key, size_t& remainLen, std::vector<Attr
     });
 }
 
-void CalcAclTensorNum(size_t idx, const aclTensor* tensor, size_t& num);
-void CalcAclTensorNum(size_t idx, const aclTensorList* tensor, size_t& num);
-void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num);
+void CalcAclTensorNum(size_t idx, const aclTensor* tensor, size_t& num, bool genPlaceholder);
+void CalcAclTensorNum(size_t idx, const aclTensorList* tensor, size_t& num, bool genPlaceholder);
+void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num, bool genPlaceholder);
 
-inline size_t GetAclTensorCount(OpArgList& args)
+inline size_t GetAclTensorCount(OpArgList& args, bool genPlaceholder)
 {
     size_t num = 0;
-    args.VisitByNoReturn([&num](size_t idx, OpArg& elem) { CalcAclTensorNum(idx, elem, num); });
+    args.VisitByNoReturn(
+        [&num, genPlaceholder](size_t idx, OpArg& elem) { CalcAclTensorNum(idx, elem, num, genPlaceholder); });
     return num;
 }
 

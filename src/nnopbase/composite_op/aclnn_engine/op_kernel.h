@@ -853,14 +853,14 @@ public:
             if (hasDevPtrArg_) {
                 inputNum = GetArgCount4DevPtrArg(*args->GetOpArg(op::OP_INPUT_ARG));
             } else {
-                inputNum = GetAclTensorCount(*args->GetOpArg(op::OP_INPUT_ARG));
+                inputNum = GetAclTensorCount(*args->GetOpArg(op::OP_INPUT_ARG), genPlaceholder_);
             }
             CollectMemSetTensor(args, inputNum, needAlign, memsetVersion);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
             return memsetBin->MemSetV2(stream, memSetValueCtx_);
 #endif
         } else {
-            size_t inputNum = GetAclTensorCount(*args->GetOpArg(op::OP_INPUT_ARG));
+            size_t inputNum = GetAclTensorCount(*args->GetOpArg(op::OP_INPUT_ARG), genPlaceholder_);
             CollectMemSetTensor(args, inputNum, needAlign, memsetVersion);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
             return memsetBin->MemSet(stream, memSetValueCtx_);

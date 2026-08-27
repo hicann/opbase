@@ -194,8 +194,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase4)
 
     auto ctx = op::MakeOpArgContext(input, output);
 
-    size_t tn_list = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)));
-    size_t tn = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG)));
+    size_t tn_list = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false);
+    size_t tn = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG)), false);
     delete inputList;
     EXPECT_EQ(tn, 1u);
     EXPECT_EQ(tn_list, 2u);
@@ -558,8 +558,36 @@ TEST_F(KernelLaunchUT, GetAclTensorCountTerst1)
     auto input_arg = OP_INPUT(nullTensor, nullTensorList);
     // create arg
     auto ctx = op::MakeOpArgContext(input_arg);
-    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)));
+    // tbe 语义：null 入参不计数
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false);
     EXPECT_EQ(num, 0u);
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountAscendCPlaceholder)
+{
+    // ascendc 语义(genPlaceholder=true)：null 的 aclTensor 入参占位计数，null 的 aclTensorList 仍跳过
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
+    auto input_arg = OP_INPUT(nullTensor, nullTensorList);
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // nullTensor 计 1，nullTensorList 跳过，期望 1
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true);
+    EXPECT_EQ(num, 1u);
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountAscendCPlaceholderAlign)
+{
+    // 验证 ascendc 语义下 null 占位对后续 tensor 索引的影响：
+    // null aclTensor 占位计 1（走 num++），其后有效 aclTensor 计 1，合计 2u。
+    // 若实现误改为"null 占位但不递增 num"或"null 仍跳过"，num 会是 1u，用例捕获回归。
+    aclTensor* nullTensor = nullptr;
+    op::Shape shape{33, 15, 64};
+    auto validTensor = std::make_unique<aclTensor>(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto input_arg = OP_INPUT(nullTensor, validTensor.get());
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // null 占位计 1 + 有效 tensor 计 1 = 2u；若 null 被错误跳过则会是 1u
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true);
+    EXPECT_EQ(num, 2u);
 }
 
 TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)

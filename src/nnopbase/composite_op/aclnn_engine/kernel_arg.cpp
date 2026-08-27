@@ -15,34 +15,35 @@ namespace op {
 namespace internal {
 using char_t = char;
 
-void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensor* tensor, size_t& num)
+void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensor* tensor, size_t& num, bool genPlaceholder)
 {
-    if (tensor == nullptr) {
+    // tbe 算子(genPlaceholder 为 false)跳过 null 入参；ascendc 算子对 null 入参占位计数，与 json argIdx_ 编址对齐
+    if (tensor == nullptr && !genPlaceholder) {
         OP_LOGW("op input is null. idx: %zu.", idx);
         return;
     }
     num++;
 }
 
-void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensorList* tensor, size_t& num)
+void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensorList* tensor, size_t& num, bool genPlaceholder)
 {
     if (tensor == nullptr) {
         OP_LOGW("op input tensorlist is null. idx: %zu.", idx);
         return;
     }
     for (size_t i = 0; i < tensor->Size(); i++) {
-        CalcAclTensorNum(idx, (*tensor)[i], num);
+        CalcAclTensorNum(idx, (*tensor)[i], num, genPlaceholder);
     }
 }
 
-void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num)
+void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num, bool genPlaceholder)
 {
     switch (arg.type) {
         case OpArgType::OPARG_ACLTENSOR:
-            CalcAclTensorNum(idx, reinterpret_cast<aclTensor*>(arg->pointer), num);
+            CalcAclTensorNum(idx, reinterpret_cast<aclTensor*>(arg->pointer), num, genPlaceholder);
             break;
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            CalcAclTensorNum(idx, reinterpret_cast<aclTensorList*>(arg->pointer), num);
+            CalcAclTensorNum(idx, reinterpret_cast<aclTensorList*>(arg->pointer), num, genPlaceholder);
             break;
         default:
             break;
