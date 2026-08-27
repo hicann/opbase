@@ -50,7 +50,7 @@ static bool GetBuiltinOppPath(string& oppPath)
 
     const char* currOppPath = nullptr;
     MM_SYS_GET_ENV(MM_ENV_ASCEND_OPP_PATH, currOppPath);
-    OP_CHECK(currOppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH not config."), return false);
+    OP_CHECK(currOppPath != nullptr, OP_LOGW("ASCEND_OPP_PATH is not configured."), return false);
     oppPathEnv = currOppPath;
 
     OP_CHECK(!oppPathEnv.empty(), OP_LOGW("ASCEND_OPP_PATH is empty"), return false);
@@ -70,7 +70,7 @@ aclnnStatus LoadOppResource()
     OP_LOGI("Entering func: LoadOppResource.");
     string oppPath;
     auto ret = GetBuiltinOppPath(oppPath);
-    OP_CHECK(ret, OP_LOGI("Leaving func: LoadOppResource, ASCEND_OPP_PATH not config."),
+    OP_CHECK(ret, OP_LOGI("Leaving func: LoadOppResource, ASCEND_OPP_PATH is not configured."),
              return ACLNN_ERR_PARAM_INVALID);
     auto loadRet = LoadOpProto(oppPath);
     OP_CHECK(loadRet == ACLNN_SUCCESS, OP_LOGI("Leaving func: LoadOppResource with status: %d", loadRet),

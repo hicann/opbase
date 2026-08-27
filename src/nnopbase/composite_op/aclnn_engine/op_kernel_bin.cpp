@@ -215,7 +215,7 @@ void OpKernelBin::DumpWorkspaceData(aclrtStream stream, OpArgContext* args) cons
 {
     OP_CHECK(args != nullptr && args->ContainsOpArgType(op::OP_WORKSPACE_ARG), OP_LOGW("Don't have workspace"), return);
     auto& argList = *args->GetOpArg(op::OP_WORKSPACE_ARG);
-    OP_CHECK((argList.count == 1), OP_LOGW("workspace must has only one value."), return);
+    OP_CHECK((argList.count == 1), OP_LOGW("workspace must have only one value."), return);
     auto& arg = argList[0];
 
     OP_CHECK((arg.type == OpArgType::OPARG_ACLTENSOR_LIST), OP_LOGW("workspace should be tensor list."), return);

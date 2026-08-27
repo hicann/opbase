@@ -103,7 +103,7 @@ void UpdateThradLocalPlatformInfo(fe::PlatFormInfos* platformInfo, const uint32_
             cubeCoreNumLast = cubeCoreNum;
         } else {
             OP_LOGD(
-                "getPlatformResWithLock is false when updateThradLocalPlatformInfo, can't use thread control coreNum.");
+                "getPlatformResWithLock is false when updateThreadLocalPlatformInfo, can't use thread control coreNum.");
         }
     }
     platformInfo->SetCoreNum(coreNum);

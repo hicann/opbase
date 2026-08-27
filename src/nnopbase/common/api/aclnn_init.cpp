@@ -45,7 +45,7 @@ aclnnStatus InitSystemConfig(const char* configPath)
 
     string configPathStr(configPath);
     string realConfigPathStr = op::RealPath(configPathStr);
-    OP_CHECK(!realConfigPathStr.empty(), OP_LOGI("real path of the input config path [%s] is not exist", configPath),
+    OP_CHECK(!realConfigPathStr.empty(), OP_LOGI("real path of the input config path [%s] does not exist", configPath),
              return op::internal::systemConfig.SetEnableDebugKernelFlag(false));
 
     // 解析json文件中的配置

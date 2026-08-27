@@ -464,7 +464,7 @@ void GetOpExecModeForTaskInfo(TaskInfo& info, OpArgContext* args)
         return;
     }
     auto& argList = *args->GetOpArg(op::OP_EXEC_MODE_ARG);
-    OP_CHECK((argList.count == 1), OP_LOGW("OP_EXEC_MODE_ARG must has only one value."), return);
+    OP_CHECK((argList.count == 1), OP_LOGW("OP_EXEC_MODE_ARG must have only one value."), return);
     auto& arg = argList[0];
     OP_CHECK((arg.type == OpArgType::OPARG_UINT), OP_LOGW("OP_EXEC_MODE_ARG must use OpExecMode enum."), return);
     info.execMode = static_cast<OpExecMode>(arg->value);

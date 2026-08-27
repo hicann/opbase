@@ -157,7 +157,7 @@ aclnnStatus OpExecutorImpl::SetRepeatable(const op::FVector<op::KernelLauncher*>
     OP_CHECK((repeatMode_ != RepeatMode::Unrepeatable),
              OP_LOGW("unrepeatable executor, find keyword MarkOpCacheInvalid in log."), return ACLNN_ERR_INNER;);
     OP_CHECK((hugeMemPoolIndex_ == op::kInvalidHugeMemIndexId),
-             OP_LOGW("can't set executor repeatable when use huge page mem."), return ACLNN_ERR_INNER;);
+             OP_LOGW("can't set executor repeatable when using huge page memory."), return ACLNN_ERR_INNER;);
 
     OP_CHECK((tensorRelation_.size() % K_PAIR_STORAGE_RELATION == 0),
              OP_LOGW("size of tensor relation must be a pair of tensors"), return ACLNN_ERR_INNER;);
