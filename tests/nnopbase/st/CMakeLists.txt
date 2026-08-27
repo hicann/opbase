@@ -41,9 +41,9 @@ message(STATUS "OPS_BASE_PATH: ${OPS_BASE_PATH}")
 
 # generate protobuff files
 file(GLOB utils_proto_src_files ${OPS_BASE_PATH}/src/nnopbase/aicpu/proto/*.proto)
-protobuf_generate(aicpu PROTO_SRCS PROTO_HDRS ${utils_proto_src_files})
+generate_cann_protobuf(aicpu PROTO_SRCS PROTO_HDRS ${utils_proto_src_files})
 file(GLOB cpu_proto_src_files ${OPS_BASE_PATH}/src/nnopbase/aicpu/cpu_proto/*.proto)
-protobuf_generate(aicpu_proto CPU_PROTO_SRCS CPU_PROTO_HDRS ${cpu_proto_src_files})
+generate_cann_protobuf(aicpu_proto CPU_PROTO_SRCS CPU_PROTO_HDRS ${cpu_proto_src_files})
 message(STATUS "generate aicpu successfully")
 
 set(NNOPBASE_STEST_HEADERS

@@ -105,9 +105,9 @@ add_subdirectory(individual_op)
 # generate protobuff files
 set(AICPU_PATH ${NNOPBASE_PATH}/aicpu)
 file(GLOB utils_proto_src_files ${AICPU_PATH}/proto/*.proto)
-protobuf_generate(aicpu PROTO_SRCS PROTO_HDRS ${utils_proto_src_files})
+generate_cann_protobuf(aicpu PROTO_SRCS PROTO_HDRS ${utils_proto_src_files})
 file(GLOB cpu_proto_src_files ${AICPU_PATH}/cpu_proto/*.proto)
-protobuf_generate(aicpu_proto CPU_PROTO_SRCS CPU_PROTO_HDRS ${cpu_proto_src_files})
+generate_cann_protobuf(aicpu_proto CPU_PROTO_SRCS CPU_PROTO_HDRS ${cpu_proto_src_files})
 # aicpu
 add_subdirectory(aicpu)
 

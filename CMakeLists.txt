@@ -61,7 +61,6 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     add_cann_third_party(protobuf)
     add_cann_third_party(eigen)
     add_cann_third_party(json)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/func.cmake)
 
     include(version.cmake)
     set(ASCEND_INSTALL_PATH "${ASCEND_HOME_PATH}")

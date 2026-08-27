@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14.1)
 project(cpu_kernels_context_device)
 
-protobuf_generate(aicpu_proto_device PROTO_SRCS PROTO_HDRS ${proto_src_files} TARGET)
+generate_cann_protobuf(aicpu_proto_device PROTO_SRCS PROTO_HDRS ${proto_src_files} TARGET)
 set(aicpu_proto_include "${CMAKE_BINARY_DIR}/proto/aicpu_proto_device")
 
 add_library(aicpu_context STATIC

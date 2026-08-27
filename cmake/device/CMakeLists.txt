@@ -17,7 +17,6 @@ add_cann_target_options()
 get_filename_component(OPS_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 
 include(${OPS_BASE_DIR}/cmake/config.cmake)
-include(${OPS_BASE_DIR}/cmake/func.cmake)
 
 add_cann_third_party(protobuf)
 add_cann_third_party(eigen)
