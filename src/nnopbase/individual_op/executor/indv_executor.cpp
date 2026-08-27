@@ -1332,7 +1332,10 @@ aclnnStatus NnopbaseExecutorKernelLaunch(NnopbaseExecutor* executor, aclrtStream
         NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorRunKernelForVectorCore(executor, stream, numBlocks, coreType));
     } else {
         NNOPBASE_ASSERT_RTOK_RETVAL(NnopbaseExecutorLaunchKernel(executor, stream, numBlocks));
-        const uint32_t taskType = NnopbaseExecutorGetTaskType(coreType, executor->args->binInfo->taskRation);
+        const NnopbaseTaskRation profilingTaskRation = (executor->args->binInfo->multiKernelType == 1) ?
+                                                           taskRation :
+                                                           executor->args->binInfo->taskRation;
+        const uint32_t taskType = NnopbaseExecutorGetTaskType(coreType, profilingTaskRation);
         NnopbaseExecutorReportProfiling(executor, numBlocks, taskType, launchBeginTime, stream);
     }
 

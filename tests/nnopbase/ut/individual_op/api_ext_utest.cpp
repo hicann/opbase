@@ -22,6 +22,7 @@
 #include "depends/mmpa/mmpa_stub.h"
 #include "depends/op/op_stub.h"
 #include "depends/op/aclnn_bninference_d_kernel_stub.h"
+#include "depends/profiler/profiler_stub.h"
 #include "opdev/op_executor.h"
 #include "utils/indv_lib_wrapper.h"
 #include "depends/runtime/runtime_stub.h"
@@ -785,6 +786,69 @@ TEST_F(NnopbaseExtUnitTest, Test1971Profiling5)
     uint32_t goldenData = 0u;
     uint64_t tilingKey = 3U; // taskRation 1:0 crossCoreSync: 0
     RunCommonOpForProfiling("1971_for_mix_normal", kMixAiv, "ascend910b", tilingKey, goldenData, false);
+}
+
+class MIXAIVProfilerByTilingKey : public ProfilerStub {
+public:
+    int32_t MsprofReportCompactInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length)
+    {
+        MsprofCompactInfo* report_data = (MsprofCompactInfo*)data;
+        auto& profNodeBasicInfo = report_data->data.nodeBasicInfo;
+        EXPECT_EQ(report_data->level, MSPROF_REPORT_NODE_LEVEL);
+        EXPECT_EQ(report_data->type, MSPROF_REPORT_NODE_BASIC_INFO_TYPE);
+        EXPECT_EQ(profNodeBasicInfo.taskType, MSPROF_GE_TASK_TYPE_MIX_AIV);
+        return 0;
+    }
+};
+
+TEST_F(NnopbaseExtUnitTest, Test1971ProfilingMixAivByTilingKey)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+    op::internal::opProfilingSwitch.reportFlag = true;
+    op::internal::opProfilingSwitch.additionInfoFlag = true;
+
+    MIXAIVProfilerByTilingKey profiler;
+    ProfilerStub::GetInstance()->Install(&profiler);
+
+    void* executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+
+    const char* opType = "1971_for_mix_normal";
+    char inputDesc[] = {1, 1, 1};
+    char outputDesc[] = {1};
+    char attrDesc[] = {};
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    ASSERT_NE(executor, nullptr);
+
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    (void)NnopbaseAddInput(executor, tensor, 0);
+    (void)NnopbaseAddInput(executor, tensor, 1);
+    (void)NnopbaseAddInput(executor, tensor, 2);
+    (void)NnopbaseAddOutput(executor, tensor, 0);
+
+    size_t workspaceLen = 0U;
+    ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
+    ((NnopbaseExecutor*)executor)->args->tilingInfo.tilingKey = 1U;
+
+    void* stream = (void*)0x12345;
+    void* workspace = nullptr;
+    if (workspaceLen > 0U) {
+        workspace = (void*)malloc(workspaceLen);
+    }
+    ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
+    if (workspaceLen > 0U) {
+        free(workspace);
+    }
+
+    NnopbaseExecutorGcSpace(executorSpace);
+    aclDestroyTensor(tensor);
+    ProfilerStub::GetInstance()->UnInstall();
+    NnopbaseUnsetEnvAndClearFolder();
+    op::internal::opProfilingSwitch.reportFlag = false;
+    op::internal::opProfilingSwitch.additionInfoFlag = false;
 }
 
 void CheckSizeInfoAddr(void* sizeInfoAddr)
