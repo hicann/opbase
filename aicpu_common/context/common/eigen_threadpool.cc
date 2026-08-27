@@ -42,7 +42,7 @@ EigenThreadPool* EigenThreadPool::GetInstance()
                 try {
                     core_num_ = std::strtol(&(value[0U]), nullptr, kDecimalScaleNum); // 10 is for 10进制
                 } catch (...) {
-                    KERNEL_LOG_ERROR("eigen thread get core num:%d failed.", core_num_);
+                    KERNEL_LOG_ERROR("Eigen thread failed to get core num, core_num[%d].", core_num_);
                     return nullptr;
                 }
             }
@@ -66,11 +66,10 @@ void EigenThreadPool::ParallelFor(int64_t total, int64_t per_unit_size, const Sh
 {
     KERNEL_LOG_INFO("Eigen threadpool parallel for begin, total[%ld], per_unit_size[%ld]", total, per_unit_size);
     if ((total <= 0) || (work == nullptr) || (per_unit_size <= 0)) {
-        KERNEL_LOG_WARN(
-            "Invalid param: total[%ld] <= 0 or per_unit_size[%ld] <= 0 or work "
-            "is "
-            "nullptr",
-            total, per_unit_size);
+        KERNEL_LOG_WARN("Invalid param: total[%ld] <= 0 or per_unit_size[%ld] <= 0 or work "
+                        "is "
+                        "nullptr",
+                        total, per_unit_size);
         return;
     }
 
@@ -97,9 +96,8 @@ void EigenThreadPool::ParallelFor(int64_t total, int64_t per_unit_size, const Sh
 
     KERNEL_LOG_INFO("Eigen threadpool parallel for, per_unit_cost[%.6f]", per_unit_cost);
 
-    threadpool_device_->parallelFor(
-        total, Eigen::TensorOpCost(0, 0, per_unit_cost),
-        [&work](Eigen::Index first, Eigen::Index last) { work(first, last); });
+    threadpool_device_->parallelFor(total, Eigen::TensorOpCost(0, 0, per_unit_cost),
+                                    [&work](Eigen::Index first, Eigen::Index last) { work(first, last); });
     KERNEL_LOG_INFO("Eigen threadpool parallel for success");
 }
 

@@ -28,20 +28,18 @@ uint32_t ParseExtSessionInfo(AicpuParamHead* param_head, SessionInfo*& session)
     while (offset + sizeof(FWKAdapter::ExtInfo) <= param_head->extInfoLength) {
         ext_info = reinterpret_cast<FWKAdapter::ExtInfo*>(ext_info_addr + offset);
         if (ext_info == nullptr) {
-            KERNEL_LOG_ERROR(
-                "Extend info is nullptr, extend info length[%u], extend info "
-                "offset[%u].",
-                param_head->extInfoLength, offset);
+            KERNEL_LOG_ERROR("Extend info is nullptr, extend info length[%u], extend info "
+                             "offset[%u].",
+                             param_head->extInfoLength, offset);
             return KERNEL_STATUS_PARAM_INVALID;
         }
 
         if (ext_info->infoType == static_cast<int32_t>(FWKAdapter::FWK_ADPT_EXT_SESSION_INFO)) {
             auto need_len = sizeof(SessionInfo);
             if (ext_info->infoLen != need_len) {
-                KERNEL_LOG_ERROR(
-                    "Parse extend session info failed, as info length must be "
-                    "[%zu], but %u.",
-                    sizeof(SessionInfo), ext_info->infoLen);
+                KERNEL_LOG_ERROR("Parse extend session info failed, as info length must be "
+                                 "[%zu], but got [%u].",
+                                 sizeof(SessionInfo), ext_info->infoLen);
                 return KERNEL_STATUS_PARAM_INVALID;
             }
 
@@ -72,9 +70,8 @@ __attribute__((visibility("default"))) uint32_t RunCpuKernel(void* param)
     // parse param_len
     AicpuParamHead* param_head = static_cast<AicpuParamHead*>(param);
     if (param_head->length < sizeof(AicpuParamHead)) {
-        KERNEL_LOG_ERROR(
-            "Param length[%u] can't be less than AicpuParamHead length[%zu]", param_head->length,
-            sizeof(AicpuParamHead));
+        KERNEL_LOG_ERROR("Param length[%u] can't be less than AicpuParamHead length[%zu]", param_head->length,
+                         sizeof(AicpuParamHead));
         return KERNEL_STATUS_PARAM_INVALID;
     }
 
@@ -107,14 +104,13 @@ __attribute__((visibility("default"))) uint32_t RunCpuKernelWithBlock(void* para
         return KERNEL_STATUS_PARAM_INVALID;
     }
 
-    KERNEL_LOG_INFO(
-        "RunCpuKernelWithBlock C begin. blockid[%u], blockdim[%u].", blkdim_info->block_id, blkdim_info->block_num);
+    KERNEL_LOG_INFO("RunCpuKernelWithBlock C begin. blockid[%u], blockdim[%u].", blkdim_info->block_id,
+                    blkdim_info->block_num);
     // parse param_len
     AicpuParamHead* param_head = static_cast<AicpuParamHead*>(param);
     if (param_head->length < sizeof(AicpuParamHead)) {
-        KERNEL_LOG_ERROR(
-            "Param length[%u] can't be less than AicpuParamHead length[%zu]", param_head->length,
-            sizeof(AicpuParamHead));
+        KERNEL_LOG_ERROR("Param length[%u] can't be less than AicpuParamHead length[%zu]", param_head->length,
+                         sizeof(AicpuParamHead));
         return KERNEL_STATUS_PARAM_INVALID;
     }
 

@@ -481,7 +481,7 @@ bool JsonLoadManger::ReadBytesFromBinaryFile(const std::string& fileName, std::v
     }
     if (size > kMaxFileSizeLimit) {
         file.close();
-        OP_LOGE(false, "File %s size %ld is out of limit %d.", fileName.c_str(), size, kMaxFileSizeLimit);
+        OP_LOGE(false, "File %s size %ld bytes is out of limit %d bytes.", fileName.c_str(), size, kMaxFileSizeLimit);
         return false;
     }
 
@@ -490,7 +490,7 @@ bool JsonLoadManger::ReadBytesFromBinaryFile(const std::string& fileName, std::v
     buffer.resize(size);
     file.read(&buffer[0], size);
     file.close();
-    OP_LOGI("Binary file size is %ld", size);
+    OP_LOGI("Binary file size is %ld bytes", size);
     return true;
 }
 
@@ -511,7 +511,7 @@ std::shared_ptr<std::vector<char>> JsonLoadManger::GetOrCreateBuffer(const std::
     }
 
     bufferCache_[filePath] = buffer;
-    OP_LOGI("Cached buffer for: %s, size: %zu", filePath.c_str(), buffer->size());
+    OP_LOGI("Cached buffer for: %s, size: %zu bytes", filePath.c_str(), buffer->size());
     return buffer;
 }
 } // namespace internal

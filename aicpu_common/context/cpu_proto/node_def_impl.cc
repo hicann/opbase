@@ -113,8 +113,8 @@ bool NodeDefImpl::AddAttrs(const std::string& name, const AttrValue* attr)
     auto attrs = nodedef_->mutable_attrs();
     KERNEL_CHECK_NULLPTR(attrs, false, "Protobuf mutable attrs is null")
     auto impl = CpuKernelUtils::GetImpl(attr);
-    auto pair =
-        attrs->insert(google::protobuf::Map<std::string, aicpuops::AttrValue>::value_type(name, *(impl->GetProto())));
+    auto pair = attrs->insert(
+        google::protobuf::Map<std::string, aicpuops::AttrValue>::value_type(name, *(impl->GetProto())));
     if (!pair.second) {
         KERNEL_LOG_ERROR("Nodedef insert attr %s to nodeDef failed.", name.c_str());
         return false;
@@ -138,10 +138,9 @@ int32_t NodeDefImpl::OutputsSize() const { return nodedef_->outputs_size(); }
 std::shared_ptr<Tensor> NodeDefImpl::MutableInputs(int32_t index) const
 {
     if ((index >= InputsSize()) || (index < 0)) {
-        KERNEL_LOG_ERROR(
-            "Index[%d] should be less than input tensors size[%d] and noe less than "
-            "0.",
-            index, InputsSize());
+        KERNEL_LOG_ERROR("Index[%d] should be less than input tensors size[%d] and not less than "
+                         "0.",
+                         index, InputsSize());
         return std::shared_ptr<Tensor>(nullptr);
     }
 
@@ -170,10 +169,9 @@ std::shared_ptr<Tensor> NodeDefImpl::MutableInputs(int32_t index) const
 std::shared_ptr<Tensor> NodeDefImpl::MutableOutputs(int32_t index) const
 {
     if ((index >= OutputsSize()) || (index < 0)) {
-        KERNEL_LOG_ERROR(
-            "Index[%d] should be less than output tensors size[%d] and noe less than "
-            "0.",
-            index, OutputsSize());
+        KERNEL_LOG_ERROR("Index[%d] should be less than output tensors size[%d] and not less than "
+                         "0.",
+                         index, OutputsSize());
         return std::shared_ptr<Tensor>(nullptr);
     }
 

@@ -76,49 +76,48 @@ std::string FormatToSerialString(Format format)
         }
         return it->second;
     } else {
-        KERNEL_LOG_ERROR("Format not support [%u]", format);
+        KERNEL_LOG_ERROR("Format is not supported, format[%u]", format);
         return "UNDEFINED";
     }
 }
 
-const std::map<std::string, DataType> DtypeMaps{
-    {"DT_FLOAT", DT_FLOAT},
-    {"DT_FLOAT16", DT_FLOAT16},
-    {"DT_BFLOAT16", DT_BFLOAT16},
-    {"DT_INT8", DT_INT8},
-    {"DT_INT16", DT_INT16},
-    {"DT_UINT16", DT_UINT16},
-    {"DT_UINT8", DT_UINT8},
-    {"DT_INT32", DT_INT32},
-    {"DT_INT64", DT_INT64},
-    {"DT_UINT32", DT_UINT32},
-    {"DT_UINT64", DT_UINT64},
-    {"DT_BOOL", DT_BOOL},
-    {"DT_DOUBLE", DT_DOUBLE},
-    {"DT_STRING", DT_STRING},
-    {"DT_DUAL_SUB_INT8", DT_DUAL_SUB_INT8},
-    {"DT_DUAL_SUB_UINT8", DT_DUAL_SUB_UINT8},
-    {"DT_COMPLEX32", DT_COMPLEX32},
-    {"DT_COMPLEX64", DT_COMPLEX64},
-    {"DT_COMPLEX128", DT_COMPLEX128},
-    {"DT_QINT8", DT_QINT8},
-    {"DT_QINT16", DT_QINT16},
-    {"DT_QINT32", DT_QINT32},
-    {"DT_QUINT8", DT_QUINT8},
-    {"DT_QUINT16", DT_QUINT16},
-    {"DT_RESOURCE", DT_RESOURCE},
-    {"DT_STRING_REF", DT_STRING_REF},
-    {"DT_DUAL", DT_DUAL},
-    {"DT_UINT1", DT_UINT1},
-    {"DT_HIFLOAT8", DT_HIFLOAT8},
-    {"DT_FLOAT8_E5M2", DT_FLOAT8_E5M2},
-    {"DT_FLOAT8_E4M3FN", DT_FLOAT8_E4M3FN},
-    {"DT_FLOAT8_E8M0", DT_FLOAT8_E8M0},
-    {"DT_FLOAT6_E3M2", DT_FLOAT6_E3M2},
-    {"DT_FLOAT6_E2M3", DT_FLOAT6_E2M3},
-    {"DT_FLOAT4_E2M1", DT_FLOAT4_E2M1},
-    {"DT_FLOAT4_E1M2", DT_FLOAT4_E1M2},
-    {"DT_UNDEFINED", DT_UNDEFINED}};
+const std::map<std::string, DataType> DtypeMaps{{"DT_FLOAT", DT_FLOAT},
+                                                {"DT_FLOAT16", DT_FLOAT16},
+                                                {"DT_BFLOAT16", DT_BFLOAT16},
+                                                {"DT_INT8", DT_INT8},
+                                                {"DT_INT16", DT_INT16},
+                                                {"DT_UINT16", DT_UINT16},
+                                                {"DT_UINT8", DT_UINT8},
+                                                {"DT_INT32", DT_INT32},
+                                                {"DT_INT64", DT_INT64},
+                                                {"DT_UINT32", DT_UINT32},
+                                                {"DT_UINT64", DT_UINT64},
+                                                {"DT_BOOL", DT_BOOL},
+                                                {"DT_DOUBLE", DT_DOUBLE},
+                                                {"DT_STRING", DT_STRING},
+                                                {"DT_DUAL_SUB_INT8", DT_DUAL_SUB_INT8},
+                                                {"DT_DUAL_SUB_UINT8", DT_DUAL_SUB_UINT8},
+                                                {"DT_COMPLEX32", DT_COMPLEX32},
+                                                {"DT_COMPLEX64", DT_COMPLEX64},
+                                                {"DT_COMPLEX128", DT_COMPLEX128},
+                                                {"DT_QINT8", DT_QINT8},
+                                                {"DT_QINT16", DT_QINT16},
+                                                {"DT_QINT32", DT_QINT32},
+                                                {"DT_QUINT8", DT_QUINT8},
+                                                {"DT_QUINT16", DT_QUINT16},
+                                                {"DT_RESOURCE", DT_RESOURCE},
+                                                {"DT_STRING_REF", DT_STRING_REF},
+                                                {"DT_DUAL", DT_DUAL},
+                                                {"DT_UINT1", DT_UINT1},
+                                                {"DT_HIFLOAT8", DT_HIFLOAT8},
+                                                {"DT_FLOAT8_E5M2", DT_FLOAT8_E5M2},
+                                                {"DT_FLOAT8_E4M3FN", DT_FLOAT8_E4M3FN},
+                                                {"DT_FLOAT8_E8M0", DT_FLOAT8_E8M0},
+                                                {"DT_FLOAT6_E3M2", DT_FLOAT6_E3M2},
+                                                {"DT_FLOAT6_E2M3", DT_FLOAT6_E2M3},
+                                                {"DT_FLOAT4_E2M1", DT_FLOAT4_E2M1},
+                                                {"DT_FLOAT4_E1M2", DT_FLOAT4_E1M2},
+                                                {"DT_UNDEFINED", DT_UNDEFINED}};
 
 bool IsEmptyTensor(Tensor* tensor)
 {
@@ -139,11 +138,10 @@ uint32_t NormalMathCheck(CpuKernelContext& ctx)
     const uint32_t k_output_num = 1;
 
     if ((ctx.GetInputsSize() != k_input_num) || (ctx.GetOutputsSize() != k_output_num)) {
-        KERNEL_LOG_ERROR(
-            "[%s] Input size or Output size is unexpected,"
-            "expected input size [%u], real input size [%u],"
-            "expected output size [%u], real output size [%u]",
-            ctx.GetOpType().c_str(), k_input_num, ctx.GetInputsSize(), k_output_num, ctx.GetOutputsSize());
+        KERNEL_LOG_ERROR("[%s] Input size or Output size is unexpected,"
+                         "expected input size [%u], real input size [%u],"
+                         "expected output size [%u], real output size [%u]",
+                         ctx.GetOpType().c_str(), k_input_num, ctx.GetInputsSize(), k_output_num, ctx.GetOutputsSize());
         return KERNEL_STATUS_PARAM_INVALID;
     }
 
@@ -153,11 +151,10 @@ uint32_t NormalMathCheck(CpuKernelContext& ctx)
     KERNEL_CHECK_NULLPTR(input_1, KERNEL_STATUS_PARAM_INVALID, "[%s] Get input[1] failed", ctx.GetOpType().c_str());
 
     if (input_0->GetDataType() != input_1->GetDataType()) {
-        KERNEL_LOG_WARN(
-            "[%s] dtype of inputs not matched, input[0] data_type is [%s], "
-            "input[1] data_type is [%s]",
-            ctx.GetOpType().c_str(), DTypeStr(input_0->GetDataType()).c_str(),
-            DTypeStr(input_1->GetDataType()).c_str());
+        KERNEL_LOG_WARN("[%s] dtype of inputs not matched, input[0] data_type is [%s], "
+                        "input[1] data_type is [%s]",
+                        ctx.GetOpType().c_str(), DTypeStr(input_0->GetDataType()).c_str(),
+                        DTypeStr(input_1->GetDataType()).c_str());
         return KERNEL_STATUS_PARAM_INVALID;
     }
 
@@ -169,59 +166,54 @@ uint32_t NormalMathCheck(CpuKernelContext& ctx)
 uint32_t NormalCheck(CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num)
 {
     if (static_cast<int32_t>(inputs_num) != kDynamicInput) {
-        KERNEL_CHECK_FALSE(
-            (ctx.GetInputsSize() >= inputs_num), KERNEL_STATUS_PARAM_INVALID, "[%s] need [%u] inputs, but got [%u].",
-            ctx.GetOpType().c_str(), inputs_num, ctx.GetInputsSize());
+        KERNEL_CHECK_FALSE((ctx.GetInputsSize() >= inputs_num), KERNEL_STATUS_PARAM_INVALID,
+                           "[%s] need [%u] inputs, but got [%u].", ctx.GetOpType().c_str(), inputs_num,
+                           ctx.GetInputsSize());
         for (uint32_t i = 0; i < inputs_num; ++i) {
             Tensor* input = ctx.Input(i);
-            KERNEL_CHECK_NULLPTR(
-                input, KERNEL_STATUS_INNER_ERROR, "[%s] get input[%u] failed.", ctx.GetOpType().c_str(), i);
+            KERNEL_CHECK_NULLPTR(input, KERNEL_STATUS_INNER_ERROR, "[%s] get input[%u] failed.",
+                                 ctx.GetOpType().c_str(), i);
             auto input_shape = input->GetTensorShape();
-            KERNEL_CHECK_NULLPTR(
-                input_shape, KERNEL_STATUS_PARAM_INVALID, "%s input[%u] tensor shape is nullptr.",
-                ctx.GetOpType().c_str(), i);
+            KERNEL_CHECK_NULLPTR(input_shape, KERNEL_STATUS_PARAM_INVALID, "%s input[%u] tensor shape is nullptr.",
+                                 ctx.GetOpType().c_str(), i);
             if (!IsEmptyTensor(input)) {
                 auto input_data = input->GetData();
-                KERNEL_CHECK_NULLPTR(
-                    input_data, KERNEL_STATUS_PARAM_INVALID, "%s input[%u] tensor data is nullptr.",
-                    ctx.GetOpType().c_str(), i);
+                KERNEL_CHECK_NULLPTR(input_data, KERNEL_STATUS_PARAM_INVALID, "%s input[%u] tensor data is nullptr.",
+                                     ctx.GetOpType().c_str(), i);
             }
         }
     }
 
     if (static_cast<int32_t>(outputs_num) != kDynamicOutput) {
-        KERNEL_CHECK_FALSE(
-            (ctx.GetOutputsSize() == outputs_num), KERNEL_STATUS_PARAM_INVALID, "[%s] need [%u] outputs, but got [%u].",
-            ctx.GetOpType().c_str(), outputs_num, ctx.GetOutputsSize());
+        KERNEL_CHECK_FALSE((ctx.GetOutputsSize() == outputs_num), KERNEL_STATUS_PARAM_INVALID,
+                           "[%s] need [%u] outputs, but got [%u].", ctx.GetOpType().c_str(), outputs_num,
+                           ctx.GetOutputsSize());
         for (uint32_t i = 0; i < outputs_num; ++i) {
             Tensor* output = ctx.Output(i);
-            KERNEL_CHECK_NULLPTR(
-                output, KERNEL_STATUS_INNER_ERROR, "[%s] get output[%u] failed.", ctx.GetOpType().c_str(), i);
+            KERNEL_CHECK_NULLPTR(output, KERNEL_STATUS_INNER_ERROR, "[%s] get output[%u] failed.",
+                                 ctx.GetOpType().c_str(), i);
             auto output_shape = output->GetTensorShape();
-            KERNEL_CHECK_NULLPTR(
-                output_shape, KERNEL_STATUS_PARAM_INVALID, "%s output[%u] tensor shape is nullptr.",
-                ctx.GetOpType().c_str(), i);
+            KERNEL_CHECK_NULLPTR(output_shape, KERNEL_STATUS_PARAM_INVALID, "%s output[%u] tensor shape is nullptr.",
+                                 ctx.GetOpType().c_str(), i);
             if (!IsEmptyTensor(output)) {
                 auto output_data = output->GetData();
-                KERNEL_CHECK_NULLPTR(
-                    output_data, KERNEL_STATUS_PARAM_INVALID, "%s output[%u] tensor data is nullptr.",
-                    ctx.GetOpType().c_str(), i);
+                KERNEL_CHECK_NULLPTR(output_data, KERNEL_STATUS_PARAM_INVALID, "%s output[%u] tensor data is nullptr.",
+                                     ctx.GetOpType().c_str(), i);
             }
         }
     }
     return KERNEL_STATUS_OK;
 }
 
-uint32_t NormalCheck(
-    CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num,
-    const std::vector<std::string>& attr_names)
+uint32_t NormalCheck(CpuKernelContext& ctx, const uint32_t inputs_num, const uint32_t outputs_num,
+                     const std::vector<std::string>& attr_names)
 {
-    KERNEL_HANDLE_ERROR(NormalCheck(ctx, inputs_num, outputs_num), "Check Greater params failed.");
+    KERNEL_HANDLE_ERROR(NormalCheck(ctx, inputs_num, outputs_num), "[%s] check params failed.",
+                        ctx.GetOpType().c_str());
     for (auto const& attr_name : attr_names) {
         auto attr = ctx.GetAttr(attr_name);
-        KERNEL_CHECK_NULLPTR(
-            attr, KERNEL_STATUS_PARAM_INVALID, "%s get attr[%s] is nullptr.", ctx.GetOpType().c_str(),
-            attr_name.c_str());
+        KERNEL_CHECK_NULLPTR(attr, KERNEL_STATUS_PARAM_INVALID, "%s get attr[%s] is nullptr.", ctx.GetOpType().c_str(),
+                             attr_name.c_str());
     }
     return KERNEL_STATUS_OK;
 }

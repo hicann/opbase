@@ -104,8 +104,8 @@ std::vector<std::string> CpuKernelRegister::GetAllRegisteredOpTypesV2() const
     return ret;
 }
 
-uint32_t CpuKernelRegister::RunCpuKernelCommon(
-    CpuKernelContext& ctx, const std::string type, const std::shared_ptr<CpuKernel> kernel)
+uint32_t CpuKernelRegister::RunCpuKernelCommon(CpuKernelContext& ctx, const std::string type,
+                                               const std::shared_ptr<CpuKernel> kernel)
 {
     if (aicpu::SetThreadLocalCtx != nullptr) {
         if (aicpu::SetThreadLocalCtx(aicpu::CONTEXT_KEY_OP_NAME, type) != aicpu::AICPU_ERROR_NONE) {
@@ -120,9 +120,8 @@ uint32_t CpuKernelRegister::RunCpuKernelCommon(
     auto start = std::chrono::steady_clock::now();
     uint32_t ret = kernel->Compute(ctx);
     auto end = std::chrono::steady_clock::now();
-    KERNEL_LOG_INFO(
-        "op type [%s] run cpu kernel finished, run time is [%lf] us.", type.c_str(),
-        std::chrono::duration<double, std::micro>(end - start).count());
+    KERNEL_LOG_INFO("op type [%s] run cpu kernel finished, run time is [%lf] us.", type.c_str(),
+                    std::chrono::duration<double, std::micro>(end - start).count());
     if (ret != KERNEL_STATUS_OK) {
         return ret;
     }
@@ -159,8 +158,8 @@ uint32_t CpuKernelRegister::RunCpuKernelV2(CpuKernelContext& ctx)
     return RunCpuKernelCommon(ctx, type, kernel);
 }
 
-uint32_t CpuKernelRegister::SetAsyncKernelContext(
-    const std::string& type, const uint8_t wait_type, const uint32_t wait_id)
+uint32_t CpuKernelRegister::SetAsyncKernelContext(const std::string& type, const uint8_t wait_type,
+                                                  const uint32_t wait_id)
 {
     if (aicpu::SetThreadLocalCtx != nullptr) {
         if (aicpu::SetThreadLocalCtx(aicpu::CONTEXT_KEY_OP_NAME, type) != aicpu::AICPU_ERROR_NONE) {
@@ -183,14 +182,14 @@ uint32_t CpuKernelRegister::SetAsyncKernelContext(
     return KERNEL_STATUS_OK;
 }
 
-uint32_t CpuKernelRegister::RunCpuKernelAsyncCommon(
-    CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id, std::function<uint32_t()> cb,
-    const std::shared_ptr<CpuKernel> kernel)
+uint32_t CpuKernelRegister::RunCpuKernelAsyncCommon(CpuKernelContext& ctx, const uint8_t wait_type,
+                                                    const uint32_t wait_id, std::function<uint32_t()> cb,
+                                                    const std::shared_ptr<CpuKernel> kernel)
 {
     std::string type = ctx.GetOpType();
     AsyncCpuKernel* async_kernel = dynamic_cast<AsyncCpuKernel*>(kernel.get());
     if (async_kernel == nullptr) {
-        KERNEL_LOG_ERROR("kernel name[%s] does not hava async impl", type.c_str());
+        KERNEL_LOG_ERROR("kernel name[%s] does not have async impl", type.c_str());
         return KERNEL_STATUS_INNER_ERROR;
     }
     uint32_t ret = SetAsyncKernelContext(type, wait_type, wait_id);
@@ -223,18 +222,17 @@ uint32_t CpuKernelRegister::RunCpuKernelAsyncCommon(
         }
         notify_info->retCode = status;
         void* param = reinterpret_cast<void*>(notify_info.get());
-        KERNEL_LOG_INFO(
-            "RunCpuKernelAsync notify event wait, wait_type[%u], "
-            "wait_id[%u], task_id[%lu], stream_id[%u], status[%u]",
-            notify_info->waitType, notify_info->waitId, notify_info->taskId, notify_info->streamId,
-            notify_info->retCode);
+        KERNEL_LOG_INFO("RunCpuKernelAsync notify event wait, wait_type[%u], "
+                        "wait_id[%u], task_id[%lu], stream_id[%u], status[%u]",
+                        notify_info->waitType, notify_info->waitId, notify_info->taskId, notify_info->streamId,
+                        notify_info->retCode);
         AsyncEventUtil::GetInstance().NotifyWait(param, sizeof(AsyncNotifyInfo));
     };
     return async_kernel->ComputeAsync(ctx, done);
 }
 
-uint32_t CpuKernelRegister::RunCpuKernelAsync(
-    CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id, std::function<uint32_t()> cb)
+uint32_t CpuKernelRegister::RunCpuKernelAsync(CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id,
+                                              std::function<uint32_t()> cb)
 {
     std::string type = ctx.GetOpType();
     KERNEL_LOG_INFO("op type [%s] run cpu kernel async.", type.c_str());
@@ -246,8 +244,8 @@ uint32_t CpuKernelRegister::RunCpuKernelAsync(
     return RunCpuKernelAsyncCommon(ctx, wait_type, wait_id, cb, kernel);
 }
 
-uint32_t CpuKernelRegister::RunCpuKernelAsyncV2(
-    CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id, std::function<uint32_t()> cb)
+uint32_t CpuKernelRegister::RunCpuKernelAsyncV2(CpuKernelContext& ctx, const uint8_t wait_type, const uint32_t wait_id,
+                                                std::function<uint32_t()> cb)
 {
     std::string type = ctx.GetOpType();
     KERNEL_LOG_INFO("op type [%s] run cpu kernel async v2.", type.c_str());

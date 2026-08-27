@@ -306,14 +306,14 @@ aclnnStatus AicpuExtInfoHandler::GetExtInfoDeviceBuffer(const aclOpExecutor* exe
                                                         uint64_t& deviceCacheOffset)
 {
     if (deviceExtMemSize > executor->workspaceDeviceAicpuMem_) {
-        OP_LOGE(ACLNN_ERR_INNER, "deviceExtMemSize:%lu is too big, workspaceDeviceAicpuMem_:%lu", deviceExtMemSize,
-                executor->workspaceDeviceAicpuMem_);
+        OP_LOGE(ACLNN_ERR_INNER, "deviceExtMemSize:%lu bytes is too big, workspaceDeviceAicpuMem_:%lu bytes",
+                deviceExtMemSize, executor->workspaceDeviceAicpuMem_);
         return ACLNN_ERR_INNER;
     }
 
     deviceExtInfo_ = ValueToPtr(PtrToValue(executor->GetWorkspaceAddr()) + executor->workspaceDeviceAicpuTaskOffset_);
     deviceCacheOffset += deviceExtMemSize;
-    OP_LOGI("alloc deviceExtInfo success. deviceExtMemSize:%lu", deviceExtMemSize);
+    OP_LOGI("alloc deviceExtInfo success. deviceExtMemSize:%lu bytes", deviceExtMemSize);
     return OK;
 }
 

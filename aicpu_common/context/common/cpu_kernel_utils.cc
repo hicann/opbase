@@ -184,9 +184,8 @@ std::shared_ptr<NodeDef> CpuKernelUtils::CreateNodeDef()
  * ParallelFor shards the "total" units of work.
  * @return uint32_t: 0->sucess other->failed
  */
-uint32_t CpuKernelUtils::ParallelFor(
-    const CpuKernelContext& ctx, int64_t total, int64_t per_unit_size,
-    const std::function<void(int64_t, int64_t)>& work)
+uint32_t CpuKernelUtils::ParallelFor(const CpuKernelContext& ctx, int64_t total, int64_t per_unit_size,
+                                     const std::function<void(int64_t, int64_t)>& work)
 {
     KERNEL_CHECK_NULLPTR(ctx.device_, KERNEL_STATUS_INNER_ERROR, "Device is null.")
 
@@ -215,11 +214,10 @@ void CpuKernelUtils::UpdateCustWorkSpaceInfo(CpuKernelContext* ctx, uint64_t wor
 {
     ctx->workspace_size_ = workspace_size;
     ctx->workspace_addr_ = workspace_addr;
-    auto ret = memset_s(
-        reinterpret_cast<void*>(static_cast<uintptr_t>(ctx->workspace_addr_)), ctx->workspace_size_, 0x00,
-        ctx->workspace_size_);
+    auto ret = memset_s(reinterpret_cast<void*>(static_cast<uintptr_t>(ctx->workspace_addr_)), ctx->workspace_size_,
+                        0x00, ctx->workspace_size_);
     if (ret != EOK) {
-        KERNEL_LOG_ERROR("UpdateCustWorkSpaceInfo memeset_s failed.");
+        KERNEL_LOG_ERROR("UpdateCustWorkSpaceInfo memset_s failed.");
     }
     return;
 }

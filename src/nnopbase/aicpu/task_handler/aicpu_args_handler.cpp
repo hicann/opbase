@@ -458,7 +458,7 @@ void AicpuArgsHandler::GetDeviceCacheAddr(void*& deviceAddr, aclOpExecutor* exec
                                                 deviceCacheOffset);
     }
     deviceAddr = op::internal::ValueToPtr(op::internal::PtrToValue(deviceCache_) + deviceCacheSize_);
-    OP_LOGD("alloc deviceCache_ success. deviceCacheSize_:%lu", static_cast<uint64_t>(deviceCacheSize_));
+    OP_LOGD("alloc deviceCache_ success. deviceCacheSize_:%lu bytes", static_cast<uint64_t>(deviceCacheSize_));
 }
 
 aclnnStatus AicpuArgsHandler::UpdateIoAddr(const FVector<const aclTensor*>& inputs, const FVector<aclTensor*>& outputs,

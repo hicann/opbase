@@ -93,11 +93,11 @@ const char KERNEL_MODULE[] = "AICPU";
         return errorCode;                                  \
     }
 
-#define KERNEL_CHECK_ASSIGN_64S_MULTI(A, B, result, errorCode)                    \
-    if ((A) != 0 && (B) != 0 && ((INT64_MAX) / (A)) <= (B)) {                     \
-        KERNEL_LOG_ERROR("Integer reversed multiA: %ld * multiB: %ld", (A), (B)); \
-        return errorCode;                                                         \
-    }                                                                             \
+#define KERNEL_CHECK_ASSIGN_64S_MULTI(A, B, result, errorCode)                                       \
+    if ((A) != 0 && (B) != 0 && ((INT64_MAX) / (A)) <= (B)) {                                        \
+        KERNEL_LOG_ERROR("Integer overflow in multiplication: multiA[%ld] * multiB[%ld]", (A), (B)); \
+        return errorCode;                                                                            \
+    }                                                                                                \
     (result) = ((A) * (B));
 
 #define KERNEL_CHECK_FALSE_RUN_INFO(condition, errorCode, logText...) \

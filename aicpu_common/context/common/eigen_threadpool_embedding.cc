@@ -46,7 +46,8 @@ EigenThreadPoolEmbedding* EigenThreadPoolEmbedding::GetInstance()
                 try {
                     core_num_ = std::strtol(&(core_num_value[0U]), nullptr, kDecimalScaleNum);
                 } catch (...) {
-                    KERNEL_LOG_WARN("embedding thread can not find core num env, use default value.");
+                    KERNEL_LOG_WARN("Embedding thread failed to parse core num from env, use default value[%d].",
+                                    kPerformanceMulitCoresNum);
                     core_num_ = kPerformanceMulitCoresNum;
                 }
             }
@@ -69,8 +70,8 @@ void EigenThreadPoolEmbedding::ParallelFor(int64_t total, int64_t per_unit_size,
 {
     double per_unit_cost = 1.0;
     if ((total <= 0) || (work == nullptr) || (per_unit_size <= 0)) {
-        KERNEL_LOG_WARN(
-            "Invalid param: total[%ld] <= 0 or per_unit_size[%ld] <= 0 or work is nullptr", total, per_unit_size);
+        KERNEL_LOG_WARN("Invalid param: total[%ld] <= 0 or per_unit_size[%ld] <= 0 or work is nullptr", total,
+                        per_unit_size);
         return;
     }
     if ((per_unit_size) <= (total / core_num_)) {
@@ -84,9 +85,8 @@ void EigenThreadPoolEmbedding::ParallelFor(int64_t total, int64_t per_unit_size,
         per_unit_cost = 1.0 * kMaxTaskSize / per_unit_size;
     }
 
-    threadpool_device_->parallelFor(
-        total, Eigen::TensorOpCost(0, 0, per_unit_cost),
-        [&work](Eigen::Index first, Eigen::Index last) { work(first, last); });
+    threadpool_device_->parallelFor(total, Eigen::TensorOpCost(0, 0, per_unit_cost),
+                                    [&work](Eigen::Index first, Eigen::Index last) { work(first, last); });
     KERNEL_LOG_INFO("Eigen threadpool parallel for success.");
 }
 } // namespace aicpu
