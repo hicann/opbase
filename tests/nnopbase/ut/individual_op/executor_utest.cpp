@@ -37,6 +37,12 @@
 #define private public
 #include "executor/indv_args_pool.h"
 #undef private
+// indv_executor_ext.cpp is compiled into this test TU (and excluded from
+// NNOPBASE_SRC_FILES in tests/nnopbase/ut/CMakeLists.txt) so that the tests
+// below can access its internal state (g_nnopbaseStreamMap, declared in an
+// anonymous namespace). GCC 15 no longer gives such anonymous-namespace
+// symbols global linkage, so the tests cannot reach them via `extern` anymore.
+#include "executor/indv_executor_ext.cpp"
 
 namespace {
 void SetSocVersion(const std::string& version)
@@ -2348,7 +2354,8 @@ TEST_F(NnopbaseExecutorUnitTest, LoadTilingSoFailed)
 
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForStream)
 {
-    extern std::unordered_map<void*, NnopbaseStreamForCombineExecution> g_nnopbaseStreamMap;
+    // g_nnopbaseStreamMap is visible here because indv_executor_ext.cpp is
+    // compiled into this TU (see the #include at the top of this file).
     g_nnopbaseStreamMap.clear();
 
     aclrtStream mainStream;
@@ -2367,7 +2374,6 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForStream)
 
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseStreamCallbackFuncForContextWithDefaultStream)
 {
-    extern std::unordered_map<void*, NnopbaseStreamForCombineExecution> g_nnopbaseStreamMap;
     g_nnopbaseStreamMap.clear();
 
     NnopbaseStreamForCombineExecution nnopbaseStream;

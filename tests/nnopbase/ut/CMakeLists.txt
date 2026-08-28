@@ -121,6 +121,13 @@ file(GLOB_RECURSE NNOPBASE_SRC_FILES CONFIGURE_DEPENDS
     ${OPS_BASE_PATH}/src/nnopbase/individual_op/executor/*.cpp
 )
 
+# indv_executor_ext.cpp is compiled inside individual_op/executor_utest.cpp
+# (which #includes it) so that the UT can access its anonymous-namespace state.
+# Exclude it here to avoid duplicate definitions of its external functions.
+list(REMOVE_ITEM NNOPBASE_SRC_FILES
+    ${OPS_BASE_PATH}/src/nnopbase/individual_op/executor/indv_executor_ext.cpp
+)
+
 # testcase源文件
 file(GLOB_RECURSE NNOPBASE_TEST_COMMON_CASE_SRC_FILES CONFIGURE_DEPENDS
     ${NNOPBASE_UT_DIR}/individual_op/*.cpp                                     # individual_op

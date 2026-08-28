@@ -11,6 +11,7 @@
 #ifndef OP_INTERNAL_SMALL_VECTOR_H_
 #define OP_INTERNAL_SMALL_VECTOR_H_
 #include <algorithm>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <vector>
