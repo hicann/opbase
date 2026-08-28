@@ -34,6 +34,8 @@ stages:
               repo_name: "opbase"
               target_branch: ${{ env.TARGET_BRANCH }}
               repo_url: ${{ vars.CI_PATH }}
+              comment: ${{ atomgit.event.comment.body }}
+              token: ${{ secrets.GIT_TOKEN }}
           -
             name: show_output
             run: |

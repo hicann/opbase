@@ -16,9 +16,27 @@ else
     echo "api-check=continue" >> "${ATOMGIT_OUTPUT}"
 fi
 if [[ "${task_name}" =~ Compile_Ascend_X86_ubuntu24 ]]; then
-  sudo update-alternatives --set gcc /usr/bin/gcc-14
+  sudo update-alternatives --set gcc /usr/bin/gcc-15
   sed -i "1i set(CMAKE_EXPORT_COMPILE_COMMANDS ON)" "CMakeLists.txt"
 fi
+
+if gcc --version | head -n1 | grep -q "15\."; then
+    rm -rf /home/jenkins/opensource/lib_cache
+    if [ -d /home/jenkins/opensource/gcc15 ]; then
+        rm -rf /home/jenkins/opensource/gcc15/lib_cache/abseil-cpp
+        rm -rf /home/jenkins/opensource/gcc15/lib_cache/device/abseil-cpp
+        ln -s /home/jenkins/opensource/gcc15/lib_cache /home/jenkins/opensource/lib_cache
+    elif [ -d /home/jenkins/opensource/gcc15x86 ]; then
+        rm -rf /home/jenkins/opensource/gcc15x86/lib_cache/abseil-cpp
+        rm -rf /home/jenkins/opensource/gcc15x86/lib_cache/device/abseil-cpp
+        ln -s /home/jenkins/opensource/gcc15x86/lib_cache /home/jenkins/opensource/lib_cache
+    fi
+else
+    gcc --version
+    rm -rf /home/jenkins/opensource/lib_cache
+    ln -s /home/jenkins/opensource/ubuntu20/lib_cache /home/jenkins/opensource/lib_cache
+fi
+
 rm -rf /home/jenkins/opensource/json
 source /home/jenkins/Ascend/cann/bin/setenv.bash
 bash build.sh --cann_3rd_lib_path=/home/jenkins/opensource -j16
