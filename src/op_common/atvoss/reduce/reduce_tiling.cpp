@@ -420,7 +420,7 @@ ge::graphStatus ReduceOpTiling::PreProcessOptionalParam()
 // elimniate dim and axes where dim = 1
 void ReduceOpTiling::EliminateOne(uint64_t* viewShape, int64_t* viewStride, int32_t& shapeSize)
 {
-    bool contiguousFlag = CheckIsContiguous(opInput_);
+    bool contiguousFlag = isContiguous_;
     int32_t dstIdx = 1; // shape中第一个数给了1, 跳过第一个数
     for (size_t i = 0; i < opInput_.axes.size(); i++) {
         // 前面补了一维，所有的axes需要加1
@@ -630,6 +630,7 @@ void ReduceOpTiling::DoReduceTiling(ReduceTilingKey& key)
     int64_t newStride[MAX_DIM] = {0};
     int32_t newShapeSize = 0;
     tilingKey_.batchInvariant = key.batchInvariant;
+    isContiguous_ = CheckIsContiguous(opInput_);
     TransformShape(newShape, newStride, newShapeSize);
 
     DoTilingMatchPattern(newShape, newShapeSize);
@@ -850,6 +851,7 @@ void ReduceOpTiling::ComputeUnitR(const uint64_t* shape)
                 break;
             }
         }
+        AdjustStepToDivisor<Pattern>(shape, iR, step, bBlockNum, innerA, innerR, ubBlockSize);
         innerR = innerR * step;
         outerR = (step >= sliceShape_[iR] ? outerR / axisLen * CeilDiv(axisLen, step) :
                                             outerR / axisLen * sliceNum_[iR] * CeilDiv(sliceShape_[iR], step));
@@ -922,6 +924,27 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
         outerA /= axisLen;
     }
     AssembleUnit(unitA_, iA, innerA, outerA, step);
+}
+
+/*
+ * 非质数且连续场景下，调整step为shape整除的因子，保证R轴均匀切分，减少kernel侧补pad
+ */
+template <class Pattern>
+void ReduceOpTiling::AdjustStepToDivisor(const uint64_t* shape, int32_t iR, uint64_t& step, uint64_t bBlockNum,
+                                         uint64_t innerA, uint64_t innerR, uint64_t ubBlockSize)
+{
+    if (!isPrime(shape[iR]) && isContiguous_) {
+        uint64_t maxStep = bBlockNum / (innerA * innerR * cBlock_.aSize * cBlock_.rSize) / 2;
+        for (uint64_t i = step; i >= maxStep; i--) {
+            if (shape[iR] % i == 0) {
+                step = i;
+                break;
+            }
+        }
+        if (iR == Pattern::Dim - 1) {
+            step = FloorAlign(step, ubBlockSize);
+        }
+    }
 }
 
 template <class Pattern>
@@ -1049,7 +1072,7 @@ ge::graphStatus ReduceOpTiling::ComputeTiling(uint64_t* shape)
     if (IsEmtpyTensor<Pattern>(shape)) {
         return ComputeEmptyTiling<Pattern>(shape);
     }
-    if (tilingKey_.batchInvariant && CheckIsContiguous(opInput_)) {
+    if (tilingKey_.batchInvariant && isContiguous_) {
         ComputeRFirst<Pattern>(shape);
         if (unitR_.idx == -1) {
             ComputeAWithRFullLoad<Pattern>(shape);
@@ -1175,6 +1198,23 @@ void ReduceOpTiling::ComputeStride(const uint64_t* shape)
     tilingData_->meanVar = static_cast<float>(meanVar);
 }
 
+bool ReduceOpTiling::isPrime(uint64_t num) const
+{
+    if (num <= CONST1)
+        return false;
+    if (num == CONST2 || num == CONST3)
+        return true;
+    if (num % CONST2 == 0 || num % CONST3 == 0)
+        return false;
+
+    for (uint64_t i = CONST5; i * i <= num; i += CONST6) {
+        if (num % i == 0 || num % (i + CONST2) == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 template <class Pattern>
 void ReduceOpTiling::SetTilingKey()
 {
@@ -1198,7 +1238,7 @@ void ReduceOpTiling::SetTilingKey()
     tilingKey_.patternID = Pattern::ID * CONST10 + innerID;
     tilingKey_.loopARCount = static_cast<uint32_t>(aCount * CONST10 + rCount);
     tilingKey_.loopInnerARCount = static_cast<uint32_t>(innerACount * CONST10 + innerRCount);
-    tilingKey_.isContiguous = CheckIsContiguous(opInput_);
+    tilingKey_.isContiguous = isContiguous_;
     OP_LOGI(context_, "patternID:%u, loopARCount:%u, loopInnerARCount:%u, isContiguous:%d, isBatchInvariant:%d",
             tilingKey_.patternID, tilingKey_.loopARCount, tilingKey_.loopInnerARCount, tilingKey_.isContiguous ? 1 : 0,
             tilingKey_.batchInvariant ? 1 : 0);

@@ -163,7 +163,6 @@ void ReduceOpTiling::ComputeAWithRFullLoad(const uint64_t* shape)
     for (int32_t iA = startA; iA >= endA; iA -= AXES_STEP) {
         outerA *= shape[iA];
     }
-    OP_LOGD(context_, "outerA is %lu", outerA);
     int32_t iA;
     for (iA = startA; iA >= endA; iA -= AXES_STEP) {
         uint64_t axisLen = shape[iA];
@@ -236,23 +235,6 @@ void ReduceOpTiling::SetTilingDataBatchInvariant(const uint64_t* shape)
                         CeilDiv(unitR_.outer, tilingData_->factorRCntPerCore);
     tilingData_->realCoreNum = realCore;
     context_->SetBlockDim(realCore);
-}
-
-inline bool ReduceOpTiling::isPrime(uint64_t num) const
-{
-    if (num <= CONST1)
-        return false;
-    if (num == CONST2 || num == CONST3)
-        return true;
-    if (num % CONST2 == 0 || num % CONST3 == 0)
-        return false;
-
-    for (uint64_t i = CONST5; i * i <= num; i += CONST6) {
-        if (num % i == 0 || num % (i + CONST2) == 0) {
-            return false;
-        }
-    }
-    return true;
 }
 
 } // namespace Base

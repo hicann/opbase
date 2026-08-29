@@ -435,6 +435,10 @@ protected:
 
     bool isPrime(uint64_t num) const;
 
+    template <class Pattern>
+    void AdjustStepToDivisor(const uint64_t* shape, int32_t iR, uint64_t& step, uint64_t bBlockNum, uint64_t innerA,
+                             uint64_t innerR, uint64_t ubBlockSize);
+
 protected:
     gert::TilingContext* context_{nullptr};
     ReduceOpCompileInfo* compileInfo_{nullptr};
@@ -444,6 +448,7 @@ protected:
     uint64_t resultBlock_{0}; // reduce计算后的buffer大小
     int32_t dimNum_{0};
     bool needReserveA_ = 0;
+    bool isContiguous_ = true;
     size_t workSpaceSize_{0};
     CacheLineBlock cBlock_;
     ReduceTilingUnit unitA_;
