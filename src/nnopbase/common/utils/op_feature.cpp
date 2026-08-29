@@ -12,6 +12,8 @@
 
 #include <cinttypes>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <vector>
 
@@ -43,6 +45,15 @@ std::once_flag g_pcieThroughOnceFlag;
 
 extern "C" {
 __attribute__((weak)) aclError aclrtHostGetDevicePointerAddrRange(PcieAddrRange* addrRange, uint32_t* count);
+}
+
+// PCIe through 环境变量总开关名
+constexpr const char* PCIE_THROUGH_ENV_NAME = "OP_PCIE_THROUGH_ACCESS_HOST_MEM_CHECK_ENABLE";
+
+bool IsPcieThroughEnvEnabled()
+{
+    const char* envVal = std::getenv(PCIE_THROUGH_ENV_NAME);
+    return (envVal != nullptr) && (std::strcmp(envVal, "1") == 0);
 }
 
 bool IsHostDeviceConnectWithPcie([[maybe_unused]] uint32_t deviceId)
@@ -124,6 +135,12 @@ aclnnStatus InitPcieThroughInfo()
         if (!IsHostDeviceConnectWithPcie(static_cast<uint32_t>(deviceId))) {
             OP_LOGI("The connect type between host and device cannot be obtained, or the type is not PCIe, so disable "
                     "PCIe through feature.");
+            return;
+        }
+
+        if (!IsPcieThroughEnvEnabled()) {
+            OP_LOGI("PCIe through env switch [%s] is not set to 1, disable PCIe through feature.",
+                    PCIE_THROUGH_ENV_NAME);
             return;
         }
 
