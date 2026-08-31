@@ -136,9 +136,11 @@
         <file value="reduce_tiling_data.h" install_mod="550"/>
         <file value="reduce_tiling.h" install_mod="550"/>
         <file value="reduce_tiling_key_decl_batch_invariant.h" install_mod="550"/>
+        <file value="reduce_tiling_key_decl_full.h" install_mod="550"/>
         <file value="reduce_tiling_key_decl.h" install_mod="550"/>
         <file value="reduce_tiling_key_decl_non_contiguous.h" install_mod="550"/>
         <file value="reduce_tiling_key_sel_batch_invariant.h" install_mod="550"/>
+        <file value="reduce_tiling_key_sel_full.h" install_mod="550"/>
         <file value="reduce_tiling_key_sel.h" install_mod="550"/>
         <file value="reduce_tiling_key_sel_non_contiguous.h" install_mod="550"/>
         <file value="reduce_util.h" install_mod="550"/>
