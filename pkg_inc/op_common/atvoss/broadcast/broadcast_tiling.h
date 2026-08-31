@@ -737,16 +737,37 @@ private:
 
     ge::graphStatus DoBroadcastOpTilingNonContiguousBase(BroadcastTilingParams& broadcastTilingParams)
     {
-        auto status = DoBroadcastOpTiling(broadcastTilingParams);
+        brcBaseTilingData = context_->GetTilingData<BroadcastBaseTilingData<OpDag>>();
 
-        if (status != ge::GRAPH_SUCCESS) {
-            OP_LOGE(context_, "Do broadcast tiling failed.");
-            return ge::GRAPH_FAILED;
-        }
+        OP_CHECK_IF((brcBaseTilingData == nullptr),
+                    OP_LOGE(context_->GetNodeName(), "Get brcBaseTilingData from GE context failed"),
+                    return ge::GRAPH_FAILED);
+        GetCopyInBrcPosList();
+        bool isUbBroadcast = IsUbBroadcast();
+        int64_t bufferNum = GetBufferNum(isUbBroadcast);
+
+        BroadcastComputeParams params;
+        params.maxDtypeBits = OpDag::MaxDtypeBytes * BROADCAST_BITS_NUM;
+        params.minDtypeBits = OpDag::MinDtypeBytes * BROADCAST_BITS_NUM;
+        params.extraSize = {tmpExtraSize};
+        params.bufferDivisor = {(bufferNum + tmpExtraBufferNum) * params.maxDtypeBits};
+        broadcastTilingParams.computeMap = {{1, params}};
+
+        auto status = DoBrodcastTilingNonContiguousBase(broadcastTilingParams, tilingData);
+        OP_CHECK_IF((status != ge::GRAPH_SUCCESS),
+                    OP_LOGE(context_->GetNodeName(), "DoBrodcastTilingNonContiguousBase failed"),
+                    return ge::GRAPH_FAILED);
 
         schMode = tilingData.shapeLen - tilingData.ubSplitAxis > MAX_NNDMA_DIM ?
                       SCH_MODE_NON_CONTIGUOUS_NDDMA_WITH_LOOP_CACHE_BRC :
                       SCH_MODE_NON_CONTIGUOUS_NDDMA_WITHOUT_LOOP_CACHE_BRC;
+
+        AdaptBroadcastBaseTilingData();
+        SetInputNddmaParams<0>();
+        SetInputUbBrcParams<0>();
+        SetInputParams();
+
+        context_->SetBlockDim(brcBaseTilingData->blockNum);
 
         return ge::GRAPH_SUCCESS;
     }

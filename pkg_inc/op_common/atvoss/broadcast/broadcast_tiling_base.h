@@ -92,6 +92,7 @@ struct BroadcastTilingParams {
     std::vector<gert::Stride> inStride;
     gert::Shape outShape;
     int64_t ubSize;
+    // 仅对连续路径（inputAllContiguous=true）生效；非连续路径默认多核优先，忽略此参数
     bool preferMultiCore = false;
     bool inputAllContiguous = true;
     std::map<uint64_t, BroadcastComputeParams> computeMap;

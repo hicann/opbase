@@ -82,6 +82,7 @@ public:
         BroadcastGetAxesIndicesNDDMA(axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(),
                                      tilingData->outputDims, tilingData->ubSplitAxis,
                                      tilingData->dimProductBeforeUbInner);
+        InitShapeOneFlag();
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum; ubLoopIdx += 1) {
             copyInBrcCount = 0;
             if (ubLoopIdx != 0) {
@@ -119,6 +120,23 @@ protected:
         }
     }
 
+    // 检测输入是否为shape[1]广播：遍历实际有效维度（shapeLen），若所有维度stride均为0则标记为shape[1]
+    __aicore__ inline void InitShapeOneFlag()
+    {
+        for (int i = 0; i < BrcDag::CopyBrcSize; i++) {
+            int64_t strideSum = 0;
+            for (int j = 0; j < tilingData->shapeLen; j++) {
+                strideSum += tilingData->inputBrcStrides[i][j];
+                if (strideSum != 0) {
+                    break;
+                }
+            }
+            if (strideSum == 0) {
+                inputIsShapeOne[i] = true;
+            }
+        }
+    }
+
     template <typename Op, int pos>
     __aicore__ inline void CopyInBrc(int64_t ubSplitSize,
                                      const int64_t (&axesIndices)[BROADCAST_NON_CONTIGIOUS_MAX_DIMS_NUM],
@@ -140,6 +158,26 @@ protected:
         globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(this->inGm_[input::Pos]));
 
         RUN_LOG("copyInBrcCount is %d , input::Pos is %d ,pingpong is %d", copyInBrcCount, input::Pos, pingPong);
+        if (inputIsShapeOne[copyInBrcCount]) {
+            // shape[1] 广播：搬入 1 元素后 Duplicate 填满整个 buffer（elemNum）。
+            // pingPong buffer 在 former/tail 迭代间复用，若按 ubSplitSize×stride 仅填当前迭代大小，
+            // former 复用同一 buffer 时尾部残留 tail 旧数据，导致精度错误。
+            if (ubLoopIdx <= 1) {
+                GetTensor<TPosition::VECIN>(bufId);
+                AscendC::DataCopyPad(inTensor, globalTensor, {1, sizeof(inputType), 0, 0}, {false, 0, 0, 0});
+                ReleaseTensor<TPosition::VECIN>(bufId);
+                GetTensor<TPosition::VECCALC>(bufId);
+                if constexpr (std::is_same_v<inputType, double>) {
+                    AscendC::Duplicate<int64_t>(inTensor.template ReinterpretCast<int64_t>(),
+                                                inTensor.template ReinterpretCast<int64_t>(), tilingData->elemNum);
+                } else {
+                    AscendC::Duplicate<inputType>(inTensor, inTensor, tilingData->elemNum);
+                }
+                ReleaseTensor<TPosition::VECCALC>(bufId);
+            }
+            copyInBrcCount = copyInBrcCount + 1;
+            return;
+        }
         if ((tilingData->inputBrcStrides[copyInBrcCount][tilingData->ubSplitAxis] != 0) ||
             (ubLoopIdx <= 1 ||
              (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter <= 1)) {
@@ -213,6 +251,7 @@ private:
     constexpr static int bufferNum = BrcDag::template GetBufferNum<true, true>();
     int copyInBrcCount = 0;
     const BroadcastNlastTransposeTilingData<BrcDag>* tilingData;
+    bool inputIsShapeOne[BrcDag::CopyBrcSize] = {false};
 };
 } // namespace Base
 } // namespace Ops

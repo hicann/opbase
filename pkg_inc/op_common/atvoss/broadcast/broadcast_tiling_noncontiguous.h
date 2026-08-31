@@ -19,18 +19,14 @@
 
 namespace Ops {
 namespace Base {
-OPBASE_API uint64_t GetBlockSplitFactorLastTranspose(BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo,
-                                                     uint64_t maxElemNum, const BroadcastComputeParams& computeParams);
-
 OPBASE_API ge::graphStatus DoBrodcastTilingLastTranspose(const BroadcastTilingParams& broadcastTilingParams,
                                                          BroadcastTilingData& broadcastTilingData);
 
-OPBASE_API uint64_t GetBlockSplitFactorNLastTranspose(BroadcastTilingData& broadcastTilingData, ubSplitInfo& ubInfo,
-                                                      uint64_t maxElemNum, const BroadcastComputeParams& computeParams,
-                                                      bool isUbBroadcast);
+OPBASE_API ge::graphStatus DoBrodcastTilingNLastTranspose(const BroadcastTilingParams& broadcastTilingParams,
+                                                          BroadcastTilingData& broadcastTilingData, bool isUbBroadcast);
 
-OPBASE_API ge::graphStatus BroadcastTilingNLastTranspose(const BroadcastTilingParams& broadcastTilingParams,
-                                                         BroadcastTilingData& broadcastTilingData, bool isUbBroadcast);
+OPBASE_API ge::graphStatus DoBrodcastTilingNonContiguousBase(const BroadcastTilingParams& broadcastTilingParams,
+                                                             BroadcastTilingData& broadcastTilingData);
 
 /**
  *  按顺序将对应节点的输入shape信息设置到tilingdata中
@@ -222,7 +218,7 @@ ge::graphStatus DoBroadcastTilingNLastTranspose(BroadcastTilingParams& broadcast
                                                 T* brcNLastTransposeTilingData, BroadcastTilingData& tilingData,
                                                 bool isUbBroadcast)
 {
-    auto status = BroadcastTilingNLastTranspose(broadcastTilingParams, tilingData, isUbBroadcast);
+    auto status = DoBrodcastTilingNLastTranspose(broadcastTilingParams, tilingData, isUbBroadcast);
     if (status != ge::GRAPH_SUCCESS) {
         OP_LOGE("BroadcastTiling", "inner DoBroadcastOpTilingLastTranspose tiling failed");
         return ge::GRAPH_FAILED;
