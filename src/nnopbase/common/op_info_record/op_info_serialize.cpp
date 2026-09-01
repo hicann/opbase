@@ -258,6 +258,7 @@ int32_t OpInfoSerialize(const gert::TilingContext* ctx, const aclnnOpInfoRecord:
             return 0;
         }
         AddPlatformInfoToJson(jsonDebug, ctx);
+        jsonDebug["platform_info"]["pcie_through_flag"] = opt.enablePcie;
         jsonDebug["impl_mode"] = opt.impl_mode;
         jsonDebug["deterministic"] = (opt.deterministic == 0U) ? "false" : "true";
         jsonDebug["deterministic_level"] = opt.deterministic;

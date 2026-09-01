@@ -135,10 +135,12 @@ public:
         gert::TilingContext* ctx = PtrCastTo<gert::TilingContext>(tilingCtx_);
         if (op::internal::GetOpProfilingRecordArgFlag()) {
             auto opCompilerOpt = aclnnOpInfoRecord::OpCompilerOption(
-                tilingParseCtx->GetOpImplModeStr(), GetThreadLocalContext().opConfigInfo_.deterministicLevel_);
-            OP_LOGI("Call OpInfoSerialize, deterministic level %d, impl mode %s. kernel info %d %s.",
+                tilingParseCtx->GetOpImplModeStr(), GetThreadLocalContext().opConfigInfo_.deterministicLevel_,
+                GetThreadLocalContext().opConfigInfo_.usePcieAddr);
+            OP_LOGI("Call OpInfoSerialize, deterministic level %d, impl mode %s. kernel info %d %s, enable pcie is %d.",
                     opCompilerOpt.deterministic, opCompilerOpt.impl_mode.c_str(),
-                    tilingParseCtx->GetOpKernelInfo()->bin_type, tilingParseCtx->GetOpKernelInfo()->bin_info.c_str());
+                    tilingParseCtx->GetOpKernelInfo()->bin_type, tilingParseCtx->GetOpKernelInfo()->bin_info.c_str(),
+                    GetThreadLocalContext().opConfigInfo_.usePcieAddr);
             OP_CHECK_NO_RETURN(
                 aclnnOpInfoRecord::OpInfoSerialize(ctx, opCompilerOpt, tilingParseCtx->GetOpKernelInfo()) == 0,
                 OP_LOGW("OpInfoSerialize return failed!"));

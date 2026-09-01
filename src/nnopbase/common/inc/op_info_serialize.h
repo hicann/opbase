@@ -15,14 +15,15 @@
 
 namespace aclnnOpInfoRecord {
 struct OpCompilerOption {
-    explicit OpCompilerOption(const std::string& impl_mode_v, uint8_t deterministic_v = true)
-        : impl_mode(impl_mode_v), deterministic(deterministic_v)
+    explicit OpCompilerOption(const std::string& impl_mode_v, uint8_t deterministic_v = true, bool enablePcie_v = false)
+        : impl_mode(impl_mode_v), deterministic(deterministic_v), enablePcie(enablePcie_v)
     {}
-    explicit OpCompilerOption(const char* impl_mode_v, uint8_t deterministic_v = true)
-        : impl_mode(impl_mode_v), deterministic(deterministic_v)
+    explicit OpCompilerOption(const char* impl_mode_v, uint8_t deterministic_v = true, bool enablePcie_v = false)
+        : impl_mode(impl_mode_v), deterministic(deterministic_v), enablePcie(enablePcie_v)
     {}
     std::string impl_mode;
     uint8_t deterministic;
+    bool enablePcie;
 };
 
 struct OpKernelInfo {

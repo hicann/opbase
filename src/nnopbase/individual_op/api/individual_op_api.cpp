@@ -24,11 +24,13 @@
 #include "executor/indv_bininfo.h"
 #include "executor/indv_args_pool.h"
 #include "executor/indv_cache_key_builder.h"
+#include "executor/static_kernel_helper.h"
 #include "profiling/prof_api.h"
 #include "aclnn/aclnn_base.h"
 #include "thread_local_context.h"
 #include "opdev/platform.h"
 #include "op_dfx_internal.h"
+#include "op_feature_internal.h"
 #include "nnopbase_error_msg.h"
 
 void NnopbaseOpLogE(const aclnnStatus code, const NnopbaseChar* const expr) { OP_LOGE(code, "Check %s failed", expr); }
@@ -41,27 +43,6 @@ constexpr size_t MAX_PRINT_NUM = 128U;
         return;                                            \
     }
 
-static inline std::string NnopbaseBuildShapeStridesStr(const aclTensor* const tensor)
-{
-    const auto& shape = tensor->GetViewShape();
-    const auto& strides = tensor->GetViewStrides();
-    std::stringstream ss;
-    ss << "shape=[";
-    for (size_t i = 0U; i < shape.GetDimNum(); i++) {
-        if (i > 0)
-            ss << ",";
-        ss << shape.GetDim(i);
-    }
-    ss << "], strides=[";
-    for (size_t i = 0U; i < strides.size(); i++) {
-        if (i > 0)
-            ss << ",";
-        ss << strides[i];
-    }
-    ss << "]";
-    return ss.str();
-}
-
 static inline void NnopbaseLogTensorInfo(const char* const paramName, const aclTensor* const tensor,
                                          const uint32_t index)
 {
@@ -70,10 +51,35 @@ static inline void NnopbaseLogTensorInfo(const char* const paramName, const aclT
         OP_LOGI("[DFX] %s[%u] addr=nullptr.", paramName, index);
         return;
     }
-    OP_LOGI("[DFX] %s[%u] dtype=%s, format=%s, placement=%d, addr=%p, %s, offset=%lld.", paramName, index,
-            op::ToString(tensor->GetDataType()).GetString(), op::ToString(tensor->GetStorageFormat()).GetString(),
-            static_cast<int32_t>(tensor->GetPlacement()), tensor->GetData(),
-            NnopbaseBuildShapeStridesStr(tensor).c_str(), static_cast<int64_t>(tensor->GetViewOffset()));
+    OP_LOGI("[DFX] %s[%u] %s.", paramName, index, tensor->ToString().GetString());
+}
+
+static inline void NnopbaseUpdatePcieThroughFlag(NnopbaseExecutor* const executor, const aclTensor* const tensor)
+{
+    if ((executor == nullptr) || (tensor == nullptr) || executor->isEnablePcie ||
+        !op::internal::IsPcieThroughEnabled()) {
+        return;
+    }
+    void* const addr = tensor->GetStorageAddr();
+    if ((addr != nullptr) && op::internal::IsTensorAddrInPcieRange(addr)) {
+        executor->isEnablePcie = true;
+        OP_LOGI("Storage address %p is in PCIe range, enable PCIe through.", addr);
+    }
+}
+
+static inline void NnopbaseUpdatePcieThroughFlag(NnopbaseExecutor* const executor,
+                                                 const aclTensorList* const tensorList)
+{
+    if ((executor == nullptr) || (tensorList == nullptr) || executor->isEnablePcie ||
+        !op::internal::IsPcieThroughEnabled()) {
+        return;
+    }
+    for (uint64_t i = 0U; i < tensorList->Size(); ++i) {
+        NnopbaseUpdatePcieThroughFlag(executor, (*tensorList)[i]);
+        if (executor->isEnablePcie) {
+            return;
+        }
+    }
 }
 
 static inline void NnopbaseLogTensorListInfo(const char* const paramName, const aclTensorList* const tensorList,
@@ -84,16 +90,14 @@ static inline void NnopbaseLogTensorListInfo(const char* const paramName, const 
         OP_LOGI("[DFX] %s[%u] addr=nullptr.", paramName, index);
         return;
     }
-    OP_LOGI("[DFX] %s[%u] dtype=aclTensorList, size=%llu, addr=%p.", paramName, index, tensorList->Size(),
-            static_cast<const void*>(tensorList));
-    for (uint64_t i = 0; i < tensorList->Size(); i++) {
-        if ((*tensorList)[i] != nullptr) {
-            const auto& t = (*tensorList)[i];
-            OP_LOGI("[DFX] %s[%u][%llu] dtype=%s, format=%s, placement=%d, addr=%p, %s, offset=%lld.", paramName, index,
-                    i, op::ToString(t->GetDataType()).GetString(), op::ToString(t->GetStorageFormat()).GetString(),
-                    static_cast<int32_t>(t->GetPlacement()), t->GetData(), NnopbaseBuildShapeStridesStr(t).c_str(),
-                    static_cast<int64_t>(t->GetViewOffset()));
+    OP_LOGI("[DFX] %s[%u] aclTensorList size=%lu.", paramName, index, tensorList->Size());
+    for (uint64_t i = 0U; i < tensorList->Size(); ++i) {
+        const aclTensor* const tensor = (*tensorList)[i];
+        if (tensor == nullptr) {
+            OP_LOGI("[DFX] %s[%u][%lu] addr=nullptr.", paramName, index, i);
+            continue;
         }
+        OP_LOGI("[DFX] %s[%u][%lu] %s.", paramName, index, i, tensor->ToString().GetString());
     }
 }
 
@@ -105,8 +109,7 @@ static inline void NnopbaseLogScalarInfo(const char* const paramName, const aclS
         OP_LOGI("[DFX] %s[%u] addr=nullptr.", paramName, index);
         return;
     }
-    OP_LOGI("[DFX] %s[%u] info=%s, size=%llu, addr=%p.", paramName, index, scalar->ToString().GetString(),
-            static_cast<uint64_t>(scalar->Size()), static_cast<const void*>(scalar));
+    OP_LOGI("[DFX] %s[%u] %s.", paramName, index, scalar->ToString().GetString());
 }
 
 static inline void NnopbaseLogScalarListInfo(const char* const paramName, const aclScalarList* const scalarList,
@@ -117,21 +120,7 @@ static inline void NnopbaseLogScalarListInfo(const char* const paramName, const 
         OP_LOGI("[DFX] %s[%u] addr=nullptr.", paramName, index);
         return;
     }
-    OP_LOGI("[DFX] %s[%u] dtype=ScalarList, size=%llu, addr=%p.", paramName, index, scalarList->Size(),
-            static_cast<const void*>(scalarList));
-    const uint64_t totalSize = scalarList->Size();
-    for (uint64_t i = 0U; i < totalSize; i++) {
-        if (i >= static_cast<uint64_t>(MAX_PRINT_NUM)) {
-            OP_LOGI("[DFX] %s[%u][%llu]...", paramName, index, i);
-            break;
-        }
-        const aclScalar* const scalar = (*scalarList)[i];
-        if (scalar != nullptr) {
-            OP_LOGI("[DFX] %s[%u][%llu] info=%s, size=%llu, addr=%p.", paramName, index, i,
-                    scalar->ToString().GetString(), static_cast<uint64_t>(scalar->Size()),
-                    static_cast<const void*>(scalar));
-        }
-    }
+    OP_LOGI("[DFX] %s[%u] aclScalarList[%s].", paramName, index, scalarList->ToString().GetString());
 }
 
 template <typename T>
@@ -143,30 +132,7 @@ static inline void NnopbaseLogArrayInfo(const char* const typeName, const char* 
         OP_LOGI("[DFX] %s[%zu] dtype=%s, addr=nullptr.", paramName, index, typeName);
         return;
     }
-    const size_t size = array->Size();
-    const void* data = array->GetData();
-    std::stringstream ss;
-    ss << "[";
-    if (data != nullptr) {
-        for (size_t i = 0U; i < std::min(size, MAX_PRINT_NUM); i++) {
-            if (i > 0)
-                ss << ",";
-            if constexpr (std::is_same<T, aclIntArray>::value) {
-                ss << static_cast<const int64_t*>(data)[i];
-            } else if constexpr (std::is_same<T, aclBoolArray>::value) {
-                ss << static_cast<const bool*>(data)[i];
-            } else if constexpr (std::is_same<T, aclFloatArray>::value) {
-                ss << static_cast<const float*>(data)[i];
-            }
-        }
-        if (size > MAX_PRINT_NUM)
-            ss << ",...";
-    } else {
-        ss << "<null data>";
-    }
-    ss << "]";
-    OP_LOGI("[DFX] %s[%zu] dtype=%s, size=%zu, addr=%p, values=%s.", paramName, index, typeName, size, data,
-            ss.str().c_str());
+    OP_LOGI("[DFX] %s[%zu] %s%s.", paramName, index, typeName, array->ToString().GetString());
 }
 
 static inline void NnopbaseLogAttrValueInfo(const NnopbaseAttrDtype dtype, const void* const addr, const size_t attrLen,
@@ -267,6 +233,8 @@ aclnnStatus NnopbaseInit()
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorWork(binCollector.get()));
         gBinCollector = binCollector.release();
     }
+    OP_CHECK_NO_RETURN(op::internal::InitPcieThroughInfo() == ACLNN_SUCCESS,
+                       OP_LOGW("Failed to execute InitPcieThroughInfo."));
     NnopbaseExecutorSpaceSetInit(&g_nnopbaseSpaceSet);
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorSetGlobalConfig());
     PrintNnopbaseInitTimeStampInfo();
@@ -397,6 +365,7 @@ aclnnStatus NnopbaseAddInput(void* executor, const aclTensor* tensor, const uint
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseLogTensorInfo("AddInput", tensor, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensor);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].tensor = tensor;
@@ -413,6 +382,7 @@ aclnnStatus NnopbaseAddIgnoreContinuesInput(void* executor, const aclTensor* ten
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseLogTensorInfo("AddIgnoreContInput", tensor, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensor);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].ignoreCont = true;
@@ -499,6 +469,7 @@ aclnnStatus NnopbaseAddDynamicInput(void* executor, const aclTensorList* tensorL
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseLogTensorListInfo("AddDynamicInput", tensorList, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensorList);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].tensorList = tensorList;
@@ -515,6 +486,7 @@ aclnnStatus NnopbaseAddIgnoreContiguousDynamicInput(void* executor, const aclTen
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseLogTensorListInfo("AddIgnoreContDynInput", tensorList, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensorList);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].ignoreCont = true;
@@ -531,6 +503,7 @@ aclnnStatus NnopbaseAddOutput(void* executor, const aclTensor* tensor, const uin
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseLogTensorInfo("AddOutput", tensor, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensor);
     const auto tensors = &nnopExecutor->ownArgs.outputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].tensor = tensor;
@@ -554,7 +527,11 @@ aclnnStatus NnopbaseAddOutputShapeDependTensor(void* executor, aclTensor* tensor
     NnopbaseTensors* tensors = &(((NnopbaseExecutor*)executor)->ownArgs.outputs);
     tensors->outPutShapeSize += sizeof(uint64_t) * 9U; // 9 表示1个count和8个dim
     tensors->outPutShapeMap[index] = tensor;           // 覆盖刷新tensor地址
-    OP_LOGI("[DFX] AddShapeDependOutputTensor[%u] addr=%p.", index, tensor);
+    if (tensor == nullptr) {
+        OP_LOGI("[DFX] AddShapeDependOutputTensor[%u] addr=nullptr.", index);
+    } else {
+        OP_LOGI("[DFX] AddShapeDependOutputTensor[%u] %s.", index, tensor->ToString().GetString());
+    }
     return NnopbaseAddOutput(executor, tensor, index);
 }
 
@@ -563,6 +540,7 @@ aclnnStatus NnopbaseAddDynamicOutput(void* executor, const aclTensorList* tensor
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
     NnopbaseLogTensorListInfo("AddDynamicOutput", tensorList, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
+    NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensorList);
     const auto tensors = &nnopExecutor->ownArgs.outputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].tensorList = tensorList;
@@ -1121,34 +1099,8 @@ const NnopbaseChar* NnopbaseFindStaticKernel(const aclTensor* tensors[], const N
             return nullptr;
         }
     }
-    thread_local static NnopbaseUChar verbose[NNOPBASE_MAX_STATICKEY_LEN];
-    NnopbaseUChar* verKey1 = verbose;
-    NnopbaseRegInfoKey regInfoKey;
-    regInfoKey.opType = staticRuntimeInfo->opType;
-    regInfoKey.hashKey = static_cast<uint64_t>(
-        NnopbaseHashBinary(PtrCastTo<NnopbaseUChar>(regInfoKey.opType.c_str()), regInfoKey.opType.size()) %
-        NNOPBASE_NORM_MAX_BIN_BUCKETS);
-    OP_LOGI("OpType is %s, hashkey is %lu.", regInfoKey.opType.c_str(), regInfoKey.hashKey);
-
-    verKey1 = NnopbaseCollectorGenStaticKey(verKey1, &regInfoKey, tensorNumInfo, tensors, attrs,
-                                            staticRuntimeInfo->implMode, staticRuntimeInfo->deterMode, valueDepend,
-                                            true);
-
-    StaticKernelPlatformInfo platformInfo{{staticRuntimeInfo->aicNum, staticRuntimeInfo->aivNum},
-                                          static_cast<int8_t>(staticRuntimeInfo->deterMode)};
-    auto simplifiedKey = NnopbaseCollectorGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                                             uint32_t(verKey1 - verbose), &platformInfo);
-    if (simplifiedKey != nullptr) {
-        return simplifiedKey;
-    } else {
-        OP_LOGW("Cannot find static kernel bin with stride information, trying to find without stride again.");
-        NnopbaseUChar* verKey2 = verbose;
-        verKey2 = NnopbaseCollectorGenStaticKey(verKey2, &regInfoKey, tensorNumInfo, tensors, attrs,
-                                                staticRuntimeInfo->implMode, staticRuntimeInfo->deterMode, valueDepend,
-                                                false);
-        return NnopbaseCollectorGetStaticKernelBin(regInfoKey.opType.c_str(), regInfoKey.hashKey, verbose,
-                                                   uint32_t(verKey2 - verbose), &platformInfo);
-    }
+    return Indv::StaticKernelHelper::FindStaticKernelPath(tensors, attrs, valueDepend, tensorNumInfo,
+                                                          staticRuntimeInfo);
 }
 
 aclnnStatus NnopbaseGetStreamAndEvent(const aclrtStream stream, aclrtStream* subStream, aclrtEvent* evtA,

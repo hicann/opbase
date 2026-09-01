@@ -2221,7 +2221,6 @@ TEST_F(NnopbaseExecutorUnitTest, TestInvalidStaticShape)
     intValues = std::vector<int64_t>(100000);
     executor = GetIntArrayExecutor(executorSpace, intValues.data(), intValues.size());
     opExecutor = (NnopbaseExecutor*)executor;
-    ASSERT_EQ(NnopbaseExecutorGenStaticKey(opExecutor, false), ACLNN_ERR_PARAM_INVALID);
     ASSERT_EQ(NnopbaseExecutorGetStaticBinInfo(opExecutor), false);
 
     NnopbaseExecutorGcSpace(executorSpace);

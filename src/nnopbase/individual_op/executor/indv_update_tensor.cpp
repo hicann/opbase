@@ -347,12 +347,16 @@ void NnopbaseClearParamInstance(NnopbaseTensors* tensors)
 
 aclnnStatus NnopbaseAddIoTensors(NnopbaseExecutor* executor)
 {
+    if (executor->completeIoByPcie) {
+        return OK;
+    }
     for (uint32_t i = 0U; i < executor->ownArgs.inputs.paramDescs.count; i++) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddInputsTensors(executor, &executor->ownArgs.inputs, i));
     }
     for (uint32_t i = 0U; i < executor->ownArgs.outputs.paramDescs.count; i++) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddOutputsTensors(executor, &executor->ownArgs.outputs, i));
     }
+    executor->completeIoByPcie = true;
     return OK;
 }
 

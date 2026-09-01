@@ -170,6 +170,9 @@ typedef struct {
     NnopbaseCoreNum coreNum{0, 0};
     bool deterministic = false;
     uint8_t deterministicLevel = 0U;
+    bool isEnablePcie = false;
+    bool
+        completeIoByPcie = false; // 由于Pcie检测输入输出无法感知全局，只有在添加Io结束&缓存时通过置true来避免重复配置Io
     NnopbaseParamCheckMode paramCheckMode = NnopbaseParamCheckMode::kCheckEnd;
 } NnopbaseExecutor;
 
@@ -231,13 +234,8 @@ void NnopbaseExecutorDeInit(NnopbaseExecutor* executor);
 void StreamMapClear(aclrtStream stream);
 aclnnStatus CheckSocVersionAndParam(NnopbaseExecutor* executor,
                                     NnopbaseParamCheckMode mode = NnopbaseParamCheckMode::kCheckRequiredIo);
-aclnnStatus NnopbaseExecutorGenStaticKey(NnopbaseExecutor* const executor, const bool usingStride = false);
 void NnopbaseExecutorGenDynamicKey(NnopbaseExecutor* const executor);
 aclnnStatus NnopbaseExecutorGenCustomizedDynamicKey(NnopbaseExecutor* const executor);
-size_t NnopbaseExecutorComputeGenKeySize(const NnopbaseExecutor* const executor, bool usingStride = false);
-NnopbaseUChar* NnopbaseExecutorGenAttrsKey(const NnopbaseAttrs* const attrs, NnopbaseUChar* verKey);
-NnopbaseUChar* NnopbaseExecutorGenTensorsKey(NnopbaseUChar* verKey, const NnopbaseTensors* const tensors,
-                                             const size_t tensorNum, const bool usingStride = false);
 bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor* const executor);
 NnopbaseUChar* NnopbaseExecutor8ByteCopy(const size_t totalSize, NnopbaseUChar* verKey, const NnopbaseUChar* addr);
 aclnnStatus SetTensorDataSizeToInitValue(NnopbaseExecutor* executor);

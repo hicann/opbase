@@ -24,6 +24,7 @@
 #include "indv_mc2_aicpu.h"
 #include "opdev/data_type_utils.h"
 #include "kernel_utils.h"
+#include "static_kernel_helper.h"
 #include "bridge_dfx.h"
 #include "acl/acl_rt.h"
 #ifndef PRODUCT_SIDE_IS_DEVICE
@@ -79,8 +80,8 @@ aclnnStatus RegisterCustomizedCallback(NnopbaseExecutor* const executor, Nnopbas
     (METADEF_VERSION_NUM >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER)
     int32_t metadefVerNum = -1;
     int32_t runtimeVerNum = -1;
-    auto aclRetForMetadef = aclsysGetVersionNum("metadef", &metadefVerNum);
-    auto aclRetForRts = aclsysGetVersionNum("runtime", &runtimeVerNum);
+    static auto aclRetForMetadef = aclsysGetVersionNum("metadef", &metadefVerNum);
+    static auto aclRetForRts = aclsysGetVersionNum("runtime", &runtimeVerNum);
     if (aclRetForMetadef == ACL_SUCCESS && aclRetForRts == ACL_SUCCESS &&
         metadefVerNum >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER &&
         runtimeVerNum >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER) {
@@ -122,25 +123,6 @@ void ResizeExecutorArgsBuf(NnopbaseExecutor* executor)
         executor->args->argsBuf.resize(argsLen);
     }
     OP_LOGI("Finish resizing %s args buffer.", executor->opType);
-}
-
-bool GenStaticKeyAndFindStaticBin(NnopbaseExecutor* executor, bool usingStride)
-{
-    if (NnopbaseExecutorGenStaticKey(executor, usingStride) != OK) {
-        return false;
-    }
-    // 已在缓存匹配流程调用控核接口，保证executor的coreNum/determisiticLevel不为非法值
-    StaticKernelPlatformInfo platformInfo{NnopbaseCoreNum{executor->coreNum.aicNum, executor->coreNum.aivNum},
-                                          static_cast<int8_t>(executor->deterministicLevel)};
-    auto binInfo = NnopbaseCollectorFindBinInfo(executor->regInfo, executor->binInfoKey.hashKey,
-                                                &(executor->binInfoKey.verbose[0U]), executor->binInfoKey.len,
-                                                &platformInfo);
-    if ((binInfo != nullptr) && (NnopbaseKernelRegister(executor, binInfo) == OK)) {
-        executor->args->binInfo = binInfo;
-        executor->hasTiling = false;
-        return true;
-    }
-    return false;
 }
 
 void UpdateStaticKernelTilingInfo(NnopbaseExecutor* executor)
@@ -812,10 +794,13 @@ aclnnStatus NnopbaseKernelRegister(NnopbaseExecutor* executor, NnopbaseBinInfo* 
 
 bool NnopbaseExecutorGetStaticBinInfo(NnopbaseExecutor* const executor)
 {
-    if (!GenStaticKeyAndFindStaticBin(executor, true)) {
-        OP_LOGW("Cannot find static kernel bin with stride information, trying to find without stride again.");
-        return GenStaticKeyAndFindStaticBin(executor, false);
+    executor->binInfoKey.Clear();
+    auto binInfo = Indv::StaticKernelHelper::FindStaticBinInfo(executor, executor->binInfoKey);
+    if (binInfo == nullptr) {
+        return false;
     }
+    executor->args->binInfo = binInfo;
+    executor->hasTiling = false;
     return true;
 }
 
@@ -948,6 +933,10 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor* executor)
     // find static bin
     if (executor->regInfo->hasStaticShapeBin && NnopbaseExecutorGetStaticBinInfo(executor)) {
         OP_LOGI("Op[%s] has found static bin.", executor->opType);
+        if (NnopbaseKernelRegister(executor, executor->args->binInfo) != OK) {
+            executor->binInfoKey.Clear();
+            return ACLNN_ERR_PARAM_INVALID;
+        }
         UpdateStaticKernelTilingInfo(executor);
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindStaticEnd);
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kFindBinEnd);
@@ -1090,7 +1079,13 @@ aclnnStatus NnopbaseExecutorMatchCache(NnopbaseExecutor* executor)
     }
 
     // 开启dump不开启缓存匹配
-    if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
+    if (executor->isEnablePcie) {
+        executor->ownArgs.enableCache = false;
+        OP_LOGI("Op %s skip args cache because current op has tensor using PCIe addr.", executor->opType);
+        if (NnopbaseIsV2CacheKeyEnabled(executor)) {
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddIoTensors(executor));
+        }
+    } else if ((!g_nnopbaseSysCfgParams.enableArgsCache) || op::internal::GetOpProfilingRecordArgFlag()) {
         executor->ownArgs.enableCache = false;
     } else if (NnopbaseExecutorCachedArgs(executor)) {
         return OK;
@@ -1145,7 +1140,8 @@ static inline aclnnStatus NnopbaseDumpNodeInfo(NnopbaseExecutor* executor)
         executor->dfx.opKernelInfo.isMc2 = executor->mc2.enabled;
         aclnnOpInfoRecord::OpInfoSerialize(
             op::internal::PtrCastTo<const gert::TilingContext>(executor->tiling.contextExt.context),
-            aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, executor->deterministicLevel),
+            aclnnOpInfoRecord::OpCompilerOption(g_nnopbaseSysCfgParams.implMode, executor->deterministicLevel,
+                                                executor->isEnablePcie),
             &executor->dfx.opKernelInfo);
         OP_LOGI("Dump node info for operator %s finished.", executor->opType);
     }

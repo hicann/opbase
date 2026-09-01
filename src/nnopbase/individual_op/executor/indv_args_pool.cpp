@@ -92,6 +92,12 @@ bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* e
 bool ArgsPool::MatchArgs(NnopbaseExecutor* executor)
 {
     RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheStart);
+    if (executor->isEnablePcie) {
+        executor->ownArgs.enableCache = false;
+        OP_LOGI("Op %s skip args cache because current op has tensor using PCIe addr.", executor->opType);
+        RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheEnd);
+        return false;
+    }
     if (maxCacheNum == 0U) {
         executor->ownArgs.enableCache = false;
         RecordNnopbaseTime(executor, NnopbaseTimeIdx::kMatchCacheEnd);

@@ -11,6 +11,9 @@
 #ifndef OP_API_OP_API_COMMON_INC_OPDEV_NNOPBASE_H
 #define OP_API_OP_API_COMMON_INC_OPDEV_NNOPBASE_H
 
+#include <memory>
+#include <mutex>
+#include <string>
 #include "opdev/common_types.h"
 
 #ifdef __cplusplus
@@ -38,6 +41,7 @@ struct NnopbaseStaticRuntimeInfo {
     uint32_t aivNum;
     int64_t implMode;
     int64_t deterMode;
+    bool enablePcie = false;
 };
 
 /**

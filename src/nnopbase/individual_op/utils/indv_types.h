@@ -53,6 +53,7 @@ enum InputsAppend {
     kInputsTilingFunc,
     kInputsDeterministic,
     kInputsDeterministicLevel,
+    kInputsEnablePcieThrough,
     kInputsAppendEnd
 };
 

@@ -10,6 +10,7 @@
 #ifndef INDV_BIN_INFO_H_
 #define INDV_BIN_INFO_H_
 
+#include <algorithm>
 #include <string>
 #include "securec.h"
 #include "utils/indv_dlist.h"
@@ -66,6 +67,24 @@ struct BinInfoKey {
     std::vector<NnopbaseUChar> verbose;
     uint32_t len = 0U;
     uint32_t bufLen = 0U;
+
+    void Clear()
+    {
+        verbose = std::vector<NnopbaseUChar>();
+        len = 0U;
+        bufLen = 0U;
+        hashKey = 0U;
+    }
+
+    void Reset()
+    {
+        if (!verbose.empty()) {
+            std::fill(verbose.begin(), verbose.end(), 0U);
+            bufLen = static_cast<uint32_t>(verbose.size());
+        }
+        len = 0U;
+        hashKey = 0U;
+    }
 };
 
 enum NnopbaseTaskRation {

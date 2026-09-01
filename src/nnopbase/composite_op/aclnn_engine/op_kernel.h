@@ -1365,15 +1365,18 @@ public:
         OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
                 implMode, determinConfig, tensors.size(), dynamicCount.size(), attrsVec.size(),
                 valueDependIndex_.size());
-        OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u, deterministicLevel %lld].",
+        OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u, deterministicLevel %lld, enablePcie %d].",
                 GetThreadLocalContext().opConfigInfo_.aicNum_, GetThreadLocalContext().opConfigInfo_.aivNum_,
-                determinConfig);
+                determinConfig, GetThreadLocalContext().opConfigInfo_.usePcieAddr);
         NnopbaseStaticTensorNumInfo tensorNumInfo{
             static_cast<int64_t>(tensors.size()), static_cast<int64_t>(dynamicCount.size()),
             static_cast<int64_t>(attrsVec.size()), static_cast<int64_t>(valueDependIndex_.size())};
-        NnopbaseStaticRuntimeInfo staticRuntimeInfo{opTypeStr_, GetThreadLocalContext().opConfigInfo_.aicNum_,
-                                                    GetThreadLocalContext().opConfigInfo_.aivNum_, implMode,
-                                                    determinConfig};
+        NnopbaseStaticRuntimeInfo staticRuntimeInfo{opTypeStr_,
+                                                    GetThreadLocalContext().opConfigInfo_.aicNum_,
+                                                    GetThreadLocalContext().opConfigInfo_.aivNum_,
+                                                    implMode,
+                                                    determinConfig,
+                                                    GetThreadLocalContext().opConfigInfo_.usePcieAddr};
         simpKey = NnopbaseFindStaticKernel((tensors.data()), const_cast<const NnopbaseAttrAddr**>(attrsVec.data()),
                                            valueDependIndex_.data(), &tensorNumInfo, &staticRuntimeInfo);
         if (simpKey != nullptr) {

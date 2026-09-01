@@ -2084,6 +2084,109 @@ TEST_F(NnopbaseUnitTest, NnopBaseAddArrayInputSuccess)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
+TEST_F(NnopbaseUnitTest, NnopbaseLogAddApiPrintCoverage)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+    setenv("ASCEND_GLOBAL_LOG_LEVEL", "1", 1);
+
+    void* executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+
+    const char* opType = "bninference_d_kernel";
+    char inputDesc[] = {1, 1, 2, 2, 0, 0, 0, 1, 1};
+    char outputDesc[] = {1, 1, 2};
+    char attrDesc[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    ASSERT_NE(executor, nullptr);
+    MOCKER(CheckLogLevelInner).stubs().will(returnValue(1));
+
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* inputTensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                             aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), data);
+    aclTensor* ignoreContTensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                                  aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), data + 8);
+    aclTensor* outputTensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                              aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), data + 16);
+    aclTensor* shapeDependOutput = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                                   aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), data + 24);
+    aclTensor* dynamicTensor0 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                                aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), data + 32);
+    aclTensor* dynamicTensor1 = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                                aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), data + 40);
+    std::vector<const aclTensor*> tensorList = {dynamicTensor0, dynamicTensor1};
+    aclTensorList* aclTensorTestList = aclCreateTensorList(tensorList.data(), tensorList.size());
+
+    int64_t intValues[] = {3, 4, 5};
+    bool boolValues[] = {true, false, true};
+    float floatValues[] = {0.1F, 0.2F, 0.3F};
+    auto* intArray = aclCreateIntArray(intValues, sizeof(intValues) / sizeof(intValues[0]));
+    auto* boolArray = aclCreateBoolArray(boolValues, sizeof(boolValues) / sizeof(boolValues[0]));
+    auto* floatArray = aclCreateFloatArray(floatValues, sizeof(floatValues) / sizeof(floatValues[0]));
+
+    int32_t scalarValue = 5;
+    int32_t scalarListValue = 6;
+    auto* scalar = aclCreateScalar(&scalarValue, aclDataType::ACL_INT32);
+    auto* scalarForList = aclCreateScalar(&scalarListValue, aclDataType::ACL_INT32);
+    auto* scalarList = aclCreateScalarList(&scalarForList, 1);
+
+    ASSERT_EQ(NnopbaseAddInput(executor, inputTensor, 0), OK);
+    ASSERT_EQ(NnopbaseAddIgnoreContinuesInput(executor, ignoreContTensor, 1), OK);
+    ASSERT_EQ(NnopbaseAddDynamicInput(executor, aclTensorTestList, 2), OK);
+    ASSERT_EQ(NnopbaseAddIgnoreContiguousDynamicInput(executor, aclTensorTestList, 3), OK);
+    ASSERT_EQ(NnopbaseAddIntArrayInput(executor, intArray, 4), OK);
+    ASSERT_EQ(NnopbaseAddBoolArrayInput(executor, boolArray, 5), OK);
+    ASSERT_EQ(NnopbaseAddFloatArrayInput(executor, floatArray, 6), OK);
+    ASSERT_EQ(NnopbaseAddScalarInput(executor, scalar, 7, -1, ge::DT_UNDEFINED), OK);
+    ASSERT_EQ(NnopbaseAddScalarListInput(executor, scalarList, 8, -1, ge::DT_UNDEFINED), OK);
+
+    ASSERT_EQ(NnopbaseAddOutput(executor, outputTensor, 0), OK);
+    ASSERT_EQ(NnopbaseAddOutputShapeDependTensor(executor, shapeDependOutput, 1), OK);
+    ASSERT_EQ(NnopbaseAddDynamicOutput(executor, aclTensorTestList, 2), OK);
+
+    int64_t intAttr = 7;
+    float floatAttr = 1.5F;
+    bool boolAttr = true;
+    char stringAttr[] = "log_attr";
+    int64_t rawIntAttr[] = {1, 2, 3};
+    bool rawBoolAttr[] = {true, false};
+    float rawFloatAttr[] = {1.0F, 2.0F};
+    ASSERT_EQ(NnopbaseAddAttr(executor, &intAttr, sizeof(intAttr), 0), OK);
+    ASSERT_EQ(NnopbaseAddAttrWithDtype(executor, &intAttr, sizeof(intAttr), 1, kNnopbaseInt), OK);
+    ASSERT_EQ(NnopbaseAddAttrWithDtype(executor, &floatAttr, sizeof(floatAttr), 2, kNnopbaseFloat), OK);
+    ASSERT_EQ(NnopbaseAddAttrWithDtype(executor, &boolAttr, sizeof(boolAttr), 3, kNnopbaseBool), OK);
+    ASSERT_EQ(NnopbaseAddAttrWithDtype(executor, stringAttr, sizeof(stringAttr), 4, kNnopbaseString), OK);
+    ASSERT_EQ(NnopbaseAddBoolArrayAttr(executor, boolArray, 5), OK);
+    ASSERT_EQ(NnopbaseAddFloatArrayAttr(executor, floatArray, 6), OK);
+    ASSERT_EQ(NnopbaseAddIntArrayAttr(executor, intArray, 7), OK);
+    ASSERT_EQ(NnopbaseAddArrayAttr(executor, rawBoolAttr, sizeof(rawBoolAttr) / sizeof(rawBoolAttr[0]),
+                                   sizeof(rawBoolAttr[0]), 8),
+              OK);
+    ASSERT_EQ(NnopbaseAddArrayAttrWithDtype(executor, rawIntAttr, sizeof(rawIntAttr) / sizeof(rawIntAttr[0]),
+                                            sizeof(rawIntAttr[0]), 9, kNnopbaseInt),
+              OK);
+    ASSERT_EQ(NnopbaseAddArrayAttrWithDtype(executor, rawFloatAttr, sizeof(rawFloatAttr) / sizeof(rawFloatAttr[0]),
+                                            sizeof(rawFloatAttr[0]), 10, kNnopbaseFloat),
+              OK);
+    ASSERT_EQ(NnopbaseAddArrayAttrWithDtype(executor, rawBoolAttr, sizeof(rawBoolAttr) / sizeof(rawBoolAttr[0]),
+                                            sizeof(rawBoolAttr[0]), 11, kNnopbaseBool),
+              OK);
+
+    NnopbaseExecutorGcSpace(executorSpace);
+    aclDestroyTensor(inputTensor);
+    aclDestroyTensor(ignoreContTensor);
+    aclDestroyTensor(outputTensor);
+    aclDestroyTensor(shapeDependOutput);
+    aclDestroyTensorList((const aclTensorList*)aclTensorTestList);
+    aclDestroyScalar(scalar);
+    aclDestroyScalarList(scalarList);
+    aclDestroyIntArray(intArray);
+    aclDestroyBoolArray(boolArray);
+    aclDestroyFloatArray(floatArray);
+    unsetenv("ASCEND_GLOBAL_LOG_LEVEL");
+    NnopbaseUnsetEnvAndClearFolder();
+}
+
 TEST_F(NnopbaseUnitTest, NnopBaseRunWithHostAndDynamicInput)
 {
     NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);

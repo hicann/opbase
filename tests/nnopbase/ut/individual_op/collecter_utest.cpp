@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <cstdio>
+#include "individual_op_internal.h"
 #include "utils/indv_types.h"
 #include "executor/indv_collector.h"
 #include "executor/indv_executor.h"
@@ -16,6 +17,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string.h>
+#include <vector>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdio.h>
@@ -33,6 +35,67 @@ void SetSocVersion(const std::string& version)
     auto& soc = nnopbase::IndvSoc::GetInstance();
     soc.socVersion = version;
     soc.isInit = true;
+}
+
+constexpr const char* STATIC_FIND_OP_TYPE = "StaticPcieThroughFindTest";
+constexpr const char* PCIE_WITH_STRIDE_SIMPLIFIED_KEY = "StaticPcieThroughFindTest/d=0,p=0,pt=1/0,2,(2,3),0";
+constexpr const char* STRIDE_SIMPLIFIED_KEY = "StaticPcieThroughFindTest/d=0,p=0/0,2,(2,3),0";
+constexpr const char* NO_STRIDE_SIMPLIFIED_KEY = "StaticPcieThroughFindTest/d=0,p=0/0,2,(2,3)";
+
+aclnnStatus InitStaticBinBySimplifiedKey(NnopbaseBinInfo& binInfo, const std::string& simplifiedKey,
+                                         const std::string& binPath)
+{
+    std::vector<NnopbaseUChar> verbose(NNOPBASE_MAX_STATICKEY_LEN, 0U);
+    uint32_t len = 0U;
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectorConvertStaticVerbKey(simplifiedKey.c_str(), verbose.data(), &len));
+    NnopbaseBinInfoInit(&binInfo);
+    binInfo.binPath = binPath;
+    return NnopbaseBinInfoSetOpBinInfoKey(&binInfo, verbose.data(), len);
+}
+
+class ScopedBinCollector {
+public:
+    explicit ScopedBinCollector(NnopbaseBinCollector* collector) : oldCollector_(gBinCollector)
+    {
+        gBinCollector = collector;
+    }
+
+    ~ScopedBinCollector() { gBinCollector = oldCollector_; }
+
+private:
+    NnopbaseBinCollector* oldCollector_;
+};
+
+void InsertStaticFindRegInfo(NnopbaseBinCollector& collector, NnopbaseRegInfo& regInfo)
+{
+    regInfo.key.hashKey = static_cast<uint64_t>(
+        NnopbaseHashBinary(op::internal::PtrCastTo<NnopbaseUChar>(regInfo.key.opType.c_str()),
+                           regInfo.key.opType.size()) %
+        NNOPBASE_NORM_MAX_BIN_BUCKETS);
+    DoubleListNodeInit(&regInfo.dllNode);
+    DoubleListAppend(&regInfo.dllNode, &collector.regInfoTbl.buckets[regInfo.key.hashKey].head);
+}
+
+const char* FindStaticPathForTest(const bool enablePcie)
+{
+    std::vector<int64_t> shape = {2, 3};
+    std::vector<int64_t> stride = {3, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, stride.data(), 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    const aclTensor* tensors[] = {tensor};
+    const NnopbaseAttrAddr* attrs[] = {};
+    const int64_t valueDepend[] = {};
+    NnopbaseStaticTensorNumInfo tensorNumInfo{1, 0, 0, 0};
+    NnopbaseStaticRuntimeInfo runtimeInfo{STATIC_FIND_OP_TYPE, 0U, 0U, 0, 0, enablePcie};
+    const char* path = NnopbaseFindStaticKernel(tensors, attrs, valueDepend, &tensorNumInfo, &runtimeInfo);
+    aclDestroyTensor(tensor);
+    return path;
+}
+
+void InitStaticFindRegInfo(NnopbaseRegInfo& regInfo)
+{
+    regInfo.key.opType = STATIC_FIND_OP_TYPE;
+    NnopbaseCollectorInitBinTbl(&regInfo.binTbl);
 }
 } // namespace
 
@@ -107,6 +170,66 @@ TEST_F(NnopbaseCollectorUnitTest, StaticKernelMatchChecksDeterministicLevelAfter
     StaticKernelPlatformInfo runtimeLevel3{{24U, 48U}, 3};
     EXPECT_EQ(NnopbaseCollectorFindBinInfo(&regInfo, binLevel1.binInfoKey.hashKey, verbose, verboseLen, &runtimeLevel3),
               nullptr);
+}
+
+TEST_F(NnopbaseCollectorUnitTest, StaticKernelFindPrefersPcieWithStride)
+{
+    NnopbaseBinCollector collector;
+    ASSERT_EQ(NnopbaseCollectorInit(&collector), OK);
+    ScopedBinCollector scopedCollector(&collector);
+    NnopbaseRegInfo regInfo;
+    InitStaticFindRegInfo(regInfo);
+    InsertStaticFindRegInfo(collector, regInfo);
+
+    NnopbaseBinInfo pcieWithStrideBin;
+    ASSERT_EQ(InitStaticBinBySimplifiedKey(pcieWithStrideBin, PCIE_WITH_STRIDE_SIMPLIFIED_KEY, "pcie_stride.o"), OK);
+    NnopbaseBinInfo strideBin;
+    ASSERT_EQ(InitStaticBinBySimplifiedKey(strideBin, STRIDE_SIMPLIFIED_KEY, "stride.o"), OK);
+    NnopbaseBinInfo noStrideBin;
+    ASSERT_EQ(InitStaticBinBySimplifiedKey(noStrideBin, NO_STRIDE_SIMPLIFIED_KEY, "no_stride.o"), OK);
+
+    NnopbaseCollectorInsertBinInfo(&regInfo, &noStrideBin);
+    NnopbaseCollectorInsertBinInfo(&regInfo, &strideBin);
+    NnopbaseCollectorInsertBinInfo(&regInfo, &pcieWithStrideBin);
+
+    EXPECT_STREQ(FindStaticPathForTest(true), "pcie_stride.o");
+}
+
+TEST_F(NnopbaseCollectorUnitTest, StaticKernelFindFallbacksToStrideWithoutPcie)
+{
+    NnopbaseBinCollector collector;
+    ASSERT_EQ(NnopbaseCollectorInit(&collector), OK);
+    ScopedBinCollector scopedCollector(&collector);
+    NnopbaseRegInfo regInfo;
+    InitStaticFindRegInfo(regInfo);
+    InsertStaticFindRegInfo(collector, regInfo);
+
+    NnopbaseBinInfo strideBin;
+    ASSERT_EQ(InitStaticBinBySimplifiedKey(strideBin, STRIDE_SIMPLIFIED_KEY, "stride.o"), OK);
+    NnopbaseBinInfo noStrideBin;
+    ASSERT_EQ(InitStaticBinBySimplifiedKey(noStrideBin, NO_STRIDE_SIMPLIFIED_KEY, "no_stride.o"), OK);
+
+    NnopbaseCollectorInsertBinInfo(&regInfo, &noStrideBin);
+    NnopbaseCollectorInsertBinInfo(&regInfo, &strideBin);
+
+    EXPECT_STREQ(FindStaticPathForTest(true), "stride.o");
+}
+
+TEST_F(NnopbaseCollectorUnitTest, StaticKernelFindFallbacksToNoStride)
+{
+    NnopbaseBinCollector collector;
+    ASSERT_EQ(NnopbaseCollectorInit(&collector), OK);
+    ScopedBinCollector scopedCollector(&collector);
+    NnopbaseRegInfo regInfo;
+    InitStaticFindRegInfo(regInfo);
+    InsertStaticFindRegInfo(collector, regInfo);
+
+    NnopbaseBinInfo noStrideBin;
+    ASSERT_EQ(InitStaticBinBySimplifiedKey(noStrideBin, NO_STRIDE_SIMPLIFIED_KEY, "no_stride.o"), OK);
+
+    NnopbaseCollectorInsertBinInfo(&regInfo, &noStrideBin);
+
+    EXPECT_STREQ(FindStaticPathForTest(true), "no_stride.o");
 }
 
 TEST_F(NnopbaseCollectorUnitTest, test_get_soc_version_ok)

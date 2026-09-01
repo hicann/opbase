@@ -246,10 +246,11 @@ public:
         if (op::internal::GetOpProfilingRecordArgFlag()) {
             gert::TilingContext* ctx = opRunCtx_.UpdateTilingCtx(opType, opJson, inputs, outputs, attrs);
             auto opCompilerOpt = aclnnOpInfoRecord::OpCompilerOption(
-                implMode, GetThreadLocalContext().opConfigInfo_.deterministicLevel_);
-            OP_LOGI("Call OpInfoSerialize, deterministic level %d, impl mode %s. kernel info %d %s.",
+                implMode, GetThreadLocalContext().opConfigInfo_.deterministicLevel_,
+                GetThreadLocalContext().opConfigInfo_.usePcieAddr);
+            OP_LOGI("Call OpInfoSerialize, deterministic level %d, impl mode %s. kernel info %d %s, enablePcie %d.",
                     opCompilerOpt.deterministic, opCompilerOpt.impl_mode.c_str(), kernelInfo.bin_type,
-                    kernelInfo.bin_info.c_str());
+                    kernelInfo.bin_info.c_str(), GetThreadLocalContext().opConfigInfo_.usePcieAddr);
             OP_CHECK_NO_RETURN(aclnnOpInfoRecord::OpInfoSerialize(ctx, opCompilerOpt, &kernelInfo) == 0,
                                OP_LOGW("OpInfoSerialize return failed!"));
         }

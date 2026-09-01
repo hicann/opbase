@@ -12,6 +12,7 @@
 #define INDV_COLLECTOR_H_
 
 #include <string>
+#include <vector>
 #include "nlohmann/json.hpp"
 #include "utils/indv_base.h"
 #include "utils/indv_dlist.h"
@@ -90,14 +91,8 @@ aclnnStatus NnopbaseCollectorSetTiling(const NnopbaseJsonInfo& jsonInfo, TilingF
                                        GenSimplifiedKeyFun* const genSimplifiedKey,
                                        gert::OppImplVersionTag oppImplVersion);
 bool NnopbaseReadConfigFile(const std::string& configPath, std::vector<std::string>& subPath);
-NnopbaseUChar* NnopbaseCollectorGenStaticKey(NnopbaseUChar* verKey, const NnopbaseRegInfoKey* const regInfoKey,
-                                             const NnopbaseStaticTensorNumInfo* const tensorNumInfo,
-                                             const aclTensor* tensors[], const NnopbaseAttrAddr* attrs[],
-                                             const int64_t implMode, const int64_t deterMin,
-                                             const int64_t* const vDepend, const bool usingStride);
-const char* NnopbaseCollectorGetStaticKernelBin(const NnopbaseChar* const opType, const uint64_t key,
-                                                const NnopbaseUChar* verbose, const uint32_t verbLen,
-                                                const StaticKernelPlatformInfo* const platformInfo = nullptr);
+NnopbaseRegInfo* NnopbaseCollectorFindRegInfoInTbl(const NnopbaseBinCollector* const collector,
+                                                   const NnopbaseChar* const opType, const uint64_t hashKey);
 aclnnStatus NnopbaseCollectorGetStaticKernelPathAndReadConfig(NnopbaseBinCollector* const collector,
                                                               const std::string& basePath = "");
 aclnnStatus NnopbaseCollectorDeleteStaticBins(NnopbaseRegInfo* regInfo);
@@ -137,9 +132,6 @@ static inline void NnopbaseCollectorInitBinTbl(BinTbl* binTbl)
         binTbl->buckets[i].isVisit = false;
     }
 }
-
-NnopbaseRegInfo* NnopbaseCollectorFindRegInfoInTbl(const NnopbaseBinCollector* const collector,
-                                                   const NnopbaseChar* const opType, const uint64_t hashKey);
 #ifdef __cplusplus
 }
 #endif
