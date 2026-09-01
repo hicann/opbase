@@ -423,6 +423,70 @@ private:
         }
     }
     /**
+     *  判断是否为5维以上的特殊场景， 该场景走ub brc。
+     *  前置条件（任一不满足直接返回false）：
+     *  1. 输入输出总个数不超过SPECIAL_DIM_MAX_IN_OUT_NUM
+     *  2. dtype大小为2或4字节
+     *  3. 输出维度数大于SPECIAL_DIM_THRESHOLD，且输出的第5维维不超过2
+     *  需同时存在以下两类输入，且每个输入均满足对应条件，才返回true：
+     *  1. last brc输入（尾轴stride为0）：全维度元素个数乘dTypeSize小于CACHE_LINE_512
+     *  2. 非last brc输入（无任何广播轴）：内5维（从右往左）之积不超过SPECIAL_DIM_IN_THRESHOLD，
+     *     外层维度之积不小于OUTER_PRODUCT_THRESHOLD且不超过2*OUTER_PRODUCT_THRESHOLD
+     * @param dTypeSize dtype大小
+     * @return
+     */
+    bool IsSpecialDimAboveFive(int64_t dTypeSize)
+    {
+        if (tilingData.dims.size() > SPECIAL_DIM_MAX_IN_OUT_NUM) {
+            return false;
+        }
+        if (dTypeSize != DTYPE_BYTES_2 && dTypeSize != DTYPE_BYTES_4) {
+            return false;
+        }
+        const auto& outDims = tilingData.dims.back();
+        int64_t outDimNum = static_cast<int64_t>(outDims.size());
+        if (outDimNum <= SPECIAL_DIM_THRESHOLD) {
+            return false;
+        }
+        int64_t innerStart = outDimNum - SPECIAL_DIM_THRESHOLD;
+        if (outDims[innerStart] > VALUE_TWO) {
+            return false;
+        }
+        bool checkB = false;
+        bool checkA = false;
+        for (uint64_t i = 0; i < tilingData.dims.size() - 1; i++) {
+            if (tilingData.strides[i].back() == 0) {
+                int64_t inputProduct = 1;
+                for (const auto& dim : tilingData.dims[i]) {
+ 	                inputProduct *= dim;
+ 	            }
+                if (inputProduct * dTypeSize >= CACHE_LINE_512) {
+ 	                return false;
+ 	            }
+                checkB = true;
+            } else {
+                int64_t innerProduct = 1;
+ 	            int64_t outerProduct = 1;
+                for (uint64_t j = 0; j < tilingData.dims[i].size(); j++) {
+                    if (tilingData.strides[i][j] == 0) {
+                        return false;
+                    }
+                    if (j < static_cast<uint64_t>(innerStart)) {
+ 	                    outerProduct *= tilingData.dims[i][j];
+ 	                } else {
+                        innerProduct *= tilingData.dims[i][j];
+ 	                }
+                }
+                if (innerProduct > SPECIAL_DIM_IN_THRESHOLD || outerProduct < OUTER_PRODUCT_THRESHOLD ||
+                    outerProduct > VALUE_TWO * OUTER_PRODUCT_THRESHOLD) {
+                    return false;
+ 	            }
+                checkA = true;
+            }
+        }
+        return checkA && checkB;
+    }
+    /**
      *  判断是否为nlast brc并且尾轴大于4096场景， 该场景走ub brc。
      *  1. 该输入必须是copyInBrc节点
      *  2. 该输入不可以是last brc节点
@@ -506,6 +570,9 @@ private:
         OP_CHECK_NULL_WITH_CONTEXT(context_, inputDesc);
         auto inputDtype = inputDesc->GetDataType();
         int64_t dTypeSize = ge::GetSizeByDataType(inputDtype);
+        if (IsSpecialDimAboveFive(dTypeSize)) {
+            return true;
+        }
         if (dTypeSize != 0 && lastDim % (BLOCK_LENGTH / dTypeSize) == 0 && ubBroadcastDtypes.count(inputDtype)) {
             return true;
         }

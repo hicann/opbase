@@ -53,6 +53,12 @@ constexpr int64_t DB_LOOP = 2;
 constexpr uint64_t DIM_TWO = 2;
 constexpr uint64_t DIM_THREE = 3;
 constexpr int64_t SINGLE_CORE_SIZE_LIMIT = 8 * 1024;
+constexpr int64_t SPECIAL_DIM_THRESHOLD = 5;
+constexpr int64_t SPECIAL_DIM_IN_THRESHOLD = 64;
+constexpr int64_t SPECIAL_DIM_MAX_IN_OUT_NUM = 3;
+constexpr int64_t OUTER_PRODUCT_THRESHOLD = 32768;
+constexpr int64_t DTYPE_BYTES_2 = 2;
+constexpr int64_t DTYPE_BYTES_4 = 4;
 
 static constexpr uint32_t BLOCK_LENGTH = 32;
 static constexpr uint64_t BROADCAST_COMPUTE_KEY_OFFSET = 1000000;
