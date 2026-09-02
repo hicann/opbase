@@ -208,7 +208,8 @@
                 "QuantBatchMatmulInplaceAddTransposeFusionPass": "4375",
                 "AllGatherMatmulToV2FusionPass": "4376",
                 "BucketizeFusionPass":"4378",
-                "IndexPutV2FusionPass":"4379"
+                "IndexPutV2FusionPass":"4379",
+                "MaxPoolV3GradFusionPass": "4380"
             },
             "Down":{
                 "ZConcatDFusionPass": "5000",
