@@ -165,7 +165,7 @@ private:
         }
 
         size_t idx = tag - DEFAULT_TAG;
-        if (idx > MAX_STORE) {
+        if (idx >= MAX_STORE) {
             // FATAL: try to free block not belong to this BlockPool
             return;
         }
