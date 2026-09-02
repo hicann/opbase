@@ -47,20 +47,21 @@ public:
         kMax,
     };
 
-    aclnnStatus InitOpHead(int64_t deterministicMode, int64_t implMode);
-    aclnnStatus InitPcie(bool enablePcie);
-    aclnnStatus InitTensorWithStride(const NnopbaseStaticTensorNumInfo* tensorNumInfo, const aclTensor* tensors[],
-                                     const int64_t* valueDepend);
-    aclnnStatus InitTensor(const NnopbaseStaticTensorNumInfo* tensorNumInfo, const aclTensor* tensors[],
-                           const int64_t* valueDepend);
-    aclnnStatus InitAttr(const NnopbaseStaticTensorNumInfo* tensorNumInfo, const NnopbaseAttrAddr* attrs[]);
-    aclnnStatus InitTensorWithStride(const NnopbaseTensors* inputs, size_t inputTensorNum,
-                                     const NnopbaseTensors* outputs, size_t outputTensorNum);
-    aclnnStatus InitTensor(const NnopbaseTensors* inputs, size_t inputTensorNum, const NnopbaseTensors* outputs,
-                           size_t outputTensorNum);
-    aclnnStatus InitAttr(const NnopbaseAttrs* attrs);
-    NnopbaseBinInfo* FindWithLayout(BinInfoKey& binInfoKey, NnopbaseRegInfo* regInfo, std::initializer_list<Id> layout,
-                                    const StaticKernelPlatformInfo* platformInfo) const;
+    aclnnStatus InitOpHead(const int64_t deterministicMode, const int64_t implMode);
+    aclnnStatus InitPcie(const bool enablePcie);
+    aclnnStatus InitTensorWithStride(const NnopbaseStaticTensorNumInfo* const tensorNumInfo, const aclTensor* tensors[],
+                                     const int64_t* const valueDepend);
+    aclnnStatus InitTensor(const NnopbaseStaticTensorNumInfo* const tensorNumInfo, const aclTensor* tensors[],
+                           const int64_t* const valueDepend);
+    aclnnStatus InitAttr(const NnopbaseStaticTensorNumInfo* const tensorNumInfo, const NnopbaseAttrAddr* attrs[]);
+    aclnnStatus InitTensorWithStride(const NnopbaseTensors* const inputs, const size_t inputTensorNum,
+                                     const NnopbaseTensors* const outputs, const size_t outputTensorNum);
+    aclnnStatus InitTensor(const NnopbaseTensors* const inputs, const size_t inputTensorNum,
+                           const NnopbaseTensors* const outputs, const size_t outputTensorNum);
+    aclnnStatus InitAttr(const NnopbaseAttrs* const attrs);
+    NnopbaseBinInfo* FindWithLayout(BinInfoKey& binInfoKey, NnopbaseRegInfo* const regInfo,
+                                    const std::initializer_list<Id> layout,
+                                    const StaticKernelPlatformInfo* const platformInfo) const;
 
 private:
     static constexpr size_t ToIndex(Id id) { return static_cast<size_t>(id); }

@@ -38,16 +38,18 @@ void NnopbaseSetTilingRuntimeFlags(NnopbaseAsyncAnyValue** values, const uint32_
 {
     /* kInputsDeterministic. */
     *op::internal::PtrCastTo<int32_t>(
-        values[appendBaseIndex + kInputsDeterministic]->data.inplace) = executor->deterministic ? 1 : 0;
-    values[appendBaseIndex + kInputsDeterministic]->deleter = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsDeterministic)]->data.inplace) = executor->deterministic ?
+                                                                                                   1 :
+                                                                                                   0;
+    values[appendBaseIndex + static_cast<uint32_t>(kInputsDeterministic)]->deleter = nullptr;
     /* kInputsDeterministicLevel. */
-    *op::internal::PtrCastTo<int32_t>(values[appendBaseIndex + kInputsDeterministicLevel]
+    *op::internal::PtrCastTo<int32_t>(values[appendBaseIndex + static_cast<uint32_t>(kInputsDeterministicLevel)]
                                           ->data.inplace) = static_cast<int32_t>(executor->deterministicLevel);
-    values[appendBaseIndex + kInputsDeterministicLevel]->deleter = nullptr;
+    values[appendBaseIndex + static_cast<uint32_t>(kInputsDeterministicLevel)]->deleter = nullptr;
     /* kInputsEnablePcieThrough. */
-    *op::internal::PtrCastTo<int32_t>(
-        values[appendBaseIndex + kInputsEnablePcieThrough]->data.inplace) = executor->isEnablePcie ? 1 : 0;
-    values[appendBaseIndex + kInputsEnablePcieThrough]->deleter = nullptr;
+    *op::internal::PtrCastTo<int32_t>(values[appendBaseIndex + static_cast<uint32_t>(kInputsEnablePcieThrough)]
+                                          ->data.inplace) = executor->isEnablePcie ? 1 : 0;
+    values[appendBaseIndex + static_cast<uint32_t>(kInputsEnablePcieThrough)]->deleter = nullptr;
 }
 
 uint32_t NnopbaseGetKernelRunContextValuesInitNum(NnopbaseExecutor* executor)
@@ -244,17 +246,18 @@ aclnnStatus NnopbaseTilingContextBuild(NnopbaseExecutor* executor)
         (executor->args->inputs.nonDynamicCnt > executor->args->inputs.requiredCnt)) {
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseTilingContextUpdtPrepare(executor));
         /* kInputsCompileInfo. */
-        values[appendBaseIndex + kInputsCompileInfo]->data.pointer = nullptr;
-        values[appendBaseIndex + kInputsCompileInfo]->deleter = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsCompileInfo)]->data.pointer = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsCompileInfo)]->deleter = nullptr;
         /* kInputsTilingFunc. */
-        values[appendBaseIndex + kInputsTilingFunc]->data.pointer = nullptr;
-        values[appendBaseIndex + kInputsTilingFunc]->deleter = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsTilingFunc)]->data.pointer = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsTilingFunc)]->deleter = nullptr;
         NnopbaseTilingSetContextOutputStep1(executor);
         executor->tiling.contextExt.hasPrepared = true;
     }
     /* kInputsPlatformInfo. */
-    values[appendBaseIndex + kInputsPlatformInfo]->data.pointer = static_cast<void*>(g_nnopbasePlatformMgr.infos.get());
-    values[appendBaseIndex + kInputsPlatformInfo]->deleter = nullptr;
+    values[appendBaseIndex + static_cast<uint32_t>(kInputsPlatformInfo)]->data.pointer = static_cast<void*>(
+        g_nnopbasePlatformMgr.infos.get());
+    values[appendBaseIndex + static_cast<uint32_t>(kInputsPlatformInfo)]->deleter = nullptr;
     NnopbaseSetTilingRuntimeFlags(values, appendBaseIndex, executor);
 
     *(executor->tiling.tilingKey) = 0U;
@@ -461,16 +464,17 @@ aclnnStatus NnopbaseBuildMemsetTilingContext(NnopbaseExecutor* executor)
     const uint32_t appendBaseIndex = executor->args->binInfo->initValues.size() + 1U; // 1 is for workspace
     if (!contextExt->hasPrepared) {
         /* kInputsCompileInfo. */
-        values[appendBaseIndex + kInputsCompileInfo]
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsCompileInfo)]
             ->data.pointer = executor->args->binInfo->memsetInfo->tilingParseContext->values[kCompileInfoStruct]
                                  ->data.pointer;
-        values[appendBaseIndex + kInputsCompileInfo]->deleter = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsCompileInfo)]->deleter = nullptr;
         /* kInputsPlatformInfo. */
-        values[appendBaseIndex + kInputsPlatformInfo]->data.pointer = nullptr; // tiling里从compileinfo中获取platform
-        values[appendBaseIndex + kInputsPlatformInfo]->deleter = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsPlatformInfo)]
+            ->data.pointer = nullptr; // tiling里从compileinfo中获取platform
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsPlatformInfo)]->deleter = nullptr;
         /* kInputsTilingFunc. */
-        values[appendBaseIndex + kInputsTilingFunc]->data.pointer = nullptr;
-        values[appendBaseIndex + kInputsTilingFunc]->deleter = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsTilingFunc)]->data.pointer = nullptr;
+        values[appendBaseIndex + static_cast<uint32_t>(kInputsTilingFunc)]->deleter = nullptr;
         NnopbaseSetMemsetTilingKeyAndNumBlocks(executor);
         contextExt->hasPrepared = true;
     }
