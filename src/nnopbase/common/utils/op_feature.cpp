@@ -62,11 +62,12 @@ bool IsHostDeviceConnectWithPcie([[maybe_unused]] uint32_t deviceId)
     int64_t hdConnectType = ACL_HOST_DEVICE_CONNECT_TYPE_UB;
     auto ret = aclrtGetDeviceInfo(deviceId, ACL_DEV_ATTR_HD_CONNECT_TYPE, &hdConnectType);
     if (ret != ACL_SUCCESS) {
-        OP_LOGW("Get HD_CONNECT_TYPE by aclrtGetDeviceInfo failed, return %d", static_cast<int32_t>(ret));
+        OP_LOGW("Failed to get host device connect type when calling aclrtGetDeviceInfo, return %d",
+                static_cast<int32_t>(ret));
         return false;
     }
     if (hdConnectType != ACL_HOST_DEVICE_CONNECT_TYPE_PCIE) {
-        OP_LOGI("HD connect type is %" PRId64 ", not PCIe", static_cast<int64_t>(hdConnectType));
+        OP_LOGI("Host device connect type is %" PRId64 ", not PCIe", static_cast<int64_t>(hdConnectType));
         return false;
     }
     return true;
@@ -89,7 +90,8 @@ aclnnStatus GetPcieAddrRange([[maybe_unused]] std::vector<PcieAddrRange>& addrRa
     uint32_t rangeCount = 0;
     auto ret = aclrtHostGetDevicePointerAddrRange(nullptr, &rangeCount);
     if (ret != ACL_SUCCESS) {
-        OP_LOGW("aclrtHostGetDevicePointerAddrRange failed to get range count, return %d", static_cast<int32_t>(ret));
+        OP_LOGW("Failed to get PCIe addr range count when calling aclrtHostGetDevicePointerAddrRange, return %d",
+                static_cast<int32_t>(ret));
         return ACLNN_ERR_RUNTIME_ERROR;
     }
     if (rangeCount == 0U) {
@@ -100,7 +102,8 @@ aclnnStatus GetPcieAddrRange([[maybe_unused]] std::vector<PcieAddrRange>& addrRa
     addrRanges.resize(rangeCount);
     ret = aclrtHostGetDevicePointerAddrRange(addrRanges.data(), &rangeCount);
     if (ret != ACL_SUCCESS) {
-        OP_LOGW("aclrtHostGetDevicePointerAddrRange failed to get addr ranges, return %d", static_cast<int32_t>(ret));
+        OP_LOGW("Failed to get PCIe addr ranges when calling aclrtHostGetDevicePointerAddrRange, return %d",
+                static_cast<int32_t>(ret));
         return ACLNN_ERR_RUNTIME_ERROR;
     }
     return ACLNN_SUCCESS;
@@ -133,19 +136,19 @@ aclnnStatus InitPcieThroughInfo()
         }
 
         if (!IsHostDeviceConnectWithPcie(static_cast<uint32_t>(deviceId))) {
-            OP_LOGI("The connect type between host and device cannot be obtained, or the type is not PCIe, so disable "
-                    "PCIe through feature.");
+            OP_LOGI("The connect type between host and device cannot be obtained, or the type is not PCIe, so "
+                    "PCIe through feature is disabled.");
             return;
         }
 
         if (!IsPcieThroughEnvEnabled()) {
-            OP_LOGI("PCIe through env switch [%s] is not set to 1, disable PCIe through feature.",
+            OP_LOGI("PCIe through environment variable [%s] is not set to 1, so PCIe through feature is disabled.",
                     PCIE_THROUGH_ENV_NAME);
             return;
         }
 
         if (GetPcieAddrRange(g_pcieAddrRanges) != ACLNN_SUCCESS || g_pcieAddrRanges.empty()) {
-            OP_LOGI("Can't get PCIe addr ranges, or the range count is 0, so disable PCIe through feature.");
+            OP_LOGI("Cannot get PCIe addr ranges, or the range count is 0, so PCIe through feature is disabled.");
             return;
         }
 

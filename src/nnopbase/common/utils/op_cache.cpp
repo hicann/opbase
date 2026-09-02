@@ -1269,7 +1269,7 @@ void OpExecCacheManager::DeleteCache1()
 OpExecCache* OpExecCacheManager::GetOpExecCache(uint64_t hash)
 {
     if (g_opCacheTlsData.threadLocalContext.opConfigInfo_.usePcieAddr) {
-        OP_LOGI("Skip cache get, current op has tensor using PCIe addr");
+        OP_LOGI("Cannot get op cache, because the current op uses PCIe addr");
         return nullptr;
     }
     std::lock_guard<std::mutex> guard(lock_);
@@ -1287,7 +1287,7 @@ OpExecCache* OpExecCacheManager::GetOpExecCache(uint64_t hash)
 OpExecCache* OpExecCacheManager::GetOpExecCache(OpCacheKey& key)
 {
     if (g_opCacheTlsData.threadLocalContext.opConfigInfo_.usePcieAddr) {
-        OP_LOGI("Skip cache get, current op has tensor using PCIe addr");
+        OP_LOGI("Cannot get op cache, because the current op uses PCIe addr");
         return nullptr;
     }
     std::lock_guard<std::mutex> guard(lock_);
@@ -1327,7 +1327,7 @@ size_t OpExecCacheManager::GetCacheSizeLimit()
 bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
 {
     if (g_opCacheTlsData.threadLocalContext.opConfigInfo_.usePcieAddr) {
-        OP_LOGI("Skip cache add, current op has tensor using PCIe addr");
+        OP_LOGI("Cannot add op cache, because the current op uses PCIe addr");
         delete exec;
         return false;
     }
