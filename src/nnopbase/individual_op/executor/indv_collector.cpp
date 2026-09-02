@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <exception>
 #include <fstream>
 #include <mutex>
 #include <dirent.h>
@@ -704,9 +705,9 @@ void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& sta
                 kernelDesc.runInfo->scheduleMode, kernelDesc.runInfo->tilingCond, kernelDesc.runInfo->tilingKey,
                 kernelDesc.runInfo->clearAtomic, kernelDesc.runInfo->tilingData.size(),
                 kernelDesc.runInfo->workspaceSizesNum);
-    } catch (const nlohmann::json::exception& e) {
+    } catch (const std::exception& e) {
         kernelDesc.runInfo = nullptr;
-        OP_LOGW("Failed to read static kernel json file of runInfo, reason: %s", e.what());
+        OP_LOGW("Failed to parse static kernel json file of runInfo, reason: %s", e.what());
     }
     return;
 }
