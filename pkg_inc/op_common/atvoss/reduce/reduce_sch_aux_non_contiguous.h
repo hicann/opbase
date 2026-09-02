@@ -69,7 +69,7 @@ public:
     {
         if (ubFactor <= sliceShape) { // ub切在sliceShape
             axisStep = Ops::Base::CeilDiv(sliceShape, ubFactor);
-            axisSliceStep = 1;
+            axisSliceStep = sliceNum;
         } else { // ub切在sliceNum
             axisStep = 1;
             axisSliceStep = Ops::Base::CeilDiv(sliceNum, Ops::Base::CeilDiv(ubFactor, sliceShape));
@@ -214,6 +214,7 @@ public:
             } else {
                 iterAddr_[axis].start = step % this->tiling_->shape[axis];
                 iterAddr_[axis].stride = 1;
+                iterAddr_[axis].sliceStride = 1;
                 CalculateIterA<LoopAIdx - 1>(step / this->tiling_->shape[axis]);
             }
         }
@@ -345,6 +346,7 @@ public:
             } else {
                 iterAddr_[axis].start = basicBlockIdx % this->tiling_->shape[axis];
                 iterAddr_[axis].stride = 1;
+                iterAddr_[axis].sliceStride = 1;
                 CalculateInnerIterR<LoopInnerRIdx - 1>(basicBlockIdx / this->tiling_->shape[axis]);
             }
         }
@@ -373,6 +375,7 @@ public:
                     } else {
                         iterAddr_[axis].start = temp % this->tiling_->shape[axis];
                         iterAddr_[axis].stride = 1;
+                        iterAddr_[axis].sliceStride = 1;
                         temp = temp / this->tiling_->shape[axis];
                     }
                 }
