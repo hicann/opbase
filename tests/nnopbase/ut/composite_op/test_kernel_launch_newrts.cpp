@@ -266,23 +266,25 @@ TEST_F(KernelLaunchNewRtsUT, abnormalCase1)
     int dummyStream = 0;
     void* stream = &dummyStream;
 
+    // opType 超过上限，在 AclOpKernelInit 入口被拦截（观察日志 "Op type ... is invalid" warning）。
     uint32_t opType = static_cast<uint32_t>(op::internal::MAX_OP_TYPE_COUNT) + 1;
-    auto rc2 = op::internal::gKernelMgr.Run(opType, stream, ctx);
-    EXPECT_NE(rc2, ACL_SUCCESS);
     const size_t* workspaceSize = nullptr;
     size_t workspaceNum = 0;
-    auto rc3 = op::internal::gKernelMgr.GetWorkspace(
+    auto rc = op::internal::gKernelMgr.GetWorkspace(
         opType, workspaceSize, workspaceNum, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
-    EXPECT_NE(rc3, ACL_SUCCESS);
-
-    uint32_t opType1 = op::OpTypeDict::ToOpType("Axpy1");
-    auto rc = op::internal::gKernelMgr.Run(opType1, stream, ctx);
     EXPECT_NE(rc, ACL_SUCCESS);
-    auto rc1 = op::internal::gKernelMgr.GetWorkspace(
+    rc = op::internal::gKernelMgr.Run(opType, stream, ctx);
+    EXPECT_NE(rc, ACL_SUCCESS);
+
+    // opType 为 0（未注册算子 ToOpType 返回 0），在 AclOpKernelInit 入口被拦截，观察日志确认。
+    uint32_t opType1 = op::OpTypeDict::ToOpType("Axpy1");
+    rc = op::internal::gKernelMgr.GetWorkspace(
         opType1, workspaceSize, workspaceNum, *ctx->GetOpArg(op::OpArgDef::OP_OPTION_ARG),
         *ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), *ctx->GetOpArg(op::OpArgDef::OP_ATTR_ARG));
-    EXPECT_NE(rc1, ACL_SUCCESS);
+    EXPECT_NE(rc, ACL_SUCCESS);
+    rc = op::internal::gKernelMgr.Run(opType1, stream, ctx);
+    EXPECT_NE(rc, ACL_SUCCESS);
     op::DestroyOpArgContext(ctx);
 }
 

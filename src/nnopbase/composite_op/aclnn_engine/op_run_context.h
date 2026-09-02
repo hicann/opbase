@@ -165,6 +165,7 @@ public:
                                                 const std::vector<MemSetTensorInfo>& memsetTensorInfo)
     {
         static uint32_t opType = OpTypeDict::ToOpType("MemSet");
+        OP_CHECK(opType != 0, OP_LOGW("MemSet op is not registered, opType is 0."), return nullptr);
         OP_CHECK(InitOpFunctions(opType) == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "InitOpFunctions failed"),
                  return nullptr);
         if (opTilingFuncs_[opType] == nullptr || opTilingFuncs_[opType]->tiling == nullptr) {

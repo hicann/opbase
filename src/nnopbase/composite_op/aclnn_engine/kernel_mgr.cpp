@@ -459,8 +459,8 @@ aclnnStatus KernelMgr::ParseStaticKernels(uint32_t opType)
 aclnnStatus KernelMgr::AclOpKernelInit(uint32_t opType)
 {
     // init_ change name to initDynKernelFlags_. 2025.7.8
-    if (opType >= MAX_OP_TYPE_COUNT) {
-        OP_LOGD("Op type %u %s is larger than %zu has been initialized.", opType,
+    if (opType >= MAX_OP_TYPE_COUNT || opType == 0) {
+        OP_LOGW("Op type %u %s is invalid, opType may be unregistered or exceed max count %zu.", opType,
                 OpTypeDict::ToString(opType).GetString(), MAX_OP_TYPE_COUNT);
         return ACLNN_SUCCESS;
     }

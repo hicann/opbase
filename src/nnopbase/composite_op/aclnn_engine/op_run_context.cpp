@@ -34,6 +34,9 @@ aclnnStatus OpRunContextMgr::InitOpFunctions(uint32_t opType)
     // This function may be called in phase 1 and phase 2 thread.
     op::opploader::LoadAllOppPackage();
 
+    CHECK_COND(opType < MAX_OP_TYPE_COUNT, ACLNN_ERR_INNER, "opType %u exceeds max count %zu.", opType,
+               MAX_OP_TYPE_COUNT);
+
     static std::once_flag flag[MAX_OP_TYPE_COUNT];
     aclnnStatus ret = ACLNN_SUCCESS;
     auto f = [&ret, &opType]() {

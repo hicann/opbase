@@ -228,7 +228,7 @@ struct NonFiniteCheckTensorList {
 
 struct NonFiniteCheckOpContext {
     NonFiniteCheckOpContext(aclOpExecutor* executor, aclrtStream stream, OpArgContext* opArgCtx)
-        : executor_(executor), stream_(stream), opArgCtx_(opArgCtx), bin_(nullptr) {};
+        : executor_(executor), stream_(stream), opArgCtx_(opArgCtx), bin_(nullptr){};
 
     aclOpExecutor* executor_;
     aclrtStream stream_;
@@ -244,6 +244,7 @@ public:
     static aclnnStatus RunNonfiniteCheckOp(NonFiniteCheckOpContext& nonFiniteCheckOpCtx, bool& dump)
     {
         static uint32_t opid = OpTypeDict::ToOpType("NonFiniteCheck");
+        OP_CHECK(opid != 0, OP_LOGW("NonFiniteCheck op is not registered, opid is 0."), return ACLNN_ERR_INNER);
         (void)gKernelMgr.AclOpKernelInit(opid);
 
         std::unordered_map<op::DataType, std::vector<aclTensor*>> dtype2Tensors;

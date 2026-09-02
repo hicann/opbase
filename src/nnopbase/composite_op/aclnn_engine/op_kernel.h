@@ -1407,12 +1407,15 @@ public:
         const char* simpKey = nullptr;
         auto ret = GenerateStaticParam(inputs, outputs, attrs, simpKey);
         if (ret != ACLNN_SUCCESS || simpKey == nullptr) {
+            OP_LOGW("Failed to generate simplified key for static bin of op %s, GenerateStaticParam returned %d, "
+                    "simplified key is %s.",
+                    op::OpTypeDict::ToString(opType_).GetString(), ret, simpKey == nullptr ? "null" : "valid");
             return nullptr;
         }
         size_t hash = HashBinary(simpKey, strlen(simpKey));
         auto iter = staticBins_.find(hash);
         if (iter == staticBins_.end()) {
-            OP_LOGI("Cannot find static bin of op %s, simplified key %s.",
+            OP_LOGW("Cannot find static bin of op %s, simplified key %s.",
                     op::OpTypeDict::ToString(opType_).GetString(), simpKey);
             return nullptr;
         }

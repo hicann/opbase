@@ -37,6 +37,8 @@ constexpr aclnnStatus ACLNN_ERR_INNER_RUNTIME_INVALID_HANDLE = 561201;
 
 constexpr uint32_t KERNEL_UTILS_THIRTY_TWO_BIT = 32;
 
+constexpr size_t MAX_OP_TYPE_COUNT = 1024; // max registered op type
+
 // Aligns the supplied size to the specified PowerOfTwo
 inline size_t AlignSize(size_t sizeToAlign, size_t powerOfTwo)
 {

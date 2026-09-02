@@ -18,6 +18,7 @@
 #include <strings.h>
 #include "opdev/op_def.h"
 #include "opdev/op_log.h"
+#include "kernel_utils.h"
 
 namespace op {
 
@@ -128,7 +129,11 @@ aclnnStatus OpTypeDict::Add(uint32_t& id, const char* opName)
         opTypeNum++;
     }
 
-    // check duplicate
+    if (opTypeNum >= op::internal::MAX_OP_TYPE_COUNT) {
+        OP_LOGE(ACLNN_ERR_INNER, "Op type count %u reaches upper limit %zu, op %s registration rejected.",
+                opTypeNum.load(), op::internal::MAX_OP_TYPE_COUNT, opName);
+        return ACLNN_ERR_INNER;
+    }
     id = opTypeNum;
     opTypeName_.emplace_back(ge::AscendString(opName));
     string opConfigFileStr(GetConfigJsonName(opTypeName_.back()));
@@ -207,6 +212,11 @@ void BinConfigJsonDict::UpdateConfigJsonPath(uint32_t opType, const std::string&
 std::vector<std::string> GetOpConfigJsonFileName(uint32_t opType)
 {
     const std::lock_guard<std::mutex> lock(opTypeMutex);
+    if (opType >= BinConfigJsonDict::opConfigJsonPath_.size()) {
+        OP_LOGW("opType %u exceeds opConfigJsonPath_ size %zu, return empty.", opType,
+                BinConfigJsonDict::opConfigJsonPath_.size());
+        return {};
+    }
     return BinConfigJsonDict::opConfigJsonPath_[opType];
 }
 

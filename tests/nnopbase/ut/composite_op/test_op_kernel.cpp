@@ -2123,3 +2123,30 @@ TEST_F(OpKernelUT, Initialize_MergePriority_CustomOppWinsOverVendorsAndBuiltin)
     setenv("ASCEND_OPP_PATH", mockDir.c_str(), 1);
     setenv("ASCEND_CUSTOM_OPP_PATH", (mockDir + "/custom").c_str(), 1);
 }
+
+// GetOpConfigJsonFileName 对越界 opType 返回空 vector，且空 vector 对下游 ParseDynamicKernelConfig 无破坏性影响
+TEST_F(OpKernelUT, GetOpConfigJsonFileNameOutOfBounds)
+{
+    // 合法 opType 返回非空（对照，证明校验未误伤合法路径）
+    uint32_t validOpType = op::OpTypeDict::ToOpType("Axpy");
+    auto validFiles = op::GetOpConfigJsonFileName(validOpType);
+    EXPECT_FALSE(validFiles.empty());
+
+    // 越界 opType（>= opConfigJsonPath_.size() 但 < MAX_OP_TYPE_COUNT）：校验返回空 vector
+    uint32_t invalidOpType = static_cast<uint32_t>(op::OpTypeDict::GetAllOpTypeSize()) + 10U;
+    auto invalidFiles = op::GetOpConfigJsonFileName(invalidOpType);
+    EXPECT_TRUE(invalidFiles.empty());
+
+    // 空 vector 传入下游 ParseDynamicKernelConfig：for 循环空转，不越界访问 [0]，走失败路径返回错误
+    auto rc = op::internal::gKernelMgr.ParseDynamicKernelConfig(invalidFiles);
+    EXPECT_NE(rc, ACL_SUCCESS);
+}
+
+// InitOpFunctions 对越界 opType 返回 ACLNN_ERR_INNER，不越界访问 flag[opType]
+TEST_F(OpKernelUT, InitOpFunctionsOutOfBounds)
+{
+    // 越界 opType（>= MAX_OP_TYPE_COUNT）：校验返回 ACLNN_ERR_INNER，不走到 flag[opType] 越界点
+    uint32_t invalidOpType = static_cast<uint32_t>(op::internal::MAX_OP_TYPE_COUNT) + 1U;
+    auto invalidRc = op::internal::OpRunContextMgr::InitOpFunctions(invalidOpType);
+    EXPECT_EQ(invalidRc, ACLNN_ERR_INNER);
+}
