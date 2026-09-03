@@ -1,4 +1,4 @@
-﻿# op\_common
+# op\_common
 
 - **[op\_common接口列表](op_common_api_introduction.md)**  
 
@@ -11,3 +11,5 @@
 - **[infershape](infershape/infershape.md)**  
 
 - **[op\_graph](op_graph/op_graph.md)**  
+
+- **[op\_host](op_host/op_host.md)**  

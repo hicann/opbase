@@ -8,6 +8,7 @@
   - math：数学计算相关接口。
   - platform：算子执行平台信息相关接口。
   - infershape：算子shape处理相关接口。
+  - op_host：算子注册AI Core配置相关接口。
 
 - **接口说明**：
 
@@ -316,6 +317,12 @@
   <tr>
     <td><a href='op_graph/CANN_OPS_OPB_ASYN_EXEC_ACLNN.md'>CANN_OPS_OPB_ASYN_EXEC_ACLNN</a></td>
     <td>Aclnn接口在图场景的通用执行接口（异步接口），内部调用了一阶段接口，并把二阶段注册给了GE的context</td>
+  </tr>
+  <tr>
+    <td rowspan="1">op_host</td>
+    <td><a href='op_host/AddConfigByArch.md'>AddConfigByArch</a></td>
+    <td>按NPU架构批量注册算子的AI Core配置。</td>
+    <td rowspan="1">op_common/op_host/util/op_arch_helper.h</td>
   </tr>
   <tr>
     <td><a href='reserved_interface_op_common.md'>预留接口</a></td>
