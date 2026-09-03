@@ -361,7 +361,7 @@ const PlatformInfo& PlatformThreadLocalCtx::GetPlatformInfo()
     int32_t deviceId;
     auto ret = aclrtGetDevice(&deviceId);
     OP_CHECK(ret == ACL_SUCCESS,
-             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get device id failed when do GetCurrentPlatformInfo."),
+             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Get device id failed when doing GetCurrentPlatformInfo."),
              return invalidPlatform_);
     while (platformInfoList_.size() <= static_cast<size_t>(deviceId)) {
         PlatformInfo* info = new PlatformInfo(platformInfoList_.size());

@@ -114,7 +114,7 @@ public:
             allocatedTensorList_.push_back(tensor);
             return tensor;
         } catch (...) {
-            OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor fail.");
+            OP_LOGE(ACLNN_ERR_INNER, "aclOpExecutor::ConvertToTensor failed.");
             delete tensor;
             return nullptr;
         }
@@ -181,7 +181,7 @@ public:
         if (uniqueExecutor_.get() != nullptr) {
             uniqueExecutor_.get()->DeleteCache();
             OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER_NOT_TRANS_EXECUTOR,
-                                   "When %s do success, ReleaseTo(executor) should be called before return.",
+                                   "When %s succeeds, ReleaseTo(executor) should be called before return.",
                                    funcName_);
         }
     }

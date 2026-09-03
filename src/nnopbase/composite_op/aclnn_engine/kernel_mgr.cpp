@@ -99,7 +99,8 @@ aclnnStatus KernelMgr::LoadStaticBinJson()
     staticBinAndJsonDir_.append(STATIC_BIN_AND_JSON_DIR_PATH);
     std::string realConfigJsonPath = RealPath(configJsonPath);
     OP_CHECK(!realConfigJsonPath.empty(),
-             OP_LOGW("static kernel config json is not exist, path: %s", configJsonPath.c_str()), return ACLNN_SUCCESS);
+             OP_LOGW("static kernel config json does not exist, path: %s", configJsonPath.c_str()),
+             return ACLNN_SUCCESS);
     ifstream f(realConfigJsonPath);
     try {
         staticConfigJson_ = nlohmann::json::parse(f);

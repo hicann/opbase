@@ -376,7 +376,7 @@ private:
         }
 
         if (index < 0 || index >= BlockPool::MAX_STORE) {
-            OP_LOGE(ACLNN_ERR_INNER, "invalid cache to alloc, idx %d size %lu", index, size);
+            OP_LOGE(ACLNN_ERR_INNER, "invalid cache to alloc, idx %d size %lu B", index, size);
             return nullptr;
         }
 

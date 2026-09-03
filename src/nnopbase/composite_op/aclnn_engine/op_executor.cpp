@@ -703,7 +703,9 @@ aclTensor* aclOpExecutor::CreateView(const aclTensor* tensor, const op::Shape& o
     }
     int64_t actualShapeLen = storageSize - offset;
     OP_CHECK((actualShapeLen >= 0 && actualShapeLen <= storageSize),
-             OP_LOGE(ACLNN_ERR_INNER, "The tensor's offset is invalid with the specified storageShape"),
+             OP_LOGE(ACLNN_ERR_INNER,
+                     "The tensor's offset %ld is invalid, storage size is %ld, offset must be in [0, %ld].",
+                     offset, storageSize, storageSize),
              return nullptr;);
     // 在非连续场景下，传入tiling的storageshape会被oom用来计算合法内存大小，aclnn在下发时会将gm地址加上offset偏移，此时算子合法内存大小应为原始内存大小减offset
     storageShapeCorrect.SetDim(0, actualShapeLen);
@@ -892,7 +894,7 @@ uint64_t aclOpExecutor::GetMagicNumber() { return magicNumber_; }
 UniqueExecutor::UniqueExecutor(const char* funcName) : funcName_(funcName), uniqueExecutor_(new aclOpExecutor())
 {
     OP_LOGI("Create executor: %p", uniqueExecutor_.get());
-    OP_CHECK(uniqueExecutor_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "executor constructed failed."),
+    OP_CHECK(uniqueExecutor_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to construct executor."),
              throw std::bad_alloc());
     auto& threadLocalCtx = op::internal::GetThreadLocalContext();
     uniqueExecutor_->SetLogInfo(threadLocalCtx.logInfo_);

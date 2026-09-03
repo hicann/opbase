@@ -123,7 +123,7 @@ aclnnStatus InitPcieThroughInfo()
         g_pcieThroughEnabled = false;
         NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
         if (npuArch != NpuArch::DAV_3510 && npuArch != NpuArch::DAV_9201 && npuArch != NpuArch::DAV_9202) {
-            OP_LOGI("Current NPU arch [%u] not support PCIe through.", static_cast<uint32_t>(npuArch));
+            OP_LOGI("Current NPU arch [%u] does not support PCIe through.", static_cast<uint32_t>(npuArch));
             return;
         }
 

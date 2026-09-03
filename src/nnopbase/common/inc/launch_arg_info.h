@@ -274,7 +274,7 @@ private:
             devArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
-            OP_LOGD("Append Launch DEVICE aclTensor. dims: %zu, dtype: %d, aclTensor: %p, addr: %p, tensor size: %zu",
+            OP_LOGD("Append Launch DEVICE aclTensor. dims: %zu, dtype: %d, aclTensor: %p, addr: %p, tensor size: %zu B",
                     arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, arg->GetData(),
                     arg->GetTensor()->GetSize());
             const auto& shape = arg->GetStorageShape();
@@ -288,7 +288,7 @@ private:
             hostArgNum_++;
             tensorNum_++;
 #ifdef DEBUG
-            OP_LOGD("Append Launch HOST aclTensor. dims: %zu, dtype: %d, %p, calc size: %zu, tensor size: %zu",
+            OP_LOGD("Append Launch HOST aclTensor. dims: %zu, dtype: %d, %p, calc size: %zu B, tensor size: %zu B",
                     arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg, size, arg->GetTensor()->GetSize());
             const auto& shape = arg->GetStorageShape();
             for (size_t i = 0; i < shape.GetDimNum(); i++) {
@@ -318,7 +318,7 @@ private:
             tensorNum_ += arg->Size() + 1;
             dfxInfoDumpElemCount_++;
 #ifdef DEBUG
-            OP_LOGD("Append input DEVICE ptr: size %lu, dataSize %zu", arg->Size(), dataSize);
+            OP_LOGD("Append input DEVICE ptr: tensor num: %lu, dataSize: %zu B", arg->Size(), dataSize);
 #endif
             return;
         }
@@ -347,7 +347,7 @@ private:
         tensorNum_++;
         dfxInfoDumpElemCount_ += CalAdumpDFXInfoElemCount(arg);
 #ifdef DEBUG
-        OP_LOGD("Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu",
+        OP_LOGD("Append Launch aclTensor. dims: %zu, dtype: %d, data:%p, tensor size: %zu B",
                 arg->GetStorageShape().GetDimNum(), arg->GetDataType(), arg->GetData(), arg->GetTensor()->GetSize());
         const auto& shape = arg->GetStorageShape();
         for (size_t i = 0; i < shape.GetDimNum(); i++) {
@@ -374,7 +374,7 @@ private:
             tensorNum_ += arg->Size() + 1;
             dfxInfoDumpElemCount_++;
 #ifdef DEBUG
-            OP_LOGD("Append output DEVICE ptr: size %ld, dataSize %ld", arg->Size(), dataSize);
+            OP_LOGD("Append output DEVICE ptr: tensor num: %lu, dataSize: %zu B", arg->Size(), dataSize);
 #endif
             return;
         }

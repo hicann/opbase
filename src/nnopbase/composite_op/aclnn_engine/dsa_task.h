@@ -43,7 +43,8 @@ protected:
 
     aclnnStatus VisitOutputArgs(OpArgList& argList)
     {
-        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "output arg num must be 1.");
+        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "output arg num must be 1, but got %zu.",
+                   argList.count);
         return VisitOutputArg(reinterpret_cast<aclTensor*>(argList[0]->pointer));
     }
 
@@ -186,7 +187,7 @@ private:
         } else if (idx == idxStd) {
             const auto rc = memcpy_s(&workspaceHolder_[IDX_PARAM1], sizeof(uint64_t), arg->GetData(), arg->Size());
             if (rc != EOK) {
-                OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
+                OP_LOGE(ACLNN_ERR_INNER, "memcpy second input arg (std) failed.");
                 return ACLNN_ERR_INNER;
             }
 
@@ -217,7 +218,7 @@ private:
     aclnnStatus VisitInputArgs(OpArgList& argList)
     {
         CHECK_COND(argList.count == DSA_TASK_INPUT_NUM, ACLNN_ERR_INNER,
-                   "DSARandomNormal or DSARandomTruncatedNormal input arg num must be 5.");
+                   "DSARandomNormal or DSARandomTruncatedNormal input arg num must be 5, but got %zu.", argList.count);
         return argList.VisitBy([this](size_t idx, OpArg& arg) -> aclnnStatus { return VisitInputArg(idx, arg); });
     }
 };
@@ -324,7 +325,7 @@ private:
         } else if (idx == idxMax) {
             const auto rc = memcpy_s(&workspaceHolder_[IDX_PARAM1], sizeof(uint64_t), arg->GetData(), arg->Size());
             if (rc != EOK) {
-                OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
+                OP_LOGE(ACLNN_ERR_INNER, "memcpy second input arg (max) failed.");
                 return ACLNN_ERR_INNER;
             }
             memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.max.valueOrAddr, arg->Size(),
@@ -355,7 +356,7 @@ private:
     aclnnStatus VisitInputArgs(OpArgList& argList)
     {
         CHECK_COND(argList.count == DSA_TASK_INPUT_NUM, ACLNN_ERR_INNER,
-                   "DSARandomUniformTask input arg num must be 5.");
+                   "DSARandomUniformTask input arg num must be 5, but got %zu.", argList.count);
         return argList.VisitBy([this](size_t idx, OpArg& arg) -> aclnnStatus { return VisitInputArg(idx, arg); });
     }
 };
@@ -468,7 +469,7 @@ private:
     aclnnStatus VisitInputArgs(OpArgList& argList)
     {
         CHECK_COND(argList.count == DSA_GENBIT_TASK_INPUT_NUM, ACLNN_ERR_INNER,
-                   "DSARandomUniformTask input arg num must be 4.");
+                   "DSAGenBitMaskTask input arg num must be 4, but got %zu.", argList.count);
         return argList.VisitBy([this](size_t idx, OpArg& arg) -> aclnnStatus { return VisitInputArg(idx, arg); });
     }
 
@@ -480,7 +481,8 @@ private:
 
     aclnnStatus VisitOutputArgs(OpArgList& argList)
     {
-        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "output arg num must be 1.");
+        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "output arg num must be 1, but got %zu.",
+                   argList.count);
         return VisitOutputArg(reinterpret_cast<aclTensor*>(argList[0]->pointer));
     }
 };

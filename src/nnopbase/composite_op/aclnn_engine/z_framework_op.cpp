@@ -192,7 +192,7 @@ aclnnStatus CopyNpuToNpu(const aclTensor* src, const aclTensor* dst, aclOpExecut
              OP_LOGE(ACLNN_ERR_INNER, "Get input param's placement:%d when expect kOnDeviceHbm.", src->GetPlacement()),
              return ACLNN_ERR_INNER);
     OP_CHECK(dst->GetPlacement() == op::TensorPlacement::kOnDeviceHbm,
-             OP_LOGE(ACLNN_ERR_INNER, "Get out param's placement:%d when expect kOnDeviceHbm.", src->GetPlacement()),
+             OP_LOGE(ACLNN_ERR_INNER, "Get out param's placement:%d when expect kOnDeviceHbm.", dst->GetPlacement()),
              return ACLNN_ERR_INNER);
 
     op::internal::ProfilingInfoId profilingInfoId;

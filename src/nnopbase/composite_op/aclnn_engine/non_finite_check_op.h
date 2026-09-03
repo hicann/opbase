@@ -93,7 +93,7 @@ public:
         OP_CHECK(ret == ACL_SUCCESS, OP_LOGW("failed to call aclrtMallocWithCfg, ret %d", ret), return ACLNN_ERR_INNER);
 
         workspaceTensor->SetStorageAddr(wsAddr);
-        OP_LOGD("create non finite check op workspace size %zu", workspaceSize[0]);
+        OP_LOGD("create non finite check op workspace size %zu bytes", workspaceSize[0]);
         return ACLNN_SUCCESS;
     }
 
@@ -184,7 +184,7 @@ struct NonFiniteCheckTensorList {
             OP_LOGD("tensor dimNum %zu", dimNum);
             size_ += sizeof(int64_t); // ptr
         }
-        OP_LOGD("size %zu ptrOffset %zu", size_, ptrOffset_);
+        OP_LOGD("size %zu bytes, ptrOffset %zu bytes", size_, ptrOffset_);
     }
 
     aclnnStatus Init(std::vector<aclTensor*>& checkTensors)
@@ -274,11 +274,11 @@ public:
                      return ret);
 
             auto rc = aclrtSynchronizeStream(nonFiniteCheckOpCtx.stream_);
-            OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtSynchronizeStream failed, ret %d", ret), return ACLNN_ERR_INNER);
+            OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtSynchronizeStream failed, ret %d", rc), return ACLNN_ERR_INNER);
 
             float status = 0;
             rc = aclrtMemcpy(&status, sizeof(float), outputAddr, sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST);
-            OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtMemcpy failed, ret %d", ret), return ACLNN_ERR_INNER);
+            OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtMemcpy failed, ret %d", rc), return ACLNN_ERR_INNER);
             OP_LOGD("non finite check status %f", status);
             if (static_cast<int>(status) == 1) {
                 dump = true;

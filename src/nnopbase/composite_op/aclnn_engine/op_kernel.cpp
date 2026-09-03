@@ -1143,7 +1143,8 @@ aclnnStatus OpKernel::HashAndInsert(const string& binAndJsonDir, const string& b
         auto binsIter = bins_.find(hash);
         if (binsIter != bins_.end()) {
             if (key.key != binsIter->second->GetKeyAndDetail().key) {
-                OP_LOGE(ACLNN_ERR_INNER, "Two bin [%s & %s] has same hash but their integral key is diff[%s, %s].",
+                OP_LOGE(ACLNN_ERR_INNER,
+                        "Two bins [%s & %s] have the same hash but their integral keys differ [%s, %s].",
                         binOrJsonPath.c_str(), binsIter->second->jsonPath_.c_str(),
                         GetReadableKey(key.key, keyParams.len).c_str(),
                         GetReadableKey(binsIter->second->GetKeyAndDetail().key, keyParams.len).c_str());
@@ -1153,7 +1154,7 @@ aclnnStatus OpKernel::HashAndInsert(const string& binAndJsonDir, const string& b
                     binsIter->second->SetJsonPath(jsonPath);
                     binsIter->second->SetBinPath(binPath);
                 } else {
-                    OP_LOGW("Two different bin [%s & %s] has same integral key %s.", binOrJsonPath.c_str(),
+                    OP_LOGW("Two different bins [%s & %s] have the same integral key %s.", binOrJsonPath.c_str(),
                             binsIter->second->jsonPath_.c_str(), GetReadableKey(key.key, keyParams.len).c_str());
                     continue;
                 }
@@ -1220,7 +1221,7 @@ void HandleAttrValue(const nlohmann::json& value, AttrInfo& attrInfo)
             OP_LOGD("Float attr [%s] need to be compared.", attrInfo.attrName.c_str());
             attrInfo.supportAll = false;
         } else {
-            OP_LOGD("Float attr [%s] currently do not need to be compared.", attrInfo.attrName.c_str());
+            OP_LOGD("Float attr [%s] currently does not need to be compared.", attrInfo.attrName.c_str());
         }
     } else if (value.is_number()) {
         int64_t valueInt64 = value.get<int64_t>();
@@ -1231,14 +1232,14 @@ void HandleAttrValue(const nlohmann::json& value, AttrInfo& attrInfo)
             OP_LOGD("Int64 attr [%s] need to be compared.", attrInfo.attrName.c_str());
             attrInfo.supportAll = false;
         } else {
-            OP_LOGD("Int64 attr [%s] currently do not need to be compared.", attrInfo.attrName.c_str());
+            OP_LOGD("Int64 attr [%s] currently does not need to be compared.", attrInfo.attrName.c_str());
         }
     } else if (value.is_array()) {
         if (attrInfo.values[0] != value.size()) {
             OP_LOGD("Int64 attr [%s] need to be compared.", attrInfo.attrName.c_str());
             attrInfo.supportAll = false;
         } else {
-            OP_LOGD("Int64 attr [%s] currently do not need to be compared.", attrInfo.attrName.c_str());
+            OP_LOGD("Int64 attr [%s] currently does not need to be compared.", attrInfo.attrName.c_str());
         }
     }
     return;
@@ -1266,7 +1267,9 @@ aclnnStatus OpKernel::JudgeInputSupportAll(const nlohmann::json& binListJson)
         for (const auto& input : *inputsIter) {
             ++inputsCnt;
             if (inputsCnt >= static_cast<int64_t>(inputInfos_.size())) {
-                OP_LOGE(ACLNN_ERR_INNER_INPUT_NUM_IN_JSON_TOO_LARGE, "%ld is too large", inputsCnt);
+                OP_LOGE(ACLNN_ERR_INNER_INPUT_NUM_IN_JSON_TOO_LARGE,
+                        "Input num %ld in json is too large, max supported input num is %zu.", inputsCnt,
+                        inputInfos_.size());
                 return ACLNN_ERR_INNER_INPUT_NUM_IN_JSON_TOO_LARGE;
             }
             auto& inputInfo = inputInfos_[inputsCnt];

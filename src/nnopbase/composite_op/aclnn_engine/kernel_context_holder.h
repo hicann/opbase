@@ -52,7 +52,7 @@ public:
         CHECK_RET_CODE(input.VisitBy([this](size_t idx, OpArg& arg) { return UpdateInputArg(idx, arg); }),
                        "UpdateInputArg failed.");
         CHECK_RET_CODE(output.VisitBy([this](size_t idx, OpArg& arg) { return UpdateOutputArg(idx, arg); }),
-                       "UpdateInputArg failed.");
+                       "UpdateOutputArg failed.");
         FinalizeComputeNodeInfo(attr.count);
         void* attrPtr = attrDataStart_;
         CHECK_RET_CODE(

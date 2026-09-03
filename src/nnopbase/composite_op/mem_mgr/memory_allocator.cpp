@@ -41,7 +41,8 @@ void TensorBucket::UpdateOffset(const uint64_t offset)
     for (const auto ref : refs_) {
         ref->SetOffset(offset_);
         OP_LOGI(
-            "MaxAllocator tensor index: %zu, offset: %lu, lifetime: [%ld, %ld], original size: %ld, align size: %lu.",
+            "MaxAllocator tensor index: %zu, offset: %lu B, lifetime: [%ld, %ld], original size: %ld B, "
+            "align size: %lu B.",
             ref->GetIndex(), offset_, ref->GetLifeTimeStart(), ref->GetLifeTimeEnd(), ref->GetSize(),
             Align(ref->GetSize()));
     }

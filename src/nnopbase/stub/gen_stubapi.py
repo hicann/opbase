@@ -456,7 +456,7 @@ class H2CC(object):
             self.line_index += 1
         self.write_specified_template()
         logging.info('Added %s functions', len(self.func_list_exist))
-        logging.info('Successfully converted,please see ' + self.output_file)
+        logging.info('Successfully converted, please see ' + self.output_file)
 
     def handle_func1(self, line, template_string=''):
         """

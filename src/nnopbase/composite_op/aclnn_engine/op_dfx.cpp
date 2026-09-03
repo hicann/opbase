@@ -1185,7 +1185,7 @@ static bool IsSaturationOverflow(aclrtStream stream)
     CHECK_COND(ret == ACL_SUCCESS, false, "aclrtNpuGetFloatOverFlowStatus failed, ret %d", ret);
 
     auto rc = aclrtSynchronizeStream(stream);
-    OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtSynchronizeStream failed, ret %d", ret), return ACLNN_ERR_INNER);
+    OP_CHECK(rc == ACL_SUCCESS, OP_LOGW("aclrtSynchronizeStream failed, ret %d", rc), return ACLNN_ERR_INNER);
 
     uint8_t status = 0;
     ret = aclrtMemcpy(&status, sizeof(uint8_t), ValueToPtr(realAddr), sizeof(uint8_t), ACL_MEMCPY_DEVICE_TO_HOST);
