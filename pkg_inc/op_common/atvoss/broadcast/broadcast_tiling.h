@@ -458,29 +458,29 @@ private:
             if (tilingData.strides[i].back() == 0) {
                 int64_t inputProduct = 1;
                 for (const auto& dim : tilingData.dims[i]) {
- 	                inputProduct *= dim;
- 	            }
+                    inputProduct *= dim;
+                }
                 if (inputProduct * dTypeSize >= CACHE_LINE_512) {
- 	                return false;
- 	            }
+                    return false;
+                }
                 checkB = true;
             } else {
                 int64_t innerProduct = 1;
- 	            int64_t outerProduct = 1;
+                int64_t outerProduct = 1;
                 for (uint64_t j = 0; j < tilingData.dims[i].size(); j++) {
                     if (tilingData.strides[i][j] == 0) {
                         return false;
                     }
                     if (j < static_cast<uint64_t>(innerStart)) {
- 	                    outerProduct *= tilingData.dims[i][j];
- 	                } else {
+                        outerProduct *= tilingData.dims[i][j];
+                    } else {
                         innerProduct *= tilingData.dims[i][j];
- 	                }
+                    }
                 }
                 if (innerProduct > SPECIAL_DIM_IN_THRESHOLD || outerProduct < OUTER_PRODUCT_THRESHOLD ||
                     outerProduct > VALUE_TWO * OUTER_PRODUCT_THRESHOLD) {
                     return false;
- 	            }
+                }
                 checkA = true;
             }
         }
@@ -670,6 +670,43 @@ private:
         return false;
     }
 
+    // 转置输入处理：命中末两轴转置（维度 <= 3 且满足转置特征）时更新各输入 303 并行度上限的
+    // 最大值（倒数第二轴 × 前缀积，末轴转置行不可跨核切分，只能沿倒数第二轴方向多核切分）
+    // 并置位 isLastTranspose，返回 true 表示该输入已按转置场景处理（调用方 continue，
+    // 不再落入 NLast 三项检查，避免真转置形态必然不满足三项检查而误否决其他转置输入的置位）。
+    // isOnlyLastTwoAxesTransposed 已保证 shapeDim >= 2（1 维无末两轴转置概念直接返回 false），
+    // 下方 dims.size() - DIM_TWO 的索引不会越界
+    static bool HandleTransposeInput(const std::vector<int64_t>& dims, const std::vector<int64_t>& strides,
+                                     int64_t& maxTransposeParallel, bool& isLastTranspose)
+    {
+        if (dims.size() > DIM_THREE || !isOnlyLastTwoAxesTransposed(dims, strides)) {
+            return false;
+        }
+        int64_t transposeParallel = dims[dims.size() - DIM_TWO];
+        for (int64_t k = 0; k + 2 < static_cast<int64_t>(dims.size()); k++) {
+            transposeParallel *= dims[k];
+        }
+        if (transposeParallel > maxTransposeParallel) {
+            maxTransposeParallel = transposeParallel;
+        }
+        isLastTranspose = true;
+        return true;
+    }
+    // NLast 场景检查（前两项，仅依赖合轴后形态）：last 轴 128B 连续 / 小包，任一满足即支持
+    static bool IsNLastScenario(const std::vector<int64_t>& dims, const std::vector<int64_t>& strides, size_t shapeDim,
+                                int64_t dimLimit)
+    {
+        // last轴128B连续场景
+        if ((dims[shapeDim - 1] >= dimLimit) && (strides[shapeDim - 1] == 1)) {
+            return true;
+        }
+        // 小包场景
+        if (shapeDim > 1 && dims[shapeDim - 1] < dimLimit && strides[shapeDim - DIM_TWO] > dimLimit) {
+            return true;
+        }
+        return false;
+    }
+
     //
     ge::graphStatus isBroadcastTemplateNonContiguousSupport(bool& isSupported, bool& isLastTranspose,
                                                             bool& isLastAxisBrc)
@@ -678,6 +715,9 @@ private:
         isLastTranspose = false;
         bool isLastAxisContigunous = true;
         isLastAxisBrc = false;
+        // 各转置输入的 303 并行度上限取最大值：任一输入并行度足够即走 303
+        // （303 切分按输出 dims，混合输入下取输入最大并行度，避免低并行度输入否决高并行度输入）
+        int64_t maxTransposeParallel = 0;
         for (int64_t i = 0; i < static_cast<int64_t>(inShapes.size()); ++i) {
             auto shapeDim = tilingData.dims[i].size();
             auto strideDim = tilingData.strides[i].size();
@@ -716,9 +756,10 @@ private:
                 isSupported = false;
                 return ge::GRAPH_SUCCESS;
             }
-            // 转置场景
-            if (isOnlyLastTwoAxesTransposed(tilingData.dims[i], tilingData.strides[i]) && shapeDim <= 3) {
-                isLastTranspose = true;
+            // 转置场景：记录并行度上限，循环后统一判定（并行度不足半数核数时必然欠核，
+            // 改走 NonContiguousBase（304/305）满核直拷）
+            if (HandleTransposeInput(tilingData.dims[i], tilingData.strides[i], maxTransposeParallel,
+                                     isLastTranspose)) {
                 continue;
             }
 
@@ -729,28 +770,25 @@ private:
             int64_t dimLimit = CACHE_LINE / dTypeSize;
             int64_t sizeLimit = SINGLE_CORE_SIZE_LIMIT * coreNum;
 
-            // last轴128B连续场景
-            if ((tilingData.dims[i][shapeDim - 1] >= dimLimit) && (tilingData.strides[i][strideDim - 1] == 1)) {
-                continue;
+            // NLast 场景检查，任一满足即支持，均不满足则走 NonContiguousBase 兜底
+            bool isNLastScenario = IsNLastScenario(tilingData.dims[i], tilingData.strides[i], shapeDim, dimLimit) ||
+                                   (tilingData.dims[i][shapeDim - 1] < dimLimit &&
+                                    inShapes[i].GetShapeSize() * dTypeSize <= sizeLimit);
+            if (!isNLastScenario) {
+                isSupported = false;
+                return ge::GRAPH_SUCCESS;
             }
-
-            // 小包场景
-            if (shapeDim > 1 && tilingData.dims[i][shapeDim - 1] < dimLimit &&
-                tilingData.strides[i][strideDim - DIM_TWO] > dimLimit) {
-                continue;
-            }
-
-            // 小shape场景
-            if (tilingData.dims[i][shapeDim - 1] < dimLimit && inShapes[i].GetShapeSize() * dTypeSize <= sizeLimit) {
-                continue;
-            }
-
-            isSupported = false;
-            return ge::GRAPH_SUCCESS;
         }
 
         // nlast场景不支持尾轴非连续（尾轴stride大于1）
         if (isLastTranspose == false && isLastAxisContigunous == false) {
+            isSupported = false;
+        }
+
+        // 转置场景统一判定：所有转置输入的并行度上限均不足半数核数时，303 必然欠核，
+        // 改走 NonContiguousBase（304/305）满核直拷
+        if (isLastTranspose && maxTransposeParallel < static_cast<int64_t>(coreNum / HALF_CORE_NUM_DIVIDE)) {
+            isLastTranspose = false;
             isSupported = false;
         }
 
