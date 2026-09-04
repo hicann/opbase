@@ -435,7 +435,7 @@ protected:
      * @return
      */
     template <typename OutputType, class Op, int pos = 0>
-    __aicore__ inline constexpr void RunOp(LocalTensor<OutputType>& outTensor, uint64_t tileLength, int32_t pingPong)
+    __aicore__ inline void RunOp(LocalTensor<OutputType>& outTensor, uint64_t tileLength, int32_t pingPong)
     {
         using Func = typename Op::Fun;
         auto inputArgs = PrepareArgs<Op>(pingPong);
@@ -452,7 +452,7 @@ protected:
      * @return
      */
     template <class Op, int pos = 0>
-    __aicore__ inline constexpr void RunNormalOp(uint64_t tileLength, int32_t pingPong)
+    __aicore__ inline void RunNormalOp(uint64_t tileLength, int32_t pingPong)
     {
         // Prepare output args
         using OutputType = typename Op::template FunRetArgType<0>;

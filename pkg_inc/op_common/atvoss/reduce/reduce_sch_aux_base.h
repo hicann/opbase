@@ -539,7 +539,7 @@ public:
     }
 
     template <class ElemOp, int32_t pos, typename OutputType, class S>
-    __aicore__ inline constexpr void RunOp(LocalTensor<OutputType>& outTensor, S& shape, int32_t pingPong)
+    __aicore__ inline void RunOp(LocalTensor<OutputType>& outTensor, S& shape, int32_t pingPong)
     {
         using Func = typename ElemOp::Fun;
         uint64_t tileLength = shape.value[0] * shape.value[1];
@@ -549,7 +549,7 @@ public:
     }
 
     template <class ElemOp, int32_t pos, class S>
-    __aicore__ inline constexpr void RunNormalOp(S& shape, int32_t pingPong)
+    __aicore__ inline void RunNormalOp(S& shape, int32_t pingPong)
     {
         constexpr bool isPre = pos < OpDag::ReduceOpPos;
         using RetType = typename ElemOp::template FunRetArgType<0>;
@@ -703,7 +703,7 @@ public:
     }
 
     template <typename T>
-    __aicore__ inline constexpr LocalTensor<T> GetReduceInputTensor(int32_t pingPong, int32_t idx, int32_t tileLength)
+    __aicore__ inline LocalTensor<T> GetReduceInputTensor(int32_t pingPong, int32_t idx, int32_t tileLength)
     {
         if constexpr (IsSameType<OpDag, void>::value || !IsStageOne) {
             uint8_t bufId = GetPreBufId<0>(pingPong, idx);
@@ -720,7 +720,7 @@ public:
         }
     }
 
-    __aicore__ inline constexpr void ReleaseReduceInputTensor(int32_t pingPong, int32_t idx)
+    __aicore__ inline void ReleaseReduceInputTensor(int32_t pingPong, int32_t idx)
     {
         if constexpr (IsSameType<OpDag, void>::value || !IsStageOne) {
             uint8_t bufId = GetPreBufId<0>(pingPong, idx);
@@ -765,7 +765,7 @@ public:
     }
 
     template <class Op, int32_t ArgPos>
-    __aicore__ inline constexpr auto GetInputTensor(int32_t pingPong, int32_t tileLength, int32_t idx = 0)
+    __aicore__ inline auto GetInputTensor(int32_t pingPong, int32_t tileLength, int32_t idx = 0)
     {
         using InputOp = typename Op::InArgs::template At<ArgPos>;
         using TensorType = typename Op::template FunInArgType<ArgPos>;
@@ -789,7 +789,7 @@ public:
     }
 
     template <class ElemOp, int32_t ArgPos>
-    __aicore__ inline constexpr void ReleaseInputTensor(int32_t pingPong, int32_t idx = 0)
+    __aicore__ inline void ReleaseInputTensor(int32_t pingPong, int32_t idx = 0)
     {
         using InputOp = typename ElemOp::InArgs::template At<ArgPos>;
         if constexpr (Vec::IsReduceOp<typename InputOp::Fun>::Value) {
