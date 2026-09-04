@@ -14,7 +14,7 @@
 #include <dlfcn.h>
 
 #include "base/registry/opp_package_utils.h"
-#include "graph/ge_error_codes.h"
+#include "graph/error_codes.h"
 #include "mmpa/mmpa_api.h"
 
 #include "op_proto_loader.h"

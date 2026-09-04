@@ -14,7 +14,7 @@
 #include "utils/thread_var_container.h"
 #include "utils/indv_soc.h"
 #include "indv_tilingcontext_builder.h"
-#include "graph/ge_error_codes.h"
+#include "graph/error_codes.h"
 #include "thread_local_context.h"
 #include "opdev/format_utils.h"
 #include "op_dfx_internal.h"
