@@ -1,4 +1,4 @@
-﻿# aclInitTensor
+# aclInitTensor
 
 ## 功能说明
 
@@ -41,7 +41,7 @@ aclnnStatus aclInitTensor(aclTensor *tensor, const int64_t *viewDims, uint64_t v
 
 ## 约束说明
 
-无
+- 必须在一阶段接口aclxxXxxGetWorkspaceSize之前或者二阶段接口aclxxXxx之后使用，不支持在一阶段与二阶段接口之间使用。
 
 ## 调用示例
 

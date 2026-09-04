@@ -339,7 +339,6 @@ aclnnStatus aclInitTensor(aclTensor* tensor, const int64_t* viewDims, uint64_t v
     if (tensor == nullptr) {
         return ACLNN_ERR_PARAM_NULLPTR;
     }
-    CHECK_RET(aclCheckPcieAddrRefresh(tensor, tensorDataAddr, "tensorDataAddr") == OK, ACLNN_ERR_PARAM_INVALID);
     tensor->InitTensor(viewDims, viewDimsNum, dataType, stride, offset, format, storageDims, storageDimsNum,
                        tensorDataAddr);
     return OK;
@@ -539,7 +538,6 @@ aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor* executor)
 aclnnStatus aclSetRawTensorAddr(aclTensor* tensor, void* addr)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensor, ACLNN_ERR_PARAM_NULLPTR);
-    CHECK_RET(aclCheckPcieAddrRefresh(tensor, addr, "addr") == OK, ACLNN_ERR_PARAM_INVALID);
     tensor->SetStorageAddr(addr);
     return OK;
 }
