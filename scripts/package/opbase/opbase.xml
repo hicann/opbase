@@ -257,6 +257,7 @@
         <file value="platform_util.h" install_mod="550"/>
         <file value="shape_util.h" install_mod="550"/>
         <file value="const_util.h" install_mod="550"/>
+        <file value="op_const_def.h" install_mod="550"/>
         <file value="fp16.h" install_mod="550"/>
         <file value="op_arch_helper.h" install_mod="550"/>
         <file value="opbase_export.h" install_mod="550"/>

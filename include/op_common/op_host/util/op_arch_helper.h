@@ -19,7 +19,7 @@
 #include "register/op_def_registry.h"
 
 #include "opbase_export.h"
-#include "platform_util.h"
+#include "op_const_def.h"
 
 namespace opbase {
 class OPBASE_API ArchConfigHelper {

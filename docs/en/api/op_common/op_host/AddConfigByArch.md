@@ -28,7 +28,7 @@ static void AddConfigByArch(ops::OpAICoreDef &aicore, NpuArch arch);
 | Parameter| Input/Output| Description|
 | --- | --- | --- |
 | aicore | Input/Output| AI Core definition of the operator, that is, the return value of `this->AICore()` in the OpDef implementation class.|
-| arch | Input| NPU architecture. You are advised to use the `DAV_*` constants defined in the `Ops::Base` namespace in platform_util.h.|
+| arch | Input| NPU architecture. You are advised to use the `DAV_*` constants defined in the `Ops::Base` namespace in op_const_def.h.|
 | aicoreConfig | Input| AI Core configuration to register. If this parameter is not transferred, it is equivalent to calling `AddConfig(soc)` for each SoC version in the mapping table.|
 
 ## Returns

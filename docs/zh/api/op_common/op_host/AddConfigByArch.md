@@ -28,7 +28,7 @@ static void AddConfigByArch(ops::OpAICoreDef &aicore, NpuArch arch);
 | 参数名 | 输入/输出 | 说明 |
 | --- | --- | --- |
 | aicore | 输入/输出 | 算子的AI Core定义，取OpDef实现类中`this->AICore()`的返回值。 |
-| arch | 输入 | NPU架构，建议使用platform_util.h中`Ops::Base`命名空间下定义的`DAV_*`常量。 |
+| arch | 输入 | NPU架构，建议使用op_const_def.h中`Ops::Base`命名空间下定义的`DAV_*`常量。 |
 | aicoreConfig | 输入 | 待注册的AI Core配置，不传该参数时等价于对映射表内各SoC版本分别调用`AddConfig(soc)`。 |
 
 ## 返回值说明
