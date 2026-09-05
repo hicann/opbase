@@ -12,6 +12,7 @@
 #define OP_API_COMMON_INC_OPDEV_DATA_TYPE_UTILS_H_
 
 #include <algorithm>
+#include <array>
 #include <complex>
 #include <string>
 #include <vector>
@@ -38,9 +39,20 @@ static constexpr auto ud = ge::DataType::DT_UNDEFINED;
 
 constexpr uint32_t kDataTypeSizeBitOffset = 1000;
 
-inline bool CheckType(const DataType dtype, const std::initializer_list<DataType>& valid_types)
+inline bool CheckType(const DataType dtype, const std::initializer_list<DataType>& validTypes)
 {
-    return std::find(valid_types.begin(), valid_types.end(), dtype) != valid_types.end();
+    return std::find(validTypes.begin(), validTypes.end(), dtype) != validTypes.end();
+}
+
+template <size_t N>
+inline bool CheckType(const DataType dtype, const std::array<DataType, N>& validTypes)
+{
+    return std::find(validTypes.begin(), validTypes.end(), dtype) != validTypes.end();
+}
+
+inline bool CheckType(const DataType dtype, const std::vector<DataType>& validTypes)
+{
+    return std::find(validTypes.begin(), validTypes.end(), dtype) != validTypes.end();
 }
 
 inline bool IsBasicType(const DataType dtype)
@@ -79,11 +91,11 @@ inline bool IsRealNumberType(const DataType dtype)
 inline size_t TypeSize(DataType dataType)
 {
     static int data_type_size[DataType::DT_MAX] = {
-        4, // DT_FLOAT = 0,               float type
-        2, // DT_FLOAT16 = 1,             fp16 type
-        1, // DT_INT8 = 2,                int8 type
-        4, // DT_INT32 = 3,
-        1, // DT_UINT8 = 4,               uint8 type
+        4,                          // DT_FLOAT = 0,               float type
+        2,                          // DT_FLOAT16 = 1,             fp16 type
+        1,                          // DT_INT8 = 2,                int8 type
+        4,                          // DT_INT32 = 3,
+        1,                          // DT_UINT8 = 4,               uint8 type
         -1,
         2,                          // DT_INT16 = 6,               int16 type
         2,                          // DT_UINT16 = 7,              uint16 type
@@ -158,6 +170,25 @@ inline aclDataType ToAclDataType(DataType type)
 }
 
 ge::AscendString ToString(const std::initializer_list<DataType>& dataTypes);
+
+template <size_t N>
+ge::AscendString ToString(const std::array<DataType, N>& dataTypes)
+{
+    if (dataTypes.empty()) {
+        return ge::AscendString("[]");
+    }
+    std::string str("[");
+    for (const auto& type : dataTypes) {
+        str += ToString(type).GetString();
+        str += ",";
+    }
+    str.pop_back();
+    str += "]";
+    return ge::AscendString(str.c_str());
+}
+
+ge::AscendString ToString(const std::vector<DataType>& dataTypes);
+
 int64_t CalcShapeBytes(int64_t size, DataType dataType, bool ceil = false);
 
 // @formatter:off

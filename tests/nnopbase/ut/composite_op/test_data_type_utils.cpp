@@ -276,6 +276,41 @@ TEST_F(TestDataTypeUtils, ToString1)
     EXPECT_EQ(op::ToString({}), "[]");
 }
 
+TEST_F(TestDataTypeUtils, CheckTypeContainerOverloads)
+{
+    constexpr op::DataType t1 = op::DataType::DT_INT4;
+    constexpr op::DataType t2 = op::DataType::DT_INT8;
+    constexpr op::DataType miss = op::DataType::DT_FLOAT;
+
+    // 正常列表 - 命中
+    EXPECT_TRUE(op::CheckType(t2, std::array<op::DataType, 2>{t1, t2}));
+    EXPECT_TRUE(op::CheckType(t2, std::vector<op::DataType>{t1, t2}));
+
+    // 正常列表 - 未命中
+    EXPECT_FALSE(op::CheckType(miss, std::array<op::DataType, 2>{t1, t2}));
+    EXPECT_FALSE(op::CheckType(miss, std::vector<op::DataType>{t1, t2}));
+
+    // 空列表
+    EXPECT_FALSE(op::CheckType(miss, std::vector<op::DataType>{}));
+
+    // 单元素
+    EXPECT_TRUE(op::CheckType(t1, std::vector<op::DataType>{t1}));
+}
+
+TEST_F(TestDataTypeUtils, ToStringContainerOverloads)
+{
+    // initializer_list 版维持现状（含尾随逗号）
+    EXPECT_EQ(op::ToString(std::initializer_list<op::DataType>{op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT}),
+              "[DT_FLOAT16,DT_FLOAT,]");
+    // array / vector 版无尾随逗号
+    EXPECT_EQ(op::ToString(std::array<op::DataType, 2>{op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT}),
+              "[DT_FLOAT16,DT_FLOAT]");
+    EXPECT_EQ(op::ToString(std::vector<op::DataType>{op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT}),
+              "[DT_FLOAT16,DT_FLOAT]");
+    // 空列表
+    EXPECT_EQ(op::ToString(std::vector<op::DataType>{}), "[]");
+}
+
 TEST_F(TestDataTypeUtils, TypeSize)
 {
     EXPECT_EQ(op::TypeSize(op::DataType::DT_MAX), sizeof(op::complex128));

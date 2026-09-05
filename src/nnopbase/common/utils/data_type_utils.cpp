@@ -44,6 +44,21 @@ ge::AscendString ToString(const std::initializer_list<DataType>& dataTypes)
     return ge::AscendString("[]");
 }
 
+ge::AscendString ToString(const std::vector<DataType>& dataTypes)
+{
+    if (dataTypes.empty()) {
+        return ge::AscendString("[]");
+    }
+    std::string str("[");
+    for (const auto& type : dataTypes) {
+        str += ToString(type).GetString();
+        str += ",";
+    }
+    str.pop_back();
+    str += "]";
+    return ge::AscendString(str.c_str());
+}
+
 int64_t CalcShapeBytes(int64_t size, DataType dataType, bool ceil)
 {
     int64_t byteNum = 0;

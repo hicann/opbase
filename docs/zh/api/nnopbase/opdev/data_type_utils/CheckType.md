@@ -7,7 +7,12 @@
 ## 函数原型
 
 ```cpp
-bool CheckType(const DataType dtype, const std::initializer_list<DataType>& valid_types)
+bool CheckType(const DataType dtype, const std::initializer_list<DataType>& validTypes)
+
+template <size_t N>
+bool CheckType(const DataType dtype, const std::array<DataType, N>& validTypes)
+
+bool CheckType(const DataType dtype, const std::vector<DataType>& validTypes)
 ```
 
 ## 参数说明
@@ -15,11 +20,11 @@ bool CheckType(const DataType dtype, const std::initializer_list<DataType>& vali
 | 参数 | 输入/输出 | 说明 |
 | --- | --- | --- |
 | dtype | 输入 | 待检查的数据类型。 |
-| valid_types | 输入 | 合法数据类型列表。 |
+| validTypes | 输入 | 合法数据类型列表，类型为`std::initializer_list<DataType>`、`std::array<DataType, N>`或`std::vector<DataType>`。 |
 
 ## 返回值说明
 
-若`dtype`在`valid_types`列表中返回true，否则返回false。
+若`dtype`在合法数据类型列表中返回true，否则返回false。三个重载行为一致：均采用线性查找，在列表中匹配到`dtype`即返回true；空列表返回false。
 
 ## 约束说明
 
@@ -31,6 +36,15 @@ bool CheckType(const DataType dtype, const std::initializer_list<DataType>& vali
 // 校验dtype是否为float16或float32，不是则提前返回
 void Func(const ge::DataType dtype) {
     if (!CheckType(dtype, {DT_FLOAT16, DT_FLOAT})) {
+        return;
+    }
+    // 后续执行算子计算逻辑
+}
+
+// 使用编译期固定数据类型列表（std::array）进行校验
+void FuncArray(const ge::DataType dtype) {
+    static constexpr std::array<ge::DataType, 2> validTypes = {DT_FLOAT16, DT_FLOAT};
+    if (!CheckType(dtype, validTypes)) {
         return;
     }
     // 后续执行算子计算逻辑
