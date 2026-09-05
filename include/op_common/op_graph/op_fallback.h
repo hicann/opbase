@@ -20,61 +20,62 @@
 
 namespace fallback {
 
-#define CANN_OPS_OPB_SYN_EXEC_ACLNN(ctx, aclnnApi, ...)                                                              \
-    ({                                                                                                               \
-        static auto ret = GRAPH_SUCCESS;                                                                             \
-        do {                                                                                                         \
-            static const auto ResetCacheThreadLocalAddr = GetOpApiFuncAddr("ResetCacheThreadLocal");                 \
-            static const auto getWorkspaceSizeFuncAddr = GetOpApiFuncAddr(#aclnnApi "GetWorkspaceSize");             \
-            static const auto opApiFuncAddr = GetOpApiFuncAddr(#aclnnApi);                                           \
-            if (getWorkspaceSizeFuncAddr == nullptr || opApiFuncAddr == nullptr ||                                   \
-                ResetCacheThreadLocalAddr == nullptr) {                                                              \
-                OP_LOGE("aclnnfallback", "%s or %s not in  %s or %s  or ResetCacheThreadLocal not found.",           \
-                        #aclnnApi "GetWorkspaceSize", #aclnnApi, GetOpApiLibName(), GetOpApiLibName());              \
-                ret = GRAPH_FAILED;                                                                                  \
-                break;                                                                                               \
-            }                                                                                                        \
-            auto ResetCacheThreadLocalFunc = reinterpret_cast<ResetCacheThreadLocal>(ResetCacheThreadLocalAddr);     \
-            ResetCacheThreadLocalFunc();                                                                             \
-            uint64_t workspace_size = 0;                                                                             \
-            uint64_t* workspace_size_addr = &workspace_size;                                                         \
-            aclOpExecutor* executor = nullptr;                                                                       \
-            aclOpExecutor** executor_addr = &executor;                                                               \
-            auto converted_params = ConvertTypes(__VA_ARGS__, workspace_size_addr, executor_addr);                   \
-            static auto getWorkspaceSizeFunc = ConvertToOpApiFunc(converted_params, getWorkspaceSizeFuncAddr);       \
-            auto workspace_status = call(getWorkspaceSizeFunc, converted_params);                                    \
-            if (workspace_status != 0) {                                                                             \
-                OP_LOGE("aclnnfallback", "call %s failed:", #aclnnApi);                                              \
-                ret = GRAPH_FAILED;                                                                                  \
-                break;                                                                                               \
-            }                                                                                                        \
-            void* workspace_addr = nullptr;                                                                          \
-            if (workspace_size > 0) {                                                                                \
-                workspace_addr = ctx->MallocWorkspace(workspace_size);                                               \
-                if (workspace_addr == nullptr) {                                                                     \
-                    OP_LOGE("aclnnfallback", "call %s allocate workspace failed", #aclnnApi);                        \
-                    ret = GRAPH_FAILED;                                                                              \
-                    break;                                                                                           \
-                }                                                                                                    \
-            }                                                                                                        \
-            auto acl_stream = ctx->GetStream();                                                                      \
-            auto acl_call = [converted_params, workspace_addr, workspace_size, ctx, acl_stream, executor]() -> int { \
-                using OpApiFunc = int (*)(void*, uint64_t, aclOpExecutor*, const aclrtStream);                       \
-                OpApiFunc opApiFunc = reinterpret_cast<OpApiFunc>(opApiFuncAddr);                                    \
-                auto op_api_ret = opApiFunc(workspace_addr, workspace_size, executor, acl_stream);                   \
-                ReleaseConvertTypes(converted_params);                                                               \
-                ctx->FreeWorkspace();                                                                                \
-                if (op_api_ret != 0) {                                                                               \
-                    OP_LOGE("aclnnfallback", "call %s allocate workspace failed op_api_ret: %d", #aclnnApi,          \
-                            op_api_ret);                                                                             \
-                    return GRAPH_FAILED;                                                                             \
-                }                                                                                                    \
-                return op_api_ret;                                                                                   \
-            };                                                                                                       \
-                                                                                                                     \
-            ret = acl_call();                                                                                        \
-        } while (false);                                                                                             \
-        (ret);                                                                                                       \
+#define CANN_OPS_OPB_SYN_EXEC_ACLNN(ctx, aclnnApi, ...)                                                          \
+    ({                                                                                                           \
+        static auto ret = GRAPH_SUCCESS;                                                                         \
+        do {                                                                                                     \
+            static const auto ResetCacheThreadLocalAddr = GetOpApiFuncAddr("ResetCacheThreadLocal");             \
+            static const auto getWorkspaceSizeFuncAddr = GetOpApiFuncAddr(#aclnnApi "GetWorkspaceSize");         \
+            static const auto opApiFuncAddr = GetOpApiFuncAddr(#aclnnApi);                                       \
+            if (getWorkspaceSizeFuncAddr == nullptr || opApiFuncAddr == nullptr ||                               \
+                ResetCacheThreadLocalAddr == nullptr) {                                                          \
+                OP_LOGE("aclnnfallback", "%s or %s not in  %s or %s  or ResetCacheThreadLocal not found.",       \
+                        #aclnnApi "GetWorkspaceSize", #aclnnApi, GetOpApiLibName(), GetOpApiLibName());          \
+                ret = GRAPH_FAILED;                                                                              \
+                break;                                                                                           \
+            }                                                                                                    \
+            auto ResetCacheThreadLocalFunc = reinterpret_cast<ResetCacheThreadLocal>(ResetCacheThreadLocalAddr); \
+            ResetCacheThreadLocalFunc();                                                                         \
+            uint64_t workspace_size = 0;                                                                         \
+            uint64_t* workspace_size_addr = &workspace_size;                                                     \
+            aclOpExecutor* executor = nullptr;                                                                   \
+            aclOpExecutor** executor_addr = &executor;                                                           \
+            auto converted_params = ConvertTypes(__VA_ARGS__, workspace_size_addr, executor_addr);               \
+            static auto getWorkspaceSizeFunc = ConvertToOpApiFunc(converted_params, getWorkspaceSizeFuncAddr);   \
+            auto workspace_status = call(getWorkspaceSizeFunc, converted_params);                                \
+            if (workspace_status != 0) {                                                                         \
+                OP_LOGE("aclnnfallback", "call %s failed:", #aclnnApi);                                          \
+                ret = GRAPH_FAILED;                                                                              \
+                break;                                                                                           \
+            }                                                                                                    \
+            void* workspace_addr = nullptr;                                                                      \
+            if (workspace_size > 0) {                                                                            \
+                workspace_addr = ctx->MallocWorkspace(workspace_size);                                           \
+                if (workspace_addr == nullptr) {                                                                 \
+                    OP_LOGE("aclnnfallback", "call %s allocate workspace failed", #aclnnApi);                    \
+                    ret = GRAPH_FAILED;                                                                          \
+                    break;                                                                                       \
+                }                                                                                                \
+            }                                                                                                    \
+            auto acl_stream = ctx->GetStream();                                                                  \
+            auto acl_call = [converted_params, workspace_addr, workspace_size, ctx, acl_stream,                  \
+                             executor]() -> graphStatus {                                                        \
+                using OpApiFunc = int (*)(void*, uint64_t, aclOpExecutor*, const aclrtStream);                   \
+                OpApiFunc opApiFunc = reinterpret_cast<OpApiFunc>(opApiFuncAddr);                                \
+                auto op_api_ret = opApiFunc(workspace_addr, workspace_size, executor, acl_stream);               \
+                ReleaseConvertTypes(converted_params);                                                           \
+                ctx->FreeWorkspace();                                                                            \
+                if (op_api_ret != 0) {                                                                           \
+                    OP_LOGE("aclnnfallback", "call %s allocate workspace failed op_api_ret: %d", #aclnnApi,      \
+                            op_api_ret);                                                                         \
+                    return GRAPH_FAILED;                                                                         \
+                }                                                                                                \
+                return GRAPH_SUCCESS;                                                                            \
+            };                                                                                                   \
+                                                                                                                 \
+            ret = acl_call();                                                                                    \
+        } while (false);                                                                                         \
+        (ret);                                                                                                   \
     })
 
 #define CANN_OPS_OPB_ASYN_EXEC_ACLNN(ctx, aclnn_api, ...)                                                        \
