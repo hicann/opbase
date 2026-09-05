@@ -17,6 +17,7 @@
 
 #include "broadcast_tiling_base.h"
 #include "broadcast_tiling_noncontiguous.h"
+#include "version/metadef_version.h"
 
 namespace Ops {
 namespace Base {
@@ -107,6 +108,13 @@ public:
             return ge::GRAPH_FAILED;
         }
 
+        // 3. 获取PcieThrough信息
+        status = GetPcieThroughInfo();
+        if (status != ge::GRAPH_SUCCESS) {
+            OP_LOGE(context_, "Get PcieThrough info failed.");
+            return ge::GRAPH_FAILED;
+        }
+
         BrcPrintShapes(inShapes, "inShapes");
         BrcPrintShape(outShape, "outShape");
         BrcPrintStrides(inStrides, "inStrides");
@@ -122,7 +130,7 @@ public:
         OP_LOGI(context_->GetNodeName(), "coreNum: %llu, ubSize: %llu, inputAllContiguous:%d", coreNum, ubSize,
                 inputAllContiguous);
 
-        // 3. 合轴
+        // 4. 合轴
         status = DoDimensionCollapse(broadcastTilingParams, tilingData);
         if (status != ge::GRAPH_SUCCESS) {
             OP_LOGE(context_, "dimension collapse failed.");
@@ -132,10 +140,10 @@ public:
         BrcPrintVectors(tilingData.dims, "after DoDimensionCollapse in&out dims");
         BrcPrintVectors(tilingData.strides, "after DoDimensionCollapse in&out strides");
 
-        // 4. 根据轴信息判断是否走onedim分支
+        // 5. 根据轴信息判断是否走onedim分支
         OP_CHECK_IF((tilingData.dims.back().size() == 0),
                     OP_LOGE(context_->GetNodeName(), "tensor check is empty, check failed"), return ge::GRAPH_FAILED);
-        if (tilingData.dims.back().size() == 1 && broadcastTilingParams.inputAllContiguous) {
+        if (tilingData.dims.back().size() == 1 && broadcastTilingParams.inputAllContiguous && !isPcieThrough) {
             if constexpr ((OpDag::InputSize + OpDag::OutputSize <= MAX_IN_OUT_ARGS_NUMBER) && OpDag::VarSize <= 0) {
                 status = DoOneDimOpTilingAdvance();
             } else {
@@ -244,6 +252,27 @@ private:
         }
 
         OP_LOGI(context_->GetNodeName(), "Broadcast GetPlatformInfo ubSize is %lu, coreNum is %lu", ubSize, coreNum);
+        return ge::GRAPH_SUCCESS;
+    }
+
+    /**
+     *  判断是否PcieThrough
+     * @return
+     */
+    ge::graphStatus GetPcieThroughInfo()
+    {
+#if defined(METADEF_VERSION_NUM) && METADEF_VERSION_NUM >= 90200000
+        isPcieThrough = context_->GetPcieThroughFlag();
+        OP_LOGD(context_->GetNodeName(), "IsPcieThrough: %s", (isPcieThrough ? "true" : "false"));
+#else
+        isPcieThrough = false;
+        OP_LOGD(context_->GetNodeName(), "IsPcieThrough: false");
+#endif
+        // 非连续模板不支持PCIE Through场景
+        if (isPcieThrough && !inputAllContiguous) {
+            OP_LOGE(context_, "PcieThrough not support noncontiguous.");
+            return ge::GRAPH_FAILED;
+        }
         return ge::GRAPH_SUCCESS;
     }
 
@@ -603,7 +632,13 @@ private:
         // 1、判断ubbrc用到 2、设置copyIn参数用到
         GetCopyInBrcPosList();
 
-        bool isUbBroadcast = IsUbBroadcast();
+        bool isUbBroadcast;
+        if (isPcieThrough) {
+            isUbBroadcast = true;
+        } else {
+            isUbBroadcast = IsUbBroadcast();
+        }
+
         int64_t bufferNum = GetBufferNum(isUbBroadcast);
         OP_LOGI(context_->GetNodeName(), "Broadcast DoBroadcastOpTiling. isUbBroadcast: %d bufferNum: %ld ",
                 isUbBroadcast, bufferNum);
@@ -1229,6 +1264,7 @@ private:
     std::vector<gert::Shape> inShapes;
     std::vector<bool> inputIsContiguous;
     std::vector<gert::Stride> inStrides;
+    bool isPcieThrough = false;
     bool inputAllContiguous = true;
     gert::Shape outShape;
     gert::Stride outStride;

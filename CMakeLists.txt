@@ -130,6 +130,7 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
         $<BUILD_INTERFACE:error_manager_headers>
         $<BUILD_INTERFACE:c_sec_headers>
         $<BUILD_INTERFACE:asc_host_headers>
+        $<BUILD_INTERFACE:cann_version_headers>
         unified_dlog
     )
 
