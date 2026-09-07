@@ -196,7 +196,7 @@ updatefeatureandchipinfo() {
     else
         echo "${_key_val}=${_val}" > "${_target_install_info}"
     fi
- 
+
     chmod 644 "${_target_install_info}" 2> /dev/null
 }
 
@@ -408,27 +408,7 @@ sh "${_COMMON_PARSER_FILE}" --copy_all --package="${ops_base_platform_dir}" --in
     --version=$pkg_version --version-dir=$pkg_version_dir $install_option ${in_install_for_all} ${in_feature_1} ${chip_type_1}  "${install_type}" "${_TARGET_INSTALL_PATH}" "${_FILELIST_FILE}"
 logwitherrorlevel "$?" "error" "[ERROR]: ERR_NO:${INSTALL_FAILED};ERR_DES:Install opbase module files failed."
 
-#chmod to support copy
-if [ -d "${version_install_dir}/share/info/${ops_base_platform_dir}/vendors" ] && [ "$(id -u)" != "0" ]; then
-    chmod -R "${_CUSTOM_PERM}" ${version_install_dir}/share/info/${ops_base_platform_dir}/vendors
-fi
-
 logandprint "[INFO]: upgradePercentage:50%"
-
-# change log dir and file owner and rights
-chmod "${_LOG_PATH_PERM}" "${_LOG_PATH}" 2> /dev/null
-chmod "${_LOG_FILE_PERM}" "${_INSTALL_LOG_FILE}" 2> /dev/null
-chmod "${_LOG_FILE_PERM}" "${_OPERATE_LOG_FILE}" 2> /dev/null
-
-if [ "$(id -u)" = "0" ]; then
-    chmod "755" "${version_install_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
-else
-    chmod "${_BUILTIN_PERM}" "${version_install_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
-fi
-
-chmod "${_ONLYREAD_PERM}" "${version_install_dir}""/share/info/${ops_base_platform_dir}/scene.info" 2> /dev/null
-chmod "${_ONLYREAD_PERM}" "${version_install_dir}""/share/info/${ops_base_platform_dir}/version.info" 2> /dev/null
-chmod "${_ONLYREAD_PERM}" "${version_install_dir}""/opp/version.info" 2> /dev/null
 
 if [ "${is_change_dir_mode}" = "true" ]; then
     chmod u-w "${version_install_dir}" 2> /dev/null

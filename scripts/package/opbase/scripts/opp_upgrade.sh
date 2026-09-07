@@ -189,7 +189,7 @@ updatefeatureandchipinfo() {
     else
         echo "${_key_val}=${_val}" > "${_target_install_dir}"
     fi
- 
+
     chmod 644 "${_target_install_dir}" 2> /dev/null
 }
 
@@ -509,48 +509,7 @@ sh "${_COMMON_PARSER_FILE}" --package="${ops_base_platform_dir}" --install --use
     --version=${pkg_version} --version-dir=$pkg_version_dir $upgrade_option ${in_install_for_all} ${in_feature_1} ${chip_type_1} "${install_type}" "${_TARGET_INSTALL_PATH}" "${_FILELIST_FILE}"
 logwitherrorlevel "$?" "error" "[ERROR]: ERR_NO:${INSTALL_FAILED};ERR_DES:Install opbase module files failed."
 logandprint "[INFO]: upgradePercentage:50%"
-
-# change installed folder's permission except aicpu
-if [ -f "${install_version_dir}/share/info/${ops_base_platform_dir}" ]; then
-    subdirs_info=$(ls "${install_version_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null)
-    for dir in ${subdirs_info}; do
-        if [ "${dir}" != "Ascend310" ] && [ "${dir}" != "Ascend310RC" ] && [ "${dir}" != "Ascend910" ] && [ "${dir}" != "Ascend310P" ] && [ "${dir}" != "Ascend" ] &&  [ "${dir}" != "aicpu" ] && [ "${dir}" != "script" ]; then
-            chmod -R "${_CUSTOM_PERM}" "${install_version_dir}/opbase/${dir}" 2> /dev/null
-        fi
-    done
-    chmod "${_CUSTOM_PERM}" "${install_version_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
-    logwitherrorlevel "$?" "error" "[ERROR]: ERR_NO:${UPGRADE_FAILED};ERR_DES:Uninstall the \
-    installed directory (${install_version_dir}) failed."
-fi
-
 logandprint "[INFO]: Update the opbase install info."
-
-# change installed folder's permission except aicpu
-subdirs=$(ls "${install_version_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null)
-for dir in ${subdirs}; do
-    if [ "${dir}" != "vendors" ] && [ "${dir}" != "Ascend310" ] && [ "${dir}" != "Ascend310RC" ] && [ "${dir}" != "Ascend910" ] && [ "${dir}" != "Ascend310P" ] && [ "${dir}" != "Ascend" ] &&  [ "${dir}" != "aicpu" ] && [ "${dir}" != "script" ] && [ "${dir}" != "static_kernel" ]; then
-        chmod -R "${_BUILTIN_PERM}" "${install_version_dir}/share/info/${ops_base_platform_dir}/${dir}" 2> /dev/null
-    fi
-done
-
-if [ "$(id -u)" = "0" ]; then
-    chmod "755" "${install_version_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
-else
-    chmod "${_BUILTIN_PERM}" "${install_version_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
-fi
-
-vendor_dir=$(ls "${install_version_dir}/share/info/${ops_base_platform_dir}/vendors" 2> /dev/null)
-if [ -d "$vendor_dir" ]; then
-    chmod -R "${_CUSTOM_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/vendors/$vendor_dir/framework/" 2> /dev/null
-    chmod -R "${_CUSTOM_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/vendors/$vendor_dir/fusion_pass/" 2> /dev/null
-    chmod -R "${_CUSTOM_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/vendors/$vendor_dir/fusion_rules/" 2> /dev/null
-    chmod -R "${_CUSTOM_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/vendors/$vendor_dir/op_impl/" 2> /dev/null
-    chmod -R "${_CUSTOM_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/vendors/$vendor_dir/op_proto/" 2> /dev/null
-fi
-chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/scene.info" 2> /dev/null
-chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/share/info/${ops_base_platform_dir}/version.info" 2> /dev/null
-chmod "${_ONLYREAD_PERM}" "${install_version_dir}""/opp/version.info" 2> /dev/null
-chmod 644 "${install_version_dir}""/share/info/${ops_base_platform_dir}/ascend_install.info" 2> /dev/null
 
 if [ "${is_change_dir_mode}" = "true" ]; then
     chmod u-w "${_TARGET_INSTALL_PATH}" 2> /dev/null
@@ -565,11 +524,6 @@ for dir in ${subdirs}; do
 done
 chown "${_TARGET_USERNAME}":"${_TARGET_USERGROUP}" "${install_version_dir}/share/info/${ops_base_platform_dir}" 2> /dev/null
 logwitherrorlevel "$?" "error" "[ERROR]: ERR_NO:${INSTALL_FAILED};ERR_DES:Change opbase onwership failed.."
-
-#chmod to support copy
-if [ -d "${install_version_dir}/share/info/${ops_base_platform_dir}/vendors" ] && [ "$(id -u)" != "0" ]; then
-    chmod -R "${_CUSTOM_PERM}" ${install_version_dir}/share/info/${ops_base_platform_dir}/vendors
-fi
 
 # create softlinks for stub libs in devlib/linux/$(ARCH)
 create_stub_softlink "${install_version_dir}"

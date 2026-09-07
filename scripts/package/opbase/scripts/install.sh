@@ -314,7 +314,7 @@ precleanbeforeinstall() {
             fi
         done
     fi
-   
+
     if [ "${_files_existed}" = "0" ]; then
         if [ "${is_quiet}" = y ]; then
             logandprint "[WARNING]: Directory has file existed or installed opbase \
@@ -484,7 +484,7 @@ getfirstnotexistdir() {
     arr=$(echo ${in_tmp_dir} | tr '/' "\n")
     index=0
     id=-1
-    for i in $arr;do 
+    for i in $arr;do
 	id=$((${id:=-1}+1))
 	eval arr_$id=$i
 	index=$(expr $index + 1)
@@ -510,7 +510,7 @@ matchfullpath() {
         absolute_path=${1}
         return
     fi
-    paths="/"* 
+    paths="/"*
     for i in ${paths}; do
         if [ "${1}" = "${i}" ] && [ "${1%/*}" = "" ]; then
             absolute_path="/${1##*/}"
@@ -960,7 +960,7 @@ repairaicpu(){
         if [ "$is_for_all" = "y" ];then
             num_value_param=555
             chmod $num_value_param $1/${opp_platform_dir}/built-in/op_proto/libopsproto.so > /dev/null 2>&1
-            chmod $num_value_param $1/${opp_platform_dir}/built-in/op_impl/ai_core/tbe/op_tiling/liboptiling.so > /dev/null 2>&1 
+            chmod $num_value_param $1/${opp_platform_dir}/built-in/op_impl/ai_core/tbe/op_tiling/liboptiling.so > /dev/null 2>&1
         fi
         if [ $(id -u) -ne 0 ];then
             chmod $num_value_param $1/${opp_platform_dir}/built-in/op_proto/libopsproto.so > /dev/null 2>&1
@@ -1142,7 +1142,7 @@ if [ "$(id -u)" = "0" ] ; then
 fi
 
 # pre-check
-if [ "${iter_i}" -eq 0 ] && [ "x${is_precheck}" = "xy" ]; then 
+if [ "${iter_i}" -eq 0 ] && [ "x${is_precheck}" = "xy" ]; then
     interact_pre_check
     exitlog
     exit 0
@@ -1500,8 +1500,6 @@ user group (${_DEFAULT_USERGROUP}) for devel mode? [y/n]"
                 chip_type_new=${chip_type_new}
             fi
             sh "${_UPGRADE_SHELL_FILE}" "${_TARGET_INSTALL_PATH}" "${_DEFAULT_USERNAME}" "${_DEFAULT_USERGROUP}" ${in_feature} "${is_quiet}" "${is_for_all}" "${is_setenv}" "${is_docker_install}" "${docker_root}" "" "n" "${in_feature_new}" "${chip_type_new}"
-            chmod -R 555 "${target_dir}/${opp_platform_dir}/script"> /dev/null 2>&1
-            chmod -R 555 "${target_dir}/${opp_platform_dir}/bin"> /dev/null 2>&1
             if [ $(id -u) -eq 0 ]; then
                 chown -R "root":"root" "${target_dir}/${opp_platform_dir}/script"> /dev/null 2>&1
                 chown "root":"root" "${target_dir}/${opp_platform_dir}"> /dev/null 2>&1
@@ -1532,9 +1530,6 @@ user group (${_DEFAULT_USERGROUP}) for devel mode? [y/n]"
     if [ $(id -u) -eq 0 ]; then
         chown -R "root":"root" "${target_dir}/${opp_platform_dir}/script" 2> /dev/null
         chown "root":"root" "${target_dir}/${opp_platform_dir}" 2> /dev/null
-    else
-        chmod -R 550 "${target_dir}/${opp_platform_dir}/script" 2> /dev/null
-        chmod 440 "${target_dir}/${opp_platform_dir}/script/filelist.csv" 2> /dev/null
     fi
     logoperationretstatus "install" "${in_install_type}" "$?" "${in_cmd_list}"
 fi
@@ -1561,13 +1556,7 @@ if [ "${is_upgrade}" = "y" ];then
     fi
 #    aicpuinfofile "add"
     repairaicpu "${target_dir}"
-    if [ $(id -u) -eq 0 ]; then
-        chmod -R 555 "${target_dir}/${opp_platform_dir}/script" 2> /dev/null
-        chmod 444 "${target_dir}/${opp_platform_dir}/script/filelist.csv" 2> /dev/null
-    else
-        chmod -R 550 "${target_dir}/${opp_platform_dir}/script" 2> /dev/null
-        chmod 440 "${target_dir}/${opp_platform_dir}/script/filelist.csv" 2> /dev/null
-    fi
+
     # uprate precheck info to ${target_dir}/bin/prereq_check.bash
     logandprint "[INFO]: Set precheck info."
     logoperationretstatus "upgrade" "${install_type}" "$?" "${in_cmd_list}"
