@@ -702,11 +702,11 @@ aclTensor* aclOpExecutor::CreateView(const aclTensor* tensor, const op::Shape& o
         storageSize *= storageShape.GetDim(i);
     }
     int64_t actualShapeLen = storageSize - offset;
-    OP_CHECK((actualShapeLen >= 0 && actualShapeLen <= storageSize),
-             OP_LOGE(ACLNN_ERR_INNER,
-                     "The tensor's offset %ld is invalid, storage size is %ld, offset must be in [0, %ld].",
-                     offset, storageSize, storageSize),
-             return nullptr;);
+    OP_CHECK(
+        (actualShapeLen >= 0 && actualShapeLen <= storageSize),
+        OP_LOGE(ACLNN_ERR_INNER, "The tensor's offset %ld is invalid, storage size is %ld, offset must be in [0, %ld].",
+                offset, storageSize, storageSize),
+        return nullptr;);
     // 在非连续场景下，传入tiling的storageshape会被oom用来计算合法内存大小，aclnn在下发时会将gm地址加上offset偏移，此时算子合法内存大小应为原始内存大小减offset
     storageShapeCorrect.SetDim(0, actualShapeLen);
     OP_LOGI("storageSize: %lu, actualShapeLen: %lu", storageSize, actualShapeLen);
@@ -1000,28 +1000,32 @@ aclnnStatus CommonOpExecutorRun(void* workspace, uint64_t workspaceSize, aclOpEx
 }
 
 namespace {
-// 从 ACL runtime 获取确定性计算 level
-// ACL_OPT_DETERMINISTIC 取值含义：
-//   0 = 关闭
-//   1 = 开启确定性计算
-//   2 = 开启强一致性（前向包含 1）
-//   3 = 开启 batch 一致性（前向包含 2）
-// 兼容老 runtime：当返回值为 1 时（老 runtime 仅返回 0/1），二次获取
-// ACL_OPT_STRONG_CONSISTENCY 确认是否实际应为 level 2
+// ACL_OPT_DETERMINISTIC 取值，level值前向兼容：强一致性包含确定性，batch一致性包含强一致性和确定性
+enum class DeterministicLevel : int64_t {
+    OFF = 0,
+    BASIC = 1,
+    STRONG_CONSISTENCY = 2,
+    BATCH_CONSISTENCY = 3,
+};
+
 int64_t GetDeterministicLevelFromRt()
 {
-    int64_t deterministicLevel = 0;
+    int64_t deterministicLevel = static_cast<int64_t>(DeterministicLevel::OFF);
     aclError aclRet = aclrtGetSysParamOpt(ACL_OPT_DETERMINISTIC, &deterministicLevel);
-    OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, deterministicLevel = 0;
-                       OP_LOGW("can not get system param deterministic, ret= %d.", aclRet));
+    OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, deterministicLevel = static_cast<int64_t>(DeterministicLevel::OFF);
+                       OP_LOGW("Failed to get deterministic level when calling aclrtGetSysParamOpt, return %d",
+                               static_cast<int32_t>(aclRet)));
 
-    if (deterministicLevel == 1) {
+    // 兼容使用老runtime包的场景：老runtime包的强一致性开关由ACL_OPT_DETERMINISTIC和ACL_OPT_STRONG_CONSISTENCY共同确定，
+    // ACL_OPT_DETERMINISTIC值为1时需二次读取ACL_OPT_STRONG_CONSISTENCY确认强一致性是否打开
+    if (deterministicLevel == static_cast<int64_t>(DeterministicLevel::BASIC)) {
         int64_t consistency = 0;
-        aclError consistencyRet = aclrtGetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, &consistency);
-        OP_CHECK_NO_RETURN(consistencyRet == ACL_SUCCESS, consistency = 0;
-                           OP_LOGW("can not get system param strong consistency, ret= %d.", consistencyRet));
+        aclRet = aclrtGetSysParamOpt(ACL_OPT_STRONG_CONSISTENCY, &consistency);
+        OP_CHECK_NO_RETURN(aclRet == ACL_SUCCESS, consistency = 0;
+                           OP_LOGW("Failed to get strong consistency when calling aclrtGetSysParamOpt, return %d",
+                                   static_cast<int32_t>(aclRet)));
         if (consistency == 1) {
-            deterministicLevel = 2;
+            deterministicLevel = static_cast<int64_t>(DeterministicLevel::STRONG_CONSISTENCY);
             OP_LOGI("Upgrade deterministic level from 1 to 2, because strong consistency is on.");
         }
     }
@@ -1047,7 +1051,7 @@ void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** ex
 
     int64_t deterministicLevel = GetDeterministicLevelFromRt();
     opTlsCtx.opConfigInfo_.deterministicLevel_ = static_cast<uint8_t>(deterministicLevel);
-    opTlsCtx.opConfigInfo_.isDeterministicOn_ = (deterministicLevel >= 1);
+    opTlsCtx.opConfigInfo_.isDeterministicOn_ = (deterministicLevel >= static_cast<int64_t>(DeterministicLevel::BASIC));
     OP_LOGI("aic num: %u, aiv num: %u, deterministic level: %d, is deterministic on: %d, is op dump enable: %d",
             opTlsCtx.opConfigInfo_.aicNum_, opTlsCtx.opConfigInfo_.aivNum_, opTlsCtx.opConfigInfo_.deterministicLevel_,
             opTlsCtx.opConfigInfo_.isDeterministicOn_, opTlsCtx.opConfigInfo_.isOpDumpEnable_);

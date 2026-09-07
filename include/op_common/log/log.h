@@ -1025,20 +1025,19 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
  * errMessage: Parameter [paramName] of [entityName] has invalid list size [incorrectSize]. Reason:
  * [reason].
  */
-#define OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)                      \
-    do {                                                                                                            \
-        std::string _safe_entityName_(entityName);                                                                  \
-        std::string _safe_paramName_(paramName);                                                                  \
-        std::string _safe_incorrectSize_(incorrectSize);                                                            \
-        std::string _safe_reason_(reason);                                                                          \
-        OP_LOGE_LIBOPAPI_REPORT(_safe_entityName_.c_str(),                                                          \
-                                "Parameter %s of %s has incorrect element nums %s. Reason: %s.",                    \
-                                _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), \
-                                _safe_reason_.c_str());                                                             \
-        const std::vector<const char*> msgKey = {"paramName", "op_name", "incorrect_size", "reason"};             \
-        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),            \
-                                                   _safe_incorrectSize_.c_str(), _safe_reason_.c_str()};            \
-        REPORT_PREDEFINED_ERR_MSG("EZ0038", msgKey, msgvalue);                                                      \
+#define OP_LOGE_FOR_INVALID_LISTSIZE_WITH_REASON(entityName, paramName, incorrectSize, reason)                         \
+    do {                                                                                                               \
+        std::string _safe_entityName_(entityName);                                                                     \
+        std::string _safe_paramName_(paramName);                                                                       \
+        std::string _safe_incorrectSize_(incorrectSize);                                                               \
+        std::string _safe_reason_(reason);                                                                             \
+        OP_LOGE_LIBOPAPI_REPORT(                                                                                       \
+            _safe_entityName_.c_str(), "Parameter %s of %s has incorrect element nums %s. Reason: %s.",                \
+            _safe_paramName_.c_str(), _safe_entityName_.c_str(), _safe_incorrectSize_.c_str(), _safe_reason_.c_str()); \
+        const std::vector<const char*> msgKey = {"paramName", "op_name", "incorrect_size", "reason"};                  \
+        const std::vector<const char*> msgvalue = {_safe_paramName_.c_str(), _safe_entityName_.c_str(),                \
+                                                   _safe_incorrectSize_.c_str(), _safe_reason_.c_str()};               \
+        REPORT_PREDEFINED_ERR_MSG("EZ0038", msgKey, msgvalue);                                                         \
     } while (0)
 
 #ifndef OP_LOG_LIBOPAPI_ONLY
@@ -1087,15 +1086,15 @@ typename std::enable_if<IsContextType<T>(), std::string>::type GetOpInfo(T conte
             return_expr;                         \
         }                                        \
     } while (0)
-#define OP_CHECK_NULL_WITH_CONTEXT(context, ptr)                                                           \
-    do {                                                                                                   \
-        if (unlikely((ptr) == nullptr)) {                                                                  \
-            const char* name = (unlikely(((context) == nullptr) || (context)->GetNodeName() == nullptr)) ? \
-                                   "nil" :                                                                 \
-                                   (context)->GetNodeName();                                               \
-            OP_LOGE(name, "%s is nullptr!", #ptr);                                                         \
-            return ge::GRAPH_FAILED;                                                                       \
-        }                                                                                                  \
+#define OP_CHECK_NULL_WITH_CONTEXT(context, ptr)                                                            \
+    do {                                                                                                    \
+        if (unlikely((ptr) == nullptr)) {                                                                   \
+            const char* name_ = (unlikely(((context) == nullptr) || (context)->GetNodeName() == nullptr)) ? \
+                                    "nil" :                                                                 \
+                                    (context)->GetNodeName();                                               \
+            OP_LOGE(name_, "%s is nullptr!", #ptr);                                                         \
+            return ge::GRAPH_FAILED;                                                                        \
+        }                                                                                                   \
     } while (0)
 OPBASE_API std::string ToString(ge::DataType type);
 OPBASE_API std::string ToString(ge::Format format);
