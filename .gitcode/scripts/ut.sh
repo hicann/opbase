@@ -34,4 +34,9 @@ fi
 gcc --version
 rm -rf /home/jenkins/opensource/json
 source /home/jenkins/Ascend/cann/bin/setenv.bash
-bash build.sh -j -u -j16
+bash build.sh -u -j16
+ret=$?
+if [ $ret -ne 200 ] && [ $ret -ne 0 ]; then
+    echo "run ut fail"
+    exit 1
+fi
