@@ -336,7 +336,7 @@ const static std::string g_msg = R"(
       "errClass": "Operator Errors",
       "errTitle": "Invalid_Argument_Tensor_Shape",
       "ErrCode": "EZ0009",
-      "ErrMessage": "Parameter %s of %s has incorrect shape [%s]. Reason: %s.",
+      "ErrMessage": "Parameter %s of %s has incorrect shape %s. Reason: %s.",
       "Arglist": "param_name, op_name, incorrect_shape, reason",
       "suggestion": {
         "Possible Cause": "N/A",
