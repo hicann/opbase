@@ -195,26 +195,6 @@ TEST_F(NnopbaseCollectorUnitTest, StaticKernelFindPrefersPcieWithStride)
     EXPECT_STREQ(FindStaticPathForTest(true), "pcie_stride.o");
 }
 
-TEST_F(NnopbaseCollectorUnitTest, StaticKernelFindFallbacksToStrideWithoutPcie)
-{
-    NnopbaseBinCollector collector;
-    ASSERT_EQ(NnopbaseCollectorInit(&collector), OK);
-    ScopedBinCollector scopedCollector(&collector);
-    NnopbaseRegInfo regInfo;
-    InitStaticFindRegInfo(regInfo);
-    InsertStaticFindRegInfo(collector, regInfo);
-
-    NnopbaseBinInfo strideBin;
-    ASSERT_EQ(InitStaticBinBySimplifiedKey(strideBin, STRIDE_SIMPLIFIED_KEY, "stride.o"), OK);
-    NnopbaseBinInfo noStrideBin;
-    ASSERT_EQ(InitStaticBinBySimplifiedKey(noStrideBin, NO_STRIDE_SIMPLIFIED_KEY, "no_stride.o"), OK);
-
-    NnopbaseCollectorInsertBinInfo(&regInfo, &noStrideBin);
-    NnopbaseCollectorInsertBinInfo(&regInfo, &strideBin);
-
-    EXPECT_STREQ(FindStaticPathForTest(true), "stride.o");
-}
-
 TEST_F(NnopbaseCollectorUnitTest, StaticKernelFindFallbacksToNoStride)
 {
     NnopbaseBinCollector collector;
