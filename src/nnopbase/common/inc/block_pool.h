@@ -417,7 +417,12 @@ private:
         }
 
         if (head->cacheExt_ != reinterpret_cast<uintptr_t>(this) && cacheCount_[idx] > cacheMaxCount_[idx]) {
-            OP_LOGD("free cache pool block to block pool");
+#if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
+            OP_LOGD("Cache count [%zu] exceeds max [%zu] for size class [%d], free the cross-thread released block to "
+                    "system memory",
+                    cacheCount_[idx], cacheMaxCount_[idx], idx);
+#endif
+            // 跨线程释放的块均为 SYS_TAG 系统内存, BlockPool::Free 实际执行 std::free, 此处为释放系统内存而非归还进程池
             BlockPool::Free(block);
             return;
         }

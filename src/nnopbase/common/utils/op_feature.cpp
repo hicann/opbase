@@ -34,10 +34,14 @@ namespace op {
 namespace internal {
 
 namespace {
+#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+using PcieAddrRange = aclrtAddrRange;
+#else
 struct PcieAddrRange {
     void* startAddr{nullptr};
     void* endAddr{nullptr};
 };
+#endif
 
 bool g_pcieThroughEnabled{false};
 std::vector<PcieAddrRange> g_pcieAddrRanges;
