@@ -49,13 +49,13 @@ public:
         } else {
             enableDebugKernelFlag = false;
         }
-        OP_LOGI("enable debug kernel flag %d.", enableDebugKernelFlag);
+        OP_LOGI("Enable debug kernel flag value is %d.", enableDebugKernelFlag);
     }
 
     aclnnStatus SetEnableDebugKernelFlag(bool flag)
     {
         enableDebugKernelFlag = flag;
-        OP_LOGI("set enable debug kernel flag %d.", flag);
+        OP_LOGI("Set enable debug kernel flag to %d.", flag);
         return ACLNN_SUCCESS;
     }
 
@@ -65,7 +65,7 @@ public:
         aclError ret = aclrtCtxGetSysParamOpt(ACL_OPT_ENABLE_DEBUG_KERNEL, &debugFlag);
         if (ret != ACL_ERROR_NONE) {
             if (ret != ACL_ERROR_RT_SYSPARAMOPT_NOT_SET) {
-                OP_LOGW("failed to call aclrtCtxGetSysParamOpt, ret %d", ret);
+                OP_LOGW("Failed to call aclrtCtxGetSysParamOpt, return %d", ret);
             }
             debugFlag = 0;
         }
@@ -79,8 +79,8 @@ private:
 
 class RecordOpArgCallbacker {
 public:
-    RecordOpArgCallbacker() {};
-    ~RecordOpArgCallbacker() {};
+    RecordOpArgCallbacker(){};
+    ~RecordOpArgCallbacker(){};
 
     static int32_t RecordOpArgCallback(uint64_t dumpSwitch, [[maybe_unused]] char* dumpConfig,
                                        [[maybe_unused]] int32_t size);

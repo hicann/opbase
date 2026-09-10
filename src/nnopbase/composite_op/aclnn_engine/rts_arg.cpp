@@ -114,8 +114,8 @@ void PrintTilingData(const rtArgs_t& rtArg)
         return;
     }
     if (rtArg.tilingDataOffset >= rtArg.argsSize) {
-        OP_LOGW("tilingDataOffset %u >= argsSize %u, hasTiling %u, skip print.", rtArg.tilingDataOffset, rtArg.argsSize,
-                rtArg.hasTiling);
+        OP_LOGW("tilingDataOffset %u >= argsSize %u, hasTiling %u, skip printing.", rtArg.tilingDataOffset,
+                rtArg.argsSize, rtArg.hasTiling);
         return;
     }
     uint32_t tilingLen = 0;
@@ -146,7 +146,7 @@ int PrintRtArg(const rtArgs_t& rtArg)
             "tilingDataOffset: %u",
             op::internal::GetThreadLocalContext().logInfo_.l0Name, rtArg.argsSize, rtArg.placeHolderInfoNum,
             hostDataNum, rtArg.hasTiling, rtArg.tilingAddrOffset, rtArg.tilingDataOffset);
-    OP_CHECK(rtArg.args != nullptr, OP_LOGW("args is null, no need to print."), return -1);
+    OP_CHECK(rtArg.args != nullptr, OP_LOGW("Args is null, no need to print."), return -1);
 
     aclrtPlaceHolderInfo* placeHolderInfo = rtArg.placeHolderInfoPtr;
     uint32_t hostDataOffset = static_cast<uint32_t>(0xffffffff);
@@ -239,15 +239,16 @@ RtsArg::RtsArg(bool hasFftsAddr, const LaunchArgInfo& argInfo, ExpandableRtsArgB
     // 阶段1: 确保容量（可能触发扩容，但此时没有已填数据，无需刷新）
     // 1a. 确保 launch_arg 容量并设置已用大小
     size_t requiredLaunchArgSize = argNum_ * sizeof(void*);
-    OP_CHECK(rtsArgBuffer_->EnsureLaunchArgCapacity(requiredLaunchArgSize) == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to ensure launch arg capacity, required %zu.", requiredLaunchArgSize),
-             throw std::bad_alloc());
+    OP_CHECK(
+        rtsArgBuffer_->EnsureLaunchArgCapacity(requiredLaunchArgSize) == ACLNN_SUCCESS,
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to ensure launch arg capacity, required size: %zu.", requiredLaunchArgSize),
+        throw std::bad_alloc());
     rtsArgBuffer_->SetLaunchArgSize(requiredLaunchArgSize);
 
     // 1b. 确保 tiling_host_data 容量
     size_t alignedTilingDataLen = AlignSize(tilingDataLen, HOST_VALUE_ALIGNMENT);
     OP_CHECK(rtsArgBuffer_->UpdateTilingDataSize(alignedTilingDataLen) == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to ensure tiling host data size %zu.", alignedTilingDataLen),
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to ensure tiling host data size: %zu.", alignedTilingDataLen),
              throw std::bad_alloc());
 
     // 阶段2: 从最终基地址设置指针（一次性，无需检测扩容）
@@ -412,7 +413,7 @@ aclnnStatus RtsArg::AppendHostArg(void* hostData, size_t hostDataSize)
 {
     bool isEmptyData = false;
     if (hostData == nullptr || hostDataSize == 0) {
-        OP_LOGI("host data is null. %zu", hostDataSize);
+        OP_LOGI("Host data is null. %zu", hostDataSize);
         // reserve one block of device memory for null host data.
         hostDataSize = HOST_VALUE_ALIGNMENT;
         isEmptyData = true;
@@ -423,7 +424,7 @@ aclnnStatus RtsArg::AppendHostArg(void* hostData, size_t hostDataSize)
 
     size_t alignedHostDataSize = AlignSize(hostDataSize, HOST_VALUE_ALIGNMENT);
     OP_CHECK(rtsArgBuffer_->SeekTilingHostData(alignedHostDataSize) == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignedHostDataSize), return ACLNN_ERR_INNER);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to seek buffer, len %zu.", alignedHostDataSize), return ACLNN_ERR_INNER);
 
     if (rtsArgBuffer_->GetGeneration() != savedGen) {
         RefreshRtArgsAddr();
@@ -461,7 +462,7 @@ aclnnStatus RtsArg::AppendDevicePtrArg(const aclTensorList* tensors, size_t data
     size_t savedOffset = rtsArgBuffer_->GetTilingHostDataSize();
 
     OP_CHECK(rtsArgBuffer_->SeekTilingHostData(alignedHostDataSize) == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to seek buffer, len %zu.", alignedHostDataSize), return ACLNN_ERR_INNER);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to seek buffer, len %zu.", alignedHostDataSize), return ACLNN_ERR_INNER);
 
     if (rtsArgBuffer_->GetGeneration() != savedGen) {
         RefreshRtArgsAddr();
@@ -574,7 +575,8 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
     size_t argIdx = 0;
     if (hasFftsAddr) {
         void* pFfsAddr = cache->AddLaunchData(sizeof(void*));
-        OP_CHECK(pFfsAddr != nullptr, OP_LOGD("cache can't addLaunchData about fftsAddr, cache is invalid."), return);
+        OP_CHECK(pFfsAddr != nullptr, OP_LOGD("The cache cannot add launch data for fftsAddr, the cache is invalid."),
+                 return);
         argInfo[argIdx++].type = LaunchArgCache::FFTS_ADDR;
     }
     auto& allArg = launchArgInfo.GetAllArgInfo();
@@ -583,26 +585,29 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
         if (elem.tag_ == LaunchArgInfo::ArgAddr::ArgTag::DEVICE_ARG) {
             if (elem.devAddr_.tensor != nullptr) {
                 OP_CHECK((cache->AddLaunchTensor(elem.devAddr_.tensor, sizeof(void*)) != nullptr),
-                         OP_LOGD("cache can't addLaunchTensor about devArgAddr, cache is invalid."), return);
+                         OP_LOGD("The cache cannot add the launch tensor for devArgAddr, the cache is invalid."),
+                         return);
                 argInfo[argIdx++].type = LaunchArgCache::DEV_ADDR;
                 OP_LOGD("Add cache launch tensor: %p, addr: %p", elem.devAddr_.tensor, elem.devAddr_.devAddr);
             } else {
                 void** p = PtrCastTo<void*>(cache->AddLaunchData(sizeof(void*)));
-                OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about devArgAddr, cache is invalid."),
-                         return);
+                OP_CHECK(p != nullptr,
+                         OP_LOGD("The cache cannot add launch data for devArgAddr, the cache is invalid."), return);
                 *p = nullptr;
                 argInfo[argIdx++].type = LaunchArgCache::DEV_ADDR;
                 OP_LOGD("Add cache launch tensor: nullptr");
             }
         } else if (elem.tag_ == LaunchArgInfo::ArgAddr::ArgTag::DEVICE_PTR_ARG) {
             void** p = PtrCastTo<void*>(cache->AddLaunchData(sizeof(void*)));
-            OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about devPtrArgAddr, cache is invalid."), return);
+            OP_CHECK(p != nullptr, OP_LOGD("The cache cannot add launch data for devPtrArgAddr, the cache is invalid."),
+                     return);
             *p = nullptr;
             argInfo[argIdx++].type = LaunchArgCache::DEV_PTR_ADDR;
             OP_LOGD("Add cache dev ptr");
         } else {
             void** p = PtrCastTo<void*>(cache->AddLaunchData(sizeof(void*)));
-            OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about hostDataAddr, cache is invalid."), return);
+            OP_CHECK(p != nullptr, OP_LOGD("The cache cannot add launch data for hostDataAddr, the cache is invalid."),
+                     return);
             *p = nullptr;
             argInfo[argIdx++].type = LaunchArgCache::HOST_DATA;
             OP_LOGD("Add cache host data addr");
@@ -611,8 +616,8 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
     }
     size_t additionalAddr = 2; // tilingdata addr and overflow addr
     void* pAdditionalAddr = cache->AddLaunchData(sizeof(void*) * additionalAddr);
-    OP_CHECK(pAdditionalAddr != nullptr, OP_LOGD("cache can't addLaunchData about additionalAddr, cache is invalid."),
-             return);
+    OP_CHECK(pAdditionalAddr != nullptr,
+             OP_LOGD("The cache cannot add launch data for additionalAddr, the cache is invalid."), return);
     LaunchArgCache::ArgInfo* tilingInfo = &argInfo[argIdx];
     argInfo[argIdx++].type = LaunchArgCache::TILING_DATA;
     argInfo[argIdx++].type = LaunchArgCache::OVERFLOW_ADDR;
@@ -631,7 +636,8 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
             }
             size_t alignLen = AlignSize(hostLen, HostValueAlignment);
             void* p = cache->AddLaunchData(alignLen);
-            OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about hostArgAddr, cache is invalid."), return);
+            OP_CHECK(p != nullptr, OP_LOGD("The cache cannot add launch data for hostArgAddr, the cache is invalid."),
+                     return);
             if (!isEmptyData) {
                 OP_CHECK(memcpy_s(p, hostLen, hostData, hostLen) == EOK, OP_LOGW("Failed to memcpy."), ;);
                 if (alignLen > hostLen) {
@@ -648,7 +654,8 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
             auto tensors = elem.devPtrAddr_.tensors;
             size_t dataSize = elem.devPtrAddr_.ptrListLen;
             int64_t* p = static_cast<int64_t*>(cache->AddLaunchData(dataSize));
-            OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about devPtrArgAddr, cache is invalid."), return);
+            OP_CHECK(p != nullptr, OP_LOGD("The cache cannot add launch data for devPtrArgAddr, the cache is invalid."),
+                     return);
             *p++ = dataSize;
             for (size_t i = 0; i < tensors->Size(); i++) {
                 if ((*tensors)[i] == nullptr) {
@@ -665,18 +672,20 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
             for (size_t i = 0; i < tensors->Size(); i++) {
                 if ((*tensors)[i] != nullptr) {
                     OP_CHECK((cache->AddLaunchTensor((*tensors)[i], sizeof(void*)) != nullptr),
-                             OP_LOGD("cache can't addLaunchTensor about devPtrArgAddr, cache is invalid."), return);
+                             OP_LOGD("The cache cannot add the launch tensor for devPtrArgAddr, the cache is invalid."),
+                             return);
                 } else {
                     void** cacheData = PtrCastTo<void*>(cache->AddLaunchData(sizeof(void*)));
                     OP_CHECK(cacheData != nullptr,
-                             OP_LOGD("cache can't addLaunchData about devPtrArgAddr, cache is invalid."), return);
+                             OP_LOGD("The cache cannot add launch data for devPtrArgAddr, the cache is invalid."),
+                             return);
                     *cacheData = nullptr;
                 }
             }
             size_t dataLen = dataSize + tensors->Size() * sizeof(void*);
             size_t alignLen = AlignSize(dataLen, RtsArg::HOST_VALUE_ALIGNMENT);
             OP_CHECK(cache->AddLaunchData(alignLen - dataLen) != nullptr,
-                     OP_LOGD("cache can't addLaunchData about hostAlignAddr, cache is invalid."), return);
+                     OP_LOGD("The cache cannot add launch data for hostAlignAddr, the cache is invalid."), return);
             argInfo[argIdx++].dataLen = alignLen;
             OP_LOGD("Add cache device ptr, size: %zu", alignLen);
         }
@@ -685,7 +694,8 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
     size_t tilingDataLen = tilingData->data_size_;
     size_t aligntilingDataLen = AlignSize(tilingDataLen, HostValueAlignment);
     void* p = cache->AddLaunchData(aligntilingDataLen);
-    OP_CHECK(p != nullptr, OP_LOGD("cache can't addLaunchData about aligntilingDataAddr, cache is invalid."), return);
+    OP_CHECK(p != nullptr, OP_LOGD("The cache cannot add launch data for aligntilingDataAddr, the cache is invalid."),
+             return);
     OP_CHECK(memcpy_s(p, tilingDataLen, tilingData->data_, tilingDataLen) == EOK, OP_LOGW("Failed to memcpy."), ;);
     if (aligntilingDataLen > tilingDataLen) {
         OP_CHECK((memset_s(PtrShift(p, tilingDataLen), aligntilingDataLen - tilingDataLen, 0,
@@ -701,7 +711,7 @@ void RtsArg::AddExceptionDumpDataToCache(const LaunchArgInfo& argInfo, OpExecCac
                                          LaunchArgCache* launchCache) const
 {
     if (exceptionDumpAddr_ == nullptr) {
-        OP_LOGI("exception dump addr is null, skip cache.");
+        OP_LOGI("Exception dump addr is null, skip cache.");
         return;
     }
     auto dumpArgNum = argInfo.GetTensorNum() + ExceptionDumpHead;
@@ -735,7 +745,7 @@ void RtsArg::AddDFXInfoDumpDataToCache(const LaunchArgInfo& argInfo, OpExecCache
     launchCache->SetDFXInfoOffsetInTilingData(argInfo.GetDFXInfoOffsetInTilingData());
     launchCache->SetLaunchArgNum(argInfo.GetArgSize());
 
-    OP_LOGI("cache addr: %p, DFX info offset in tiling data: %zu, print dfx info in cache: %d", dfxInfoCacheAddr,
+    OP_LOGI("Cache addr: %p, DFX info offset in tiling data: %zu, print dfx info in cache: %d", dfxInfoCacheAddr,
             argInfo.GetDFXInfoOffsetInTilingData(),
             PrintAICErrorDFXInfo(dfxInfoCacheAddr, argInfo.GetArgSize(), dfxInfoElemCount * sizeof(uint64_t)));
 }
@@ -744,13 +754,14 @@ LaunchArgCache* RtsArg::DumpToCache()
 {
     OpExecCache* cache = GetOpCacheContext().GetOpCache();
     if (cache == nullptr) {
-        OP_LOGD("no op cache in context");
+        OP_LOGD("No op cache in context.");
         return nullptr;
     }
     OP_CHECK(!(cache->CanUse()), OP_LOGI("OpExecCache is in use, can't dump to cache."), return nullptr);
     size_t tilingDataLen = rtsArgBuffer_->GetTilingDataPtr()->data_size_;
     if (!cache->IsOpCacheValid() || tilingDataLen == 0 || tilingDataLen >= MAX_CACHE_TILING_SIZE) {
-        OP_LOGI("hash key is zero, or does not have tiling, or tiling size bigger than cache limit, skip cache.");
+        OP_LOGI("Hash key is zero, or does not have tiling, or the tiling size is bigger than the cache limit, skip "
+                "cache.");
         cache->MarkOpCacheInvalid();
         return nullptr;
     }
@@ -760,7 +771,7 @@ LaunchArgCache* RtsArg::DumpToCache()
     OP_LOGD("New launch cache. offset: %zu, cap: %zu", offset, cap);
     size_t argInfoLen = argNum_ * sizeof(LaunchArgCache::ArgInfo);
     LaunchArgCache* launchCache = PtrCastTo<LaunchArgCache>(cache->AddLaunchData(sizeof(LaunchArgCache) + argInfoLen));
-    OP_CHECK(launchCache != nullptr, OP_LOGD("cache can't addLaunchData in dumpToCache, cache is invalid."),
+    OP_CHECK(launchCache != nullptr, OP_LOGD("The cache cannot add launch data in dumpToCache, the cache is invalid."),
              return nullptr);
     launchCache->SetArgNum(argNum_);
     launchCache->SetExceptionArgNum(0);
@@ -815,7 +826,7 @@ static void UpdateDFXInfoDumpAndTilingData(rtArgs_t& rtArg, const LaunchArgCache
     size_t dfxInfoOffset = launchCache->GetDFXInfoOffsetInTilingData();
     *PtrCastTo<uint64_t>(PtrShift(rtArg.args, rtArg.tilingDataOffset + dfxInfoOffset)) = dfxInfoDumpIndex;
     uint32_t* atomicIndexU32Type = PtrCastTo<uint32_t>(&dfxInfoDumpIndex);
-    OP_LOGI("dump request space: %u, atomic index: %lu(hex: 0x%lX, uint32_t: %u %u), "
+    OP_LOGI("Dump request space: %u, atomic index: %lu (hex: 0x%lX, uint32_t: %u %u), "
             "DFX info offset in tiling data: %zu, print dfx info dump: %d",
             dumpElemCount, dfxInfoDumpIndex, dfxInfoDumpIndex, atomicIndexU32Type[0], atomicIndexU32Type[1],
             dfxInfoOffset,
@@ -904,7 +915,7 @@ aclnnStatus LaunchArgCache::RunFromCache(aclrtStream stream, void* cache)
     RtsArg::placeHolderInfo_.clear();
     std::vector<aclrtPlaceHolderInfo>& placeHolderInfo = RtsArg::placeHolderInfo_;
     OP_CHECK(launchCache->GetRtsApiType() == LaunchArgCache::RTS_OLD,
-             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "cache only support old rts, type is %u.",
+             OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "The cache only supports old rts, type is %u.",
                      static_cast<uint32_t>(launchCache->GetRtsApiType())),
              return ACLNN_ERR_RUNTIME_ERROR);
     rtArgs_t rtArg;

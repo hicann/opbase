@@ -21,13 +21,14 @@ aclnnStatus KernelGraphUtils::Link(const KernelNode* fromNode, const KernelNode*
 
     auto& fromNodeOutputs = fromNode->GetOutputs();
     if (from > fromNodeOutputs.size()) {
-        OP_LOGE(ACLNN_ERR_INNER, "from %zu is larger than fromNode output size %zu.", from, fromNodeOutputs.size());
+        OP_LOGE(ACLNN_ERR_INNER, "From index %zu is larger than fromNode output size %zu.", from,
+                fromNodeOutputs.size());
         return ACLNN_ERR_INNER;
     }
 
     auto& toNodeInputs = toNode->GetInputs();
     if (to > toNodeInputs.size()) {
-        OP_LOGE(ACLNN_ERR_INNER, "to %zu is larger than toNode input size %zu.", to, toNodeInputs.size());
+        OP_LOGE(ACLNN_ERR_INNER, "To index %zu is larger than toNode input size %zu.", to, toNodeInputs.size());
         return ACLNN_ERR_INNER;
     }
     auto* fromTensor = fromNodeOutputs.at(from);

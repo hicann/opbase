@@ -48,7 +48,7 @@ class CopyToNpuKernelLauncher : public KernelLauncher {
 public:
     CopyToNpuKernelLauncher(uint32_t opType, op::CoreType coreType, op::internal::ProfilingInfoId& profilingId,
                             const aclOpExecutor* executor, const aclTensor* src, const aclTensor* dst)
-        : KernelLauncher(opType, coreType, executor, profilingId), src_(src), dst_(dst) {};
+        : KernelLauncher(opType, coreType, executor, profilingId), src_(src), dst_(dst){};
     aclnnStatus Launch() override
     {
         uint64_t dstNByptes = 0;
@@ -87,7 +87,7 @@ class CopyNpuToNpuKernelLauncher : public KernelLauncher {
 public:
     CopyNpuToNpuKernelLauncher(uint32_t opType, op::CoreType coreType, op::internal::ProfilingInfoId& profilingId,
                                const aclOpExecutor* executor, const aclTensor* src, const aclTensor* dst)
-        : KernelLauncher(opType, coreType, executor, profilingId), src_(src), dst_(dst) {};
+        : KernelLauncher(opType, coreType, executor, profilingId), src_(src), dst_(dst){};
     aclnnStatus Launch() override
     {
         uint64_t dstNByptes = 0;
@@ -161,7 +161,7 @@ const aclTensor* CopyToNpuSync(const aclTensor* src, aclOpExecutor* executor)
              return nullptr);
     auto dst = executor->AllocTensor(src->GetStorageShape(), src->GetOriginalShape(), src->GetDataType(),
                                      src->GetStorageFormat(), src->GetOriginalFormat());
-    OP_CHECK(dst != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to alloc tensor"), return nullptr);
+    OP_CHECK(dst != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate tensor."), return nullptr);
 
     uint64_t srcNByptes = 0;
     auto calcRet = CalcTensorNBytes(src, srcNByptes);

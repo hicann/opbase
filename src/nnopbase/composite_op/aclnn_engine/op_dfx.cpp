@@ -74,7 +74,7 @@ uint32_t GenOpTypeId(const char* opName, const OP_SOC_RESOURCES& opResources)
         // 注册算子用到的资源
         auto it = std::get<OP_RESOURCE_BINARY_IDX>(op_res).find(tmp.c_str());
         if (it == std::get<OP_RESOURCE_BINARY_IDX>(op_res).end()) {
-            OP_LOGW("failed to find op resources, soc version %s", socVersion.GetString());
+            OP_LOGW("Failed to find op resources for SoC version %s.", socVersion.GetString());
             return 0;
         }
         nnopbase::OpBinaryResourceManager::GetInstance().AddOpFuncHandle(op_type,
@@ -92,13 +92,13 @@ uint32_t GenOpTypeId(const char* opName, const OP_SOC_RESOURCES& opResources)
 uint32_t GenOpTypeId(const char* opName)
 {
     if (opName == nullptr) {
-        OP_LOGW("opName is nullptr when genOpTypeId.");
+        OP_LOGW("opName is nullptr when calling genOpTypeId.");
         return 0;
     }
     string opNameString = string(opName);
     TrimWith(opNameString, ' ');
     if (opNameString.empty()) {
-        OP_LOGW("opName is empty when genOpTypeId.");
+        OP_LOGW("opName is empty when calling genOpTypeId.");
         return 0;
     }
     uint32_t id = 0;
@@ -132,7 +132,7 @@ void InitAclnnDebugSwitch()
     std::call_once(g_aclnnDebugOnceFlag, []() {
         if (CheckLogLevelInner(OP_ID, OP_LOG_INFO) == 1) {
             g_aclnnDebugEnabled.store(true, std::memory_order_relaxed);
-            OP_LOGI("aclnn debug mode enabled by log level");
+            OP_LOGI("Aclnn debug mode is enabled by log level.");
         }
     });
 }
@@ -217,16 +217,16 @@ uint64_t GenSummaryItemId(const char* l2Name, const char* l0Name, const char* op
     OP_CHECK_NOTNULL(hashHolder);
     auto hashPtr = hashHolder.get();
     auto rc = strncpy_s(hashPtr, totalSize, l2Name, l2NameLen);
-    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info l2 name: %s failed.", l2Name);
+    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "Failed to construct hash info for l2 name: %s.", l2Name);
     rc = strncpy_s(hashPtr + l2NameLen, totalSize - l2NameLen, "_", 1);
-    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info delimiter failed.");
+    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "Failed to construct hash info delimiter.");
     rc = strncpy_s(hashPtr + l2NameLen + 1, totalSize - l2NameLen - 1, l0Name, l0NameLen);
-    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info l0 name: %s failed.", l0Name);
+    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "Failed to construct hash info for l0 name: %s.", l0Name);
     rc = strncpy_s(hashPtr + l2NameLen + l0NameLen + 1, totalSize - l2NameLen - l0NameLen - 1, "_", 1);
-    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info delimiter failed.");
+    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "Failed to construct hash info delimiter.");
     rc = strncpy_s(hashPtr + l2NameLen + l0NameLen + 1 + 1, totalSize - l2NameLen - l0NameLen - 1 - 1, opType,
                    opTypeLen);
-    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "construct hash info opType: %s failed.", opType);
+    CHECK_COND(rc == EOK, ACLNN_ERR_INNER, "Failed to construct hash info for opType: %s.", opType);
     uint64_t id = MsprofGetHashId(hashPtr, strlen(hashPtr));
     OP_LOGI("GenSummaryItemId, l2Name = %s, l0Name = %s, opType = %s, id = %lu", l2Name, l0Name, opType, id);
     return id;
@@ -271,7 +271,7 @@ int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len)
         return -1;
     }
     if (len != sizeof(MsprofCommandHandle)) {
-        OP_LOGW("len(%u) != sizeof MsprofCommandHandle(%zu).", len, sizeof(MsprofCommandHandle));
+        OP_LOGW("Length %u does not match the size of MsprofCommandHandle (%zu).", len, sizeof(MsprofCommandHandle));
         return -1;
     }
 
@@ -433,7 +433,7 @@ static void ReportCacheOpInfoTensor(uint8_t* dest, uint64_t& destOffset, const u
             msTensor.shape[j] = 0;
         }
         OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &msTensor, sizeof(MsrofTensorData)) == EOK,
-                 OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+                 OP_LOGE(ACLNN_ERR_INNER, "Failed to call memcpy_s."),
                  throw std::runtime_error("aclGraph profiling memcpy runtime error."));
         destOffset += sizeof(MsrofTensorData);
         OP_LOGI("tensorIndex %zu, tensorType %u, format %u, dataType %u, shape(%u, %u, %u, %u, %u, %u, %u, %u)", i,
@@ -455,7 +455,7 @@ void ReportCacheOpInfo(const TaskInfo& taskInfo, OpArgContext* args, const uint6
     uint32_t tensorNum = inTensors.size() + outTensors.size();
     size_t totalSize = sizeof(CacheOpInfoBasic) + (sizeof(MsrofTensorData) * tensorNum);
     void* infoPtr = op::internal::Allocate(totalSize);
-    OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocate failed."), throw std::bad_alloc());
+    OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocation failed."), throw std::bad_alloc());
     uint8_t* dest = static_cast<uint8_t*>(infoPtr);
     uint64_t destOffset = 0;
     cacheOpInfoBasic.attrId = attrId;
@@ -479,7 +479,7 @@ void ReportCacheOpInfo(const TaskInfo& taskInfo, OpArgContext* args, const uint6
                                   0;
     cacheOpInfoBasic.tensorNum = tensorNum;
     OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to call memcpy_s."),
              throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
     OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
@@ -503,7 +503,7 @@ void ReportCacheOpInfoDSA(OpArgList& inputs, OpArgList& outputs, MsprofGeTaskTyp
     uint32_t tensorNum = inTensors.size() + outTensors.size();
     size_t totalSize = sizeof(CacheOpInfoBasic) + (sizeof(MsrofTensorData) * tensorNum);
     void* infoPtr = op::internal::Allocate(totalSize);
-    OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocate failed."), throw std::bad_alloc());
+    OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocation failed."), throw std::bad_alloc());
     uint8_t* dest = static_cast<uint8_t*>(infoPtr);
     uint64_t destOffset = 0;
     // CacheOpInfoBasic: taskType/nodeId/opType/numBlocks/opFlag/tensorNum
@@ -516,7 +516,7 @@ void ReportCacheOpInfoDSA(OpArgList& inputs, OpArgList& outputs, MsprofGeTaskTyp
     cacheOpInfoBasic.opFlag = 0;
     cacheOpInfoBasic.tensorNum = tensorNum;
     OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to call memcpy_s."),
              throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
     OP_LOGI("taskType %u, nodeId %zu, opType %zu, numBlocks %u, opFlag %u, tensorNum %u", cacheOpInfoBasic.taskType,
@@ -895,7 +895,7 @@ static void AddToAttrArg([[maybe_unused]] size_t idx, bool isTensor, std::string
     if (tensor->GetPlacement() != gert::TensorPlacement::kOnHost) {
         return;
     }
-    OP_LOGI("input_%zu is host tensor", idx);
+    OP_LOGI("input_%zu is a host tensor.", idx);
     if (isTensor) {
         attrStr += "input_" + std::to_string(idx) + ":";
     } else {
@@ -1168,7 +1168,7 @@ static bool IsSaturationOverflow(aclrtStream stream)
     aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
     auto ret = aclrtMallocWithCfg(&descBuf, (npuArch == NpuArch::DAV_2201) ? (descBufLen * 2) : descBufLen,
                                   ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg);
-    CHECK_COND(ret == ACL_SUCCESS, false, "failed to call aclrtMallocWithCfg, ret %d", ret);
+    CHECK_COND(ret == ACL_SUCCESS, false, "Failed to call aclrtMallocWithCfg, return %d", ret);
 
     DevPtrGuard guard(descBuf);
 
@@ -1194,7 +1194,7 @@ static bool IsSaturationOverflow(aclrtStream stream)
     ret = aclrtNpuClearFloatOverFlowStatus(checkMode, stream);
     CHECK_COND(ret == ACL_SUCCESS, false, "aclrtNpuClearFloatOverFlowStatus failed, ret %d", ret);
 
-    OP_LOGD("get saturation overflow status %u", status);
+    OP_LOGD("Get saturation overflow status: %u.", status);
     return status;
 }
 
@@ -1204,7 +1204,7 @@ static bool IsInfNanOverflow(OpArgContext* args, aclOpExecutor* executor, aclrtS
     NonFiniteCheckOpContext nonFiniteCheckOpCtx(executor, stream, args);
     auto ret = NonFiniteCheckOp::RunNonfiniteCheckOp(nonFiniteCheckOpCtx, dump);
     OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("RunNonfiniteCheckOp failed, ret %d", ret), return false);
-    OP_LOGI("inf nan overflow status %d", dump);
+    OP_LOGI("Inf/NaN overflow status: %d.", dump);
     return dump;
 }
 
@@ -1215,7 +1215,7 @@ aclnnStatus OverflowDumpProcess(OpArgContext* args, aclOpExecutor* executor, acl
     aclError ret = aclrtGetDeviceSatMode(&floatOverflowMode);
     OP_CHECK((ret == ACL_SUCCESS && (floatOverflowMode == ACL_RT_OVERFLOW_MODE_SATURATION ||
                                      floatOverflowMode == ACL_RT_OVERFLOW_MODE_INFNAN)),
-             OP_LOGW("check aclrtGetDeviceSatMode failed, ret: %d, overflow mode %d", ret, floatOverflowMode),
+             OP_LOGW("Checking aclrtGetDeviceSatMode failed, return %d, overflow mode %d", ret, floatOverflowMode),
              return ACLNN_ERR_INNER);
 
     ret = aclrtSynchronizeStream(stream);

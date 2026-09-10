@@ -873,7 +873,7 @@ OpExecCache::OpExecCache()
 
 OpExecCache::~OpExecCache()
 {
-    OP_LOGD("destruct OpExecCache %p", this);
+    OP_LOGD("Destructing OpExecCache %p", this);
     OldCacheClear();
     if (hasExclusiveMem_) {
         delete[] static_cast<char*>(cacheBuf_);
@@ -934,14 +934,14 @@ aclnnStatus OpExecCache::RecordAddrRule(const aclTensor* t, AddrRule& rule)
     }
 
     if (storageRelation_.find(s) == storageRelation_.end()) {
-        OP_LOGW("record addr rule find tensor relation fail");
+        OP_LOGW("Failed to find tensor relation in record addr rule.");
         return ACLNN_ERR_INNER;
     }
     // viewCopy or createView product l0 tensor and l2 tensor relation
     auto rel = storageRelation_[s];
     it = std::find(cachedStorageList_.begin(), cachedStorageList_.end(), rel);
     if (it == cachedStorageList_.end()) {
-        OP_LOGW("record addr rule find tensor fail");
+        OP_LOGW("Failed to find tensor in record addr rule.");
         return ACLNN_ERR_INNER;
     }
     auto idx = std::distance(cachedStorageList_.begin(), it);
@@ -968,7 +968,7 @@ void* OpExecCache::AddLaunchTensor(const aclTensor* t, size_t dataLen)
     }
 
     if (storageRelation_.find(s) == storageRelation_.end()) {
-        OP_LOGW("op executor cache find tensor relation fail");
+        OP_LOGW("Failed to find tensor relation in op executor cache.");
         MarkOpCacheInvalid();
         return nullptr;
     }
@@ -976,7 +976,7 @@ void* OpExecCache::AddLaunchTensor(const aclTensor* t, size_t dataLen)
     auto rel = storageRelation_[s];
     it = std::find(cachedStorageList_.begin(), cachedStorageList_.end(), rel);
     if (it == cachedStorageList_.end()) {
-        OP_LOGW("op executor cache find tensor fail");
+        OP_LOGW("Failed to find tensor in op executor cache.");
         MarkOpCacheInvalid();
         return nullptr;
     }
@@ -991,9 +991,9 @@ void* OpExecCache::AddLaunchData(size_t dataLen)
     // if cache buf not enough, abandon cache.
     if (cacheOffset_ + dataLen > cacheCap_) {
         MarkOpCacheInvalid();
-        OP_LOGW("cache buf is full, abandon current cache.");
+        OP_LOGW("Cache buffer is full, abandoning current cache.");
         if (dataLen > cacheCap_) {
-            OP_LOGW("cache buf cap is not enough for once cache data!");
+            OP_LOGW("Cache buffer capacity is insufficient for a single cache data entry!");
         }
         return nullptr;
     }
@@ -1086,12 +1086,12 @@ void OpExecCache::MarkOpCacheInvalid()
     hashKey_ = 0;
     // 不释放/置空 buf 仅置 len 为 0，避免 operator== 跨线程读到 buf 为空而 len 非 0 的中间态导致崩溃
     key_.len = 0;
-    OP_LOGI("key_.len %zu", key_.len);
+    OP_LOGI("key_.len: %zu", key_.len);
 }
 
 bool OpExecCache::IsOpCacheValid()
 {
-    OP_LOGI("hash Key: %lu, key_.len %zu", hashKey_, key_.len);
+    OP_LOGI("Hash key: %lu, key_.len: %zu", hashKey_, key_.len);
     return hashKey_ || (key_.buf && key_.len);
 }
 
@@ -1157,7 +1157,7 @@ bool OpExecCache::CanUse()
         current = tlsData->threadLocalContext.logInfo_.l2ApiName;
     }
     if (current != l2Name_) {
-        OP_LOGW("can not hit cache, may be hash conflict, current: %s, cache: %s", current, l2Name_);
+        OP_LOGW("Cannot hit cache, possibly a hash conflict, current: %s, cache: %s", current, l2Name_);
         return false;
     }
     return canUse_.load();
@@ -1220,7 +1220,7 @@ OpExecCacheManager::~OpExecCacheManager()
 {
     WaitCacheCompleteUse();
     DeleteCache1();
-    OP_LOGI("delete op exec cache manager");
+    OP_LOGI("Deleting op exec cache manager");
     if (gcInitialize_ && consumer_.joinable()) {
         threadStop_.store(true);
         consumer_.join();
@@ -1240,7 +1240,7 @@ void OpExecCacheManager::ClearCacheManually()
 
 void OpExecCacheManager::WaitCacheCompleteUse()
 {
-    OP_LOGI("there are %ld cache in use now", useCount_.load());
+    OP_LOGI("There are %ld caches in use now.", useCount_.load());
     if (!g_enableOpCacheCount.load()) {
         OP_LOGI("OpCache count is disabled, no need to wait cache complete use");
         return;
@@ -1318,7 +1318,7 @@ size_t OpExecCacheManager::GetCacheSizeLimit()
         }
     }
     c = std::min(K_MAX_CACHE_LIMIT, c);
-    OP_LOGI("cachelimit is %zu", c);
+    OP_LOGI("Cache limit is %zu.", c);
     return c;
 }
 
@@ -1337,7 +1337,7 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
         bool ret = false;
         std::lock_guard<std::mutex> guard(lock_);
         if (cache_.size() >= cacheLimit_) {
-            OP_LOGW("op cache is full, cache size %zu, limit %zu", cache_.size(), cacheLimit_);
+            OP_LOGW("Op cache is full, cache size: %zu, limit: %zu", cache_.size(), cacheLimit_);
             op::internal::GetThreadLocalContext().cacheHasFull_ = true;
             delete exec;
             return false;
@@ -1349,7 +1349,7 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
         }
 
         if (cache2_.size() >= cacheLimit_) {
-            OP_LOGW("op cache2 is full, cache2 size %zu, limit %zu", cache2_.size(), cacheLimit_);
+            OP_LOGW("Op cache2 is full, cache2 size: %zu, limit: %zu", cache2_.size(), cacheLimit_);
             ShrinkCache(K_CACHE_SHRINK_NUM, exec->GetShrinkList());
         }
         OpCacheKey key = exec->GetOpCacheKey();
@@ -1392,7 +1392,7 @@ void OpExecCacheManager::RemoveOpExecCache(OpExecCache* exec)
 
 void OpExecCacheManager::ShrinkCache(const size_t num, ListHead* shrinkList)
 {
-    OP_LOGI("op cache size %zu before shrink", cache2_.size());
+    OP_LOGI("Op cache size: %zu before shrink.", cache2_.size());
     for (size_t i = 0; i < num; i++) {
         if (cache2_.rbegin() != cache2_.rend()) {
             OpCacheValue* value = cache2_.rbegin().operator->();
@@ -1407,13 +1407,13 @@ void OpExecCacheManager::ShrinkCache(const size_t num, ListHead* shrinkList)
             break;
         }
     }
-    OP_LOGI("op cache size %zu after shrink", cache2_.size());
+    OP_LOGI("Op cache size: %zu after shrink.", cache2_.size());
 }
 
 void OpExecCacheManager::Start()
 {
     auto f = [this]() {
-        OP_LOGI("start op cache gc thread");
+        OP_LOGI("Starting op cache GC thread.");
         ListHead* task = nullptr;
         while (true) {
             this->gcQueue_.Dequeue(task);
@@ -1424,7 +1424,7 @@ void OpExecCacheManager::Start()
                 continue;
             }
             if (this->threadStop_.load()) {
-                OP_LOGI("stop op cache gc thread");
+                OP_LOGI("Stopping op cache GC thread.");
                 return;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(10));

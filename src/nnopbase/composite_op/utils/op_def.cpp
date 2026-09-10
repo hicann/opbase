@@ -266,7 +266,7 @@ OpImplMode ToOpImplMode(const std::string& implModeStr)
     if (found != STRING_TO_OP_IMPL_MODE_MAP.end()) {
         implMode = found->second;
     } else {
-        OP_LOGW("unknown OpImplMode:%s.", implModeStr.c_str());
+        OP_LOGW("Unknown OpImplMode: %s.", implModeStr.c_str());
     }
     return implMode;
 }

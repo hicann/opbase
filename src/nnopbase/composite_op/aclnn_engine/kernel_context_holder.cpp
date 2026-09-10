@@ -60,12 +60,12 @@ aclnnStatus KernelContextHolder::EnsureArgCapacity(size_t requiredCapacity)
     // Allocate new memory (do NOT use realloc)
     size_t newSize = sizeof(AsyncAnyValue) * newCapacity;
     AsyncAnyValue* newArg = static_cast<AsyncAnyValue*>(malloc(newSize));
-    OP_CHECK(newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc opInArg, size %zu.", newSize),
+    OP_CHECK(newArg != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate opInArg, size %zu.", newSize),
              return ACLNN_ERR_INNER);
 
     // Copy existing data to new location
     size_t oldSize = sizeof(AsyncAnyValue) * opInArgCapacity_;
-    OP_CHECK(memcpy_s(newArg, newSize, opInArg_, oldSize) == EOK, OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy opInArg."),
+    OP_CHECK(memcpy_s(newArg, newSize, opInArg_, oldSize) == EOK, OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy opInArg."),
              std::free(newArg);
              return ACLNN_ERR_INNER);
 
@@ -99,12 +99,12 @@ aclnnStatus KernelContextHolder::EnsureComputeNodeInfoCapacity(size_t requiredCa
     size_t newSize = sizeof(ComputeNodeInfo) + sizeof(AnchorInstanceInfo) * newCapacity +
                      sizeof(CompileTimeTensorDesc) * newCapacity + sizeof(RuntimeAttrsDef) + attrCapacity_;
     ComputeNodeInfo* newInfo = static_cast<ComputeNodeInfo*>(malloc(newSize));
-    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo, size %zu.", newSize),
+    OP_CHECK(newInfo != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate computeNodeInfo, size %zu.", newSize),
              return ACLNN_ERR_INNER);
 
     // Copy existing data
     OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."), std::free(newInfo);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy computeNodeInfo."), std::free(newInfo);
              return ACLNN_ERR_INNER);
 
     // Zero out the new portion
@@ -155,12 +155,12 @@ aclnnStatus KernelContextHolder::EnsureAttrCapacity(size_t requiredSize)
                      sizeof(CompileTimeTensorDesc) * computeNodeInfoCapacity_ + sizeof(RuntimeAttrsDef) + newCapacity;
     ComputeNodeInfo* newInfo = static_cast<ComputeNodeInfo*>(malloc(newSize));
     OP_CHECK(newInfo != nullptr,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to malloc computeNodeInfo for attr expansion, size %zu.", newSize),
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate computeNodeInfo for attr expansion, size %zu.", newSize),
              return ACLNN_ERR_INNER);
 
     // Copy data up to current computeNodeInfoSize_
     OP_CHECK(memcpy_s(newInfo, newSize, computeNodeInfo_, computeNodeInfoSize_) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy computeNodeInfo."), std::free(newInfo);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy computeNodeInfo."), std::free(newInfo);
              return ACLNN_ERR_INNER);
 
     // Zero out the new portion
@@ -273,7 +273,7 @@ aclnnStatus KernelContextHolder::UpdateInputArg(size_t idx, OpArg& arg)
         case OpArgType::OPARG_ACLTENSOR_LIST:
             return UpdateInputArg(idx, reinterpret_cast<aclTensorList*>(arg->pointer));
         default:
-            OP_LOGE(ACLNN_ERR_INNER, "invalid input arg type %d.", static_cast<int>(arg.type));
+            OP_LOGE(ACLNN_ERR_INNER, "Invalid input arg type %d.", static_cast<int>(arg.type));
             return ACLNN_ERR_INNER;
     }
 }
@@ -323,7 +323,7 @@ aclnnStatus KernelContextHolder::UpdateOutputArg(size_t idx, OpArg& arg)
         case OpArgType::OPARG_ACLTENSOR_LIST:
             return UpdateOutputArg(idx, reinterpret_cast<aclTensorList*>(arg->pointer));
         default:
-            OP_LOGE(ACLNN_ERR_INNER, "invalid output arg type %d.", static_cast<int>(arg.type));
+            OP_LOGE(ACLNN_ERR_INNER, "Invalid output arg type %d.", static_cast<int>(arg.type));
             return ACLNN_ERR_INNER;
     }
 }
@@ -368,7 +368,7 @@ void KernelContextHolder::UpdateOutputArgIr(size_t idx, OpArg& arg, size_t& seq)
             UpdateOutputArgIr(idx, reinterpret_cast<aclTensorList*>(arg->pointer), seq);
             break;
         default:
-            OP_LOGW("invalid output arg type %d.", static_cast<int>(arg.type));
+            OP_LOGW("Invalid output arg type %d.", static_cast<int>(arg.type));
             break;
     }
 }

@@ -44,7 +44,7 @@ void FreeExtendTensorImpl(void* extendTensor)
 
 aclnnStatus AddKernelNodeToGraph(void* kn, void* graph)
 {
-    OP_LOGI("graph %p, kernel node: %p", graph, kn);
+    OP_LOGI("Graph %p, kernel node: %p", graph, kn);
     KernelGraph* g = static_cast<KernelGraph*>(graph);
     g->AddKernelNode(static_cast<KernelNode*>(kn));
     return ACL_SUCCESS;
@@ -102,7 +102,7 @@ void* BuildKernelNodeImpl(uint32_t opType, FVector<aclTensor*>& aclInputs, FVect
             // 上一个l0算子的输出作为下一个l0算子的输出
             KernelTensor* outPeerTensor = extend->GetKernelTensor();
             if (outPeerTensor != nullptr) {
-                OP_LOGW("the output of the previous op is used as the output of current op!!!");
+                OP_LOGW("The output of the previous op is used as the output of the current op!");
                 outPeerTensor->AddPeerTensor(out);
                 out->AddPeerTensor(outPeerTensor);
             }

@@ -376,7 +376,7 @@ private:
         }
 
         if (index < 0 || index >= BlockPool::MAX_STORE) {
-            OP_LOGE(ACLNN_ERR_INNER, "invalid cache to alloc, idx %d size %lu B", index, size);
+            OP_LOGE(ACLNN_ERR_INNER, "Invalid cache index %d for allocation of size %lu B", index, size);
             return nullptr;
         }
 
@@ -411,7 +411,7 @@ private:
 
         int idx = GetBlockCacheIndex(head);
         if (idx < 0 || idx >= BlockPool::MAX_STORE) {
-            OP_LOGW("invalid block to free, idx %d tag %u blockIdx %d cacheExt %lu", idx, head->userTag_,
+            OP_LOGW("Invalid block to free, index %d, tag %u, blockIdx %d, cacheExt %lu", idx, head->userTag_,
                     head->blockIdx_, head->cacheExt_);
             return;
         }

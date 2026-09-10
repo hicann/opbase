@@ -94,7 +94,7 @@ Format ToFormat(const std::string& formatStr)
     if (found != kStringToFormatMap.end()) {
         format = found->second;
     } else {
-        OP_LOGW("unknown format:%s.", formatStr.c_str());
+        OP_LOGW("Unknown format: %s.", formatStr.c_str());
     }
 
     return format;
@@ -165,7 +165,7 @@ ge::AscendString ToString(Format format)
         }
         return ge::AscendString((it->second).c_str());
     } else {
-        OP_LOGW("unknown format:%d.", format);
+        OP_LOGW("Unknown format: %d.", format);
         return ge::AscendString(reserved.c_str());
     }
 }

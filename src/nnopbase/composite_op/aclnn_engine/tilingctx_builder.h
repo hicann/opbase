@@ -75,7 +75,7 @@ public:
 
     ~TilingResCache()
     {
-        OP_LOGI("release tiling result");
+        OP_LOGI("Release tiling result");
         if (workspaceSize_ != nullptr) {
             BlockPool::Free(workspaceSize_);
             workspaceSize_ = nullptr;

@@ -96,7 +96,7 @@ static bool BroadcastDim(int64_t& dim1, const int64_t dim2)
 
 bool CheckBroadcastShape(const op::Shape& self, const op::Shape& other)
 {
-    OP_LOGD("check broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
+    OP_LOGD("Check broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
     size_t selfShapeLen = self.GetDimNum();
     size_t otherShapeLen = other.GetDimNum();
     const auto& largerDimShape = selfShapeLen > otherShapeLen ? self : other;
@@ -117,8 +117,8 @@ bool CheckBroadcastShape(const op::Shape& self, const op::Shape& other)
 
 bool BroadcastInferShape(const op::Shape& self, const op::Shape& other, op::Shape& broadcastShape)
 {
-    OP_LOGD("start broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
-    OP_LOGD("check broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
+    OP_LOGD("Start broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
+    OP_LOGD("Check broadcast %s and %s!", op::ToString(self).GetString(), ToString(other).GetString());
     size_t selfShapeLen = self.GetDimNum();
     size_t otherShapeLen = other.GetDimNum();
     const auto& largerDimShape = selfShapeLen > otherShapeLen ? self : other;

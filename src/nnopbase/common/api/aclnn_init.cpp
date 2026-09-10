@@ -45,7 +45,8 @@ aclnnStatus InitSystemConfig(const char* configPath)
 
     string configPathStr(configPath);
     string realConfigPathStr = op::RealPath(configPathStr);
-    OP_CHECK(!realConfigPathStr.empty(), OP_LOGI("real path of the input config path [%s] does not exist", configPath),
+    OP_CHECK(!realConfigPathStr.empty(),
+             OP_LOGI("The real path of the input config path [%s] does not exist.", configPath),
              return op::internal::systemConfig.SetEnableDebugKernelFlag(false));
 
     // 解析json文件中的配置
@@ -54,21 +55,21 @@ aclnnStatus InitSystemConfig(const char* configPath)
         Json sysConfig = Json::parse(f);
         Json opDebugConfig;
         if (sysConfig.find("op_debug_config") == sysConfig.end()) {
-            OP_LOGI("op_debug_config not in json file: %s", configPath);
+            OP_LOGI("op_debug_config is not found in the json file: %s", configPath);
             return op::internal::systemConfig.SetEnableDebugKernelFlag(false);
         }
         opDebugConfig = sysConfig.at("op_debug_config");
         if (opDebugConfig.find("enable_debug_kernel") == opDebugConfig.end()) {
-            OP_LOGI("enable_debug_kernel not in json file: %s", configPath);
+            OP_LOGI("enable_debug_kernel is not found in the json file: %s", configPath);
             return op::internal::systemConfig.SetEnableDebugKernelFlag(false);
         }
         std::string enableDebugKernel = opDebugConfig.at("enable_debug_kernel");
-        OP_LOGI("enable_debug_kernel value is: %s", enableDebugKernel.c_str());
+        OP_LOGI("The enable_debug_kernel value is: %s", enableDebugKernel.c_str());
         if (enableDebugKernel.compare("on") == 0) {
             return op::internal::systemConfig.SetEnableDebugKernelFlag(true);
         }
     } catch (...) {
-        OP_LOGW("json parse failed. json file: %s", configPath);
+        OP_LOGW("Failed to parse the JSON file: %s", configPath);
     }
     return op::internal::systemConfig.SetEnableDebugKernelFlag(false);
 }

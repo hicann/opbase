@@ -102,8 +102,7 @@ void UpdateThradLocalPlatformInfo(fe::PlatFormInfos* platformInfo, const uint32_
             vectorCoreNumLast = vectorCoreNum;
             cubeCoreNumLast = cubeCoreNum;
         } else {
-            OP_LOGD(
-                "getPlatformResWithLock is false when updateThreadLocalPlatformInfo, can't use thread control coreNum.");
+            OP_LOGD("Call getPlatformResWithLock failed, can't use thread control coreNum.");
         }
     }
     platformInfo->SetCoreNum(coreNum);
@@ -116,13 +115,13 @@ void SetCoreNum(const Json& opJson, fe::PlatFormInfos* platformInfo, uint32_t& c
     if (!opJson.contains("coreType")) {
         coreNum = cubeCoreNum;
         UpdateThradLocalPlatformInfo(platformInfo, coreNum, cubeCoreNum, vectorCoreNum);
-        OP_LOGI("op json doesn't contain coreType, set core num: %u.", coreNum);
+        OP_LOGI("Op json does not contain coreType, set core num to %u.", coreNum);
         return;
     }
 
     std::string coreType = opJson["coreType"].get<std::string>();
     NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    OP_LOGI("current npu arch value: %u, core type: %s.", npuArch, coreType.c_str());
+    OP_LOGI("Current NPU arch value: %u, core type: %s.", npuArch, coreType.c_str());
     if (coreType == "VectorCore") {
         coreNum = vectorCoreNum;
         OP_LOGI("Set VectorCore core num: %u", coreNum);

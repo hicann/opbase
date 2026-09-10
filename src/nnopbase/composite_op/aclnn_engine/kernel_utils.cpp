@@ -29,7 +29,7 @@ gert::OppImplVersionTag GetOppImplVersion()
     string p = homePath;
     const std::string kernelPath = p + "/opp_latest";
     std::string oppKernelPath = RealPath(kernelPath);
-    OP_CHECK(oppKernelPath.empty(), OP_LOGI("opp kernel path %s", oppKernelPath.c_str()),
+    OP_CHECK(oppKernelPath.empty(), OP_LOGI("Opp kernel path: %s.", oppKernelPath.c_str()),
              return gert::OppImplVersionTag::kOppKernel);
     return gert::OppImplVersionTag::kOpp;
 }
@@ -42,7 +42,7 @@ aclnnStatus GetOppKernelPath(std::string& oppKernelPath)
         string p = homePath;
         const std::string kernelPath = p + "/opp_latest";
         oppKernelPath = RealPath(kernelPath);
-        OP_CHECK(oppKernelPath.empty(), OP_LOGI("opp kernel path %s", oppKernelPath.c_str()), return ACLNN_SUCCESS);
+        OP_CHECK(oppKernelPath.empty(), OP_LOGI("Opp kernel path: %s.", oppKernelPath.c_str()), return ACLNN_SUCCESS);
     } else {
         OP_LOGW("ASCEND_HOME_PATH is null.");
     }
@@ -55,7 +55,7 @@ aclnnStatus GetOppKernelPath(std::string& oppKernelPath)
     string p = oppPath;
     oppKernelPath = RealPath(p);
     if (!oppKernelPath.empty()) {
-        OP_LOGI("opp kernel path %s", oppKernelPath.c_str());
+        OP_LOGI("Opp kernel path: %s.", oppKernelPath.c_str());
         return ACLNN_SUCCESS;
     } else {
         OP_LOGE_FOR_CONFIG_ERROR_INVALID_ENVIRONMENT_VARIABLE("Get opp kernel path", "ASCEND_OPP_PATH");

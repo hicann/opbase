@@ -72,14 +72,14 @@ public:
 
         auto storageRelate = relation_.find(s);
         if (storageRelate == relation_.end()) {
-            OP_LOGW("launcher repeat check fail, find tensor relation fail");
+            OP_LOGW("Launcher repeatability check failed: cannot find tensor relation.");
             canRepeatable_ = false;
             return;
         }
         // viewCopy or createView product l0 tensor and l2 tensor relation
         auto rel = storageRelate->second;
         if (std::find(oriStorage_.begin(), oriStorage_.end(), rel) == oriStorage_.end()) {
-            OP_LOGW("launcher repeat check fail, find tensor fail");
+            OP_LOGW("Launcher repeatability check failed: cannot find tensor.");
             canRepeatable_ = false;
             return;
         }
@@ -148,7 +148,7 @@ public:
             args_ = nullptr;
         }
         if (launchCtx_.GetLauncherRepeatable()) {
-            OP_LOGI("delete launch ctx in repeatable launcher destructor");
+            OP_LOGI("Deleting launch ctx in repeatable launcher destructor.");
             launchCtx_.Reset();
         }
     }

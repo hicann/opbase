@@ -42,7 +42,7 @@ public:
                 std::invoke(std::forward<F>(func), std::forward<Args>(args)...);
                 onceFlag_.store(FLAG_EXECUTED);
             } catch (std::exception& e) {
-                OP_LOGW("invoke call function failed, reason: %s", e.what());
+                OP_LOGW("Invoke call function failed, reason: %s", e.what());
                 onceFlag_.store(FLAG_NOT_EXECUTE);
                 throw;
             }

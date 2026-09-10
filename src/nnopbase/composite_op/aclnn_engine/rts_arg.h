@@ -130,7 +130,7 @@ public:
                 launchCfg_.funcHandle, launchCfg_.binHandle);
         if (!launchCfg_.isFatBin) {
             OP_CHECK(kernelName.length() < KERNEL_NAME_MAX_SIZE,
-                     OP_LOGW("kernel name is bigger than %zu", KERNEL_NAME_MAX_SIZE), return false);
+                     OP_LOGW("Kernel name length exceeds the maximum of %zu.", KERNEL_NAME_MAX_SIZE), return false);
             auto rc = strncpy_s(kernelNameOfNoFatBin_, KERNEL_NAME_MAX_SIZE - 1, kernelName.c_str(),
                                 kernelName.length());
             OP_CHECK(rc == EOK, OP_LOGW("Copy kernel name to cache failed"), return false);

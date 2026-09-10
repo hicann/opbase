@@ -41,7 +41,7 @@ aclnnStatus OpKernelBin::ParseStaticWorkSpace(const nlohmann::json& workspaceJso
         if (sizeIter != workspaceJson.end()) {
             staticWorkspaceSize_ = sizeIter->get<FVector<size_t>>();
         } else {
-            OP_LOGE(ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID, "workspace does not contain [size].");
+            OP_LOGE(ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID, "Workspace does not contain [size].");
             return ACLNN_ERR_INNER_STATIC_WORKSPACE_INVALID;
         }
     } catch (const nlohmann::json::exception& e) {
@@ -66,7 +66,7 @@ aclnnStatus OpKernelBin::ParseStaticBlockdim(const nlohmann::json& objJson)
         return ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID;
     }
     if ((staticBlockDim_ < 0) || (staticBlockDim_ > MAX_BLOCK_DIM)) {
-        OP_LOGE(ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID, "blockDim[%ld] is out of range[0, 65535].", staticBlockDim_);
+        OP_LOGE(ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID, "BlockDim[%ld] is out of range [0, 65535].", staticBlockDim_);
         return ACLNN_ERR_INNER_STATIC_BLOCK_DIM_INVALID;
     }
     OP_LOGD("Static block dim is %ld", staticBlockDim_);
@@ -77,7 +77,7 @@ void OpKernelBin::ParseStaticImplMode(const nlohmann::json& objJson)
 {
     auto supportInfoIter = objJson.find(SUPPORT_INFO);
     if (supportInfoIter == objJson.end()) {
-        OP_LOGW("Static json can not find supportInfo in %s", jsonPath_.c_str());
+        OP_LOGW("Static json cannot find supportInfo in %s.", jsonPath_.c_str());
         return;
     }
     try {
@@ -89,7 +89,7 @@ void OpKernelBin::ParseStaticImplMode(const nlohmann::json& objJson)
             return;
         }
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("Static json parse implMode fail in %s", jsonPath_.c_str());
+        OP_LOGW("Static json parse implMode failed in %s.", jsonPath_.c_str());
         return;
     }
 }
@@ -104,25 +104,25 @@ void OpKernelBin::ParseStaticDevPtrMode(const nlohmann::json& objJson)
     if (value == FOLDED_WITH_DESC) {
         hasDevPtrArg_ = true;
     }
-    OP_LOGI("parse static kernel dev ptr mode : %d", hasDevPtrArg_);
+    OP_LOGI("Parse static kernel dev ptr mode: %d.", hasDevPtrArg_);
 }
 
 void OpKernelBin::ParseStaticDynUBufSize(const nlohmann::json& objJson)
 {
     if (!objJson.contains(DYN_UBUF_SIZE)) {
-        OP_LOGW("Static kernel json [%s] does not have localMemorySize", jsonPath_.c_str());
+        OP_LOGW("Static kernel json [%s] does not have localMemorySize.", jsonPath_.c_str());
         staticKernelDynUBufSize_ = 0;
         return;
     }
     if (objJson[DYN_UBUF_SIZE].is_null()) {
-        OP_LOGW("localMemorySize value is null in %s", jsonPath_.c_str());
+        OP_LOGW("LocalMemorySize value is null in %s.", jsonPath_.c_str());
         staticKernelDynUBufSize_ = 0;
         return;
     }
     try {
         staticKernelDynUBufSize_ = objJson[DYN_UBUF_SIZE].get<uint32_t>();
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("parse localMemorySize failed in %s, reason: %s", jsonPath_.c_str(), e.what());
+        OP_LOGW("Parse localMemorySize failed in %s, reason: %s.", jsonPath_.c_str(), e.what());
         staticKernelDynUBufSize_ = 0;
         return;
     }
@@ -138,7 +138,7 @@ void OpKernelBin::ParseOpDebugConfig(const nlohmann::json& objJson)
 
     auto supportInfoIter = objJson.find(SUPPORT_INFO);
     if (supportInfoIter == objJson.end()) {
-        OP_LOGW("Static json can not find supportInfo in %s", jsonPath_.c_str());
+        OP_LOGW("Static json cannot find supportInfo in %s.", jsonPath_.c_str());
         return;
     }
     try {
@@ -158,7 +158,7 @@ void OpKernelBin::ParseOpDebugConfig(const nlohmann::json& objJson)
         }
         OP_LOGI("%s debug config is %u", jsonPath_.c_str(), debugConfig_);
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("json can not parse op_debug_config in %s", jsonPath_.c_str());
+        OP_LOGW("Json cannot parse op_debug_config in %s.", jsonPath_.c_str());
         return;
     }
 }
@@ -171,11 +171,11 @@ void OpKernelBin::ParseOriOpParaSize(const nlohmann::json& objJson)
             oriOpParaSize_ = paraSize->get<uint32_t>();
             OP_LOGI("%s oriOpParaSize is %u", jsonPath_.c_str(), oriOpParaSize_);
         } else {
-            OP_LOGW("json can not parse oriOpParaSize in %s", jsonPath_.c_str());
+            OP_LOGW("Json cannot parse oriOpParaSize in %s.", jsonPath_.c_str());
             return;
         }
     } catch (const nlohmann::json::exception& e) {
-        OP_LOGW("json can not parse oriOpParaSize in %s", jsonPath_.c_str());
+        OP_LOGW("Json cannot parse oriOpParaSize in %s.", jsonPath_.c_str());
         return;
     }
 }
@@ -202,7 +202,7 @@ void OpKernelBin::ParseKernelDfxConfig(const nlohmann::json& objJson)
         return;
     }
     kernelDfxBufSize_ = static_cast<uint64_t>(debugOptionsBufSize->get<uint32_t>());
-    OP_LOGI("kernel dfx config is %u, buf size is %lu", kernelDfxType_, kernelDfxBufSize_);
+    OP_LOGI("Kernel dfx config is %u, buf size is %lu.", kernelDfxType_, kernelDfxBufSize_);
 }
 
 bool OpKernelBin::IsAssertEnable() const { return kernelDfxType_ & static_cast<uint32_t>(KernelDfxType::ASSERT); }
@@ -213,15 +213,16 @@ uint64_t OpKernelBin::GetKernelDfxBufSize() const { return kernelDfxBufSize_; }
 
 void OpKernelBin::DumpWorkspaceData(aclrtStream stream, OpArgContext* args) const
 {
-    OP_CHECK(args != nullptr && args->ContainsOpArgType(op::OP_WORKSPACE_ARG), OP_LOGW("Don't have workspace"), return);
+    OP_CHECK(args != nullptr && args->ContainsOpArgType(op::OP_WORKSPACE_ARG), OP_LOGW("Don't have workspace."),
+             return);
     auto& argList = *args->GetOpArg(op::OP_WORKSPACE_ARG);
-    OP_CHECK((argList.count == 1), OP_LOGW("workspace must have only one value."), return);
+    OP_CHECK((argList.count == 1), OP_LOGW("Workspace must have only one value."), return);
     auto& arg = argList[0];
 
-    OP_CHECK((arg.type == OpArgType::OPARG_ACLTENSOR_LIST), OP_LOGW("workspace should be tensor list."), return);
+    OP_CHECK((arg.type == OpArgType::OPARG_ACLTENSOR_LIST), OP_LOGW("Workspace should be a tensor list."), return);
     aclTensorList* tensors = PtrCastTo<aclTensorList>(arg->pointer);
 
-    OP_CHECK(tensors != nullptr && tensors->Size() > 0, OP_LOGW("workspace at least has one."), return);
+    OP_CHECK(tensors != nullptr && tensors->Size() > 0, OP_LOGW("Workspace must have at least one."), return);
     const aclTensor* firstWorkspace = (*tensors)[0];
 
     Adx::AdumpPrintWorkSpace(firstWorkspace->GetData(), kernelDfxBufSize_, stream,

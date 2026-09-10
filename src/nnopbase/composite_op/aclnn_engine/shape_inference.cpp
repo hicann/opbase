@@ -42,7 +42,7 @@ aclnnStatus UpdateOutputShape(aclTensor* tensor)
 aclnnStatus UpdateOutputShape(aclTensorList* tensors)
 {
     for (uint64_t i = 0; i < tensors->Size(); i++) {
-        CHECK_RET_CODE(UpdateOutputShape((*tensors)[i]), "update dynamic output error.");
+        CHECK_RET_CODE(UpdateOutputShape((*tensors)[i]), "Failed to update the dynamic output shape.");
     }
     return ACLNN_SUCCESS;
 }

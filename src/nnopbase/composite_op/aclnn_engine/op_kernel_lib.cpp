@@ -143,7 +143,7 @@ const std::string& OpKernelLib::GetAiCoreImplPath()
     std::string oppRealPath;
     auto ret = GetOppKernelPath(oppRealPath);
     OP_CHECK(ret == ACLNN_SUCCESS && !oppRealPath.empty(),
-             OP_LOGW("opp kernel real path can not be found. ret %d", ret), return aiCoreImplPath_);
+             OP_LOGW("Failed to find the real opp kernel path, return %d", ret), return aiCoreImplPath_);
 
     aiCoreImplPath_.append(oppRealPath);
     aiCoreImplPath_.append(AICORE_IMPL_PATH_SUFFIX);
@@ -167,7 +167,7 @@ const std::vector<std::string>& OpKernelLib::GetCustomImplPath()
     for (const auto& str : strs) {
         const std::string implPath = str + CUSTOM_IMPL_PATH_SUFFIX;
         const std::string realImplPath = RealPath(implPath);
-        OP_LOGI("custom impl path: %s, real path: %s", implPath.c_str(), realImplPath.c_str());
+        OP_LOGI("Custom impl path: %s, real path: %s.", implPath.c_str(), realImplPath.c_str());
         if (realImplPath != "") {
             customImplPath_.emplace_back(realImplPath);
         }
@@ -191,7 +191,7 @@ const std::vector<std::string>& OpKernelLib::GetConfigImplPath()
     for (const auto& vendorName : vendorNames) {
         const std::string implPath = oppPathStr + "/vendors/" + vendorName + CUSTOM_IMPL_PATH_SUFFIX;
         const std::string realImplPath = RealPath(implPath);
-        OP_LOGD("config impl path: %s, real path: %s", implPath.c_str(), realImplPath.c_str());
+        OP_LOGD("Config impl path: %s, real path: %s.", implPath.c_str(), realImplPath.c_str());
         OP_CHECK_NO_RETURN(realImplPath == "", configImplPath_.emplace_back(realImplPath));
     }
 
@@ -230,9 +230,9 @@ const std::vector<std::string> OpKernelLib::GetVendorNames() const
     const std::string oppPathStr = oppPath;
     const std::string configPath = oppPathStr + "/vendors/config.ini";
     const std::string realConfigPath = RealPath(configPath);
-    OP_LOGI("config.ini file path [%s], real path: [%s].", configPath.c_str(), realConfigPath.c_str());
+    OP_LOGI("Config.ini file path [%s], real path: [%s].", configPath.c_str(), realConfigPath.c_str());
     if (realConfigPath == "") {
-        OP_LOGI("config.ini file path [%s] is invalid or does not exist.", configPath.c_str());
+        OP_LOGI("Config.ini file path [%s] is invalid or does not exist.", configPath.c_str());
         return vendorNames;
     }
 
@@ -268,7 +268,7 @@ const std::vector<std::string> OpKernelLib::GetBuiltInFilePaths()
     configFileDir.append(GetSocPath());
     OP_CHECK(ReadDirBySuffix(configFileDir, ".json", configFileNames) == ACLNN_SUCCESS,
              OP_LOGW("Failed to read dir: %s", configFileDir.c_str()), return configFilePaths);
-    OP_CHECK(!configFileNames.empty(), OP_LOGW("configFileNames is empty in %s", configFileDir.c_str()),
+    OP_CHECK(!configFileNames.empty(), OP_LOGW("configFileNames is empty in %s.", configFileDir.c_str()),
              return configFilePaths);
     bool hasLegacyFile = false;
     std::string lebacyFileName;
@@ -308,7 +308,7 @@ const std::vector<std::string> OpKernelLib::GetOppVendorsFilePaths()
         std::vector<std::string> customFileNames;
         std::string realCustomFileDir = RealPath(customFileDir);
         if (realCustomFileDir == "") {
-            OP_LOGW("custom file dir [%s] is null, skip vendor [%s].", customFileDir.c_str(), vendorName.c_str());
+            OP_LOGW("Custom file dir [%s] is null, skip vendor [%s].", customFileDir.c_str(), vendorName.c_str());
             continue;
         }
         OP_CHECK_NO_RETURN(ReadDirBySuffix(realCustomFileDir, ".json", customFileNames) == ACLNN_SUCCESS,
@@ -336,7 +336,7 @@ const std::vector<std::string> OpKernelLib::GetCustomOppFilePaths()
         const std::string customFileDir = element + "/" + KERNEL_CONFIG_SUFFIX + GetSocPath();
         std::string realCustomFileDir = RealPath(customFileDir);
         if (realCustomFileDir.empty()) {
-            OP_LOGW("custom opp file dir [%s] is null, skip.", customFileDir.c_str());
+            OP_LOGW("Custom opp file dir [%s] is null, skip.", customFileDir.c_str());
             continue;
         }
         std::vector<std::string> customFileNames;

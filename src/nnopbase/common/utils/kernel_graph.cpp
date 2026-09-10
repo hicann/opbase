@@ -67,7 +67,7 @@ aclnnStatus KernelGraph::TopologicalSortBFS()
             for (auto& peer : tensor->GetPeerTensors()) {
                 auto topoId = peer->GetOwnerNode()->GetTopoId();
                 if (topoId >= static_cast<int64_t>(indegrees.size())) {
-                    OP_LOGE(ACLNN_ERR_INNER, "peer node's topo id %ld is larger than the in-degree size %zu.", topoId,
+                    OP_LOGE(ACLNN_ERR_INNER, "Peer node's topo ID %ld is larger than the in-degree size %zu.", topoId,
                             indegrees.size());
                     return ACLNN_ERR_INNER;
                 }
@@ -115,7 +115,7 @@ int64_t KernelGraph::CalcIndegrees()
         for (auto& output : node->GetOutputs()) {
             for (auto& peer : output->GetPeerTensors()) {
                 auto peerIdx = peer->GetOwnerNode()->GetOriginalId();
-                OP_LOGI("node %ld output , peerIdx is %ld.", node->GetOriginalId(), peerIdx);
+                OP_LOGI("Node %ld output, peerIdx is %ld.", node->GetOriginalId(), peerIdx);
                 if (peerIdx != node->GetOriginalId()) {
                     indegrees_[peerIdx] += 1;
                 } else {
@@ -210,7 +210,7 @@ aclnnStatus KernelGraph::CalcLifeTimeAndSize()
 
         for (auto& output : node->GetOutputs()) {
             if (output == nullptr) {
-                OP_LOGE(ACLNN_ERR_INNER, "node %ld is nullptr.", node->GetOriginalId());
+                OP_LOGE(ACLNN_ERR_INNER, "Node %ld is nullptr.", node->GetOriginalId());
                 return ACLNN_ERR_INNER;
             }
             CHECK_RET(output->GetAclTensor() != nullptr, ACLNN_ERR_INNER);
@@ -267,7 +267,7 @@ size_t KernelGraph::PrintGraph()
     for (auto& node : kernelNodes_) {
         size_t count = 0;
         for (auto& output : node->GetOutputs()) {
-            OP_LOGD("node[%s %ld] output total[%zu], current %zu, is from wsp %d, acltensor: %p, child-nodes are: %s.",
+            OP_LOGD("Node[%s %ld] output total[%zu], current %zu, is from wsp %d, acltensor: %p, child-nodes are: %s.",
                     op::OpTypeDict::ToString(node->GetOpType()).GetString(), node->GetOriginalId(),
                     node->GetOutputs().size(), count, output->GetAclTensor()->IsFromWorkspace(), output->GetAclTensor(),
                     GetChildNodesName(output).c_str());
@@ -275,7 +275,7 @@ size_t KernelGraph::PrintGraph()
         }
         count = 0;
         for (auto& input : node->GetInputs()) {
-            OP_LOGD("node[%s %ld],input total [%zu] current %zu , is from wsp %d, acltensor: %p, father-nodes are: %s.",
+            OP_LOGD("Node[%s %ld], input total[%zu], current %zu, is from wsp %d, acltensor: %p, father-nodes are: %s.",
                     op::OpTypeDict::ToString(node->GetOpType()).GetString(), node->GetOriginalId(),
                     node->GetInputs().size(), count, input->GetAclTensor()->IsFromWorkspace(), input->GetAclTensor(),
                     GetChildNodesName(input).c_str());

@@ -118,7 +118,7 @@ aclnnStatus aclDestroyTensor(const aclTensor* tensor)
     }
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclTensor*>(tensor))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(tensor));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(tensor));
     }
     delete tensor;
     return OK;
@@ -131,7 +131,7 @@ aclnnStatus aclDestroyScalar(const aclScalar* scalar)
     }
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclScalar*>(scalar))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(scalar));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(scalar));
     }
     delete scalar;
     return OK;
@@ -144,7 +144,7 @@ aclnnStatus aclDestroyIntArray(const aclIntArray* array)
     }
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclIntArray*>(array))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(array));
     }
     delete array;
     return OK;
@@ -157,7 +157,7 @@ aclnnStatus aclDestroyFloatArray(const aclFloatArray* array)
     }
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclFloatArray*>(array))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(array));
     }
     delete array;
     return OK;
@@ -170,7 +170,7 @@ aclnnStatus aclDestroyBoolArray(const aclBoolArray* array)
     }
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclBoolArray*>(array))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(array));
     }
     delete array;
     return OK;
@@ -184,7 +184,7 @@ aclnnStatus aclDestroyTensorList(const aclTensorList* array)
     // 仅对外层 list 指针本身做一次预检；元素由循环内 aclDestroyTensor 各自覆盖
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclTensorList*>(array))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(array));
     }
     for (uint64_t i = 0; i < array->Size(); i++) {
         aclDestroyTensor((*array)[i]);
@@ -201,7 +201,7 @@ aclnnStatus aclDestroyScalarList(const aclScalarList* array)
     // 仅对外层 list 指针本身做一次预检；元素由循环内 aclDestroyScalar 各自覆盖
     if (unlikely(op::internal::IsAclnnDebugEnabled()) &&
         op::internal::CheckDoubleFree(const_cast<aclScalarList*>(array))) {
-        OP_LOGW("possible double-free at addr %p.", static_cast<const void*>(array));
+        OP_LOGW("Possible double-free at addr %p.", static_cast<const void*>(array));
     }
     for (uint64_t i = 0; i < array->Size(); i++) {
         aclDestroyScalar((*array)[i]);
@@ -388,7 +388,7 @@ aclnnStatus AclSetOutputTensorAddr(aclOpExecutor* executor, const size_t index, 
 aclnnStatus aclSetDynamicInputTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
                                          aclTensorList* tensors, void* addr)
 {
-    OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
+    OP_LOGI("Executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
     CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
                "Set dynamic input tensor addr failed. "
@@ -419,7 +419,7 @@ aclnnStatus AclSetDynamicInputTensorAddr(aclOpExecutor* executor, size_t irIndex
 aclnnStatus aclSetDynamicOutputTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
                                           aclTensorList* tensors, void* addr)
 {
-    OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
+    OP_LOGI("Executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
     CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
                "Set dynamic output tensor addr failed. "
@@ -472,7 +472,7 @@ aclnnStatus AclSetTensorAddr(aclOpExecutor* executor, const size_t index, aclTen
 aclnnStatus aclSetDynamicTensorAddr(aclOpExecutor* executor, size_t irIndex, const size_t relativeIndex,
                                     aclTensorList* tensors, void* addr)
 {
-    OP_LOGI("executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
+    OP_LOGI("Executor addr is %p, irIndex is %zu, relativeIndex is %zu.", executor, irIndex, relativeIndex);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_INNER_NULLPTR);
     CHECK_COND((relativeIndex < tensors->Size()), ACLNN_ERR_PARAM_INVALID,
                "Set dynamic tensor addr failed. "
@@ -506,7 +506,7 @@ aclnnStatus aclSetAclOpExecutorRepeatable(aclOpExecutor* executor)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
-    OP_LOGI("executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
+    OP_LOGI("Executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
             executor->GetMagicNumber());
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseSetRepeatable(executor);
@@ -520,7 +520,7 @@ aclnnStatus aclDestroyAclOpExecutor(aclOpExecutor* executor)
 {
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(executor, ACLNN_ERR_INNER_NULLPTR);
     uint64_t* magicNum = op::internal::PtrCastTo<uint64_t>(executor);
-    OP_LOGI("executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
+    OP_LOGI("Executor addr is %p, magicNum is 0x%lX, executor->GetMagicNumber() is 0x%lX.", executor, *magicNum,
             executor->GetMagicNumber());
     if (*magicNum == NNOPBASE_EXECUTOR_MAGIC_NUMBER) {
         return NnopbaseResetExecutor(executor);
@@ -586,7 +586,7 @@ aclnnStatus aclDumpOpTensors(const char* opType, const char* opName, aclTensor**
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(opName, ACLNN_ERR_PARAM_NULLPTR);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(tensors, ACLNN_ERR_PARAM_NULLPTR);
     NNOPBASE_ASSERT_NULLPTR_WITH_RETURN(stream, ACLNN_ERR_PARAM_NULLPTR);
-    OP_LOGI("start dump tensors. opType: %s, opName: %s.", opType, opName);
+    OP_LOGI("Start dump tensors. opType: %s, opName: %s.", opType, opName);
     std::vector<Adx::TensorInfoV2> dumpTensors;
     std::vector<const aclTensor*> inputTensors;
     for (size_t i = 0U; i < inputTensorNum; i++) {

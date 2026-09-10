@@ -123,7 +123,7 @@ OpExecutorImpl::OpExecutorImpl()
 OpExecutorImpl::~OpExecutorImpl()
 {
     if (repeatMode_ == RepeatMode::Repeat && opExecCache_ != nullptr) {
-        OP_LOGI("delete opExecCache in repeatable executor destructor");
+        OP_LOGI("Deleting opExecCache in the repeatable executor destructor.");
         delete opExecCache_;
         opExecCache_ = nullptr;
     }
@@ -155,12 +155,13 @@ void OpExecutorImpl::SetGraph(void* graph) { graph_ = graph; }
 aclnnStatus OpExecutorImpl::SetRepeatable(const op::FVector<op::KernelLauncher*>& launchers)
 {
     OP_CHECK((repeatMode_ != RepeatMode::Unrepeatable),
-             OP_LOGW("unrepeatable executor, find keyword MarkOpCacheInvalid in log."), return ACLNN_ERR_INNER;);
+             OP_LOGW("The executor is unrepeatable, find the keyword MarkOpCacheInvalid in the log."),
+             return ACLNN_ERR_INNER;);
     OP_CHECK((hugeMemPoolIndex_ == op::kInvalidHugeMemIndexId),
-             OP_LOGW("can't set executor repeatable when using huge page memory."), return ACLNN_ERR_INNER;);
+             OP_LOGW("Cannot set the executor to repeatable when using huge page memory."), return ACLNN_ERR_INNER;);
 
     OP_CHECK((tensorRelation_.size() % K_PAIR_STORAGE_RELATION == 0),
-             OP_LOGW("size of tensor relation must be a pair of tensors"), return ACLNN_ERR_INNER;);
+             OP_LOGW("The size of the tensor relation must be a pair of tensors."), return ACLNN_ERR_INNER;);
     // check tensor can repeat
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
     cachedStorageList_.assign(opTlsCtx.cachedStorageList_.begin(),
@@ -192,7 +193,7 @@ void OpExecutorImpl::UpdateStorageAddr()
     if (repeatMode_ != RepeatMode::Repeat) {
         return;
     }
-    OP_CHECK((tensorRelation_.size() % 2 == 0), OP_LOGE(ACLNN_ERR_INNER, "the size of tensorRelation must be even"),
+    OP_CHECK((tensorRelation_.size() % 2 == 0), OP_LOGE(ACLNN_ERR_INNER, "The size of tensorRelation must be even."),
              return);
     for (size_t i = 0; i < tensorRelation_.size(); i += K_PAIR_STORAGE_RELATION) {
         const aclTensor* output = tensorRelation_[i];
@@ -207,9 +208,9 @@ aclnnStatus OpExecutorImpl::RepeatRunWithCache(void* workspaceAddr, const aclrtS
     if (repeatMode_ != RepeatMode::Repeat) {
         return ACLNN_ERR_INNER;
     }
-    OP_CHECK((opExecCache_ != nullptr && opExecCache_->CanUse()), OP_LOGW("don't have cache or cache can't use"),
-             return ACLNN_ERR_INNER;);
-    OP_CHECK(CheckCacheable(), OP_LOGW("cache can't be used because enable some dfx options."),
+    OP_CHECK((opExecCache_ != nullptr && opExecCache_->CanUse()),
+             OP_LOGW("No cache is available or the cache cannot be used."), return ACLNN_ERR_INNER;);
+    OP_CHECK(CheckCacheable(), OP_LOGW("The cache cannot be used because some dfx options are enabled."),
              return ACLNN_ERR_INNER;);
     OP_LOGI("Repeat run executor, device ptr after update: %s", ReportAddrForRepeat().c_str());
     cacheAddrLists_.clear();
@@ -595,7 +596,7 @@ aclnnStatus aclOpExecutor::Run()
                 op::OpTypeDict::ToString(launcher->GetOpType()).GetString(), node->GetOriginalId());
         status = launcher->Launch();
         if (status != ACLNN_SUCCESS) {
-            OP_LOGE(status, "launch failed for %s, errno:%d.",
+            OP_LOGE(status, "Launch failed for %s, errno:%d.",
                     op::OpTypeDict::ToString(launcher->GetOpType()).GetString(), status);
             break;
         }
@@ -614,7 +615,7 @@ uint64_t aclOpExecutor::GetWorkspaceSize() const
     auto graph = (op::mem::KernelGraph*)(impl_->GetGraph());
     auto& tensors = graph->GetSortedKernelTensors();
 
-    OP_LOGD("workspace tensor count:%zu.", tensors.size());
+    OP_LOGD("Workspace tensor count: %zu.", tensors.size());
     auto allocator = op::mem::MaxAllocator();
     workspaceDeviceAicpuTaskOffset_ = allocator.Allocate(tensors);
     uint64_t workspaceSize = workspaceDeviceAicpuTaskOffset_ + workspaceDeviceAicpuMem_;
@@ -633,7 +634,7 @@ uint64_t aclOpExecutor::GetLinearWorkspaceSize() const
     auto graph = (op::mem::KernelGraph*)(impl_->GetGraph());
     auto& tensors = graph->GetSortedKernelTensors();
 
-    OP_LOGD("workspace count:%zu.", tensors.size());
+    OP_LOGD("Workspace count: %zu.", tensors.size());
     auto allocator = op::mem::LinearAllocator();
     workspaceDeviceAicpuTaskOffset_ = allocator.Allocate(tensors);
     uint64_t workspaceSize = workspaceDeviceAicpuTaskOffset_ + workspaceDeviceAicpuMem_;
@@ -894,7 +895,7 @@ uint64_t aclOpExecutor::GetMagicNumber() { return magicNumber_; }
 UniqueExecutor::UniqueExecutor(const char* funcName) : funcName_(funcName), uniqueExecutor_(new aclOpExecutor())
 {
     OP_LOGI("Create executor: %p", uniqueExecutor_.get());
-    OP_CHECK(uniqueExecutor_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to construct executor."),
+    OP_CHECK(uniqueExecutor_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to construct the executor."),
              throw std::bad_alloc());
     auto& threadLocalCtx = op::internal::GetThreadLocalContext();
     uniqueExecutor_->SetLogInfo(threadLocalCtx.logInfo_);
@@ -912,7 +913,7 @@ aclOpExecutor* PTAGetExecCache(uint64_t hash, uint64_t* workspaceSize)
 {
     auto cache = GetOpExecCache(hash);
     if (cache == nullptr) {
-        OP_LOGW("cache is nullptr.");
+        OP_LOGW("The cache is nullptr.");
         return nullptr;
     }
     *workspaceSize = cache->GetWorkspaceSize();
@@ -925,7 +926,7 @@ aclOpExecutor* PTAFindExecCache(uint8_t* buf, size_t len, uint64_t* workspaceSiz
     OpCacheKey key(buf, len);
     auto cache = GetOpExecCache(key);
     if (cache == nullptr) {
-        OP_LOGW("cache is nullptr.");
+        OP_LOGW("The cache is nullptr.");
         return nullptr;
     }
     *workspaceSize = cache->GetWorkspaceSize();
@@ -962,11 +963,11 @@ aclnnStatus CommonOpExecutorRun(void* workspace, uint64_t workspaceSize, aclOpEx
 {
     static thread_local OpCacheGuard cacheGuard;
     if (unlikely(executor == nullptr)) {
-        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "executor is nullptr.");
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "The executor is nullptr.");
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (unlikely(workspaceSize > 0 && workspace == nullptr)) {
-        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "workspace is nullptr.");
+        OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "The workspace is nullptr.");
         DeleteExecutorForError(executor);
         return ACLNN_ERR_PARAM_NULLPTR;
     }
@@ -1052,14 +1053,14 @@ void InitL2Phase1Context(const char* l2Name, [[maybe_unused]] aclOpExecutor** ex
     int64_t deterministicLevel = GetDeterministicLevelFromRt();
     opTlsCtx.opConfigInfo_.deterministicLevel_ = static_cast<uint8_t>(deterministicLevel);
     opTlsCtx.opConfigInfo_.isDeterministicOn_ = (deterministicLevel >= static_cast<int64_t>(DeterministicLevel::BASIC));
-    OP_LOGI("aic num: %u, aiv num: %u, deterministic level: %d, is deterministic on: %d, is op dump enable: %d",
+    OP_LOGI("AIC num: %u, AIV num: %u, deterministic level: %d, is deterministic on: %d, is op dump enabled: %d",
             opTlsCtx.opConfigInfo_.aicNum_, opTlsCtx.opConfigInfo_.aivNum_, opTlsCtx.opConfigInfo_.deterministicLevel_,
             opTlsCtx.opConfigInfo_.isDeterministicOn_, opTlsCtx.opConfigInfo_.isOpDumpEnable_);
 }
 
 void InitL2Phase2Context([[maybe_unused]] const char* l2Name, aclOpExecutor* executor)
 {
-    OP_CHECK(executor != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "executor is nullptr."), return);
+    OP_CHECK(executor != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "The executor is nullptr."), return);
     auto cacheWrap = GetOpExecCacheFromExecutor(executor);
     auto& opTlsCtx = op::internal::GetThreadLocalContext();
     if (cacheWrap != nullptr) {
@@ -1075,7 +1076,7 @@ void InitL2Phase2Context([[maybe_unused]] const char* l2Name, aclOpExecutor* exe
 
 void InitL0Context(const char* profilingName, aclOpExecutor* executor)
 {
-    OP_CHECK_NO_RETURN(executor != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "executor can't be nullptr."));
+    OP_CHECK_NO_RETURN(executor != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Executor cannot be nullptr."));
     if (executor->GetMagicNumber() == K_EXECUTOR_MAGIC_NUMBER) {
         op::internal::OpLogInfo tmpLogInfo = executor->GetLogInfo();
         tmpLogInfo.l0Name = profilingName;

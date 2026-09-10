@@ -255,7 +255,7 @@ static void ParseShapeDimNum(const TensorInfo& tensorInfo, const nlohmann::json&
             key += (MAX_VALID_DTYPE_FORMAT_KEY + dimNum);
             OP_LOGD("Shape dim num = %zu.", shape->size());
         } else {
-            OP_LOGW("shape is invalid.");
+            OP_LOGW("Shape is invalid.");
         }
     }
 }
@@ -439,7 +439,7 @@ void GetTaskInfoMultiKernelInfo(TaskInfo& info, const nlohmann::json& elem)
     const uint32_t crossCoreSync = (elem["crossCoreSync"].is_number_integer()) ?
                                        (elem["crossCoreSync"].get<uint32_t>()) :
                                        0;
-    OP_LOGI("get info from json, kernelType is: %s, taskRation is: %s, crossCoreSync is: %u", kernelType.c_str(),
+    OP_LOGI("Got info from json: kernelType is %s, taskRation is %s, crossCoreSync is %u.", kernelType.c_str(),
             taskRation.c_str(), crossCoreSync);
     if (taskRation == "1:0" || taskRation == "0:1") {
         if (crossCoreSync == 1) {
@@ -476,7 +476,7 @@ MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json& opJson)
     MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
     if (opJson.contains("magic")) {
         const auto& str = opJson["magic"].get<std::string>();
-        OP_LOGI("get task type, kernel magic: %s", str.c_str());
+        OP_LOGI("Got task type, kernel magic: %s.", str.c_str());
         if (str == "RT_DEV_BINARY_MAGIC_ELF_AICUBE") {
             taskType = MSPROF_GE_TASK_TYPE_AI_CORE;
         } else if (str == "RT_DEV_BINARY_MAGIC_ELF_AIVEC" || str == "FFTS_BINARY_MAGIC_ELF_MIX_AIC" ||
@@ -485,7 +485,7 @@ MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json& opJson)
         }
         if (opJson.contains("taskRation")) {
             const auto& taskRation = opJson["taskRation"].get<std::string>();
-            OP_LOGI("get task type, task ration: %s", taskRation.c_str());
+            OP_LOGI("Got task type, task ration: %s.", taskRation.c_str());
             if (!taskRation.empty() && (taskRation[0] == '0')) {
                 taskType = MSPROF_GE_TASK_TYPE_MIX_AIV;
             } else {
@@ -499,16 +499,16 @@ MsprofGeTaskType GetTaskTypeSingleKernelType(const nlohmann::json& opJson)
 void OpKernelBin::GetTaskRationForSingleBinMutilKernel(TaskInfo& info, const nlohmann::json& opJson, uint64_t tilingkey,
                                                        MsprofGeTaskType taskType)
 {
-    OP_LOGI("single-bin multi-kernel");
+    OP_LOGI("Single-bin multi-kernel.");
     if (!opJson.contains("kernelList")) {
-        OP_LOGW("json parse error. does not contain kernellist.");
+        OP_LOGW("Json parse error: does not contain kernelList.");
         info.type = taskType;
         info.ration = 0;
         return;
     }
     for (const auto& elem : opJson["kernelList"]) {
         if (!elem.contains("tilingKey")) {
-            OP_LOGW("json parse error. does not contain tilingKey.");
+            OP_LOGW("Json parse error: does not contain tilingKey.");
             continue;
         }
         if (elem["tilingKey"] != tilingkey) {
@@ -517,15 +517,15 @@ void OpKernelBin::GetTaskRationForSingleBinMutilKernel(TaskInfo& info, const nlo
         if (elem.contains("kernelType") && (elem["kernelType"].get<std::string>() == "MIX_AIC" ||
                                             elem["kernelType"].get<std::string>() == "MIX_AIV")) {
             if (!elem.contains("taskRation")) {
-                OP_LOGW("json parse error. json file: %s does not contain taskRation.", jsonPath_.c_str());
+                OP_LOGW("Json parse error: json file %s does not contain taskRation.", jsonPath_.c_str());
                 info.type = taskType;
                 info.ration = 0;
                 return;
             }
             GetTaskInfoMultiKernelInfo(info, elem);
-            OP_LOGI("single-bin multi-kernel %u, %u", info.type, info.ration);
+            OP_LOGI("Single-bin multi-kernel: type %u, ration %u.", info.type, info.ration);
         } else {
-            OP_LOGW("json parse error. kernelType parse error.");
+            OP_LOGW("Json parse error: kernelType parse error.");
             info.type = taskType;
             info.ration = 0;
         }
@@ -547,7 +547,7 @@ TaskInfo OpKernelBin::GetTaskInfo(uint64_t tilingkey, OpArgContext* args)
         }
         info.type = taskType;
         info.ration = (taskType == MSPROF_GE_TASK_TYPE_MIX_AIC) ? KERNEL_RATION_TWO : 0;
-        OP_LOGI("non-single-bin multi-kernel %u, %u", info.type, info.ration);
+        OP_LOGI("Non-single-bin multi-kernel: type %u, ration %u.", info.type, info.ration);
         return info;
     } else {
         GetTaskRationForSingleBinMutilKernel(info, opJson, tilingkey, taskType);
@@ -609,7 +609,7 @@ static void GetParamtersValue(const nlohmann::json& elem, op::DataType& dtype, i
         dtype = op::DataType::DT_UINT8;
         valuei = static_cast<int64_t>(elem["init_value"].get<uint8_t>());
     } else {
-        OP_LOGW("unknown dtype: %s", elem["dtype"].get<std::string>().c_str());
+        OP_LOGW("Unknown dtype: %s.", elem["dtype"].get<std::string>().c_str());
     }
 }
 
@@ -630,7 +630,7 @@ void OpKernelBin::SetMemSetFlagFromJson()
             if (!elem.contains("dtype") || !elem.contains("init_value")) {
                 memSetValue_.emplace_back(MemSetTensorInfo{i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR,
                                                            nullptr, nullptr, nullptr});
-                OP_LOGW("not contain dtype, index: %zu", i);
+                OP_LOGW("Does not contain dtype, index: %zu.", i);
                 continue;
             }
             GetParamtersValue(elem, dtype, valuei, valuef);
@@ -651,11 +651,11 @@ uint64_t OpKernelBin::GetAttrId(OpArgContext* args)
         if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
             op::internal::ReportAttrInfo(*args->GetOpArg(op::OP_ATTR_ARG), attrStrId,
                                          static_cast<OpKernel*>(opKernel_)->attrInfos_);
-            OP_LOGI("attrStrId is %s after add attr value", attrStrId.c_str());
+            OP_LOGI("attrStrId is %s after adding attr value.", attrStrId.c_str());
         }
         OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
         input.VisitByNoReturn([&attrStrId](size_t idx, OpArg& elem) { SummaryAttrArg(idx, elem, attrStrId); });
-        OP_LOGI("attrStrId is %s after add input tensor", attrStrId.c_str());
+        OP_LOGI("attrStrId is %s after adding input tensor.", attrStrId.c_str());
         attrStrId += std::string("IsStaticKernel:") +
                      (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));
         aclGraphAttrId = MsprofGetHashId(attrStrId.c_str(), attrStrId.size());
@@ -669,7 +669,7 @@ void ParseImplModeByJson(const nlohmann::json& singleBinJson, const std::string&
     auto iter = singleBinJson.find(IMPL_MODE);
     if (iter != singleBinJson.end()) {
         if (*iter == ALL_PRECISION_MODE) {
-            OP_LOGD("jsonPath %s support all op impl mode.", jsonPath.c_str());
+            OP_LOGD("jsonPath %s supports all op impl modes.", jsonPath.c_str());
             implModes = {OpImplMode::IMPL_MODE_HIGH_PERFORMANCE, OpImplMode::IMPL_MODE_HIGH_PRECISION,
                          OpImplMode::IMPL_MODE_ENABLE_FLOAT32_EXECUTION,
                          OpImplMode::IMPL_MODE_ENABLE_HI_FLOAT32_EXECUTION};
@@ -927,7 +927,7 @@ aclnnStatus OpKernel::GenerateKeyBySimplifiedKey(const nlohmann::json& singleBin
         // exclude op type str in simplified key
         // "ZerosLike/d=0,p=0/12,2/12,2" -> "d=0,p=0/12,2/12,2"
         std::string keyStr = key.get<std::string>().substr(opTypeStr_.size() + 1);
-        OP_LOGD("simplified key string %s.", keyStr.c_str());
+        OP_LOGD("Simplified key string: %s.", keyStr.c_str());
         uint32_t deterministicFlag;
         uint32_t mode;
         constexpr int goodRes = 2;
@@ -1055,7 +1055,7 @@ string OpKernel::GetReadableKey(const string& key, KeyLength& len) const
     if (len.tensorLen == 0 && len.ctxAndtensorLen >= len.ctxLen) {
         len.tensorLen = len.ctxAndtensorLen - len.ctxLen;
     }
-    OP_LOGD("key is: tensorLen[%zu], ctxtLen[%zu]: %s", len.tensorLen, len.ctxLen, keyNew.c_str());
+    OP_LOGD("Key: tensorLen[%zu], ctxtLen[%zu]: %s", len.tensorLen, len.ctxLen, keyNew.c_str());
 
     string debugStr = key.substr(0, len.ctxLen);
     debugStr += '|';
@@ -1137,7 +1137,7 @@ aclnnStatus OpKernel::HashAndInsert(const string& binAndJsonDir, const string& b
         }
 
         OP_LOGD("Add key %s into bins_.", GetReadableKey(key.key, keyParams.len).c_str());
-        OP_LOGD("result json path [%s]; bin file path[%s]", jsonPath.c_str(), binPath.c_str());
+        OP_LOGD("Result json path [%s]; bin file path [%s].", jsonPath.c_str(), binPath.c_str());
         auto hash = HashBinary(key.key.c_str(), key.key.size());
         OP_LOGD("Hash key %zu origin size %zu into bins_;", hash, key.key.size());
         auto binsIter = bins_.find(hash);
@@ -1343,7 +1343,7 @@ aclnnStatus OpKernel::JudgeAttrSupportAll(const nlohmann::json& binListJson)
             /* 2. Check value  */
             auto value = attr.find(VALUE);
             if (value == attr.end()) {
-            OP_LOGE(ACLNN_ERR_INNER, "Attr %s does not contain value!", attrInfo.attrName.c_str());
+                OP_LOGE(ACLNN_ERR_INNER, "Attr %s does not contain value!", attrInfo.attrName.c_str());
                 return ACLNN_ERR_INNER;
             }
 
@@ -1380,17 +1380,17 @@ void OpKernel::JudgeCustomizedSimpliedKeyMode(const nlohmann::json& binListJson)
         auto simplifiedKeyMode = binJson.find(SIMPLIFIED_KEY_MODE);
         if (simplifiedKeyMode != binJson.end() && simplifiedKeyMode->is_number() &&
             simplifiedKeyMode->get<int64_t>() == CUSTOMIZED_SIMPLIFIED_KEY) {
-            OP_LOGI("op type %s has customized simplified key.", opTypeStr_.c_str());
+            OP_LOGI("Op type %s has customized simplified key.", opTypeStr_.c_str());
             customizedSimplifiedKeyMode_ = true;
             break;
         }
         // if one bin dont has simplifiedKeyMode or simplifiedKeyMode is not 0, dont use ingnoreAttrSimplifiedKeyMode_
         if (simplifiedKeyMode != binJson.end() && simplifiedKeyMode->is_number() &&
             simplifiedKeyMode->get<int64_t>() == IGNORE_ATTR_SIMPLIFIED_KEY) {
-            OP_LOGI("op type %s has ignore attr simplified key.", opTypeStr_.c_str());
+            OP_LOGI("Op type %s has ignore-attr simplified key mode.", opTypeStr_.c_str());
             ingnoreAttrSimplifiedKeyMode_ = true;
         } else {
-            OP_LOGI("op type %s remove ignore attr simplified key.", opTypeStr_.c_str());
+            OP_LOGI("Op type %s removed ignore-attr simplified key mode.", opTypeStr_.c_str());
             ingnoreAttrSimplifiedKeyMode_ = false;
             break;
         }
@@ -1425,7 +1425,7 @@ aclnnStatus OpKernel::AppendDynBin(const string& jsonPath, const string& binAndJ
 {
     configJsonPath_ = jsonPath;
     auto ret = GetOpDescJson(debug);
-    CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "failed to get op desc info [%s]", opTypeStr_.c_str());
+    CHECK_COND(ret == ACLNN_SUCCESS, ACLNN_ERR_INNER, "Failed to get op desc info [%s].", opTypeStr_.c_str());
 
     auto binListIter = configJson_.find(BIN_LIST);
     if (binListIter == configJson_.end()) {
@@ -1599,11 +1599,11 @@ void OpKernelBin::ReportOpAttrInfo(OpArgContext* args, uint64_t summaryId)
     if (args->ContainsOpArgType(op::OP_ATTR_ARG)) {
         op::internal::ReportAttrInfo(*args->GetOpArg(op::OP_ATTR_ARG), attrStr,
                                      static_cast<OpKernel*>(opKernel_)->attrInfos_);
-        OP_LOGI("attrStr is %s after add attr value", attrStr.c_str());
+        OP_LOGI("attrStr is %s after adding attr value.", attrStr.c_str());
     }
     OpArgList input = *args->GetOpArg(op::OP_INPUT_ARG);
     input.VisitByNoReturn([&attrStr](size_t idx, OpArg& elem) { SummaryAttrArg(idx, elem, attrStr); });
-    OP_LOGI("attrStr is %s after add input tensor", attrStr.c_str());
+    OP_LOGI("attrStr is %s after adding input tensor.", attrStr.c_str());
     attrStr += std::string("IsStaticKernel:") +
                (binType_ == BinType::STATIC_BIN ? std::string("true") : std::string("false"));
     ReportAttrInfo(attrStr, summaryId);

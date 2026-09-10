@@ -46,7 +46,7 @@ aclnnStatus InferShapeContextHolder::EnsureContextCapacity(size_t requiredCapaci
     // Allocate new memory (do NOT use realloc)
     size_t newSize = sizeof(KernelRunContext) + sizeof(AsyncAnyValue*) * (newCapacity + inferShapeValueNum_);
     KernelRunContext* newCtx = static_cast<KernelRunContext*>(malloc(newSize));
-    OP_CHECK(newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc inferShapeCtx, size %zu.", newSize),
+    OP_CHECK(newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate inferShapeCtx, size %zu.", newSize),
              return ACLNN_ERR_INNER);
 
     // Calculate old size for copy
@@ -54,7 +54,7 @@ aclnnStatus InferShapeContextHolder::EnsureContextCapacity(size_t requiredCapaci
 
     // Copy existing data
     OP_CHECK(memcpy_s(newCtx, newSize, inferShapeCtx_, oldSize) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy inferShapeCtx."), std::free(newCtx);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy inferShapeCtx."), std::free(newCtx);
              return ACLNN_ERR_INNER);
 
     // Zero out the new portion
