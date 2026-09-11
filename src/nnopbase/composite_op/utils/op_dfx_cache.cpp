@@ -71,7 +71,7 @@ struct TensorsCached {
     Tensor* tensor_{nullptr};
 };
 
-int32_t RestoreTensorInfo(void* cacheTensorInfoLists, FVector<const TensorsCached*>& inTensors,
+int32_t RestoreTensorInfo(void* infoLists, FVector<const TensorsCached*>& inTensors,
                           FVector<const TensorsCached*>& outTensors);
 
 void PrepareTensorDataFromCache(const FVector<const TensorsCached*>& tensors, MsprofTensorInfo& tensorInfo,

@@ -860,8 +860,6 @@ bool operator==(const OpCacheKey& lhs, const OpCacheKey& rhs)
     OpCacheKey key = cache->GetOpCacheKey();
     // 防御：任一侧 buf 为空或 len 为 0 视为无效，避免 memcmp 解引用空指针
     if (lhs.buf == nullptr || lhs.len == 0 || key.buf == nullptr || key.len == 0) {
-        OP_LOGW("op cache key is invalid, lhs buf is null: %d, lhs len: %zu, key buf is null: %d, key len: %zu",
-                lhs.buf == nullptr, lhs.len, key.buf == nullptr, key.len);
         return false;
     }
     return lhs.len == key.len && (memcmp(PtrCastTo<char>(lhs.buf), PtrCastTo<char>(key.buf), lhs.len) == 0);
