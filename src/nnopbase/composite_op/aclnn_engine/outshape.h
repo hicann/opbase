@@ -66,7 +66,7 @@ void UpdateTensorShape([[maybe_unused]] size_t index, const aclTensor* arg, void
 #endif
         newShape.AppendDim(dimSize);
     }
-    OP_LOGI("new shape: %s", op::ToString(newShape).GetString());
+    OP_LOGI("New shape: %s", op::ToString(newShape).GetString());
     const_cast<aclTensor*>(arg)->SetStorageShape(newShape);
     const_cast<aclTensor*>(arg)->SetOriginalShape(newShape);
     const_cast<aclTensor*>(arg)->SetViewShape(newShape);

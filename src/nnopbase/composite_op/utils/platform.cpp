@@ -29,7 +29,7 @@ using SocSpecAbilityVector = std::vector<SocSpecAbility>;
 
 class PlatformThreadLocalCtx {
 public:
-    PlatformThreadLocalCtx() {};
+    PlatformThreadLocalCtx(){};
 
     ~PlatformThreadLocalCtx()
     {
@@ -225,7 +225,7 @@ void PlatformInfoImpl::InitSocVersion()
     if (!ret) {
         OP_LOGW("InitFromOriginPlatformInfo failed, get soc long version failed.");
     }
-    OP_LOGI("soc long version is %s, soc short version is %s", socLogVersion_.c_str(), socVersionStr.c_str());
+    OP_LOGI("SoC long version is %s, SoC short version is %s.", socLogVersion_.c_str(), socVersionStr.c_str());
 }
 
 void PlatformInfoImpl::InitAiCoreSpec()
@@ -268,7 +268,7 @@ void PlatformInfoImpl::InitNpuArch()
 {
     char archVal[NPU_ARCH_VAL_MAX_LEN] = {0};
     OP_CHECK(rtGetSocSpec("version", "NpuArch", archVal, NPU_ARCH_VAL_MAX_LEN) == RT_ERROR_NONE,
-             OP_LOGW("call rtGetSocSpec failed"), return);
+             OP_LOGW("Call rtGetSocSpec failed."), return);
     std::string archStrVal(archVal);
     uint32_t npuArchVal = 0;
     try {
@@ -411,7 +411,7 @@ ge::AscendString ToString(SocVersion socVersion)
     if (it != kSocVersionMap.end()) {
         return ge::AscendString((it->second).c_str());
     } else {
-        OP_LOGW("unknown soc version:%d.", static_cast<int32_t>(socVersion));
+        OP_LOGW("Unknown SoC version: %d.", static_cast<int32_t>(socVersion));
         return ge::AscendString((reserved).c_str());
     }
 }

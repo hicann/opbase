@@ -108,7 +108,7 @@ aclArray<T>::aclArray(const T* value, uint64_t size)
         value_ = new (base) T[size];
         if constexpr (std::is_trivial_v<T>) {
             OP_CHECK(memcpy_s(value_, size * sizeof(T), value, size * sizeof(T)) == EOK,
-                     OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+                     OP_LOGE(ACLNN_ERR_INNER, "Call memcpy_s failed."),
                      throw std::runtime_error("aclArray<T>::aclArray memcpy runtime error."));
         } else {
             for (uint64_t i = 0; i < size; i++) {
@@ -119,7 +119,7 @@ aclArray<T>::aclArray(const T* value, uint64_t size)
 }
 
 aclTensor::aclTensor(op::DataType dataType, op::Format storageFormat, op::Format originFormat)
-    : storage_(new (std::nothrow) aclStorage(true)),
+    : storage_(new(std::nothrow) aclStorage(true)),
       viewOffset_(0),
       viewStrides_(),
       viewShape_(),
@@ -141,7 +141,7 @@ aclTensor::aclTensor(const op::Shape& shape, op::DataType dataType, op::Format f
 
 aclTensor::aclTensor(const op::Shape& storageShape, const op::Shape& originShape, op::DataType dataType,
                      op::Format storageFormat, op::Format originFormat, void* tensorDataAddr)
-    : storage_(new (std::nothrow) aclStorage(tensorDataAddr, true)),
+    : storage_(new(std::nothrow) aclStorage(tensorDataAddr, true)),
       viewOffset_(0),
       viewStrides_(),
       viewShape_(originShape),
@@ -526,7 +526,7 @@ void aclTensor::InitTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDat
     viewOffset_ = offset;
 
     if (op::IsPrivateFormat(viewFormat_)) {
-        OP_LOGW("the private format[%s], should not use this constructor.", op::ToString(viewFormat_).GetString());
+        OP_LOGW("The private format [%s] should not use this constructor.", op::ToString(viewFormat_).GetString());
     }
 
     if (storage_ && tensorDataAddr) {
@@ -914,7 +914,7 @@ bool aclScalar::CheckOverflows() const
         case op::DataType::DT_COMPLEX128:
             return op::internal::Overflows<to>(v.complex128);
         default:
-            OP_LOGW("no supported data type[%s].", op::ToString(dataType_).GetString());
+            OP_LOGW("No supported data type [%s].", op::ToString(dataType_).GetString());
             break;
     }
     return true;
@@ -1007,7 +1007,7 @@ T aclScalar::To() const
             } else if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
                 return std::complex<double>(v.complex64);
             }
-            OP_LOGW("data type[DT_COMPLEX64] does not support conversion to non-complex types.");
+            OP_LOGW("Data type [DT_COMPLEX64] does not support conversion to non-complex types.");
             return T{};
         case op::DataType::DT_COMPLEX128:
             if constexpr (std::is_same<std::complex<double>, typename std::decay<T>::type>::value) {
@@ -1015,10 +1015,10 @@ T aclScalar::To() const
             } else if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
                 return static_cast<std::complex<float>>(v.complex128);
             }
-            OP_LOGW("data type[DT_COMPLEX128] does not support conversion to non-complex types.");
+            OP_LOGW("Data type [DT_COMPLEX128] does not support conversion to non-complex types.");
             return T{};
         default:
-            OP_LOGW("data type[%s] does not support To conversion.", op::ToString(dataType_).GetString());
+            OP_LOGW("Data type [%s] does not support To conversion.", op::ToString(dataType_).GetString());
             return T{};
     }
 }
@@ -1104,7 +1104,7 @@ ge::AscendString aclScalar::ToStr() const
         case op::DataType::DT_INT2:
         case op::DataType::DT_UINT2:
         default:
-            OP_LOGW("no supported data type[%s].", op::ToString(dataType_).GetString());
+            OP_LOGW("No supported data type [%s].", op::ToString(dataType_).GetString());
             return "Unknown";
     }
 }

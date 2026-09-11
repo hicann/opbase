@@ -31,7 +31,7 @@ void* Allocate(size_t size)
 
 void DeAllocate(void* addr)
 {
-    OP_CHECK(addr != nullptr, OP_LOGW("deAllocate addr is nullptr."), return);
+    OP_CHECK(addr != nullptr, OP_LOGW("The address passed to DeAllocate is nullptr."), return);
     if (op::internal::BlockPool::InHugeMemRange(addr)) {
         // since huge mem pool use offset, so free just a dummy operation
     } else {
@@ -69,7 +69,7 @@ bool CheckDoubleFree(void* addr)
         return false;
     }
     if (ext == reinterpret_cast<uintptr_t>(nullptr)) {
-        OP_LOGW("cacheExt_ is nullptr, block has been returned to cache list (list head was empty).");
+        OP_LOGW("cacheExt_ is nullptr, the block has been returned to the cache list (the list head was empty).");
         return true;
     }
     // 区分"指向合法 BlockHeader（已归还到 cache 链表，cacheExt_ 存的是 cacheHead_[idx] 即 BlockHeader*）"
@@ -83,7 +83,7 @@ bool CheckDoubleFree(void* addr)
     // （无 +1/-1 算术），故此处读 magic_ 也不做指针算术，保持与写入端对称
     BlockStore::BlockHeader* nextHead = reinterpret_cast<BlockStore::BlockHeader*>(ext); // NOLINT
     if (nextHead->magic_ == BlockStore::MAGIC) {
-        OP_LOGW("cacheExt_ points to another block header in cache list, block has been returned already.");
+        OP_LOGW("cacheExt_ points to another block header in the cache list, the block has been returned already.");
         return true;
     }
     return false;

@@ -88,7 +88,7 @@ void TilingCtxHolder::BuildTilingCtx()
     OP_CHECK(rtsArgBuffer_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "malloc failed. [%zu]", sizeof(ExpandableRtsArgBuffer)),
              return);
     aclnnStatus res = rtsArgBuffer_->Init(LAUNCH_ARG_INIT_SIZE, TILING_HOST_DATA_INIT_SIZE);
-    OP_CHECK(res == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "failed to init expandable rts arg buffer."), return);
+    OP_CHECK(res == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER, "Failed to init expandable rts arg buffer."), return);
 
     // 设置 TilingData
     tilingData_ = rtsArgBuffer_->GetTilingDataPtr();
@@ -142,7 +142,7 @@ aclnnStatus TilingCtxHolder::EnsureTilingCtxCapacity(size_t requiredCapacity)
     size_t newSize = sizeof(AsyncAnyValue*) * (newCapacity + TILING_INPUT_OTHER_NUM + tilingOutputNum_) +
                      sizeof(KernelRunContext);
     KernelRunContext* newCtx = static_cast<KernelRunContext*>(malloc(newSize));
-    OP_CHECK(newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc tilingCtx, size %zu.", newSize),
+    OP_CHECK(newCtx != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate tilingCtx, size %zu.", newSize),
              return ACLNN_ERR_INNER);
 
     // Calculate old size for copy
@@ -151,7 +151,7 @@ aclnnStatus TilingCtxHolder::EnsureTilingCtxCapacity(size_t requiredCapacity)
 
     // Copy existing data
     OP_CHECK(memcpy_s(newCtx, newSize, tilingCtx_, oldSize) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy tilingCtx."), std::free(newCtx);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy tilingCtx."), std::free(newCtx);
              return ACLNN_ERR_INNER);
 
     // Zero out the new portion

@@ -280,7 +280,7 @@ public:
                 return RefreshOutputShape(0, *args->GetOpArg(op::OP_OUTSHAPE_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG));
             }
         } catch (...) {
-            OP_LOGE(ACLNN_ERR_INNER, "doLaunch rtsArg construct error");
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to construct rtsArg in doLaunch.");
             return ACLNN_ERR_INNER;
         }
         return ACLNN_SUCCESS;
@@ -383,7 +383,7 @@ public:
         auto& allArg = argInfo.GetAllArgInfo();
         size_t argNum = argInfo.GetArgSize();
         if (argNum == 0) {
-            OP_LOGI("arg num is 0, no need dump.");
+            OP_LOGI("Arg num is 0, no need to dump.");
             return ACLNN_SUCCESS;
         }
 
@@ -462,10 +462,10 @@ public:
         std::shared_ptr<std::mutex> streamLckPtr;
         auto getStreamAndEventStatus = NnopbaseGetStreamAndEvent(stream, &secondStream, &eventA, &eventB, streamLckPtr);
         if (getStreamAndEventStatus != OK) {
-            OP_LOGW("getting secondStream, eventA and eventB fail.");
+            OP_LOGW("Failed to get secondStream, eventA and eventB.");
             return getStreamAndEventStatus;
         }
-        OP_LOGI("getting secondStream, eventA and eventB Succeed.");
+        OP_LOGI("Successfully got secondStream, eventA and eventB.");
         std::lock_guard<std::mutex> lock(*streamLckPtr);
         if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
             GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
@@ -501,12 +501,12 @@ public:
 
                 ret = aclrtRecordEvent(eventA, stream);
                 if (ret != ACL_SUCCESS) {
-                    OP_LOGW("main record eventA fail.");
+                    OP_LOGW("Failed to record eventA on the main stream.");
                     return ret;
                 }
                 ret = aclrtStreamWaitEvent(secondStream, eventA);
                 if (ret != ACL_SUCCESS) {
-                    OP_LOGW("second wait eventA fail.");
+                    OP_LOGW("Failed to wait for eventA on the second stream.");
                     return ret;
                 }
 
@@ -523,10 +523,10 @@ public:
                 rtsArg.ReportExceptionDumpInfo();
                 ret = DoLaunchKernel(rtsArg, stream, launchCfg);
                 if (ret != ACLNN_SUCCESS) {
-                    OP_LOGW("main kernel launch with handle fail.");
+                    OP_LOGW("Failed to launch the main kernel with the function handle.");
                     return ret;
                 }
-                OP_LOGI("mainStream kernel launch succeed.");
+                OP_LOGI("Kernel launch on the main stream succeeded.");
             }
             if (IsPrintFEnable()) {
                 DumpWorkspaceData(stream, args);
@@ -571,7 +571,7 @@ public:
                 rtsArg.ReportExceptionDumpInfo();
                 ret = DoLaunchKernel(rtsArg, secondStream, launchCfg);
                 if (ret != ACLNN_SUCCESS) {
-                    OP_LOGW("second kernel launch fail.");
+                    OP_LOGW("Failed to launch the second kernel.");
                     return ret;
                 }
 
@@ -582,15 +582,15 @@ public:
 
                 ret = aclrtRecordEvent(eventB, secondStream);
                 if (ret != ACL_SUCCESS) {
-                    OP_LOGW("second record eventB fail.");
+                    OP_LOGW("Failed to record eventB on the second stream.");
                     return ret;
                 }
                 ret = aclrtStreamWaitEvent(stream, eventB);
                 if (ret != ACL_SUCCESS) {
-                    OP_LOGW("main wait eventB fail.");
+                    OP_LOGW("Failed to wait for eventB on the main stream.");
                     return ret;
                 }
-                OP_LOGI("secondStream kernel launch succeed.");
+                OP_LOGI("Kernel launch on the second stream succeeded.");
             }
             if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
                 MsprofGeTaskType taskType = MSPROF_GE_TASK_TYPE_AIV;
@@ -709,7 +709,7 @@ public:
                 *(res->numBlocks_));
         std::vector<std::tuple<void*, const aclTensor*>> tensor;
         for (const auto& elem : memsetTensorInfo) {
-            OP_CHECK_NO_RETURN(elem.tensor_ != nullptr, OP_LOGW("elem idx [%zu] is nullptr.", elem.argIdx_));
+            OP_CHECK_NO_RETURN(elem.tensor_ != nullptr, OP_LOGW("Element at index [%zu] is nullptr.", elem.argIdx_));
             tensor.emplace_back(elem.tensorData_, elem.tensor_);
         }
         auto workspace = OP_WORKSPACE(std::move(tensor));
@@ -938,7 +938,7 @@ private:
             allIdx++;
             return;
         }
-        OP_LOGD("index in arglist: %zu, allIdx: %zu, tensor: %p", idx, allIdx, tensor);
+        OP_LOGD("Index in arglist: %zu, allIdx: %zu, tensor: %p.", idx, allIdx, tensor);
         for (auto& elem : memSetValueCtx_) {
             if (allIdx == elem.argIdx_) {
                 if (needAlign) {
@@ -1114,7 +1114,7 @@ private:
             sizeInfoOffset += sizeof(uint64_t);
             return ACLNN_SUCCESS;
         }
-        OP_CHECK(tensor != nullptr, OP_LOGW("tensor is nullptr"), return ACLNN_ERR_INNER_NULLPTR);
+        OP_CHECK(tensor != nullptr, OP_LOGW("Tensor is nullptr."), return ACLNN_ERR_INNER_NULLPTR);
         // append tensor size info
         size_t tensorSize = AlignSize(tensor->GetTensor()->GetSize(), OP_KERNEL_BLOCK_SIZE);
         *PtrCastTo<uint64_t>(PtrShift(dfxInfoDumpAddr, sizeInfoOffset)) = tensorSize;
@@ -1133,10 +1133,10 @@ private:
         } else {
             *shapeInfoPtr++ = dimNum;
             const int64_t* dims = &shape[0];
-            OP_CHECK(
-                memcpy_s(shapeInfoPtr, dimNum * sizeof(int64_t), dims, dimNum * sizeof(int64_t)) == EOK,
-                OP_LOGW("fill dim info failed, tensor size: %zu, dim num: %zu", tensor->GetTensor()->GetSize(), dimNum),
-                return ACLNN_ERR_INNER);
+            OP_CHECK(memcpy_s(shapeInfoPtr, dimNum * sizeof(int64_t), dims, dimNum * sizeof(int64_t)) == EOK,
+                     OP_LOGW("Failed to fill dim info, tensor size: %zu, dim num: %zu.", tensor->GetTensor()->GetSize(),
+                             dimNum),
+                     return ACLNN_ERR_INNER);
             shapeInfoOffset += (1 + dimNum) * sizeof(uint64_t);
         }
         return ACLNN_SUCCESS;
@@ -1359,10 +1359,11 @@ public:
             "Append attr failed.");
 
         int64_t implMode = ToIndex(GetCurrentImplMode());
-        OP_LOGD("tensor size %zu; dynamic index %s, dynamic count %s. Attr size %zu.", tensors.size(),
+        OP_LOGD("Tensor size: %zu; dynamic index: %s, dynamic count: %s; attr size: %zu.", tensors.size(),
                 IntegerVecToString(dynamicIndex).c_str(), IntegerVecToString(dynamicCount).c_str(), attrsVec.size());
         int64_t determinConfig = GetThreadLocalContext().opConfigInfo_.deterministicLevel_;
-        OP_LOGD("implMode %ld, determin %ld. tensor size %zu, dynamic size %zu, attr size %zu, value depend size %zu.",
+        OP_LOGD("Impl mode: %ld, deterministic level: %ld, tensor size: %zu, dynamic size: %zu, attr size: %zu, value "
+                "depend size: %zu.",
                 implMode, determinConfig, tensors.size(), dynamicCount.size(), attrsVec.size(),
                 valueDependIndex_.size());
         OP_LOGD("Finding static kernel with [aicNum %u, aivNum %u, deterministicLevel %lld, enablePcie %d].",
@@ -1443,7 +1444,7 @@ public:
                  return nullptr);
         char* initAddr = integralKey;
         OP_CHECK((GenerateKey(integralKey, len, inputs, outputs, attrs) == ACLNN_SUCCESS),
-                 OP_LOGW("generateKey is not success when selectBin."),
+                 OP_LOGW("Failed to generate the key during SelectBin."),
                  ;);
         //  *integralKey = '\0'; // Add a '\0' at the end of integral key.
 
@@ -1636,7 +1637,7 @@ private:
         *integralKey = '\0';
 
         if (OpRunContextMgr::GenSimplifiedKey(opType_, integralKey, inputs, outputs, attrs)) {
-            OP_LOGE(ACLNN_ERR_INNER, "failed to generate simplified key.");
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to generate simplified key.");
             return ACLNN_ERR_INNER;
         }
         integralKey += std::strlen(integralKey);
@@ -1681,13 +1682,14 @@ private:
         /* 3. Generate key for outputs. */
         ret = GenKeyByArgs(integralKey, outputInfos_, outputs);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGW("genKeyByArgs about outputs is not success when generateKey.");
+            OP_LOGW("genKeyByArgs failed to generate the key for outputs.");
         }
         len.ctxAndtensorLen = integralKey - originalKey;
-        OP_LOGD("ctxAndtensorLen %zu addr[%p, %p] [%s].", len.ctxAndtensorLen, integralKey, originalKey,
+        OP_LOGD("ctxAndtensorLen: %zu, addr[%p, %p]: [%s].", len.ctxAndtensorLen, integralKey, originalKey,
                 GetReadableKey(std::string(originalKey, len.ctxAndtensorLen), len).c_str());
         if (len.ctxAndtensorLen >= len.totalBufferLength) {
-            OP_LOGE(ACLNN_ERR_INNER, "tensorLen %zu is >= total_size %zu", len.ctxAndtensorLen, len.totalBufferLength);
+            OP_LOGE(ACLNN_ERR_INNER, "tensorLen %zu is greater than or equal to total_size %zu.", len.ctxAndtensorLen,
+                    len.totalBufferLength);
             return ACLNN_ERR_INNER;
         }
 

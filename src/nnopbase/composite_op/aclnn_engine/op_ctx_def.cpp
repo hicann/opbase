@@ -37,7 +37,7 @@ aclnnStatus ExpandableRtsArgBuffer::Init(size_t launchArgCap, size_t tilingHostD
     }
     totalSize_ = sizeof(TilingData) + launchArgCap + tilingHostDataCap;
     baseAddr_ = std::malloc(totalSize_);
-    OP_CHECK(baseAddr_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", totalSize_),
+    OP_CHECK(baseAddr_ != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate memory of size %zu.", totalSize_),
              return ACLNN_ERR_INNER);
     launchArgCapacity_ = launchArgCap;
     launchArgSize_ = 0;
@@ -73,11 +73,11 @@ aclnnStatus ExpandableRtsArgBuffer::AppendTilingHostData(const void* data, size_
 {
     size_t oldSize = tilingHostDataSize_;
     OP_CHECK(SeekTilingHostData(len) == ACLNN_SUCCESS,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to seek tiling host data, len %zu.", len), return ACLNN_ERR_INNER);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to seek tiling host data, len %zu.", len), return ACLNN_ERR_INNER);
     void* writePos = static_cast<uint8_t*>(GetTilingDataAddr()) + oldSize;
     size_t availableSize = tilingHostDataCapacity_ - oldSize;
     OP_CHECK(memcpy_s(writePos, availableSize, data, len) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy tiling host data."), return ACLNN_ERR_INNER);
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to copy tiling host data."), return ACLNN_ERR_INNER);
     return ACLNN_SUCCESS;
 }
 
@@ -88,11 +88,11 @@ aclnnStatus ExpandableRtsArgBuffer::SeekTilingHostData(size_t len)
         size_t requiredCapacity = tilingHostDataSize_ + len;
         OP_CHECK(
             ExpandTilingHostData(requiredCapacity) == ACLNN_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER, "failed to expand tiling host data, required capacity %zu.", requiredCapacity),
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to expand tiling host data, required capacity %zu.", requiredCapacity),
             return ACLNN_ERR_INNER);
     }
     tilingHostDataSize_ += len;
-    OP_LOGD("seek tiling host data len %zu, tiling host data used size from %zu to %zu.", len, oldSize,
+    OP_LOGD("Sought tiling host data of len %zu, tiling host data used size changed from %zu to %zu.", len, oldSize,
             tilingHostDataSize_);
     return ACLNN_SUCCESS;
 }
@@ -107,7 +107,7 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandLaunchArg(size_t requiredCapacity)
     while (newLaunchCap < requiredCapacity) {
         // 检查乘法溢出，防止死循环
         OP_CHECK(newLaunchCap <= MAX_CAPACITY_BEFORE_OVERFLOW,
-                 OP_LOGE(ACLNN_ERR_INNER, "launch arg capacity overflow, current %zu, required %zu.", newLaunchCap,
+                 OP_LOGE(ACLNN_ERR_INNER, "Launch arg capacity overflow, current %zu, required %zu.", newLaunchCap,
                          requiredCapacity),
                  return ACLNN_ERR_INNER);
         newLaunchCap *= BUFFER_EXPANSION_FACTOR;
@@ -120,13 +120,13 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandLaunchArg(size_t requiredCapacity)
             oldLaunchCap, newLaunchCap, totalSize_, newTotalSize);
 
     void* newAddr = std::malloc(newTotalSize);
-    OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", newTotalSize),
+    OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate memory of size %zu.", newTotalSize),
              return ACLNN_ERR_INNER);
 
     // Step 1: 拷贝 TilingData 头部
     if (memcpy_s(newAddr, sizeof(TilingData), baseAddr_, sizeof(TilingData)) != EOK) {
         std::free(newAddr);
-        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy TilingData header.");
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to copy TilingData header.");
         return ACLNN_ERR_INNER;
     }
 
@@ -139,7 +139,7 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandLaunchArg(size_t requiredCapacity)
         void* dst = static_cast<uint8_t*>(newAddr) + newTilingHostDataStart;
         if (memcpy_s(dst, tilingHostDataCapacity_, src, tilingHostDataSize_) != EOK) {
             std::free(newAddr);
-            OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy tiling_host_data.");
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to copy tiling_host_data.");
             return ACLNN_ERR_INNER;
         }
     }
@@ -167,7 +167,7 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandTilingHostData(size_t requiredCapacity
     while (newTilingHostDataCap < requiredCapacity) {
         // 检查乘法溢出，防止死循环
         OP_CHECK(newTilingHostDataCap <= MAX_CAPACITY_BEFORE_OVERFLOW,
-                 OP_LOGE(ACLNN_ERR_INNER, "tiling host data capacity overflow, current %zu, required %zu.",
+                 OP_LOGE(ACLNN_ERR_INNER, "Tiling host data capacity overflow, current %zu, required %zu.",
                          newTilingHostDataCap, requiredCapacity),
                  return ACLNN_ERR_INNER);
         newTilingHostDataCap *= BUFFER_EXPANSION_FACTOR;
@@ -179,13 +179,13 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandTilingHostData(size_t requiredCapacity
             oldTilingHostDataCap, newTilingHostDataCap, totalSize_, newTotalSize);
 
     void* newAddr = std::malloc(newTotalSize);
-    OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "failed to malloc size %zu.", newTotalSize),
+    OP_CHECK(newAddr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate memory of size %zu.", newTotalSize),
              return ACLNN_ERR_INNER);
 
     // Step 1: 拷贝 TilingData 头部
     if (memcpy_s(newAddr, sizeof(TilingData), baseAddr_, sizeof(TilingData)) != EOK) {
         std::free(newAddr);
-        OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy TilingData header.");
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to copy TilingData header.");
         return ACLNN_ERR_INNER;
     }
 
@@ -195,7 +195,7 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandTilingHostData(size_t requiredCapacity
         if (memcpy_s(static_cast<uint8_t*>(newAddr) + launchArgUsedStart, launchArgSize_,
                      static_cast<uint8_t*>(baseAddr_) + launchArgUsedStart, launchArgSize_) != EOK) {
             std::free(newAddr);
-            OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy launch_arg used portion.");
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to copy the used portion of launch_arg.");
             return ACLNN_ERR_INNER;
         }
     }
@@ -206,7 +206,7 @@ aclnnStatus ExpandableRtsArgBuffer::ExpandTilingHostData(size_t requiredCapacity
         void* dst = static_cast<uint8_t*>(newAddr) + tilingHostDataStart_;
         if (memcpy_s(dst, newTilingHostDataCap, src, tilingHostDataSize_) != EOK) {
             std::free(newAddr);
-            OP_LOGE(ACLNN_ERR_INNER, "failed to memcpy tiling_host_data.");
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to copy tiling_host_data.");
             return ACLNN_ERR_INNER;
         }
     }

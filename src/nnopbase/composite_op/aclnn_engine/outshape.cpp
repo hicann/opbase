@@ -43,7 +43,7 @@ aclnnStatus RefreshOutputShape([[maybe_unused]] size_t index, OpArgList& outputS
             });
         }
     } else {
-        OP_LOGE(ACLNN_ERR_INNER, "unsupported outshape dtype. %d", dtype);
+        OP_LOGE(ACLNN_ERR_INNER, "Unsupported outshape dtype: %d.", dtype);
         BlockPool::Free(shapeData);
         return ACLNN_ERR_INNER;
     }

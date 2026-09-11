@@ -269,11 +269,11 @@ static void ReportCacheOpInfoTensorFromCache(uint8_t* dest, uint64_t& destOffset
             msTensor.shape[j] = 0;
         }
         OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &msTensor, sizeof(MsrofTensorData)) == EOK,
-                 OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+                 OP_LOGE(ACLNN_ERR_INNER, "Failed to call memcpy_s."),
                  throw std::runtime_error("aclGraph profiling memcpy runtime error."));
         destOffset += sizeof(MsrofTensorData);
-        OP_LOGI("tensorIndex %zu, tensorType %u, format %u, dataType %u, shape(%u, %u, %u, %u, %u, %u, %u, %u)", i,
-                msTensor.tensorType, msTensor.format, msTensor.dataType, msTensor.shape[0], msTensor.shape[1],
+        OP_LOGI("Tensor index: %zu, tensor type: %u, format: %u, data type: %u, shape(%u, %u, %u, %u, %u, %u, %u, %u).",
+                i, msTensor.tensorType, msTensor.format, msTensor.dataType, msTensor.shape[0], msTensor.shape[1],
                 msTensor.shape[2], msTensor.shape[3], msTensor.shape[4], msTensor.shape[5], msTensor.shape[6],
                 msTensor.shape[7]);
     }
@@ -292,7 +292,7 @@ void ReportCacheOpInfoFromCache(const TaskInfo& taskInfo, void* tensorInfoLists,
     uint32_t tensorNum = inTensors.size() + outTensors.size();
     size_t totalSize = sizeof(CacheOpInfoBasic) + (sizeof(MsrofTensorData) * tensorNum);
     void* infoPtr = op::internal::Allocate(totalSize);
-    OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "infoPtr allocate failed."), throw std::bad_alloc());
+    OP_CHECK(infoPtr != nullptr, OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate infoPtr."), throw std::bad_alloc());
     uint8_t* dest = static_cast<uint8_t*>(infoPtr);
     uint64_t destOffset = 0;
     // CacheOpInfoBasic: taskType/nodeId/opType/numBlocks/opFlag/tensorNum
@@ -301,24 +301,24 @@ void ReportCacheOpInfoFromCache(const TaskInfo& taskInfo, void* tensorInfoLists,
     cacheOpInfoBasic.opType = profilingInfoId.kernelLauncherId_;
     cacheOpInfoBasic.attrId = taskInfo.attrId;
     uint32_t currBlockDim = numBlocks;
-    OP_LOGI("numBlocks is %u, taskInfo.ration is %u", currBlockDim, taskInfo.ration);
+    OP_LOGI("numBlocks is %u, taskInfo.ration is %u.", currBlockDim, taskInfo.ration);
     if (taskInfo.ration == OP_DFX_TASK_RATION_TWO) {
         currBlockDim = ((currBlockDim & 0xFFFFU) | (0x20000));
     } else if (taskInfo.ration == 1) {
         currBlockDim = ((currBlockDim & 0xFFFFU) | (0x10000));
     }
     cacheOpInfoBasic.numBlocks = currBlockDim;
-    OP_LOGI("numBlocks is %u after calculation", currBlockDim);
+    OP_LOGI("numBlocks is %u after calculation.", currBlockDim);
     cacheOpInfoBasic.opFlag = (static_cast<uint32_t>(taskInfo.execMode) &
                                static_cast<uint32_t>(OpExecMode::OP_EXEC_MODE_HF32)) != 0 ?
                                   1 :
                                   0;
     cacheOpInfoBasic.tensorNum = tensorNum;
     OP_CHECK(memcpy_s(dest + destOffset, totalSize - destOffset, &cacheOpInfoBasic, sizeof(CacheOpInfoBasic)) == EOK,
-             OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+             OP_LOGE(ACLNN_ERR_INNER, "Failed to call memcpy_s."),
              throw std::runtime_error("aclGraph profiling memcpy runtime error."));
     destOffset += sizeof(CacheOpInfoBasic);
-    OP_LOGI("taskType %u, nodeId %zu, opType %zu, attrId %zu, numBlocks %u, opFlag %u, tensorNum %u",
+    OP_LOGI("taskType: %u, nodeId: %zu, opType: %zu, attrId: %zu, numBlocks: %u, opFlag: %u, tensorNum: %u.",
             cacheOpInfoBasic.taskType, cacheOpInfoBasic.nodeId, cacheOpInfoBasic.opType, cacheOpInfoBasic.attrId,
             cacheOpInfoBasic.numBlocks, cacheOpInfoBasic.opFlag, cacheOpInfoBasic.tensorNum);
     ReportCacheOpInfoTensorFromCache(dest, destOffset, totalSize, inTensors, MSPROF_GE_TENSOR_TYPE_INPUT);

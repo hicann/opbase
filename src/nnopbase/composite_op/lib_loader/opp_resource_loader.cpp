@@ -45,7 +45,7 @@ static bool GetBuiltinOppPath(string& oppPath)
     if (currHomePath) {
         const std::string kernelPath = std::string(currHomePath) + "/opp_latest";
         oppPathEnv = RealPath(kernelPath);
-        OP_CHECK(oppPathEnv.empty(), OP_LOGI("opp kernel path %s", oppPathEnv.c_str()), return true);
+        OP_CHECK(oppPathEnv.empty(), OP_LOGI("OPP kernel path: %s", oppPathEnv.c_str()), return true);
     }
 
     const char* currOppPath = nullptr;

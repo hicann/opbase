@@ -19,7 +19,7 @@ void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensor* tensor, size
 {
     // tbe 算子(genPlaceholder 为 false)跳过 null 入参；ascendc 算子对 null 入参占位计数，与 json argIdx_ 编址对齐
     if (tensor == nullptr && !genPlaceholder) {
-        OP_LOGW("op input is null. idx: %zu.", idx);
+        OP_LOGW("Op input is null. idx: %zu.", idx);
         return;
     }
     num++;
@@ -28,7 +28,7 @@ void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensor* tensor, size
 void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensorList* tensor, size_t& num, bool genPlaceholder)
 {
     if (tensor == nullptr) {
-        OP_LOGW("op input tensorlist is null. idx: %zu.", idx);
+        OP_LOGW("Op input tensorlist is null. idx: %zu.", idx);
         return;
     }
     for (size_t i = 0; i < tensor->Size(); i++) {
@@ -76,7 +76,7 @@ aclnnStatus GenKeyByArgImpl(char*& key, const std::array<TensorInfo, MAX_TENSOR_
                             size_t idx, const aclTensor* tensor, int argType)
 {
     if (tensor == nullptr) {
-        OP_LOGW("tensor is nullptr when genKeyByArgImpl.");
+        OP_LOGW("Tensor is nullptr when genKeyByArgImpl is called.");
         return ACLNN_SUCCESS;
     }
 

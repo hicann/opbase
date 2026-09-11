@@ -211,7 +211,7 @@ inline std::string GetOpName()
 #define CHECK_RET(condition, ret_value)                                              \
     do {                                                                             \
         if (unlikely(!(condition))) {                                                \
-            OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "check %s failed.", #condition); \
+            OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "Check %s failed.", #condition); \
             return ret_value;                                                        \
         }                                                                            \
     } while (false)

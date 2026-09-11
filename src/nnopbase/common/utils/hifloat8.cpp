@@ -54,17 +54,9 @@ constexpr std::array<uint8_t, 16> HIF8_EXP_TO_DOT = {{
     0b0010, // [1]
     0b0100,
     0b0100, // [2, 3]
-    0b1000,
-    0b1000,
-    0b1000,
+    0b1000, 0b1000, 0b1000,
     0b1000, // [4, 7]
-    0b1100,
-    0b1100,
-    0b1100,
-    0b1100,
-    0b1100,
-    0b1100,
-    0b1100,
+    0b1100, 0b1100, 0b1100, 0b1100, 0b1100, 0b1100, 0b1100,
     0b1100, // [8, 15]
 }};
 
@@ -197,7 +189,7 @@ auto BitCast(const From& src) -> To
 {
     static_assert(sizeof(To) == sizeof(From), "");
     To dst = 0;
-    OP_CHECK(memcpy_s(&dst, sizeof(To), &src, sizeof(From)) == EOK, OP_LOGE(ACLNN_ERR_INNER, "call memcpy_s failed."),
+    OP_CHECK(memcpy_s(&dst, sizeof(To), &src, sizeof(From)) == EOK, OP_LOGE(ACLNN_ERR_INNER, "Call memcpy_s failed."),
              ;);
     return dst;
 }
@@ -241,7 +233,7 @@ float HiFloat8::Hifp8ToFloat(HiFloat8 hif8)
         {HIF8_DML_FLAG, 4}, // 0b0000
         {0, 4},             // 0b0001
         {1, 3},
-        {1, 3}, // 0b001.
+        {1, 3},             // 0b001.
         {2, 2},
         {2, 2},
         {2, 2},

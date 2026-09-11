@@ -43,7 +43,7 @@ protected:
 
     aclnnStatus VisitOutputArgs(OpArgList& argList)
     {
-        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "output arg num must be 1, but got %zu.",
+        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "Output arg num must be 1, but got %zu.",
                    argList.count);
         return VisitOutputArg(reinterpret_cast<aclTensor*>(argList[0]->pointer));
     }
@@ -66,7 +66,7 @@ protected:
                 GetThreadLocalContext().logInfo_.l0Name);
             OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
                                          DfxProfilingKernelLaunch);
-            OP_LOGI("funcType is %d", randomNumTaskInfo_.randomNumFuncParaInfo.funcType);
+            OP_LOGI("funcType is %d.", randomNumTaskInfo_.randomNumFuncParaInfo.funcType);
             auto ret = aclrtRandomNumAsync(&randomNumTaskInfo_, stream, nullptr);
             if (ret != ACL_SUCCESS) {
                 OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "rtsLaunchRandomNumTask failed, runtime error code: %d", ret);
@@ -176,7 +176,7 @@ private:
         if (idx == idxMean) {
             const auto rc = memcpy_s(&workspaceHolder_[IDX_PARAM0], sizeof(uint64_t), arg->GetData(), arg->Size());
             if (rc != EOK) {
-                OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
+                OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy first input arg.");
                 return ACLNN_ERR_INNER;
             }
 
@@ -210,7 +210,7 @@ private:
             case OpArgType::OPARG_ACLSCALAR:
                 return VisitInputArg(idx, reinterpret_cast<aclScalar*>(arg->pointer));
             default:
-                OP_LOGE(ACLNN_ERR_INNER, "invalid arg type %d.", static_cast<int>(arg.type));
+                OP_LOGE(ACLNN_ERR_INNER, "Invalid arg type %d.", static_cast<int>(arg.type));
                 return ACLNN_ERR_INNER;
         }
     }
@@ -315,7 +315,7 @@ private:
         if (idx == idxMin) {
             const auto rc = memcpy_s(&workspaceHolder_[IDX_PARAM0], sizeof(uint64_t), arg->GetData(), arg->Size());
             if (rc != EOK) {
-                OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
+                OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy first input arg.");
                 return ACLNN_ERR_INNER;
             }
             memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.uniformDisInfo.min.valueOrAddr, arg->Size(),
@@ -348,7 +348,7 @@ private:
             case OpArgType::OPARG_ACLSCALAR:
                 return VisitInputArg(idx, reinterpret_cast<aclScalar*>(arg->pointer));
             default:
-                OP_LOGE(ACLNN_ERR_INNER, "invalid arg type %d.", static_cast<int>(arg.type));
+                OP_LOGE(ACLNN_ERR_INNER, "Invalid arg type %d.", static_cast<int>(arg.type));
                 return ACLNN_ERR_INNER;
         }
     }
@@ -437,7 +437,7 @@ private:
         if (idx == idxDropoutRatio) {
             const auto rc = memcpy_s(&workspaceHolder_[IDX_PARAM0], sizeof(uint64_t), arg->GetData(), arg->Size());
             if (rc != EOK) {
-                OP_LOGE(ACLNN_ERR_INNER, "memcpy first input arg fail.");
+                OP_LOGE(ACLNN_ERR_INNER, "Failed to memcpy first input arg.");
                 return ACLNN_ERR_INNER;
             }
             memcpy_s(randomNumTaskInfo_.randomNumFuncParaInfo.paramInfo.dropoutBitmaskInfo.dropoutRation.valueOrAddr,
@@ -461,7 +461,7 @@ private:
             case OpArgType::OPARG_ACLSCALAR:
                 return VisitInputArg(idx, reinterpret_cast<aclScalar*>(arg->pointer));
             default:
-                OP_LOGE(ACLNN_ERR_INNER, "invalid arg type %d.", static_cast<int>(arg.type));
+                OP_LOGE(ACLNN_ERR_INNER, "Invalid arg type %d.", static_cast<int>(arg.type));
                 return ACLNN_ERR_INNER;
         }
     }
@@ -481,7 +481,7 @@ private:
 
     aclnnStatus VisitOutputArgs(OpArgList& argList)
     {
-        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "output arg num must be 1, but got %zu.",
+        CHECK_COND(argList.count == DSA_TASK_OUTPUT_NUM, ACLNN_ERR_INNER, "Output arg num must be 1, but got %zu.",
                    argList.count);
         return VisitOutputArg(reinterpret_cast<aclTensor*>(argList[0]->pointer));
     }

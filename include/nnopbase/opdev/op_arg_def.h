@@ -601,14 +601,14 @@ OpArgContext* MakeOpArgContext(const Ts&... ts)
     size_t size = sizeof(OpArgContext) + (OpArgContextSize(ts...) + 1) * sizeof(OpArg);
     void* addr = Allocated(size);
     if (!addr) {
-        OP_LOGE(ACLNN_ERR_INNER, "failed to allocate OpArgContext.");
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to allocate OpArgContext.");
         return nullptr;
     }
     OpArgContext* ctx = new (addr) OpArgContext();
     // reserve first OpArg for append workspace
     OpArg* currArg = reinterpret_cast<OpArg*>(ctx + 1) + 1;
     if (OpArgContextInit(*ctx, currArg, ts...)) {
-        OP_LOGE(ACLNN_ERR_INNER, "failed to init OpArgContext.");
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to init OpArgContext.");
         DeAllocated(ctx);
         return nullptr;
     }

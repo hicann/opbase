@@ -131,7 +131,7 @@ public:
         auto ctx = opRunCtx_.UpdateTilingCtx(opType, inputs, outputs, attrs);
         auto ret = opTilingFuncs_[opType]->gen_simplifiedkey(ctx, simplifiedKey);
         if (ret != ACLNN_SUCCESS) {
-            OP_LOGE(ACLNN_ERR_INNER, "gen simplified key failed");
+            OP_LOGE(ACLNN_ERR_INNER, "Failed to generate the simplified key.");
             return ACLNN_ERR_INNER;
         }
         return ACLNN_SUCCESS;
@@ -219,10 +219,10 @@ public:
     {
         const char* opTypeStr = OpTypeDict::ToString(opType).GetString();
         OP_CHECK(opRunCtx_.kernelCtx_.UpdateComputeNodeInfo(opTypeStr, inputs, outputs, attrs) == ACLNN_SUCCESS,
-                 OP_LOGE(ACLNN_ERR_INNER, "failed to UpdateComputeNodeInfo"), return nullptr);
+                 OP_LOGE(ACLNN_ERR_INNER, "Failed to update compute node info."), return nullptr);
         auto ret = const_cast<TilingCtxOutput*>(opRunCtx_.tilingCtx_.GetTilingResult());
         *ret->numBlocks_ = staticBlockDim;
-        OP_LOGD("numBlocks is %ld", *ret->numBlocks_);
+        OP_LOGD("numBlocks is %ld.", *ret->numBlocks_);
         *ret->atomicCleanFlag_ = atomicCleanFlag;
         ret->workspaceSize_->SetSize(staticWorkspaceSize.size());
         for (size_t i = 0; i < staticWorkspaceSize.size(); ++i) {
@@ -231,7 +231,7 @@ public:
 
         *ret->scheduleMode_ = scheduleMode;
         *ret->dynUBufSize_ = staticKernelDynUBufSize;
-        OP_LOGD("scheduleMode_ is %u, dynUBufSize_ is %u", *ret->scheduleMode_, *ret->dynUBufSize_);
+        OP_LOGD("scheduleMode_ is %u, dynUBufSize_ is %u.", *ret->scheduleMode_, *ret->dynUBufSize_);
         *ret->tilingKey_ = 0;
         ret->tilingData_->data_size_ = 0;
         *ret->tilingCond_ = 0;
