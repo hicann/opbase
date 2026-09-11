@@ -1086,12 +1086,12 @@ void OpExecCache::MarkOpCacheInvalid()
     hashKey_ = 0;
     // 不释放/置空 buf 仅置 len 为 0，避免 operator== 跨线程读到 buf 为空而 len 非 0 的中间态导致崩溃
     key_.len = 0;
-    OP_LOGI("key_.len: %zu", key_.len);
+    OP_LOGI("Mark op cache invalid.");
 }
 
 bool OpExecCache::IsOpCacheValid()
 {
-    OP_LOGI("Hash key: %lu, key_.len: %zu", hashKey_, key_.len);
+    OP_LOGI("Hash key: %lu, OpCacheKey len: %zu", hashKey_, key_.len);
     return hashKey_ || (key_.buf && key_.len);
 }
 
@@ -1346,10 +1346,11 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
         if (hash && cache_.find(hash) == cache_.end()) {
             cache_[hash] = exec;
             ret = true;
+            OP_LOGI("Add cache to cache v1, hash key: %lu, current size: %zu", hash, cache_.size());
         }
 
         if (cache2_.size() >= cacheLimit_) {
-            OP_LOGW("Op cache2 is full, cache2 size: %zu, limit: %zu", cache2_.size(), cacheLimit_);
+            OP_LOGW("Cache v2 is full, current size: %zu, limit: %zu", cache2_.size(), cacheLimit_);
             ShrinkCache(K_CACHE_SHRINK_NUM, exec->GetShrinkList());
         }
         OpCacheKey key = exec->GetOpCacheKey();
@@ -1357,7 +1358,8 @@ bool OpExecCacheManager::AddOpExecCache(OpExecCache* exec)
             OpCacheValue value(exec, key);
             cache2_[key] = std::move(value);
             ret = true;
-            OP_LOGD("Add op cache key %s value %p", key.ToString().GetString(), exec);
+            OP_LOGI("Add cache to cache v2, current size: %zu, key: %s, value: %p", cache2_.size(),
+                    key.ToString().GetString(), exec);
         }
         if (ret) {
             return ret;
@@ -1500,11 +1502,15 @@ bool CheckCacheable()
                          (op::internal::GetOpProfilingRecordArgFlag() ||
                           internal::opProfilingSwitch.level2ProfilingFlag));
     if (cacheDisable) {
+        OP_LOGI("Cache is disabled, op dump: %d, record op arg flag: %d, level2ProfilingFlag: %d",
+                op::internal::IsDumpEnable(), op::internal::GetOpProfilingRecordArgFlag(),
+                internal::opProfilingSwitch.level2ProfilingFlag);
         g_opCacheTlsData.threadLocalContext.cacheHasFull_ = true;
         return false;
     }
     static const char* pathVar = GetEnvOfDisableL2Cache();
     if (pathVar != nullptr) {
+        OP_LOGI("Disable L2 cache env is set, so disable cache");
         g_opCacheTlsData.threadLocalContext.cacheHasFull_ = true;
         return false;
     }
