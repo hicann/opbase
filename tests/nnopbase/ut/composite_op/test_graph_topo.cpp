@@ -150,6 +150,10 @@ TEST_F(memory_allocator_ut, TestCase1)
     KernelGraphUtils::Link(b, d, 0, 1);
     KernelGraphUtils::Link(d, e, 0, 0);
 
+    // 越界索引（index == size）应返回错误码，不应走到 SmallVector::at 的越界异常
+    EXPECT_EQ(KernelGraphUtils::Link(a, b, 1, 0), ACLNN_ERR_INNER); // a 只声明 1 个输出，索引 1 越界
+    EXPECT_EQ(KernelGraphUtils::Link(a, b, 0, 1), ACLNN_ERR_INNER); // b 只声明 1 个输入，索引 1 越界
+
     KernelGraph* kernel_graph = new KernelGraph(0);
 
     op::FVector<KernelNode*, DEFAULT_NODE_NUM> kernel_nodes;

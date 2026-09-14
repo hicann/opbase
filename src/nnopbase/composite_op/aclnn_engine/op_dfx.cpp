@@ -124,18 +124,19 @@ void SetOpProfilingRecordArgFlag(bool value)
     opProfilingSwitch.recordOpArgFlag = value;
 }
 
+namespace {
 std::atomic<bool> g_aclnnDebugEnabled{false};
-static std::once_flag g_aclnnDebugOnceFlag;
 
-void InitAclnnDebugSwitch()
+__attribute__((constructor)) void InitAclnnDebugSwitch()
 {
-    std::call_once(g_aclnnDebugOnceFlag, []() {
-        if (CheckLogLevelInner(OP_ID, OP_LOG_INFO) == 1) {
-            g_aclnnDebugEnabled.store(true, std::memory_order_relaxed);
-            OP_LOGI("Aclnn debug mode is enabled by log level.");
-        }
-    });
+    if (CheckLogLevelInner(OP_ID, OP_LOG_INFO) == 1) {
+        g_aclnnDebugEnabled.store(true, std::memory_order_relaxed);
+        OP_LOGI("Aclnn debug mode is enabled by log level.");
+    }
 }
+} // namespace
+
+bool IsAclnnDebugEnabled() { return g_aclnnDebugEnabled.load(std::memory_order_relaxed); }
 
 OpThreadLocalContext& GetThreadLocalContext()
 {
