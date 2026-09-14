@@ -21,7 +21,7 @@ This project provides multiple methods for setting up the Ascend environment. Se
 
 If you do not have Ascend devices, you can use the CANNLab cloud development environment, a **one-stop operator development platform**. This platform provides an online Ascend environment. The required driver, firmware, software packages, and dependencies have been installed in the environment, and you do not need to manually install them.
 
-> **Note**: By default, the environment comes with the latest commercial CANN package pre-installed. When downloading the source code, ensure that it matches the installed software version. For more information about the development platform, see [LINK](https://gitcode.com/org/cann/discussions/54).
+> **Note**: By default, the environment comes with the latest commercial CANN package pre-installed. When downloading the source code, ensure that it matches the installed software version. For more information about the development platform, see [LINK](https://gitcode.com/cann/cann-learning-hub/blob/master/docs/CANNLab_env_experience_guide.md).
 
 1. Go to the open-source project and click `CANNLab` to log in with your authenticated Huawei Cloud account. If you have not signed up or authenticated, sign up and authenticate as prompted.
 

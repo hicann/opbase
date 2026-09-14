@@ -23,7 +23,7 @@
 
 > **注意**：
 >
-> - 环境中CANN包版本支持手动更新，运行前请保证与源码版本匹配，更多平台介绍请参考[CANNLab指导](https://gitcode.com/org/cann/discussions/54)。
+> - 环境中CANN包版本支持手动更新，运行前请保证与源码版本匹配，更多平台介绍请参考[CANNLab指导](https://gitcode.com/cann/cann-learning-hub/blob/master/docs/CANNLab_env_experience_guide.md)。
 > - CANNLab有2种接入方式：WebIDE提供网页版便携云开发环境；VSCode IDE提供远程连接云开发环境能力，可使用VSCode强大插件。
 
 1. 进入开源项目，单击“`CANNLab`”按钮，使用已认证过的华为云账号登录。若未注册或认证，请根据页面提示进行注册和认证。
