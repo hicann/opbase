@@ -560,7 +560,7 @@ public:
             if (i == aAxis) {
                 addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
                 if (this->tiling_->sliceNum[i] != 1) {
-                    addrOffset += iterAddr_[i].sliceStart * this->tiling_->sliceShape[i];
+                    addrOffset += iterAddr_[i].sliceStart * this->tiling_->sliceShape[i] * this->tiling_->dstStride[i];
                 }
             } else {
                 addrOffset += iterAddr_[i].start * this->tiling_->dstStride[i];
