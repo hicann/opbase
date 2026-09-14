@@ -265,6 +265,11 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/opp_builtin/__i
     COMPONENT opbase
 )
 
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/opbase/ops_deliverables.json
+    DESTINATION opp/conf
+    COMPONENT opbase
+)
+
 set(fusion_config_src ${CMAKE_CURRENT_SOURCE_DIR}/scripts/fusion_config)
 install(FILES
         ${fusion_config_src}/fusion_pass/config/fusion_config.json

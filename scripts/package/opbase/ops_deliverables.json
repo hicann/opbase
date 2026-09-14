@@ -1,0 +1,64 @@
+{
+    "version": "1.0",
+    "placeholders": {
+        "description": "这里的placeholders都要解析替换，如果有对应名称，则替换成对应环境的信息进行替换",
+        "socversion": "AI Core SoC 版本号",
+        "os": "操作系统名字，例如：linux",
+        "arch": "硬件架构名字，例如：aarch64"
+    },
+    "deliverables": [
+        {
+            "name": "ophost",
+            "type": "shared_library",
+            "description": "host侧实现动态库，包括tiling、infershape等实现，主要是各算子仓op_host目录下生成的交付件,如下文件按序加载，对于不存在的忽略不报错",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_cv.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_math.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_nn.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_oam.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_transformer.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_comm_legacy.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_legacy.so"
+            ]
+        },
+        {
+            "name": "opgraph",
+            "type": "shared_library",
+            "description": "host侧实现动态库，包括算子原型、inferdatatype、融合pass等实现，主要是各算子仓op_graph目录下生成的交付件,如下文件按序加载，对于不存在的忽略不报错",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/op_graph/lib/{os}/{arch}/libopgraph_cv.so",
+                "{ASCEND_OPP_PATH}/built-in/op_graph/lib/{os}/{arch}/libopgraph_hccl.so",
+                "{ASCEND_OPP_PATH}/built-in/op_graph/lib/{os}/{arch}/libopgraph_math.so",
+                "{ASCEND_OPP_PATH}/built-in/op_graph/lib/{os}/{arch}/libopgraph_nn.so",
+                "{ASCEND_OPP_PATH}/built-in/op_graph/lib/{os}/{arch}/libopgraph_transformer.so",
+                "{ASCEND_OPP_PATH}/built-in/op_graph/lib/{os}/{arch}/libopgraph_legacy.so"
+            ]
+        },
+        {
+            "name": "opkernel",
+            "type": "obj_file",
+            "description": "算子的二进制文件路径",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/kernel/{socversion}/ops_cv",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/kernel/{socversion}/ops_math",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/kernel/{socversion}/ops_nn",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/kernel/{socversion}/ops_oam",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/kernel/{socversion}/ops_transformer",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/kernel/{socversion}/ops_legacy"
+            ]
+        },
+        {
+            "name": "opimpl",
+            "type": "obj_file",
+            "description": "算子的编译文件路径",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_cv",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_math",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_nn",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_oam",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_transformer",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_legacy"
+            ]
+        }
+    ]
+}
