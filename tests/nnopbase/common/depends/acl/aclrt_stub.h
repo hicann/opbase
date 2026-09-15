@@ -20,6 +20,8 @@
 
 #include "opdev/op_log.h"
 
+extern int32_t g_aclsysVersionNum;
+
 class AclrtStub {
 public:
     virtual ~AclrtStub() = default;
@@ -85,6 +87,12 @@ public:
                                              aclrtStreamAttrValue* value)
     {
         value->cacheOpInfoSwitch = 1;
+        return ACL_SUCCESS;
+    }
+
+    virtual aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType,
+                                             aclrtStreamAttrValue* value)
+    {
         return ACL_SUCCESS;
     }
 
