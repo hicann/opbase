@@ -49,12 +49,8 @@
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/common" install_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/common" install_type="all">
         <file value="async_cpu_kernel.h" install_mod="550"/>
         <file value="async_event_util.h" install_mod="550"/>
-        <file value="cpu_context.h" install_mod="550"/>
         <file value="cpu_kernel_cache.h" install_mod="550"/>
-        <file value="cpu_kernel.h" install_mod="550"/>
-        <file value="cpu_kernel_register.h" install_mod="550"/>
         <file value="cpu_kernel_utils.h" install_mod="550"/>
-        <file value="cpu_types.h" install_mod="550"/>
         <file value="device_cpu_kernel.h" install_mod="550"/>
         <file value="device.h" install_mod="550"/>
         <file value="device_sharder.h" install_mod="550"/>
@@ -70,10 +66,7 @@
     </file_info>
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cpu_proto" install_path="$(TARGET_ENV)/pkg_inc/aicpu_common/context/cpu_proto" install_type="all">
         <file value="attr_value_impl.h" install_mod="550"/>
-        <file value="cpu_attr_value.h" install_mod="550"/>
         <file value="cpu_node_def.h" install_mod="550"/>
-        <file value="cpu_tensor.h" install_mod="550"/>
-        <file value="cpu_tensor_shape.h" install_mod="550"/>
         <file value="node_def_impl.h" install_mod="550"/>
         <file value="tensor_impl.h" install_mod="550"/>
         <file value="tensor_shape_impl.h" install_mod="550"/>
