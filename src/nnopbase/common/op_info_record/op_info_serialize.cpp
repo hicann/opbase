@@ -16,6 +16,7 @@
 #include <fstream>
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
+#include "opdev/platform.h"
 #include "platform/platform_info.h"
 #include "tiling_context_to_json.h"
 #include "ini_parse.h"
@@ -184,7 +185,9 @@ void AddPlatformInfoToJson(nlohmann::json& opJson, const gert::TilingContext* ct
 
 void AddJsonToOpInfoCompile(const nlohmann::json& opJson)
 {
-    if (g_opTypeBlackList.find(opJson["op_type"]) == g_opTypeBlackList.cend()) {
+    static op::SocVersion socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    if (g_opTypeBlackList.find(opJson["op_type"]) == g_opTypeBlackList.cend() ||
+        (socVersion != op::SocVersion::ASCEND910B && socVersion != op::SocVersion::ASCEND910_93)) {
         g_opInfoStatisticsOpcompile.emplace(opJson);
     } else {
         OP_LOGD("TilingContextToJson node type[%s] is in black list!", opJson["op_type"].get<std::string>().c_str());
