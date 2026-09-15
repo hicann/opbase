@@ -25,6 +25,8 @@ thread_local AclrtStub* AclrtStub::fakeAclrtInstance_;
 #endif
 #endif
 char aclSocVersion[100];
+// 生产代码用static缓存版本查询结果，进程内首次调用即定值，故直接给到支持不阻塞属性的版本
+int32_t g_aclsysVersionNum = 90200000;
 EXTERN_C
 aclError aclrtSetDevice(int32_t deviceId) { return ACL_SUCCESS; }
 
@@ -261,6 +263,12 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
 }
 
 EXTERN_C
+aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue* value)
+{
+    return AclrtStub::GetInstance()->aclrtSetStreamAttribute(stream, stmAttrType, value);
+}
+
+EXTERN_C
 aclError aclrtCacheLastTaskOpInfo(const void* const infoPtr, size_t infoSize)
 {
     return AclrtStub::GetInstance()->aclrtCacheLastTaskOpInfo(infoPtr, infoSize);
@@ -349,7 +357,7 @@ aclError aclsysGetVersionNum(char* pkgName, int32_t* versionNum)
 {
     (void)pkgName;
     if (versionNum != nullptr) {
-        *versionNum = 0;
+        *versionNum = g_aclsysVersionNum;
     }
     return ACL_SUCCESS;
 }

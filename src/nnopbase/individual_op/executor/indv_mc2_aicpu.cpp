@@ -15,9 +15,21 @@
 #include <cstddef>
 
 #include <cstdint>
+#ifndef PRODUCT_SIDE_IS_DEVICE
+#include "version/runtime_version.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+// runtime 9.2.0起支持将ACL_STREAM_LAUNCH_BLOCKING流属性设置为NO_BLOCKING模式
+#define STREAM_NO_BLOCKING_SUPPORT_VER 90200000
+
+// device侧不涉及该场景，构建时runtime版本低于9.2.0时整段逻辑不编入
+#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && \
+    (RUNTIME_VERSION_NUM >= STREAM_NO_BLOCKING_SUPPORT_VER)
+#define NNOPBASE_SUPPORT_STREAM_NO_BLOCKING 1
 #endif
 
 namespace {
@@ -85,6 +97,54 @@ aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor* executor, HcclComm 
     }
     return nnopbase::IndvHcclWrapper::GetInstance().HcclAllocComResourceByTiling(comm, stream, tilingData, commCtx);
 }
+
+#ifdef NNOPBASE_SUPPORT_STREAM_NO_BLOCKING
+// 查询失败属执行异常返回错误，版本不足仅置isSupported为false放行
+aclnnStatus NnopbaseIsStreamNoBlockingSupported(bool& isSupported)
+{
+    static int32_t runtimeVerNum = -1;
+    static const aclError ret = aclsysGetVersionNum("runtime", &runtimeVerNum);
+    if (ret != ACL_SUCCESS) {
+        OP_LOGE(ACLNN_ERR_INNER, "Failed to get runtime version num, ret is %d.", ret);
+        return ACLNN_ERR_INNER;
+    }
+    isSupported = runtimeVerNum >= STREAM_NO_BLOCKING_SUPPORT_VER;
+    if (!isSupported) {
+        OP_LOGW("Skip setting aicpu streams to no blocking, runtime version num is %d, required is %d.", runtimeVerNum,
+                STREAM_NO_BLOCKING_SUPPORT_VER);
+    }
+    return OK;
+}
+
+aclnnStatus NnopbaseSetAicpuStreamsNoBlocking(const std::vector<aclrtStream>& aicpuStreams)
+{
+    // 版本不足属环境不支持，跳过属性设置放行，避免旧版本runtime上的KFC下发全部失败
+    bool isSupported = false;
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseIsStreamNoBlockingSupported(isSupported));
+    if (!isSupported) {
+        return OK;
+    }
+    for (aclrtStream aicpuStream : aicpuStreams) {
+        // commHandle为空时NnopbaseGetHcomResource会填入nullptr占位
+        if (aicpuStream == nullptr) {
+            continue;
+        }
+        aclrtStreamAttrValue value = {};
+        value.launchBlockingMode = ACL_STREAM_LAUNCH_BLOCKING_MODE_NON_BLOCKING;
+        const aclError ret = aclrtSetStreamAttribute(aicpuStream, ACL_STREAM_LAUNCH_BLOCKING_MODE, &value);
+        if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
+            // 芯片版本不支持该流属性，属预期环境差异，跳过本流继续设置后续从流
+            OP_LOGW("Soc does not support stream no blocking attr, skip aicpu stream %p.", aicpuStream);
+            continue;
+        }
+        CHECK_COND(ret == ACL_SUCCESS, ACLNN_ERR_RUNTIME_ERROR, "Failed to set aicpu stream %p to no blocking.",
+                   aicpuStream);
+    }
+    return OK;
+}
+#else
+aclnnStatus NnopbaseSetAicpuStreamsNoBlocking(const std::vector<aclrtStream>&) { return OK; }
+#endif
 } // namespace
 
 aclnnStatus NnopbaseGetHcomResource(NnopbaseExecutor* executor, aclrtStream const stream)
@@ -180,6 +240,7 @@ aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor* const executor, aclrtStream 
 {
     OP_LOGI("Launch kernel by KFC mode.");
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddCapture(stream, executor->mc2.aicpuStreams));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSetAicpuStreamsNoBlocking(executor->mc2.aicpuStreams));
     if (executor->mc2.aicpuStreams[0] != nullptr) {
         CHECK_COND(
             aclrtWaitAndResetNotify(executor->mc2.aicpuNotifies[0].first, executor->mc2.aicpuStreams[0], UINT32_MAX) ==
@@ -220,6 +281,7 @@ aclnnStatus NnopbaseLaunchKFCTaskA5(NnopbaseExecutor* const executor, aclrtStrea
     OP_LOGI("Launch kernel by A5 KFC mode.");
 
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddCapture(stream, executor->mc2.aicpuStreams));
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSetAicpuStreamsNoBlocking(executor->mc2.aicpuStreams));
     if (executor->mc2.aicpuStreams[0] != nullptr) {
         const uint64_t unfoldThread = executor->mc2.aicpuThreads[0];
         HcclComm comm = executor->mc2.commHandles[0];
@@ -284,8 +346,8 @@ aclnnStatus NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecuto
 
     const bool useA5Mc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseA5Mc2Client(executor->mc2.serverType);
     const NnopbaseUChar* pSoName = useA5Mc2Client ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
-    const NnopbaseUChar* pKernelName =
-        useA5Mc2Client ? NNOPBASE_MC2_SERVER_KERNEL_NAME : NNOPBASE_MC2_AICPU_KERNEL_NAME;
+    const NnopbaseUChar* pKernelName = useA5Mc2Client ? NNOPBASE_MC2_SERVER_KERNEL_NAME :
+                                                        NNOPBASE_MC2_AICPU_KERNEL_NAME;
     const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     const bool enableCcuLaunch = nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType);
     const size_t opNameDataLen = enableCcuLaunch ? NnopbaseAlignToEightBytes(opName.length()) : opName.length();
