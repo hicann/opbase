@@ -284,7 +284,7 @@ void NnopbaseExecutorClear(NnopbaseExecutor* executor);
 size_t NnopbaseCalcArgsSize(NnopbaseExecutor* const executor, const size_t tilingDataSize);
 void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* const executor);
 aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, NnopbaseExecutorArgsAddr* const argsAddr,
-                                           const uint32_t workspaceNum);
+                                           const uint32_t workspaceNum, const aclrtStream stream);
 bool NnopbaseMatchArgsCache(NnopbaseExecutor* executor, size_t& seed);
 aclnnStatus NnopbaseCreateExecutorArgs(NnopbaseExecutor* executor, const size_t seed);
 
@@ -306,6 +306,7 @@ void NnopbaseExecutorReportProfiling(NnopbaseExecutor* const executor, uint32_t 
 void NnopbaseReportAttrAndHostInfo(const NnopbaseExecutor* const executor, const uint64_t timeStamp);
 std::string NnopbaseGetHostInfoStr(const NnopbaseTensors& tensors);
 std::string NnopbaseGetAttrVal(const NnopbaseAttrs& attrs);
+bool NnopbaseIsAclGraphCaptureScene(const aclrtStream stream);
 void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
                                aclrtStream stream);
 

@@ -52,6 +52,12 @@ public:
         return (void*)dfxAddr_;
     }
 
+    virtual void* AdumpGetDFXInfoAddrForStatic(uint32_t space, uint64_t& atomicIndex)
+    {
+        atomicIndex = 5526;
+        return (void*)dfxAddr_;
+    }
+
     void Install(DumpStub* instance) { fake_instance_ = instance; }
 
     void UnInstall() { fake_instance_ = nullptr; }

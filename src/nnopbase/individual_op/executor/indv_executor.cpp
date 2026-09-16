@@ -595,7 +595,7 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor* const executor, a
                            op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + tilingDataSize;
 
         if (executor->args->binInfo->oomFlag || op::internal::IsArgExceptionDumpEnable()) {
-            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorArgsGetDfxInfo(executor, &argsAddr, workspaceNum));
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorArgsGetDfxInfo(executor, &argsAddr, workspaceNum, stream));
         }
     } else {
         // MC2算子没有静态场景

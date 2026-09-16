@@ -15,7 +15,6 @@
 #include <exception>
 #include <fstream>
 #include <mutex>
-#include <dirent.h>
 #include "securec.h"
 #include "mmpa/mmpa_api.h"
 #include "mmpa/sub_inc/mmpa_linux.h"
@@ -28,13 +27,13 @@
 #include "indv_executor.h"
 #include "opdev/data_type_utils.h"
 #include "op_dfx_util.h"
+#include "opp_resource_loader.h"
 #include "register/op_binary_resource_manager.h"
 
 using namespace std;
 using namespace nnopbase;
 
 namespace {
-constexpr char const* OP_TILING_SO_SUFFIX = ".so";
 constexpr char* ERR_REASON_FOR_OPP_PACKAGE = "1.The operator package is not installed. "
                                              "2.The operator package is damaged. "
                                              "3.The binary_info_config.json file is damaged or does not exist. "
@@ -110,63 +109,6 @@ std::string GetBuiltInBasePath(gert::OppImplVersionTag& oppImplVersion)
         return std::string(oppPathEnv);
     }
     return "";
-}
-
-void GetFilesWithSuffix(const std::string& path, const std::string& suffix, std::vector<std::string>& files)
-{
-    struct dirent** entries = nullptr;
-    const auto fileNum = scandir(path.c_str(), &entries, nullptr, nullptr);
-    if (entries == nullptr) {
-        return;
-    }
-    if (fileNum <= 0) {
-        free(entries);
-        return;
-    }
-    for (int i = 0; i < fileNum; ++i) {
-        const dirent* const dirEnt = entries[i];
-        const string name = string(dirEnt->d_name);
-        if ((strcmp(name.c_str(), ".") == 0) || (strcmp(name.c_str(), "..") == 0)) {
-            continue;
-        }
-        if (dirEnt->d_type == DT_DIR) {
-            continue;
-        }
-        if (name.size() < suffix.size() || name.compare(name.size() - suffix.size(), suffix.size(), suffix) != 0) {
-            continue;
-        }
-        const string fullName = path + "/" + name;
-        files.push_back(fullName);
-    }
-    for (int i = 0; i < fileNum; i++) {
-        free(entries[i]);
-    }
-    free(entries);
-}
-
-std::string GetOpSoPackageName(const std::string& path)
-{
-    // 新的自定义算子包路径：<opp-path>/vendors/<name>/op_proto/
-    const std::string vendors_str = "vendors/";
-    auto pos = path.find(vendors_str);
-    if (pos != std::string::npos) {
-        // vendors/ 后面一级目录
-        pos += vendors_str.size();
-        auto end_pos = path.find('/', pos);
-        if (end_pos == std::string::npos) {
-            end_pos = path.size();
-        }
-        return path.substr(pos, end_pos - pos);
-    }
-
-    // 老的自定义算子包路径：<opp-path>/op_proto/custom/
-    pos = path.find("custom/");
-    if (pos != std::string::npos) {
-        return "custom";
-    }
-
-    // 内置算子包名
-    return "built-in";
 }
 
 bool MatchBinWithPlatformInfo(const NnopbaseBinInfo* const binInfo, const StaticKernelPlatformInfo* const platformInfo)
@@ -374,62 +316,6 @@ void NnopbaseGetCustomOppPath(std::vector<std::pair<std::string, gert::OppImplVe
         }
     }
     OP_LOGI("Get CustomOppPath finished.");
-}
-
-aclnnStatus NnopbaseLoadTilingSo(std::vector<std::pair<std::string, gert::OppImplVersionTag>>& basePath)
-{
-    std::string path;
-    std::string osType;
-    std::string cpuType;
-    bool openSoSuccess = false;
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseGetCurEnvPackageOsAndCpuType(osType, cpuType));
-    std::vector<NnopbaseChar> soPath(NNOPBASE_FILE_PATH_MAX_LEN, '\0');
-    std::vector<std::string> tilingSoPaths;
-    for (size_t i = 0U; i < basePath.size(); i++) {
-        tilingSoPaths.clear();
-        if (i == (basePath.size() - 1U)) {
-            // 自研路径V2
-            std::string builtInTilingSoBasePath = basePath[i].first + "/op_impl/ai_core/tbe/op_host/lib/" + osType +
-                                                  "/" + cpuType + "/";
-            if (mmRealPath(builtInTilingSoBasePath.c_str(), &(soPath[0U]), NNOPBASE_FILE_PATH_MAX_LEN) != EN_OK) {
-                // 自研路径V1
-                tilingSoPaths.push_back(basePath[i].first + "/op_impl/ai_core/tbe/op_tiling/lib/" + osType + "/" +
-                                        cpuType + "/" + "libopmaster_rt2.0.so");
-            } else {
-                GetFilesWithSuffix(&(soPath[0U]), OP_TILING_SO_SUFFIX, tilingSoPaths);
-            }
-        } else {
-            // 自定义路径
-            path = basePath[i].first + "/op_impl/ai_core/tbe/op_tiling/lib/" + osType + "/" + cpuType + "/" +
-                   "libcust_opmaster_rt2.0.so";
-            if (mmRealPath(path.c_str(), &(soPath[0U]), NNOPBASE_FILE_PATH_MAX_LEN) == EN_OK) {
-                tilingSoPaths.push_back(std::string(&(soPath[0U])));
-            } else {
-                OP_LOGW("Failed to get op tiling so path for %s, errmsg:%s.", path.c_str(), NnopbaseGetmmErrorMsg());
-            }
-        }
-        for (auto tilingSoPath : tilingSoPaths) {
-            OP_LOGI("Tiling so path: %s", tilingSoPath.c_str());
-            auto registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry(basePath[i].second);
-            if (registry == nullptr) {
-                registry = std::make_shared<gert::OpImplSpaceRegistryV2>();
-                NNOPBASE_ASSERT_NOTNULL_RETVAL(registry);
-                gert::DefaultOpImplSpaceRegistryV2::GetInstance().SetSpaceRegistry(registry, basePath[i].second);
-            }
-            gert::OppSoDesc oppSoDesc({ge::AscendString(tilingSoPath.c_str())},
-                                      ge::AscendString(GetOpSoPackageName(tilingSoPath).c_str()));
-            if (registry->AddSoToRegistry(oppSoDesc) == ge::GRAPH_SUCCESS) {
-                openSoSuccess = true;
-            } else {
-                OP_LOGW("Failed to load op tiling so path for %s.", tilingSoPath.c_str());
-            }
-        }
-    }
-    if (openSoSuccess) {
-        return OK;
-    }
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to get op tiling so path.");
-    return ACLNN_ERR_PARAM_INVALID;
 }
 
 NnopbaseRegInfo* NnopbaseCollectorFindRegInfoInTbl(const NnopbaseBinCollector* const collector,
@@ -1445,7 +1331,7 @@ aclnnStatus NnopbaseCollectorWork(NnopbaseBinCollector* const collector)
     RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
 
     if (basePath.size() > 0) {
-        (void)(NnopbaseLoadTilingSo(basePath));
+        op::opploader::LoadAllOppPackage();
     }
     RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
 

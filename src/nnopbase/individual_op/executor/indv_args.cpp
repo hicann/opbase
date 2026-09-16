@@ -162,7 +162,7 @@ void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* const executor)
 }
 
 aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, NnopbaseExecutorArgsAddr* const argsAddr,
-                                           const uint32_t workspaceNum)
+                                           const uint32_t workspaceNum, const aclrtStream stream)
 {
     if (executor->args->dfxInfo.empty()) {
         NnopbaseExecutorPrepareDfxInfo(executor);
@@ -185,7 +185,12 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, Nno
     }
     if (op::internal::IsArgExceptionDumpEnable()) {
         uint64_t atomicIndex = 0U;
-        void* exceptionDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(executor->args->dfxInfo.size(), atomicIndex);
+        void* exceptionDumpAddr = nullptr;
+        if (NnopbaseIsAclGraphCaptureScene(stream)) {
+            exceptionDumpAddr = Adx::AdumpGetDFXInfoAddrForStatic(executor->args->dfxInfo.size(), atomicIndex);
+        } else {
+            exceptionDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(executor->args->dfxInfo.size(), atomicIndex);
+        }
         NNOPBASE_ASSERT_NOTNULL_RETVAL(exceptionDumpAddr);
         OP_LOGI("Get atomicIndex is %lu.", atomicIndex);
         argsAddr->ptr = nnopbase::NnopbaseAppendByte<uint64_t>(argsAddr->ptr, atomicIndex);
