@@ -16,6 +16,7 @@
 #include <fstream>
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
+#include "opdev/platform.h"
 #include "platform/platform_info.h"
 #include "tiling_context_to_json.h"
 #include "ini_parse.h"
@@ -54,8 +55,9 @@ std::set<std::string> g_opTypeWhiteList = {
 };
 
 std::set<std::string> g_opTypeBlackList = {
-    "ReduceSum", "ReduceMin",       "ReduceMax", "ArgMinWithValue", "FusedInferAttentionScore",
-    "GatherV2",  "ArgMaxWithValue", "Range"};
+    "ReduceSum", "ReduceMin", "ReduceMax", "ArgMinWithValue", "GatherV2", "ArgMaxWithValue", "Range"};
+
+std::set<std::string> g_opTypeBlackList950 = {"FusedInferAttentionScore"};
 
 constexpr int JSON_INDENT = 2;
 
@@ -184,7 +186,11 @@ void AddPlatformInfoToJson(nlohmann::json& opJson, const gert::TilingContext* ct
 
 void AddJsonToOpInfoCompile(const nlohmann::json& opJson)
 {
-    if (g_opTypeBlackList.find(opJson["op_type"]) == g_opTypeBlackList.cend()) {
+    static op::SocVersion socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
+    const std::set<std::string>& blackList =
+        (socVersion != op::SocVersion::ASCEND910B && socVersion != op::SocVersion::ASCEND910_93) ?
+        g_opTypeBlackList950 : g_opTypeBlackList;
+    if (blackList.find(opJson["op_type"]) == blackList.cend()) {
         g_opInfoStatisticsOpcompile.emplace(opJson);
     } else {
         OP_LOGD("TilingContextToJson node type[%s] is in black list!", opJson["op_type"].get<std::string>().c_str());
