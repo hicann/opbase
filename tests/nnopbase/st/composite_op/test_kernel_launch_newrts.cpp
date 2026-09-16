@@ -156,8 +156,8 @@ TEST_F(KernelLaunchNewRtsUT, KernelLaunchUTCase4)
     auto output = OP_OUTPUT(out.get());
     auto ctx = op::MakeOpArgContext(input, output);
 
-    size_t tn_list = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), false);
-    size_t tn = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), false);
+    size_t tn_list = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), false, false);
+    size_t tn = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG), false, false);
     delete inputList;
     op::DestroyOpArgContext(ctx);
     EXPECT_EQ(tn, 1u);
@@ -254,7 +254,7 @@ TEST_F(KernelLaunchNewRtsUT, GetAclTensorCountTerst1)
     auto input_arg = OP_INPUT(nullTensor, nullTensorList);
     auto ctx = op::MakeOpArgContext(input_arg);
     // tbe 语义：null 入参不计数
-    size_t num = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), false);
+    size_t num = op::internal::GetAclTensorCount(*ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG), false, false);
     op::DestroyOpArgContext(ctx);
     EXPECT_EQ(num, 0u);
 }

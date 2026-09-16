@@ -657,21 +657,21 @@ void AddArgInfoToCache(OpExecCache* cache, LaunchArgCache::ArgInfo* argInfo, con
             OP_CHECK(p != nullptr, OP_LOGD("The cache cannot add launch data for devPtrArgAddr, the cache is invalid."),
                      return);
             *p++ = dataSize;
-            for (size_t i = 0; i < tensors->Size(); i++) {
-                if ((*tensors)[i] == nullptr) {
+            for (size_t tensorIdx = 0; tensorIdx < tensors->Size(); tensorIdx++) {
+                if ((*tensors)[tensorIdx] == nullptr) {
                     *p++ = (static_cast<int64_t>(1) << RtsArg::DEV_PTR_DIM_SHIFT_BIT) + static_cast<int64_t>(0);
                     continue;
                 }
-                const auto& shape = (*tensors)[i]->GetStorageShape();
+                const auto& shape = (*tensors)[tensorIdx]->GetStorageShape();
                 size_t dim = shape.GetDimNum();
                 *p++ = (static_cast<int64_t>(1) << RtsArg::DEV_PTR_DIM_SHIFT_BIT) + dim;
                 for (size_t j = 0; j < dim; j++) {
                     *p++ = shape.GetDim(j);
                 }
             }
-            for (size_t i = 0; i < tensors->Size(); i++) {
-                if ((*tensors)[i] != nullptr) {
-                    OP_CHECK((cache->AddLaunchTensor((*tensors)[i], sizeof(void*)) != nullptr),
+            for (size_t tensorIdx = 0; tensorIdx < tensors->Size(); tensorIdx++) {
+                if ((*tensors)[tensorIdx] != nullptr) {
+                    OP_CHECK((cache->AddLaunchTensor((*tensors)[tensorIdx], sizeof(void*)) != nullptr),
                              OP_LOGD("The cache cannot add the launch tensor for devPtrArgAddr, the cache is invalid."),
                              return);
                 } else {

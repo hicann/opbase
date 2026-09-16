@@ -19,31 +19,37 @@ void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensor* tensor, size
 {
     // tbe 算子(genPlaceholder 为 false)跳过 null 入参；ascendc 算子对 null 入参占位计数，与 json argIdx_ 编址对齐
     if (tensor == nullptr && !genPlaceholder) {
-        OP_LOGW("Op input is null. idx: %zu.", idx);
+        OP_LOGW("Op input tensor is null, index: %zu.", idx);
         return;
     }
     num++;
 }
 
-void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensorList* tensor, size_t& num, bool genPlaceholder)
+void CalcAclTensorNum([[maybe_unused]] size_t idx, const aclTensorList* tensorList, size_t& num, bool genPlaceholder,
+                      bool hasDevPtrArg)
 {
-    if (tensor == nullptr) {
-        OP_LOGW("Op input tensorlist is null. idx: %zu.", idx);
+    if (tensorList == nullptr) {
+        OP_LOGW("Op input tensor list is null, index: %zu.", idx);
         return;
     }
-    for (size_t i = 0; i < tensor->Size(); i++) {
-        CalcAclTensorNum(idx, (*tensor)[i], num, genPlaceholder);
+    if (hasDevPtrArg) {
+        OP_LOGI("Op input tensor list at index %zu, and this op supports folded_with_desc.", idx);
+        num++;
+        return;
+    }
+    for (size_t i = 0; i < tensorList->Size(); i++) {
+        CalcAclTensorNum(idx, (*tensorList)[i], num, genPlaceholder);
     }
 }
 
-void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num, bool genPlaceholder)
+void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num, bool genPlaceholder, bool hasDevPtrArg)
 {
     switch (arg.type) {
         case OpArgType::OPARG_ACLTENSOR:
             CalcAclTensorNum(idx, reinterpret_cast<aclTensor*>(arg->pointer), num, genPlaceholder);
             break;
         case OpArgType::OPARG_ACLTENSOR_LIST:
-            CalcAclTensorNum(idx, reinterpret_cast<aclTensorList*>(arg->pointer), num, genPlaceholder);
+            CalcAclTensorNum(idx, reinterpret_cast<aclTensorList*>(arg->pointer), num, genPlaceholder, hasDevPtrArg);
             break;
         default:
             break;

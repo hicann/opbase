@@ -194,8 +194,8 @@ TEST_F(KernelLaunchUT, KernelLaunchUTCase4)
 
     auto ctx = op::MakeOpArgContext(input, output);
 
-    size_t tn_list = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false);
-    size_t tn = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG)), false);
+    size_t tn_list = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false, false);
+    size_t tn = op::internal::GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_OUTPUT_ARG)), false, false);
     delete inputList;
     EXPECT_EQ(tn, 1u);
     EXPECT_EQ(tn_list, 2u);
@@ -559,7 +559,7 @@ TEST_F(KernelLaunchUT, GetAclTensorCountTerst1)
     // create arg
     auto ctx = op::MakeOpArgContext(input_arg);
     // tbe 语义：null 入参不计数
-    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false);
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false, false);
     EXPECT_EQ(num, 0u);
 }
 
@@ -571,7 +571,7 @@ TEST_F(KernelLaunchUT, GetAclTensorCountAscendCPlaceholder)
     auto input_arg = OP_INPUT(nullTensor, nullTensorList);
     auto ctx = op::MakeOpArgContext(input_arg);
     // nullTensor 计 1，nullTensorList 跳过，期望 1
-    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true);
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true, false);
     EXPECT_EQ(num, 1u);
 }
 
@@ -586,8 +586,86 @@ TEST_F(KernelLaunchUT, GetAclTensorCountAscendCPlaceholderAlign)
     auto input_arg = OP_INPUT(nullTensor, validTensor.get());
     auto ctx = op::MakeOpArgContext(input_arg);
     // null 占位计 1 + 有效 tensor 计 1 = 2u；若 null 被错误跳过则会是 1u
-    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true);
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true, false);
     EXPECT_EQ(num, 2u);
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountDevPtrTensorList)
+{
+    // device ptr 模式：整个 tensorList 占 1 个入参槽位，不按元素展开
+    op::Shape shape{33, 15, 64};
+    aclTensor tensor1(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    aclTensor tensor2(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    aclTensor tensor3(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    const aclTensor* tensorArr[3] = {&tensor1, &tensor2, &tensor3};
+    aclTensorList* tensorList = aclCreateTensorList(tensorArr, 3);
+    auto input_arg = OP_INPUT(&tensor1, tensorList);
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // 有效 tensor 计 1 + 整个 list 计 1 = 2u；若 list 仍按元素展开则为 4u
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false, true);
+    EXPECT_EQ(num, 2u);
+    delete tensorList;
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountDevPtrNullTensorList)
+{
+    // device ptr 模式：null tensorList 不占槽位（与下发侧 launch_arg_info.h 一致）
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
+    auto input_arg = OP_INPUT(nullTensor, nullTensorList);
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // null tensor 占位计 1 + null list 计 0 = 1u；若 null list 被误计 1 槽则为 2u
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true, true);
+    EXPECT_EQ(num, 1u);
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountDevPtrMixed)
+{
+    // device ptr 模式混合输入：null tensor 占位 + 有效 list 计 1 + null list 计 0
+    aclTensor* nullTensor = nullptr;
+    aclTensorList* nullTensorList = nullptr;
+    op::Shape shape{33, 15, 64};
+    aclTensor tensor1(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    aclTensor tensor2(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    aclTensor tensor3(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    const aclTensor* tensorArr[3] = {&tensor1, &tensor2, &tensor3};
+    aclTensorList* tensorList = aclCreateTensorList(tensorArr, 3);
+    auto input_arg = OP_INPUT(nullTensor, tensorList, nullTensorList);
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // 1 + 1 + 0 = 2u
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), true, true);
+    EXPECT_EQ(num, 2u);
+    delete tensorList;
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountNonDevPtrTensorList)
+{
+    // 非 device ptr 模式：list 仍按元素展开（确认原有语义未被破坏）
+    op::Shape shape{33, 15, 64};
+    aclTensor tensor1(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    aclTensor tensor2(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    aclTensor tensor3(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    const aclTensor* tensorArr[3] = {&tensor1, &tensor2, &tensor3};
+    aclTensorList* tensorList = aclCreateTensorList(tensorArr, 3);
+    auto input_arg = OP_INPUT(&tensor1, tensorList);
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // 有效 tensor 计 1 + 3 个元素各计 1 = 4u
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false, false);
+    EXPECT_EQ(num, 4u);
+    delete tensorList;
+}
+
+TEST_F(KernelLaunchUT, GetAclTensorCountDevPtrNullTensor)
+{
+    // device ptr 模式不会让 null tensor 计 1：单 tensor 只受 genPlaceholder 控制
+    aclTensor* nullTensor = nullptr;
+    op::Shape shape{33, 15, 64};
+    aclTensor validTensor(shape, op::DataType::DT_FLOAT, op::Format::FORMAT_ND, nullptr);
+    auto input_arg = OP_INPUT(nullTensor, &validTensor);
+    auto ctx = op::MakeOpArgContext(input_arg);
+    // null tensor 跳过计 0 + 有效 tensor 计 1 = 1u；若 devPtr 让 null tensor 也计 1 则为 2u
+    size_t num = GetAclTensorCount(*(ctx->GetOpArg(op::OpArgDef::OP_INPUT_ARG)), false, true);
+    EXPECT_EQ(num, 1u);
 }
 
 TEST_F(KernelLaunchUT, SetMemSetFlagFromJsonTest)

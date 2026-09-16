@@ -189,24 +189,14 @@ inline aclnnStatus GenKeyByAttrs(char*& key, size_t& remainLen, std::vector<Attr
 }
 
 void CalcAclTensorNum(size_t idx, const aclTensor* tensor, size_t& num, bool genPlaceholder);
-void CalcAclTensorNum(size_t idx, const aclTensorList* tensor, size_t& num, bool genPlaceholder);
-void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num, bool genPlaceholder);
+void CalcAclTensorNum(size_t idx, const aclTensorList* tensorList, size_t& num, bool genPlaceholder, bool hasDevPtrArg);
+void CalcAclTensorNum(size_t idx, OpArg& arg, size_t& num, bool genPlaceholder, bool hasDevPtrArg);
 
-inline size_t GetAclTensorCount(OpArgList& args, bool genPlaceholder)
+inline size_t GetAclTensorCount(OpArgList& args, bool genPlaceholder, bool hasDevPtrArg)
 {
     size_t num = 0;
-    args.VisitByNoReturn(
-        [&num, genPlaceholder](size_t idx, OpArg& elem) { CalcAclTensorNum(idx, elem, num, genPlaceholder); });
-    return num;
-}
-
-inline size_t GetArgCount4DevPtrArg(OpArgList& args)
-{
-    size_t num = 0;
-    args.VisitByNoReturn([&num]([[maybe_unused]] size_t idx, OpArg& elem) {
-        if (elem.type == OpArgType::OPARG_ACLTENSOR || elem.type == OpArgType::OPARG_ACLTENSOR_LIST) {
-            num++;
-        }
+    args.VisitByNoReturn([&num, genPlaceholder, hasDevPtrArg](size_t idx, OpArg& elem) {
+        CalcAclTensorNum(idx, elem, num, genPlaceholder, hasDevPtrArg);
     });
     return num;
 }
