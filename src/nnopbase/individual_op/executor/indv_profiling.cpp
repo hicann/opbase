@@ -148,19 +148,27 @@ static void NnopbaseEncodeMixOpNumBlocks(NnopbaseExecutor* const executor, uint3
     }
 }
 
-void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
-                               aclrtStream stream)
+bool NnopbaseIsAclGraphCaptureScene(const aclrtStream stream)
 {
     aclrtStreamAttrValue value = {};
     value.cacheOpInfoSwitch = 0;
-    OP_CHECK(stream != nullptr, OP_LOGW("stream is nullptr, do not support aclGraph profiling capture."), return);
+    OP_CHECK(stream != nullptr, OP_LOGW("stream is nullptr, do not support aclGraph profiling capture."), return false);
     aclError ret = aclrtGetStreamAttribute(stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
     if (ret != ACL_SUCCESS) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to get stream attribute, ret is [%d]", ret);
-        return;
+        return false;
     }
     if (!static_cast<bool>(value.cacheOpInfoSwitch)) {
         OP_LOGI("Profiling for AclGraph is disabled.");
+        return false;
+    }
+    return true;
+}
+
+void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlocks, uint32_t taskType,
+                               aclrtStream stream)
+{
+    if (!NnopbaseIsAclGraphCaptureScene(stream)) {
         return;
     }
 
@@ -192,7 +200,7 @@ void NnopbaseReportCacheOpInfo(NnopbaseExecutor* const executor, uint32_t numBlo
         NnopbaseBuildCacheAttrInfo(executor, opInfo);
     }
 
-    ret = aclrtCacheLastTaskOpInfo(buffer, totalSize);
+    aclError ret = aclrtCacheLastTaskOpInfo(buffer, totalSize);
     if (ret != ACL_SUCCESS) {
         OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to report operator info cache, ret is [%d]", ret);
     }

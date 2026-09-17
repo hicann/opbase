@@ -735,6 +735,86 @@ aclnnStatus RunBnProfiling(std::vector<int64_t> shape = {1, 1, 1, 1, 1})
     return ret;
 }
 
+struct StreamCacheOpInfoStub : public AclrtStub {
+    explicit StreamCacheOpInfoStub(uint8_t cacheOpInfoSwitch) : cacheOpInfoSwitch_(cacheOpInfoSwitch) {}
+
+    aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType,
+                                     aclrtStreamAttrValue* value) override
+    {
+        value->cacheOpInfoSwitch = cacheOpInfoSwitch_;
+        return ACL_SUCCESS;
+    }
+
+    uint8_t cacheOpInfoSwitch_;
+};
+
+struct DfxInfoAddrRecorder : public Adx::DumpStub {
+    void* AdumpGetDFXInfoAddrForDynamic(uint32_t space, uint64_t& atomicIndex) override
+    {
+        dynamicCallCnt++;
+        return dfxInfoAddr;
+    }
+
+    void* AdumpGetDFXInfoAddrForStatic(uint32_t space, uint64_t& atomicIndex) override
+    {
+        staticCallCnt++;
+        return dfxInfoAddr;
+    }
+
+    uint32_t dynamicCallCnt = 0U;
+    uint32_t staticCallCnt = 0U;
+    char dfxInfoAddr[5000] = {0};
+};
+
+static aclnnStatus RunBnWithStream(const aclrtStream stream)
+{
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    uint64_t workspaceSize = 0U;
+    aclOpExecutor* executor = nullptr;
+    aclnnStatus ret = aclnnBninferenceDKernelGetWorkspaceSize(tensor, tensor, tensor, tensor, &workspaceSize,
+                                                              &executor);
+    if (ret == OK) {
+        void* workspace = workspaceSize != 0U ? malloc(workspaceSize) : nullptr;
+        ret = aclnnBninferenceDKernel(workspace, workspaceSize, executor, stream);
+        if (workspace != nullptr) {
+            free(workspace);
+        }
+    }
+    aclDestroyTensor(tensor);
+    return ret;
+}
+
+TEST_F(NnopbaseExecutorUnitTest, AclGraphCaptureDfxInfoAddrSelect)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+    DfxInfoAddrRecorder recorder;
+    Adx::DumpStub::GetInstance()->Install(&recorder);
+
+    // aclGraph capture场景，获取静态shape异常算子dump空间
+    StreamCacheOpInfoStub captureStub(1U);
+    AclrtStub::GetInstance()->Install(&captureStub);
+    aclrtStream stream = static_cast<aclrtStream>(new uint8_t[1]);
+    EXPECT_EQ(RunBnWithStream(stream), OK);
+    delete[] static_cast<uint8_t*>(stream);
+    AclrtStub::GetInstance()->UnInstall();
+    EXPECT_EQ(recorder.staticCallCnt, 1U);
+    EXPECT_EQ(recorder.dynamicCallCnt, 0U);
+
+    // 非capture场景，获取动态shape异常算子dump空间
+    StreamCacheOpInfoStub normalStub(0U);
+    AclrtStub::GetInstance()->Install(&normalStub);
+    stream = static_cast<aclrtStream>(new uint8_t[1]);
+    EXPECT_EQ(RunBnWithStream(stream), OK);
+    delete[] static_cast<uint8_t*>(stream);
+    AclrtStub::GetInstance()->UnInstall();
+    EXPECT_EQ(recorder.staticCallCnt, 1U);
+    EXPECT_EQ(recorder.dynamicCallCnt, 1U);
+
+    Adx::DumpStub::GetInstance()->UnInstall();
+}
+
 class ApiProfiler : public ProfilerStub {
 public:
     int32_t MsprofReportApi(uint32_t agingFlag, const MsprofApi* api)
@@ -2338,16 +2418,6 @@ TEST_F(NnopbaseExecutorUnitTest, NnopbaseSupportScalarConvertDtypeWithInput)
         aclDestroyTensor(tmpTensor);
     }
     NnopbaseExecutorGcSpace(executorSpace);
-    NnopbaseUnsetEnvAndClearFolder();
-}
-
-TEST_F(NnopbaseExecutorUnitTest, LoadTilingSoFailed)
-{
-    std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
-    basePath.push_back(std::make_pair("/usr/local", gert::OppImplVersionTag::kOpp));
-    setenv("ASCEND_HOME_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
-    setenv("ASCEND_OPP_PATH", OP_API_COMMON_UT_SRC_DIR, 1);
-    ASSERT_NE(NnopbaseLoadTilingSo(basePath), OK);
     NnopbaseUnsetEnvAndClearFolder();
 }
 

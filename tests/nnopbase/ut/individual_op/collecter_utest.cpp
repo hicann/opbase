@@ -501,13 +501,6 @@ TEST_F(NnopbaseCollectorUnitTest, test_get_tilingFunc_null)
     ASSERT_EQ(genSimplifiedKey, nullptr);
 }
 
-TEST_F(NnopbaseCollectorUnitTest, test_load_tilingso_fail)
-{
-    std::vector<std::pair<std::string, gert::OppImplVersionTag>> basePath;
-    int32_t ret = NnopbaseLoadTilingSo(basePath);
-    ASSERT_EQ(ret, ACLNN_ERR_PARAM_NULLPTR);
-}
-
 TEST_F(NnopbaseCollectorUnitTest, test_get_path_and_read_config_fail)
 {
     ASSERT_EQ(NnopbaseSetStubNoConfigFiles(), 1);
