@@ -35,6 +35,47 @@
             ]
         },
         {
+            "name": "opsproto",
+            "type": "shared_library",
+            "description": "rt1.0的算子原型、infershape等",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/op_proto/lib/{os}/{arch}/libopsproto.so"
+            ]
+        },
+        {
+            "name": "tf-plugin",
+            "type": "shared_library",
+            "description": "tensorflow的算子插件",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_cv.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_hccl.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_math.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_nn.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_transformer.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_legacy.so"
+            ]
+        },
+        {
+            "name": "onnx-plugin",
+            "type": "shared_library",
+            "description": "onnx的算子插件",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/framework/onnx/liboponnx_plugin_cv.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/onnx/liboponnx_plugin_math.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/onnx/liboponnx_plugin_nn.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/onnx/liboponnx_plugin_transformer.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/onnx/liboponnx_plugin_legacy.so"
+            ]
+        },
+        {
+            "name": "caffe-plugin",
+            "type": "shared_library",
+            "description": "caffe的算子插件",
+            "paths": [
+                "{ASCEND_OPP_PATH}/built-in/framework/caffe/libopcaffe_plugin_legacy.so"
+            ]
+        },
+        {
             "name": "opkernel",
             "type": "obj_file",
             "description": "算子的二进制文件路径",
@@ -48,16 +89,17 @@
             ]
         },
         {
-            "name": "opimpl",
-            "type": "obj_file",
+            "name": "opsrc",
+            "type": "src_file",
             "description": "算子的编译文件路径",
             "paths": [
-                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_cv",
-                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_math",
-                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_nn",
-                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_oam",
-                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_transformer",
-                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops_legacy"
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-cv/dynamic",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-math/dynamic",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-nn/dynamic",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-oam/dynamic",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-transformer/dynamic",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-legacy/dynamic",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/impl/ops-legacy"
             ]
         }
     ]
