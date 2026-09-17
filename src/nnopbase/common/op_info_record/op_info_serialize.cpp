@@ -55,7 +55,8 @@ std::set<std::string> g_opTypeWhiteList = {
 };
 
 std::set<std::string> g_opTypeBlackList = {
-    "ReduceSum", "ReduceMin", "ReduceMax", "ArgMinWithValue", "GatherV2", "ArgMaxWithValue", "Range"};
+    "ReduceSum", "ReduceMin", "ReduceMax", "ArgMinWithValue", "GatherV2", "ArgMaxWithValue", "Range",
+    "FusedInferAttentionScore"};
 
 std::set<std::string> g_opTypeBlackList950 = {"FusedInferAttentionScore"};
 
