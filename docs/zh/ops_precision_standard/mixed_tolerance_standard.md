@@ -23,7 +23,7 @@
 
 | 维度 | 生成规则 |
 |------|----------|
-| **数据维度** | 覆盖算子支持的维度范围（1~8维），维度值在 $[1, 2^{20}]$ 内取用（2的幂次）和（2的幂次方-1）两种取值。总元素数不超过2的31次方 |
+| **数据维度** | 覆盖算子支持的维度范围（1~8维），维度值在 $[1, 2^{20}]$ 内取用（2的幂次）和（2的幂次方-1）两种取值。总元素数不超过2的34次方 |
 | **数据格式** | 覆盖算子支持的所有数据格式（ND、NCHW等） |
 
 **步长与组合生成**：各参数类型之间应进行正交组合遍历，值域覆盖策略如下：
@@ -107,21 +107,21 @@ $$
     <tbody>
       <tr>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;"><strong>rtol</strong></td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-9</sup> (1.95e-3)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-6</sup> (1.56e-2)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-10</sup> (9.77e-4)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-9</sup> (1.95e-3)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-10</sup> (1e-3)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-7</sup> (7.8e-3)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-13</sup> (1.2e-4)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-10</sup> (1e-3)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-3</sup> (0.125)</td>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-2</sup> (0.25)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-1</sup> (0.5)</td>
       </tr>
       <tr>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;"><strong>atol</strong></td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-9</sup> (1.95e-3)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-6</sup> (1.56e-2)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-16</sup> (1.53e-5)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-10</sup> (9.77e-4)</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-4</sup> (0.0625)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-10</sup> (1e-3)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-7</sup> (7.8e-3)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-13</sup> (1.2e-4)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-10</sup> (1e-3)</td>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-3</sup> (0.125)</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">2<sup>-2</sup> (0.25)</td>
       </tr>
       <tr>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;"><strong>required_matched_ratio</strong></td>
@@ -130,14 +130,16 @@ $$
       <tr>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;"><strong>max_abs_error_limit</strong></td>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-1 or 32 * ULP</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-0 or 32 * ULP</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-1 or 32 * ULP</td>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-2 or 32 * ULP</td>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-1 or 32 * ULP</td>
         <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-0 or 32 * ULP</td>
-        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-1 or 32 * ULP</td>
+        <td style="text-align: center; border: 1px solid #ddd; padding: 8px;">1e-0 or 32 * ULP</td>
       </tr>
     </tbody>
 </table>
+
+注：当前的阈值拦截在各数值精度下约为 1ULP左右，涉及到大数规约可能会引入更大精度误差导致误报，可酌情降低至2ULP。
 
 ### 2.3 通过判定
 
