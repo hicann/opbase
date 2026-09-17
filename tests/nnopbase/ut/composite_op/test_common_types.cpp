@@ -1277,3 +1277,69 @@ TEST_F(CommonTypesTest, aclTensorSetData)
     float intArr[5] = {1., 2., 3., 4., 5.};
     floatTensor->SetData(intArr, 5, op::DataType::DT_QINT16);
 }
+
+// 场景: 浮点类特殊值(NaN/Inf)转bool, 验证NaN返回true
+TEST_F(CommonTypesTest, TestAclScalar_SpecialFloatValuesToBool)
+{
+    // ---- float32 ----
+    float nan32 = NAN;
+    aclScalar nanScalar(&nan32, DataType::DT_FLOAT);
+    EXPECT_EQ(static_cast<bool>(nan32), nanScalar.ToBool()); // NaN → true
+
+    float inf32 = INFINITY;
+    aclScalar infScalar(&inf32, DataType::DT_FLOAT);
+    EXPECT_EQ(static_cast<bool>(inf32), infScalar.ToBool()); // +inf → true
+
+    float negInf32 = -INFINITY;
+    aclScalar negInfScalar(&negInf32, DataType::DT_FLOAT);
+    EXPECT_EQ(static_cast<bool>(negInf32), negInfScalar.ToBool()); // -inf → true
+
+    // ---- float16 ----
+    // fp16 NaN = 0x7E00, fp16 +inf = 0x7C00, fp16 -inf = 0xFC00
+    uint16_t fp16Nan = 0x7E00;
+    aclScalar fp16NanScalar(&fp16Nan, DataType::DT_FLOAT16);
+    EXPECT_TRUE(fp16NanScalar.ToBool());
+
+    uint16_t fp16Inf = 0x7C00;
+    aclScalar fp16InfScalar(&fp16Inf, DataType::DT_FLOAT16);
+    EXPECT_TRUE(fp16InfScalar.ToBool());
+
+    uint16_t fp16NegInf = 0xFC00;
+    aclScalar fp16NegInfScalar(&fp16NegInf, DataType::DT_FLOAT16);
+    EXPECT_TRUE(fp16NegInfScalar.ToBool());
+
+    // ---- bfloat16 ----
+    // bf16 NaN = 0x7FC0, bf16 +inf = 0x7F80, bf16 -inf = 0xFF80
+    uint16_t bf16Nan = 0x7FC0;
+    aclScalar bf16NanScalar(&bf16Nan, DataType::DT_BF16);
+    EXPECT_TRUE(bf16NanScalar.ToBool());
+
+    uint16_t bf16Inf = 0x7F80;
+    aclScalar bf16InfScalar(&bf16Inf, DataType::DT_BF16);
+    EXPECT_TRUE(bf16InfScalar.ToBool());
+
+    uint16_t bf16NegInf = 0xFF80;
+    aclScalar bf16NegInfScalar(&bf16NegInf, DataType::DT_BF16);
+    EXPECT_TRUE(bf16NegInfScalar.ToBool());
+
+    // ---- 自定义float类型 NaN ----
+    // Float8E5M2: NAN_VALUE = 0x7F
+    uint8_t f8e5m2Nan = op::Float8E5M2::NAN_VALUE;
+    aclScalar f8e5m2NanScalar(&f8e5m2Nan, DataType::DT_FLOAT8_E5M2);
+    EXPECT_TRUE(f8e5m2NanScalar.ToBool());
+
+    // Float8E4M3FN: NAN_VALUE = 0x7F
+    uint8_t f8e4m3fnNan = op::Float8E4M3FN::NAN_VALUE;
+    aclScalar f8e4m3fnNanScalar(&f8e4m3fnNan, DataType::DT_FLOAT8_E4M3FN);
+    EXPECT_TRUE(f8e4m3fnNanScalar.ToBool());
+
+    // Float8E8M0: NAN_VALUE = 0xFF
+    uint8_t f8e8m0Nan = op::Float8E8M0::NAN_VALUE;
+    aclScalar f8e8m0NanScalar(&f8e8m0Nan, DataType::DT_FLOAT8_E8M0);
+    EXPECT_TRUE(f8e8m0NanScalar.ToBool());
+
+    // HiFloat8: HIF8_NAN_VALUE = 0b10000000 (0x80)
+    uint8_t hifp8Nan = op::HiFloat8::HIF8_NAN_VALUE;
+    aclScalar hifp8NanScalar(&hifp8Nan, DataType::DT_HIFLOAT8);
+    EXPECT_TRUE(hifp8NanScalar.ToBool());
+}

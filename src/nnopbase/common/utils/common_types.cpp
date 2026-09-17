@@ -9,6 +9,7 @@
  */
 
 #include <sstream>
+#include <cmath>
 #include <securec.h>
 #include <graph/utils/type_utils.h>
 #include <stdexcept>
@@ -927,6 +928,11 @@ static T ConvertCustomFloatTo(uint8_t bits)
     if constexpr (std::is_same<FloatType, typename std::decay<T>::type>::value) {
         return val;
     } else if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+        if constexpr (std::numeric_limits<FloatType>::has_quiet_NaN) {
+            if (std::isnan(val)) {
+                return true;
+            }
+        }
         return std::abs(static_cast<float>(val)) >= std::numeric_limits<float>::epsilon();
     } else {
         return static_cast<T>(static_cast<float>(val));
@@ -939,18 +945,26 @@ T aclScalar::To() const
     switch (dataType_) {
         case op::DataType::DT_FLOAT:
             if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+                if (std::isnan(v.f))
+                    return static_cast<bool>(v.f);
                 return std::abs(v.f) >= std::numeric_limits<float>::epsilon();
             } else {
                 return static_cast<T>(v.f);
             }
         case op::DataType::DT_FLOAT16:
             if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+                if (FP16_IS_NAN(v.ui16)) {
+                    return true;
+                }
                 return std::abs(op::fp16_t(v.ui16).toFloat()) >= std::numeric_limits<float>::epsilon();
             } else {
                 return static_cast<T>(op::fp16_t(v.ui16).toDouble());
             }
         case op::DataType::DT_BF16:
             if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+                if (std::isnan(BFloat16())) {
+                    return true;
+                }
                 return std::abs(static_cast<float>(BFloat16())) >= std::numeric_limits<float>::epsilon();
             } else {
                 return static_cast<T>(BFloat16());
@@ -1291,13 +1305,13 @@ aclScalar::aclScalar(double value)
 
 aclScalar::aclScalar(op::fp16_t value)
 {
-    dataType_ = op::DataType::DT_FLOAT;
-    v.f = value;
+    dataType_ = op::DataType::DT_FLOAT16;
+    v.ui16 = value.val;
 }
 aclScalar::aclScalar(op::bfloat16 value)
 {
     dataType_ = op::DataType::DT_BF16;
-    v.f = value;
+    v.ui16 = value.value;
 }
 
 aclScalar::aclScalar(op::Float8E5M2 value) : dataType_(op::DataType::DT_FLOAT8_E5M2) { v.ui8 = value.value; }
