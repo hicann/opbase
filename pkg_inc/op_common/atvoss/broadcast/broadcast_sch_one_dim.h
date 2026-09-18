@@ -328,7 +328,7 @@ protected:
      * @return 类型位ScalarType的Scalar值
      */
     template <typename ScalarType, typename scalarValue>
-    __aicore__ inline constexpr ScalarType GetScalar()
+    __aicore__ inline ScalarType GetScalar()
     {
         static_assert(!(Placeholder::IsVar<scalarValue>::Value && Placeholder::IsInHolder<scalarValue>::Value &&
                         Placeholder::IsConstValue<scalarValue>::Value),
