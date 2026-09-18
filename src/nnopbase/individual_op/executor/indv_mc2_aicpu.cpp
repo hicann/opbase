@@ -232,15 +232,16 @@ aclnnStatus NnopbaseAddCapture(aclrtStream stream, std::vector<aclrtStream> aicp
                 NNOPBASE_ASSERT_RTOK_RETVAL(rtStreamAddToModel(stm, captureMdl));
             }
         }
+        return OK;
     }
-    return OK;
+    // 从流已入captureModel成为非执行流，aclrtSetStreamAttribute不支持非执行流，故仅在非capture场景设置
+    return NnopbaseSetAicpuStreamsNoBlocking(aicpuStreams);
 }
 
 aclnnStatus NnopbaseLaunchKFCTask(NnopbaseExecutor* const executor, aclrtStream stream)
 {
     OP_LOGI("Launch kernel by KFC mode.");
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddCapture(stream, executor->mc2.aicpuStreams));
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSetAicpuStreamsNoBlocking(executor->mc2.aicpuStreams));
     if (executor->mc2.aicpuStreams[0] != nullptr) {
         CHECK_COND(
             aclrtWaitAndResetNotify(executor->mc2.aicpuNotifies[0].first, executor->mc2.aicpuStreams[0], UINT32_MAX) ==
@@ -281,7 +282,6 @@ aclnnStatus NnopbaseLaunchKFCTaskA5(NnopbaseExecutor* const executor, aclrtStrea
     OP_LOGI("Launch kernel by A5 KFC mode.");
 
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAddCapture(stream, executor->mc2.aicpuStreams));
-    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseSetAicpuStreamsNoBlocking(executor->mc2.aicpuStreams));
     if (executor->mc2.aicpuStreams[0] != nullptr) {
         const uint64_t unfoldThread = executor->mc2.aicpuThreads[0];
         HcclComm comm = executor->mc2.commHandles[0];

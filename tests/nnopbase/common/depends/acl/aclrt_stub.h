@@ -100,9 +100,11 @@ public:
 
     virtual aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus* status, aclmdlRI* captureMdl)
     {
-        *status = ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+        *status = captureActive ? ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE : ACL_MODEL_RI_CAPTURE_STATUS_NONE;
         return ACL_SUCCESS;
     }
+
+    bool captureActive = false; // 模拟主流处于图捕获激活状态
 
 private:
     thread_local static std::shared_ptr<AclrtStub> aclrtInstance_;
