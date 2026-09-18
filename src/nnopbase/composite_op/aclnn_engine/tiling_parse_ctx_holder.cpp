@@ -40,6 +40,7 @@
 #include "op_info_serialize.h"
 #include "acl/acl_rt.h"
 #include "nnopbase_error_msg.h"
+#include "op_common/op_host/util/op_const_def.h"
 
 namespace op::internal {
 
@@ -128,7 +129,7 @@ void SetCoreNum(const Json& opJson, fe::PlatFormInfos* platformInfo, uint32_t& c
     } else if (coreType == "MIX") {
         coreNum = CalcMixCoreNum(cubeCoreNum, vectorCoreNum, opJson);
         OP_LOGI("Set MIX core num: %u", coreNum);
-    } else if (npuArch == NpuArch::DAV_2002 && (coreType == "MIX_AIV" || coreType == "MIX_VECTOR_CORE")) {
+    } else if (npuArch == Ops::Base::DAV_2002 && (coreType == "MIX_AIV" || coreType == "MIX_VECTOR_CORE")) {
         coreNum = vectorCoreNum + cubeCoreNum;
         OP_LOGI("Set MIX_AIV core num: %u", coreNum);
     } else {

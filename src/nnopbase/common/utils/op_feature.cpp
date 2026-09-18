@@ -27,6 +27,7 @@
 #include "opdev/platform.h"
 #include "opdev/op_log.h"
 #include "opdev/op_errno.h"
+#include "op_common/op_host/util/op_const_def.h"
 
 #define PKG_VERSION_NUM_9_2_0 90200000
 
@@ -126,7 +127,7 @@ aclnnStatus InitPcieThroughInfo()
     std::call_once(g_pcieThroughOnceFlag, []() {
         g_pcieThroughEnabled = false;
         NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-        if (npuArch != NpuArch::DAV_3510 && npuArch != NpuArch::DAV_9201 && npuArch != NpuArch::DAV_9202) {
+        if (npuArch != Ops::Base::DAV_3510 && npuArch != Ops::Base::DAV_9201 && npuArch != Ops::Base::DAV_9202) {
             OP_LOGI("Current NPU arch [%u] does not support PCIe through.", static_cast<uint32_t>(npuArch));
             return;
         }

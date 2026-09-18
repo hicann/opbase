@@ -16,6 +16,7 @@
 #include "platform/platform_info.h"
 #include "opdev/fast_vector.h"
 #include "acl/acl_rt.h"
+#include "op_common/op_host/util/op_const_def.h"
 
 using namespace std;
 
@@ -97,7 +98,7 @@ private:
     uint32_t vectorCoreNum_{0};
     std::vector<SocSpecAbilityVector> aiCoreInstAbility_;
     bool fftsPlusMode_{false};
-    NpuArch npuArch_{NpuArch::DAV_RESV};
+    NpuArch npuArch_{Ops::Base::DAV_RESV};
 };
 
 PlatformInfoImpl::PlatformInfoImpl(fe::PlatFormInfos* platformOriginInfo) : platformOriInfo_(platformOriginInfo)
@@ -275,7 +276,7 @@ void PlatformInfoImpl::InitNpuArch()
         npuArchVal = static_cast<uint32_t>(std::stoul(archStrVal));
     } catch (const std::exception& e) {
         OP_LOGW("stoul %s to uint32_t value failed, reason: %s", archStrVal.c_str(), e.what());
-        npuArch_ = NpuArch::DAV_RESV;
+        npuArch_ = Ops::Base::DAV_RESV;
         return;
     }
     OP_LOGI("Npu arch get from rtGetSocSpec: %s, change to uint32_t: %u", archVal, npuArchVal);
@@ -346,7 +347,7 @@ bool PlatformInfo::GetFftsPlusMode() const
 
 NpuArch PlatformInfo::GetCurNpuArch() const
 {
-    CHECK_RET(impl_ != nullptr, NpuArch::DAV_RESV);
+    CHECK_RET(impl_ != nullptr, Ops::Base::DAV_RESV);
     return impl_->GetCurNpuArch();
 }
 

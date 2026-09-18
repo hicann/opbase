@@ -13,9 +13,10 @@
  * \brief
  */
 
-#include "op_common/op_host/tiling_base_util.h"
-#include "tiling/platform/platform_ascendc.h"
 #include "platform/soc_spec.h"
+#include "op_common/op_host/tiling_base_util.h"
+#include "op_common/op_host/util/op_const_def.h"
+#include "tiling/platform/platform_ascendc.h"
 
 namespace Ops {
 namespace Base {
@@ -23,7 +24,7 @@ static const gert::Shape g_vec_1_shape = {1};
 
 static bool IsRegbaseSocVersion(NpuArch npuArch)
 {
-    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_5102};
+    const static std::set<NpuArch> regbaseArch = {Ops::Base::DAV_3510, Ops::Base::DAV_5102};
 
     return regbaseArch.find(npuArch) != regbaseArch.end();
 }

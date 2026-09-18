@@ -29,6 +29,7 @@
 #include "non_finite_check_op.h"
 #include "utils/string_utils.h"
 #include "dlopen_api.h"
+#include "op_common/op_host/util/op_const_def.h"
 
 namespace op {
 
@@ -1167,7 +1168,7 @@ static bool IsSaturationOverflow(aclrtStream stream)
     moduleIdValue.moduleId = kModelId;
     aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
     aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
-    auto ret = aclrtMallocWithCfg(&descBuf, (npuArch == NpuArch::DAV_2201) ? (descBufLen * 2) : descBufLen,
+    auto ret = aclrtMallocWithCfg(&descBuf, (npuArch == Ops::Base::DAV_2201) ? (descBufLen * 2) : descBufLen,
                                   ACL_MEM_TYPE_HIGH_BAND_WIDTH, &cfg);
     CHECK_COND(ret == ACL_SUCCESS, false, "Failed to call aclrtMallocWithCfg, return %d", ret);
 
@@ -1175,7 +1176,7 @@ static bool IsSaturationOverflow(aclrtStream stream)
 
     uint64_t realAddr = PtrToValue(descBuf);
 #if !defined(NNOPBASE_UT) && !defined(NNOPBASE_ST)
-    if (npuArch == NpuArch::DAV_2201) {
+    if (npuArch == Ops::Base::DAV_2201) {
         realAddr = PtrToValue(PtrShift(descBuf, descBufLen));
         ret = aclrtMemcpy(descBuf, sizeof(uint64_t), &realAddr, sizeof(uint64_t), ACL_MEMCPY_HOST_TO_DEVICE);
         CHECK_COND(ret == ACL_SUCCESS, false, "aclrtMemcpy failed, ret %d", ret);

@@ -13,6 +13,7 @@
 #include "dump/adump_pub.h"
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
+#include "op_common/op_host/util/op_const_def.h"
 
 namespace op {
 namespace internal {
@@ -46,7 +47,8 @@ bool IsOverflowDumpEnable()
 bool IsNeedL0ExceptionDump()
 {
     static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    static bool isNeed = ((npuArch == NpuArch::DAV_1001 || npuArch == NpuArch::DAV_3002) && IsArgExceptionDumpEnable());
+    static bool isNeed = ((npuArch == Ops::Base::DAV_1001 || npuArch == Ops::Base::DAV_3002) &&
+                          IsArgExceptionDumpEnable());
     OP_LOGI("NPU arch: %u, L0 exception dump needed: %d.", npuArch, isNeed);
     return isNeed;
 }

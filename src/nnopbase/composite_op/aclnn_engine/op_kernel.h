@@ -53,6 +53,7 @@
 #include "individual_op_internal.h"
 #include "bridge_dfx.h"
 #include "nnopbase_error_msg.h"
+#include "op_common/op_host/util/op_const_def.h"
 
 namespace op {
 namespace internal {
@@ -412,7 +413,7 @@ public:
     bool IsNeedSplitAicAndAiv(const TilingCtxOutput* res, const op::PlatformInfo& platformInfo)
     {
         NpuArch npuArch = platformInfo.GetCurNpuArch();
-        if (npuArch != NpuArch::DAV_2002) {
+        if (npuArch != Ops::Base::DAV_2002) {
             return false;
         }
         uint32_t cubeCoreNum = GetThreadLocalContext().opConfigInfo_.aicNum_;
@@ -687,7 +688,7 @@ public:
         bool needSplitAicAndAiv = IsNeedSplitAicAndAiv(res, platformInfo);
         if (!needSplitAicAndAiv) {
             NpuArch npuArch = platformInfo.GetCurNpuArch();
-            isVectorCoreEnableScenario_ = (npuArch == NpuArch::DAV_2002) ? true : false;
+            isVectorCoreEnableScenario_ = (npuArch == Ops::Base::DAV_2002) ? true : false;
             return DoLaunchWithDfx(res, stream, args);
         } else {
             OP_LOGW("Entering two Kernel Launches with AIC and AIV.");
@@ -841,9 +842,9 @@ public:
 #else
         static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
 #endif
-        bool needAlign = (npuArch == NpuArch::DAV_2201 || npuArch == NpuArch::DAV_3510) ? false : true;
-        MemsetVersion memsetVersion = (npuArch == NpuArch::DAV_3510) ? MemsetVersion::MEMSET_V1_ASCENDC :
-                                                                       MemsetVersion::MEMSET_V1;
+        bool needAlign = (npuArch == Ops::Base::DAV_2201 || npuArch == Ops::Base::DAV_3510) ? false : true;
+        MemsetVersion memsetVersion = (npuArch == Ops::Base::DAV_3510) ? MemsetVersion::MEMSET_V1_ASCENDC :
+                                                                         MemsetVersion::MEMSET_V1;
         CHECK_RET_CODE(SelectMemsetOpBin(memsetVersion, memSetValue_.size(), memsetBin), "Select MemSet op failed");
 
         // for multi thread
@@ -996,8 +997,8 @@ private:
 #else
         static NpuArch npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
 #endif
-        return npuArch != NpuArch::DAV_RESV &&
-               static_cast<uint32_t>(npuArch) >= static_cast<uint32_t>(NpuArch::DAV_3510);
+        return npuArch != Ops::Base::DAV_RESV &&
+               static_cast<uint32_t>(npuArch) >= static_cast<uint32_t>(Ops::Base::DAV_3510);
     }
 
     aclnnStatus AppendTensorShapeInfo(size_t idx, const aclTensor* tensor, ExpandableRtsArgBuffer* buffer,

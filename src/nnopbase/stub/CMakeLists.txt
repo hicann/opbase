@@ -88,6 +88,7 @@ target_link_libraries(stub_nnopbase
         $<BUILD_INTERFACE:error_manager_headers>
         metadef_headers
         runtime_headers
+        opbase_headers
         nnopbase_internal_headers
         stub_internal_headers
         c_sec

@@ -56,6 +56,7 @@ target_link_libraries(nnopbase
         $<BUILD_INTERFACE:hccl_headers>
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:cann_version_headers>
+        opbase_headers
         nnopbase_internal_headers
         -Wl,--no-as-needed
         runtime
