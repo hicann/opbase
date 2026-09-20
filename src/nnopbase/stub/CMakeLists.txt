@@ -10,6 +10,7 @@
 set(STUB_SRC_LIST
     ${CMAKE_CURRENT_BINARY_DIR}/stub_aicpu_task.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_common_types.cc
+    ${CMAKE_CURRENT_BINARY_DIR}/stub_direct_invoke_task.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_data_type_utils.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_format_utils.cc
     ${CMAKE_CURRENT_BINARY_DIR}/stub_framework_op.cc
@@ -43,7 +44,7 @@ add_custom_command(
     OUTPUT ${STUB_SRC_LIST}
     COMMAND echo "Generating nnopbase stub files."
             && ${HI_PYTHON} ${CMAKE_CURRENT_LIST_DIR}/gen_stubapi.py ${OPS_BASE_PATH} ${CMAKE_CURRENT_BINARY_DIR} > /dev/null 2>&1
-            && echo "Generating nnopbase stub files end."      
+            && echo "Generating nnopbase stub files end."
 )
 
 

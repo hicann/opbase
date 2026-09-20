@@ -21,7 +21,8 @@
 
 namespace op {
 
-enum CoreType { AI_CORE = 0, AI_CPU, DVPP, NO_CALC };
+// DIRECT_INVOKE is an engine-neutral compute task, not a device engine identity.
+enum CoreType { AI_CORE = 0, AI_CPU, DVPP, NO_CALC, DIRECT_INVOKE };
 
 enum OpIOType { OpInputType, OpOutputType, OpWorkspaceType };
 

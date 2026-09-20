@@ -321,7 +321,15 @@ struct OpArgContext {
         return nullptr;
     }
 
-    inline bool ContainsOpArgType(OpArgDef type)
+    inline const OpArgList* GetOpArg(OpArgDef type) const
+    {
+        if (type >= OP_INPUT_ARG && type <= OP_EXEC_MODE_ARG) {
+            return &argLists[type];
+        }
+        return nullptr;
+    }
+
+    inline bool ContainsOpArgType(OpArgDef type) const
     {
         if (type >= OP_INPUT_ARG && type <= OP_EXEC_MODE_ARG) {
             return argLists[type].args && argLists[type].count;

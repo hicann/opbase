@@ -1,5 +1,7 @@
 # 常用宏和类
 
+- **[AddDirectInvokeTask](AddDirectInvokeTask.md)**
+
 - **[ADD\_TO\_LAUNCHER\_LIST\_AICORE](ADD_TO_LAUNCHER_LIST_AICORE.md)**  
 
 - **[ADD\_TO\_LAUNCHER\_LIST\_AICPU](ADD_TO_LAUNCHER_LIST_AICPU.md)**  

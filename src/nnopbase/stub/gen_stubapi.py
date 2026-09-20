@@ -78,6 +78,7 @@ white_list_for_debug = [
     "format_utils.h",
     "data_type_utils.h",
     "common_types.h",
+    "direct_invoke_task.h",
     "aicpu/aicpu_task.h", # aicpu
     "individual_op_api.h",  # nnopbase
     "aclnn/acl_meta.h",
