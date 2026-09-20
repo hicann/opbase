@@ -757,10 +757,11 @@ void ReduceOpTiling::ComputeUnitA(const uint64_t* shape)
         bool splitHere = false;
         double maxRate = 0.0f;
         for (; step <= axisLen; step = step + stepLen) {
-            uint64_t s = step > sliceShape_[iA] ? FloorAlign(step, sliceShape_[iA]) : step; // 非连续与sliceShape对齐
+            uint64_t s = step;
             if (iA == Pattern::Dim - 1 && s <= sliceShape_[iA]) {
                 s = FloorAlign(s, ubBlockSize);
             }
+            s = s > sliceShape_[iA] ? FloorAlign(s, sliceShape_[iA]) : s; // 非连续与sliceShape对齐
             uint64_t tmpInnerA = innerA * s;
             uint64_t tmpOuterA = (s >= sliceShape_[iA] ?
                                       outerA / axisLen * CeilDiv(axisLen, s) :
@@ -825,19 +826,20 @@ void ReduceOpTiling::ComputeUnitR(const uint64_t* shape)
 
         // maybe bBlockNum not full
         step = std::min(bBlockNum / (innerA * innerR * cBlock_.aSize * cBlock_.rSize), axisLen);
-        if (step > sliceShape_[iR]) {
-            step = FloorAlign(step, sliceShape_[iR]);
-        }
         if (iR == Pattern::Dim - 1) {
             step = FloorAlign(step, ubBlockSize);
         }
+        if (step > sliceShape_[iR]) {
+            step = FloorAlign(step, sliceShape_[iR]);
+        }
         uint64_t minStep = (iR == axisInCacheLine ? cBlock_.cacheLineStep : 1UL);
         for (uint64_t s = step; s > minStep; s--) {
-            uint64_t tmpS = (s > sliceShape_[iR] ? FloorAlign(s, sliceShape_[iR]) : s); // 非连续与sliceShape对齐
+            uint64_t tmpS = s;
             if (iR == Pattern::Dim - 1 && tmpS != sliceShape_[iR]) {
                 // 尾轴R场景，尽可能保证尾轴切分block对齐，减少kernel侧补pad
                 tmpS = FloorAlign(tmpS, ubBlockSize);
             }
+            tmpS = (tmpS > sliceShape_[iR] ? FloorAlign(tmpS, sliceShape_[iR]) : tmpS); // 非连续与sliceShape对齐
             auto tmpOuterR = (tmpS >= sliceShape_[iR] ?
                                   outerR / axisLen * CeilDiv(axisLen, tmpS) :
                                   outerR / axisLen * sliceNum_[iR] * CeilDiv(sliceShape_[iR], tmpS));
@@ -889,10 +891,11 @@ void ReduceOpTiling::ComputeProgressUnitA(const uint64_t* shape)
         uint64_t s = (iA == unitA_.idx ? unitA_.step + 1UL : 1UL);
         uint64_t maxStep = (iA == unitA_.idx ? unitA_.step : 1UL);
         for (; s <= axisLen; s++) {
-            uint64_t tmpS = s > sliceShape_[iA] ? FloorAlign(s, sliceShape_[iA]) : s; // 非连续与sliceShape对齐
+            uint64_t tmpS = s;
             if (iA == Pattern::Dim - 1) {
                 tmpS = CeilAlign(tmpS, ubBlockSize);
             }
+            tmpS = tmpS > sliceShape_[iA] ? FloorAlign(tmpS, sliceShape_[iA]) : tmpS; // 非连续与sliceShape对齐
             uint64_t tmpInnerA = innerA * tmpS;
             uint64_t tmpOuterA = (tmpS >= sliceShape_[iA] ?
                                       outerA / axisLen * CeilDiv(axisLen, tmpS) :
