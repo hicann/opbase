@@ -3747,4 +3747,18 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCFeatureNotSupportSkipAndNotBreakLaunch
     ASSERT_EQ(recorder.calls.size(), 2U);
 }
 
+TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCCaptureActiveSkipSetNoBlocking)
+{
+    // 图捕获激活时从流入captureModel成为非执行流，不应再设置不阻塞属性；下发正常返回OK
+    SetStreamAttrRecorder recorder;
+    recorder.captureActive = true; // 开关设在recorder上，Install后生产代码取到的就是它
+    {
+        SetStreamAttrRecorderGuard guard(recorder);
+        TestHcclServerType([](void* executor) { NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU); },
+                           nnopbase::OPS_SUBPATH_ASCEND910B);
+    }
+    // capture分支不触碰aclrtSetStreamAttribute，观测桩零调用
+    EXPECT_TRUE(recorder.calls.empty());
+}
+
 #endif // UT_ENABLE_STREAM_NO_BLOCKING_TESTS
