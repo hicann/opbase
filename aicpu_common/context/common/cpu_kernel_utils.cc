@@ -20,6 +20,10 @@
 #include "securec.h"
 
 namespace aicpu {
+namespace {
+inline void* ValueToPtr(const uint64_t value) { return reinterpret_cast<void*>(static_cast<uintptr_t>(value)); }
+} // namespace
+
 /*
  * construct Tensor for memory self-management.
  */
@@ -214,8 +218,7 @@ void CpuKernelUtils::UpdateCustWorkSpaceInfo(CpuKernelContext* ctx, uint64_t wor
 {
     ctx->workspace_size_ = workspace_size;
     ctx->workspace_addr_ = workspace_addr;
-    auto ret = memset_s(reinterpret_cast<void*>(static_cast<uintptr_t>(ctx->workspace_addr_)), ctx->workspace_size_,
-                        0x00, ctx->workspace_size_);
+    auto ret = memset_s(ValueToPtr(ctx->workspace_addr_), ctx->workspace_size_, 0x00, ctx->workspace_size_);
     if (ret != EOK) {
         KERNEL_LOG_ERROR("UpdateCustWorkSpaceInfo memset_s failed.");
     }
