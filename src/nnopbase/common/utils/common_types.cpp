@@ -1011,6 +1011,9 @@ T aclScalar::To() const
             return static_cast<T>(v.i8);
         case op::DataType::DT_DOUBLE:
             if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+                if (std::isnan(v.d)) {
+                    return static_cast<bool>(v.d);
+                }
                 return std::abs(v.d) >= std::numeric_limits<double>::epsilon();
             } else {
                 return static_cast<T>(v.d);

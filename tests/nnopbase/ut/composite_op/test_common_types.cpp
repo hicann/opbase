@@ -1294,6 +1294,19 @@ TEST_F(CommonTypesTest, TestAclScalar_SpecialFloatValuesToBool)
     aclScalar negInfScalar(&negInf32, DataType::DT_FLOAT);
     EXPECT_EQ(static_cast<bool>(negInf32), negInfScalar.ToBool()); // -inf → true
 
+    // ---- double ----
+    double nan64 = NAN;
+    aclScalar nan64Scalar(&nan64, DataType::DT_DOUBLE);
+    EXPECT_EQ(static_cast<bool>(nan64), nan64Scalar.ToBool()); // NaN → true
+
+    double inf64 = INFINITY;
+    aclScalar inf64Scalar(&inf64, DataType::DT_DOUBLE);
+    EXPECT_EQ(static_cast<bool>(inf64), inf64Scalar.ToBool()); // +inf → true
+
+    double negInf64 = -INFINITY;
+    aclScalar negInf64Scalar(&negInf64, DataType::DT_DOUBLE);
+    EXPECT_EQ(static_cast<bool>(negInf64), negInf64Scalar.ToBool()); // -inf → true
+
     // ---- float16 ----
     // fp16 NaN = 0x7E00, fp16 +inf = 0x7C00, fp16 -inf = 0xFC00
     uint16_t fp16Nan = 0x7E00;
