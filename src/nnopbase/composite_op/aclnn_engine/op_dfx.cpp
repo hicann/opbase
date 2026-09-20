@@ -399,22 +399,35 @@ void PrepareBasicInfo(MsprofCompactInfo& compactInfo, const TaskInfo& taskInfo, 
             compactInfo.timeStamp, compactInfo.data.nodeBasicInfo.taskType);
 }
 
-void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream& stream)
+void GetCacheOpInfoSwitch(const aclrtStream& stream)
 {
-    aclrtStreamAttr stmAttrType = ACL_STREAM_ATTR_CACHE_OP_INFO;
     aclrtStreamAttrValue value = {};
     value.cacheOpInfoSwitch = 0;
     if (stream != nullptr) {
-        OP_CHECK_NO_RETURN(aclrtGetStreamAttribute(stream, stmAttrType, &value) == ACL_SUCCESS,
-                           OP_LOGW("aclrtGetStreamAttribute is not working as expected."));
+        aclError ret = aclrtGetStreamAttribute(stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
+        if (ret == ACL_SUCCESS) {
+            OP_LOGI("cacheOpInfoSwitch obtained from stream is %u.", value.cacheOpInfoSwitch);
+        } else {
+            value.cacheOpInfoSwitch = 0;
+            OP_LOGW("Failed to call aclrtGetStreamAttribute, return %d, cacheOpInfoSwitch is set to 0.", ret);
+        }
     } else {
-        OP_LOGI("stream is nullptr, cannot get cache op info switch from stream attribute.");
+        OP_LOGI("Stream is nullptr, cannot get cacheOpInfoSwitch, cacheOpInfoSwitch is %u.", value.cacheOpInfoSwitch);
     }
-#if defined(NNOPBASE_UT) || defined(NNOPBASE_ST)
-    op::internal::GetThreadLocalContext().cacheOpInfoSwitch_ = true;
-#else
     op::internal::GetThreadLocalContext().cacheOpInfoSwitch_ = static_cast<bool>(value.cacheOpInfoSwitch);
-#endif
+}
+
+void* GetAdumpDFXInfoAddr(uint32_t space, uint64_t& atomicIndex)
+{
+    // aclgraph的capture场景，使用AdumpGetDFXInfoAddrForStatic接口dump数据
+    const bool cacheOpInfoSwitch = op::internal::GetThreadLocalContext().cacheOpInfoSwitch_;
+    void* addr = cacheOpInfoSwitch ? Adx::AdumpGetDFXInfoAddrForStatic(space, atomicIndex) :
+                                     Adx::AdumpGetDFXInfoAddrForDynamic(space, atomicIndex);
+    if (addr == nullptr) {
+        OP_LOGW("Failed to get DFX info addr when calling %s, request space: %u.",
+                cacheOpInfoSwitch ? "AdumpGetDFXInfoAddrForStatic" : "AdumpGetDFXInfoAddrForDynamic", space);
+    }
+    return addr;
 }
 
 static void ReportCacheOpInfoTensor(uint8_t* dest, uint64_t& destOffset, const uint32_t& totalSize,

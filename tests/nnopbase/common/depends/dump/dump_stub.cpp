@@ -49,6 +49,7 @@ void* AdumpGetSizeInfoAddr(uint32_t space, uint32_t& atomicIndex)
 {
     return DumpStub::GetInstance()->AdumpGetSizeInfoAddr(space, atomicIndex);
 }
+
 void* AdumpGetDFXInfoAddrForDynamic(uint32_t space, uint64_t& atomicIndex)
 {
     return DumpStub::GetInstance()->AdumpGetDFXInfoAddrForDynamic(space, atomicIndex);
@@ -58,7 +59,9 @@ void* AdumpGetDFXInfoAddrForStatic(uint32_t space, uint64_t& atomicIndex)
 {
     return DumpStub::GetInstance()->AdumpGetDFXInfoAddrForStatic(space, atomicIndex);
 }
+
 uint64_t AdumpGetDumpSwitch(DumpType type) { return DumpStub::GetInstance()->AdumpGetDumpSwitch(type); }
+
 void AdumpPrintWorkSpace(const void* workSpaceAddr, const size_t dumpWorkSpaceSize, aclrtStream stream,
                          const char* opType)
 {
