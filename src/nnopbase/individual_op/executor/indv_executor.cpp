@@ -94,10 +94,16 @@ aclnnStatus RegisterCustomizedCallback(NnopbaseExecutor* const executor, Nnopbas
             if (inst == nullptr) {
                 return ACLNN_ERR_INNER;
             }
-            auto binHandle = binInfo->ccuBinHandle == nullptr ? binInfo->binHandle : binInfo->ccuBinHandle;
+            if (binInfo->ccuBinHandle != nullptr) {
+                NNOPBASE_ASSERT_OK_RETVAL(inst->AclrtBinarySetExceptionCallback(
+                    binInfo->ccuBinHandle, op::internal::PtrCastTo<void>(opImpl->exception_func), nullptr));
+                OP_LOGI("Register customized exception dump parse function for op %s fusion kernel successfully.",
+                        executor->opType);
+            }
             NNOPBASE_ASSERT_OK_RETVAL(inst->AclrtBinarySetExceptionCallback(
-                binHandle, op::internal::PtrCastTo<void>(opImpl->exception_func), nullptr));
-            OP_LOGI("Register customized exception dump parse function for op: %s successfully.", executor->opType);
+                binInfo->binHandle, op::internal::PtrCastTo<void>(opImpl->exception_func), nullptr));
+            OP_LOGI("Register customized exception dump parse function for op %s aicore kernel successfully.",
+                    executor->opType);
         }
     }
 #endif
