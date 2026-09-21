@@ -17,7 +17,7 @@
 | DLOG_WARN | WARN级别日志级别常量，值为2。 |
 | DLOG_ERROR | ERROR级别日志级别常量，值为3。 |
 | OP_MODULE_ID | 算子模块ID常量，值为63。 |
-| CheckLogLevel(int32_t moduleId, int32_t logLevel) | 日志级别检查函数，判断指定模块的日志级别是否使能，返回1为使能。 |
+| CheckLogLevel(int32_t moduleId, int32_t logLevel) | 日志级别检查函数，判断指定模块的日志级别是否启用，返回1为启用。 |
 | DlogRecord(int32_t moduleId, int32_t level, const char\* fmt, ...) | 日志记录函数，按模块ID和级别记录日志。 |
 | OP_LOGE_LIBOPAPI_REPORT(opName, fmt, ...) | 底层日志上报宏，记录ERROR级别日志。 |
 | OP_LOGE_WITHOUT_REPORT(opName, ...) | 仅记录日志不上报错误的日志宏。 |

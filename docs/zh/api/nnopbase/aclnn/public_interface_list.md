@@ -1,6 +1,6 @@
-﻿# 公共接口列表
+# 公共接口列表
 
-本章是调用CANN API过程中依赖的公共Meta接口，如创建/释放aclTensor、aclScalar、aclIntArray等。
+本章是调用CANN算子API过程中依赖的公共Meta接口，如创建/释放aclTensor、aclScalar、aclIntArray等。
 
 **头文件说明**：调用本章接口时，请按实际情况include依赖的头文件，一般定义在`${INSTALL_DIR}/include`目录。其中\$\{INSTALL\_DIR\}表示为CANN软件安装后的路径，以root安装举例，安装后路径为`/usr/local/Ascend/cann`。
 

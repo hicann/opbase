@@ -13,8 +13,8 @@
 
 新建 `Requirement|需求建议` 类Issue，并阐明新增算子的设计方案。Issue一般需包含以下内容：
 
-- **背景信息**  
-- **价值/作用**  
+- **背景信息**
+- **价值/作用**
 - **设计方案**
 
 请在提交的Issue中评论`/assign @yourself` 认领该任务。
@@ -30,7 +30,7 @@ Sig组将指派Committer对您提交的Issue进行评审并反馈修改意见。
 PR上库要求：
 
 - 代码合规：
-  - 代码是否符合《[C++ 编程规范](https://gitcode.com/cann/community/blob/master/contributor/coding-standards/C++%20Coding%20standards.md)》
+  - 代码是否符合《[C++编程规范](https://gitcode.com/cann/community/blob/master/contributor/coding-standards/C++%20Coding%20standards.md)》
   - 代码是否编译通过
 - 文档合规：文档写作规范参考[文档贡献指南](docs/CONTRIBUTING_DOCS.md)。
 - 贡献目录：按sig成员意见提交至指定目录，可参考已有文件放置规则。

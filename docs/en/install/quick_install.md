@@ -125,11 +125,11 @@ You can use a project script to automate the installation of these dependencies.
 1. Download the source code.
 
     Download the branch source code that matches the CANN version. Replace \$\{tag\_version\} with the branch tag name.
-   
+
     ```bash
     git clone -b ${tag_version} https://gitcode.com/cann/opbase.git
     ```
-    
+
 2. Install dependencies.
 
     Use the project script install\_deps.sh to install the dependencies. For a system that does not support the script, adapt it based on this section.

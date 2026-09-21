@@ -30,14 +30,14 @@ aclnnStatus aclSetOutputTensorAddr(aclOpExecutor *executor, const size_t index, 
   - index取值越界。
   - 第一次执行一阶段接口aclxxXxxGetWorkspaceSize时传入的aclTensor是nullptr，不再支持刷新地址。
   <!-- npu="950" id1 -->
-  - Ascend 950PR/Ascend 950DT：在该产品型号下若开启PCIe through功能，新Device存储地址与原Device存储地址分属不同地址空间时（PCIe地址与非PCIe地址互相刷新），刷新会被拦截。
+  - Ascend 950PR&950DT系列产品：在该产品型号下若开启PCIe through功能，新Device存储地址与原Device存储地址分属不同地址空间时（PCIe地址与非PCIe地址互相刷新），刷新会被拦截。
   <!-- end id1 -->
 
 ## 约束说明
 
 <!-- npu="950" id2 -->
-- Ascend 950PR/Ascend 950DT：在该产品型号下若开启PCIe through功能，要求新Device存储地址与原Device存储地址属于同一地址空间：PCIe地址只能刷新为PCIe地址，非PCIe地址只能刷新为非PCIe地址；若在两种地址空间之间互相刷新，接口将拦截该操作并返回错误码161002。
-- PCIe through是Ascend NPU的硬件能力，允许Device侧算子通过PCIe总线直接访问Host内存，从而省去Host与Device之间的数据拷贝。该功能仅支持Ascend 950PR和Ascend 950DT。
+- Ascend 950PR&950DT系列产品：在该产品型号下若开启PCIe through功能，要求新Device存储地址与原Device存储地址属于同一地址空间：PCIe地址只能刷新为PCIe地址，非PCIe地址只能刷新为非PCIe地址；若在两种地址空间之间互相刷新，接口将拦截该操作并返回错误码161002。
+- PCIe through是Ascend NPU的硬件能力，允许Device侧算子通过PCIe总线直接访问Host内存，从而省去Host与Device之间的数据拷贝。该功能仅支持Ascend 950PR&950DT系列产品。
 <!-- end id2 -->
 
 ## 调用示例
@@ -65,7 +65,7 @@ aclOpExecutor *executor;
 // 调用第1段接口
 aclnnAddCustomGetWorkspaceSize(tensor1, tensor2, output, tensorList, &workspaceSize, &executor);
 // 设置executor为可复用
-aclSetAclOpExecutorRepeatable(executor); 
+aclSetAclOpExecutorRepeatable(executor);
 void *addr;
 aclSetOutputTensorAddr(executor, 0, output, addr);  // 刷新输出aclTensor的device地址
 aclSetOutputTensorAddr(executor, 1, tensor3, addr);  // 刷新输出tensorList中第一个aclTensor的device地址
@@ -74,5 +74,5 @@ aclSetOutputTensorAddr(executor, 2, tensor4, addr);  // 刷新输出tensorList�
 // 调用第2段接口
 aclnnAddCustom(workspace, workspaceSize, executor, stream);
 // 清理executor
-aclDestroyAclOpExecutor(executor);  
+aclDestroyAclOpExecutor(executor);
 ```
