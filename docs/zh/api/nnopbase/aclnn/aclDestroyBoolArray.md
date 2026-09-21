@@ -1,4 +1,4 @@
-﻿# aclDestroyBoolArray
+# aclDestroyBoolArray
 
 ## 功能说明
 

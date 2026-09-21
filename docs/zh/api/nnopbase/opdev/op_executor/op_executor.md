@@ -1,4 +1,4 @@
-﻿# op\_executor
+# op\_executor
 
 - **[AllocTensor](AllocTensor.md)**  
 

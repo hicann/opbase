@@ -1,4 +1,4 @@
-﻿# aclDumpOpTensors
+# aclDumpOpTensors
 
 ## 功能说明
 
@@ -27,7 +27,7 @@ aclnnStatus aclDumpOpTensors(const char *opType, const char *opName, aclTensor *
 
 ## 约束说明
 
-本接口需要在开启算子Dump功能时有效，您可以通过aclInit接口开启Dump，也可以通过aclmdlInitDump、aclmdlSetDump、aclmdlFinalizeDump系列接口开启Dump，接口介绍请参见《Runtime运行时 API》。
+本接口需要在开启算子Dump功能时有效，您可以通过aclInit接口开启Dump，也可以通过aclmdlInitDump、aclmdlSetDump、aclmdlFinalizeDump系列接口开启Dump，接口介绍请参见《Runtime运行时API》。
 
 ## 调用示例
 

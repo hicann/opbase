@@ -1,4 +1,4 @@
-﻿# aclGetDataType
+# aclGetDataType
 
 ## 功能说明
 

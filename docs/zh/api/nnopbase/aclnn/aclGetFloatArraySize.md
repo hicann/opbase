@@ -1,4 +1,4 @@
-﻿# aclGetFloatArraySize
+# aclGetFloatArraySize
 
 ## 功能说明
 

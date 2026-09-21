@@ -1,4 +1,4 @@
-﻿# shape\_utils
+# shape\_utils
 
 - **[ToShape](ToShape.md)**  
 

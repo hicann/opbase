@@ -1,4 +1,4 @@
-﻿# aclGetStorageShape
+# aclGetStorageShape
 
 ## 功能说明
 

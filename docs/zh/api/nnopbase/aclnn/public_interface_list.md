@@ -1,4 +1,4 @@
-﻿# 公共接口列表
+# 公共接口列表
 
 本章是调用CANN API过程中依赖的公共Meta接口，如创建/释放aclTensor、aclScalar、aclIntArray等。
 

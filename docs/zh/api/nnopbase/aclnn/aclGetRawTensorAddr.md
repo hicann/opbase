@@ -1,4 +1,4 @@
-﻿# aclGetRawTensorAddr
+# aclGetRawTensorAddr
 
 ## 功能说明
 

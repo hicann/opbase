@@ -1,4 +1,4 @@
-﻿# aclDestroyFloatArray
+# aclDestroyFloatArray
 
 ## 功能说明
 

@@ -1,4 +1,4 @@
-﻿# aclGetIntArraySize
+# aclGetIntArraySize
 
 ## 功能说明
 

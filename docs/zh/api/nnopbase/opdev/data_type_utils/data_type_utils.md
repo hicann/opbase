@@ -1,4 +1,4 @@
-﻿# data\_type\_utils
+# data\_type\_utils
 
 - **[IsBasicType](IsBasicType.md)**  
 

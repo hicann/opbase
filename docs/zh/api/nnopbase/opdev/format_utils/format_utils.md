@@ -1,4 +1,4 @@
-﻿# format\_utils
+# format\_utils
 
 - **[IsPrivateFormat](IsPrivateFormat.md)**  
 

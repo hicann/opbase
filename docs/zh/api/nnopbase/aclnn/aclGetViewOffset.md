@@ -1,4 +1,4 @@
-﻿# aclGetViewOffset
+# aclGetViewOffset
 
 ## 功能说明
 

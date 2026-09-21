@@ -1,4 +1,4 @@
-﻿# aclnn公共接口
+# aclnn公共接口
 
 - [公共接口列表](public_interface_list.md)
 - [aclCreateBoolArray](aclCreateBoolArray.md)

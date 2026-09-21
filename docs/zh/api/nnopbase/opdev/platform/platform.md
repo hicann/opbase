@@ -1,4 +1,4 @@
-﻿# platform
+# platform
 
 - **[GetCurrentPlatformInfo](GetCurrentPlatformInfo.md)**  
 

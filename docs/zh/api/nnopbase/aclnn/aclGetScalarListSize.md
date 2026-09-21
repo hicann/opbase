@@ -1,4 +1,4 @@
-﻿# aclGetScalarListSize
+# aclGetScalarListSize
 
 ## 功能说明
 

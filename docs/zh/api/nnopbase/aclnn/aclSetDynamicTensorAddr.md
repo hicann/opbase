@@ -31,14 +31,14 @@ aclnnStatus aclSetDynamicTensorAddr(aclOpExecutor *executor, size_t irIndex, con
   - relativeIndex\>=tensors里tensor的个数。
   - irIndex\>=算子原型输入/输出参数的个数。
   <!-- npu="950" id1 -->
-  - Ascend 950PR/Ascend 950DT：在该产品型号下若开启PCIe through功能，新Device存储地址与原Device存储地址分属不同地址空间时（PCIe地址与非PCIe地址互相刷新），刷新会被拦截。
+  - Ascend 950PR&950DT系列产品：在该产品型号下若开启PCIe through功能，新Device存储地址与原Device存储地址分属不同地址空间时（PCIe地址与非PCIe地址互相刷新），刷新会被拦截。
   <!-- end id1 -->
 
 ## 约束说明
 
 <!-- npu="950" id2 -->
-- Ascend 950PR/Ascend 950DT：在该产品型号下若开启PCIe through功能，要求新Device存储地址与原Device存储地址属于同一地址空间：PCIe地址只能刷新为PCIe地址，非PCIe地址只能刷新为非PCIe地址；若在两种地址空间之间互相刷新，接口将拦截该操作并返回错误码161002。
-- PCIe through是Ascend NPU的硬件能力，允许Device侧算子通过PCIe总线直接访问Host内存，从而省去Host与Device之间的数据拷贝。该功能仅支持Ascend 950PR和Ascend 950DT。
+- Ascend 950PR&950DT系列产品：在该产品型号下若开启PCIe through功能，要求新Device存储地址与原Device存储地址属于同一地址空间：PCIe地址只能刷新为PCIe地址，非PCIe地址只能刷新为非PCIe地址；若在两种地址空间之间互相刷新，接口将拦截该操作并返回错误码161002。
+- PCIe through是Ascend NPU的硬件能力，允许Device侧算子通过PCIe总线直接访问Host内存，从而省去Host与Device之间的数据拷贝。该功能仅支持Ascend 950PR&950DT系列产品。
 <!-- end id2 -->
 
 ## 调用示例
@@ -68,7 +68,7 @@ aclOpExecutor *executor;
 // 调用第1段接口
 aclnnAddCustomGetWorkspaceSize(tensorList, tensor3, output, &workspaceSize, &executor);
 // 设置executor为可复用
-aclSetAclOpExecutorRepeatable(executor);  
+aclSetAclOpExecutorRepeatable(executor);
 void *addr;
 aclSetDynamicTensorAddr(executor, 0, 0, tensorList, addr); // 刷新输入tensorlist中第1个aclTensor的device地址
 aclSetDynamicTensorAddr(executor, 0, 1, tensorList, addr); // 刷新输入tensorlist中第2个aclTensor的device地址
@@ -78,5 +78,5 @@ aclSetDynamicTensorAddr(executor, 0, 1, output, addr); // 刷新输出output中�
 // 调用第2段接口
 aclnnAddCustom(workspace, workspaceSize, executor, stream);
 // 清理executor
-aclDestroyAclOpExecutor(executor);  
+aclDestroyAclOpExecutor(executor);
 ```
