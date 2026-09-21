@@ -45,6 +45,7 @@
 #include "memset_op.h"
 #include "op_ctx_def.h"
 #include "op_cache_internal.h"
+#include "op_dfx_internal.h"
 #include "op_run_context.h"
 #include "tiling_parse_ctx_holder.h"
 #include "outshape.h"
@@ -389,10 +390,10 @@ public:
 
         uint32_t dumpElemCount = argInfo.GetDFXInfoDumpElemCount();
         uint64_t dfxInfoDumpIndex = 0;
-        void* dfxInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
-        OP_CHECK(dfxInfoDumpAddr != nullptr,
-                 OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount),
-                 return ACLNN_ERR_INNER_NULLPTR);
+        void* dfxInfoDumpAddr = GetAdumpDFXInfoAddr(dumpElemCount, dfxInfoDumpIndex);
+        if (dfxInfoDumpAddr == nullptr) {
+            return ACLNN_ERR_INNER_NULLPTR;
+        }
         aclnnStatus ret = AppendAICErrorDFXInfoToDump(allArg, argNum, dfxInfoDumpAddr, dumpElemCount);
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Append AIC Error DFX info to dump failed!"), return ret);
         argInfo.SetDFXInfoDumpAddr(dfxInfoDumpAddr);

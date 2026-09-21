@@ -1306,7 +1306,7 @@ static void MultiDoLaunchNormalTest4()
 
 class MultiDoLaunchAlignTestDumpStub : public Adx::DumpStub {
 public:
-    void* AdumpGetDFXInfoAddrForDynamic(uint32_t space, uint64_t& atomicIndex)
+    void* AdumpGetDFXInfoAddrForStatic(uint32_t space, uint64_t& atomicIndex)
     {
         dfxInfoSpace_ = space;
         atomicIndex = 666;
@@ -1672,6 +1672,7 @@ static void MultiDoLaunchAlignTest()
 
     AclrtStub::GetInstance()->Install(&aclrtStub);
 
+    op::internal::GetThreadLocalContext().cacheOpInfoSwitch_ = true;
     MultiDoLaunchAlignTestDumpStub dumpStub;
     Adx::DumpStub::GetInstance()->Install(&dumpStub);
 
@@ -1718,6 +1719,7 @@ static void MultiDoLaunchAlignTest()
 
     AclrtStub::GetInstance()->UnInstall();
     Adx::DumpStub::GetInstance()->UnInstall();
+    op::internal::GetThreadLocalContext().cacheOpInfoSwitch_ = false;
 
     // tear down
     delete ptr1;

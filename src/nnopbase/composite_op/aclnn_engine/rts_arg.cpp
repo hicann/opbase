@@ -817,9 +817,10 @@ static void UpdateDFXInfoDumpAndTilingData(rtArgs_t& rtArg, const LaunchArgCache
     uint32_t dumpElemCount = launchCache->GetDFXInfoCacheElemCount();
     OP_CHECK(dumpElemCount != 0, OP_LOGW("DFX info elem count is 0, no need to update"), return);
     uint64_t dfxInfoDumpIndex = 0;
-    void* newDFXInfoDumpAddr = Adx::AdumpGetDFXInfoAddrForDynamic(dumpElemCount, dfxInfoDumpIndex);
-    OP_CHECK(newDFXInfoDumpAddr != nullptr,
-             OP_LOGW("AdumpGetDFXInfoAddrForDynamic get address failed, request space: %u", dumpElemCount), return);
+    void* newDFXInfoDumpAddr = GetAdumpDFXInfoAddr(dumpElemCount, dfxInfoDumpIndex);
+    if (newDFXInfoDumpAddr == nullptr) {
+        return;
+    }
     OP_CHECK(memcpy_s(newDFXInfoDumpAddr, dumpElemCount * sizeof(uint64_t), dfxInfoCache,
                       dumpElemCount * sizeof(uint64_t)) == EOK,
              OP_LOGW("Failed to memcpy."), return);

@@ -10,6 +10,7 @@
 
 #ifndef OP_DFX_INTERNAL_H_
 #define OP_DFX_INTERNAL_H_
+#include <cstdint>
 #include "profiling/aprof_pub.h"
 #include "op_dfx_util.h"
 #include "op_cache_internal.h"
@@ -42,7 +43,8 @@ struct CacheOpInfoBasic {
     MsrofTensorData tensorData[0];
 };
 
-void GetCacheOpInfoSwitch([[maybe_unused]] const aclrtStream& stream);
+void GetCacheOpInfoSwitch(const aclrtStream& stream);
+void* GetAdumpDFXInfoAddr(uint32_t space, uint64_t& atomicIndex);
 void ReportCacheOpInfo(const TaskInfo& taskInfo, OpArgContext* args, const uint64_t& opType,
                        const uint64_t& attrId = 0);
 void ReportCacheOpInfoFromCache(const TaskInfo& taskInfo, void* tensorInfoLists, const uint32_t& numBlocks,
