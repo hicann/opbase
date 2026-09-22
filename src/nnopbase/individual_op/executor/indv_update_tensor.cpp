@@ -49,6 +49,9 @@ aclnnStatus NnopbaseUpdateDynamicTensors(NnopbaseTensors* dstTensors, NnopbaseTe
                "Failed to update dynamic tensor[%u], instance num is %u, tensorListSize is %u.", index, dynamicNum,
                tensorListSize);
     for (uint32_t j = 0U; j < dynamicNum; j++) {
+        NNOPBASE_ASSERT_NOTNULL_RETVAL((*tensors->paramDescs.instances[index].tensorList)[j]);
+        dstTensors->extTensors[startIndex + j].storageShape =
+            (*tensors->paramDescs.instances[index].tensorList)[j]->GetStorageShape();
         NNOPBASE_ASSERT_OK_RETVAL(dstTensors->extTensors[startIndex + j].rt2Tensor.MutableTensorData().SetAddr(
             (*tensors->paramDescs.instances[index].tensorList)[j]->GetData(), nullptr));
         OP_LOGI("Update dynamic tensor[%u] addr %p successfully.", startIndex + j,
@@ -139,6 +142,7 @@ static aclnnStatus NnopbaseSetRt2Tensor(NnopbaseTensor* dstTensors, NnopbaseTens
 {
     GertTensor* dstRt2Tensor = &dstTensors->rt2Tensor;
     GertTensor* srcRt2Tensor = &srcTensor->rt2Tensor;
+    dstTensors->storageShape = srcTensor->storageShape;
     dstRt2Tensor->MutableOriginShape() = srcRt2Tensor->MutableOriginShape();
     dstRt2Tensor->MutableStorageShape() = srcRt2Tensor->MutableStorageShape();
     dstRt2Tensor->SetDataType(srcRt2Tensor->GetDataType());
@@ -189,6 +193,50 @@ static void NnopbaseUpdateOutputShapeTensorMap(NnopbaseTensors* dstTensors, cons
     dstTensors->outPutShapeMap = tensors->outPutShapeMap;
 }
 
+aclnnStatus NnopbaseRefreshInputStorageShape(NnopbaseExecutor* executor)
+{
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(executor->args);
+    if ((executor->args->binInfo == nullptr) || (!executor->args->binInfo->oomConfig.flag) ||
+        (!executor->args->binInfo->oomConfig.storageShapeEnabled)) {
+        return OK;
+    }
+    auto& dstTensors = executor->args->inputs;
+    auto& tensors = executor->ownArgs.inputs;
+    CHECK_COND(tensors.paramDescs.instances.size() >= tensors.paramDescs.count, ACLNN_ERR_PARAM_INVALID,
+               "Input instance count[%zu] is less than param count[%u].", tensors.paramDescs.instances.size(),
+               tensors.paramDescs.count);
+    CHECK_COND(dstTensors.paramDescs.instances.size() >= tensors.paramDescs.count, ACLNN_ERR_PARAM_INVALID,
+               "Cached input instance count[%zu] is less than param count[%u].",
+               dstTensors.paramDescs.instances.size(), tensors.paramDescs.count);
+    for (uint32_t i = 0U; i < tensors.paramDescs.count; i++) {
+        const auto& instance = tensors.paramDescs.instances[i];
+        const uint32_t startIndex = dstTensors.paramDescs.instances[i].startIndex;
+        if (instance.tensor != nullptr) {
+            CHECK_COND(startIndex < dstTensors.extTensors.size(), ACLNN_ERR_PARAM_INVALID,
+                       "Cached input tensor index[%u] is out of range[%zu].", startIndex,
+                       dstTensors.extTensors.size());
+            dstTensors.extTensors[startIndex].storageShape = instance.tensor->GetStorageShape();
+        } else if (instance.tensorList != nullptr) {
+            const uint32_t tensorListSize = static_cast<uint32_t>(instance.tensorList->Size());
+            CHECK_COND(tensorListSize == dstTensors.paramDescs.instances[i].num, ACLNN_ERR_PARAM_INVALID,
+                       "Failed to refresh dynamic tensor[%u], instance num is %u, tensorListSize is %u.", i,
+                       dstTensors.paramDescs.instances[i].num, tensorListSize);
+            for (uint32_t j = 0U; j < tensorListSize; j++) {
+                CHECK_COND(startIndex + j < dstTensors.extTensors.size(), ACLNN_ERR_PARAM_INVALID,
+                           "Cached input tensor index[%u] is out of range[%zu].", startIndex + j,
+                           dstTensors.extTensors.size());
+                if ((*instance.tensorList)[j] == nullptr) {
+                    dstTensors.extTensors[startIndex + j].storageShape = {};
+                    continue;
+                }
+                dstTensors.extTensors[startIndex + j].storageShape = (*instance.tensorList)[j]->GetStorageShape();
+            }
+        }
+    }
+    return OK;
+}
+
 aclnnStatus NnopbaseSaveCachedTensor(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors, bool isInput)
 {
     NnopbaseSaveParamDesc(dstTensors, tensors);
@@ -235,6 +283,7 @@ aclnnStatus NnopbaseUpdateInputAddr(NnopbaseExecutor* executor)
 {
     auto& dstTensors = executor->args->inputs;
     auto& tensors = executor->ownArgs.inputs;
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseRefreshInputStorageShape(executor));
     for (uint32_t i = 0U; i < tensors.paramDescs.count; i++) {
         if (tensors.paramDescs.instances[i].tensorList != nullptr) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseUpdateDynamicTensors(&dstTensors, &tensors, i));

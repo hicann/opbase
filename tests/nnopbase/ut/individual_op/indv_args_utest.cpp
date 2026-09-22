@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "bridge_dfx.h"
 #include "executor/indv_args.h"
 #include "executor/indv_bininfo.h"
 #include "executor/indv_executor.h"
@@ -34,6 +35,7 @@ void SetTensor(NnopbaseTensor& tensor, void* addr, gert::TensorPlacement placeme
 {
     tensor.isNull = false;
     GertShape gertShape(shape);
+    tensor.storageShape = gertShape;
     tensor.rt2Tensor.MutableOriginShape() = gertShape;
     tensor.rt2Tensor.MutableStorageShape() = gertShape;
     tensor.rt2Tensor.SetDataType(dtype);
@@ -147,4 +149,269 @@ TEST_F(NnopbaseIndvArgsTest, GetIrIndexMapsFlattenedDynamicTensorIndexBackToIrIn
 
     EXPECT_EQ(irIndex, 1U);
     EXPECT_EQ(relativeIndex, 2U);
+}
+
+TEST_F(NnopbaseIndvArgsTest, AppendOomStorageShapeForIgnoreContiguousTensor)
+{
+    const int64_t viewShape[] = {2, 2};
+    const int64_t viewStrides[] = {3, 1};
+    const int64_t storageShape[] = {2, 3};
+    uint8_t data[32] = {};
+    aclTensor* tensor = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, viewStrides, 0,
+                                        aclFormat::ACL_FORMAT_ND, storageShape, 2U, data);
+    ASSERT_NE(tensor, nullptr);
+
+    args_.inputs.paramDescs.count = 1U;
+    args_.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(args_.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    args_.inputs.paramDescs.instances[0U].ignoreCont = true;
+    args_.inputs.paramDescs.instances[0U].tensor = tensor;
+    args_.inputs.extTensors.resize(1U);
+    args_.inputs.extTensors[0U].storageShape = tensor->GetStorageShape();
+    args_.inputs.num = 1U;
+    executor_.ownArgs.inputs.paramDescs.count = 1U;
+    executor_.ownArgs.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    executor_.ownArgs.inputs.paramDescs.instances[0U].ignoreCont = true;
+    executor_.ownArgs.inputs.paramDescs.instances[0U].tensor = tensor;
+    args_.dfxInfo.resize(2U);
+    binInfo_.oomConfig.flag = true;
+    binInfo_.oomConfig.storageShapeEnabled = true;
+    binInfo_.oomConfig.version = 3U;
+    binInfo_.oomConfig.tensorVersion = 5U;
+    NnopbaseExecutorArgsAddr argsAddr{nullptr, nullptr, launchBuf_.data(), nullptr, nullptr};
+
+    ASSERT_EQ(NnopbaseExecutorArgsGetDfxInfo(&executor_, &argsAddr, 1U, nullptr), OK);
+    const auto* extension = launchBuf_.data() + 16U;
+    EXPECT_EQ(extension[0U], 0x4FU);
+    EXPECT_EQ(extension[1U], 0x03U);
+
+    uint64_t size = 0U;
+    std::memcpy(&size, extension + 2U, sizeof(size));
+    EXPECT_EQ(size, 19U);
+    EXPECT_EQ(extension[10U], 1U);
+    EXPECT_EQ(extension[11U], 0U);
+    EXPECT_EQ(extension[12U], 5U);
+    uint64_t storageSize = 0U;
+    std::memcpy(&storageSize, extension + 13U, sizeof(storageSize));
+    EXPECT_EQ(storageSize, 6U);
+    const size_t exceptionDumpSize = op::internal::IsArgExceptionDumpEnable() ? sizeof(uint64_t) : 0U;
+    EXPECT_EQ(argsAddr.ptr, launchBuf_.data() + 40U + exceptionDumpSize);
+
+    aclDestroyTensor(tensor);
+}
+
+TEST_F(NnopbaseIndvArgsTest, AppendOomStorageShapeForTensorList)
+{
+    const int64_t viewShape[] = {2, 2};
+    const int64_t contiguousStrides[] = {2, 1};
+    const int64_t nonContiguousStrides[] = {3, 1};
+    const int64_t storageShape0[] = {2, 3};
+    const int64_t storageShape1[] = {2, 4};
+    uint8_t data0[32] = {};
+    uint8_t data1[32] = {};
+    aclTensor* tensor0 = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, nonContiguousStrides, 0,
+                                         aclFormat::ACL_FORMAT_ND, storageShape0, 2U, data0);
+    aclTensor* tensor1 = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, contiguousStrides, 0,
+                                         aclFormat::ACL_FORMAT_ND, storageShape1, 2U, data1);
+    ASSERT_NE(tensor0, nullptr);
+    ASSERT_NE(tensor1, nullptr);
+    const aclTensor* tensorListData[] = {tensor0, tensor1};
+    aclTensorList* tensorList = aclCreateTensorList(tensorListData, 2U);
+    ASSERT_NE(tensorList, nullptr);
+
+    args_.inputs.paramDescs.count = 1U;
+    args_.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(args_.inputs.paramDescs.instances[0U], 0U, 2U, true, true);
+    args_.inputs.paramDescs.instances[0U].ignoreCont = true;
+    args_.inputs.paramDescs.instances[0U].tensorList = tensorList;
+    args_.inputs.extTensors.resize(2U);
+    args_.inputs.extTensors[0U].storageShape = tensor0->GetStorageShape();
+    args_.inputs.extTensors[1U].storageShape = tensor1->GetStorageShape();
+    args_.inputs.num = 2U;
+    executor_.ownArgs.inputs.paramDescs.count = 1U;
+    executor_.ownArgs.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[0U], 0U, 2U, true, true);
+    executor_.ownArgs.inputs.paramDescs.instances[0U].ignoreCont = true;
+    executor_.ownArgs.inputs.paramDescs.instances[0U].tensorList = tensorList;
+    args_.dfxInfo.resize(2U);
+    binInfo_.oomConfig.flag = true;
+    binInfo_.oomConfig.storageShapeEnabled = true;
+    binInfo_.oomConfig.version = 2U;
+    binInfo_.oomConfig.tensorVersion = 7U;
+    NnopbaseExecutorArgsAddr argsAddr{nullptr, nullptr, launchBuf_.data(), nullptr, nullptr};
+
+    ASSERT_EQ(NnopbaseExecutorArgsGetDfxInfo(&executor_, &argsAddr, 1U, nullptr), OK);
+    const auto* extension = launchBuf_.data() + 16U;
+    EXPECT_EQ(extension[0U], 0x4FU);
+    EXPECT_EQ(extension[1U], 0x02U);
+
+    uint64_t size = 0U;
+    std::memcpy(&size, extension + 2U, sizeof(size));
+    EXPECT_EQ(size, 30U);
+    EXPECT_EQ(extension[10U], 2U);
+    EXPECT_EQ(extension[11U], 0U);
+    EXPECT_EQ(extension[12U], 2U);
+    EXPECT_EQ(extension[13U], 0U);
+    EXPECT_EQ(extension[14U], 7U);
+    uint64_t storageSize0 = 0U;
+    std::memcpy(&storageSize0, extension + 15U, sizeof(storageSize0));
+    EXPECT_EQ(storageSize0, 6U);
+    EXPECT_EQ(extension[23U], 7U);
+    uint64_t storageSize1 = 0U;
+    std::memcpy(&storageSize1, extension + 24U, sizeof(storageSize1));
+    EXPECT_EQ(storageSize1, 8U);
+    const size_t exceptionDumpSize = op::internal::IsArgExceptionDumpEnable() ? sizeof(uint64_t) : 0U;
+    EXPECT_EQ(argsAddr.ptr, launchBuf_.data() + 48U + exceptionDumpSize);
+
+    aclDestroyTensorList(tensorList);
+}
+
+TEST_F(NnopbaseIndvArgsTest, AppendOomStorageShapeForMixedTensorAndTensorList)
+{
+    const int64_t viewShape[] = {2, 2};
+    const int64_t tensorStrides[] = {3, 1};
+    const int64_t listStrides0[] = {4, 1};
+    const int64_t listStrides1[] = {2, 1};
+    const int64_t tensorStorageShape[] = {2, 3};
+    const int64_t listStorageShape0[] = {2, 4};
+    const int64_t listStorageShape1[] = {2, 5};
+    uint8_t tensorData[32] = {};
+    uint8_t listData0[32] = {};
+    uint8_t listData1[32] = {};
+    aclTensor* tensor = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, tensorStrides, 0,
+                                         aclFormat::ACL_FORMAT_ND, tensorStorageShape, 2U, tensorData);
+    aclTensor* listTensor0 = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, listStrides0, 0,
+                                              aclFormat::ACL_FORMAT_ND, listStorageShape0, 2U, listData0);
+    aclTensor* listTensor1 = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, listStrides1, 0,
+                                              aclFormat::ACL_FORMAT_ND, listStorageShape1, 2U, listData1);
+    ASSERT_NE(tensor, nullptr);
+    ASSERT_NE(listTensor0, nullptr);
+    ASSERT_NE(listTensor1, nullptr);
+    const aclTensor* tensorListData[] = {listTensor0, listTensor1};
+    aclTensorList* tensorList = aclCreateTensorList(tensorListData, 2U);
+    ASSERT_NE(tensorList, nullptr);
+
+    args_.inputs.paramDescs.count = 2U;
+    args_.inputs.paramDescs.instances.resize(2U);
+    SetParamInstance(args_.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    SetParamInstance(args_.inputs.paramDescs.instances[1U], 1U, 2U, true, true);
+    args_.inputs.paramDescs.instances[0U].tensor = tensor;
+    args_.inputs.paramDescs.instances[1U].tensorList = tensorList;
+    args_.inputs.extTensors.resize(3U);
+    args_.inputs.extTensors[0U].storageShape = tensor->GetStorageShape();
+    args_.inputs.extTensors[1U].storageShape = listTensor0->GetStorageShape();
+    args_.inputs.extTensors[2U].storageShape = listTensor1->GetStorageShape();
+    args_.inputs.num = 3U;
+
+    executor_.ownArgs.inputs.paramDescs.count = 2U;
+    executor_.ownArgs.inputs.paramDescs.instances.resize(2U);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[1U], 1U, 2U, true, true);
+    executor_.ownArgs.inputs.paramDescs.instances[0U].tensor = tensor;
+    executor_.ownArgs.inputs.paramDescs.instances[1U].tensorList = tensorList;
+
+    args_.dfxInfo.resize(3U);
+    binInfo_.oomConfig.flag = true;
+    binInfo_.oomConfig.storageShapeEnabled = true;
+    binInfo_.oomConfig.version = 1U;
+    binInfo_.oomConfig.tensorVersion = 2U;
+    NnopbaseExecutorArgsAddr argsAddr{nullptr, nullptr, launchBuf_.data(), nullptr, nullptr};
+
+    ASSERT_EQ(NnopbaseExecutorArgsGetDfxInfo(&executor_, &argsAddr, 1U, nullptr), OK);
+    const auto* tensorRecord = launchBuf_.data() + 24U;
+    EXPECT_EQ(tensorRecord[0U], 0x4FU);
+    EXPECT_EQ(tensorRecord[1U], 1U);
+    uint64_t tensorRecordSize = 0U;
+    std::memcpy(&tensorRecordSize, tensorRecord + 2U, sizeof(tensorRecordSize));
+    EXPECT_EQ(tensorRecordSize, 19U);
+    EXPECT_EQ(tensorRecord[10U], 1U);
+    EXPECT_EQ(tensorRecord[12U], 2U);
+    uint64_t tensorStorageSize = 0U;
+    std::memcpy(&tensorStorageSize, tensorRecord + 13U, sizeof(tensorStorageSize));
+    EXPECT_EQ(tensorStorageSize, 6U);
+
+    // 新协议：扩展区仅一个2B总Header，RecordBody连续拼接，无每条Record的独立Header
+    const auto* tensorListRecord = tensorRecord + 21U;
+    uint64_t tensorListRecordSize = 0U;
+    std::memcpy(&tensorListRecordSize, tensorListRecord, sizeof(tensorListRecordSize));
+    EXPECT_EQ(tensorListRecordSize, 30U);
+    EXPECT_EQ(tensorListRecord[8U], 2U);
+    EXPECT_EQ(tensorListRecord[9U], 0U);
+    EXPECT_EQ(tensorListRecord[10U], 2U);
+    EXPECT_EQ(tensorListRecord[12U], 2U);
+    EXPECT_EQ(tensorListRecord[21U], 2U);
+    uint64_t listStorageSize0 = 0U;
+    uint64_t listStorageSize1 = 0U;
+    std::memcpy(&listStorageSize0, tensorListRecord + 13U, sizeof(listStorageSize0));
+    std::memcpy(&listStorageSize1, tensorListRecord + 22U, sizeof(listStorageSize1));
+    EXPECT_EQ(listStorageSize0, 8U);
+    EXPECT_EQ(listStorageSize1, 10U);
+
+    const size_t exceptionDumpSize = op::internal::IsArgExceptionDumpEnable() ? sizeof(uint64_t) : 0U;
+    EXPECT_EQ(argsAddr.ptr, launchBuf_.data() + 80U + exceptionDumpSize);
+    aclDestroyTensor(tensor);
+    aclDestroyTensorList(tensorList);
+}
+
+TEST_F(NnopbaseIndvArgsTest, RefreshCachedStorageShapeBeforeOomSerialization)
+{
+    const int64_t viewShape[] = {2, 2};
+    const int64_t viewStrides[] = {3, 1};
+    const int64_t storageShape[] = {2, 4};
+    uint8_t data[32] = {};
+    aclTensor* tensor = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, viewStrides, 0,
+                                        aclFormat::ACL_FORMAT_ND, storageShape, 2U, data);
+    ASSERT_NE(tensor, nullptr);
+
+    GertShape oldStorageShape({2, 3});
+    args_.inputs.paramDescs.count = 1U;
+    args_.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(args_.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    args_.inputs.extTensors.resize(1U);
+    args_.inputs.extTensors[0U].storageShape = oldStorageShape;
+    args_.inputs.num = 1U;
+    executor_.ownArgs.inputs.paramDescs.count = 1U;
+    executor_.ownArgs.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    executor_.ownArgs.inputs.paramDescs.instances[0U].tensor = tensor;
+
+    args_.dfxInfo.resize(2U);
+    binInfo_.oomConfig.flag = true;
+    binInfo_.oomConfig.storageShapeEnabled = true;
+    binInfo_.oomConfig.version = 1U;
+    binInfo_.oomConfig.tensorVersion = 2U;
+
+    ASSERT_EQ(NnopbaseRefreshInputStorageShape(&executor_), OK);
+    EXPECT_EQ(args_.inputs.extTensors[0U].storageShape, tensor->GetStorageShape());
+    EXPECT_EQ(args_.inputs.extTensors[0U].storageShape.GetShapeSize(), 8);
+
+    NnopbaseExecutorArgsAddr argsAddr{nullptr, nullptr, launchBuf_.data(), nullptr, nullptr};
+    ASSERT_EQ(NnopbaseExecutorArgsGetDfxInfo(&executor_, &argsAddr, 1U, nullptr), OK);
+    uint64_t storageShapeSize = 0U;
+    std::memcpy(&storageShapeSize, launchBuf_.data() + 29U, sizeof(storageShapeSize));
+    EXPECT_EQ(storageShapeSize, 8U);
+
+    aclDestroyTensor(tensor);
+}
+
+TEST_F(NnopbaseIndvArgsTest, OomStorageShapeMaxSizeReservesAlignmentPadding)
+{
+    const int64_t shape[] = {2, 2};
+    const int64_t storageShape[] = {2, 3};
+    uint8_t data[32] = {};
+    aclTensor* tensor = aclCreateTensor(shape, 2U, aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, storageShape, 2U, data);
+    ASSERT_NE(tensor, nullptr);
+
+    executor_.ownArgs.inputs.paramDescs.count = 1U;
+    executor_.ownArgs.inputs.paramDescs.instances.resize(1U);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    executor_.ownArgs.inputs.paramDescs.instances[0U].tensor = tensor;
+    binInfo_.oomConfig.flag = true;
+    binInfo_.oomConfig.storageShapeEnabled = true;
+
+    EXPECT_EQ(NnopbaseGetOomInfoExtMaxSize(&executor_), 24U);
+
+    aclDestroyTensor(tensor);
 }

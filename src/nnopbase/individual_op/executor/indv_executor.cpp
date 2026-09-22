@@ -119,7 +119,8 @@ void ResizeExecutorArgsBuf(NnopbaseExecutor* executor)
     const size_t tilingDataSize = executor->args->binInfo->opParaSize == 0U ? NNOPBASE_MAX_TILING_DATA_LEN :
                                                                               executor->args->binInfo->opParaSize;
     // 3k包括2k的输入输出、oom、dynamic输入的shape信息和rtHostInputInfo_t结构体
-    const size_t argSize = executor->args->inputs.hostInputSize + tilingDataSize + NNOPBASE_HOST_DATA_LEN;
+    const size_t argSize = executor->args->inputs.hostInputSize + tilingDataSize + NNOPBASE_HOST_DATA_LEN +
+                           NnopbaseGetOomInfoExtMaxSize(executor);
     OP_LOGI("Tiling data size is %zu, argSize is %zu, hostInputSize is %zu.", tilingDataSize, argSize,
             executor->args->inputs.hostInputSize);
     if ((ioNum > NNOPBASE_MAX_TENSOR_NUM) || (argSize > argsLen) || (tilingDataSize > NNOPBASE_MAX_TILING_DATA_LEN)) {
@@ -596,11 +597,11 @@ aclnnStatus NnopbaseExecutorPrepareParamsExt(NnopbaseExecutor* const executor, a
 
         const size_t alignTilingDataSize = ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U :
                                                                           tilingDataSize; // 8byte对齐
-        argsAddr.ptr = executor->args->binInfo->oomFlag ?
+        argsAddr.ptr = executor->args->binInfo->oomConfig.flag ?
                            op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + alignTilingDataSize :
                            op::internal::PtrCastTo<NnopbaseUChar>(tilingData->GetData()) + tilingDataSize;
 
-        if (executor->args->binInfo->oomFlag || op::internal::IsArgExceptionDumpEnable()) {
+        if (executor->args->binInfo->oomConfig.flag || op::internal::IsArgExceptionDumpEnable()) {
             NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorArgsGetDfxInfo(executor, &argsAddr, workspaceNum, stream));
         }
     } else {
@@ -972,7 +973,7 @@ aclnnStatus NnopbaseExecutorTilingAndUpdateBinInfo(NnopbaseExecutor* executor)
 
     // do tiling
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseExecutorDoTiling(executor));
-    if (op::internal::IsArgExceptionDumpEnable() || executor->args->binInfo->oomFlag) {
+    if (op::internal::IsArgExceptionDumpEnable() || executor->args->binInfo->oomConfig.flag) {
         NnopbaseExecutorPrepareDfxInfo(executor);
     }
     return OK;
@@ -1045,6 +1046,7 @@ static bool NnopbaseExecutorCachedArgs(NnopbaseExecutor* executor)
     // 新流程有三种场景会走到这里：匹配到缓存但是非连续、args被占用导致没匹配到缓存和没匹配到缓存
     // 匹配到缓存但是非连续不用再执行tiling
     if (executor->isCachedArgs) {
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseRefreshInputStorageShape(executor));
         if ((executor->args->binInfo->initValues.size() != 0U)) {
             executor->hasMemset = executor->args->binInfo->isStaticShape ? true : executor->args->tilingInfo.needAtomic;
         }
@@ -1056,6 +1058,7 @@ static bool NnopbaseExecutorCachedArgs(NnopbaseExecutor* executor)
         // 老流程add io时tensor是添加到ownArgs上，此时也需要更新args上的io地址
         UpdateArgsIoAddr(&executor->args->inputs, &executor->ownArgs.inputs);
         UpdateArgsIoAddr(&executor->args->outputs, &executor->ownArgs.outputs);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseRefreshInputStorageShape(executor));
         UpdateArgsUncontiguousTensor(executor->args->inputs.unContiguousTensors,
                                      executor->ownArgs.inputs.unContiguousTensors);
         if ((executor->args->binInfo->initValues.size() != 0U)) {

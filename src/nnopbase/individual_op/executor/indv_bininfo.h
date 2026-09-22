@@ -109,6 +109,13 @@ struct NnopbaseDfxInfo {
     bool isTimeStampEnable = false;
 };
 
+struct NnopbaseOomConfig {
+    bool flag = false;                 // supportInfo.op_debug_config包含oom
+    bool storageShapeEnabled = false;  // JSON含oom版本字段时开启StorageShape扩展
+    uint8_t version = 0U;
+    uint8_t tensorVersion = 0U;
+};
+
 struct NnopbaseCoreNum {
     uint32_t aicNum = 0U;
     uint32_t aivNum = 0U;
@@ -227,7 +234,7 @@ typedef struct {
     NnopbaseDfxInfo dfxInfo;
     size_t debugBufSize = 0U;
     uint32_t opParaSize = 0U;
-    bool oomFlag = false;
+    NnopbaseOomConfig oomConfig;
     NnopbaseTaskRation taskRation = kRationEnd;
     std::vector<NnopbaseInitValueInfo> initValues;
     std::shared_ptr<MemsetOpInfo> memsetInfo = nullptr;

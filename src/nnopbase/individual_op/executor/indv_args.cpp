@@ -11,6 +11,106 @@
 #include "indv_executor.h"
 #include "bridge_dfx.h"
 #include "utils/indv_soc.h"
+#include <algorithm>
+#include <cstring>
+
+namespace {
+constexpr uint8_t NNOPBASE_OOM_STORAGE_SHAPE_MAGIC = 0x4FU;
+constexpr uint8_t NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_KIND = 1U;
+constexpr uint8_t NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_LIST_KIND = 2U;
+constexpr size_t NNOPBASE_OOM_STORAGE_SHAPE_HEADER_SIZE = 2U;
+constexpr size_t NNOPBASE_OOM_STORAGE_SHAPE_DESC_SIZE = 9U;
+constexpr size_t NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_SIZE = 21U;
+constexpr size_t NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_LIST_HEADER_SIZE = 14U;
+
+struct NnopbaseOomStorageShapeRecord {
+    size_t startIndex = 0U;
+    uint16_t count = 0U;
+    bool isTensorList = false;
+};
+
+static aclnnStatus NnopbaseCollectOomStorageShapeRecords(
+    const NnopbaseExecutor* const executor, std::vector<NnopbaseOomStorageShapeRecord>& records)
+{
+    if ((executor == nullptr) || (executor->args == nullptr) || (executor->args->binInfo == nullptr) ||
+        (!executor->args->binInfo->oomConfig.storageShapeEnabled)) {
+        return OK;
+    }
+
+    const auto& instances = executor->ownArgs.inputs.paramDescs.instances;
+    const auto& inputInstances = executor->args->inputs.paramDescs.instances;
+    const uint32_t instanceCount = executor->ownArgs.inputs.paramDescs.count;
+    CHECK_COND(instances.size() >= instanceCount, ACLNN_ERR_PARAM_INVALID,
+               "Input instance count[%zu] is less than param count[%u].", instances.size(), instanceCount);
+    CHECK_COND(inputInstances.size() >= instanceCount, ACLNN_ERR_PARAM_INVALID,
+               "Cached input instance count[%zu] is less than param count[%u].", inputInstances.size(),
+               instanceCount);
+    for (uint32_t i = 0U; i < instanceCount; ++i) {
+        const auto& instance = instances[i];
+        if (instance.tensor != nullptr) {
+            if (!IsContiguousShape(instance.tensor)) {
+                records.push_back({inputInstances[i].startIndex, 1U, false});
+            }
+            continue;
+        }
+        if (instance.tensorList == nullptr) {
+            continue;
+        }
+        bool hasUnContiguousMember = false;
+        const uint64_t count = instance.tensorList->Size();
+        for (uint64_t j = 0U; j < count; ++j) {
+            const aclTensor* tensor = (*instance.tensorList)[j];
+            if ((tensor != nullptr) && (!IsContiguousShape(tensor))) {
+                hasUnContiguousMember = true;
+                break;
+            }
+        }
+        if (hasUnContiguousMember) {
+            records.push_back({inputInstances[i].startIndex, static_cast<uint16_t>(count), true});
+        }
+    }
+    return OK;
+}
+
+static aclnnStatus NnopbaseAppendOomStorageShapeRecord(const NnopbaseExecutorArgs* const args,
+                                                       const NnopbaseOomStorageShapeRecord& record,
+                                                       NnopbaseExecutorArgsAddr* const argsAddr)
+{
+    NnopbaseUChar* addr = argsAddr->ptr;
+    const uint8_t tensorVersion = args->binInfo->oomConfig.tensorVersion & 0x0FU;
+
+    const uint64_t bodySize = record.isTensorList ?
+                                  static_cast<uint64_t>(NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_LIST_HEADER_SIZE -
+                                                        NNOPBASE_OOM_STORAGE_SHAPE_HEADER_SIZE +
+                                                        static_cast<size_t>(record.count) *
+                                                            NNOPBASE_OOM_STORAGE_SHAPE_DESC_SIZE) :
+                                  static_cast<uint64_t>(NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_SIZE -
+                                                        NNOPBASE_OOM_STORAGE_SHAPE_HEADER_SIZE);
+    addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, bodySize);
+    const uint8_t kind = record.isTensorList ? NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_LIST_KIND :
+                                               NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_KIND;
+    *addr++ = kind;
+    *addr++ = 0U; // reserved字段
+    if (record.isTensorList) {
+        addr = nnopbase::NnopbaseAppendByte<uint16_t>(addr, record.count);
+    }
+
+    const auto& extTensors = args->inputs.extTensors;
+    const uint32_t tensorNum = record.isTensorList ? record.count : 1U;
+    for (size_t i = 0U; i < tensorNum; ++i) {
+        const size_t tensorIndex = record.startIndex + i;
+        CHECK_COND(tensorIndex < extTensors.size(), ACLNN_ERR_PARAM_INVALID,
+                   "Oom storage shape tensor index[%zu] is out of range[%zu].", tensorIndex, extTensors.size());
+        *addr++ = tensorVersion;
+        const uint64_t storageShapeSize =
+            static_cast<uint64_t>(extTensors[tensorIndex].storageShape.GetShapeSize());
+        OP_LOGI("Oom storage shape tensor index[%zu] storageShapeSize is %llu.", tensorIndex, storageShapeSize);
+        addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, storageShapeSize);
+    }
+    argsAddr->ptr = addr;
+    return OK;
+}
+} // namespace
 
 static inline NnopbaseUChar* NnopbasePrepareDimInfo(NnopbaseUChar* addr, const GertShape& shape)
 {
@@ -161,6 +261,30 @@ void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* const executor)
     NnopbaseExecutorSetDfxInfo(executor);
 }
 
+// 扩展区排布：2BHeader(magic + version + reserved) + records
+static aclnnStatus NnopbaseAppendOomStorageShapeExt(NnopbaseExecutor* const executor,
+                                                    NnopbaseExecutorArgsAddr* const argsAddr)
+{
+    std::vector<NnopbaseOomStorageShapeRecord> records;
+    NNOPBASE_ASSERT_OK_RETVAL(NnopbaseCollectOomStorageShapeRecords(executor, records));
+    if (!records.empty()) {
+        *argsAddr->ptr++ = NNOPBASE_OOM_STORAGE_SHAPE_MAGIC;
+        *argsAddr->ptr++ = static_cast<NnopbaseUChar>(executor->args->binInfo->oomConfig.version & 0x0FU);
+    }
+    for (const auto& record : records) {
+        OP_LOGI("Oom storage shape record startIndex is %zu, isTensorList is %d, count is %u.",
+                record.startIndex, record.isTensorList, record.count);
+        NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAppendOomStorageShapeRecord(executor->args, record, argsAddr));
+    }
+    // 扩展区尾部按8B对齐补padding。
+    if (!records.empty()) {
+        const uintptr_t endAddr = reinterpret_cast<uintptr_t>(argsAddr->ptr);
+        const size_t padding = (~endAddr + 1U) & (NNOPBASE_EIGHT_BYTES - 1U); // (8 - end%8) % 8
+        argsAddr->ptr += padding;
+    }
+    return OK;
+}
+
 aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, NnopbaseExecutorArgsAddr* const argsAddr,
                                            const uint32_t workspaceNum, const aclrtStream stream)
 {
@@ -170,7 +294,7 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, Nno
     for (size_t i = 0U; i < executor->mc2.contextAddrs.size(); i++) {
         executor->args->dfxInfo[i] = 32U;
     }
-    if (executor->args->binInfo->oomFlag) {
+    if (executor->args->binInfo->oomConfig.flag) {
         uint32_t oomSize = (executor->args->inputs.paramDescs.count + executor->args->outputs.paramDescs.count +
                             workspaceNum + executor->mc2.contextAddrs.size()) *
                            sizeof(void*);
@@ -182,6 +306,9 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, Nno
                    ACLNN_ERR_PARAM_INVALID, "Failed to execute memcpy_s oom info, src is %p, dst is %p, size is %u.",
                    argsAddr->ptr, executor->args->dfxInfo.data(), oomSize);
         argsAddr->ptr += oomSize;
+        if (executor->args->binInfo->oomConfig.storageShapeEnabled) {
+            NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAppendOomStorageShapeExt(executor, argsAddr));
+        }
     }
     if (op::internal::IsArgExceptionDumpEnable()) {
         uint64_t atomicIndex = 0U;
@@ -202,6 +329,38 @@ aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, Nno
                    executor->args->dfxInfo.size() * sizeof(uint64_t));
     }
     return OK;
+}
+
+size_t NnopbaseGetOomInfoExtMaxSize(const NnopbaseExecutor* const executor)
+{
+    if ((executor == nullptr) || (executor->args == nullptr) || (executor->args->binInfo == nullptr) ||
+        (!executor->args->binInfo->oomConfig.flag) || (!executor->args->binInfo->oomConfig.storageShapeEnabled)) {
+        return 0U;
+    }
+
+    size_t size = 0U;
+    const auto& instances = executor->ownArgs.inputs.paramDescs.instances;
+    const uint32_t instanceCount = executor->ownArgs.inputs.paramDescs.count;
+    const uint32_t validInstanceCount =
+        static_cast<uint32_t>(std::min(instances.size(), static_cast<size_t>(instanceCount)));
+    if (validInstanceCount != instanceCount) {
+        OP_LOGW("Input instance count[%zu] is less than param count[%u], skip invalid OOM size entries.",
+                instances.size(), instanceCount);
+    }
+    for (uint32_t i = 0U; i < validInstanceCount; ++i) {
+        const auto& instance = instances[i];
+        if (instance.tensor != nullptr) {
+            size += NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_SIZE;
+        } else if (instance.tensorList != nullptr) {
+            size += NNOPBASE_OOM_STORAGE_SHAPE_TENSOR_LIST_HEADER_SIZE +
+                    static_cast<size_t>(instance.tensorList->Size()) * NNOPBASE_OOM_STORAGE_SHAPE_DESC_SIZE;
+        }
+    }
+    if (size != 0U) {
+        size += NNOPBASE_EIGHT_BYTES - 1U;
+        size = (size / NNOPBASE_EIGHT_BYTES) * NNOPBASE_EIGHT_BYTES;
+    }
+    return size;
 }
 
 static void NnopbaseExecutorGetDynamicTensorSize(NnopbaseTensors& tensors)
@@ -242,6 +401,7 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor* const executor, const size_t tilin
         argsLen += sizeof(void*) * 2;                                          // 2 is outputshape and oom
     }
     argsLen += (irNum + NNOPBASE_NORM_MAX_WORKSPACE_NUMS + 1) * sizeof(void*); // oom, 1 is for automicIndex
+    argsLen += NnopbaseGetOomInfoExtMaxSize(executor);
     if (executor->hasTiling) {
         NnopbaseExecutorGetDynamicTensorSize(executor->args->inputs);
         NnopbaseExecutorGetDynamicTensorSize(executor->args->outputs);

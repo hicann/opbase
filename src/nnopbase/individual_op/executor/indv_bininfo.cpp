@@ -188,6 +188,7 @@ static void NnopbaseGetInitValue(nlohmann::json& opJson, NnopbaseBinInfo* binInf
 
 static void NnopbaseGetOomFlag(NnopbaseBinInfo* binInfo, nlohmann::json& binJsonInfo)
 {
+    binInfo->oomConfig = {};
     if (binJsonInfo.contains("supportInfo")) {
         try {
             const std::string debugConfigStr = binJsonInfo["supportInfo"]["op_debug_config"].get<std::string>();
@@ -195,14 +196,30 @@ static void NnopbaseGetOomFlag(NnopbaseBinInfo* binInfo, nlohmann::json& binJson
             std::string token;
             while (std::getline(ss, token, ',')) {
                 if (token == "oom") {
-                    binInfo->oomFlag = true;
+                    binInfo->oomConfig.flag = true;
                     break;
                 }
             }
-            OP_LOGI("OomFlag is %d.", binInfo->oomFlag);
+            OP_LOGI("OomFlag is %d.", binInfo->oomConfig.flag);
         } catch (const nlohmann::json::exception& e) {
             OP_LOGW("Failed to get op_debug_config, reason: %s.", e.what());
         }
+    }
+    if (!binInfo->oomConfig.flag || !binJsonInfo.contains("oom")) {
+        return;
+    }
+    try {
+        const auto& oomJson = binJsonInfo["oom"];
+        if (!oomJson.contains("version") || !oomJson.contains("tensor_version")) {
+            return;
+        }
+        binInfo->oomConfig.version = oomJson["version"].get<uint8_t>();
+        binInfo->oomConfig.tensorVersion = oomJson["tensor_version"].get<uint8_t>();
+        binInfo->oomConfig.storageShapeEnabled = true;
+        OP_LOGI("Oom storage shape extension is enabled, version is %u, tensor version is %u.",
+                binInfo->oomConfig.version, binInfo->oomConfig.tensorVersion);
+    } catch (const nlohmann::json::exception& e) {
+        OP_LOGW("Failed to get oom version configuration, reason: %s.", e.what());
     }
 }
 

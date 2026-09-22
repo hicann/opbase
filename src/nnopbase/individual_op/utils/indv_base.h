@@ -163,6 +163,7 @@ typedef struct {
 
 typedef struct {
     GertTensor rt2Tensor;
+    GertShape storageShape;
     bool isNull = true; // false 表示传入的aclTensor不为nullptr
     bool isRequired = false;
     bool isOptional = false;

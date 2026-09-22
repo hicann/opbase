@@ -46,6 +46,7 @@ aclnnStatus NnopbaseCopyTensor(const GertTensor& src, NnopbaseTensor& dst)
     dst.isNull = false;
     auto& rt2Tensor = dst.rt2Tensor;
     rt2Tensor.GetShape() = src.GetShape();
+    dst.storageShape = src.GetStorageShape();
     rt2Tensor.SetDataType(src.GetDataType());
     rt2Tensor.MutableFormat() = src.GetFormat();
     rt2Tensor.MutableTensorData().SetPlacement(src.GetPlacement());
@@ -88,6 +89,7 @@ aclnnStatus NnopbaseNonFiniteCheckAddOutputs(NnopbaseExecutor* executor, void* c
     auto& rt2Tensor = outputs.extTensors[0U].rt2Tensor;
     rt2Tensor.MutableOriginShape() = {1};
     rt2Tensor.MutableStorageShape() = {1};
+    outputs.extTensors[0U].storageShape = {1};
     rt2Tensor.SetDataType(ge::DataType::DT_FLOAT);
     rt2Tensor.SetOriginFormat(ge::FORMAT_ND);
     rt2Tensor.SetStorageFormat(ge::FORMAT_ND);

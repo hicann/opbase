@@ -139,6 +139,7 @@ aclnnStatus NnopbaseSaveArray(const T* array, NnopbaseTensor* tensor)
     NNOPBASE_ASSERT_NOTNULL_RETVAL(rt2Tensor);
     rt2Tensor->MutableOriginShape() = {static_cast<int64_t>(array->Size())};
     rt2Tensor->MutableStorageShape() = {static_cast<int64_t>(array->Size())};
+    tensor->storageShape = {static_cast<int64_t>(array->Size())};
     rt2Tensor->SetOriginFormat(ge::FORMAT_ND);
     rt2Tensor->SetStorageFormat(ge::FORMAT_ND);
     rt2Tensor->MutableTensorData().SetPlacement(gert::kOnHost); // valuedepend一定是host内存

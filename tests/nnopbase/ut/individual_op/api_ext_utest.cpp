@@ -2552,7 +2552,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithHostInput)
                                       ->GetDataSize();
     const size_t alignTilingDataSize = ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U :
                                                                       tilingDataSize; // 8byte对齐
-    const size_t hostInfoOffset = ((NnopbaseExecutor*)executor)->args->binInfo->oomFlag ?
+    const size_t hostInfoOffset = ((NnopbaseExecutor*)executor)->args->binInfo->oomConfig.flag ?
                                       alignTilingDataSize + 8 + paramSize :
                                       tilingDataSize + 8; // 8字节是atomicIndex
     NnopbaseUChar* tilingdata = (NnopbaseUChar*)(((NnopbaseTilingData*)(((NnopbaseExecutor*)executor)
@@ -2656,7 +2656,7 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
                                       ->GetDataSize();
     const size_t alignTilingDataSize = ((tilingDataSize % 8U) != 0) ? (tilingDataSize / 8U + 1U) * 8U :
                                                                       tilingDataSize; // 8byte对齐
-    const size_t hostInfoOffset = ((NnopbaseExecutor*)executor)->args->binInfo->oomFlag ?
+    const size_t hostInfoOffset = ((NnopbaseExecutor*)executor)->args->binInfo->oomConfig.flag ?
                                       alignTilingDataSize + 8 + paramSize :
                                       tilingDataSize + 8; // 8字节是atomicIndex
     NnopbaseUChar* tilingdata = (NnopbaseUChar*)(((NnopbaseTilingData*)(((NnopbaseExecutor*)executor)

@@ -291,6 +291,7 @@ aclnnStatus NnopbaseSaveTensor(NnopbaseExecutor* executor, const aclTensor* in_t
     NNOPBASE_ASSERT_NOTNULL_RETVAL(in_tensor);
     NNOPBASE_ASSERT_NOTNULL_RETVAL(tensor);
     tensor->isNull = false;
+    tensor->storageShape = in_tensor->GetStorageShape();
 
     // 当前op::shape和gert::shape是同一个数据结构，后续这个仓全部使用op::shape
     GertTensor* rt2Tensor = &tensor->rt2Tensor;
@@ -377,6 +378,9 @@ aclnnStatus NnopbaseExecutorAddTensor(NnopbaseExecutor* executor, const aclTenso
 {
     NnopbaseTensors* tensors = isInput ? &(executor->ownArgs.inputs) : &(executor->ownArgs.outputs);
     tensors->paramDescs.instances[index].isInput = isInput;
+    tensors->paramDescs.instances[index].tensor = tensor;
+    tensors->paramDescs.instances[index].tensorList = nullptr;
+    tensors->paramDescs.instances[index].ignoreCont = ignoreCont;
     bool isEmpty = true;
     if (tensor != nullptr) {
         isEmpty = tensor->IsEmpty();
@@ -490,13 +494,16 @@ aclnnStatus NnopbaseExecutorAddDynamicTensors(NnopbaseExecutor* executor, const 
                "Size of tensorList in dynamic input[%zu] is %llu, which exceeds limit: %d", index, tensorList->Size(),
                NNOPBASE_DYNAMIC_PARAM_DEF_NUM);
 
+    tensors->paramDescs.instances[index].isInput = isInput;
+    tensors->paramDescs.instances[index].tensor = nullptr;
+    tensors->paramDescs.instances[index].tensorList = tensorList;
+    tensors->paramDescs.instances[index].ignoreCont = ignoreCont;
     uint32_t count = 0U;
     for (uint32_t i = tensors->expectIndex; i < index; i++) {
         if (tensors->paramDescs.instances[i].cfgNum <= 1) {
             count++;
         }
     }
-    tensors->paramDescs.instances[index].isInput = isInput;
     tensors->usedNum += count;
     const size_t startIndex = tensors->usedNum;
     tensors->paramDescs.instances[index].startIndex = startIndex;

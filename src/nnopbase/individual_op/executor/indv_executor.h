@@ -285,6 +285,7 @@ size_t NnopbaseCalcArgsSize(NnopbaseExecutor* const executor, const size_t tilin
 void NnopbaseExecutorPrepareDfxInfo(NnopbaseExecutor* const executor);
 aclnnStatus NnopbaseExecutorArgsGetDfxInfo(NnopbaseExecutor* const executor, NnopbaseExecutorArgsAddr* const argsAddr,
                                            const uint32_t workspaceNum, const aclrtStream stream);
+size_t NnopbaseGetOomInfoExtMaxSize(const NnopbaseExecutor* const executor);
 bool NnopbaseMatchArgsCache(NnopbaseExecutor* executor, size_t& seed);
 aclnnStatus NnopbaseCreateExecutorArgs(NnopbaseExecutor* executor, const size_t seed);
 
@@ -348,6 +349,7 @@ aclnnStatus NnopbaseExecutorSetViewCopyExecutor(NnopbaseExecutor* executor, aclO
 // clear and update tensor
 aclnnStatus NnopbaseUpdateDynamicTensors(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors, uint32_t index);
 aclnnStatus NnopbaseSaveCachedTensor(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors, bool isInput);
+aclnnStatus NnopbaseRefreshInputStorageShape(NnopbaseExecutor* executor);
 void NnopbaseSetCachedInfo(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseUpdateInputAddr(NnopbaseExecutor* executor);
 aclnnStatus NnopbaseUpdateOutputAddr(NnopbaseTensors* dstTensors, NnopbaseTensors* tensors);
