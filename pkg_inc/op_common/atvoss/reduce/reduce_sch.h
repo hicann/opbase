@@ -574,7 +574,7 @@ public:
     }
 
     template <typename ScalarType, typename ScalarValue>
-    __aicore__ inline constexpr ScalarType GetScalar()
+    __aicore__ inline ScalarType GetScalar()
     {
         static_assert(!(Placeholder::IsVar<ScalarValue>::Value && Placeholder::IsInHolder<ScalarValue>::Value &&
                         Placeholder::IsConstValue<ScalarValue>::Value),
