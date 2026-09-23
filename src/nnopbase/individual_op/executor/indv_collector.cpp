@@ -27,7 +27,7 @@
 #include "indv_executor.h"
 #include "opdev/data_type_utils.h"
 #include "op_dfx_util.h"
-#include "opp_resource_loader.h"
+#include "base/registry/opp_package_utils.h"
 #include "register/op_binary_resource_manager.h"
 
 using namespace std;
@@ -1331,7 +1331,11 @@ aclnnStatus NnopbaseCollectorWork(NnopbaseBinCollector* const collector)
     RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kGetBasePathEnd);
 
     if (basePath.size() > 0) {
-        op::opploader::LoadAllOppPackage();
+        OP_LOGI("Start to load all OPP package.");
+        if (gert::OppPackageUtils::LoadAllOppPackage() != ge::GRAPH_SUCCESS) {
+            OP_LOGW("LoadAllOppPackage failed.");
+        }
+        OP_LOGI("Load OPP package completed.");
     }
     RecordNnopbaseInitTime(collector, NnopbaseCollectorTimeIdx::kLoadTilingSoEnd);
 
