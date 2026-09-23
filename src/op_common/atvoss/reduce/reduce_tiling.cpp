@@ -1258,7 +1258,10 @@ void ReduceOpTiling::CalcUserWorkSpace()
     if (groupR > 1UL) {
         workSpaceSize_ = compileInfo_->vectorCoreNum * CeilAlign(outSize * size, compileInfo_->cacheLineSize);
     }
-    workspaces[0] = WORKSPACE_SIZE + workSpaceSize_;
+    auto platformInfo = context_->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    size_t sysWorkSpaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
+    workspaces[0] = sysWorkSpaceSize + workSpaceSize_;
 }
 
 // dispatch tiling with different pattern

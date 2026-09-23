@@ -31,7 +31,6 @@ namespace Base {
 using namespace ReduceOpTmpl;
 using namespace optiling;
 
-constexpr uint64_t WORKSPACE_SIZE = 16 * 1024 * 1024; // fixed workspace size for ascendc
 constexpr uint64_t BASIC_BLOCK = 64 * 1024UL;
 constexpr uint64_t POST_BUF_SIZE = 8 * 1024UL;        // post reduce size for ub reduce
 constexpr uint64_t CACHE_BUF_SIZE = 16 * 1024UL;      // cache for binary reduce
