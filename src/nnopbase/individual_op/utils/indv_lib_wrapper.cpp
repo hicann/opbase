@@ -104,8 +104,10 @@ aclnnStatus IndvMc2ClientWrapper::IndvMc2ClientWrapperInit(const char* loadSoPat
     return OK;
 }
 
-IndvMc2ClientWrapper::HcclAllocComResourceResult IndvMc2ClientWrapper::HcclAllocComResourceByTiling(
-    HcclComm comm, void* stream, void* TilingData, void** commContext)
+IndvMc2ClientWrapper::HcclAllocComResourceResult IndvMc2ClientWrapper::HcclAllocComResourceByTiling(HcclComm comm,
+                                                                                                    void* stream,
+                                                                                                    void* TilingData,
+                                                                                                    void** commContext)
 {
     static constexpr uint32_t HCCL_ALGORITHM_NOT_SUPPORTED = 1042U;
     if (hcclAllocComResourceByTilingHandle == nullptr) {
@@ -412,7 +414,7 @@ aclnnStatus IndvHcclWrapper::HcclGetUnfoldThread(HcclComm comm, uint64_t* thread
                 "notifyRet = %d.",
                 comm, unfoldCtxTag, *threadHandle, notifyNum, notifyRet);
         // notify数查询成功且不为0，说明展开流线程已带有A5同步所需的notify槽位，直接复用
-        if (notifyRet == HCCL_SUCCESS && notifyNum != 0U) {
+        if (notifyRet == HCCL_SUCCESS && notifyNum == 2U) {
             return OK;
         }
         // 否则(查询失败，或notifyNum为0，即展开流线程由hccl侧以notifyNumPerThread=0创建)，缺少A5同步所需的notify槽位。
