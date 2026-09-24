@@ -461,6 +461,7 @@ static aclnnStatus NnopbaseCheckAndSaveTensor(NnopbaseExecutor* executor, const 
             }
         }
         tensors->extTensors[startIndex + i].isRequired = false;
+        tensors->extTensors[startIndex + i].isOptional = false;
     }
     const int32_t scalarIndex = tensors->paramDescs.instances[index].scalarIndex;
     if (scalarIndex != -1) {

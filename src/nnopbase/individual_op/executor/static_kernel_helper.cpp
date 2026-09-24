@@ -375,16 +375,14 @@ aclnnStatus AppendExecutorStaticTensorsKey(BinInfoKey& segment, const NnopbaseTe
             NNOPBASE_ASSERT_OK_RETVAL(AppendBinInfoKey8Byte(segment, '_'));
             continue;
         }
-        if (tensors->extTensors[i].isRequired || tensors->extTensors[i].isOptional) {
-            NNOPBASE_ASSERT_OK_RETVAL(AppendBinInfoKey8Byte(segment, tensors->extTensors[i].rt2Tensor.GetDataType()));
-            NNOPBASE_ASSERT_OK_RETVAL(
-                AppendBinInfoKey8Byte(segment, tensors->extTensors[i].rt2Tensor.GetStorageFormat()));
-            OP_LOGI("Tensor[%zu] datatype is %d, format is %d, isRequired is %s, isOptional is %s.", i,
-                    static_cast<int32_t>(tensors->extTensors[i].rt2Tensor.GetDataType()),
-                    static_cast<int32_t>(tensors->extTensors[i].rt2Tensor.GetStorageFormat()),
-                    tensors->extTensors[i].isRequired ? "true" : "false",
-                    tensors->extTensors[i].isOptional ? "true" : "false");
-        }
+        // 静态场景所有参数确定，不再区分isRequired/isOptional
+        NNOPBASE_ASSERT_OK_RETVAL(AppendBinInfoKey8Byte(segment, tensors->extTensors[i].rt2Tensor.GetDataType()));
+        NNOPBASE_ASSERT_OK_RETVAL(AppendBinInfoKey8Byte(segment, tensors->extTensors[i].rt2Tensor.GetStorageFormat()));
+        OP_LOGI("Tensor[%zu] datatype is %d, format is %d, isRequired is %s, isOptional is %s.", i,
+                static_cast<int32_t>(tensors->extTensors[i].rt2Tensor.GetDataType()),
+                static_cast<int32_t>(tensors->extTensors[i].rt2Tensor.GetStorageFormat()),
+                tensors->extTensors[i].isRequired ? "true" : "false",
+                tensors->extTensors[i].isOptional ? "true" : "false");
         const GertShape& shape = tensors->extTensors[i].rt2Tensor.GetStorageShape();
         for (size_t j = 0U; j < shape.GetDimNum(); j++) {
             NNOPBASE_ASSERT_OK_RETVAL(AppendBinInfoKey8Byte(segment, static_cast<uint64_t>(shape.GetDim(j))));
@@ -394,9 +392,12 @@ aclnnStatus AppendExecutorStaticTensorsKey(BinInfoKey& segment, const NnopbaseTe
             const auto& stride = tensors->extTensors[i].rt2Tensor.GetStride();
             for (size_t k = 0U; k < stride.GetDimNum(); k++) {
                 NNOPBASE_ASSERT_OK_RETVAL(AppendBinInfoKey8Byte(segment, static_cast<uint64_t>(stride.GetStride(k))));
+                OP_LOGI("Tensor[%zu] stride[%zu] is %ld", i, k, static_cast<uint64_t>(stride.GetStride(k)));
             }
             NNOPBASE_ASSERT_OK_RETVAL(
                 AppendBinInfoKey8Byte(segment, static_cast<uint64_t>(tensors->extTensors[i].rt2Tensor.GetOffset())));
+            OP_LOGI("Tensor[%zu] offset is %ld", i,
+                    static_cast<uint64_t>(tensors->extTensors[i].rt2Tensor.GetOffset()));
         }
         if (tensors->extTensors[i].valueDepend) {
             addr = PtrCastTo<const NnopbaseUChar>(tensors->extTensors[i].rt2Tensor.GetAddr());
