@@ -293,8 +293,8 @@ aclnnStatus NnopbaseLaunchKFCTaskA5(NnopbaseExecutor* const executor, aclrtStrea
         NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcclThreadAcquireWithStream(comm, stream, notifyNum, &mainThread));
 
         // 主流线程record进unfold线程的notify槽位，unfold线程等待自身槽位，等价于原跨流同步语义
-        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcommThreadNotifyWaitOnThread(unfoldThread, 0, UINT32_MAX));
-        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcommThreadNotifyRecordOnThread(mainThread, unfoldThread, 0));
+        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcommThreadNotifyWaitOnThread(unfoldThread, 1, UINT32_MAX));
+        NNOPBASE_ASSERT_OK_RETVAL(wrapper.HcommThreadNotifyRecordOnThread(mainThread, unfoldThread, 1));
     }
     NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAicpuKernelLaunch(executor));
     OP_LOGI("Launch kernel by A5 KFC mode successfully.");
