@@ -85,10 +85,12 @@ $$
 
 当同时满足以下两个条件时，判定该用例通过：
 
-(1) `matched_ratio ≥ required_matched_ratio`
+(1) `matched_ratio ≥ required_matched_ratio`  
 (2) `max_abs_error ≤ max_abs_error_limit`
 
-其中 `max_abs_error` 为用例中任意元素的最大绝对误差，`max_abs_error_limit` 为绝对误差硬上限。
+其中：
+- `max_abs_error` 为用例中所有**有限值比对点**（actual 与 golden 均为有限值）的最大绝对误差；±inf/NaN 元素不参与该值选取，按 2.3 节的收窄规则比对
+- `max_abs_error_limit` 为绝对误差硬上限，按最大绝对误差点所在值域动态计算：`max_abs_error_limit = max(兜底值, 32 * ULP(g_low))`，其中 `g_low` 为最大绝对误差点的 golden 值按算子实际输出 dtype 收窄后的值（兜底值见 2.2 节阈值表）
 
 ### 2.2 混合容差阈值表
 
@@ -139,10 +141,14 @@ $$
     </tbody>
 </table>
 
-注：当前的阈值拦截在各数值精度下约为 1ULP左右，涉及到大数规约可能会引入更大精度误差导致误报，可酌情降低至2ULP。
+**注**：
+- 当前的阈值拦截在各数值精度下约为 1ULP左右，涉及到大数规约可能会引入更大精度误差导致误报，可酌情降低至2ULP。  
+- 表中 `max_abs_error_limit` 行的 `or` 表示取两项中较大者；`ULP` 的锚点与计算口径（随被测 dtype 与最大误差点值域自适应缩放）见 2.1.2 节定义
 
 ### 2.3 通过判定
 
 **单标杆比对**：与更高精度的实现（CPU或昇腾小算子拼接）的单一精度标杆直接比较。
 
 当用例同时满足 `matched_ratio ≥ required_matched_ratio` 且 `max_abs_error ≤ max_abs_error_limit` 时，判定该用例精度通过。
+
+比对过程中，若遇算子实际输出为 `±inf` 而 golden 为有限值时，应先将 golden 降精度（收窄）到算子实际输出 dtype 后再比对：收窄按 round-to-nearest-even 舍入，超出该 dtype 表示范围的值转换为 `±inf`（IEEE 754 语义）。收窄后双方同为同号 `±inf` 即视为该点通过。
