@@ -78,8 +78,8 @@ aclnnStatus RegisterCustomizedCallback(NnopbaseExecutor* const executor, Nnopbas
 #if defined(RUNTIME_VERSION_NUM) && defined(METADEF_VERSION_NUM) &&    \
     (RUNTIME_VERSION_NUM >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER) && \
     (METADEF_VERSION_NUM >= CUSTOM_EXCEPTION_CALL_BACK_SUPPORT_VER)
-    int32_t metadefVerNum = -1;
-    int32_t runtimeVerNum = -1;
+    static int32_t metadefVerNum = -1;
+    static int32_t runtimeVerNum = -1;
     static auto aclRetForMetadef = aclsysGetVersionNum("metadef", &metadefVerNum);
     static auto aclRetForRts = aclsysGetVersionNum("runtime", &runtimeVerNum);
     if (aclRetForMetadef == ACL_SUCCESS && aclRetForRts == ACL_SUCCESS &&
@@ -147,6 +147,7 @@ void UpdateStaticKernelTilingInfo(NnopbaseExecutor* executor)
     tilingInfo.scheMode = static_cast<uint8_t>(staticKernelRunInfo->scheduleMode);
     tilingInfo.aicpuNumBlocks = staticKernelRunInfo->aicpuNumBlocks;
     tilingInfo.needAtomic = staticKernelRunInfo->clearAtomic;
+    tilingInfo.dynUbufSize = staticKernelRunInfo->dynUBufSize;
     tilingInfo.staticTilingData = staticKernelRunInfo->tilingData;
     OP_LOGI("Updated static tilingInfo: opType %s, aicpuNumBlocks %u, numBlocks %u,"
             " scheduleMode %u, tilingKey %llu, clearAtomic %d, staticTilingDataSize %zu.",
@@ -1165,14 +1166,15 @@ static aclnnStatus NnopbaseExecutorLaunchKernel(NnopbaseExecutor* executor, aclr
     uint32_t dynUbufSize = executor->args->tilingInfo.dynUbufSize;
     auto attrs = CreateRtsLaunchCfgAttrs(scheMode, dynUbufSize, is195x);
     if (executor->args->binInfo->isStaticShape) {
-        OP_LOGI("Launch static kernel %s task, numBlocks is %u, scheMode is %u.", executor->opType, numBlocks,
-                scheMode);
+        OP_LOGI("Launch static kernel %s task, numBlocks is %u, scheMode is %u, dynUbufSize is %u.", executor->opType,
+                numBlocks, scheMode, dynUbufSize);
         NNOPBASE_ASSERT_RTOK_RETVAL(GetFuncHandleByKernelName(
             executor->args->binInfo->binHandle, executor->args->binInfo->kernelName.c_str(), &funcHandle));
     } else {
         const uint64_t tilingKey = executor->args->tilingInfo.tilingKey;
-        OP_LOGI("Launch dynamic kernel %s task, tilingKey is %lu, scheMode is %u, numBlocks is %u, stream is %p",
-                executor->opType, tilingKey, scheMode, numBlocks, stream);
+        OP_LOGI("Launch dynamic kernel %s task, tilingKey is %lu, scheMode is %u, numBlocks is %u, dynUbufSize is %u, "
+                "stream is %p",
+                executor->opType, tilingKey, scheMode, numBlocks, dynUbufSize, stream);
         NNOPBASE_ASSERT_OK_RETVAL(GetFuncHandleByEntry(executor->args->binInfo->binHandle, tilingKey, &funcHandle));
     }
 
