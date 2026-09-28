@@ -26,6 +26,7 @@ constexpr const char* OPS_SUBPATH_ASCEND310P = "ascend310p";
 constexpr const char* OPS_SUBPATH_ASCEND310B = "ascend310b";
 constexpr const char* OPS_SUBPATH_ASCEND610LITE = "ascend610lite";
 constexpr const char* OPS_SUBPATH_ASCEND910_96 = "ascend910_96";
+constexpr const char* OPS_SUBPATH_ASCEND960DT = "ascend960dt";
 constexpr const char* OPS_SUBPATH_ASCEND350 = "ascend350";
 
 constexpr uint32_t SOC_VERSION_ASCEND910A = 1U;
@@ -54,6 +55,7 @@ public:
     bool IsCouplingArch(void) const;
     bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType);
     bool NnopbaseUseA5Mc2Client(const NnopbaseHcclServerType sType);
+    bool NnopbaseSupportMc2Fallback(const NnopbaseHcclServerType sType);
     uint32_t* GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const;
     uint32_t GetSocEnum();
     bool IsSupportedSocName(const std::string& name) const;

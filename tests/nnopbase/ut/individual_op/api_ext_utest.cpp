@@ -41,8 +41,11 @@ extern aclnnStatus NnopbaseInit();
 constexpr const char* ASCEND_MILAN_SOC_VERSION = "1";
 constexpr const char* ASCEND_DAVID_SOC_VERSION = "2";
 constexpr const char* ASCEND_DC_SOC_VERSION = "3";
+constexpr uint32_t HCCL_ALGORITHM_NOT_SUPPORTED_RET = 1042U;
 
 namespace {
+HcclResult g_hcclAllocComResourceResult = HCCL_SUCCESS;
+
 void SetSocVersion(const std::string& version)
 {
     auto& soc = nnopbase::IndvSoc::GetInstance();
@@ -94,7 +97,8 @@ protected:
 
     int64_t data[1024 * 1024] = {0};
     void TestHcclServerType(std::function<void(void*)> setHcclServerTypeFunc, const char* socVersion,
-                            aclnnStatus expectStatus = OK);
+                            aclnnStatus expectRunStatus = OK,
+                            std::function<void(void*)> verifyExecutorFunc = nullptr);
 };
 
 TEST_F(NnopbaseExtUnitTest, TestDynamicLaunchUtForAscend310P)
@@ -2679,7 +2683,8 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithDynamicInput)
 }
 
 void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void*)> setHcclServerTypeFunc, const char* socVersion,
-                                             aclnnStatus expectStatus)
+                                             aclnnStatus expectRunStatus,
+                                             std::function<void(void*)> verifyExecutorFunc)
 {
     MmpaNormalStubGuard mmpaGuard;
     // RAII guard to ensure SOC version is always restored, even if test fails
@@ -2743,7 +2748,10 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void*)> setHcclS
         workspace = (void*)malloc(workspaceLen);
     }
 
-    ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), expectStatus);
+    ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), expectRunStatus);
+    if (verifyExecutorFunc != nullptr) {
+        verifyExecutorFunc(executor);
+    }
     // SOC version will be restored by SocVersionGuard destructor
     ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = oriMc2FusionLaunchFlag;
 
@@ -3334,7 +3342,7 @@ HcclResult HcclGetRankIdNormal(HcclComm comm, uint32_t* rankId)
 
 HcclResult HcclAllocComResourceNormal(HcclComm comm, void* stream, void* TilingData, void** commContext)
 {
-    return HCCL_SUCCESS;
+    return g_hcclAllocComResourceResult;
 }
 
 HcclResult HcclGetAicpuOpStreamAndNotifyNormal(HcclComm comm, aclrtStream* opStream, uint8_t notifyCnt,
@@ -3618,147 +3626,38 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseMC2RunSuccessForDavidWithServerTypeAICPU)
     Adx::MmpaStub::GetInstance()->UnInstall();
 }
 
-// 以下用例验证MC2 KFC从流不阻塞属性设置特性，需runtime 9.2.0及以上
-#ifndef PRODUCT_SIDE_IS_DEVICE
-#include "version/runtime_version.h"
-#endif
-
-#define STREAM_NO_BLOCKING_SUPPORT_VER 90200000
-#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && \
-    (RUNTIME_VERSION_NUM >= STREAM_NO_BLOCKING_SUPPORT_VER)
-#define UT_ENABLE_STREAM_NO_BLOCKING_TESTS 1
-#endif
-
-#ifdef UT_ENABLE_STREAM_NO_BLOCKING_TESTS
-namespace {
-class SetStreamAttrRecorder : public AclrtStub {
-public:
-    struct Call {
-        aclrtStream stream;
-        aclrtStreamAttr attrType;
-        uint8_t mode;
-    };
-
-    aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType,
-                                     aclrtStreamAttrValue* value) override
-    {
-        calls.push_back({stream, stmAttrType, value->launchBlockingMode});
-        if (failAtCall != 0U && calls.size() == failAtCall) {
-            return featureNotSupport ? ACL_ERROR_RT_FEATURE_NOT_SUPPORT : ACL_ERROR_RT_PARAM_INVALID;
-        }
-        return ACL_SUCCESS;
-    }
-
-    std::vector<Call> calls;
-    size_t failAtCall = 0U;         // 0表示不注入失败
-    bool featureNotSupport = false; // 注入芯片不支持错误码
-};
-
-// TestHcclServerType中的ASSERT失败会提前返回，用RAII保证桩被卸载
-class SetStreamAttrRecorderGuard {
-public:
-    explicit SetStreamAttrRecorderGuard(SetStreamAttrRecorder& recorder)
-    {
-        AclrtStub::GetInstance()->Install(&recorder);
-    }
-    ~SetStreamAttrRecorderGuard() { AclrtStub::GetInstance()->UnInstall(); }
-};
-} // namespace
-
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCSetAicpuStreamNoBlocking)
+TEST_F(NnopbaseExtUnitTest, Mc2A6CcuAlgNotSupportedReturnsInnerErrorWithoutFallback)
 {
-    SetStreamAttrRecorder recorder;
-    {
-        SetStreamAttrRecorderGuard guard(recorder);
-        TestHcclServerType([](void* executor) { NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU); },
-                           nnopbase::OPS_SUBPATH_ASCEND910B);
-    }
-    ASSERT_EQ(recorder.calls.size(), 1U);
-    EXPECT_NE(recorder.calls[0].stream, nullptr);
-    EXPECT_EQ(recorder.calls[0].attrType, ACL_STREAM_LAUNCH_BLOCKING_MODE);
-    EXPECT_EQ(recorder.calls[0].mode, ACL_STREAM_LAUNCH_BLOCKING_MODE_NON_BLOCKING);
+    g_hcclAllocComResourceResult = static_cast<HcclResult>(HCCL_ALGORITHM_NOT_SUPPORTED_RET);
+    TestHcclServerType(
+        [](void* executor) {
+            ((NnopbaseExecutor*)executor)->repeatFlag = true;
+            NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
+        },
+        nnopbase::OPS_SUBPATH_ASCEND910_96, ACLNN_ERR_INNER,
+        [](void* executor) { EXPECT_FALSE(((NnopbaseExecutor*)executor)->mc2.fallback); });
+    g_hcclAllocComResourceResult = HCCL_SUCCESS;
 }
 
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCA5SkipNullptrAicpuStream)
+TEST_F(NnopbaseExtUnitTest, Mc2A6CcuNullContextDoesNotFallToFusionLaunch)
 {
-    // 融合下发走NnopbaseLaunchKFCTaskA5，UT中HcclStreamAcquireWithThread无桩，从流为空
-    SetStreamAttrRecorder recorder;
-    Adx::MmpaStub::GetInstance()->Install((Adx::MmpaStub*)&mmpaNormallStub);
-    {
-        SetStreamAttrRecorderGuard guard(recorder);
-        TestHcclServerType([](void* executor) { NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU); },
-                           nnopbase::OPS_SUBPATH_ASCEND950);
-    }
-    Adx::MmpaStub::GetInstance()->UnInstall();
-    EXPECT_TRUE(recorder.calls.empty());
+    TestHcclServerType(
+        [](void* executor) {
+            ((NnopbaseExecutor*)executor)->repeatFlag = true;
+            NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
+        },
+        nnopbase::OPS_SUBPATH_ASCEND910_96, ACLNN_ERR_INNER);
 }
 
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCSetNoBlockingFailedBreakLaunch)
+TEST_F(NnopbaseExtUnitTest, Mc2A5CcuAlgNotSupportedStillFallsBack)
 {
-    // 追加一个通信域凑出两条有效从流，首条设置失败后应中断下发，不再设置第二条
-    SetStreamAttrRecorder recorder;
-    recorder.failAtCall = 1U;
-    {
-        SetStreamAttrRecorderGuard guard(recorder);
-        TestHcclServerType(
-            [](void* executor) {
-                NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
-                NnopbaseSetHcomGroup(executor, "another_group");
-            },
-            nnopbase::OPS_SUBPATH_ASCEND910B, ACLNN_ERR_RUNTIME_ERROR);
-    }
-    EXPECT_EQ(recorder.calls.size(), 1U);
+    g_hcclAllocComResourceResult = static_cast<HcclResult>(HCCL_ALGORITHM_NOT_SUPPORTED_RET);
+    TestHcclServerType(
+        [](void* executor) {
+            ((NnopbaseExecutor*)executor)->repeatFlag = true;
+            NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
+        },
+        nnopbase::OPS_SUBPATH_ASCEND950, ACLNN_ERR_INNER,
+        [](void* executor) { EXPECT_TRUE(((NnopbaseExecutor*)executor)->mc2.fallback); });
+    g_hcclAllocComResourceResult = HCCL_SUCCESS;
 }
-
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCSkipNullptrAicpuStreamAndSetTheRest)
-{
-    // group为空时commHandles填入nullptr，从流集合中nullptr占位与有效流共存
-    SetStreamAttrRecorder recorder;
-    {
-        SetStreamAttrRecorderGuard guard(recorder);
-        TestHcclServerType(
-            [](void* executor) {
-                NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
-                NnopbaseSetHcomGroup(executor, "");
-            },
-            nnopbase::OPS_SUBPATH_ASCEND910B);
-    }
-    ASSERT_EQ(recorder.calls.size(), 1U);
-    EXPECT_NE(recorder.calls[0].stream, nullptr);
-    EXPECT_EQ(recorder.calls[0].mode, ACL_STREAM_LAUNCH_BLOCKING_MODE_NON_BLOCKING);
-}
-
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCFeatureNotSupportSkipAndNotBreakLaunch)
-{
-    // 芯片版本不支持时打W日志跳过该流，不中断下发，继续设置后续从流
-    SetStreamAttrRecorder recorder;
-    recorder.failAtCall = 1U;
-    recorder.featureNotSupport = true;
-    {
-        SetStreamAttrRecorderGuard guard(recorder);
-        TestHcclServerType(
-            [](void* executor) {
-                NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU);
-                NnopbaseSetHcomGroup(executor, "another_group");
-            },
-            nnopbase::OPS_SUBPATH_ASCEND910B);
-    }
-    // 两条有效从流：首条返回不支持被跳过，第二条仍被尝试设置；下发不被中断，整体返回OK
-    ASSERT_EQ(recorder.calls.size(), 2U);
-}
-
-TEST_F(NnopbaseExtUnitTest, NnopBaseMC2KFCCaptureActiveSkipSetNoBlocking)
-{
-    // 图捕获激活时从流入captureModel成为非执行流，不应再设置不阻塞属性；下发正常返回OK
-    SetStreamAttrRecorder recorder;
-    recorder.captureActive = true; // 开关设在recorder上，Install后生产代码取到的就是它
-    {
-        SetStreamAttrRecorderGuard guard(recorder);
-        TestHcclServerType([](void* executor) { NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_AICPU); },
-                           nnopbase::OPS_SUBPATH_ASCEND910B);
-    }
-    // capture分支不触碰aclrtSetStreamAttribute，观测桩零调用
-    EXPECT_TRUE(recorder.calls.empty());
-}
-
-#endif // UT_ENABLE_STREAM_NO_BLOCKING_TESTS

@@ -92,6 +92,15 @@ aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor* executor, HcclComm 
         if (result != AllocResult::ALGORITHM_NOT_SUPPORTED) {
             return result == AllocResult::SUCCESS ? OK : ACLNN_ERR_INNER;
         }
+        // mc2_client不支持当前算法时，若该场景不允许回退HCCL模块则直接报错
+        if (!nnopbase::IndvSoc::GetInstance().NnopbaseSupportMc2Fallback(executor->mc2.serverType)) {
+            OP_LOGE(ACLNN_ERR_INNER,
+                    "The mc2_client module does not support the current algorithm on socVersion[%s] with "
+                    "hcclServerType[%d]; fallback to the HCCL module is not allowed.",
+                    nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str(),
+                    static_cast<int>(executor->mc2.serverType));
+            return ACLNN_ERR_INNER;
+        }
         executor->mc2.fallback = true;
         OP_LOGI("The mc2_client module does not support the current algorithm; falling back to the HCCL module.");
     }
@@ -492,6 +501,17 @@ static aclnnStatus NnopbaseMC2KernelCCU(NnopbaseExecutor* const executor, aclrtS
 {
     if (NnopbaseIsCcuSplitLaunchOp(executor)) {
         return NnopbaseCcuKernelLaunch(executor, stream);
+    }
+    if (!nnopbase::IndvSoc::GetInstance().NnopbaseSupportMc2Fallback(executor->mc2.serverType)) {
+        OP_LOGE(ACLNN_ERR_INNER,
+                "CCU split launch is not available on socVersion[%s] with hcclServerType[%d], and direct CCU "
+                "fusion launch is not supported. contextAddr[0] is %p, commHandle[0] is %p, fallback is %d.",
+                nnopbase::IndvSoc::GetInstance().GetCurSocVersion().c_str(),
+                static_cast<int>(executor->mc2.serverType),
+                executor->mc2.contextAddrs.empty() ? nullptr : executor->mc2.contextAddrs[0],
+                executor->mc2.commHandles.empty() ? nullptr : executor->mc2.commHandles[0],
+                static_cast<int>(executor->mc2.fallback));
+        return ACLNN_ERR_INNER;
     }
     return NnopbaseFusionKernelLaunch(executor, stream);
 }

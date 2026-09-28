@@ -59,7 +59,7 @@ bool IndvSoc::SupportMc2FusionLaunch(void)
 {
     const std::string& curSocVersion = GetCurSocVersion();
     return (curSocVersion == OPS_SUBPATH_ASCEND950) || (curSocVersion == OPS_SUBPATH_ASCEND910_96) ||
-           (curSocVersion == OPS_SUBPATH_ASCEND350);
+           (curSocVersion == OPS_SUBPATH_ASCEND350) || (curSocVersion == OPS_SUBPATH_ASCEND960DT);
 }
 
 bool IndvSoc::NeedAlignInitValues(void) const
@@ -99,6 +99,16 @@ bool IndvSoc::NnopbaseUseA5Mc2Client(const NnopbaseHcclServerType sType)
     OP_LOGD("NnopbaseUseA5Mc2Client check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, useA5Mc2Client=%d",
             curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, useA5Mc2Client);
     return useA5Mc2Client;
+}
+
+bool IndvSoc::NnopbaseSupportMc2Fallback(const NnopbaseHcclServerType sType)
+{
+    // ascend910_96芯片CCU场景不允许回退HCCL模块
+    const std::string& curSocVersion = GetCurSocVersion();
+    const bool support = (curSocVersion != OPS_SUBPATH_ASCEND910_96) || (sType != NNOPBASE_HCCL_SERVER_TYPE_CCU);
+    OP_LOGD("NnopbaseSupportMc2Fallback check, socVersion=%s, sType=%d, support=%d", curSocVersion.c_str(),
+            static_cast<int>(sType), support);
+    return support;
 }
 
 uint32_t* IndvSoc::GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const
