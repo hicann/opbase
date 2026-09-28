@@ -135,6 +135,7 @@ if(BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG)
     )
 
     add_subdirectory(aicpu_common/context)
+    add_subdirectory(src/aicpu_const_folding)
     target_compile_definitions(ops_base PRIVATE
         BUILD_WITH_INSTALLED_DEPENDENCY_CANN_PKG
     )

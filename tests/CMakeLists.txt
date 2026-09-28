@@ -38,3 +38,6 @@ add_cann_third_party(json)
 
 add_subdirectory(op_common)
 add_subdirectory(nnopbase)
+if(ENABLE_UT)
+    add_subdirectory(aicpu_const_folding)
+endif()

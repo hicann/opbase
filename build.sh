@@ -421,6 +421,19 @@ main() {
             exit 1
         fi
 
+        if [ -f "${BASEPATH}"/"${BUILD_RELATIVE_PATH}"/tests/aicpu_const_folding/aicpu_const_folding_ut ]; then
+            cd "${BASEPATH}"/"${BUILD_RELATIVE_PATH}"/tests/aicpu_const_folding/
+            ./aicpu_const_folding_ut
+            if [[ $? -ne 0 ]]; then
+                echo "Execute aicpu_const_folding_ut failed."
+                exit 1
+            fi
+            echo "Execute aicpu_const_folding_ut successful."
+        else
+            echo "aicpu_const_folding_ut does not generated"
+            exit 1
+        fi
+
         echo "Execute ops_base_ut successful."
         
         if [[ "${ENABLE_COVERAGE}" == "on" ]];then

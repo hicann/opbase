@@ -171,6 +171,7 @@
     </file_info>
     <file_info value="ops_base_lib" copy_type="delivery" src_path="" dst_path="$(TARGET_ENV)/lib64" install_path="$(TARGET_ENV)/lib64" install_mod="440">
         <file value="libops_base.so" file_type="shared"/>
+        <file value="libopconstant_folding.so" file_type="shared"/>
     </file_info>
     <file_info value="ops_base_lib_aicpu" copy_type="delivery" src_path="" dst_path="$(TARGET_ENV)/lib64" install_path="$(TARGET_ENV)/lib64" install_mod="440">
         <file value="libaicpu_context.a" file_type="shared" optional="true"/>
