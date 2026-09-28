@@ -152,7 +152,7 @@ uint32_t CpuKernelCache::UpdateInputTensor(
                 reinterpret_cast<RuntimeTensorDesc*>(static_cast<uintptr_t>(io_addrs[addr_index]));
             std::vector<int64_t> dims;
             KERNEL_CHECK_FALSE(
-                (tensor_desc->shape[0] <= kMaxDimSize), KERNEL_STATUS_PARAM_INVALID,
+                (tensor_desc->shape[0] >= 0 && tensor_desc->shape[0] <= kMaxDimSize), KERNEL_STATUS_PARAM_INVALID,
                 "Max shape size[%ld], but got input[%zu] shape size[%ld]", kMaxDimSize, i, tensor_desc->shape[0])
             GetDimsFromArrays(&(tensor_desc->shape[1]), static_cast<size_t>(tensor_desc->shape[0]), dims);
             auto shape = input->GetTensorShape();

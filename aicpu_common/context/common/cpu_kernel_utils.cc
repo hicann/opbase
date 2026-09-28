@@ -216,6 +216,10 @@ uint32_t CpuKernelUtils::GetCPUNum(const CpuKernelContext& ctx)
 
 void CpuKernelUtils::UpdateCustWorkSpaceInfo(CpuKernelContext* ctx, uint64_t workspace_size, uint64_t workspace_addr)
 {
+    if (ctx == nullptr || workspace_addr == 0UL || workspace_size == 0UL) {
+        KERNEL_LOG_ERROR("Invalid workspace info, addr[%lu], size[%lu].", workspace_addr, workspace_size);
+        return;
+    }
     ctx->workspace_size_ = workspace_size;
     ctx->workspace_addr_ = workspace_addr;
     auto ret = memset_s(ValueToPtr(ctx->workspace_addr_), ctx->workspace_size_, 0x00, ctx->workspace_size_);
