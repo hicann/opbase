@@ -70,7 +70,7 @@ bash install_deps.sh
 2. **安装opbase包**
 
     ```bash
-    ./cann-opbase_${cann_version}_linux-${arch}.run --full --install-path=${install_path}
+    ./build_out/cann-opbase_${cann_version}_linux-${arch}.run --full --install-path=${install_path}
     ```
 
     \$\{install\_path\}表示指定安装路径，若不指定，默认安装路径为：`/usr/local/Ascend`；若指定，一般安装在\$\{install\_path\}目录下。
