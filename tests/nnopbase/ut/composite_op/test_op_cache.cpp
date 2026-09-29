@@ -1058,7 +1058,7 @@ TEST_F(OpCacheUt, AddParamToBufChar)
 
 TEST_F(OpCacheUt, OpExecCacheRemove)
 {
-    const char_t* const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
+    ScopedEnvironmentVariable cacheLimit("ACLNN_CACHE_LIMIT");
     setenv("ACLNN_CACHE_LIMIT", "100000", 1);
     GetThreadLocalContext().hashKey_ = 0;
     GetThreadLocalContext().cacheHashKey_ = (uint8_t*)"hello1";
@@ -1081,7 +1081,6 @@ TEST_F(OpCacheUt, OpExecCacheRemove)
     delete opExecCache1;
 
     RemoveExecCache(nullptr);
-    setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
 }
 
 TEST_F(OpCacheUt, OpExecCacheDeleteTest)

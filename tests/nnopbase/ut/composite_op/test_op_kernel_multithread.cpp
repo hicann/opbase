@@ -2247,7 +2247,7 @@ TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernel)
     op::GenOpTypeId("Conv2D");
     // 启用 debug kernel，使 Conv2D 能同时加载 static 与 debug static 二进制（满足 line 1988 的初始期望）
     op::internal::systemConfig.SetEnableDebugKernelFlag(true);
-    const char_t* const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
+    ScopedEnvironmentVariable cacheLimit("ACLNN_CACHE_LIMIT");
     setenv("ACLNN_CACHE_LIMIT", "10000", 1);
 
     // 单线程预初始化被测 op，避免多线程首次 init 时 mock 环境下 dynamic kernel 加载竞态/失败
@@ -2277,7 +2277,6 @@ TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernel)
     }
     ret = pthread_barrier_destroy(&barrier);
     ret = pthread_barrier_destroy(&barrier2);
-    setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
     // 还原 debug kernel flag，避免污染同 fixture 其他测试
     op::internal::systemConfig.SetEnableDebugKernelFlag(false);
 }
@@ -2292,7 +2291,7 @@ TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernelWithPath)
     op::GenOpTypeId("Conv2D");
     // 启用 debug kernel，使 Conv2D 能同时加载 static 与 debug static 二进制（与 TestReselectStaticKernel 对称）
     op::internal::systemConfig.SetEnableDebugKernelFlag(true);
-    const char_t* const cacheLimit = std::getenv("ACLNN_CACHE_LIMIT");
+    ScopedEnvironmentVariable cacheLimit("ACLNN_CACHE_LIMIT");
     setenv("ACLNN_CACHE_LIMIT", "10000", 1);
 
     // 单线程预初始化被测 op，避免多线程首次 init 时 mock 环境下 dynamic kernel 加载竞态/失败
@@ -2321,7 +2320,6 @@ TEST_F(OpKernelMultiThreadUT, TestReselectStaticKernelWithPath)
     }
     ret = pthread_barrier_destroy(&barrier);
     ret = pthread_barrier_destroy(&barrier2);
-    setenv("ACLNN_CACHE_LIMIT", cacheLimit, 1);
     // 还原 debug kernel flag，避免污染同 fixture 其他测试
     op::internal::systemConfig.SetEnableDebugKernelFlag(false);
 }
