@@ -153,6 +153,10 @@ ge::graphStatus DimensionCollapse(const std::vector<gert::Shape>& inShapes, cons
 {
     // 获取输出shape的轴数量，并封装输出shape
     uint64_t maxDim = outShapes.GetDimNum();
+    if (maxDim == 0) {
+        OP_LOGE("BroadcastTiling", "The output shape's dim num can not be 0");
+        return ge::GRAPH_FAILED;
+    }
     std::vector<int64_t> outputShapes;
     for (uint64_t i = 0; i < outShapes.GetDimNum(); i++) {
         outputShapes.push_back(outShapes.GetDim(i));
@@ -180,6 +184,10 @@ ge::graphStatus DimensionCollapse(const std::vector<gert::Shape>& inShapes, cons
     // 遍历所有输入的所有维度，校验轴的合法性。
     // 将某个输入的brc轴对应的二进制位置设置为1
     for (uint64_t i = 0; i < inputShapes[0].size(); ++i) {
+        if (outputShapes[i] <= 0) {
+            OP_LOGE("BroadcastTiling", "The output's dim index(%lu) must be a positive number", i);
+            return ge::GRAPH_FAILED;
+        }
         int64_t flag = 0;
         for (uint64_t j = 0; j < inputShapes.size(); ++j) {
             flag <<= 1;
@@ -348,6 +356,10 @@ ge::graphStatus NonContiguousDimensionCollapse(const std::vector<gert::Shape>& i
 {
     // 获取输出shape的轴数量，并封装输出shape
     uint64_t maxDim = outShapes.GetDimNum();
+    if (maxDim == 0) {
+        OP_LOGE("BroadcastTiling", "The output shape's dim num can not be 0");
+        return ge::GRAPH_FAILED;
+    }
     std::vector<int64_t> outputShapes;
     for (uint64_t i = 0; i < outShapes.GetDimNum(); i++) {
         outputShapes.push_back(outShapes.GetDim(i));
@@ -388,6 +400,10 @@ ge::graphStatus NonContiguousDimensionCollapse(const std::vector<gert::Shape>& i
     // 遍历所有输入的所有维度，校验轴的合法性。
     // 将某个输入的brc轴对应的二进制位置设置为1
     for (uint64_t i = 0; i < inputShapes[0].size(); ++i) {
+        if (outputShapes[i] <= 0) {
+            OP_LOGE("BroadcastTiling", "The output's dim index(%lu) must be a positive number", i);
+            return ge::GRAPH_FAILED;
+        }
         int64_t flag = 0;
         for (uint64_t j = 0; j < inputShapes.size(); ++j) {
             flag <<= 1;
