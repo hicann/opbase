@@ -18,7 +18,7 @@ TEST(TestMathUtil, testFloorDiv)
     EXPECT_EQ(FloorDiv<int32_t>(1500, 512), 2);
     EXPECT_EQ(FloorDiv<int32_t>(130, 64), 2);
     EXPECT_EQ(FloorDiv<int64_t>(999, 100), 9);
-    EXPECT_NE(FloorDiv<int64_t>(10, 3), 0);
+    EXPECT_EQ(FloorDiv<int64_t>(10, 3), 3);
     EXPECT_EQ(FloorDiv<int32_t>(std::numeric_limits<int32_t>::max(), 8), 268435455);
     EXPECT_EQ(FloorDiv<int64_t>(std::numeric_limits<int64_t>::max(), 64), 144115188075855871);
 }
