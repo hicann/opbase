@@ -370,11 +370,12 @@ TEST_F(AclOpApiTest, aclGetFormat)
 
 TEST_F(AclOpApiTest, aclGetDataType)
 {
-    EXPECT_NE(aclGetFormat(nullptr, nullptr), OK);
+    aclDataType dataType = aclDataType::ACL_DT_UNDEFINED;
+    EXPECT_NE(aclGetDataType(nullptr, &dataType), OK);
     std::vector<int64_t> strides = {8, 1};
     CHECK_TENSOR(a, std::vector<int64_t>({4, 2}), std::vector<int64_t>({32}), aclDataType::ACL_FLOAT, strides.data(), 0,
                  aclFormat::ACL_FORMAT_ND, nullptr);
-    aclDataType dataType = aclDataType::ACL_DT_UNDEFINED;
+    EXPECT_NE(aclGetDataType(a, nullptr), OK);
     EXPECT_EQ(aclGetDataType(a, &dataType), OK);
     EXPECT_EQ(dataType, aclDataType::ACL_FLOAT);
 }
