@@ -107,7 +107,7 @@ struct BroadcastTilingParams {
 /**
  *  @brief 编译参数信息
  * - dslCompileInfo dsl分支场景的compileInfo信息
- * - isAscendC 是否走Acendc分支标记
+ * - isAscendC 是否走AscendC分支标记
  * - coreNum 核数大小
  * - ubSize ub空间大小
  */

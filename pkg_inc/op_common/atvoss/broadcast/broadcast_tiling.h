@@ -452,11 +452,11 @@ private:
         }
     }
     /**
-     *  判断是否为5维以上的特殊场景， 该场景走ub brc。
+     *  判断是否为5维以上的特殊场景，该场景走ub brc。
      *  前置条件（任一不满足直接返回false）：
      *  1. 输入输出总个数不超过SPECIAL_DIM_MAX_IN_OUT_NUM
      *  2. dtype大小为2或4字节
-     *  3. 输出维度数大于SPECIAL_DIM_THRESHOLD，且输出的第5维维不超过2
+     *  3. 输出维度数大于SPECIAL_DIM_THRESHOLD，且输出的从右往左第5维不超过2
      *  需同时存在以下两类输入，且每个输入均满足对应条件，才返回true：
      *  1. last brc输入（尾轴stride为0）：全维度元素个数乘dTypeSize小于CACHE_LINE_512
      *  2. 非last brc输入（无任何广播轴）：内5维（从右往左）之积不超过SPECIAL_DIM_IN_THRESHOLD，
@@ -516,7 +516,7 @@ private:
         return checkA && checkB;
     }
     /**
-     *  判断是否为nlast brc并且尾轴大于4096场景， 该场景走ub brc。
+     *  判断是否为nlast brc并且尾轴大于4096场景，该场景走ub brc。
      *  1. 该输入必须是copyInBrc节点
      *  2. 该输入不可以是last brc节点
      *  3. 该输入不可以是纯搬运节点

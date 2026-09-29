@@ -283,8 +283,8 @@ enum class CollapseAction : uint8_t {
 };
 
 static bool IsAxesPairJointContiguous(const std::vector<std::vector<int64_t>>& inputShapes,
-                                      const std::vector<std::vector<int64_t>>& inputStrides,
-                                      uint64_t lastKeptAxis, uint64_t currentAxis)
+                                      const std::vector<std::vector<int64_t>>& inputStrides, uint64_t lastKeptAxis,
+                                      uint64_t currentAxis)
 {
     for (uint64_t i = 0; i < inputStrides.size(); i++) {
         if (inputStrides[i].empty()) {
@@ -310,19 +310,18 @@ static bool IsAxesPairJointContiguous(const std::vector<std::vector<int64_t>>& i
  * @param flags 每根轴的brc标记
  * @param target 全1轴flag值
  * @return 每根轴的合轴动作
-*/
-static std::vector<CollapseAction> ComputeBroadcastCollapsePlan(
-    const std::vector<std::vector<int64_t>>& inputShapes,
-    const std::vector<std::vector<int64_t>>& inputStrides,
-    const std::vector<int64_t>& outputShapes,
-    const std::vector<int64_t>& flags, int64_t target)
+ */
+static std::vector<CollapseAction> ComputeBroadcastCollapsePlan(const std::vector<std::vector<int64_t>>& inputShapes,
+                                                                const std::vector<std::vector<int64_t>>& inputStrides,
+                                                                const std::vector<int64_t>& outputShapes,
+                                                                const std::vector<int64_t>& flags, int64_t target)
 {
     std::vector<CollapseAction> plan(outputShapes.size(), CollapseAction::KEEP);
     int64_t prevFlag = flags[0];
     uint64_t lastKeptAxis = 0;
     for (uint64_t j = 1; j < outputShapes.size(); j++) {
         int64_t curFlag = flags[j];
-        // 场景1 或者 场景2
+        // 场景1或者场景2
         bool isValid = (prevFlag == curFlag) || (prevFlag == target && outputShapes[j - 1] == 1);
         if (isValid && (prevFlag == target || IsAxesPairJointContiguous(inputShapes, inputStrides, lastKeptAxis, j))) {
             plan[j] = CollapseAction::MERGE;
@@ -423,8 +422,8 @@ ge::graphStatus NonContiguousDimensionCollapse(const std::vector<gert::Shape>& i
     }
 
     int64_t target = (1 << inputShapes.size()) - 1;
-    std::vector<CollapseAction> collapsePlan = ComputeBroadcastCollapsePlan(
-        inputShapes, inputStrides, outputShapes, flags, target);
+    std::vector<CollapseAction> collapsePlan = ComputeBroadcastCollapsePlan(inputShapes, inputStrides, outputShapes,
+                                                                            flags, target);
 
     // 做输入shape合轴逻辑
     // 遍历所有的输入，遍历所有的轴

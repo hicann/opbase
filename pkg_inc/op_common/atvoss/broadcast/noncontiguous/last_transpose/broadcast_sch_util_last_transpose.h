@@ -61,7 +61,7 @@ __aicore__ inline AscendC::NdDmaParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> Broadca
         loopInfo.loopSize[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - i] = 1;
         loopInfo.loopSrcStride[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - i] = inputStrides[ubSplitAxis];
         loopInfo.loopDstStride[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 -
-                               i] = outputStridesWithPad[ubSplitAxis]; // outputStride 为ub内stride， -2轴补pad.
+                               i] = outputStridesWithPad[ubSplitAxis]; // outputStride 为ub内stride，-2轴补pad.
     }
 
     // 设置ub切分轴
@@ -104,8 +104,8 @@ __aicore__ inline void MovAlign2UB(AscendC::LocalTensor<T1>& ubTensor, AscendC::
 
     dataCopyExtParams.blockLen = lastDimFactor * sizeof(T1);
     dataCopyExtParams.dstStride = 0;
-    // tiling在合轴的时候，不会补维，所以这边有可能是3维 也可能是2维，由shapeLen决定，至少两维。
-    // 同时ub切分轴，也可能在1维 也可能在0维。
+    // tiling在合轴的时候，不会补维，所以这边有可能是3维也可能是2维，由shapeLen决定，至少两维。
+    // 同时ub切分轴，也可能在1维也可能在0维。
     if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENTION_TWO_LAST_TRANSPOSE) {
         // [ubSplitSize, lastDimFactor]
         // [xxx, ubSplitSize, lastDimFactor]
