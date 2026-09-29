@@ -16,6 +16,7 @@
                 "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_math.so",
                 "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_nn.so",
                 "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_oam.so",
+                "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_ras.so",
                 "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_transformer.so",
                 "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_comm_legacy.so",
                 "{ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe/op_host/lib/{os}/{arch}/libophost_legacy.so"
@@ -47,10 +48,10 @@
             "type": "shared_library",
             "description": "tensorflow的算子插件",
             "paths": [
-                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_cv.so",
-                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_hccl.so",
                 "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_math.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_hccl.so",
                 "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_nn.so",
+                "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_cv.so",
                 "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_transformer.so",
                 "{ASCEND_OPP_PATH}/built-in/framework/tensorflow/liboptf_plugin_legacy.so"
             ]
