@@ -95,6 +95,7 @@ file(GLOB_RECURSE NNOPBASE_SRC_FILES CONFIGURE_DEPENDS
 # testcase源文件
 file(GLOB_RECURSE NNOPBASE_TEST_COMMON_CASE_SRC_FILES CONFIGURE_DEPENDS
     ${NNOPBASE_ST_DIR}/composite_op/*.cpp                                      # composite_op
+    ${NNOPBASE_ST_DIR}/individual_op/*.cpp                                     # individual_op
     # ${NNOPBASE_ST_DIR}/aicpu/*.cpp                                             # aicpu_op
 )
 
