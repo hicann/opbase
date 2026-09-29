@@ -52,7 +52,7 @@ generate_coverage() {
     exit 1
   fi
 
-  local _path_to_gen="$(dirname ${_coverage_file})"
+  local _path_to_gen="$(dirname -- "${_coverage_file}")"
   if [[ ! -d "${_path_to_gen}" ]]; then
     mk_dir "${_path_to_gen}"
   fi
