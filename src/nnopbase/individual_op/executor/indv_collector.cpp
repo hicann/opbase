@@ -43,7 +43,7 @@ constexpr const char* ERR_REASON_FOR_OPP_PACKAGE = "1.The operator package is no
 constexpr size_t MAX_BIN_KEY_MULTIPLIER = 4UL;
 static const std::vector<std::string> OPS_PATH_VEC = {
     "ops_math",  "ops_nn", "ops_cv", "ops_transformer", "ops_oam",
-    "ops_legacy" // 低优先级
+    "ops_legacy", "ops_ras" // 低优先级
 };
 
 void NnopbaseTrim(string& result, const NnopbaseChar delims)
