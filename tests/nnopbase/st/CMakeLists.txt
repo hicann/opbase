@@ -112,7 +112,7 @@ file(GLOB_RECURSE NNOPBASE_TEST_COMMON_SRC_FILES CONFIGURE_DEPENDS
     ${NNOPBASE_ST_DIR}/../common/depends/acl/aclrt_stub.cpp
     ${NNOPBASE_ST_DIR}/../common/depends/profiler/profiler_stub.cpp
     ${NNOPBASE_ST_DIR}/../common/depends/op/aclnn_mul_stub.cpp
-    ${NNOPBASE_UT_DIR}/../common/depends/mmpa/mmpa_stub.cpp
+    ${NNOPBASE_ST_DIR}/../common/depends/mmpa/mmpa_stub.cpp
 )
 
 # 创建stest执行对象
