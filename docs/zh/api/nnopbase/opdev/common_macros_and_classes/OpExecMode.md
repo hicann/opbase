@@ -8,5 +8,5 @@ enum class OpExecMode : uint32_t {
     OP_EXEC_MODE_DEFAULT = 0,
     OP_EXEC_MODE_HF32T = 1,
     OP_EXEC_MODE_RESERVED = 0xFFFFFFFF
-}
+};
 ```
