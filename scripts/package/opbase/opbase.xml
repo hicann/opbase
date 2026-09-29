@@ -187,6 +187,7 @@
     <file_info copy_type="source" src_path="" dst_path="$(TARGET_ENV)/include/aclnn/opdev" install_path="$(TARGET_ENV)/include/aclnn/opdev" install_type="all">
         <file value="bfloat16.h" install_mod="550"/>
         <file value="common_types.h" install_mod="550"/>
+        <file value="direct_invoke_task.h" install_mod="550"/>
         <file value="data_type_utils.h" install_mod="550"/>
         <file value="fast_vector.h" install_mod="550"/>
         <file value="float4_e1m2.h" install_mod="550"/>
