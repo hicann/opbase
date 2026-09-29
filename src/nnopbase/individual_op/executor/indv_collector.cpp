@@ -41,7 +41,7 @@ constexpr char* ERR_REASON_FOR_OPP_PACKAGE = "1.The operator package is not inst
                                              "binary_info_config.json file in the operator package fails to be read";
 constexpr size_t MAX_BIN_KEY_MULTIPLIER = 4UL;
 static const std::vector<std::string> OPS_PATH_VEC = {
-    "ops_math",  "ops_nn", "ops_cv", "ops_transformer", "ops_oam",
+    "ops_math",  "ops_nn", "ops_cv", "ops_transformer", "ops_oam", "ops_ras",
     "ops_legacy" // 低优先级
 };
 
