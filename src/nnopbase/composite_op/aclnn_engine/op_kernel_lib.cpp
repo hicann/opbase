@@ -82,11 +82,10 @@ aclnnStatus KernelLibInfo::Initialize(nlohmann::json& singleKernelJson)
 const string& KernelLibInfo::GetOpFile() const { return opFile_; }
 
 // ============================== OpKernelLib ====================================
-static std::unordered_map<std::string, std::string> socOpMapV2 = {{"Ascend910B", "ascend910b/"},
-                                                                  {"Ascend910_93", "ascend910_93/"},
-                                                                  {"Ascend910_95", "ascend910_95/"},
-                                                                  {"Ascend950", "ascend950/"},
-                                                                  {"Ascend350", "ascend350/"}};
+static std::unordered_map<std::string, std::string> socOpMapV2 = {
+    {"Ascend910B", "ascend910b/"}, {"Ascend910_93", "ascend910_93/"}, {"Ascend910_95", "ascend910_95/"},
+    {"Ascend950", "ascend950/"},   {"Ascend960DT", "ascend960dt/"},   {"Ascend960PR", "ascend960pr/"},
+    {"Ascend350", "ascend350/"}};
 
 static std::string emptyString = "";
 

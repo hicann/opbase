@@ -211,6 +211,7 @@ void PlatformInfoImpl::InitSocVersion()
             {"Ascend310", SocVersion::ASCEND310},       {"Ascend310B", SocVersion::ASCEND310B},
             {"Ascend310C", SocVersion::ASCEND310C},     {"Ascend310P", SocVersion::ASCEND310P},
             {"Ascend350", SocVersion::ASCEND350},       {"Ascend610Lite", SocVersion::ASCEND610LITE},
+            {"Ascend960DT", SocVersion::ASCEND960DT},   {"Ascend960PR", SocVersion::ASCEND960PR},
             {"KirinX90", SocVersion::KIRINX90},         {"Kirin9030", SocVersion::KIRIN9030}};
         auto it = convertMap.find(socVersionStr);
         if (it != convertMap.end()) {
@@ -396,6 +397,8 @@ ge::AscendString ToString(SocVersion socVersion)
         {SocVersion::ASCEND910B, "Ascend910B"},             // SocVersion::ASCEND910B
         {SocVersion::ASCEND910_93, "Ascend910_93"},         // SocVersion::ASCEND910_93
         {SocVersion::ASCEND950, "Ascend950"},               // SocVersion::ASCEND950
+        {SocVersion::ASCEND960DT, "Ascend960DT"},           // SocVersion::ASCEND960DT
+        {SocVersion::ASCEND960PR, "Ascend960PR"},           // SocVersion::ASCEND960PR
         {SocVersion::ASCEND910E, "Ascend910E"},             // SocVersion::ASCEND910E
         {SocVersion::ASCEND310, "Ascend310"},               // SocVersion::ASCEND310
         {SocVersion::ASCEND310B, "Ascend310B"},             // SocVersion::ASCEND310B

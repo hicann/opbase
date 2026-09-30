@@ -36,6 +36,10 @@ enum class SocVersion {
     KIRINX90,
     KIRIN9030,
     ASCEND350,
+    ASCEND960DT = 1000,
+    ASCEND960PR,
+    // 新增的ASCEND枚举项在此添加
+    // 新增的KIRIN枚举项在此添加，从2000开始
     RESERVED_VERSION = 99999
 };
 
@@ -68,9 +72,9 @@ class PlatformInfo {
     friend class PlatformThreadLocalCtx;
 
 public:
-    PlatformInfo() {};
+    PlatformInfo(){};
 
-    PlatformInfo(int32_t deviceId) : deviceId_(deviceId) {};
+    PlatformInfo(int32_t deviceId) : deviceId_(deviceId){};
 
     SocVersion GetSocVersion() const;
 
