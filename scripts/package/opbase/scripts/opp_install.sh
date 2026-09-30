@@ -294,7 +294,7 @@ fi
 if [ "${_TARGET_INSTALL_PATH}" = "" ] || [ "${_TARGET_USERNAME}" = "" ] ||
 [ "${_TARGET_USERGROUP}" = "" ] || [ "${install_type}" = "" ] ||
 [ "${is_quiet}" = "" ]; then
-    logandprint "[ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Empty paramters is invalid for install."
+    logandprint "[ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Empty parameters is invalid for install."
     exit 1
 fi
 

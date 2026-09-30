@@ -111,7 +111,7 @@ private:
 
 OpExecutorImpl::OpExecutorImpl()
 {
-    // Put RecordHugeMem at the begining, if huge mem pool not be acitved, return kInvalidHugeMemIndexId(-1)
+    // Put RecordHugeMem at the beginning, if huge mem pool not be activated, return kInvalidHugeMemIndexId(-1)
     hugeMemPoolIndex_ = GetPoolIndex();
     OP_LOGI("Hugemem trace: get huge memory pool index: %d", hugeMemPoolIndex_);
     graph_ = CreateGraphImpl();

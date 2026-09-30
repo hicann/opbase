@@ -115,15 +115,15 @@ _CHIP_TYPE="$4"
 is_docker_install="$5"
 docker_root="$6"
 pkg_version_dir="$7"
-paramter_num="$#"
+parameter_num="$#"
 
 logandprint "[INFO]: Command ops_base_uninstall"
 
-if [ "${paramter_num}" != 0 ]; then
+if [ "${parameter_num}" != 0 ]; then
     if [ "${installed_path}" = "" ] ||
     [ "${uninstall_mode}" = "" ] ||
     [ "${is_quiet}" = "" ] ; then
-        logandprint "[ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Empty paramters is invalid\
+        logandprint "[ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Empty parameters is invalid\
 for call uninstall functions."
         exit 1
     fi

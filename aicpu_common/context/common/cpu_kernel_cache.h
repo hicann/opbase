@@ -169,7 +169,7 @@ private:
     /*
      * parse io address.
      * @param param_head: kernel context
-     * @param io_addrs: kernel inputs and outputs adress
+     * @param io_addrs: kernel inputs and outputs address
      * @param nodedef: kernel node def
      * @param nodedef_len: kernel node def length
      * @return uint32_t: 0 indicates success, while the others fail

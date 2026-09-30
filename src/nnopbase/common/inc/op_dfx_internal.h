@@ -80,7 +80,7 @@ void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo&
 int32_t RestoreTensorInfo(void* cacheTensorInfoLists, FVector<const aclTensor*>& inTensors,
                           FVector<const aclTensor*>& outTensors);
 
-void DestoryTensorsCached(void* cacheTensorInfoLists);
+void DestroyTensorsCached(void* cacheTensorInfoLists);
 
 constexpr int kMaxDurationInfoLen = 256;
 

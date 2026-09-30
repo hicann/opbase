@@ -21,7 +21,7 @@ namespace Ops {
 namespace Base {
 static constexpr int64_t BROADCAST_MAX_DIMS_LAST_TRANSPOSE = 4;
 static constexpr int64_t NDDMA_MAX_DIMS_LAST_TRANSPOSE = 4;
-static constexpr int64_t BROADCAST_BROADCAST_DIMENTION_TWO_LAST_TRANSPOSE = 2;
+static constexpr int64_t BROADCAST_BROADCAST_DIMENSION_TWO_LAST_TRANSPOSE = 2;
 
 template <std::size_t N>
 __aicore__ inline int64_t BroadcastGetGmOffsetLastTranspose(const int64_t (&axesIndices)[N],
@@ -67,7 +67,7 @@ __aicore__ inline AscendC::NdDmaParams<T, NDDMA_MAX_DIMS_LAST_TRANSPOSE> Broadca
     // 设置ub切分轴
     loopInfo.loopSize[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - axisInsideUb] = ubSplitSize;
 
-    if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENTION_TWO_LAST_TRANSPOSE) {
+    if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENSION_TWO_LAST_TRANSPOSE) {
         loopInfo.loopSrcStride[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - axisInsideUb] = inputStrides[ubSplitAxis];
         loopInfo.loopDstStride[NDDMA_MAX_DIMS_LAST_TRANSPOSE - 1 - axisInsideUb] = lastDimFactor;
     } else {
@@ -106,7 +106,7 @@ __aicore__ inline void MovAlign2UB(AscendC::LocalTensor<T1>& ubTensor, AscendC::
     dataCopyExtParams.dstStride = 0;
     // tiling在合轴的时候，不会补维，所以这边有可能是3维也可能是2维，由shapeLen决定，至少两维。
     // 同时ub切分轴，也可能在1维也可能在0维。
-    if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENTION_TWO_LAST_TRANSPOSE) {
+    if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENSION_TWO_LAST_TRANSPOSE) {
         // [ubSplitSize, lastDimFactor]
         // [xxx, ubSplitSize, lastDimFactor]
         dataCopyExtParams.blockCount = ubSplitSize;
@@ -143,7 +143,7 @@ __aicore__ inline void MovAlign2GM(AscendC::GlobalTensor<T1>& outputGm, AscendC:
     AscendC::LoopModeParams loopModeParams;
 
     // ub切分在倒数第二维
-    if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENTION_TWO_LAST_TRANSPOSE) {
+    if (shapeLen - ubSplitAxis == BROADCAST_BROADCAST_DIMENSION_TWO_LAST_TRANSPOSE) {
         // [ubSplitSize, lastDimFactor]
         // [xxx, ubSplitSize, lastDimFactor]
         dataCopyExtParams.blockCount = ubSplitSize;

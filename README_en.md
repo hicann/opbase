@@ -39,7 +39,7 @@ git clone -b ${tag_version} https://gitcode.com/cann/opbase.git
 
 ## 📝 Related Information
 
-- Directory Structure
+- [Directory Structure](docs/en/appendix/dir_structure.md)
 - [Contributions](CONTRIBUTING.md)
 - [Security Statement](SECURITY.md)
 - [Licenses](LICENSE)

@@ -172,7 +172,7 @@ ge::graphStatus ElewiseBaseTiling::DoTiling4Bits(ElewiseTilingData& elewiseTilin
     }
     status = GetShapeInfo<CheckShape>();
     if (status != ge::GRAPH_SUCCESS) {
-        OP_LOGE(context_, "Get shape info faild.");
+        OP_LOGE(context_, "Get shape info failed.");
         return ge::GRAPH_FAILED;
     }
     ComputeParams params;
@@ -230,7 +230,7 @@ ge::graphStatus ElewiseBaseTiling::DoTiling(ElewiseTilingData& elewiseTilingData
     }
     status = GetShapeInfo<CheckShape>();
     if (status != ge::GRAPH_SUCCESS) {
-        OP_LOGE(context_, "Get shape info faild.");
+        OP_LOGE(context_, "Get shape info failed.");
         return ge::GRAPH_FAILED;
     }
     ComputeParams params;

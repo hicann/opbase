@@ -161,7 +161,7 @@ public:
         bool isRepeatable = executor_->IsRepeatable();
         internal::GetLauncherCtx().SetLauncherRepeatable(isRepeatable);
         auto& threadLocalCtx = op::internal::GetThreadLocalContext();
-        // 1. Restore thread local, put these codes at the begining
+        // 1. Restore thread local, put these codes at the beginning
         threadLocalCtx.logInfo_.l0Name = opLogInfo_.l0Name;
         threadLocalCtx.profilingInfoId_ = profilingInfoId_;
 

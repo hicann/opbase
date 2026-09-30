@@ -237,16 +237,16 @@ inline aclTensor* ConvertType(const gert::Tensor* ge_tensor)
     return out;
 }
 
-inline aclTensorList* ConvertType(std::vector<const gert::Tensor*>& ge_tenserList)
+inline aclTensorList* ConvertType(std::vector<const gert::Tensor*>& ge_tensorList)
 {
-    OP_CHECK_IF(ge_tenserList.size() == 0, OP_LOGE("aclnnfallback", "ge_tenserList size 0"), return nullptr);
+    OP_CHECK_IF(ge_tensorList.size() == 0, OP_LOGE("aclnnfallback", "ge_tensorList size 0"), return nullptr);
 
     static const auto aclCreateTensorList = GET_OP_API_FUNC(aclCreateTensorList);
-    OP_CHECK_IF(aclCreateTensorList == nullptr, OP_LOGE("aclnnfallback", "ge_tenserList size 0"), return nullptr);
+    OP_CHECK_IF(aclCreateTensorList == nullptr, OP_LOGE("aclnnfallback", "ge_tensorList size 0"), return nullptr);
 
     std::vector<aclTensor*> tmp;
-    for (size_t i = 0; i < ge_tenserList.size(); i++) {
-        auto t_acl = ConvertType(ge_tenserList[i]);
+    for (size_t i = 0; i < ge_tensorList.size(); i++) {
+        auto t_acl = ConvertType(ge_tensorList[i]);
         tmp.push_back(t_acl);
     }
 

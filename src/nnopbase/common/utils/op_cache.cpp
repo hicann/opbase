@@ -879,7 +879,7 @@ OpExecCache::~OpExecCache()
         delete[] static_cast<char*>(cacheBuf_);
     }
     for (auto it : cacheTensorInfoLists_) {
-        op::internal::DestoryTensorsCached(it);
+        op::internal::DestroyTensorsCached(it);
     }
     if (key_.buf) {
         delete[] key_.buf;

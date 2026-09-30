@@ -44,7 +44,7 @@ platform_data=$(grep -e "arch" "$_RUN_PKG_INFO_FILE" | cut --only-delimited -d"=
 opp_old_platform_dir=ops_base_$platform_data-linux
 opp_platform_dir=opbase
 upper_opp_platform=$(echo "${opp_platform_dir}" | tr 'a-z' 'A-Z')
-# defaluts info determinated by user's inputs
+# defaults info determined by user's inputs
 _INSTALL_LOG_DIR="opbase/install_log"
 _INSTALL_INFO_SUFFIX="${opp_platform_dir}/ascend_install.info"
 _VERSION_INFO_SUFFIX="${opp_platform_dir}/version.info"

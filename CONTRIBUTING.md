@@ -9,7 +9,7 @@
 
 ## 贡献流程
 
-### 1. 创建Issue需求
+### 创建Issue需求
 
 新建 `Requirement|需求建议` 类Issue，并阐明新增算子的设计方案。Issue一般需包含以下内容：
 
@@ -19,13 +19,13 @@
 
 请在提交的Issue中评论`/assign @yourself` 认领该任务。
 
-### 2. 需求评审
+### 需求评审
 
 Sig组将指派Committer对您提交的Issue进行评审并反馈修改意见。请在完成修改后，于Issue中@对应Committer。
 
 若需求被接纳，[sig成员](https://gitcode.com/cann/community/blob/master/CANN/sigs/ops-basic/README.md)将为您分配合适的贡献目录。
 
-### 3. PR提交
+### PR提交
 
 PR上库要求：
 
@@ -36,7 +36,7 @@ PR上库要求：
 - 贡献目录：按sig成员意见提交至指定目录，可参考已有文件放置规则。
 - PR提交：通过`git`命令提交目标分支PR，检查PR标题是否清晰、PR描述是否规范（指明更改内容和原因、是否关联对应Issue）、是否签署CLA。
 
-### 4. CI门禁
+### CI门禁
 
 通过评论 `compile` 指令触发开源仓门禁，并依据CI检测结果进行修改，目前CI门禁包含以下检查项：
 
@@ -47,11 +47,11 @@ PR上库要求：
 
 门禁通过后，请在关联的Issue中@指派的Committer。
 
-### 5. Committer检视
+### Committer检视
 
 Committer检视后将反馈检视意见，请根据意见修改，完成后@指派的Committer。
 
-### 6. Maintainer合入
+### Maintainer合入
 
 Committer检视通过后，标注 `/lgtm`标签。Maintainer将在1天内进行最终审核，确认无问题后，将标注 `/approve` 标签合入PR。
 

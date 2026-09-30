@@ -364,7 +364,7 @@ relative_path_val=${relative_path}
 # check input parameters is valid
 if [ "${_TARGET_INSTALL_PATH}" = "" ] || [ "${_TARGET_USERNAME}" = "" ] ||
 [ "${_TARGET_USERGROUP}" = "" ] || [ "${is_quiet}" = "" ]; then
-    logandprint "[ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Empty paramters is invalid for upgrade."
+    logandprint "[ERROR]: ERR_NO:${PARAM_INVALID};ERR_DES:Empty parameters is invalid for upgrade."
     exit 1
 fi
 

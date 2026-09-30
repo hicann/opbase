@@ -31,8 +31,8 @@ CANN_OPS_OPB_ASYN_EXEC_ACLNN(ctx, aclnnApi, ...)
 关键代码示例如下，仅供参考，不支持直接拷贝运行。
 
 ```cpp
-auto apiRet = CANN_OPS_OPB_ASYN_EXEC_ACLNN(hostApiCtx, aclnnScatterList, geTenserListVar, indices, update, mask,
+auto apiRet = CANN_OPS_OPB_ASYN_EXEC_ACLNN(hostApiCtx, aclnnScatterList, geTensorListVar, indices, update, mask,
                                            reduce, *axis);
-OP_CHECK_IF(apiRet != GRAPH_SUCCESS, OP_LOGE(hostApiCtx->GetNodeName(), "apiRet faild:%d", apiRet),
+OP_CHECK_IF(apiRet != GRAPH_SUCCESS, OP_LOGE(hostApiCtx->GetNodeName(), "apiRet failed:%d", apiRet),
             return GRAPH_FAILED);
 ```

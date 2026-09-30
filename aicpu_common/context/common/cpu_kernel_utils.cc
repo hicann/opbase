@@ -186,7 +186,7 @@ std::shared_ptr<NodeDef> CpuKernelUtils::CreateNodeDef()
 
 /*
  * ParallelFor shards the "total" units of work.
- * @return uint32_t: 0->sucess other->failed
+ * @return uint32_t: 0->success other->failed
  */
 uint32_t CpuKernelUtils::ParallelFor(const CpuKernelContext& ctx, int64_t total, int64_t per_unit_size,
                                      const std::function<void(int64_t, int64_t)>& work)

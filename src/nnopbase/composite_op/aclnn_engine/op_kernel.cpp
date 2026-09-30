@@ -576,7 +576,7 @@ aclnnStatus OpKernelBin::InitTilingParseCtx()
     return ret;
 }
 
-static void GetParamtersValue(const nlohmann::json& elem, op::DataType& dtype, int64_t& valuei, float32_t& valuef)
+static void GetParametersValue(const nlohmann::json& elem, op::DataType& dtype, int64_t& valuei, float32_t& valuef)
 {
     if (elem["dtype"] == "float16") {
         dtype = op::DataType::DT_FLOAT16;
@@ -633,7 +633,7 @@ void OpKernelBin::SetMemSetFlagFromJson()
                 OP_LOGW("Does not contain dtype, index: %zu.", i);
                 continue;
             }
-            GetParamtersValue(elem, dtype, valuei, valuef);
+            GetParametersValue(elem, dtype, valuei, valuef);
 
             memSetValue_.emplace_back(MemSetTensorInfo{i, dtype, valuef, valuei, 0, 0, OpArgType::OPARG_ACLTENSOR,
                                                        nullptr, nullptr, nullptr});

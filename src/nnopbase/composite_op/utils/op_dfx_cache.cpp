@@ -85,7 +85,7 @@ void ReportAdditionInfo(FVector<const TensorsCached*>& inTensors, FVector<const 
 
 int32_t RestoreDumpTensorAddr(TensorsCached* tensorCached, void* workspaceAddr, const std::vector<void*>& tensors);
 
-void DestoryTensorsCached(void* cacheTensorInfoLists)
+void DestroyTensorsCached(void* cacheTensorInfoLists)
 {
     if (cacheTensorInfoLists == nullptr) {
         return;

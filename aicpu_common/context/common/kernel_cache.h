@@ -140,7 +140,7 @@ public:
     /*
      * get all kernel cache
      * @return std::list<std::pair<uint64_t, std::shared_ptr<T>>>: all cache,
-     * pair<kernel id, cahce>
+     * pair<kernel id, cache>
      */
     std::list<std::pair<uint64_t, std::shared_ptr<T>>> GetAllKernelCache() { return kernel_cache_; }
 
@@ -159,7 +159,7 @@ private:
     std::list<std::pair<uint64_t, std::shared_ptr<T>>> kernel_cache_; // all kernel cache, key is kernel id
     std::unordered_map<uint64_t,
                        typename std::list<std::pair<uint64_t, std::shared_ptr<T>>>::iterator> // iterator of kernel
-                                                                                              // cahce, key is kernel id
+                                                                                              // cache, key is kernel id
                                                                                                   kernel_cache_iter_;
 };
 } // namespace aicpu
