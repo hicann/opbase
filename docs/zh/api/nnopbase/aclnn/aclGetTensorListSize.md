@@ -1,4 +1,4 @@
-﻿# aclGetTensorListSize
+# aclGetTensorListSize
 
 ## 功能说明
 

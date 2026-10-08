@@ -1,4 +1,4 @@
-﻿# tensor\_view\_utils
+# tensor\_view\_utils
 
 - **[IsContiguous](IsContiguous.md)**  
 

@@ -1,4 +1,4 @@
-﻿# aclDestroyIntArray
+# aclDestroyIntArray
 
 ## 功能说明
 

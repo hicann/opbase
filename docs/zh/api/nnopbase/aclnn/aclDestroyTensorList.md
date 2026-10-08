@@ -1,4 +1,4 @@
-﻿# aclDestroyTensorList
+# aclDestroyTensorList
 
 ## 功能说明
 

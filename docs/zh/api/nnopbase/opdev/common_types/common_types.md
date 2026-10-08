@@ -1,4 +1,4 @@
-﻿# common\_types
+# common\_types
 
 - **[GetStorageShape](GetStorageShape.md)**  
 

@@ -1,4 +1,4 @@
-﻿# aclGetFormat
+# aclGetFormat
 
 ## 功能说明
 

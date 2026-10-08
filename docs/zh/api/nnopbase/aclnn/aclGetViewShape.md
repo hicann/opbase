@@ -1,4 +1,4 @@
-﻿# aclGetViewShape
+# aclGetViewShape
 
 ## 功能说明
 

@@ -1,4 +1,4 @@
-﻿# aclDestroyScalar
+# aclDestroyScalar
 
 ## 功能说明
 

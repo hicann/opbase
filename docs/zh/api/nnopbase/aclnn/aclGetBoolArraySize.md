@@ -1,4 +1,4 @@
-﻿# aclGetBoolArraySize
+# aclGetBoolArraySize
 
 ## 功能说明
 

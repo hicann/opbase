@@ -1,4 +1,4 @@
-﻿# aclSetRawTensorAddr
+# aclSetRawTensorAddr
 
 ## 功能说明
 

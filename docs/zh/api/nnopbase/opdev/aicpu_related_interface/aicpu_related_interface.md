@@ -1,4 +1,4 @@
-﻿# aicpu相关接口
+# aicpu相关接口
 
 - **[AicpuTask类](AicpuTaskClass.md)**  
 

@@ -1,4 +1,4 @@
-﻿# aclGetViewStrides
+# aclGetViewStrides
 
 ## 功能说明
 
