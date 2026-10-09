@@ -79,7 +79,7 @@ aclnnStatus NnopbaseMC2DynamicKernelRegister(const bool useCoreTypeMagic, Nnopba
 aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo* binInfo)
 {
     aclrtBinaryLoadOption aclrtBinaryLoadOp = aclrtBinaryLoadOption{
-        .type = ACL_RT_BINARY_LOAD_OPT_LAZY_MAGIC,
+        .type = ACL_RT_BINARY_LOAD_OPT_MAGIC,
         .value = aclrtBinaryLoadOptionValue{.magic = NnopbaseGetBinaryMagic(useCoreTypeMagic, binInfo)}};
 
     aclrtBinaryLoadOptions aclrtBinaryLoadOpts = aclrtBinaryLoadOptions{
@@ -94,13 +94,15 @@ aclnnStatus NnopbaseAclrtBinaryLoad(const bool useCoreTypeMagic, NnopbaseBinInfo
 
 aclnnStatus NnopbaseRegisterMemsetBin(std::shared_ptr<MemsetOpBinInfo>& binInfo, bool loadFuncHandleByTilingKey)
 {
-    if (binInfo->bin == nullptr && NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen) != OK) {
-        std::string errMsg = "1.The file does not exist. 2.The file is damaged. 3.The user does not have the read permission";
+    if (binInfo->bin == nullptr &&
+        NnopbaseReadBinFile(binInfo->binPath.c_str(), &binInfo->bin, &binInfo->binLen) != OK) {
+        std::string
+            errMsg = "1.The file does not exist. 2.The file is damaged. 3.The user does not have the read permission";
         OP_LOGE_FOR_FILE_OPERATION_ERROR_PARSE(binInfo->binPath.c_str(), errMsg.c_str());
         return ACLNN_ERR_INNER_OP_FILE_INVALID;
     }
     aclrtBinaryLoadOption aclrtBinaryLoadOp = aclrtBinaryLoadOption{
-        .type = ACL_RT_BINARY_LOAD_OPT_LAZY_MAGIC, .value = aclrtBinaryLoadOptionValue{.magic = binInfo->magic}};
+        .type = ACL_RT_BINARY_LOAD_OPT_MAGIC, .value = aclrtBinaryLoadOptionValue{.magic = binInfo->magic}};
     aclrtBinaryLoadOptions aclrtBinaryLoadOpts = aclrtBinaryLoadOptions{
         .options = &aclrtBinaryLoadOp,
         .numOpt = 1U,
