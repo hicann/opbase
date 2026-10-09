@@ -47,27 +47,16 @@ static aclnnStatus NnopbaseCollectOomStorageShapeRecords(
                instanceCount);
     for (uint32_t i = 0U; i < instanceCount; ++i) {
         const auto& instance = instances[i];
+        const size_t startIndex = inputInstances[i].startIndex;
         if (instance.tensor != nullptr) {
-            if (!IsContiguousShape(instance.tensor)) {
-                records.push_back({inputInstances[i].startIndex, 1U, false});
-            }
+            records.push_back({startIndex, 1U, false});
             continue;
         }
         if (instance.tensorList == nullptr) {
+            records.push_back({startIndex, 1U, false});
             continue;
         }
-        bool hasUnContiguousMember = false;
-        const uint64_t count = instance.tensorList->Size();
-        for (uint64_t j = 0U; j < count; ++j) {
-            const aclTensor* tensor = (*instance.tensorList)[j];
-            if ((tensor != nullptr) && (!IsContiguousShape(tensor))) {
-                hasUnContiguousMember = true;
-                break;
-            }
-        }
-        if (hasUnContiguousMember) {
-            records.push_back({inputInstances[i].startIndex, static_cast<uint16_t>(count), true});
-        }
+        records.push_back({startIndex, static_cast<uint16_t>(instance.tensorList->Size()), true});
     }
     return OK;
 }
@@ -102,8 +91,8 @@ static aclnnStatus NnopbaseAppendOomStorageShapeRecord(const NnopbaseExecutorArg
         CHECK_COND(tensorIndex < extTensors.size(), ACLNN_ERR_PARAM_INVALID,
                    "Oom storage shape tensor index[%zu] is out of range[%zu].", tensorIndex, extTensors.size());
         *addr++ = tensorVersion;
-        const uint64_t storageShapeSize =
-            static_cast<uint64_t>(extTensors[tensorIndex].storageShape.GetShapeSize());
+        const uint64_t storageShapeSize = extTensors[tensorIndex].isNull ?
+            0U : static_cast<uint64_t>(extTensors[tensorIndex].storageShape.GetShapeSize());
         OP_LOGI("Oom storage shape tensor index[%zu] storageShapeSize is %llu.", tensorIndex, storageShapeSize);
         addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, storageShapeSize);
     }
@@ -276,10 +265,17 @@ static aclnnStatus NnopbaseAppendOomStorageShapeExt(NnopbaseExecutor* const exec
                 record.startIndex, record.isTensorList, record.count);
         NNOPBASE_ASSERT_OK_RETVAL(NnopbaseAppendOomStorageShapeRecord(executor->args, record, argsAddr));
     }
-    // 扩展区尾部按8B对齐补padding。
+    // 扩展区尾部按8B对齐补padding，清零防止输出侧注册误消费。
     if (!records.empty()) {
         const uintptr_t endAddr = reinterpret_cast<uintptr_t>(argsAddr->ptr);
         const size_t padding = (~endAddr + 1U) & (NNOPBASE_EIGHT_BYTES - 1U); // (8 - end%8) % 8
+        if (padding != 0U) {
+            const errno_t ret = memset_s(argsAddr->ptr, padding, 0, padding);
+            if (ret != EOK) {
+                OP_LOGW("Failed to memset_s OOM storage shape padding, ret is %d, padding size is %zu.", ret,
+                        padding);
+            }
+        }
         argsAddr->ptr += padding;
     }
     return OK;
