@@ -2,7 +2,7 @@
 
 [Table 1](#table1) describes the common return codes. To obtain error messages, call the `aclGetRecentErrMsg` API described in *Runtime APIs*. You can rectify faults based on the error messages or contact technical support.
 
-**Table 1** Return status codes <a name='table1'></a>
+**Table 1** Return status codes <a id="table1"></a>
 
 | Status Code| Value| Description|
 | --- | --- | --- |
@@ -12,7 +12,7 @@
 | ACLNN_ERR_RUNTIME_ERROR | 361001 | Internal API call to NPU runtime failed.|
 | ACLNN_ERR_INNER_XXX | 561xxx | API internal error. The possible causes are listed in [Table 2](#table2).|
 
-**Table 2** Error codes <a name='table2'></a>
+**Table 2** Error codes <a id="table2"></a>
 
 | Error Code| Value| Description|
 | --- | --- | --- |

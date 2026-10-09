@@ -2,7 +2,7 @@
 
 常见返回码如[表1](#table1)所示，异常信息可通过《Runtime运行时API》中aclGetRecentErrMsg接口获取，您可以根据报错提示排查问题或联系技术支持。
 
-**表 1**  返回状态码 <a name='table1'></a>
+**表 1**  返回状态码 <a id="table1"></a>
 
 | 状态码名称 | 状态码值 | 状态码说明 |
 | --- | --- | --- |
@@ -12,7 +12,7 @@
 | ACLNN_ERR_RUNTIME_ERROR | 361001 | API内部调用npu runtime的接口异常。 |
 | ACLNN_ERR_INNER_XXX | 561xxx | API发生内部异常，导致异常的原因很多，具体参考[表2](#table2)。 |
 
-**表 2**  异常状态码 <a name='table2'></a>
+**表 2**  异常状态码 <a id="table2"></a>
 
 | 状态码名称 | 状态码值 | 状态码说明 |
 | --- | --- | --- |
