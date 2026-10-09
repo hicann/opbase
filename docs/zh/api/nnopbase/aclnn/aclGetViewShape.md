@@ -30,7 +30,7 @@ aclnnStatus aclGetViewShape(const aclTensor *tensor, int64_t **viewDims, uint64_
 
 ## 约束说明
 
-参数viewDims内存是本接口内部申请，使用完后必须delete手动释放。
+参数viewDims内存是本接口内部申请，使用完后必须使用`delete[]`手动释放。
 
 ## 调用示例
 
