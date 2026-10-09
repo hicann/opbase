@@ -54,7 +54,7 @@ public:
     bool SupportL0ExceptionDump(void) const;
     bool IsCouplingArch(void) const;
     bool NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType);
-    bool NnopbaseUseA5Mc2Client(const NnopbaseHcclServerType sType);
+    bool NnopbaseUseMc2Client(const NnopbaseHcclServerType sType);
     bool NnopbaseSupportMc2Fallback(const NnopbaseHcclServerType sType);
     uint32_t* GetNonFiniteCheckSocSupportList(uint32_t& socSupportListLen) const;
     uint32_t GetSocEnum();

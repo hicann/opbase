@@ -82,10 +82,9 @@ bool NnopbaseIsCcuSplitLaunchOp(const NnopbaseExecutor* executor)
 aclnnStatus DoHcclAllocComResourceByTiling(NnopbaseExecutor* executor, HcclComm comm, void* stream, void* tilingData,
                                            void** commCtx)
 {
-    const bool useA5Mc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseA5Mc2Client(executor->mc2.serverType);
-    OP_LOGI("Nnopbase MC2 alloc resource route, sType[%d], useA5Mc2Client[%d].", executor->mc2.serverType,
-            useA5Mc2Client);
-    if (useA5Mc2Client) {
+    const bool useMc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseMc2Client(executor->mc2.serverType);
+    OP_LOGI("Nnopbase MC2 alloc resource route, sType[%d], useMc2Client[%d].", executor->mc2.serverType, useMc2Client);
+    if (useMc2Client) {
         using AllocResult = nnopbase::IndvMc2ClientWrapper::HcclAllocComResourceResult;
         const AllocResult result = nnopbase::IndvMc2ClientWrapper::GetInstance().HcclAllocComResourceByTiling(
             comm, stream, tilingData, commCtx);
@@ -353,10 +352,9 @@ aclnnStatus NnopbasePrepareMC2Params(NnopbaseExecutor* executor, NnopbaseExecuto
         executor->mc2.aicpuArgs.soNameAddrOffset = static_cast<uint32_t>(argsAddr->hostInputData - args);
     }
 
-    const bool useA5Mc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseA5Mc2Client(executor->mc2.serverType);
-    const NnopbaseUChar* pSoName = useA5Mc2Client ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
-    const NnopbaseUChar* pKernelName = useA5Mc2Client ? NNOPBASE_MC2_SERVER_KERNEL_NAME :
-                                                        NNOPBASE_MC2_AICPU_KERNEL_NAME;
+    const bool useMc2Client = nnopbase::IndvSoc::GetInstance().NnopbaseUseMc2Client(executor->mc2.serverType);
+    const NnopbaseUChar* pSoName = useMc2Client ? NNOPBASE_MC2_SERVER_SO_NAME : NNOPBASE_MC2_AICPU_SO_NAME;
+    const NnopbaseUChar* pKernelName = useMc2Client ? NNOPBASE_MC2_SERVER_KERNEL_NAME : NNOPBASE_MC2_AICPU_KERNEL_NAME;
     const std::string opName = std::string(executor->opType) + NNOPBASE_MC2_AICPU_SUFFIX;
     const bool enableCcuLaunch = nnopbase::IndvSoc::GetInstance().NnopbaseEnableCcuLaunch(executor->mc2.serverType);
     const size_t opNameDataLen = enableCcuLaunch ? NnopbaseAlignToEightBytes(opName.length()) : opName.length();

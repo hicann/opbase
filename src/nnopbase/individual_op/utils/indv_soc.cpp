@@ -89,16 +89,16 @@ bool IndvSoc::NnopbaseEnableCcuLaunch(const NnopbaseHcclServerType sType)
     return isEnableCcuLaunch;
 }
 
-bool IndvSoc::NnopbaseUseA5Mc2Client(const NnopbaseHcclServerType sType)
+bool IndvSoc::NnopbaseUseMc2Client(const NnopbaseHcclServerType sType)
 {
     const std::string& curSocVersion = GetCurSocVersion();
     const bool isSupportFusionLaunch = SupportMc2FusionLaunch();
-    const bool useA5Mc2Client = (isSupportFusionLaunch && ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) ||
-                                                           (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU) ||
-                                                           (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU)));
-    OP_LOGD("NnopbaseUseA5Mc2Client check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, useA5Mc2Client=%d",
-            curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, useA5Mc2Client);
-    return useA5Mc2Client;
+    const bool useMc2Client = (isSupportFusionLaunch && ((sType == NNOPBASE_HCCL_SERVER_TYPE_END) ||
+                                                          (sType == NNOPBASE_HCCL_SERVER_TYPE_AICPU) ||
+                                                          (sType == NNOPBASE_HCCL_SERVER_TYPE_CCU)));
+    OP_LOGD("NnopbaseUseMc2Client check, socVersion=%s, sType=%d, isSupportFusionLaunch=%d, useMc2Client=%d",
+            curSocVersion.c_str(), static_cast<int>(sType), isSupportFusionLaunch, useMc2Client);
+    return useMc2Client;
 }
 
 bool IndvSoc::NnopbaseSupportMc2Fallback(const NnopbaseHcclServerType sType)
