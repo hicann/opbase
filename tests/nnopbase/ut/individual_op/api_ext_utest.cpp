@@ -2710,7 +2710,7 @@ void NnopbaseExtUnitTest::TestHcclServerType(std::function<void(void*)> setHcclS
 
     auto oriMc2FusionLaunchFlag = ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch;
     SetSocVersion(socVersion);
-    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND950 || socVersion == nnopbase::OPS_SUBPATH_ASCEND910_96)) {
+    if ((socVersion == nnopbase::OPS_SUBPATH_ASCEND950 || socVersion == nnopbase::OPS_SUBPATH_ASCEND960DT)) {
         ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = true;
     } else {
         ((NnopbaseExecutor*)executor)->collector->isMc2FusionLaunch = false;
@@ -3634,7 +3634,7 @@ TEST_F(NnopbaseExtUnitTest, Mc2A6CcuAlgNotSupportedReturnsInnerErrorWithoutFallb
             ((NnopbaseExecutor*)executor)->repeatFlag = true;
             NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
         },
-        nnopbase::OPS_SUBPATH_ASCEND910_96, ACLNN_ERR_INNER,
+        nnopbase::OPS_SUBPATH_ASCEND960DT, ACLNN_ERR_INNER,
         [](void* executor) { EXPECT_FALSE(((NnopbaseExecutor*)executor)->mc2.fallback); });
     g_hcclAllocComResourceResult = HCCL_SUCCESS;
 }
@@ -3646,7 +3646,7 @@ TEST_F(NnopbaseExtUnitTest, Mc2A6CcuNullContextDoesNotFallToFusionLaunch)
             ((NnopbaseExecutor*)executor)->repeatFlag = true;
             NnopbaseSetHcclServerType(executor, NNOPBASE_HCCL_SERVER_TYPE_CCU);
         },
-        nnopbase::OPS_SUBPATH_ASCEND910_96, ACLNN_ERR_INNER);
+        nnopbase::OPS_SUBPATH_ASCEND960DT, ACLNN_ERR_INNER);
 }
 
 TEST_F(NnopbaseExtUnitTest, Mc2A5CcuAlgNotSupportedStillFallsBack)

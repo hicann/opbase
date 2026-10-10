@@ -58,8 +58,8 @@ bool IndvSoc::UseCoreTypeMagic(void) const
 bool IndvSoc::SupportMc2FusionLaunch(void)
 {
     const std::string& curSocVersion = GetCurSocVersion();
-    return (curSocVersion == OPS_SUBPATH_ASCEND950) || (curSocVersion == OPS_SUBPATH_ASCEND910_96) ||
-           (curSocVersion == OPS_SUBPATH_ASCEND350) || (curSocVersion == OPS_SUBPATH_ASCEND960DT);
+    return (curSocVersion == OPS_SUBPATH_ASCEND950) || (curSocVersion == OPS_SUBPATH_ASCEND960DT) ||
+           (curSocVersion == OPS_SUBPATH_ASCEND350);
 }
 
 bool IndvSoc::NeedAlignInitValues(void) const
@@ -103,9 +103,9 @@ bool IndvSoc::NnopbaseUseMc2Client(const NnopbaseHcclServerType sType)
 
 bool IndvSoc::NnopbaseSupportMc2Fallback(const NnopbaseHcclServerType sType)
 {
-    // ascend910_96芯片CCU场景不允许回退HCCL模块
+    // Ascend960DT芯片CCU场景不允许回退HCCL模块
     const std::string& curSocVersion = GetCurSocVersion();
-    const bool support = (curSocVersion != OPS_SUBPATH_ASCEND910_96) || (sType != NNOPBASE_HCCL_SERVER_TYPE_CCU);
+    const bool support = (curSocVersion != OPS_SUBPATH_ASCEND960DT) || (sType != NNOPBASE_HCCL_SERVER_TYPE_CCU);
     OP_LOGD("NnopbaseSupportMc2Fallback check, socVersion=%s, sType=%d, support=%d", curSocVersion.c_str(),
             static_cast<int>(sType), support);
     return support;
