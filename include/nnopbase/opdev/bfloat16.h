@@ -296,7 +296,7 @@ public:
     {
         return op::bfloat16(op::bfloat16::NAN_VALUE, op::bfloat16::from_bits());
     }
-    static constexpr op::bfloat16 signaling_NaN() { return op::bfloat16(0x7F80, op::bfloat16::from_bits()); }
+    static constexpr op::bfloat16 signaling_NaN() { return op::bfloat16(0x7FA0, op::bfloat16::from_bits()); }
     static constexpr op::bfloat16 denorm_min() { return op::bfloat16(0x0001, op::bfloat16::from_bits()); }
 };
 

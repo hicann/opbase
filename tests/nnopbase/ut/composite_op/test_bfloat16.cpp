@@ -129,3 +129,34 @@ TEST_F(TestBFloat16, ConvertToFloat4E1M2)
     op::Float4E1M2 e1m2(static_cast<float>(bf16_val));
     EXPECT_NEAR(static_cast<float>(e1m2), 1.5f, 0.1f);
 }
+
+TEST_F(TestBFloat16, SignalingNaNEncoding)
+{
+    constexpr auto value = std::numeric_limits<op::bfloat16>::signaling_NaN();
+    EXPECT_EQ(value.value, 0x7FA0u);
+    EXPECT_EQ(value.value & 0x7F80u, 0x7F80u);
+    EXPECT_NE(value.value & 0x007Fu, 0u);
+    EXPECT_EQ(value.value & 0x0040u, 0u);
+}
+
+TEST_F(TestBFloat16, SignalingNaNClassification)
+{
+    const auto value = std::numeric_limits<op::bfloat16>::signaling_NaN();
+    EXPECT_TRUE(std::isnan(value));
+    EXPECT_TRUE(std::isnan(static_cast<float>(value)));
+    EXPECT_FALSE(std::isinf(value));
+    EXPECT_FALSE(std::isfinite(value));
+}
+
+TEST_F(TestBFloat16, NumericLimitsExceptionalControls)
+{
+    const auto quiet = std::numeric_limits<op::bfloat16>::quiet_NaN();
+    const auto infinity = std::numeric_limits<op::bfloat16>::infinity();
+    EXPECT_TRUE(std::isnan(quiet));
+    EXPECT_NE(quiet.value & 0x0040u, 0u);
+    EXPECT_TRUE(std::isinf(infinity));
+    EXPECT_FALSE(std::isnan(infinity));
+    EXPECT_TRUE(std::isinf(-infinity));
+    EXPECT_TRUE(std::isfinite(std::numeric_limits<op::bfloat16>::max()));
+    EXPECT_TRUE(std::isfinite(std::numeric_limits<op::bfloat16>::denorm_min()));
+}
