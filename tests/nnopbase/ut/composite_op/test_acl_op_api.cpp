@@ -380,6 +380,38 @@ TEST_F(AclOpApiTest, aclGetDataType)
     EXPECT_EQ(dataType, aclDataType::ACL_FLOAT);
 }
 
+TEST_F(AclOpApiTest, InitTensorRecomputesStorageByteSize)
+{
+    const int64_t initialShape[] = {2};
+    std::unique_ptr<aclTensor> tensor(aclCreateTensor(initialShape, 1, aclDataType::ACL_FLOAT, nullptr, 0,
+                                                      aclFormat::ACL_FORMAT_ND, initialShape, 1, nullptr));
+    ASSERT_TRUE(tensor);
+    EXPECT_EQ(tensor->GetTensor()->GetSize(), 2 * sizeof(float));
+
+    const int64_t resetShape[] = {4};
+    ASSERT_EQ(aclInitTensor(tensor.get(), resetShape, 1, aclDataType::ACL_DOUBLE, nullptr, 0, aclFormat::ACL_FORMAT_ND,
+                            resetShape, 1, nullptr),
+              OK);
+
+    aclDataType dataType = aclDataType::ACL_DT_UNDEFINED;
+    ASSERT_EQ(aclGetDataType(tensor.get(), &dataType), OK);
+    EXPECT_EQ(dataType, aclDataType::ACL_DOUBLE);
+
+    int64_t* storageShape = nullptr;
+    uint64_t storageShapeNum = 0;
+    ASSERT_EQ(aclGetStorageShape(tensor.get(), &storageShape, &storageShapeNum), OK);
+    ASSERT_EQ(storageShapeNum, 1);
+    EXPECT_EQ(storageShape[0], 4);
+    delete[] storageShape;
+
+    EXPECT_EQ(tensor->GetTensor()->GetSize(), 4 * sizeof(double));
+
+    std::unique_ptr<aclTensor> control(aclCreateTensor(resetShape, 1, aclDataType::ACL_DOUBLE, nullptr, 0,
+                                                       aclFormat::ACL_FORMAT_ND, resetShape, 1, nullptr));
+    ASSERT_TRUE(control);
+    EXPECT_EQ(control->GetTensor()->GetSize(), 4 * sizeof(double));
+}
+
 TEST_F(AclOpApiTest, aclGetIntArraySize)
 {
     EXPECT_NE(aclGetIntArraySize(nullptr, nullptr), OK);

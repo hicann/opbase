@@ -546,6 +546,7 @@ void aclTensor::InitTensor(const int64_t* viewDims, uint64_t viewDimsNum, aclDat
         tensor_->SetStorageFormat(opFormat);
         tensor_->SetOriginFormat(opFormat);
         tensor_->SetDataType(op::ToOpDataType(dataType));
+        tensor_->SetSize(op::CalcShapeBytes(tensor_->GetShapeSize(), tensor_->GetDataType()));
 
         if (tensorDataAddr) {
             tensor_->MutableTensorData().SetAddr(tensorDataAddr, nullptr);
