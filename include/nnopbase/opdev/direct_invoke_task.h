@@ -43,7 +43,10 @@ struct DirectInvokeWorkspaceRequest {
  * opbase initializes workspaceRequest to {nullptr, 0, 0} and launchState to null.
  * A non-null state returned on success or failure is destroyed exactly once.
  * State must be address-independent: obtain final tensor/workspace addresses from
- * launch's args. Stateless tasks may return null; destroy is then not called.
+ * launch's args. Copy any metadata retained in launchState; do not retain pointers
+ * into args, tensor descriptors or attribute containers. Stateless tasks may
+ * return null; destroy is then not called. Like AI Core tiling and launch
+ * configuration, state is a reusable preparation result, not per-execution data.
  */
 using DirectInvokePrepareFn = aclnnStatus (*)(const OpArgContext* args, DirectInvokeWorkspaceRequest* workspaceRequest,
                                               void** launchState) noexcept;
@@ -54,8 +57,13 @@ using DirectInvokePrepareFn = aclnnStatus (*)(const OpArgContext* args, DirectIn
  * On an explicitly repeatable executor, prepare runs once and the same launchState
  * is reused, but this callback is invoked on every execution. Read all current
  * tensor/workspace addresses from args and use the stream supplied for that run.
- * DirectInvoke does not use OpExecCache device-task replay or cross-executor cache
- * hits: producers need not record their runtime dispatches into a replay queue.
+ * OpExecCache records this callback and owns an argument snapshot. Cache hits
+ * reuse preparation, rebind final addresses and invoke launch on the supplied
+ * stream; producers need not record individual runtime dispatches.
+ * For reusable tasks, treat argument metadata as read-only. Consume addresses
+ * during this call; do not retain pointers into args after launch returns. State must not
+ * make the computation depend on the number of previous launches. As with an
+ * AI Core cache entry, concurrent execution of the same entry is not supported.
  *
  * opbase dumps inputs/outputs and performs applicable overflow checks around
  * the callback. It reports no profiling at the callback boundary, does not
@@ -65,17 +73,19 @@ using DirectInvokePrepareFn = aclnnStatus (*)(const OpArgContext* args, DirectIn
 using DirectInvokeLaunchFn = aclnnStatus (*)(void* launchState, const OpArgContext* args, aclrtStream stream) noexcept;
 
 /**
- * Destroy a non-null state on registration failure or launcher teardown, including
+ * Destroy a non-null state on registration failure or after its last launcher/cache owner, including
  * partially prepared state. This is not a device-completion notification: producers
  * must retain code images and resources until submitted asynchronous work finishes,
  * even when launch reports an error. opbase does not synchronize or unload modules.
+ * Cache eviction may call destroy on the cache GC thread. Destruction must not
+ * depend on the registering thread's TLS or an implicitly current device context.
  */
 using DirectInvokeDestroyFn = void (*)(void* launchState) noexcept;
 
 /**
  * Attach a compute task by registering three required, non-throwing callbacks.
  * prepare runs synchronously; launch/destroy and their modules must remain valid
- * for the executor's lifetime (and submitted work's lifetime where applicable).
+ * for the executor/cache lifetime (and submitted work's lifetime where applicable).
  *
  * args is consumed on every return path and must be created by GetOpArgContext.
  * Optional input tensors may be null; outputs must be non-null. The entry workspace
@@ -87,10 +97,14 @@ using DirectInvokeDestroyFn = void (*)(void* launchState) noexcept;
  * wanting attributed profiling must register under the framework DFX macros
  * (L2_DFX_PHASE_1/L0_DFX).
  *
- * opbase disables device-task caching for any executor containing DirectInvoke.
- * Explicit executor repeat retains the prepared state and calls launch each time;
- * it remains subject to argument rebinding checks, dynamic output shape limits
- * and existing framework restrictions. A new executor performs prepare again.
+ * opbase controls cache eligibility internally. An eligible L2 cache hit skips
+ * preparation and replays launch with cache-owned args and shared prepared state.
+ * Explicit executor repeat also calls launch each time. Dynamic output shapes,
+ * unsupported argument rebinding and existing DFX restrictions still limit reuse.
+ * State destruction may be deferred until cache eviction; callback modules and
+ * immutable implementation metadata must remain valid for that lifetime.
+ * As with AI Core, the L2 cache key must cover all per-call preparation inputs;
+ * DirectInvoke does not create another cache key or implementation registry.
  * This API replaces the former descriptor-based interface; rebuild callers and
  * opbase together. No compatibility alias is provided for the old ABI.
  */

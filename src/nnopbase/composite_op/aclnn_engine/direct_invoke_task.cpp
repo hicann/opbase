@@ -14,6 +14,7 @@
 #include <new>
 
 #include "bridge_graph.h"
+#include "direct_invoke_replay.h"
 #include "kernel_launcher.h"
 #include "op_dfx_internal.h"
 #include "opdev/op_arg_def.h"
@@ -176,11 +177,10 @@ aclnnStatus AppendRequestedWorkspaces(aclOpExecutor* executor, const DirectInvok
 class DirectInvokeKernelLauncher final : public KernelLauncher {
 public:
     DirectInvokeKernelLauncher(uint32_t opType, const aclOpExecutor* executor, DirectInvokeLaunchFn launch,
-                               DirectInvokeDestroyFn destroy, void* launchState, OpArgContext* args)
+                               std::shared_ptr<void> launchState, OpArgContext* args)
         : KernelLauncher(opType, DIRECT_INVOKE, executor, internal::ProfilingInfoId{}),
           launch_(launch),
-          destroy_(destroy),
-          launchState_(launchState),
+          launchState_(std::move(launchState)),
           args_(args)
     {
         // Attribution comes from the enclosing DFX context captured by the
@@ -190,10 +190,6 @@ public:
 
     ~DirectInvokeKernelLauncher() override
     {
-        if (launchState_ != nullptr) {
-            destroy_(launchState_);
-            launchState_ = nullptr;
-        }
         DestroyOpArgContext(args_);
         args_ = nullptr;
     }
@@ -216,7 +212,12 @@ public:
             op::internal::DumpL0(*args_->GetOpArg(op::OP_INPUT_ARG), opLogInfo_, OpInputType, executor_->GetStream());
         }
 
-        const aclnnStatus ret = launch_(launchState_, args_, executor_->GetStream());
+        const aclnnStatus ret = launch_(launchState_.get(), args_, executor_->GetStream());
+        if (ret == ACLNN_SUCCESS) {
+            // Like AI Core's DumpToCache, record at the dispatch boundary once
+            // final addresses are known. A failed dispatch cannot seed a replay.
+            RecordReplay();
+        }
 
         if (threadLocalCtx.opConfigInfo_.isOpDumpEnable_) {
             op::internal::DumpL0(*args_->GetOpArg(op::OP_OUTPUT_ARG), opLogInfo_, OpOutputType, executor_->GetStream());
@@ -243,6 +244,26 @@ public:
     }
 
 private:
+    void RecordReplay()
+    {
+        auto* cache = internal::GetOpCacheContext().GetOpCache();
+        if (cache == nullptr || !cache->IsOpCacheValid() || cache->CanUse() || recorded_) return;
+        recorded_ = true;
+        try {
+            auto replay = std::make_shared<internal::DirectInvokeReplay>(launchState_);
+            if (!replay->Init(*args_, *cache)) {
+                cache->MarkOpCacheInvalid();
+                return;
+            }
+            if (!internal::DirectInvokeReplay::SaveToCache(*cache, std::move(replay), launch_,
+                                                           opLogInfo_, profilingInfoId_)) {
+                cache->MarkOpCacheInvalid();
+            }
+        } catch (const std::bad_alloc&) {
+            cache->MarkOpCacheInvalid();
+        }
+    }
+
     void CheckOverflowDump()
     {
         aclmdlRICaptureStatus status;
@@ -257,8 +278,8 @@ private:
     }
 
     DirectInvokeLaunchFn launch_;
-    DirectInvokeDestroyFn destroy_;
-    void* launchState_;
+    std::shared_ptr<void> launchState_;
+    bool recorded_{false};
     OpArgContext* args_;
 };
 
@@ -300,14 +321,20 @@ aclnnStatus AddDirectInvokeTask([[maybe_unused]] const char* l0Name, uint32_t op
         return status;
     }
 
-    // The constructor only stores pointers and cannot throw, so nothrow new
-    // fully covers launcher creation failures.
-    auto* launcher = new (std::nothrow)
-        DirectInvokeKernelLauncher(opType, executor, launch, destroy, launchState, args);
+    DirectInvokeKernelLauncher* launcher = nullptr;
+    std::shared_ptr<void> sharedState;
+    try {
+        sharedState = std::shared_ptr<void>(launchState, [destroy](void* state) {
+            if (state != nullptr) destroy(state);
+        });
+        launcher = new (std::nothrow)
+            DirectInvokeKernelLauncher(opType, executor, launch, std::move(sharedState), args);
+    } catch (const std::bad_alloc&) {
+        // The shared owner releases launchState even if construction fails.
+        DestroyOpArgContext(args);
+        return ACLNN_ERR_INNER;
+    }
     if (launcher == nullptr) {
-        if (launchState != nullptr) {
-            destroy(launchState);
-        }
         DestroyOpArgContext(args);
         return ACLNN_ERR_INNER;
     }
@@ -319,11 +346,9 @@ aclnnStatus AddDirectInvokeTask([[maybe_unused]] const char* l0Name, uint32_t op
     if (status != ACLNN_SUCCESS) {
         return status;
     }
-    // Reuse the prepared state through explicit executor repeat, but execute
-    // the producer callback on every run. Direct runtime dispatches do not
-    // populate OpExecCache's task queue, so device-task replay must not bypass
-    // Launch(). Dynamic output shapes still prohibit repeat altogether.
-    executor->AbandonCache(includeOutShape);
+    if (includeOutShape) {
+        executor->AbandonCache(true);
+    }
     return ACLNN_SUCCESS;
 }
 

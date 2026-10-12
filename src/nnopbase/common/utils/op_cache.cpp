@@ -1002,6 +1002,22 @@ void* OpExecCache::AddLaunchData(size_t dataLen)
     return buf;
 }
 
+void* OpExecCache::AddLaunchAddress(const AddrRule& rule)
+{
+    const size_t offset = cacheOffset_;
+    void* slot = AddLaunchData(sizeof(void*));
+    if (slot != nullptr) {
+        addrUpdateRelation_[offset] = rule;
+        *op::internal::PtrCastTo<void*>(slot) = nullptr;
+    }
+    return slot;
+}
+
+void OpExecCache::KeepResource(std::shared_ptr<void> resource)
+{
+    resources_.push_back(std::move(resource));
+}
+
 void OpExecCache::SetCacheBuf(void* buf) { cacheBuf_ = buf; }
 
 void OpExecCache::UpdateTensorAddr(void* workspaceAddr, const std::vector<void*>& tensors)
@@ -1040,7 +1056,12 @@ std::unordered_map<const aclStorage*, const aclStorage*> OpExecCache::GetStorage
 
 void OpExecCache::NewLaunchCache(size_t* offset, size_t* cap, R runner)
 {
-    taskQueue_.push_back({cacheOffset_, runner});
+    NewLaunchCache(offset, cap, runner, op::AI_CORE);
+}
+
+void OpExecCache::NewLaunchCache(size_t* offset, size_t* cap, R runner, op::CoreType coreType)
+{
+    taskQueue_.push_back({cacheOffset_, runner, coreType});
     *offset = cacheOffset_;
     *cap = cacheCap_ - cacheOffset_;
 }
@@ -1121,12 +1142,17 @@ aclnnStatus OpExecCache::Run(void* workspaceAddr, const aclrtStream stream, cons
 {
     int index = 0;
     UpdateTensorAddr(workspaceAddr, tensors);
-    for (Task& t : taskQueue_) {
+    for (const Task& t : taskQueue_) {
+        if (t.coreType == op::DIRECT_INVOKE) {
+            const auto result = t.runner(stream, op::internal::PtrShift(cacheBuf_, t.cacheOffset));
+            OP_CHECK(result == ACLNN_SUCCESS, OP_LOGE(result, "Cached runner failed."), return result);
+            continue;
+        }
         RestoreThreadLocal(index);
         {
             OpDfxGuard kernelLaunchGuard(opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_,
                                          DfxProfilingType::DfxProfilingKernelLaunch);
-            aclnnStatus result = std::get<1>(t)(stream, op::internal::PtrShift(cacheBuf_, std::get<0>(t)));
+            aclnnStatus result = t.runner(stream, op::internal::PtrShift(cacheBuf_, t.cacheOffset));
             OP_CHECK(result == ACLNN_SUCCESS, OP_LOGE(result, "OpExecCache run fail."), return result);
         }
         if (IsExceptionDumpEnable()) {

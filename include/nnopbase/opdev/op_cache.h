@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <tuple>
@@ -26,6 +27,7 @@
 #include "aclnn/acl_meta.h"
 #include "common_types.h"
 #include "op_cache_container.h"
+#include "op_def.h"
 #include "op_log.h"
 #include "shape_utils.h"
 
@@ -168,7 +170,11 @@ public:
     ~OpExecCache();
 
     using R = aclnnStatus (*)(aclrtStream, void* cache);
-    using Task = std::tuple<size_t, R>;
+    struct Task {
+        size_t cacheOffset;
+        R runner;
+        op::CoreType coreType{op::AI_CORE};
+    };
 
     void InitOpCacheKey();
     void InitCacheData();
@@ -177,6 +183,10 @@ public:
 
     void* AddLaunchTensor(const aclTensor* t, size_t dataLen);
     void* AddLaunchData(size_t dataLen);
+
+    // Register an address slot without changing the runtime tensor argument path.
+    void* AddLaunchAddress(const AddrRule& rule);
+    void KeepResource(std::shared_ptr<void> resource);
 
     void SetCacheBuf(void* buf);
 
@@ -191,6 +201,9 @@ public:
     void AddTensorRelation(const aclTensor* tensorOut, const aclTensor* tensorMiddle);
 
     void NewLaunchCache(size_t* offset, size_t* cap, R runner);
+
+    // DirectInvoke tasks do not consume entries in the framework DFX arrays.
+    void NewLaunchCache(size_t* offset, size_t* cap, R runner, op::CoreType coreType);
 
     void OldCacheClear();
 
@@ -227,6 +240,7 @@ private:
     // cache to use meta data
     std::unordered_map<size_t, AddrRule> addrUpdateRelation_;
     std::vector<Task> taskQueue_;
+    std::vector<std::shared_ptr<void>> resources_;
     uint64_t hashKey_{0};
     OpCacheKey key_;
     uint64_t workspaceSize_{0};
