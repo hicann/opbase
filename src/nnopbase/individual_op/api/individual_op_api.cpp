@@ -472,6 +472,7 @@ aclnnStatus NnopbaseAddDynamicInput(void* executor, const aclTensorList* tensorL
     NnopbaseUpdatePcieThroughFlag(nnopExecutor, tensorList);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
+        NNOPBASE_ASSERT_INDEX_OUT_OF_RANGE(index, "index", tensors->paramDescs.instances.size());
         tensors->paramDescs.instances[index].tensorList = tensorList;
         Indv::CacheKeyBuilder::AppendTensorList(&nnopExecutor->ownArgs, tensorList);
         return OK;

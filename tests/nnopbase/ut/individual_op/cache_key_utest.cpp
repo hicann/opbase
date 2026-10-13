@@ -734,3 +734,28 @@ TEST_F(NnopbaseCacheKeyUnitTest, NnopbaseV2CacheKeyDynamicInput)
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();
 }
+
+TEST_F(NnopbaseCacheKeyUnitTest, NnopbaseV2CacheKeyDynamicInputInvalidIndex)
+{
+    void* executorSpace = nullptr;
+    const char* opType = "bninference_d_kernel";
+    char inputDesc[] = {2, 2, 2};
+    char outputDesc[] = {2};
+    char attrDesc[] = {};
+    void* executor = PrepareV2Executor(executorSpace, opType, inputDesc, sizeof(inputDesc), outputDesc,
+                                       sizeof(outputDesc), attrDesc, sizeof(attrDesc));
+    ASSERT_NE(executor, nullptr);
+
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    std::vector<const aclTensor*> tensorVec;
+    tensorVec.push_back(tensor);
+    aclTensorList* tensorList = aclCreateTensorList(tensorVec.data(), tensorVec.size());
+
+    ASSERT_EQ(NnopbaseAddDynamicInput(executor, tensorList, 3), ACLNN_ERR_PARAM_INVALID);
+
+    aclDestroyTensorList(tensorList);
+    NnopbaseExecutorGcSpace(executorSpace);
+    NnopbaseUnsetEnvAndClearFolder();
+}
