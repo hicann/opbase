@@ -642,6 +642,18 @@ TEST_F(NnopbaseCollectorUnitTest, test_update_static_json_extra_info_tiling_data
     ASSERT_EQ(jsonInfo.extraKernelDesc.runInfo, nullptr);
 }
 
+TEST_F(NnopbaseCollectorUnitTest, test_update_static_json_extra_info_tiling_data_invalid_sign)
+{
+    NnopbaseJsonInfo jsonInfo;
+    jsonInfo.opType = "TestStatic";
+    ASSERT_EQ(strcpy_s(jsonInfo.path, NNOPBASE_FILE_PATH_MAX_LEN,
+                       OP_API_COMMON_UT_SRC_DIR "/static_kernel/test_json/Test_static_invalid_tiling_data_sign.o"),
+              EOK);
+
+    ASSERT_EQ(UpdateStaticJsonExtraInfo(jsonInfo), OK);
+    ASSERT_EQ(jsonInfo.extraKernelDesc.runInfo, nullptr);
+}
+
 TEST_F(NnopbaseCollectorUnitTest, test_update_static_json_extra_info_workspace_resize_escape)
 {
     NnopbaseJsonInfo jsonInfo;

@@ -13,8 +13,11 @@
 #include <string>
 #include <algorithm>
 #include <exception>
+#include <cctype>
+#include <cstdint>
 #include <fstream>
 #include <mutex>
+#include <stdexcept>
 #include "securec.h"
 #include "mmpa/mmpa_api.h"
 #include "mmpa/sub_inc/mmpa_linux.h"
@@ -568,9 +571,12 @@ void UpdateRunInfoForStaticJson(ExtraKernelDesc& kernelDesc, nlohmann::json& sta
             } else {
                 for (size_t i = 0U; i < tilingData.size(); i += 2U) { // String内容按每2个字符读取
                     std::string byteStr = tilingData.substr(i, 2);    // 每2个四比特的字符拼一个字节数据
-                    uint8_t byte = static_cast<uint8_t>(
-                        std::stoul(byteStr, nullptr, 16)); // 按16进制字符格式转为一个无符号字节
-                    kernelDesc.runInfo->tilingData.emplace_back(byte);
+                    if (!std::all_of(byteStr.begin(), byteStr.end(),
+                                     [](const char c) { return std::isxdigit(static_cast<unsigned char>(c)); })) {
+                        throw std::invalid_argument("invalid hexadecimal tiling data");
+                    }
+                    const uint32_t byte = std::stoul(byteStr, nullptr, 16); // 按16进制字符格式转为一个无符号字节
+                    kernelDesc.runInfo->tilingData.emplace_back(static_cast<uint8_t>(byte));
                 }
             }
         } else {
