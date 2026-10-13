@@ -98,6 +98,11 @@ static aclnnStatus NnopbaseUpdateScalarAddr(NnopbaseExecutor* executor, const ac
 static aclnnStatus NnopbaseUpdateScalarListAddr(NnopbaseExecutor* executor, const aclScalarList* scalarList,
                                                 const uint32_t index)
 {
+    if ((scalarList == nullptr) || (scalarList->Size() == 0U)) {
+        OP_LOGI("Update scalar list[%u] addr successfully because scalar list is empty.", index);
+        return OK;
+    }
+    NNOPBASE_ASSERT_NOTNULL_RETVAL((*scalarList)[0]);
     const int32_t srcIndex = executor->args->inputs.paramDescs.instances[index].srcIndex;
     ge::DataType dtype = executor->args->inputs.paramDescs.instances[index].scalarDtype;
     ge::DataType dataType = (*scalarList)[0]->GetDataType();

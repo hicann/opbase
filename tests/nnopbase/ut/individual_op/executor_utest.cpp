@@ -1736,6 +1736,63 @@ TEST_F(NnopbaseExecutorUnitTest, CacheHitUpdatesOutputShapeTensorMap)
     aclDestroyTensor(currentOutput1);
 }
 
+TEST_F(NnopbaseExecutorUnitTest, UpdateScalarListEmptyInput)
+{
+    NnopbaseExecutor executor{};
+    NnopbaseExecutorArgs cachedArgs{};
+    executor.args = &cachedArgs;
+    NnopbaseTensors& cachedInputs = cachedArgs.inputs;
+    NnopbaseTensors& currentInputs = executor.ownArgs.inputs;
+
+    cachedInputs.paramDescs.count = 1U;
+    cachedInputs.paramDescs.instances.resize(1U);
+    cachedInputs.paramDescs.instances[0U].startIndex = 0U;
+    cachedInputs.extTensors.resize(1U);
+    void* const cachedAddr = reinterpret_cast<void*>(0x1234U);
+    ASSERT_EQ(cachedInputs.extTensors[0U].rt2Tensor.MutableTensorData().SetAddr(cachedAddr, nullptr), OK);
+
+    currentInputs.paramDescs.count = 1U;
+    currentInputs.paramDescs.instances.resize(1U);
+    currentInputs.paramDescs.instances[0U].startIndex = 0U;
+    currentInputs.extTensors.resize(1U);
+    currentInputs.paramDescs.instances[0U].scalarList = aclCreateScalarList(nullptr, 0U);
+    ASSERT_NE(currentInputs.paramDescs.instances[0U].scalarList, nullptr);
+
+    ASSERT_EQ(NnopbaseUpdateInputAddr(&executor), OK);
+    EXPECT_EQ(cachedInputs.extTensors[0U].rt2Tensor.GetAddr(), cachedAddr);
+
+    aclDestroyScalarList(currentInputs.paramDescs.instances[0U].scalarList);
+}
+
+TEST_F(NnopbaseExecutorUnitTest, UpdateScalarListRejectsNullFirstElement)
+{
+    NnopbaseExecutor executor{};
+    NnopbaseExecutorArgs cachedArgs{};
+    executor.args = &cachedArgs;
+    NnopbaseTensors& cachedInputs = cachedArgs.inputs;
+    NnopbaseTensors& currentInputs = executor.ownArgs.inputs;
+
+    cachedInputs.paramDescs.count = 1U;
+    cachedInputs.paramDescs.instances.resize(1U);
+    cachedInputs.paramDescs.instances[0U].startIndex = 0U;
+    cachedInputs.extTensors.resize(1U);
+    void* const cachedAddr = reinterpret_cast<void*>(0x1234U);
+    ASSERT_EQ(cachedInputs.extTensors[0U].rt2Tensor.MutableTensorData().SetAddr(cachedAddr, nullptr), OK);
+
+    currentInputs.paramDescs.count = 1U;
+    currentInputs.paramDescs.instances.resize(1U);
+    currentInputs.paramDescs.instances[0U].startIndex = 0U;
+    currentInputs.extTensors.resize(1U);
+    const aclScalar* const scalars[1] = {nullptr};
+    currentInputs.paramDescs.instances[0U].scalarList = aclCreateScalarList(scalars, 1U);
+    ASSERT_NE(currentInputs.paramDescs.instances[0U].scalarList, nullptr);
+
+    EXPECT_EQ(NnopbaseUpdateInputAddr(&executor), ACLNN_ERR_PARAM_NULLPTR);
+    EXPECT_EQ(cachedInputs.extTensors[0U].rt2Tensor.GetAddr(), cachedAddr);
+
+    aclDestroyScalarList(currentInputs.paramDescs.instances[0U].scalarList);
+}
+
 TEST_F(NnopbaseExecutorUnitTest, NnopbaseMultiThreadForMatchCache)
 {
     NnopbaseExecutor* executor = nullptr;
