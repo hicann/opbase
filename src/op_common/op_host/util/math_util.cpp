@@ -124,8 +124,13 @@ bool SplitIntoEqualByFactor(int64_t splitLen, int32_t factor, SplitResult& split
     if (splitLen <= 0 || factor <= 0) {
         return false;
     }
-    splitResult.splitFactor = splitLen < factor ? splitLen : factor;
-    splitResult.splitCount = CeilDiv(splitLen, static_cast<int64_t>(splitResult.splitFactor));
+    const int64_t splitFactor = splitLen < factor ? splitLen : factor;
+    const int64_t splitCount = CeilDiv(splitLen, splitFactor);
+    if (splitCount > std::numeric_limits<int32_t>::max()) {
+        return false;
+    }
+    splitResult.splitFactor = splitFactor;
+    splitResult.splitCount = static_cast<int32_t>(splitCount);
     splitResult.splitTailFactor = (splitLen % splitResult.splitFactor == 0) ? splitResult.splitFactor :
                                                                               splitLen % splitResult.splitFactor;
     splitResult.splitFactor = (splitResult.splitCount == 1) ? 0 : splitResult.splitFactor;

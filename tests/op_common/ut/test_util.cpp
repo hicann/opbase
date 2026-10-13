@@ -58,3 +58,61 @@ TEST(TestMathUtil, testCeilAlign)
     EXPECT_EQ(CeilAlign<int64_t>(std::numeric_limits<int64_t>::max(), 8), std::numeric_limits<int64_t>::max());
     EXPECT_EQ(CeilAlign<uint64_t>(std::numeric_limits<uint64_t>::max(), 8), std::numeric_limits<uint64_t>::max());
 }
+
+namespace {
+constexpr int64_t kMaxSplitCount = std::numeric_limits<int32_t>::max();
+
+struct SplitFactorInput {
+    int64_t length;
+    int32_t factor;
+};
+
+class SplitFactorInvalidTest : public testing::TestWithParam<SplitFactorInput> {};
+
+TEST_P(SplitFactorInvalidTest, RejectsRequestWithoutChangingResult)
+{
+    const auto input = GetParam();
+    SplitResult result{19, 23, 29};
+    ASSERT_FALSE(SplitIntoEqualByFactor(input.length, input.factor, result));
+    EXPECT_EQ(result.splitCount, 19);
+    EXPECT_EQ(result.splitFactor, 23);
+    EXPECT_EQ(result.splitTailFactor, 29);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidCountsAndInputs, SplitFactorInvalidTest,
+    testing::Values(SplitFactorInput{kMaxSplitCount + 1, 1}, SplitFactorInput{2 * kMaxSplitCount + 1, 2},
+                    SplitFactorInput{kMaxSplitCount * kMaxSplitCount + 1, std::numeric_limits<int32_t>::max()},
+                    SplitFactorInput{std::numeric_limits<int64_t>::max(), std::numeric_limits<int32_t>::max()},
+                    SplitFactorInput{0, 1}, SplitFactorInput{-1, 1}, SplitFactorInput{1, 0}, SplitFactorInput{1, -1}));
+
+struct SplitFactorCase {
+    int64_t length;
+    int32_t factor;
+    int32_t count;
+    int64_t bodyFactor;
+    int64_t tailFactor;
+};
+
+class SplitFactorValidTest : public testing::TestWithParam<SplitFactorCase> {};
+
+TEST_P(SplitFactorValidTest, ReturnsCompleteRepresentablePartition)
+{
+    const auto input = GetParam();
+    SplitResult result;
+    ASSERT_TRUE(SplitIntoEqualByFactor(input.length, input.factor, result));
+    EXPECT_EQ(result.splitCount, input.count);
+    EXPECT_EQ(result.splitFactor, input.bodyFactor);
+    EXPECT_EQ(result.splitTailFactor, input.tailFactor);
+    const int64_t coveredLength = (int64_t{result.splitCount} - 1) * result.splitFactor + result.splitTailFactor;
+    EXPECT_EQ(coveredLength, input.length);
+}
+
+INSTANTIATE_TEST_SUITE_P(ValidBoundariesAndControls, SplitFactorValidTest,
+                         testing::Values(SplitFactorCase{kMaxSplitCount, 1, std::numeric_limits<int32_t>::max(), 1, 1},
+                                         SplitFactorCase{
+                                             kMaxSplitCount * kMaxSplitCount, std::numeric_limits<int32_t>::max(),
+                                             std::numeric_limits<int32_t>::max(), kMaxSplitCount, kMaxSplitCount},
+                                         SplitFactorCase{12, 3, 4, 3, 3}, SplitFactorCase{10, 3, 4, 3, 1},
+                                         SplitFactorCase{5, 10, 1, 0, 5}, SplitFactorCase{1, 1, 1, 0, 1}));
+} // namespace

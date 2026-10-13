@@ -39,5 +39,7 @@ add_cann_third_party(json)
 add_subdirectory(op_common)
 add_subdirectory(nnopbase)
 if(ENABLE_UT)
+    target_sources(op_common_utest PRIVATE
+        ${OPS_BASE_PATH}/src/op_common/op_host/util/math_util.cpp)
     add_subdirectory(aicpu_const_folding)
 endif()
