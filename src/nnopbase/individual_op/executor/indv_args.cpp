@@ -29,6 +29,31 @@ struct NnopbaseOomStorageShapeRecord {
     bool isTensorList = false;
 };
 
+static bool NnopbaseHasNonContiguousInput(const std::vector<NnopbaseParamInstance>& instances,
+                                          const uint32_t instanceCount)
+{
+    for (uint32_t i = 0U; i < instanceCount; ++i) {
+        const auto& instance = instances[i];
+        if (instance.tensor != nullptr) {
+            if (!IsContiguousShape(instance.tensor)) {
+                return true;
+            }
+            continue;
+        }
+        if (instance.tensorList == nullptr) {
+            continue;
+        }
+        const uint64_t count = instance.tensorList->Size();
+        for (uint64_t j = 0U; j < count; ++j) {
+            const aclTensor* tensor = (*instance.tensorList)[j];
+            if ((tensor != nullptr) && (!IsContiguousShape(tensor))) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static aclnnStatus NnopbaseCollectOomStorageShapeRecords(
     const NnopbaseExecutor* const executor, std::vector<NnopbaseOomStorageShapeRecord>& records)
 {
@@ -45,6 +70,9 @@ static aclnnStatus NnopbaseCollectOomStorageShapeRecords(
     CHECK_COND(inputInstances.size() >= instanceCount, ACLNN_ERR_PARAM_INVALID,
                "Cached input instance count[%zu] is less than param count[%u].", inputInstances.size(),
                instanceCount);
+    if (!NnopbaseHasNonContiguousInput(instances, instanceCount)) {
+        return OK;
+    }
     for (uint32_t i = 0U; i < instanceCount; ++i) {
         const auto& instance = instances[i];
         const size_t startIndex = inputInstances[i].startIndex;
@@ -59,6 +87,35 @@ static aclnnStatus NnopbaseCollectOomStorageShapeRecords(
         records.push_back({startIndex, static_cast<uint16_t>(instance.tensorList->Size()), true});
     }
     return OK;
+}
+
+// view连续按viewSize登记，非连续按storageShapeSize登记
+static inline uint64_t NnopbaseGetOomTensorRangeSize(const NnopbaseTensor& tensor)
+{
+    if (tensor.isNull) {
+        return 0U;
+    }
+    const auto& viewShape = tensor.rt2Tensor.GetOriginShape();
+    const int64_t viewSize = viewShape.GetShapeSize();
+    if (viewSize > 1) {
+        const auto& stride = tensor.rt2Tensor.GetStride();
+        int64_t validStride = 1;
+        bool isContiguous = true;
+        for (int64_t i = static_cast<int64_t>(stride.GetDimNum()) - 1; i >= 0; --i) {
+            if (viewShape.GetDim(i) == 1) {
+                continue;
+            }
+            if (validStride != stride.GetStride(i)) {
+                isContiguous = false;
+                break;
+            }
+            validStride *= viewShape.GetDim(i);
+        }
+        if (isContiguous) {
+            return static_cast<uint64_t>(viewSize);
+        }
+    }
+    return static_cast<uint64_t>(tensor.storageShape.GetShapeSize());
 }
 
 static aclnnStatus NnopbaseAppendOomStorageShapeRecord(const NnopbaseExecutorArgs* const args,
@@ -91,8 +148,7 @@ static aclnnStatus NnopbaseAppendOomStorageShapeRecord(const NnopbaseExecutorArg
         CHECK_COND(tensorIndex < extTensors.size(), ACLNN_ERR_PARAM_INVALID,
                    "Oom storage shape tensor index[%zu] is out of range[%zu].", tensorIndex, extTensors.size());
         *addr++ = tensorVersion;
-        const uint64_t storageShapeSize = extTensors[tensorIndex].isNull ?
-            0U : static_cast<uint64_t>(extTensors[tensorIndex].storageShape.GetShapeSize());
+        const uint64_t storageShapeSize = NnopbaseGetOomTensorRangeSize(extTensors[tensorIndex]);
         OP_LOGI("Oom storage shape tensor index[%zu] storageShapeSize is %llu.", tensorIndex, storageShapeSize);
         addr = nnopbase::NnopbaseAppendByte<uint64_t>(addr, storageShapeSize);
     }

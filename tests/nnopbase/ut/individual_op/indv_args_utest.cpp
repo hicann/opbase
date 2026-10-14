@@ -45,6 +45,18 @@ void SetTensor(NnopbaseTensor& tensor, void* addr, gert::TensorPlacement placeme
     tensor.rt2Tensor.SetSize(sizeof(uint64_t));
     ASSERT_EQ(tensor.rt2Tensor.MutableTensorData().SetAddr(addr, nullptr), ge::GRAPH_SUCCESS);
 }
+
+// 补齐rt2Tensor的view shape/strides（真实路径由NnopbaseExecutorSaveTensor设置，
+// OOM记录的sss取值依赖view连续性判断）
+void SetTensorView(NnopbaseTensor& tensor, const aclTensor* src)
+{
+    tensor.rt2Tensor.MutableOriginShape() = src->GetViewShape();
+    const auto& strides = src->GetViewStrides();
+    tensor.rt2Tensor.MutableStride().SetDimNum(strides.size());
+    for (size_t i = 0U; i < strides.size(); ++i) {
+        tensor.rt2Tensor.MutableStride().SetStride(i, strides[i]);
+    }
+}
 } // namespace
 
 class NnopbaseIndvArgsTest : public testing::Test {
@@ -197,6 +209,10 @@ TEST_F(NnopbaseIndvArgsTest, AppendOomStorageShapeRecordsForMixedInputs)
     args_.inputs.extTensors[1U].storageShape = nonContiguousTensor->GetStorageShape();
     args_.inputs.extTensors[2U].storageShape = listTensor0->GetStorageShape();
     args_.inputs.extTensors[3U].storageShape = listTensor1->GetStorageShape();
+    SetTensorView(args_.inputs.extTensors[0U], contiguousTensor);
+    SetTensorView(args_.inputs.extTensors[1U], nonContiguousTensor);
+    SetTensorView(args_.inputs.extTensors[2U], listTensor0);
+    SetTensorView(args_.inputs.extTensors[3U], listTensor1);
     for (auto& extTensor : args_.inputs.extTensors) {
         extTensor.isNull = false; // 真实路径由AddInput置false，UT直改内部结构需补齐
     }
@@ -258,7 +274,8 @@ TEST_F(NnopbaseIndvArgsTest, AppendOomStorageShapeRecordsForMixedInputs)
     std::memcpy(&listStorageSize0, tensorListRecord + 13U, sizeof(listStorageSize0));
     std::memcpy(&listStorageSize1, tensorListRecord + 22U, sizeof(listStorageSize1));
     EXPECT_EQ(listStorageSize0, 8U);
-    EXPECT_EQ(listStorageSize1, 10U);
+    // view连续（strides {2,1}标准）但storage [2,5]超配：按view登记（4），与legacy路径边界一致
+    EXPECT_EQ(listStorageSize1, 4U);
 
     const size_t exceptionDumpSize = op::internal::IsArgExceptionDumpEnable() ? sizeof(uint64_t) : 0U;
     EXPECT_EQ(argsAddr.ptr, launchBuf_.data() + 104U + exceptionDumpSize);
@@ -328,4 +345,65 @@ TEST_F(NnopbaseIndvArgsTest, OomStorageShapeMaxSizeReservesAlignmentPadding)
     EXPECT_EQ(NnopbaseGetOomInfoExtMaxSize(&executor_), 24U);
 
     aclDestroyTensor(tensor);
+}
+
+TEST_F(NnopbaseIndvArgsTest, SkipOomStorageShapeExtWhenAllInputsContiguous)
+{
+    const int64_t viewShape[] = {2, 2};
+    const int64_t contiguousStrides[] = {2, 1};
+    const int64_t contiguousStorage[] = {2, 2};
+    uint8_t contiguousData[32] = {};
+    uint8_t listData0[32] = {};
+    uint8_t listData1[32] = {};
+    aclTensor* contiguousTensor = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, contiguousStrides, 0,
+                                                  aclFormat::ACL_FORMAT_ND, contiguousStorage, 2U,
+                                                  contiguousData);
+    aclTensor* listTensor0 = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, contiguousStrides, 0,
+                                              aclFormat::ACL_FORMAT_ND, contiguousStorage, 2U, listData0);
+    aclTensor* listTensor1 = aclCreateTensor(viewShape, 2U, aclDataType::ACL_FLOAT, contiguousStrides, 0,
+                                              aclFormat::ACL_FORMAT_ND, contiguousStorage, 2U, listData1);
+    ASSERT_NE(contiguousTensor, nullptr);
+    ASSERT_NE(listTensor0, nullptr);
+    ASSERT_NE(listTensor1, nullptr);
+    const aclTensor* tensorListData[] = {listTensor0, listTensor1};
+    aclTensorList* tensorList = aclCreateTensorList(tensorListData, 2U);
+    ASSERT_NE(tensorList, nullptr);
+
+    args_.inputs.paramDescs.count = 2U;
+    args_.inputs.paramDescs.instances.resize(2U);
+    SetParamInstance(args_.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    SetParamInstance(args_.inputs.paramDescs.instances[1U], 1U, 2U, true, true);
+    args_.inputs.paramDescs.instances[0U].tensor = contiguousTensor;
+    args_.inputs.paramDescs.instances[1U].tensorList = tensorList;
+    args_.inputs.extTensors.resize(3U);
+    args_.inputs.extTensors[0U].storageShape = contiguousTensor->GetStorageShape();
+    args_.inputs.extTensors[1U].storageShape = listTensor0->GetStorageShape();
+    args_.inputs.extTensors[2U].storageShape = listTensor1->GetStorageShape();
+    for (auto& extTensor : args_.inputs.extTensors) {
+        extTensor.isNull = false; // 真实路径由AddInput置false，UT直改内部结构需补齐
+    }
+    args_.inputs.num = 3U;
+    executor_.ownArgs.inputs.paramDescs.count = 2U;
+    executor_.ownArgs.inputs.paramDescs.instances.resize(2U);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[0U], 0U, 1U, false, true);
+    SetParamInstance(executor_.ownArgs.inputs.paramDescs.instances[1U], 1U, 2U, true, true);
+    executor_.ownArgs.inputs.paramDescs.instances[0U].tensor = contiguousTensor;
+    executor_.ownArgs.inputs.paramDescs.instances[1U].tensorList = tensorList;
+    args_.dfxInfo.resize(3U);
+    binInfo_.oomConfig.flag = true;
+    binInfo_.oomConfig.storageShapeEnabled = true;
+    binInfo_.oomConfig.version = 1U;
+    binInfo_.oomConfig.tensorVersion = 1U;
+    NnopbaseExecutorArgsAddr argsAddr{nullptr, nullptr, launchBuf_.data(), nullptr, nullptr};
+
+    ASSERT_EQ(NnopbaseExecutorArgsGetDfxInfo(&executor_, &argsAddr, 1U, nullptr), OK);
+
+    // 全连续输入不写扩展段：oom信息(2个输入槽+1个workspace=24B)后无magic头、ptr不前进
+    const size_t oomSize = 3U * sizeof(void*);
+    const size_t exceptionDumpSize = op::internal::IsArgExceptionDumpEnable() ? sizeof(uint64_t) : 0U;
+    EXPECT_EQ(argsAddr.ptr, launchBuf_.data() + oomSize + exceptionDumpSize);
+    EXPECT_NE(launchBuf_.data()[oomSize], 0x4F);
+
+    aclDestroyTensor(contiguousTensor);
+    aclDestroyTensorList(tensorList);
 }
