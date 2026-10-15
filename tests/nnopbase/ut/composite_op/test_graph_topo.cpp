@@ -178,7 +178,7 @@ TEST_F(memory_allocator_ut, TestCase1)
     Release(kernel_graph);
 }
 
-KernelGraph* CreateGraph1(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& expected)
+KernelGraph* CreateGraph1(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& expected, SortType sort_type)
 {
     // kernel node construction
     KernelNode* a = AddNode(3, 1, 1);
@@ -210,8 +210,11 @@ KernelGraph* CreateGraph1(op::FVector<KernelNode*, DEFAULT_NODE_NUM>& expected)
     kernel_nodes = {e, d, c, a, f, b};
 
     kernel_graph->SetKernelNodes(kernel_nodes);
-    expected = {a, b, d, c, e, f};
-    // BFS: expected = {a, b, c, d, e, f};
+    if (sort_type == SortType::DFS) {
+        expected = {a, b, d, c, e, f};
+    } else if (sort_type == SortType::BFS) {
+        expected = {a, b, c, d, e, f};
+    }
     return kernel_graph;
 }
 
@@ -435,9 +438,8 @@ bool CheckResult(KernelGraph* graph, op::FVector<TensorResult, DEFAULT_TENSOR_NU
 
 TEST_F(memory_allocator_ut, TestTopoSortBFS)
 {
-    return;
     op::FVector<KernelNode*, DEFAULT_NODE_NUM> expected;
-    KernelGraph* graph = CreateGraph1(expected);
+    KernelGraph* graph = CreateGraph1(expected, SortType::BFS);
     graph->TopologicalSortBFS();
     if (expected != graph->GetKernelNodes()) {
         for (auto node : graph->GetKernelNodes()) {
@@ -451,7 +453,7 @@ TEST_F(memory_allocator_ut, TestTopoSortBFS)
 TEST_F(memory_allocator_ut, TestTopoSortDFS)
 {
     op::FVector<KernelNode*, DEFAULT_NODE_NUM> expected;
-    KernelGraph* graph = CreateGraph1(expected);
+    KernelGraph* graph = CreateGraph1(expected, SortType::DFS);
     graph->TopologicalSortDFS();
 
     for (size_t i = 0; i < graph->GetKernelNodes().size(); i++) {
@@ -509,6 +511,7 @@ void GenerateRandomGraph(int n, int m, std::vector<KernelNode*>& nodes, std::vec
 
 TEST_F(memory_allocator_ut, TestTopoSortDFSLarge)
 {
+    // 暂保留跳过，相关失败证据见 issue #437。
     return;
     // 创建随机图
     std::vector<KernelNode*> nodes;
