@@ -30,7 +30,7 @@ void SetOriginalFormat(op::Format format)
 
 ```cpp
 // 将input的OriginFormat置为ND格式
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     input->SetOriginalFormat(ge::FORMAT_ND);
 }
 ```

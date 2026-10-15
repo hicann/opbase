@@ -30,7 +30,7 @@ void SetStorageFormat(op::Format format)
 
 ```cpp
 // 将input的Storage Format置为ND格式
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     input->SetStorageFormat(ge::FORMAT_ND);
 }
 ```

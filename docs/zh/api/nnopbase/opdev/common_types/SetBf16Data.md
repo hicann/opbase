@@ -30,7 +30,7 @@ void SetBf16Data(const op::bfloat16 *value, uint64_t size, op::DataType dataType
 
 ```cpp
 // 初始化一块bf16内存，赋值给input的前10个元素
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     bfloat16 myArray[10];
     input->SetBf16Data(myArray, 10, DT_BF16);
 }

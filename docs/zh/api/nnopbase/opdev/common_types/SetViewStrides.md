@@ -32,7 +32,7 @@ void
 
 ```cpp
 // 将input最后一维的stride扩大8倍。
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     auto strides = input->GetViewStrides();
     strides[strides.size() - 1] *= 8;
     input->SetViewStrides(strides);

@@ -50,7 +50,7 @@
 
 ```cpp
 // 初始化一块int64_t内存，分别将input的前10个数字，置为该内存的内容。并将input的第11个数字置为myArray的第一个数字。
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     int64_t myArray[10];
     input->SetData(myArray, 10, DT_INT64);
     input->SetData(10, myArray[0], DT_INT64);

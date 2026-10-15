@@ -32,7 +32,7 @@ None
 
 ```cpp
 // Multiply the input's last dimension stride by 8.
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     auto strides = input->GetViewStrides();
     strides[strides.size() - 1] *= 8;
     input->SetViewStrides(strides);

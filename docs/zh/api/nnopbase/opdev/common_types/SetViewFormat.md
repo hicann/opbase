@@ -28,7 +28,7 @@ void SetViewFormat(op::Format format)
 
 ```cpp
 // 将input的ViewFormat置为ND格式
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     input->SetViewFormat(ge::FORMAT_ND);
 }
 ```

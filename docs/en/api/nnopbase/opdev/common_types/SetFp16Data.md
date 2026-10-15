@@ -30,7 +30,7 @@ The input pointer cannot be null.
 
 ```cpp
 // Initialize a fp16 memory block and assign the value to the first 10 elements of the input.
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     fp16_t myArray[10];
     input->SetFp16Data(myArray, 10, DT_FLOAT16);
 }

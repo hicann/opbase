@@ -30,7 +30,7 @@ None
 
 ```cpp
 // Set the storage format of the input to ND.
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     input->SetStorageFormat(ge::FORMAT_ND);
 }
 ```

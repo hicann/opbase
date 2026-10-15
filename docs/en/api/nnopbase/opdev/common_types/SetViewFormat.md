@@ -28,7 +28,7 @@ None
 
 ```cpp
 // Set ViewFormat of the input to ND.
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     input->SetViewFormat(ge::FORMAT_ND);
 }
 ```

@@ -28,7 +28,7 @@ void SetDataType(op::DataType dataType)
 
 ```cpp
 // 将input的数据类型设置为int64
-void Func(const aclTensor *input) {
+void Func(aclTensor *input) {
     input->SetDataType(DT_INT64);
 }
 ```
