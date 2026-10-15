@@ -2,7 +2,7 @@
 
 ## Function
 
-Checks if each dimension length of an input shape is unknown in graph mode.
+Checks whether at least one input-shape dimension has an unknown length (-1) in graph mode.
 
 ## Prototype
 
@@ -20,8 +20,11 @@ bool IsUnknownShape(const gert::Shape &shape)
 
 Return type: `bool`
 
-- **true**: Each dimension length of the input shape is unknown.
-- **false**: At least one dimension length of the input shape is known.
+- **true**: At least one input-shape dimension has an unknown length (-1).
+- **false**: No input-shape dimension has an unknown length (-1).
+
+For example, `[-1, 4]` returns `true`, while `[3, 4]` returns `false`.
+Unknown rank is checked separately by [IsUnknownRank](IsUnknownRank.md).
 
 ## Restrictions
 
