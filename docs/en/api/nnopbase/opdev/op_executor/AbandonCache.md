@@ -16,7 +16,7 @@ void AbandonCache(bool disableRepeat = false)
 
 | Parameter| Input/Output| Description|
 | --- | --- | --- |
-| disableRepeat | Input| Whether `aclOpExecutor` can be reused. The default value is `false`, indicating that it is not reused.|
+| disableRepeat | Input| Whether to disable `aclOpExecutor` reuse. `true` marks the executor as unrepeatable. The default value, `false`, leaves its current repeat mode unchanged. Cache invalidation is performed for either value.|
 
 ## Returns
 

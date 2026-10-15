@@ -16,7 +16,7 @@ void AbandonCache(bool disableRepeat = false)
 
 | 参数 | 输入/输出 | 说明 |
 | --- | --- | --- |
-| disableRepeat | 输入 | 设置aclOpExecutor是否支持复用。默认为false，不复用。 |
+| disableRepeat | 输入 | 是否禁用aclOpExecutor复用。true将执行器标记为不可复用；默认值false保持当前复用模式不变。两种取值均会使已有算子缓存失效。 |
 
 ## 返回值说明
 
