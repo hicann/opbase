@@ -7,11 +7,11 @@
 ## 函数原型
 
 ```cpp
-SetViewStrides(const op::Strides &strides)
+void SetViewStrides(const op::Strides &strides)
 ```
 
 ```cpp
-SetViewStrides(op::Strides &&strides)
+void SetViewStrides(op::Strides &&strides)
 ```
 
 ## 参数说明
