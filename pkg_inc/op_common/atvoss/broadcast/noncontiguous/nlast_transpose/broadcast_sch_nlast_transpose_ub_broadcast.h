@@ -283,7 +283,11 @@ protected:
         AscendC::LoopModeParams LoopParams{loop1Size,      loop2Size,      loop1SrcStride,
                                            loop1DstStride, loop2SrcStride, loop2DstStride};
         AscendC::SetLoopModePara(LoopParams, DataCopyMVType::OUT_TO_UB);
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+        AscendC::DataCopyPad<inputType>(inTensor, globalTensor, copyParams, padParams, true);
+#else
         AscendC::DataCopyPad<inputType>(inTensor, globalTensor, copyParams, padParams);
+#endif
         AscendC::ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
 
         // Set rlsBuf
@@ -391,7 +395,11 @@ protected:
         AscendC::LoopModeParams LoopParams{loop1Size,      loop2Size,      loop1SrcStride,
                                            loop1DstStride, loop2SrcStride, loop2DstStride};
         AscendC::SetLoopModePara(LoopParams, DataCopyMVType::OUT_TO_UB);
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+        AscendC::DataCopyPad<inputType>(inTensor, globalTensor, copyParams, padParams, true);
+#else
         AscendC::DataCopyPad<inputType>(inTensor, globalTensor, copyParams, padParams);
+#endif
         AscendC::ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
 
         // Set rlsBuf

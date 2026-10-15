@@ -19,6 +19,27 @@
 
 namespace Ops {
 namespace Base {
+
+// CopyIn 封装，目标芯片开启 Pre-allocation（enablePreReadIgnoreSync）
+// 与 Vec::CopyIn 逻辑一致，enablePreAlloc=true 时在目标芯片平台给 DataCopyPad 末尾传 true
+template <class T, bool enablePreAlloc = false>
+__aicore__ inline void CopyInWithPreAlloc(const AscendC::LocalTensor<T>& dst, const AscendC::GlobalTensor<T>& src,
+                                        uint32_t count)
+{
+#ifdef __CCE_AICORE__
+    AscendC::DataCopyExtParams copyParams{1, static_cast<uint32_t>(count * sizeof(T)), 0, 0, 0};
+    AscendC::DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+    if constexpr (enablePreAlloc) {
+        AscendC::DataCopyPad(dst, src, copyParams, padParams, true);
+    } else
+#endif
+    {
+        AscendC::DataCopyPad(dst, src, copyParams, padParams);
+    }
+#endif
+}
+
 template <class ElemDag, size_t N>
 __aicore__ inline void GetUbBroadcastShapeInfo(const int64_t (&oriShape)[N], int64_t inputUblength[2],
                                                uint32_t (&ubFormershape)[N], uint32_t (&ubTailshape)[N],

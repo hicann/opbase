@@ -319,6 +319,9 @@ protected:
         } else if constexpr (Placeholder::IsInHolder<scalarValue>::Value) {
             GlobalTensor<ScalarType> globalTensor;
             globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ ScalarType*>(inGm_[scalarValue::Pos]));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+            AscendC::WaitPreTaskEnd<false>();
+#endif
             ScalarType scalar = globalTensor.GetValue(0);
             return scalar;
         } else if constexpr (Placeholder::IsConstValue<scalarValue>::Value) {

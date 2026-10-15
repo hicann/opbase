@@ -206,7 +206,7 @@ protected:
         // Set getBuf
         GetTensor<TPosition::VECIN>(intList[1]);
         // Run copyIn
-        Vec::CopyIn<inputType>(inTensor, globalTensor, inputLength);
+        CopyInWithPreAlloc<inputType, true>(inTensor, globalTensor, inputLength);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECIN>(intList[1]);
 

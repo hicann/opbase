@@ -19,6 +19,7 @@
 #include "atvoss/util/dag.h"
 #include "atvoss/util/sync.h"
 #include "atvoss/util/vec.h"
+#include "broadcast_sch_util.h"
 
 #pragma "lib"
 
@@ -209,6 +210,9 @@ protected:
         if (isScalar) {
             if (isFirstScalarTime) {
                 globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(inGm[input::Pos].GetPhyAddr(0)));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+                AscendC::WaitPreTaskEnd<false>();
+#endif
                 inputType scalar = globalTensor.GetValue(0);
 
                 GetTensor<TPosition::VECCALC>(bufId);
@@ -226,7 +230,7 @@ protected:
             // Set getBuf
             GetTensor<TPosition::VECIN>(bufId);
             // Run copyIn
-            Vec::CopyIn<inputType>(inTensor, globalTensor, tileLength);
+            CopyInWithPreAlloc<inputType, true>(inTensor, globalTensor, tileLength);
             // Set rlsBuf
             ReleaseTensor<TPosition::VECIN>(bufId);
         }
@@ -322,6 +326,9 @@ protected:
         } else if constexpr (Placeholder::IsInHolder<scalarValue>::Value) {
             GlobalTensor<ScalarType> globalTensor;
             globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ ScalarType*>(inGm[scalarValue::Pos].GetPhyAddr(0)));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+            AscendC::WaitPreTaskEnd<false>();
+#endif
             ScalarType scalar = globalTensor.GetValue(0);
             return scalar;
         } else if constexpr (Placeholder::IsConstValue<scalarValue>::Value) {

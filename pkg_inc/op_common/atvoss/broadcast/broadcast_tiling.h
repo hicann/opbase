@@ -127,6 +127,13 @@ public:
         broadcastTilingParams.inputAllContiguous = inputAllContiguous;
         broadcastTilingParams.preferMultiCore = preferMultiCore;
 
+        // 目标芯片: 多核优先策略，强制开启 preferMultiCore
+        // 覆盖路径 A(连续多维 1/2/100-109/304/305)、D(LastTranspose 303)、E(NLastTranspose 301/302)
+        // 路径 C(202) 已强制满核无需改；路径 B(201) 在 DoOneDimFormerTiling 中单独处理
+        if (isAscend960_) {
+            broadcastTilingParams.preferMultiCore = true;
+        }
+
         OP_LOGI(context_->GetNodeName(), "coreNum: %llu, ubSize: %llu, inputAllContiguous:%d", coreNum, ubSize,
                 inputAllContiguous);
 
@@ -242,6 +249,8 @@ private:
             uint64_t ubSizePlatForm = 0;
             ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
             ubSize = ubSizePlatForm;
+            // 目标芯片平台运行时判定：NpuArch::DAV_9201
+            isAscend960_ = (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201);
 
             OP_CHECK_IF((coreNum == 0),
                         OP_LOGE(context_->GetNodeName(), "ascendcPlatform core num check is 0, check failed"),
@@ -1072,23 +1081,19 @@ private:
         blockTail = (blockTail == 0) ? blockFormer : blockTail;
         int64_t blockNum = (ubOuter + blockFormer - 1) / blockFormer;
 
-        // 如果blockNum小于核数一半，则尝试分配到核数的一半
-        if (static_cast<uint64_t>(blockNum) < (coreNum / HALF_CORE_NUM_DIVIDE) &&
-            (ubFormer * dTypeSize * aliveNum) > PER_CORE_MIN_UB_BYTE) {
-            int64_t dimPerCore = dimLength * 2 / coreNum; // 1/2 的coreNum进行分配
-            // 向上对齐到128Byte，理论上不会超过原来计算的ubFormer
-            int64_t alignDimPerCore = ((((dimPerCore * dTypeSize) + CACHE_LINE - 1) / CACHE_LINE) * CACHE_LINE) /
-                                      dTypeSize;
-            ubFormer = (ubFormer > alignDimPerCore) ? alignDimPerCore : ubFormer;
-
-            // 如果分配到核数一半后，小于8k(开DB后)，则直接按照 8k
-            // 计算。进入该分支，说明前面已经判断过开db后ub大小大于8KB
-            int64_t lowestUbFormer = (((PER_CORE_MIN_UB_BYTE / aliveNum) / CACHE_LINE) * CACHE_LINE) / dTypeSize;
-            if (ubFormer < lowestUbFormer) {
-                ubFormer = lowestUbFormer;
+        if (isAscend960_ && blockNum < static_cast<int64_t>(coreNum)) {
+            // 目标芯片: 不满核时按满核数计算每核处理量，保持 blockFormer=1（每核只做 1 次 DMA）
+            // dimPerCore = ceil(dimLength / coreNum)，向上对齐到 CACHE_LINE(128B)
+            // 若对齐后不足 CACHE_LINE_512(512B)，用 512B 下限，由实际能填满的核数分配
+            // ubFormer 取 min(原UB容量限制值, 满核每核量)，避免超过 UB 容量
+            int64_t dimPerCore = (dimLength + coreNum - 1) / coreNum;
+            int64_t alignDimPerCore =
+                ((((dimPerCore * dTypeSize) + CACHE_LINE - 1) / CACHE_LINE) * CACHE_LINE) / dTypeSize;
+            int64_t lowerLimitElems = CACHE_LINE_512 / dTypeSize;
+            if (alignDimPerCore < lowerLimitElems) {
+                alignDimPerCore = lowerLimitElems;
             }
-
-            // 重新计算分核参数
+            ubFormer = (ubFormer > alignDimPerCore) ? alignDimPerCore : ubFormer;
             ubOuter = (dimLength + ubFormer - 1) / ubFormer;
             ubTail = dimLength % ubFormer;
             ubTail = (ubTail == 0) ? ubFormer : ubTail;
@@ -1096,6 +1101,32 @@ private:
             blockTail = ubOuter % blockFormer;
             blockTail = (blockTail == 0) ? blockFormer : blockTail;
             blockNum = (ubOuter + blockFormer - 1) / blockFormer;
+        } else {
+            // 如果blockNum小于核数一半，则尝试分配到核数的一半
+            if (static_cast<uint64_t>(blockNum) < (coreNum / HALF_CORE_NUM_DIVIDE) &&
+                (ubFormer * dTypeSize * aliveNum) > PER_CORE_MIN_UB_BYTE) {
+                int64_t dimPerCore = dimLength * 2 / coreNum;  // 1/2 的coreNum进行分配
+                // 向上对齐到128Byte，理论上不会超过原来计算的ubFormer
+                int64_t alignDimPerCore =
+                    ((((dimPerCore * dTypeSize) + CACHE_LINE - 1) / CACHE_LINE) * CACHE_LINE) / dTypeSize;
+                ubFormer = (ubFormer > alignDimPerCore) ? alignDimPerCore : ubFormer;
+
+                // 如果分配到核数一半后，小于8k(开DB后)，则直接按照 8k
+                // 计算。进入该分支，说明前面已经判断过开db后ub大小大于8KB
+                int64_t lowestUbFormer = (((PER_CORE_MIN_UB_BYTE / aliveNum) / CACHE_LINE) * CACHE_LINE) / dTypeSize;
+                if (ubFormer < lowestUbFormer) {
+                    ubFormer = lowestUbFormer;
+                }
+
+                // 重新计算分核参数
+                ubOuter = (dimLength + ubFormer - 1) / ubFormer;
+                ubTail = dimLength % ubFormer;
+                ubTail = (ubTail == 0) ? ubFormer : ubTail;
+                blockFormer = (ubOuter + coreNum - 1) / coreNum;
+                blockTail = ubOuter % blockFormer;
+                blockTail = (blockTail == 0) ? blockFormer : blockTail;
+                blockNum = (ubOuter + blockFormer - 1) / blockFormer;
+            }
         }
 
         AdaptOneDimTilingData(blockNum, ubFormer, ubTail, blockFormer, blockTail);
@@ -1261,6 +1292,7 @@ private:
     gert::TilingContext* context_{nullptr};
     uint64_t coreNum{0};
     uint64_t ubSize{0};
+    bool isAscend960_{false};  // 目标芯片平台标志，由 GetPlatformInfo() 运行时设置
     std::vector<gert::Shape> inShapes;
     std::vector<bool> inputIsContiguous;
     std::vector<gert::Stride> inStrides;
