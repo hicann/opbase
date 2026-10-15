@@ -7,7 +7,7 @@
 ## 函数原型
 
 ```cpp
-FVector<int64_t> GetViewStrides()
+const op::Strides& GetViewStrides() const
 ```
 
 ## 参数说明
@@ -16,7 +16,7 @@ FVector<int64_t> GetViewStrides()
 
 ## 返回值说明
 
-返回一个FVector对象，里面存放aclTensor各个维度的stride大小。
+返回const op::Strides&，引用tensor持有的view strides。返回引用不会延长tensor的生命周期；示例按值复制得到独立对象。
 
 ## 约束说明
 

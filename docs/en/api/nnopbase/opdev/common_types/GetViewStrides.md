@@ -7,7 +7,7 @@ Obtains `ViewStrides` of an `aclTensor`.
 ## Prototype
 
 ```cpp
-FVector<int64_t> GetViewStrides()
+const op::Strides& GetViewStrides() const
 ```
 
 ## Parameters
@@ -16,7 +16,7 @@ None
 
 ## Returns
 
-An `FVector` object. It stores the stride of each dimension of the `aclTensor`.
+A `const op::Strides&` referring to the tensor's view strides. The returned reference does not extend the tensor lifetime. The example makes an independent value copy.
 
 ## Restrictions
 

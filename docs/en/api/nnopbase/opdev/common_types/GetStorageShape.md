@@ -9,7 +9,7 @@ StorageShape indicates the actual runtime shape of an `aclTensor` in memory. It 
 ## Prototype
 
 ```cpp
-gert::Shape GetStorageShape()
+const op::Shape& GetStorageShape() const
 ```
 
 ## Parameters
@@ -18,7 +18,7 @@ None
 
 ## Returns
 
-`gert::Shape`. It records a set of shape information, for example, a three-dimensional shape [10, 20, 30].
+A `const op::Shape&` referring to shape information owned by the tensor, for example, a three-dimensional shape [10, 20, 30]. The returned reference does not extend the tensor lifetime. Use a value copy, as in the example, when an independent shape is required.
 
 > **Note**: For details about `gert::Shape`, see "gert Namespace > Shape" in [Basic Data Structure and API Reference](https://www.hiascend.com/document/redirect/CannCommunitybasicopapi).
 
