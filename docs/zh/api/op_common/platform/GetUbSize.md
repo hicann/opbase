@@ -19,7 +19,7 @@ uint32_t GetUbSize(const T *context)
 
 ## 返回值说明
 
-返回平台UB空间大小，uint64\_t类型，返回0代表获取失败。
+返回平台UB空间大小，uint32\_t类型，返回0代表获取失败。
 
 ## 约束说明
 
