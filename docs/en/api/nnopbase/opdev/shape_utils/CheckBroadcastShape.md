@@ -31,11 +31,11 @@ None
 // Generate two shapes [2, 1] and [2, 10] and check if they satisfy broadcasting rules.
 void Func() {
     gert::Shape shapeA;
-    shapeA.AppendDim(1);
     shapeA.AppendDim(2);
+    shapeA.AppendDim(1);
     gert::Shape shapeB;
-    shapeB.AppendDim(10);
     shapeB.AppendDim(2);
+    shapeB.AppendDim(10);
     bool isBrc = CheckBroadcastShape(shapeA, shapeB);
 }
 ```

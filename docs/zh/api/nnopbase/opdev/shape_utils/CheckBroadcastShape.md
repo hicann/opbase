@@ -31,11 +31,11 @@ bool CheckBroadcastShape(const op::Shape &self, const op::Shape &other)
 // 生成shape为[2， 1]和[2, 10]的两个Shape对象，校验两个shape是否满足broadcast关系。
 void Func() {
     gert::Shape shapeA;
-    shapeA.AppendDim(1);
     shapeA.AppendDim(2);
+    shapeA.AppendDim(1);
     gert::Shape shapeB;
-    shapeB.AppendDim(10);
     shapeB.AppendDim(2);
+    shapeB.AppendDim(10);
     bool isBrc = CheckBroadcastShape(shapeA, shapeB);
 }
 ```
