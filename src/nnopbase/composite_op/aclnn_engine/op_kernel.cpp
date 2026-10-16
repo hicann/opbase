@@ -124,7 +124,9 @@ const std::map<std::string, ge::DataType> STR_2_DATA_TYPE{{"float", ge::DT_FLOAT
                                                           {"float6_e3m2", DataType::DT_FLOAT6_E3M2},
                                                           {"float6_e2m3", DataType::DT_FLOAT6_E2M3},
                                                           {"float4_e2m1", DataType::DT_FLOAT4_E2M1},
-                                                          {"float4_e1m2", DataType::DT_FLOAT4_E1M2}};
+                                                          {"float4_e1m2", DataType::DT_FLOAT4_E1M2},
+                                                          {"hifloat4", op::internal::DT_HIFLOAT4},
+                                                          {"hifloat4_scale", op::internal::DT_HIFLOAT4_SCALE}};
 
 const std::map<ge::DataType, std::string> DATA_TYPE_2_STR{{ge::DT_FLOAT, "float"},
                                                           {ge::DT_FLOAT, "float32"},
@@ -155,7 +157,9 @@ const std::map<ge::DataType, std::string> DATA_TYPE_2_STR{{ge::DT_FLOAT, "float"
                                                           {DataType::DT_FLOAT6_E3M2, "float6_e3m2"},
                                                           {DataType::DT_FLOAT6_E2M3, "float6_e2m3"},
                                                           {DataType::DT_FLOAT4_E2M1, "float4_e2m1"},
-                                                          {DataType::DT_FLOAT4_E1M2, "float4_e1m2"}};
+                                                          {DataType::DT_FLOAT4_E1M2, "float4_e1m2"},
+                                                          {op::internal::DT_HIFLOAT4, "hifloat4"},
+                                                          {op::internal::DT_HIFLOAT4_SCALE, "hifloat4_scale"}};
 
 const std::map<std::string, ge::Format> STR_2_FORMAT{{"ND", ge::FORMAT_ND},
                                                      {"ALL", ge::FORMAT_ND},
@@ -1009,7 +1013,7 @@ aclnnStatus OpKernel::GenerateKeyByJson(const nlohmann::json& singleBinJson, con
 void OpKernel::GetReadableFmtDtypeKey(wchar_t ele, int32_t& cnt, string& debug_str) const
 {
     if (cnt % MAX_BIN_MATCH_ARG_KEY_COUNT == 0) {
-        if (ele <= ge::DT_MAX) {
+        if (ele < op::internal::DT_MAX) {
             auto iter = DATA_TYPE_2_STR.find(static_cast<ge::DataType>(ele));
             if (iter != DATA_TYPE_2_STR.end()) {
                 debug_str += (iter->second);

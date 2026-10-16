@@ -205,12 +205,54 @@ TEST_F(CommonTypesTest, TestAclScalar_ConvertCustomFloatTo)
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E1M2, 0.0f);
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float4E1M2, -1.0f);
 
+    // --- HiFloat4 (Huawei 4bit float, 1S1E2M, bias=1, 最大值 1.75) ---
+    // 该类型同时校验 aclScalar 的 dtype 归属：aclScalar(op::HiFloat4) 应携带 DT_HIFLOAT4，
+    // 否则 Branch 1 的一致性断言会因按其它 4bit 格式解析而失败
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat4, 1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat4, 0.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat4, -1.0f);
+    CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat4, 1.25f);
+
     // --- HiFloat8 (Huawei tapered precision format) ---
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat8, 1.0f);
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat8, 0.0f);
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::HiFloat8, -1.0f);
 
 #undef CHECK_CUSTOM_FLOAT_SCALAR_TO
+}
+
+// 按 HiFloat4 位模式（1 符号位 + 1 指数位 + 2 尾数位，bias=1）验证取值转换：
+//   次正规：值 = man / 4（0x1=0.25, 0x2=0.5, 0x3=0.75）
+//   正规：  值 = 2^(E-1) × (1 + man / 4)（0x4=1.0, 0x5=1.25, 0x6=1.5, 0x7=1.75）
+//   符号位为 1 时取负（0x8=-0.0, 0x9=-0.25, 0xF=-1.75）
+TEST_F(CommonTypesTest, TestAclScalar_HiFloat4BitPatterns)
+{
+    struct HiFloat4Case {
+        uint8_t bits;
+        float expected;
+    };
+    const std::vector<HiFloat4Case> cases = {{0x0, 0.0f},  {0x1, 0.25f},  {0x2, 0.5f},  {0x3, 0.75f},
+                                             {0x4, 1.0f},  {0x5, 1.25f},  {0x6, 1.5f},  {0x7, 1.75f},
+                                             {0x8, -0.0f}, {0x9, -0.25f}, {0xF, -1.75f}};
+    for (const auto& testCase : cases) {
+        uint8_t bits = testCase.bits;
+        aclScalar scalar(&bits, op::internal::DT_HIFLOAT4);
+        EXPECT_EQ(op::internal::DT_HIFLOAT4, scalar.GetDataType());
+        EXPECT_FLOAT_EQ(testCase.expected, scalar.ToFloat());
+        EXPECT_EQ(testCase.bits, scalar.To<op::HiFloat4>().value);
+        EXPECT_EQ(testCase.bits, scalar.ToHiFloat4().value);
+    }
+
+    // 由 op::HiFloat4 值构造的 aclScalar 直接携带 DT_HIFLOAT4 类型
+    aclScalar hiFloat4Scalar(op::HiFloat4(1.25f));
+    EXPECT_EQ(op::internal::DT_HIFLOAT4, hiFloat4Scalar.GetDataType());
+    EXPECT_EQ(0x5, hiFloat4Scalar.ToHiFloat4().value);
+    EXPECT_FLOAT_EQ(1.25f, hiFloat4Scalar.ToFloat());
+
+    // HiFloat4 仅 4bit 有效，高于 4bit 的位在构造时被掩掉
+    aclScalar maskedScalar(op::HiFloat4(static_cast<uint8_t>(0xF5), op::HiFloat4::FromBits()));
+    EXPECT_EQ(op::internal::DT_HIFLOAT4, maskedScalar.GetDataType());
+    EXPECT_EQ(0x5, maskedScalar.ToHiFloat4().value);
 }
 
 // 使用 OCP 规范定义的 bit pattern 验证 ConvertCustomFloatTo 的正确性
@@ -963,6 +1005,9 @@ TEST_F(CommonTypesTest, TestAclScalarToAclTensor)
     using complex128 = std::complex<double>;
     CHECK_SCALAR2TENSOR(complex64Scalar, complex64(3.2, 3.2), complex64, DataType::DT_COMPLEX64);
     CHECK_SCALAR2TENSOR(complex128Scalar, complex128(3.2, 3.2), complex128, DataType::DT_COMPLEX128);
+    // HiFloat4 的 sizeof 为 1 字节，tensor 中写入的即为该 4bit 值（1.25f → 0x5）
+    using hifp4 = op::HiFloat4;
+    CHECK_SCALAR2TENSOR(hiFp4Scalar, hifp4(1.25f), hifp4, op::internal::DT_HIFLOAT4);
     fp16_t fp16Value = 3.2;
     try {
         // unsupport dtype
@@ -971,6 +1016,10 @@ TEST_F(CommonTypesTest, TestAclScalarToAclTensor)
         EXPECT_NE(memcmp(unsupportedDataTypeScalarTensor.GetData(), &fp16Value, sizeof(fp16Value)), 0);
     } catch (...) {
     }
+
+    // hifloat4_scale 当前不支持构造 aclScalar，因此 ConvertToTensor 也不支持该类型
+    uint8_t hifloat4ScaleBits = 0x5;
+    EXPECT_THROW(new aclScalar(&hifloat4ScaleBits, op::internal::DT_HIFLOAT4_SCALE), std::invalid_argument);
 }
 
 TEST_F(CommonTypesTest, TestAclIntArrayToAclTensor)

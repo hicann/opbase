@@ -10,9 +10,11 @@
 
 #include <sstream>
 #include <cmath>
-#include <securec.h>
-#include <graph/utils/type_utils.h>
 #include <stdexcept>
+
+#include "securec.h"
+#include "graph/utils/type_utils.h"
+
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
 #include "bridge_graph.h"
@@ -22,6 +24,7 @@
 #include "opdev/op_arg_def.h"
 #include "opdev/common_types.h"
 #include "nnopbase_error_msg.h"
+
 using namespace std;
 
 aclStorage::aclStorage(void* addr) : addr_(addr) {}
@@ -367,6 +370,9 @@ aclTensor::aclTensor(const aclScalar* value, op::DataType dataType)
         case op::DataType::DT_HIFLOAT8:
             *static_cast<uint8_t*>(dataAddr) = value->ToHiFloat8().value;
             break;
+        case op::internal::DT_HIFLOAT4:
+            *static_cast<uint8_t*>(dataAddr) = value->ToHiFloat4().value;
+            break;
         default:
             OP_CHECK(memset_s(dataAddr, typeSize, 0, typeSize) == EOK,
                      OP_LOGE_WITHOUT_REPORT(ACLNN_ERR_INNER, "memset_s failed."), return);
@@ -374,7 +380,8 @@ aclTensor::aclTensor(const aclScalar* value, op::DataType dataType)
                                      "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
                                      "DT_DOUBLE(11), DT_BOOL(12), DT_COMPLEX64(16), DT_COMPLEX128(17), DT_BF16(27), "
                                      "DT_HIFLOAT8(34), DT_FLOAT8_E5M2(35), DT_FLOAT8_E4M3FN(36), DT_FLOAT8_E8M0(37), "
-                                     "DT_FLOAT6_E3M2(38), DT_FLOAT6_E2M3(39), DT_FLOAT4_E2M1(40), DT_FLOAT4_E1M2(41)]";
+                                     "DT_FLOAT6_E3M2(38), DT_FLOAT6_E2M3(39), DT_FLOAT4_E2M1(40), DT_FLOAT4_E1M2(41), "
+                                     "DT_HIFLOAT4(42)]";
             std::string dataTypeStr = std::string(op::ToString(dataType).GetString()) + "(" +
                                       std::to_string(static_cast<int32_t>(dataType)) + ")";
             OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataTypeStr.c_str(), dtypeRange.c_str());
@@ -434,7 +441,7 @@ op::DataType aclTensor::GetDataType() const
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR,
                 "the aclTensor(%p)'s tensor_ address is %p. please check the memory usage in your code.", this,
                 tensor_);
-        return op::DataType::DT_MAX;
+        return op::internal::DT_MAX;
     }
 }
 
@@ -952,6 +959,15 @@ T aclScalar::To() const
             } else {
                 return static_cast<T>(v.f);
             }
+        case op::DataType::DT_DOUBLE:
+            if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
+                if (std::isnan(v.d)) {
+                    return static_cast<bool>(v.d);
+                }
+                return std::abs(v.d) >= std::numeric_limits<double>::epsilon();
+            } else {
+                return static_cast<T>(v.d);
+            }
         case op::DataType::DT_FLOAT16:
             if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
                 if (FP16_IS_NAN(v.ui16)) {
@@ -986,6 +1002,8 @@ T aclScalar::To() const
             return ConvertCustomFloatTo<T, op::Float4E1M2>(v.ui8);
         case op::DataType::DT_HIFLOAT8:
             return ConvertCustomFloatTo<T, op::HiFloat8>(v.ui8);
+        case op::internal::DT_HIFLOAT4:
+            return ConvertCustomFloatTo<T, op::HiFloat4>(v.ui8);
         case op::DataType::DT_INT8:
             return static_cast<T>(v.i8);
         case op::DataType::DT_INT16:
@@ -1010,15 +1028,6 @@ T aclScalar::To() const
             return static_cast<T>(v.ui64);
         case op::DataType::DT_BOOL:
             return static_cast<T>(v.i8);
-        case op::DataType::DT_DOUBLE:
-            if constexpr (std::is_same<bool, typename std::decay<T>::type>::value) {
-                if (std::isnan(v.d)) {
-                    return static_cast<bool>(v.d);
-                }
-                return std::abs(v.d) >= std::numeric_limits<double>::epsilon();
-            } else {
-                return static_cast<T>(v.d);
-            }
         case op::DataType::DT_COMPLEX64:
             if constexpr (std::is_same<std::complex<float>, typename std::decay<T>::type>::value) {
                 return v.complex64;
@@ -1074,6 +1083,9 @@ ge::AscendString aclScalar::ToStr() const
         case op::DataType::DT_HIFLOAT8:
             return ge::AscendString(
                 std::to_string(static_cast<float>(op::HiFloat8(v.ui8, op::HiFloat8::FromBits()))).c_str());
+        case op::internal::DT_HIFLOAT4:
+            return ge::AscendString(
+                std::to_string(static_cast<float>(op::HiFloat4(v.ui8, op::HiFloat4::FromBits()))).c_str());
         case op::DataType::DT_INT8:
             return ge::AscendString(std::to_string(v.i8).c_str());
         case op::DataType::DT_INT16:
@@ -1236,12 +1248,16 @@ aclScalar::aclScalar(const void* data, op::DataType dataType)
         case op::DataType::DT_HIFLOAT8:
             v.ui8 = *static_cast<const uint8_t*>(data);
             break;
+        case op::internal::DT_HIFLOAT4:
+            v.ui8 = *static_cast<const uint8_t*>(data);
+            break;
         default:
             std::string dtypeRange = "[DT_FLOAT(0), DT_FLOAT16(1), DT_INT8(2), DT_INT32(3), DT_UINT8(4), "
                                      "DT_INT16(6), DT_UINT16(7), DT_UINT32(8), DT_INT64(9), DT_UINT64(10), "
                                      "DT_DOUBLE(11), DT_BOOL(12), DT_COMPLEX64(16), DT_COMPLEX128(17), DT_BF16(27), "
                                      "DT_HIFLOAT8(34), DT_FLOAT8_E5M2(35), DT_FLOAT8_E4M3FN(36), DT_FLOAT8_E8M0(37), "
-                                     "DT_FLOAT6_E3M2(38), DT_FLOAT6_E2M3(39), DT_FLOAT4_E2M1(40), DT_FLOAT4_E1M2(41)]";
+                                     "DT_FLOAT6_E3M2(38), DT_FLOAT6_E2M3(39), DT_FLOAT4_E2M1(40), DT_FLOAT4_E1M2(41), "
+                                     "DT_HIFLOAT4(42)]";
             std::string dataTypeStr = std::string(op::ToString(dataType_).GetString()) + "(" +
                                       std::to_string(static_cast<int32_t>(dataType_)) + ")";
             OP_LOGE_FOR_NOT_SUPPORTED_DATA_TYPE(dataTypeStr.c_str(), dtypeRange.c_str());
@@ -1332,11 +1348,7 @@ aclScalar::aclScalar(op::Float4E2M1 value) : dataType_(op::DataType::DT_FLOAT4_E
 
 aclScalar::aclScalar(op::Float4E1M2 value) : dataType_(op::DataType::DT_FLOAT4_E1M2) { v.ui8 = value.value; }
 
-aclScalar::aclScalar(op::HiFloat4 value) : dataType_(op::DataType::DT_FLOAT4_E1M2)
-{
-    v.ui8 = value.value;
-    OP_LOGW("This is a reserved function for future, aclScalar of hifloat4 type cannot be created currently.");
-}
+aclScalar::aclScalar(op::HiFloat4 value) : dataType_(op::internal::DT_HIFLOAT4) { v.ui8 = value.value; }
 
 aclScalar::aclScalar(op::HiFloat8 value) : dataType_(op::DataType::DT_HIFLOAT8) { v.ui8 = value.value; }
 
@@ -1385,7 +1397,9 @@ ge::AscendString ToString(aclDataType dataType)
                                                        {ACL_FLOAT6_E3M2, "float6_e3m2"},
                                                        {ACL_FLOAT6_E2M3, "float6_e2m3"},
                                                        {ACL_FLOAT4_E2M1, "float4_e2m1"},
-                                                       {ACL_FLOAT4_E1M2, "float4_e1m2"}};
+                                                       {ACL_FLOAT4_E1M2, "float4_e1m2"},
+                                                       {op::internal::ACL_HIFLOAT4, "hifloat4"},
+                                                       {op::internal::ACL_HIFLOAT4_SCALE, "hifloat4_scale"}};
     auto iter = dtype.find(dataType);
     if (iter != dtype.end()) {
         return ge::AscendString((iter->second).c_str());

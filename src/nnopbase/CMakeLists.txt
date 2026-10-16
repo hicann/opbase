@@ -19,8 +19,9 @@ get_filename_component(OPS_BASE_PATH "${OPS_BASE_PATH}" ABSOLUTE)
 
 add_library(nnopbase_headers INTERFACE)
 target_include_directories(nnopbase_headers INTERFACE
+    ${OPS_BASE_PATH}/include/
     ${OPS_BASE_PATH}/include/nnopbase/
-    ${OPS_BASE_PATH}/include/nnopbase/opdev
+    ${OPS_BASE_PATH}/include/nnopbase/opdev/
 )
 
 # local headers target

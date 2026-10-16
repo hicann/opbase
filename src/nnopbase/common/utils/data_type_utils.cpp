@@ -8,9 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <map>
 #include <string>
-#include <graph/utils/type_utils.h>
+
+#include "graph/utils/type_utils.h"
+
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 
@@ -19,7 +20,6 @@ namespace op {
 constexpr int64_t BIT_TO_BYTE_SHIFT = 3;
 constexpr int64_t BIT_TO_BTYE_ALIGN = 7;
 
-using std::map;
 using std::string;
 
 DataType ToDataType(const string& dataTypeStr) { return ge::TypeUtils::SerialStringToDataType(dataTypeStr); }

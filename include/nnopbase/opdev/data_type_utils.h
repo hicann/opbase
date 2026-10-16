@@ -18,10 +18,27 @@
 #include <vector>
 
 #include "acl/acl_base.h"
-#include "common_types.h"
 #include "graph/types.h"
 
+#include "common_types.h"
+#include "op_log.h"
+
 namespace op {
+namespace internal {
+/*
+ * aclDataType定义在runtime仓、ge::DataType定义在metadef仓，两者随版本迭代会新增枚举项。
+ * 为使基于旧版本metadef/runtime包（头文件不含新增枚举项，如：ACL_HIFLOAT4_SCALE）也能编译，此处按同名同值补充常量定义。
+ * 仅供框架内部使用，外部请勿使用。
+ */
+constexpr ::aclDataType ACL_HIFLOAT4 = static_cast<::aclDataType>(42);
+constexpr ::aclDataType ACL_HIFLOAT4_SCALE = static_cast<::aclDataType>(43);
+
+constexpr ::ge::DataType DT_HIFLOAT4 = static_cast<::ge::DataType>(42);
+constexpr ::ge::DataType DT_HIFLOAT4_SCALE = static_cast<::ge::DataType>(43);
+// 数据类型上界（本文件支持的最大枚举项的后一位），使数组长度与范围校验在高低版本头文件下一致
+constexpr ::ge::DataType DT_MAX = static_cast<::ge::DataType>(44);
+} // namespace internal
+
 static constexpr auto u1 = ge::DataType::DT_UINT8;
 static constexpr auto i1 = ge::DataType::DT_INT8;
 static constexpr auto i2 = ge::DataType::DT_INT16;
@@ -68,77 +85,86 @@ inline bool IsNumberType(const DataType dtype)
 {
     return CheckType(
         dtype,
-        {DataType::DT_COMPLEX128,  DataType::DT_COMPLEX64,   DataType::DT_DOUBLE,      DataType::DT_FLOAT,
-         DataType::DT_FLOAT16,     DataType::DT_INT16,       DataType::DT_INT32,       DataType::DT_INT64,
-         DataType::DT_INT8,        DataType::DT_QINT32,      DataType::DT_QINT8,       DataType::DT_QUINT8,
-         DataType::DT_UINT16,      DataType::DT_UINT32,      DataType::DT_UINT64,      DataType::DT_UINT8,
-         DataType::DT_BF16,        DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN,
-         DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1,
-         DataType::DT_FLOAT4_E1M2});
+        {DataType::DT_COMPLEX128,  DataType::DT_COMPLEX64,   DataType::DT_DOUBLE,        DataType::DT_FLOAT,
+         DataType::DT_FLOAT16,     DataType::DT_INT16,       DataType::DT_INT32,         DataType::DT_INT64,
+         DataType::DT_INT8,        DataType::DT_QINT32,      DataType::DT_QINT8,         DataType::DT_QUINT8,
+         DataType::DT_UINT16,      DataType::DT_UINT32,      DataType::DT_UINT64,        DataType::DT_UINT8,
+         DataType::DT_BF16,        DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2,   DataType::DT_FLOAT8_E4M3FN,
+         DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3,   DataType::DT_FLOAT4_E2M1,
+         DataType::DT_FLOAT4_E1M2, internal::DT_HIFLOAT4,    internal::DT_HIFLOAT4_SCALE});
 }
 
 inline bool IsRealNumberType(const DataType dtype)
 {
     return CheckType(
         dtype,
-        {DataType::DT_DOUBLE,      DataType::DT_FLOAT,       DataType::DT_FLOAT16,       DataType::DT_INT16,
-         DataType::DT_INT32,       DataType::DT_INT64,       DataType::DT_INT8,          DataType::DT_UINT16,
-         DataType::DT_UINT32,      DataType::DT_UINT64,      DataType::DT_UINT8,         DataType::DT_BF16,
-         DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
-         DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1,   DataType::DT_FLOAT4_E1M2});
+        {DataType::DT_DOUBLE,      DataType::DT_FLOAT,         DataType::DT_FLOAT16,       DataType::DT_INT16,
+         DataType::DT_INT32,       DataType::DT_INT64,         DataType::DT_INT8,          DataType::DT_UINT16,
+         DataType::DT_UINT32,      DataType::DT_UINT64,        DataType::DT_UINT8,         DataType::DT_BF16,
+         DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2,   DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
+         DataType::DT_FLOAT6_E3M2, DataType::DT_FLOAT6_E2M3,   DataType::DT_FLOAT4_E2M1,   DataType::DT_FLOAT4_E1M2,
+         internal::DT_HIFLOAT4,    internal::DT_HIFLOAT4_SCALE});
 }
+
+static constexpr int g_dataTypeSize[internal::DT_MAX] = {
+    4,                          // DT_FLOAT = 0,               float type
+    2,                          // DT_FLOAT16 = 1,             fp16 type
+    1,                          // DT_INT8 = 2,                int8 type
+    4,                          // DT_INT32 = 3,
+    1,                          // DT_UINT8 = 4,               uint8 type
+    -1,
+    2,                          // DT_INT16 = 6,               int16 type
+    2,                          // DT_UINT16 = 7,              uint16 type
+    4,                          // DT_UINT32 = 8,              unsigned int32
+    8,                          // DT_INT64 = 9,               int64 type
+    8,                          // DT_UINT64 = 10,             unsigned int64
+    8,                          // DT_DOUBLE = 11,             double type
+    1,                          // DT_BOOL = 12,               bool type
+    -1,                         // DT_STRING = 13,             string type
+    1,                          // DT_DUAL_SUB_INT8 = 14,      dual output int8 type
+    1,                          // DT_DUAL_SUB_UINT8 = 15,     dual output uint8 type
+    8,                          // DT_COMPLEX64 = 16,          complex64 type
+    16,                         // DT_COMPLEX128 = 17,         complex128 type
+    1,                          // DT_QINT8 = 18,              qint8 type
+    2,                          // DT_QINT16 = 19,             qint16 type
+    4,                          // DT_QINT32 = 20,             qint32 type
+    1,                          // DT_QUINT8 = 21,             quint8 type
+    2,                          // DT_QUINT16 = 22,            quint16 type
+    8,                          // DT_RESOURCE = 23,           resource type
+    -1,                         // DT_STRING_REF = 24,         string ref type
+    5,                          // DT_DUAL = 25,               dual output type (float + int8)
+    8,                          // DT_VARIANT                  variant type
+    2,                          // DT_BF16 = 27,               bf16 type
+    -1,                         // DT_UNDEFINED = 28           Used to indicate a DataType field has not been set.
+    kDataTypeSizeBitOffset + 4, // DT_INT4 = 29,             int4 type
+    kDataTypeSizeBitOffset + 1, // DT_UINT1 = 30,            uint1 type
+    kDataTypeSizeBitOffset + 2, // DT_INT2 = 31,             int2 type
+    kDataTypeSizeBitOffset + 2, // DT_UINT2 = 32,            uint2 type
+    4,                          // DT_COMPLEXT = 33,         complex32 type
+    1,                          // DT_HIFLOAT8 = 34          hifloat8 type
+    1,                          // DT_FLOAT8_E5M2 = 35       float8_e5m2 type
+    1,                          // DT_FLOAT8_E4M3FN = 36     float8_e4m3fn type
+    1,                          // DT_FLOAT8_E8M0 = 37       float8_e8m0 type
+    kDataTypeSizeBitOffset + 6, // DT_FLOAT6_E3M2 = 38       float8 e3m2 type
+    kDataTypeSizeBitOffset + 6, // DT_FLOAT6_E2M3 = 39       float8 e2m3 type
+    kDataTypeSizeBitOffset + 4, // DT_FLOAT4_E2M1 = 40       float8 e2m1 type
+    kDataTypeSizeBitOffset + 4, // DT_FLOAT4_E1M2 = 41       float8 e1m2 type
+    kDataTypeSizeBitOffset + 4, // DT_HIFLOAT4 = 42          hifloat4 type
+    4,                          // DT_HIFLOAT4_SCALE = 43    hifloat4_scale type
+    // DT_MAX
+};
 
 inline size_t TypeSize(DataType dataType)
 {
-    static int data_type_size[DataType::DT_MAX] = {
-        4,                          // DT_FLOAT = 0,               float type
-        2,                          // DT_FLOAT16 = 1,             fp16 type
-        1,                          // DT_INT8 = 2,                int8 type
-        4,                          // DT_INT32 = 3,
-        1,                          // DT_UINT8 = 4,               uint8 type
-        -1,
-        2,                          // DT_INT16 = 6,               int16 type
-        2,                          // DT_UINT16 = 7,              uint16 type
-        4,                          // DT_UINT32 = 8,              unsigned int32
-        8,                          // DT_INT64 = 9,               int64 type
-        8,                          // DT_UINT64 = 10,             unsigned int64
-        8,                          // DT_DOUBLE = 11,             double type
-        1,                          // DT_BOOL = 12,               bool type
-        -1,                         // DT_STRING = 13,             string type
-        1,                          // DT_DUAL_SUB_INT8 = 14,      dual output int8 type
-        1,                          // DT_DUAL_SUB_UINT8 = 15,     dual output uint8 type
-        8,                          // DT_COMPLEX64 = 16,          complex64 type
-        16,                         // DT_COMPLEX128 = 17,         complex128 type
-        1,                          // DT_QINT8 = 18,              qint8 type
-        2,                          // DT_QINT16 = 19,             qint16 type
-        4,                          // DT_QINT32 = 20,             qint32 type
-        1,                          // DT_QUINT8 = 21,             quint8 type
-        2,                          // DT_QUINT16 = 22,            quint16 type
-        8,                          // DT_RESOURCE = 23,           resource type
-        -1,                         // DT_STRING_REF = 24,         string ref type
-        5,                          // DT_DUAL = 25,               dual output type (float + int8)
-        8,                          // DT_VARIANT                  variant type
-        2,                          // DT_BF16 = 27,               bf16 type
-        -1,                         // DT_UNDEFINED = 28           Used to indicate a DataType field has not been set.
-        kDataTypeSizeBitOffset + 4, // DT_INT4 = 29,             int4 type
-        kDataTypeSizeBitOffset + 1, // DT_UINT1 = 30,            uint1 type
-        kDataTypeSizeBitOffset + 2, // DT_INT2 = 31,             int2 type
-        kDataTypeSizeBitOffset + 2, // DT_UINT2 = 32,            uint2 type
-        4,                          // DT_COMPLEXT = 33,         complex32 type
-        1,                          // DT_HIFLOAT8 = 34          hifloat8 type
-        1,                          // DT_FLOAT8_E5M2 = 35       float8_e5m2 type
-        1,                          // DT_FLOAT8_E4M3FN = 36     float8_e4m3fn type
-        1,                          // DT_FLOAT8_E8M0 = 37       float8_e8m0 type
-        kDataTypeSizeBitOffset + 6, // DT_FLOAT6_E3M2 = 38       float8 e3m2 type
-        kDataTypeSizeBitOffset + 6, // DT_FLOAT6_E2M3 = 39       float8 e2m3 type
-        kDataTypeSizeBitOffset + 4, // DT_FLOAT4_E2M1 = 40       float8 e2m1 type
-        kDataTypeSizeBitOffset + 4, // DT_FLOAT4_E1M2 = 41       float8 e1m2 type
-        // DT_MAX
-    };
-    if (dataType < DataType::DT_FLOAT || dataType >= DataType::DT_MAX || data_type_size[dataType] <= 0) {
+    if (dataType < DataType::DT_FLOAT || dataType >= internal::DT_MAX) {
+        OP_LOGW("Data type %d is out of the valid range [DT_FLOAT(%d), DT_MAX(%d)).", static_cast<int32_t>(dataType),
+                static_cast<int32_t>(DataType::DT_FLOAT), static_cast<int32_t>(internal::DT_MAX));
         return sizeof(complex128);
     }
-    return static_cast<size_t>(data_type_size[dataType]);
+    if (g_dataTypeSize[dataType] <= 0) {
+        return sizeof(complex128);
+    }
+    return static_cast<size_t>(g_dataTypeSize[dataType]);
 }
 
 DataType ToDataType(const std::string& dataTypeStr);
@@ -154,13 +180,14 @@ constexpr inline DataType ToOpDataType(aclDataType type)
 inline aclDataType ToAclDataType(DataType type)
 {
     static const std::vector<DataType> CAN_CONVERT_TO_ACL_DataType_LIST = {
-        DataType::DT_FLOAT,       DataType::DT_FLOAT16,       DataType::DT_INT8,        DataType::DT_INT32,
-        DataType::DT_UINT8,       DataType::DT_INT16,         DataType::DT_UINT16,      DataType::DT_UINT32,
-        DataType::DT_INT64,       DataType::DT_DOUBLE,        DataType::DT_BOOL,        DataType::DT_STRING,
-        DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,    DataType::DT_BF16,        DataType::DT_UINT64,
-        DataType::DT_INT4,        DataType::DT_UINT1,         DataType::DT_COMPLEX32,   DataType::DT_HIFLOAT8,
-        DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2,
-        DataType::DT_FLOAT6_E2M3, DataType::DT_FLOAT4_E2M1,   DataType::DT_FLOAT4_E1M2};
+        DataType::DT_FLOAT,         DataType::DT_FLOAT16,       DataType::DT_INT8,        DataType::DT_INT32,
+        DataType::DT_UINT8,         DataType::DT_INT16,         DataType::DT_UINT16,      DataType::DT_UINT32,
+        DataType::DT_INT64,         DataType::DT_DOUBLE,        DataType::DT_BOOL,        DataType::DT_STRING,
+        DataType::DT_COMPLEX64,     DataType::DT_COMPLEX128,    DataType::DT_BF16,        DataType::DT_UINT64,
+        DataType::DT_INT4,          DataType::DT_UINT1,         DataType::DT_COMPLEX32,   DataType::DT_HIFLOAT8,
+        DataType::DT_FLOAT8_E5M2,   DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT6_E3M2,
+        DataType::DT_FLOAT6_E2M3,   DataType::DT_FLOAT4_E2M1,   DataType::DT_FLOAT4_E1M2, internal::DT_HIFLOAT4,
+        internal::DT_HIFLOAT4_SCALE};
     auto iter = std::find(CAN_CONVERT_TO_ACL_DataType_LIST.begin(), CAN_CONVERT_TO_ACL_DataType_LIST.end(), type);
     if (iter == CAN_CONVERT_TO_ACL_DataType_LIST.end()) {
         return aclDataType::ACL_DT_UNDEFINED;
@@ -193,7 +220,7 @@ int64_t CalcShapeBytes(int64_t size, DataType dataType, bool ceil = false);
 
 // @formatter:off
 static constexpr ge::DataType
-    kPromoteTypesLookup[static_cast<int>(ge::DataType::DT_MAX)][static_cast<int>(ge::DataType::DT_MAX)] = {
+    kPromoteTypesLookup[static_cast<int>(internal::DT_MAX)][static_cast<int>(internal::DT_MAX)] = {
         /*          f4  f2  i1  i4  u1  xx  i2  u2  u4  i8  u8  f8  b1  sv  d1  D1  c4  c8  q1  q2  q4  Q1  Q2  rs  sr
            du  va  bf, ud  t4  T1  t2  T2  c2*/
         /* f4 0 */ {f4, f4, f4, f4, f4, ud, f4, ud, ud, f4, ud, f8, f4, ud, ud, ud, c4,
@@ -279,7 +306,8 @@ inline bool IsFloatingType(const ge::DataType type)
             type == ge::DataType::DT_FLOAT8_E5M2 || type == ge::DataType::DT_FLOAT8_E4M3FN ||
             type == ge::DataType::DT_FLOAT8_E8M0 || type == ge::DataType::DT_FLOAT6_E3M2 ||
             type == ge::DataType::DT_FLOAT6_E2M3 || type == ge::DataType::DT_FLOAT4_E2M1 ||
-            type == ge::DataType::DT_FLOAT4_E1M2);
+            type == ge::DataType::DT_FLOAT4_E1M2 || type == internal::DT_HIFLOAT4 ||
+            type == internal::DT_HIFLOAT4_SCALE);
 }
 
 inline bool IsIntegralType(const ge::DataType type)
@@ -314,9 +342,11 @@ inline bool CanCast(const ge::DataType from, const ge::DataType to)
 
 inline ge::DataType PromoteType(ge::DataType type_a, ge::DataType type_b)
 {
-    if (static_cast<int>(type_a) < 0 || static_cast<int>(type_b) < 0 ||
-        static_cast<int>(type_a) >= static_cast<int>(ge::DataType::DT_MAX) ||
-        static_cast<int>(type_b) >= static_cast<int>(ge::DataType::DT_MAX)) {
+    if (type_a < ge::DataType::DT_FLOAT || type_a >= internal::DT_MAX || type_b < ge::DataType::DT_FLOAT ||
+        type_b >= internal::DT_MAX) {
+        OP_LOGW("Data type type_a(%d) or type_b(%d) is out of the valid range [DT_FLOAT(%d), DT_MAX(%d)).",
+                static_cast<int32_t>(type_a), static_cast<int32_t>(type_b),
+                static_cast<int32_t>(ge::DataType::DT_FLOAT), static_cast<int32_t>(internal::DT_MAX));
         return ge::DataType::DT_UNDEFINED;
     }
 
