@@ -27,7 +27,11 @@ namespace Ops {
 namespace Base {
 
 template <uint64_t schMode, class ElemDag>
-class ElementwiseSch16B {
+class ElementwiseSch16B
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+    : public PerBufferFlagSync<ElemDag, Mte2SrcPolicy::Mte2AsMte3>
+#endif
+{
 public:
     __aicore__ inline explicit ElementwiseSch16B(__tiling_data_ptr__ EleBaseTilingData16B* baseTilingData)
     {
@@ -73,6 +77,9 @@ public:
         uint64_t loopNum = GetBlockIdx() == blockNum_ - 1 ? ubLoopOfTailBlock_ : ubLoopOfFormerBlock_;
         uint64_t tailNum = GetBlockIdx() == blockNum_ - 1 ? ubTailOfTailBlock_ : ubTailOfFormerBlock_;
         uint64_t i = 0;
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        SetLoopSyncFlag<Mte2Count, Mte3Count>();
+#endif
         for (; i < loopNum - 1; i++) {
             // ub整循环处理的元素个数
             Run<0>(offset, ubFormer_, i & 1);
@@ -81,6 +88,9 @@ public:
 
         // ub尾循环处理的元素个数
         Run<0>(offset, tailNum, i & 1);
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitLoopSyncFlag<Mte2Count, Mte3Count>();
+#endif
     }
 
     /**
@@ -200,12 +210,25 @@ protected:
         GlobalTensor<TensorType> globalTensor;
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ TensorType*>(inGm[InputOp::Pos].GetPhyAddr(offset * sizeof(TensorType))));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        if constexpr (IsMte2Producer<ElemDag, Mte2SrcPolicy::Mte2AsMte3, pos>()) {
+            WaitFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+            WaitFlag<HardEvent::MTE3_MTE2>(this->template Mte2Evt<pos>(pingPong));
+            Vec::CopyIn<TensorType>(inTensor, globalTensor, tileLength);
+            SetFlag<HardEvent::MTE2_V>(this->template Mte2Evt<pos>(pingPong));
+        } else {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+            Vec::CopyIn<TensorType>(inTensor, globalTensor, tileLength);
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         // Set getBuf
         GetTensor<TPosition::VECIN>(bufId);
         // Run copyIn
         Vec::CopyIn<TensorType>(inTensor, globalTensor, tileLength);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECIN>(bufId);
+#endif
     }
 
     /**
@@ -241,12 +264,19 @@ protected:
         GlobalTensor<inputType> globalTensor;
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ inputType*>(outGm[output::Pos].GetPhyAddr(offset * sizeof(inputType))));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::V_MTE3>(this->template Mte3Evt<GetFunOutputPos<input>()>(pingPong));
+        Vec::CopyOut<inputType>(globalTensor, localTensor, tileLength);
+        SetFlag<HardEvent::MTE3_V>(this->template Mte3Evt<GetFunOutputPos<input>()>(pingPong));
+        SetMte3Mte2Flags<Mte2Count>(pingPong);
+#else
         // Set getBuf
         GetTensor<TPosition::VECOUT>(bufId);
         // Run func
         Vec::CopyOut<inputType>(globalTensor, localTensor, tileLength);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECOUT>(bufId);
+#endif
     }
 
     /**
@@ -431,12 +461,24 @@ protected:
         using OutputType = typename Op::template FunRetArgType<0>;
         uint8_t bufId = GetBufId<pos>(pingPong);
         LocalTensor<OutputType> outTensor(AscendC::TPosition::VECCALC, bufId * blockLen, blockLen / sizeof(OutputType));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        this->template WaitMte2VFlags<Op, pos, 0>(pingPong);
+        if constexpr (IsMte3Producer<ElemDag, Mte2SrcPolicy::Mte2AsMte3, pos>()) {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+        }
+        RunOp<OutputType, Op, pos>(outTensor, tileLength, pingPong);
+        this->template SetVMte2Flags<Op, pos, 0>(pingPong);
+        if constexpr (IsMte3Producer<ElemDag, Mte2SrcPolicy::Mte2AsMte3, pos>()) {
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         // Set getBuf
         GetTensor<TPosition::VECCALC>(bufId);
         // Run Op
         RunOp<OutputType, Op, pos>(outTensor, tileLength, pingPong);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECCALC>(bufId);
+#endif
     }
 
     /**
@@ -490,6 +532,17 @@ private:
     constexpr static int inputNums = ElemDag::InputSize;
     constexpr static int outputNums = ElemDag::OutputSize;
     constexpr static auto bufferIds = ElemDag::template GetBufferIds<true, false>();
+
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+    using FlagSyncBase = PerBufferFlagSync<ElemDag, Mte2SrcPolicy::Mte2AsMte3>;
+    using FlagSyncBase::Mte2Count;
+    using FlagSyncBase::Mte3Count;
+    using FlagSyncBase::Mte2Evt;
+    using FlagSyncBase::Mte3Evt;
+    using FlagSyncBase::WaitMte2VFlags;
+    using FlagSyncBase::SetVMte2Flags;
+#endif
+
     GlobalTensor<uint8_t> inGm[inputNums];
     GlobalTensor<uint8_t> outGm[outputNums];
     TPipe* pipePtr;

@@ -28,7 +28,11 @@ namespace Ops {
 namespace Base {
 static constexpr uint64_t BYTE_LENGTH = 8;
 template <class BrcDag, bool UseNddma, int64_t R = -1>
-class BroadcastBaseSch {
+class BroadcastBaseSch
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+    : public PerBufferFlagSync<BrcDag, UseNddma ? Mte2SrcPolicy::Mte2AsMte3 : Mte2SrcPolicy::Strict>
+#endif
+{
 public:
     __aicore__ inline explicit BroadcastBaseSch(const BroadcastBaseTilingData<BrcDag>* baseTilingData)
         : tilingData_(baseTilingData)
@@ -142,7 +146,18 @@ protected:
 #ifndef __CCE_KT_TEST__
         outTensor.SetBufferLen(blockEleNum_);
 #endif
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        using inputOpForWait = typename Op::Args::template At<0>;
+        constexpr int mte2SrcPos = ResolveMte2SrcPos<BrcDag, inputOpForWait, FlagPolicy(), pos>();
+        if constexpr (mte2SrcPos >= 0) {
+            WaitFlag<HardEvent::MTE2_V>(this->template Mte2Evt<mte2SrcPos>(pingPong));
+        }
+        if constexpr (IsMte3Producer<BrcDag, FlagPolicy(), pos>()) {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         GetTensor<TPosition::VECCALC>(bufId);
+#endif
         // get current broadcast op input tensor
         using inputOp = typename Op::Args::template At<0>;
         using inputType = typename Op::template FunInArgType<0>;
@@ -156,8 +171,19 @@ protected:
         static_assert(std::is_same<inputType, outputType>::value,
                       "Broadcast inputType  is inconsistent with outputType.");
         VecBrc<inputType, true>(outTensor, inputTensor, realIdx);
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        using inputOpForSet = typename Op::Args::template At<0>;
+        constexpr int mte2SrcPosSet = ResolveMte2SrcPos<BrcDag, inputOpForSet, FlagPolicy(), pos>();
+        if constexpr (mte2SrcPosSet >= 0) {
+            SetFlag<HardEvent::V_MTE2>(this->template Mte2Evt<mte2SrcPosSet>(pingPong));
+        }
+        if constexpr (IsMte3Producer<BrcDag, FlagPolicy(), pos>()) {
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         ReleaseTensor<TPosition::VECCALC>(inputBufId);
         ReleaseTensor<TPosition::VECCALC>(bufId);
+#endif
         vBrcIndex_++;
     }
 
@@ -285,12 +311,25 @@ protected:
         GlobalTensor<inputType> globalTensor;
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ inputType*>(inGm_[input::Pos] + gmOffset * sizeof(inputType)));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        if constexpr (IsMte2Producer<BrcDag, FlagPolicy(), pos>()) {
+            WaitFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+            WaitFlag<HardEvent::MTE3_MTE2>(this->template Mte2Evt<pos>(pingPong));
+            Vec::CopyIn<inputType>(inTensor, globalTensor, inputLength);
+            SetFlag<HardEvent::MTE2_V>(this->template Mte2Evt<pos>(pingPong));
+        } else {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+            Vec::CopyIn<inputType>(inTensor, globalTensor, inputLength);
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         // Set getBuf
         GetTensor<TPosition::VECIN>(bufId);
         // Run copyIn
         CopyInWithPreAlloc<inputType, !UseNddma>(inTensor, globalTensor, inputLength);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECIN>(bufId);
+#endif
     }
 
     /* *
@@ -330,12 +369,19 @@ protected:
         GlobalTensor<inputType> globalTensor;
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ inputType*>(outGm_[output::Pos] + offset * sizeof(inputType)));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::V_MTE3>(this->template Mte3Evt<GetFunOutputPos<input>()>(pingPong));
+        Vec::CopyOut<inputType>(globalTensor, localTensor, tileLength);
+        SetFlag<HardEvent::MTE3_V>(this->template Mte3Evt<GetFunOutputPos<input>()>(pingPong));
+        SetMte3Mte2Flags<Mte2Count>(pingPong);
+#else
         // Set getBuf
         GetTensor<TPosition::VECOUT>(bufId);
         // Run func
         Vec::CopyOut<inputType>(globalTensor, localTensor, tileLength);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECOUT>(bufId);
+#endif
     }
 
     /* *
@@ -521,6 +567,17 @@ protected:
 #ifndef __CCE_KT_TEST__
         outTensor.SetBufferLen(blockEleNum_);
 #endif
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        this->template WaitMte2VFlags<Op, pos, 0>(pingPong);
+        if constexpr (IsMte3Producer<BrcDag, FlagPolicy(), pos>()) {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+        }
+        RunOp<OutputType, Op, pos>(outTensor, tileLength, pingPong);
+        this->template SetVMte2Flags<Op, pos, 0>(pingPong);
+        if constexpr (IsMte3Producer<BrcDag, FlagPolicy(), pos>()) {
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         // Set getBuf
         GetTensor<TPosition::VECCALC>(bufId);
         // Run Op
@@ -528,6 +585,7 @@ protected:
 
         // Set rlsBuf
         ReleaseTensor<TPosition::VECCALC>(bufId);
+#endif
     }
 
 protected:
@@ -551,6 +609,21 @@ protected:
     uint32_t dstUbFormerShape_[8] = {1};
 
     constexpr static auto cacheBufferIds_ = BrcDag::template GetBufferIds<UseNddma, true>();
+
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+    constexpr static Mte2SrcPolicy FlagPolicy()
+    {
+        return UseNddma ? Mte2SrcPolicy::Mte2AsMte3 : Mte2SrcPolicy::Strict;
+    }
+
+    using FlagSyncBase = PerBufferFlagSync<BrcDag, FlagPolicy()>;
+    using FlagSyncBase::Mte2Count;
+    using FlagSyncBase::Mte3Count;
+    using FlagSyncBase::Mte2Evt;
+    using FlagSyncBase::Mte3Evt;
+    using FlagSyncBase::WaitMte2VFlags;
+    using FlagSyncBase::SetVMte2Flags;
+#endif
 
 private:
     const BroadcastBaseTilingData<BrcDag>* tilingData_;

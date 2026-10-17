@@ -346,6 +346,140 @@ public:
     }
 };
 
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+/* *
+ * Per-buffer flag 槽位解析策略
+ *   Strict              UB-Brc 模板：CopyInBrc 组合buffer 的MTE2 槽由其同pos 的V-part
+ *                       （RunCvecBrc）消费；VecBrc 是真实 V计算（输出TEMP），不透传。
+ *   Mte2AsMte3          elewise/BroadcastNddmaSch 等：直连 CopyOut 的 CopyIn 分配纯 MTE3
+ *                       buffer（mte2AsMte3），不再占用MTE2 槽。
+ *   Mte2AsMte3NoOpPass  one_dim 模板：VecBrc 是 NoOp 转发（RunNoOp)，解析时透传到其输入；
+ *                       其余同 Mte2AsMte3。
+*/
+enum class Mte2SrcPolicy { Strict, Mte2AsMte3, Mte2AsMte3NoOpPass };
+
+template <typename FunList, typename Op, int start = 0>
+__aicore__ constexpr static inline int FindOpPos()
+{
+    if constexpr (start >= FunList::Size) {
+        return -1;
+    } else if constexpr (std::is_same<typename FunList::template At<start>, Op>::value) {
+        return start;
+    } else {
+        return FindOpPos<FunList, Op, start + 1>();
+    }
+}
+
+template <typename DAG, Mte2SrcPolicy Policy, int pos>
+__aicore__ constexpr static inline bool IsMte2Producer()
+{
+    using Op = typename DAG::FunList::template At<pos>;
+    if constexpr (Op::IsScalarOp || !Vec::IsCopyInOp<typename Op::Fun>::Value) {
+        return false;
+    } else if constexpr(Policy == Mte2SrcPolicy::Strict) {
+        return true;
+    } else {
+        return !__aux::IsConnectOutput<typename DAG::FunList, pos + 1, Op>();
+    }
+}
+
+template <typename DAG, Mte2SrcPolicy Policy, int pos = 0, int count = 0>
+__aicore__ constexpr static inline int GetMte2ProducerCount()
+{
+    if constexpr (pos >= DAG::FunList::Size) {
+        return count;
+    } else if constexpr (IsMte2Producer<DAG, Policy, pos>()) {
+        return GetMte2ProducerCount<DAG, Policy, pos + 1, count + 1>();
+    } else {
+        return GetMte2ProducerCount<DAG, Policy, pos + 1, count>();
+    }
+}
+
+template <typename DAG, Mte2SrcPolicy Policy, int pos, int at = 0, int count = 0>
+__aicore__ constexpr static inline int GetMte2Slot()
+{
+    if constexpr (at >= pos) {
+        return count;
+    } else if constexpr (IsMte2Producer<DAG, Policy, at>()) {
+        return GetMte2Slot<DAG, Policy, pos, at + 1, count + 1>();
+    } else {
+        return GetMte2Slot<DAG, Policy, pos, at + 1, count>();
+    }
+}
+
+template <typename SrcOp, Mte2SrcPolicy Policy,
+          bool Passable = Vec::IsVecBrcOp<typename SrcOp::Fun>::Value && Policy == Mte2SrcPolicy::Mte2AsMte3NoOpPass>
+struct EffectiveProducer {
+    using Type = SrcOp;
+};
+
+template <typename SrcOp, Mte2SrcPolicy Policy>
+struct EffectiveProducer<SrcOp, Policy, true> {
+    using Type = typename EffectiveProducer<typename SrcOp::InArgs::template At<0>, Policy>::Type;
+};
+
+template <typename DAG, Mte2SrcPolicy Policy, int pos>
+__aicore__ constexpr static inline bool IsMte3Producer()
+{
+    using Op = typename DAG::FunList::template At<pos>;
+    if constexpr (Op::IsScalarOp || Vec::IsCopyOutOp<typename Op::Fun>::Value) {
+        return false;
+    } else if constexpr(Policy == Mte2SrcPolicy::Mte2AsMte3NoOpPass && Vec::IsVecBrcOp<typename Op::Fun>::Value) {
+        return false;
+    } else {
+        return __aux::IsConnectOutput<typename DAG::FunList, pos + 1, Op>();
+    }
+}
+
+template <typename DAG, Mte2SrcPolicy Policy, int pos = 0, int count = 0>
+__aicore__ constexpr static inline int GetMte3ProducerCount()
+{
+    if constexpr (pos >= DAG::FunList::Size) {
+        return count;
+    } else if constexpr (IsMte3Producer<DAG, Policy, pos>()) {
+        return GetMte3ProducerCount<DAG, Policy, pos + 1, count + 1>();
+    } else {
+        return GetMte3ProducerCount<DAG, Policy, pos + 1, count>();
+    }
+}
+
+template <typename DAG, Mte2SrcPolicy Policy, int pos, int at = 0, int count = 0>
+__aicore__ constexpr static inline int GetMte3Slot()
+{
+    if constexpr (at >= pos) {
+        return count;
+    } else if constexpr (IsMte3Producer<DAG, Policy, at>()) {
+        return GetMte3Slot<DAG, Policy, pos, at + 1, count + 1>();
+    } else {
+        return GetMte3Slot<DAG, Policy, pos, at + 1, count>();
+    }
+}
+
+template <typename DAG, typename Op, Mte2SrcPolicy Policy, int ConsumerPos>
+__aicore__ constexpr static inline int ResolveMte2SrcPos()
+{
+    if constexpr (!__aux::TypeIsFunBind<Op>::Value) {
+        return -1;
+    } else if constexpr (Vec::IsVecBrcOp<typename Op::Fun>::Value) {
+        if constexpr (Policy == Mte2SrcPolicy::Mte2AsMte3NoOpPass) {
+            using SrcOp = typename Op::InArgs::template At<0>;
+            return ResolveMte2SrcPos<DAG, SrcOp, Policy, ConsumerPos>();
+        } else {
+            return -1;
+        }
+    } else if constexpr (Vec::IsCopyInOp<typename Op::Fun>::Value) {
+        constexpr int prodPos = FindOpPos<typename DAG::FunList, Op>();
+        if constexpr (Policy == Mte2SrcPolicy::Strict) {
+            return (prodPos == ConsumerPos) ? prodPos : -1;
+        } else {
+            return IsMte2Producer<DAG, Policy, prodPos>() ? prodPos : -1;
+        }
+    } else {
+        return -1;
+    }
+}
+#endif
+
 } // namespace Base
 } // namespace Ops
 #endif // UTIL_NODE_H_

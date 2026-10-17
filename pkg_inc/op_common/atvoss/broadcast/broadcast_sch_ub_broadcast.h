@@ -73,6 +73,9 @@ public:
         int64_t axesIndices[BROADCAST_MAX_DIMS] = {0};
         BroadcastGetAxesIndices(axesIndices, tilingData->blockFormer * AscendC::GetBlockIdx(), tilingData->outputDims,
                                 tilingData->ubSplitAxis, tilingData->dimProductBeforeUbInner);
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        SetLoopSyncFlag<BroadcastBaseSch<BrcDag, false, R>::Mte2Count, BroadcastBaseSch<BrcDag, false, R>::Mte3Count>();
+#endif
         for (int64_t ubLoopIdx = 0; ubLoopIdx < ubLoopNum_; ubLoopIdx++) {
             this->vBrcIndex_ = 0;
             cBrcIndex_ = 0;
@@ -87,6 +90,9 @@ public:
             // ub整循环处理的元素个数
             Run<0, false>(ubSplitSize, axesIndices, ubLoopIdx, ubLoopIdx & 1);
         }
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitLoopSyncFlag<BroadcastBaseSch<BrcDag, false, R>::Mte2Count, BroadcastBaseSch<BrcDag, false, R>::Mte3Count>();
+#endif
     }
 
 protected:
@@ -162,6 +168,88 @@ protected:
     }
 
     /**
+     * 跳过搬入广播输入时设置同步标志
+     * @tparam pos CopyInBrc在FunList内的索引
+     * @param pingPong DoubleBuffer中所处的ping/pong阶段
+     */
+    template <int pos>
+    __aicore__ inline void SetSkipBrcFlag(int32_t pingPong)
+    {
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        WaitFlag<HardEvent::MTE3_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        SetFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        if constexpr (IsMte3Producer<BrcDag, Mte2SrcPolicy::Strict, pos>()) {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#endif
+    }
+
+    /**
+     * 搬入广播输入数据
+     * @tparam inputType 输入数据类型
+     * @tparam pos CopyInBrc在FunList内的索引
+     * @tparam BufList 缓冲区ID列表类型
+     * @param inTensor 输入的LocalTensor对象
+     * @param globalTensor 输入的GlobalTensor对象
+     * @param inputLength 搬入的数据长度
+     * @param intList 输入/输出tensor所在的buffer id列表
+     * @param pingPong DoubleBuffer中所处的ping/pong阶段
+     */
+    template <typename inputType, int pos, typename BufList>
+    __aicore__ inline void CopyInBrcInput(LocalTensor<inputType>& inTensor, GlobalTensor<inputType>& globalTensor,
+                                          int64_t inputLength, const BufList& intList, int32_t pingPong)
+    {
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        WaitFlag<HardEvent::MTE3_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        Vec::CopyIn<inputType>(inTensor, globalTensor, inputLength);
+        SetFlag<HardEvent::MTE2_V>(this->template Mte2Evt<pos>(pingPong));
+#else
+        // Set getBuf
+        GetTensor<TPosition::VECIN>(intList[1]);
+        // Run copyIn
+        CopyInWithPreAlloc<inputType, true>(inTensor, globalTensor, inputLength);
+        // Set rlsBuf
+        ReleaseTensor<TPosition::VECIN>(intList[1]);
+#endif
+    }
+
+    /**
+     * 执行广播计算
+     * @tparam inputType 输入数据类型
+     * @tparam BufList 缓冲区ID列表类型
+     * @param outTensor 输出的LocalTensor对象
+     * @param inTensor 输入的LocalTensor对象
+     * @param realIdx 当前处理的索引
+     * @param intList 输入/输出tensor所在的buffer id列表
+     * @param pingPong DoubleBuffer中所处的ping/pong阶段
+     */
+    template <typename inputType, int pos, typename BufList>
+    __aicore__ inline void RunCvecBrc(LocalTensor<inputType>& outTensor, LocalTensor<inputType>& inTensor,
+                                      int64_t realIdx, const BufList& intList, int32_t pingPong)
+    {
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::MTE2_V>(this->template Mte2Evt<pos>(pingPong));
+        if constexpr (IsMte3Producer<BrcDag, Mte2SrcPolicy::Strict, pos>()) {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+        }
+        CvecBrc<inputType>(outTensor, inTensor, realIdx);
+        SetFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        if constexpr (IsMte3Producer<BrcDag, Mte2SrcPolicy::Strict, pos>()) {
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
+        GetTensor<TPosition::VECCALC>(intList[0]);
+        GetTensor<TPosition::VECCALC>(intList[1]);
+        CvecBrc<inputType>(outTensor, inTensor, realIdx);
+        ReleaseTensor<TPosition::VECCALC>(intList[1]);
+        ReleaseTensor<TPosition::VECCALC>(intList[0]);
+#endif
+    }
+
+    /**
      * CopyInAndVecBrc函数
      * @tparam Op CopyInBrc的Bind节点
      * @tparam pos CopyInBrc在FunList内的索引
@@ -180,6 +268,7 @@ protected:
         int64_t realIdx = (AscendC::GetBlockIdx() * tilingData->blockFormer + ubLoopIdx) % tilingData->ubOuter;
 
         if ((tilingData->inputBrcStrides[cBrcIndex_][tilingData->ubSplitAxis] == 0) && ubLoopIdx > 0 && realIdx > 0) {
+            SetSkipBrcFlag<pos>(pingPong);
             cBrcIndex_++;
             return;
         }
@@ -190,7 +279,6 @@ protected:
 #ifndef __CCE_KT_TEST__
         inTensor.SetBufferLen(this->blockEleNum_);
 #endif
-        GlobalTensor<inputType> globalTensor;
         int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingData->inputBrcStrides[cBrcIndex_],
                                                 tilingData->ubSplitAxis, tilingData->ubFormer);
         int64_t inputLength = copyInBrcInputLength[cBrcIndex_][1];
@@ -201,25 +289,17 @@ protected:
                                                                copyInBrcInputLength[cBrcIndex_][0];
         }
 
+        GlobalTensor<inputType> globalTensor;
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ inputType*>(this->inGm_[input::Pos] + gmOffset * sizeof(inputType)));
-        // Set getBuf
-        GetTensor<TPosition::VECIN>(intList[1]);
-        // Run copyIn
-        CopyInWithPreAlloc<inputType, true>(inTensor, globalTensor, inputLength);
-        // Set rlsBuf
-        ReleaseTensor<TPosition::VECIN>(intList[1]);
+        CopyInBrcInput<inputType, pos, decltype(intList)>(inTensor, globalTensor, inputLength, intList, pingPong);
 
         LocalTensor<inputType> outTensor = this->tensorPool_[intList[0] * this->blockLen_]
                                                .template ReinterpretCast<inputType>();
 #ifndef __CCE_KT_TEST__
         outTensor.SetBufferLen(this->blockEleNum_);
 #endif
-        GetTensor<TPosition::VECCALC>(intList[0]);
-        GetTensor<TPosition::VECCALC>(intList[1]);
-        CvecBrc<inputType>(outTensor, inTensor, realIdx);
-        ReleaseTensor<TPosition::VECCALC>(intList[1]);
-        ReleaseTensor<TPosition::VECCALC>(intList[0]);
+        RunCvecBrc<inputType, pos, decltype(intList)>(outTensor, inTensor, realIdx, intList, pingPong);
         cBrcIndex_++;
     }
 

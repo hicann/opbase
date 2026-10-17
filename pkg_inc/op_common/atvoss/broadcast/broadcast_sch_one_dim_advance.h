@@ -26,7 +26,11 @@
 namespace Ops {
 namespace Base {
 template <class ElemDag>
-class BroadcastOneDimAdvanceSch {
+class BroadcastOneDimAdvanceSch
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+    : public PerBufferFlagSync<ElemDag, Mte2SrcPolicy::Mte2AsMte3NoOpPass>
+#endif
+{
 public:
     __aicore__ inline explicit BroadcastOneDimAdvanceSch(
         __tiling_data_ptr__ BroadcastOneDimTilingDataAdvance* baseTilingData)
@@ -81,6 +85,9 @@ public:
         uint64_t offset = 0;
         uint64_t i = 0;
         isFirstScalarTime = true;
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        SetLoopSyncFlag<Mte2Count, Mte3Count>();
+#endif
         for (; i < blockLoopNum - 1; i++) {
             if (isFirstScalarTime && i > 1) {
                 isFirstScalarTime = false;
@@ -93,6 +100,9 @@ public:
 
         // ub尾循环处理的元素个数
         Run<0>(offset, ubTailNum, i & 1);
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitLoopSyncFlag<Mte2Count, Mte3Count>();
+#endif
     }
     /**
      * 设置DAG图上Var类型PlaceHolder的值
@@ -203,37 +213,97 @@ protected:
 #ifndef __CCE_KT_TEST__
         inTensor.SetBufferLen(blockEleLen);
 #endif
-        GlobalTensor<inputType> globalTensor;
 
         int32_t inputIdx = 1 << input::Pos;
         bool isScalar = tilingData->scalarFlag & inputIdx;
         if (isScalar) {
-            if (isFirstScalarTime) {
-                globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(inGm[input::Pos].GetPhyAddr(0)));
-#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
-                AscendC::WaitPreTaskEnd<false>();
-#endif
-                inputType scalar = globalTensor.GetValue(0);
-
-                GetTensor<TPosition::VECCALC>(bufId);
-                if constexpr (std::is_same_v<inputType, double>) {
-                    Vec::Duplicate(inTensor.template ReinterpretCast<int64_t>(),
-                                   *reinterpret_cast<const int64_t*>(&scalar), tileLength);
-                } else {
-                    Vec::Duplicate(inTensor, scalar, tileLength);
-                }
-                ReleaseTensor<TPosition::VECCALC>(bufId);
-            }
+            CopyInScalar<input, inputType, pos>(inTensor, bufId, tileLength, pingPong);
         } else {
+            GlobalTensor<inputType> globalTensor;
             globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(
                 inGm[input::Pos].GetPhyAddr(CalcBlockOffset<inputType>() + offset * sizeof(inputType))));
-            // Set getBuf
-            GetTensor<TPosition::VECIN>(bufId);
-            // Run copyIn
-            CopyInWithPreAlloc<inputType, true>(inTensor, globalTensor, tileLength);
-            // Set rlsBuf
-            ReleaseTensor<TPosition::VECIN>(bufId);
+            CopyInVector<inputType, pos>(inTensor, bufId, globalTensor, tileLength, pingPong);
         }
+    }
+
+        /**
+     * 搬入Scalar输入，首次执行时将标量值填充到UB
+     * @tparam input 输入Holder类型
+     * @tparam inputType 输入数据类型
+     * @tparam pos CopyIn在FunList内的索引
+     * @param inTensor 输入的LocalTensor对象
+     * @param bufId 输入tensor所在的buffer id（仅作物理地址，不作 eventID）
+     * @param tileLength 当前处理的数据块大小
+     * @param pingPong DoubleBuffer中所处的ping/pong阶段
+     */
+    template <typename input, typename inputType, int pos>
+    __aicore__ inline void CopyInScalar(LocalTensor<inputType>& inTensor, uint8_t bufId, uint64_t tileLength,
+                                       int32_t pingPong)
+    {
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        WaitFlag<HardEvent::MTE3_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        if (isFirstScalarTime) {
+            GlobalTensor<inputType> globalTensor;
+            globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(inGm[input::Pos].GetPhyAddr(0)));
+            inputType scalar = globalTensor.GetValue(0);
+            if constexpr (std::is_same_v<inputType, double>) {
+                Vec::Duplicate(inTensor.template ReinterpretCast<int64_t>(),
+                               *reinterpret_cast<const int64_t*>(&scalar), tileLength);
+            } else {
+                Vec::Duplicate(inTensor, scalar, tileLength);
+            }
+        }
+        SetFlag<HardEvent::MTE2_V>(this->template Mte2Evt<pos>(pingPong));
+#else
+        if (isFirstScalarTime) {
+            GlobalTensor<inputType> globalTensor;
+            globalTensor.SetGlobalBuffer(reinterpret_cast<__gm__ inputType*>(inGm[input::Pos].GetPhyAddr(0)));
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202)
+            AscendC::WaitPreTaskEnd<false>();
+#endif
+            inputType scalar = globalTensor.GetValue(0);
+
+            GetTensor<TPosition::VECCALC>(bufId);
+            if constexpr (std::is_same_v<inputType, double>) {
+                Vec::Duplicate(inTensor.template ReinterpretCast<int64_t>(),
+                               *reinterpret_cast<const int64_t*>(&scalar), tileLength);
+            } else {
+                Vec::Duplicate(inTensor, scalar, tileLength);
+            }
+            ReleaseTensor<TPosition::VECCALC>(bufId);
+        }
+#endif
+    }
+
+    /**
+     * 搬入Vector输入
+     * @tparam inputType 输入数据类型
+     * @tparam pos CopyIn在FunList内的索引
+     * @param inTensor 输入的LocalTensor对象
+     * @param bufId 输入tensor所在的buffer id（仅作物理地址，不作 eventID）
+     * @param globalTensor 输入的GlobalTensor对象
+     * @param tileLength 当前处理的数据块大小
+     * @param pingPong DoubleBuffer中所处的ping/pong阶段
+     */
+    template <typename inputType, int pos>
+    __aicore__ inline void CopyInVector(LocalTensor<inputType>& inTensor, uint8_t bufId,
+                                        GlobalTensor<inputType>& globalTensor, uint64_t tileLength,
+                                        int32_t pingPong)
+    {
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        WaitFlag<HardEvent::V_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        WaitFlag<HardEvent::MTE3_MTE2>(this->template Mte2Evt<pos>(pingPong));
+        Vec::CopyIn<inputType>(inTensor, globalTensor, tileLength);
+        SetFlag<HardEvent::MTE2_V>(this->template Mte2Evt<pos>(pingPong));
+#else
+        // Set getBuf
+        GetTensor<TPosition::VECIN>(bufId);
+        // Run copyIn
+        CopyInWithPreAlloc<inputType, true>(inTensor, globalTensor, tileLength);
+        // Set rlsBuf
+        ReleaseTensor<TPosition::VECIN>(bufId);
+#endif
     }
 
     /**
@@ -272,12 +342,21 @@ protected:
         GlobalTensor<inputType> globalTensor;
         globalTensor.SetGlobalBuffer(
             reinterpret_cast<__gm__ inputType*>(outGm[output::Pos].GetPhyAddr(offset * sizeof(inputType))));
-        // Set getBuf
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        using effProducer = typename EffectiveProducer<input, FlagPolicy>::Type;
+        constexpr int producerPos = FindOpPos<typename ElemDag::FunList, effProducer>();
+        WaitFlag<HardEvent::V_MTE3>(this->template Mte3Evt<producerPos>(pingPong));
+        Vec::CopyOut<inputType>(globalTensor, localTensor, tileLength);
+        SetFlag<HardEvent::MTE3_V>(this->template Mte3Evt<producerPos>(pingPong));
+        SetMte3Mte2Flags<Mte2Count>(pingPong);
+#else
+            // Set getBuf
         GetTensor<TPosition::VECOUT>(bufId);
         // Run func
         Vec::CopyOut<inputType>(globalTensor, localTensor, tileLength);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECOUT>(bufId);
+#endif
     }
 
     /**
@@ -472,12 +551,24 @@ protected:
 #ifndef __CCE_KT_TEST__
         outTensor.SetBufferLen(blockEleLen);
 #endif
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+        this->template WaitMte2VFlags<Op, pos, 0>(pingPong);
+        if constexpr (IsMte3Producer<ElemDag, FlagPolicy, pos>()) {
+            WaitFlag<HardEvent::MTE3_V>(this->template Mte3Evt<pos>(pingPong));
+        }
+        RunOp<OutputType, Op, pos>(outTensor, tileLength, pingPong);
+        this->template SetVMte2Flags<Op, pos, 0>(pingPong);
+        if constexpr (IsMte3Producer<ElemDag, FlagPolicy, pos>()) {
+            SetFlag<HardEvent::V_MTE3>(this->template Mte3Evt<pos>(pingPong));
+        }
+#else
         // Set getBuf
         GetTensor<TPosition::VECCALC>(bufId);
         // Run Op
         RunOp<OutputType, Op, pos>(outTensor, tileLength, pingPong);
         // Set rlsBuf
         ReleaseTensor<TPosition::VECCALC>(bufId);
+#endif
     }
 
     /**
@@ -550,6 +641,19 @@ private:
     constexpr static int inputNums = ElemDag::InputSize;
     constexpr static int outputNums = ElemDag::OutputSize;
     constexpr static auto bufferIds = ElemDag::template GetBufferIds<true, true>();
+
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3003 || __NPU_ARCH__ == 3113)
+    constexpr static Mte2SrcPolicy FlagPolicy = Mte2SrcPolicy::Mte2AsMte3NoOpPass;
+
+    using FlagSyncBase = PerBufferFlagSync<ElemDag, FlagPolicy>;
+    using FlagSyncBase::Mte2Count;
+    using FlagSyncBase::Mte3Count;
+    using FlagSyncBase::Mte2Evt;
+    using FlagSyncBase::Mte3Evt;
+    using FlagSyncBase::WaitMte2VFlags;
+    using FlagSyncBase::SetVMte2Flags;
+#endif
+
     GlobalTensor<uint8_t> inGm[inputNums];
     GlobalTensor<uint8_t> outGm[outputNums];
     LocalTensor<uint8_t> tensorPool;

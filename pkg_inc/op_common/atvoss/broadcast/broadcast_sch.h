@@ -28,6 +28,7 @@ namespace Base {
 /*
   算子接口模板化
   scheMode 模板内部的tilingkey
+  KirinX90/Kirin9030平台采用SetFlag/WaitFlag支持；不支持NDDMA模板；由于EventID限制，最多支持4输入
 */
 // 模板实现
 template <uint64_t schMode, class BrcDag>
