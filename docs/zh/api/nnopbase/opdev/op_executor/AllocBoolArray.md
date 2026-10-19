@@ -30,7 +30,7 @@ aclBoolArray *AllocBoolArray(const bool *value, uint64_t size)
 ```cpp
 // 申请一个长度为10的aclBoolArray
 void Func(aclOpExecutor *executor) {
-    bool myArray[10];
+    bool myArray[10] = {};
     aclBoolArray *array = executor->AllocBoolArray(myArray, 10);
 }
 ```

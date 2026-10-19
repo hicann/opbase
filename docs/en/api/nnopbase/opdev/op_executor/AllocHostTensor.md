@@ -109,7 +109,7 @@ The input pointer cannot be null.
 ```cpp
 // Allocate a tensor on the host and copy the data in myArray to the tensor.
 void Func(aclOpExecutor *executor) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     aclTensor *tensor = executor->AllocHostTensor(myArray, 10, DT_INT64);
 }
 ```

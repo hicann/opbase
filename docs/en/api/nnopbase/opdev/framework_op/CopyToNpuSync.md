@@ -30,7 +30,7 @@ The input pointer cannot be null.
 ```cpp
 // Initialize a tensor on the host side and copy it to dst, which is a tensor on the device side.
 void Func(aclOpExecutor *executor) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     auto src = executor->ConvertToTensor(myArray, 10, DT_INT64);
     auto dst = CopyToNpuSync(src, executor);
 }

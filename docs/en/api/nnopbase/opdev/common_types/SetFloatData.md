@@ -31,7 +31,7 @@ The input pointer cannot be null.
 ```cpp
 // Initialize a float memory block and assign the values to the first 10 elements of the input.
 void Func(aclTensor *input) {
-    float myArray[10];
+    float myArray[10] = {};
     input->SetFloatData(myArray, 10, DT_FLOAT);
 }
 ```

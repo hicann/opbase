@@ -30,7 +30,7 @@ aclIntArray *AllocIntArray(const int64_t *value, uint64_t size)
 ```cpp
 // 申请一个长度为10的aclIntArray
 void Func(aclOpExecutor *executor) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     aclIntArray *array = executor->AllocIntArray(myArray, 10);
 }
 ```

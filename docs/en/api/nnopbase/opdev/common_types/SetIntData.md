@@ -31,7 +31,7 @@ The input pointer cannot be null.
 ```cpp
 // Initialize an int64 memory block and assign the value to the first 10 elements of the input.
 void Func(aclTensor *input) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     input->SetIntData(myArray, 10, DT_INT64);
 }
 ```

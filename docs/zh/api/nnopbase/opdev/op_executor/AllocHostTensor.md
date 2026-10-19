@@ -109,7 +109,7 @@
 ```cpp
 // 申请一个host侧tensor，并将myArray中的数据拷贝到tensor中
 void Func(aclOpExecutor *executor) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     aclTensor *tensor = executor->AllocHostTensor(myArray, 10, DT_INT64);
 }
 ```

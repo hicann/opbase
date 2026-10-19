@@ -30,7 +30,7 @@ aclFloatArray *AllocFloatArray(const float *value, uint64_t size)
 ```cpp
 // 申请一个长度为10的aclFloatArray
 void Func(aclOpExecutor *executor) {
-    float myArray[10];
+    float myArray[10] = {};
     aclFloatArray *array = executor->AllocFloatArray(myArray, 10);
 }
 ```

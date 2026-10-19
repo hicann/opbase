@@ -30,7 +30,7 @@ const aclTensor *CopyToNpuSync(const aclTensor *src, aclOpExecutor *executor)
 ```cpp
 // 初始化一个host侧tensor，并拷贝到dst，dst为一个device侧tensor
 void Func(aclOpExecutor *executor) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     auto src = executor->ConvertToTensor(myArray, 10, DT_INT64);
     auto dst = CopyToNpuSync(src, executor);
 }

@@ -30,7 +30,7 @@ The input pointer cannot be null.
 ```cpp
 // Allocate an aclIntArray with a length of 10.
 void Func(aclOpExecutor *executor) {
-    int64_t myArray[10];
+    int64_t myArray[10] = {};
     aclIntArray *array = executor->AllocIntArray(myArray, 10);
 }
 ```
