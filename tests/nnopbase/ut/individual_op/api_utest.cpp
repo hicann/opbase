@@ -2896,6 +2896,41 @@ TEST_F(NnopbaseUnitTest, NnopbaseAddScalarInputWithErrorDtype)
     NnopbaseUnsetEnvAndClearFolder();
 }
 
+TEST_F(NnopbaseUnitTest, NnopbaseAddScalarInputWithInvalidSrcIndex)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+
+    void* executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+
+    const char* opType = "bninference_d_kernel";
+    char inputDesc[] = {1, 1, 0, 0, 1};
+    char outputDesc[] = {1};
+    char attrDesc[] = {};
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    ASSERT_NE(executor, nullptr);
+
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    int32_t scalarValue = 5;
+    auto* scalar = aclCreateScalar(&scalarValue, aclDataType::ACL_INT32);
+    auto* scalarList = aclCreateScalarList(&scalar, 1);
+
+    (void)NnopbaseAddInput(executor, tensor, 0);
+    (void)NnopbaseAddInput(executor, tensor, 1);
+    ASSERT_EQ(NnopbaseAddScalarInput(executor, scalar, 2, 100, ge::DT_UNDEFINED), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseAddScalarInput(executor, scalar, 2, -2, ge::DT_UNDEFINED), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseAddScalarListInput(executor, scalarList, 2, 100, ge::DT_UNDEFINED), ACLNN_ERR_PARAM_INVALID);
+    ASSERT_EQ(NnopbaseAddScalarListInput(executor, scalarList, 2, -2, ge::DT_UNDEFINED), ACLNN_ERR_PARAM_INVALID);
+
+    NnopbaseExecutorGcSpace(executorSpace);
+    aclDestroyScalarList(scalarList);
+    aclDestroyTensor(tensor);
+    NnopbaseUnsetEnvAndClearFolder();
+}
+
 aclrtStream mainStream;
 aclrtStream subStream;
 aclrtEvent eventA;

@@ -1057,6 +1057,11 @@ aclnnStatus NnopbaseAddScalarInput(void* executor, const aclScalar* scalar, cons
     NnopbaseLogScalarInfo("AddScalarInput", scalar, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
+    if ((srcIndex != -1) && (static_cast<size_t>(srcIndex) >= tensors->paramDescs.instances.size())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Add scalar input failed. srcIndex[%d] must be -1 or smaller than[%zu].",
+                srcIndex, tensors->paramDescs.instances.size());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].scalar = scalar;
         tensors->paramDescs.instances[index].scalarDtype = dtype;
@@ -1077,6 +1082,11 @@ aclnnStatus NnopbaseAddScalarListInput(void* executor, const aclScalarList* scal
     NnopbaseLogScalarListInfo("AddScalarListInput", scalarList, index);
     NnopbaseExecutor* nnopExecutor = PtrCastTo<NnopbaseExecutor>(executor);
     const auto tensors = &nnopExecutor->ownArgs.inputs;
+    if ((srcIndex != -1) && (static_cast<size_t>(srcIndex) >= tensors->paramDescs.instances.size())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Add scalar list input failed. srcIndex[%d] must be -1 or smaller than[%zu].",
+                srcIndex, tensors->paramDescs.instances.size());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
     if (NnopbaseIsV2CacheKeyEnabled(nnopExecutor)) {
         tensors->paramDescs.instances[index].scalarList = scalarList;
         tensors->paramDescs.instances[index].scalarDtype = dtype;
