@@ -180,7 +180,7 @@ TEST_F(CommonTypesTest, TestAclScalar_ConvertCustomFloatTo)
     // --- Float8E8M0 (MX缩放因子, 8位纯指数, 无符号, value=2^(exp-127)) ---
     // OCP: 1.0f → exp=127, value = 2^(127-127) = 1.0 (0x7F)
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E8M0, 1.0f);
-    // OCP: 0.0f → 0x00 (zero)
+    // OCP: 0.0f → 0x00；该码表示最小正值 2^-127（E8M0 无零），往返后为 2^-127
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E8M0, 0.0f);
     // OCP: 2.0f → exp=128, value = 2^(128-127) = 2.0 (0x80)
     CHECK_CUSTOM_FLOAT_SCALAR_TO(op::Float8E8M0, 2.0f);
@@ -322,11 +322,12 @@ TEST_F(CommonTypesTest, TestAclScalar_ConvertCustomFloatTo_OcpBitPatterns)
         auto idResult = scalar.To<op::Float8E8M0>();
         EXPECT_EQ(bits, idResult.value);
     }
-    // 0x00 = zero
+    // 0x00 = 2^-127（E8M0 无零编码，0x00 是最小正值）
     {
         uint8_t bits = 0x00;
         aclScalar scalar(&bits, op::DataType::DT_FLOAT8_E8M0);
-        EXPECT_FLOAT_EQ(0.0f, scalar.ToFloat());
+        EXPECT_FLOAT_EQ(5.877471754111438e-39f, scalar.ToFloat());
+        // ToBool 的既有语义为 |value| >= float epsilon，2^-127 低于该阈值
         EXPECT_FALSE(scalar.ToBool());
     }
     // 0x80 = exp(128) → 2^(128-127) = 2.0

@@ -94,15 +94,22 @@ TEST_F(TestFloat8E4M3, FloatConversion)
 
 TEST_F(TestFloat8E4M3, OverflowClamp)
 {
-    // E4M3 has no infinity, overflow should clamp to max value (448)
+    // E4M3 无无穷大编码，采用饱和(SAT)约定：溢出与 ±Inf 一律钳制到最大有限值 ±448。
+    // 依据: OCP OFP8/MX v1.0 两种溢出模式均合规；此处采用其 SAT（饱和）模式。
     op::Float8E4M3FN large(1000.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(large), 448.0f);
+    EXPECT_EQ(large.value, 0x7E);
 
     op::Float8E4M3FN inf(std::numeric_limits<float>::infinity());
-    EXPECT_FLOAT_EQ(static_cast<float>(inf), 448.0f);
+    EXPECT_EQ(inf.value, 0x7E);
 
     op::Float8E4M3FN neg_inf(-std::numeric_limits<float>::infinity());
-    EXPECT_FLOAT_EQ(static_cast<float>(neg_inf), -448.0f);
+    EXPECT_EQ(neg_inf.value, 0xFE);
+
+    // NaN 仍为 NaN（保号）
+    op::Float8E4M3FN nan_val(std::nanf(""));
+    EXPECT_TRUE(nan_val.IsNaN());
+    EXPECT_EQ(nan_val.value, 0x7F);
 }
 
 TEST_F(TestFloat8E4M3, ArithmeticOperations)
@@ -497,17 +504,19 @@ protected:
 
 TEST_F(TestFloat8E8M0, DefaultConstructor)
 {
+    // E8M0 无零编码：0x00 表示最小正值 2^-127
     op::Float8E8M0 val;
     EXPECT_EQ(val.value, 0);
-    EXPECT_TRUE(val.IsZero());
-    EXPECT_FLOAT_EQ(static_cast<float>(val), 0.0f);
+    EXPECT_FALSE(val.IsZero());
+    EXPECT_FLOAT_EQ(static_cast<float>(val), 5.877471754111438e-39f);
 }
 
 TEST_F(TestFloat8E8M0, FromBits)
 {
-    // 0x00 = 0 (special case)
-    op::Float8E8M0 zero(0x00, op::Float8E8M0::FromBits());
-    EXPECT_TRUE(zero.IsZero());
+    // 0x00 = 2^-127（E8M0 无零编码）
+    op::Float8E8M0 min_val(0x00, op::Float8E8M0::FromBits());
+    EXPECT_FALSE(min_val.IsZero());
+    EXPECT_FLOAT_EQ(static_cast<float>(min_val), 5.877471754111438e-39f);
 
     // 0x7F = 2^0 = 1.0 (exp=127)
     op::Float8E8M0 one(0x7F, op::Float8E8M0::FromBits());
@@ -640,15 +649,15 @@ TEST_F(TestFloat8E8M0, ComparisonOperations)
 TEST_F(TestFloat8E8M0, StdFunctions)
 {
     op::Float8E8M0 val(4.0f);
-    // E8M0 has no infinity encoding, infinity input clamps to max value (2^127)
+    // E8M0 无 Infinity 编码：+Inf 映射为 NaN
     op::Float8E8M0 inf_input(std::numeric_limits<float>::infinity());
     op::Float8E8M0 zero(0.0f);
     op::Float8E8M0 nan_input(std::nanf(""));
 
     // E8M0 represents powers of 2 only, so 4.0 is valid
     EXPECT_TRUE(std::isfinite(val) || val.value != 0);
-    // E8M0 has no infinity, so isinf always returns false
-    EXPECT_FALSE(std::isinf(inf_input)); // infinity input is clamped to max, not stored as infinity
+    EXPECT_FALSE(std::isinf(inf_input)); // E8M0 无 Infinity 编码
+    EXPECT_TRUE(std::isnan(inf_input));  // +Inf 按 NaN 处理
     EXPECT_FALSE(std::isinf(val));
     EXPECT_FALSE(std::isnan(val));
     EXPECT_FLOAT_EQ(std::abs(static_cast<float>(val)), 4.0f);
@@ -662,7 +671,7 @@ TEST_F(TestFloat8E8M0, NumericLimits)
     float max_val = static_cast<float>(std::numeric_limits<op::Float8E8M0>::max());
     EXPECT_GT(max_val, 1e38f);
 
-    // min = 2^-126
+    // min = 2^-127
     float min_val = static_cast<float>(std::numeric_limits<op::Float8E8M0>::min());
     EXPECT_LT(min_val, 1e-37f);
     EXPECT_GT(min_val, 0.0f);
@@ -678,16 +687,19 @@ TEST_F(TestFloat8E8M0, OutputStream)
 
 TEST_F(TestFloat8E8M0, SpecialValues)
 {
-    // Zero
-    op::Float8E8M0 zero(0.0f);
-    EXPECT_TRUE(zero.IsZero());
+    // 0 输入映射到 0x00；该码在规范中表示 2^-127（E8M0 无零）
+    op::Float8E8M0 zero_input(0.0f);
+    EXPECT_EQ(zero_input.value, 0x00);
+    EXPECT_FALSE(zero_input.IsZero());
 
-    // E8M0 has NO infinity encoding - infinity input clamps to max value (2^127)
+    // E8M0 无 Infinity 编码：+Inf 与顶部溢出均映射为 NaN
     op::Float8E8M0 inf_input(std::numeric_limits<float>::infinity());
-    EXPECT_FALSE(inf_input.IsInf()); // E8M0 has no infinity encoding
-    EXPECT_FALSE(inf_input.IsNaN());
-    // Infinity input should clamp to max value (0xFE = 2^127)
-    EXPECT_GT(static_cast<float>(inf_input), 1e38f);
+    EXPECT_TRUE(inf_input.IsNaN());
+    EXPECT_EQ(inf_input.value, 0xFF);
+
+    op::Float8E8M0 neg_inf_input(-std::numeric_limits<float>::infinity());
+    EXPECT_TRUE(neg_inf_input.IsNaN());
+    EXPECT_EQ(neg_inf_input.value, 0xFF);
 
     // NaN
     op::Float8E8M0 nan_val(std::nanf(""));
@@ -712,7 +724,7 @@ TEST(Float8CrossType, DifferentFormats)
     op::Float8E5M2 e5m2_large(400.0f);
     EXPECT_NEAR(static_cast<float>(e5m2_large), 400.0f, 50.0f);
 
-    // E4M3 should clamp large values
+    // E4M3 溢出饱和到最大有限值 448
     op::Float8E4M3FN e4m3_overflow(500.0f);
     EXPECT_FLOAT_EQ(static_cast<float>(e4m3_overflow), 448.0f);
 

@@ -13,14 +13,9 @@
 #include <cmath>
 #include <cstdint>
 
+#include "float_common_utils.h"
+
 namespace {
-// ============= FP32 format constants =============
-constexpr int FP32_EXP_BIAS_VAL = 127;
-constexpr int FP32_MAN_LEN_VAL = 23;
-constexpr int FP32_SIGN_SHIFT_VAL = 31;
-constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
 
 // ============= E3M2 format constants (OCP MX MXFP6) =============
 constexpr int EXP_BITS = 3;
@@ -30,8 +25,9 @@ constexpr int SIGN_SHIFT = 5;
 constexpr uint8_t SIGN_MASK = 0x20;      // 1 000 00 (bit 5)
 constexpr uint8_t EXP_MASK = 0x1C;       // 0 111 00 (bits 4-2)
 constexpr uint8_t MAN_MASK = 0x03;       // 0 000 11 (bits 1-0)
-constexpr uint8_t MAX_EXP = 0x07;        // 111
 constexpr uint8_t ABS_VALUE_MASK = 0x1F; // 0 11111 (exclude sign bit)
+constexpr op::internal::SmallFloatFormat FLOAT6_E3M2_FORMAT{EXP_BITS, MAN_BITS, EXP_BIAS,
+                                                            op::internal::SmallFloatSpecialEncoding::NONE};
 } // anonymous namespace
 
 namespace op {
@@ -107,73 +103,21 @@ Float6E3M2 Float6E3M2::FloatToFloat6E3M2(float f)
     // OCP MX E3M2 has no NaN, clamp NaN to positive max value (28.0)
     // NaN has no meaningful sign, so always clamp to +28.0
     if (std::isnan(f)) {
-        // 0x1F = 0 111 11 = 2^4 * 1.75 = 28.0
         return Float6E3M2(HIGHEST_VALUE, FromBits());
     }
 
     FP32 fp32;
     fp32.f = f;
-    uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1;
-    uint32_t exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
-    uint32_t man = fp32.u & FP32_MAN_MASK_23BIT;
-
-    if (exp == 0 && man == 0) {
-        // Zero
-        return Float6E3M2(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
-    }
+    const uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1U;
 
     if (std::isinf(f)) {
-        // E3M2 has no infinity, clamp to max value
-        // 0x1F = 0 111 11 = +28.0, 0x3F = 1 111 11 = -28.0
+        // E3M2 has no infinity, clamp to max value (preserving sign)
         return Float6E3M2(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
     }
 
-    // Calculate E3M2 exponent
-    int32_t fp6Exp;
-    uint32_t fp6Man;
-
-    if (exp == 0) {
-        // Denormalized FP32 input
-        fp6Exp = 1 - FP32_EXP_BIAS_VAL + EXP_BIAS;
-        while ((man & FP32_IMPLICIT_1_VAL) == 0) {
-            man <<= 1;
-            fp6Exp--;
-        }
-        man &= FP32_MAN_MASK_23BIT;
-    } else {
-        fp6Exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS_VAL + EXP_BIAS;
-    }
-
-    // Round mantissa from 23 bits to 2 bits with round-to-nearest-even
-    int mantissaShift = FP32_MAN_LEN_VAL - MAN_BITS;
-    uint32_t manRoundBit = (man >> (mantissaShift - 1)) & 1;
-    uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) != 0 ? 1 : 0;
-    uint32_t manLsb = (man >> mantissaShift) & 1;
-
-    fp6Man = man >> mantissaShift;
-    if ((manRoundBit != 0) && ((manStickyBits != 0) || (manLsb != 0))) {
-        fp6Man++;
-        if (fp6Man > MAN_MASK) {
-            fp6Man = 0;
-            fp6Exp++;
-        }
-    }
-
-    // Handle overflow/underflow
-    if (fp6Exp <= 0) {
-        if (fp6Exp < -MAN_BITS) {
-            return Float6E3M2(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
-        }
-        fp6Man = (fp6Man | (1 << MAN_BITS)) >> (1 - fp6Exp);
-        fp6Exp = 0;
-    } else if (fp6Exp >= static_cast<int32_t>(MAX_EXP + 1)) {
-        // Overflow - for E3M2, max exp is 7
-        // OCP MX E3M2 has no NaN, clamp to max value (preserving sign)
-        // 0x1F = +28.0, 0x3F = -28.0
-        return Float6E3M2(static_cast<uint8_t>((sign << SIGN_SHIFT) | HIGHEST_VALUE), FromBits());
-    }
-
-    uint8_t result = static_cast<uint8_t>((sign << SIGN_SHIFT) | (fp6Exp << MAN_BITS) | (fp6Man & MAN_MASK));
+    // 有限值（含 ±0）：按 roundTiesToEven 统一舍入，溢出钳制到最大幅值
+    const uint8_t result = internal::ConvertFiniteFp32ToSmallFloat(fp32.u, FLOAT6_E3M2_FORMAT,
+                                                                   internal::SmallFloatOverflowAction::SATURATE_MAX);
     return Float6E3M2(result, FromBits());
 }
 

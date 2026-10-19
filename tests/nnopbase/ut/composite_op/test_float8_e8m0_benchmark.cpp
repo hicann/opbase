@@ -152,15 +152,29 @@ TEST_F(Float8E8M0Benchmark, OcpSpec_MaxMin)
     EXPECT_EQ(max_val.value, 0xFE);
     EXPECT_FLOAT_EQ(static_cast<float>(max_val), std::ldexp(1.0f, 127));
 
-    // 0x00 = Zero
-    Float8E8M0 zero_val = FromBits(0x00);
-    EXPECT_EQ(zero_val.value, 0x00);
-    EXPECT_FLOAT_EQ(static_cast<float>(zero_val), 0.0f);
+    // 0x00 = 2^-127（E8M0 无零编码，0x00 是最小正值）
+    Float8E8M0 min_val = FromBits(0x00);
+    EXPECT_EQ(min_val.value, 0x00);
+    EXPECT_FALSE(min_val.IsZero());
+    EXPECT_FLOAT_EQ(static_cast<float>(min_val), std::ldexp(1.0f, -127));
 
-    // 0x01 = 2^(-126) (min positive value)
-    Float8E8M0 min_pos = FromBits(0x01);
-    EXPECT_EQ(min_pos.value, 0x01);
-    EXPECT_FLOAT_EQ(static_cast<float>(min_pos), std::ldexp(1.0f, -126));
+    // 0x01 = 2^(-126)
+    Float8E8M0 next_val = FromBits(0x01);
+    EXPECT_EQ(next_val.value, 0x01);
+    EXPECT_FLOAT_EQ(static_cast<float>(next_val), std::ldexp(1.0f, -126));
+}
+
+TEST_F(Float8E8M0Benchmark, OverflowToNaN)
+{
+    // E8M0 仅有 NaN 编码：+Inf 与顶部溢出均 → NaN
+    Float8E8M0 inf_val(std::numeric_limits<float>::infinity());
+    EXPECT_EQ(inf_val.value, 0xFF);
+    EXPECT_TRUE(inf_val.IsNaN());
+
+    // 3e38 的指数在 RNE 后进位到 255，超出 E8M0 最大指数 254
+    Float8E8M0 large_val(3.0e38f);
+    EXPECT_EQ(large_val.value, 0xFF);
+    EXPECT_TRUE(large_val.IsNaN());
 }
 
 TEST_F(Float8E8M0Benchmark, OcpSpec_TypicalBitPatterns)

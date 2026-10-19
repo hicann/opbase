@@ -45,6 +45,17 @@ static constexpr BenchmarkCase<Float8E4M3FN> kE4M3FN_BoundaryCases[] = {
     {0.001953125f, 0x01, 0.001953125f, 0.0f, "min subnormal", "OCP"},
     {448.0f, 0x7E, 448.0f, 0.0f, "max positive", "OCP"},
     {-448.0f, 0xFE, -448.0f, 0.0f, "min negative", "OCP"},
+    // 次正规区须按 RNE 舍入，最小 LSB = 2^-9
+    {0.005f, 0x03, 0.005859375f, 0.0f, "subnormal RNE (2.56 LSB -> 3 LSB)", "OCP"},
+    {0.015f, 0x08, 0.015625f, 0.0f, "subnormal rounds up to min normal", "OCP"},
+    // 顶档区：指数域 0x0F 是合法有限指数，仅尾数全 1 用于 NaN
+    {256.0f, 0x78, 256.0f, 0.0f, "top binade start", "OCP"},
+    {248.0f, 0x78, 256.0f, 0.0f, "top binade tie (248 -> 256)", "OCP"},
+    {300.0f, 0x79, 288.0f, 0.0f, "top binade", "OCP"},
+    {421.0f, 0x7D, 416.0f, 0.0f, "top binade", "OCP"},
+    {-248.0f, 0xF8, -256.0f, 0.0f, "top binade tie (-248 -> -256)", "OCP"},
+    {-300.0f, 0xF9, -288.0f, 0.0f, "top binade", "OCP"},
+    {-421.0f, 0xFD, -416.0f, 0.0f, "top binade", "OCP"},
 };
 
 // 特殊值测试用例
@@ -63,10 +74,11 @@ static constexpr BenchmarkCase<Float8E4M3FN> kE4M3FN_TypicalCases[] = {
     {7.0f, 0x4E, 7.0f, 0.0f, "seven", "OCP"},
 };
 
-// 溢出处理测试用例
+// 溢出处理测试用例：饱和(SAT)约定下溢出/±Inf 钳制到最大有限值 ±448
 static constexpr BenchmarkCase<Float8E4M3FN> kE4M3FN_OverflowCases[] = {
-    {1000.0f, 0x7E, 448.0f, 0.0f, "positive overflow clamp", "OCP"},
-    {-1000.0f, 0xFE, -448.0f, 0.0f, "negative overflow clamp", "OCP"},
+    {464.5f, 0x7E, 448.0f, 0.0f, "rounds into NaN slot -> saturate", "OCP"},
+    {1000.0f, 0x7E, 448.0f, 0.0f, "positive overflow -> saturate", "OCP"},
+    {-1000.0f, 0xFE, -448.0f, 0.0f, "negative overflow -> saturate", "OCP"},
 };
 
 // ============================================================================
@@ -134,13 +146,14 @@ TEST_F(Float8E4M3FNBenchmark, NaNHandling)
 
 TEST_F(Float8E4M3FNBenchmark, InfinityClamp)
 {
+    // E4M3FN 无无穷大编码，±Inf 按 OCP 的 SAT 模式钳制到 ±448
     Float8E4M3FN inf_val(std::numeric_limits<float>::infinity());
-    EXPECT_FLOAT_EQ(static_cast<float>(inf_val), 448.0f);
     EXPECT_EQ(inf_val.value, 0x7E);
+    EXPECT_FLOAT_EQ(static_cast<float>(inf_val), 448.0f);
 
     Float8E4M3FN neg_inf_val(-std::numeric_limits<float>::infinity());
-    EXPECT_FLOAT_EQ(static_cast<float>(neg_inf_val), -448.0f);
     EXPECT_EQ(neg_inf_val.value, 0xFE);
+    EXPECT_FLOAT_EQ(static_cast<float>(neg_inf_val), -448.0f);
 }
 
 // ============================================================================

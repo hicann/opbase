@@ -68,11 +68,9 @@ TEST_F(TestFloat4E2M1, FromBits)
     EXPECT_FLOAT_EQ(static_cast<float>(val_0x6), 4.0f);
 
     // 0x1 = min positive denorm (0 00 1)
-    // E2M1 denorm: value = 2^(-2) * man = 0.25 * 1 = 0.25
-    // Note: Implementation may round to nearest representable value
+    // E2M1 denorm: value = 2^(1-bias) * (man / 2^1) = 2^0 * (1/2) = 0.5
     op::Float4E2M1 min_denorm(0x1, op::Float4E2M1::FromBits());
-    // Check that it's a small positive value
-    EXPECT_GT(static_cast<float>(min_denorm), 0.0f);
+    EXPECT_FLOAT_EQ(static_cast<float>(min_denorm), 0.5f);
 }
 
 TEST_F(TestFloat4E2M1, FloatConversion)

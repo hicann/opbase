@@ -42,10 +42,17 @@ static Float6E3M2 FromBits(uint8_t bits) { return Float6E3M2(bits, Float6E3M2::F
 
 // 位布局: bit5=sign, bits4-2=exp(3bits), bits1-0=man(2bits), bias=3
 static constexpr BenchmarkCase<Float6E3M2> kE3M2_TypicalCases[] = {
-    {0.0f, 0x00, 0.0f, 0.0f, "zero", "OCP"},      {1.0f, 0x0C, 1.0f, 0.0f, "one", "OCP"},
-    {2.0f, 0x10, 2.0f, 0.0f, "two", "OCP"},       {4.0f, 0x14, 4.0f, 0.0f, "four", "OCP"},
-    {8.0f, 0x18, 8.0f, 0.0f, "eight", "OCP"},     {0.5f, 0x08, 0.5f, 0.0f, "half", "OCP"},
-    {0.25f, 0x04, 0.25f, 0.0f, "quarter", "OCP"}, {1.75f, 0x0F, 1.75f, 0.0f, "1.75", "OCP"},
+    {0.0f, 0x00, 0.0f, 0.0f, "zero", "OCP"},
+    {1.0f, 0x0C, 1.0f, 0.0f, "one", "OCP"},
+    {2.0f, 0x10, 2.0f, 0.0f, "two", "OCP"},
+    {4.0f, 0x14, 4.0f, 0.0f, "four", "OCP"},
+    {8.0f, 0x18, 8.0f, 0.0f, "eight", "OCP"},
+    {0.5f, 0x08, 0.5f, 0.0f, "half", "OCP"},
+    {0.25f, 0x04, 0.25f, 0.0f, "quarter", "OCP"},
+    {1.75f, 0x0F, 1.75f, 0.0f, "1.75", "OCP"},
+    // 次正规区必须按 RNE 舍入：截断会分别得到 0x01、0x01
+    {0.1f, 0x02, 0.125f, 0.0f, "subnormal RNE (0.1 -> 0.125)", "OCP"},
+    {0.09375f, 0x02, 0.125f, 0.0f, "subnormal RNE tie -> even (0.09375 -> 0.125)", "OCP"},
 };
 
 // ============================================================================

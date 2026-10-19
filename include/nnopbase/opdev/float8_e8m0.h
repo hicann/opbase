@@ -32,9 +32,8 @@ namespace op {
  *
  * - Bias: 127
  * - Max value: 2^127 (0xFE, exponent=254)
- * - Min positive value: 2^-126 (0x01, exponent=1)
+ * - Min positive value: 2^-127 (0x00, exponent=0); E8M0 has no zero encoding
  * - NaN: 0xFF (exponent=255) - reserved for NaN
- * - Zero is represented by 0x00 (exponent=0)
  * - No infinity encoding (only NaN at 0xFF)
  */
 struct Float8E8M0 {
@@ -47,9 +46,9 @@ struct Float8E8M0 {
     static constexpr uint8_t NAN_VALUE = 0xFF;          // 255 (NaN only, no infinity encoding)
     static constexpr uint8_t ONE_VALUE = 0x7F;          // 127 (2^0 = 1.0)
     static constexpr uint8_t HIGHEST_VALUE = 0xFE;      // 254 (max value: 2^127)
-    static constexpr uint8_t MIN_POSITIVE_VALUE = 0x01; // 1 (min positive: 2^-126)
+    static constexpr uint8_t MIN_POSITIVE_VALUE = 0x00; // 0 (min positive: 2^-127)
 
-    // Default constructor - initialize to zero
+    // Default constructor - 0x00 is the minimum positive value 2^-127 (no zero encoding)
     constexpr Float8E8M0() : value(0) {}
 
     constexpr Float8E8M0(uint8_t bits, [[maybe_unused]] FromBitsTag fromBits) : value(bits) {}
@@ -79,7 +78,7 @@ struct Float8E8M0 {
 
     static constexpr Float8E8M0 MinPositive()
     {
-        // 2^-126 (exponent=1)
+        // 2^-127 (exponent=0)
         return Float8E8M0(MIN_POSITIVE_VALUE, FromBits());
     }
 
@@ -128,10 +127,10 @@ public:
     static constexpr bool is_modulo = false;
     static constexpr bool is_signed = false; // E8M0 is unsigned
     static constexpr bool is_specialized = true;
-    static constexpr int digits = 0; // No mantissa bits
+    static constexpr int digits = 0;         // No mantissa bits
     static constexpr int digits10 = 0;
     static constexpr int max_digits10 = 0;
-    static constexpr int min_exponent = -126;
+    static constexpr int min_exponent = -127;
     static constexpr int min_exponent10 = -38;
     static constexpr int max_exponent = 127;
     static constexpr int max_exponent10 = 38;
@@ -142,7 +141,8 @@ public:
     }
     static constexpr float denorm_min()
     {
-        return 0.0f; // No denormals
+        // 2^-127, the minimum positive value (FLT_MIN / 2)
+        return std::numeric_limits<float>::min() * 0.5f;
     }
 
     static constexpr op::Float8E8M0 min() { return op::Float8E8M0::MinPositive(); }

@@ -51,6 +51,9 @@ static constexpr BenchmarkCase<Float4E2M1> kE2M1_AllPositiveCases[] = {
     {3.0f, 0x5, 3.0f, 0.0f, "3.0 (exp=2, man=1)", "OCP"},
     {4.0f, 0x6, 4.0f, 0.0f, "4.0 (exp=3, man=0)", "OCP"},
     {6.0f, 0x7, 6.0f, 0.0f, "max 6.0 (exp=3, man=1)", "OCP"},
+    // 次正规区必须按 RNE 舍入：截断会分别得到 0x0、0x1
+    {0.3f, 0x1, 0.5f, 0.0f, "subnormal RNE (0.3 -> 0.5)", "OCP"},
+    {0.75f, 0x2, 1.0f, 0.0f, "subnormal RNE tie -> even (0.75 -> 1.0)", "OCP"},
 };
 
 // ============================================================================

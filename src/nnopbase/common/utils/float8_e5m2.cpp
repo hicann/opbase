@@ -13,14 +13,9 @@
 #include <cmath>
 #include <cstdint>
 
+#include "float_common_utils.h"
+
 namespace {
-// FP32 format constants
-constexpr int FP32_EXP_BIAS_VAL = 127;
-constexpr int FP32_MAN_LEN_VAL = 23;
-constexpr int FP32_SIGN_SHIFT_VAL = 31;
-constexpr uint32_t FP32_EXP_MASK_8BIT = 0xFF;
-constexpr uint32_t FP32_MAN_MASK_23BIT = 0x7FFFFF;
-constexpr uint32_t FP32_IMPLICIT_1_VAL = 0x800000;
 
 // E5M2 format constants
 constexpr int EXP_BITS = 5;
@@ -31,8 +26,10 @@ constexpr uint8_t SIGN_MASK = 0x80;      // 1 00000 00
 constexpr uint8_t EXP_MASK = 0x7C;       // 0 11111 00
 constexpr uint8_t MAN_MASK = 0x03;       // 0 00000 11
 constexpr uint8_t ABS_VALUE_MASK = 0x7F; // 0 11111 11 (exclude sign bit)
-constexpr uint8_t MAX_EXP = 0x1F;        // 11111
 constexpr uint8_t NEG_INF_VALUE = 0xFC;  // 1 11111 00
+
+constexpr op::internal::SmallFloatFormat FLOAT8_E5M2_FORMAT{EXP_BITS, MAN_BITS, EXP_BIAS,
+                                                            op::internal::SmallFloatSpecialEncoding::INF_NAN};
 } // anonymous namespace
 
 namespace op {
@@ -100,73 +97,20 @@ float Float8E5M2::Float8E5M2ToFloat(Float8E5M2 fp8)
 
 Float8E5M2 Float8E5M2::FloatToFloat8E5M2(float f)
 {
-    if (std::isnan(f)) {
-        return Float8E5M2(NAN_VALUE, FromBits());
-    }
-
     FP32 fp32;
     fp32.f = f;
-    uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1;
-    uint32_t exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
-    uint32_t man = fp32.u & FP32_MAN_MASK_23BIT;
+    const uint32_t sign = (fp32.u >> FP32_SIGN_SHIFT_VAL) & 1U;
+    const uint32_t exp = (fp32.u >> FP32_MAN_LEN_VAL) & FP32_EXP_MASK_8BIT;
 
-    if (exp == 0 && man == 0) {
-        // Zero
-        return Float8E5M2(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
+    if (exp == FP32_EXP_MAX_VAL) {
+        // NaN 与 ±Inf 各有编码，且均保留符号
+        const bool isNan = (fp32.u & FP32_MAN_MASK_23BIT) != 0U;
+        const uint8_t code = isNan ? NAN_VALUE : INF_VALUE;
+        return Float8E5M2(static_cast<uint8_t>((sign << SIGN_SHIFT) | code), FromBits());
     }
 
-    if (std::isinf(f)) {
-        // E5M2 supports infinity
-        return Float8E5M2(static_cast<uint8_t>((sign << SIGN_SHIFT) | INF_VALUE), FromBits());
-    }
-
-    // Calculate E5M2 exponent
-    int32_t fp8Exp;
-    uint32_t fp8Man;
-
-    if (exp == 0) {
-        // Denormalized FP32 input
-        fp8Exp = 1 - FP32_EXP_BIAS_VAL + EXP_BIAS;
-        // Normalize the FP32 denormal
-        while ((man & FP32_IMPLICIT_1_VAL) == 0) {
-            man <<= 1;
-            fp8Exp--;
-        }
-        man &= FP32_MAN_MASK_23BIT;
-    } else {
-        fp8Exp = static_cast<int32_t>(exp) - FP32_EXP_BIAS_VAL + EXP_BIAS;
-    }
-
-    // Round mantissa from 23 bits to 2 bits with round-to-nearest-even
-    int mantissaShift = FP32_MAN_LEN_VAL - MAN_BITS;
-    uint32_t manRoundBit = (man >> (mantissaShift - 1)) & 1;
-    uint32_t manStickyBits = (man & ((1 << (mantissaShift - 1)) - 1)) != 0 ? 1 : 0;
-    uint32_t manLsb = (man >> mantissaShift) & 1;
-
-    fp8Man = man >> mantissaShift;
-    if ((manRoundBit != 0) && ((manStickyBits != 0) || (manLsb != 0))) {
-        fp8Man++;
-        if (fp8Man > MAN_MASK) {
-            fp8Man = 0;
-            fp8Exp++;
-        }
-    }
-
-    // Handle overflow/underflow
-    if (fp8Exp <= 0) {
-        // Underflow to zero or denormal
-        if (fp8Exp < -MAN_BITS) {
-            return Float8E5M2(static_cast<uint8_t>(sign << SIGN_SHIFT), FromBits());
-        }
-        // Create denormal
-        fp8Man = (fp8Man | (1 << MAN_BITS)) >> (1 - fp8Exp);
-        fp8Exp = 0;
-    } else if (fp8Exp >= static_cast<int32_t>(MAX_EXP)) {
-        // Overflow to infinity
-        return Float8E5M2(static_cast<uint8_t>((sign << SIGN_SHIFT) | INF_VALUE), FromBits());
-    }
-
-    uint8_t result = static_cast<uint8_t>((sign << SIGN_SHIFT) | (fp8Exp << MAN_BITS) | (fp8Man & MAN_MASK));
+    const uint8_t result = internal::ConvertFiniteFp32ToSmallFloat(fp32.u, FLOAT8_E5M2_FORMAT,
+                                                                   internal::SmallFloatOverflowAction::OVF_INF);
     return Float8E5M2(result, FromBits());
 }
 
