@@ -27,7 +27,7 @@ const std::map<NpuArch, std::vector<std::string>> g_archToSocNames = {
     {Ops::Base::DAV_2201, {"ascend910b", "ascend910_93"}},
     {Ops::Base::DAV_3002, {"ascend310b"}},
     {Ops::Base::DAV_3102, {"ascend610lite"}},
-    {Ops::Base::DAV_3510, {"ascend950"}},
+    {Ops::Base::DAV_3510, {"ascend950", "ascend350"}},
 };
 } // namespace
 
