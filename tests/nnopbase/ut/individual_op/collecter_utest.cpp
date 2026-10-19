@@ -610,6 +610,30 @@ TEST_F(NnopbaseCollectorUnitTest, test_read_config_file_empty)
     ASSERT_EQ(NnopbaseReadConfigFile(path_json_config, subPath), true);
 }
 
+TEST_F(NnopbaseCollectorUnitTest, test_read_config_file_load_priority_exact_key)
+{
+    std::string path = "test";
+    std::string path_json_config = path + "/config.ini";
+    system(("mkdir -p " + path).c_str());
+    system(("echo 'nopriority=/x\nfoo=priority\nload_priority=expected' > " + path_json_config).c_str());
+
+    std::vector<std::string> subPath = {};
+    ASSERT_EQ(NnopbaseReadConfigFile(path_json_config, subPath), true);
+    ASSERT_EQ(subPath, (std::vector<std::string>{"expected"}));
+}
+
+TEST_F(NnopbaseCollectorUnitTest, test_read_config_file_trim_key_and_value)
+{
+    std::string path = "test";
+    std::string path_json_config = path + "/config.ini";
+    system(("mkdir -p " + path).c_str());
+    system(("echo '  load_priority  =  expected  ' > " + path_json_config).c_str());
+
+    std::vector<std::string> subPath = {};
+    ASSERT_EQ(NnopbaseReadConfigFile(path_json_config, subPath), true);
+    ASSERT_EQ(subPath, (std::vector<std::string>{"expected"}));
+}
+
 TEST_F(NnopbaseCollectorUnitTest, test_update_static_json_info_Fail_1)
 {
     std::string path = "../static_kernel/test_static.json";

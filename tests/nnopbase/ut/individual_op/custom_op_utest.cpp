@@ -126,7 +126,7 @@ TEST_F(NnopbaseOpPathTest, test_read_config_file_format_error)
     std::string path_vendors = opp_path + "vendors";
     std::string path_config = path_vendors + "/config.ini";
     system(("mkdir -p " + path_vendors).c_str());
-    system(("echo 'load_prioritymdc' > " + path_config).c_str());
+    system(("echo 'load_priority' > " + path_config).c_str());
 
     std::vector<std::string> subPath;
     bool ret = NnopbaseReadConfigFile(path_config, subPath);

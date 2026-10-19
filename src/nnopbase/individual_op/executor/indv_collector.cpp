@@ -254,14 +254,19 @@ bool NnopbaseReadConfigFile(const std::string& configPath, std::vector<std::stri
         if (line.empty() || (line.find('#') == 0)) {
             continue;
         }
-        if (line.find("priority") != std::string::npos) {
-            const size_t posOfEqual = line.find('=');
+        const size_t posOfEqual = line.find('=');
+        std::string key = (posOfEqual == std::string::npos) ? line : line.substr(0U, posOfEqual);
+        NnopbaseTrim(key, ' ');
+        NnopbaseTrim(key, '\t');
+        if (key == "load_priority") {
             if (posOfEqual == std::string::npos) {
                 ifs.close();
                 OP_LOGE(ACLNN_ERR_INNER, "The format of file %s is invalid.", configPath.c_str());
                 return false;
             }
-            const std::string value = line.substr(posOfEqual + 1U);
+            std::string value = line.substr(posOfEqual + 1U);
+            NnopbaseTrim(value, ' ');
+            NnopbaseTrim(value, '\t');
             NnopbaseSplitStr(value, ",", subPath);
             OP_LOGI("Get number %zu custom path.", subPath.size());
             break;
