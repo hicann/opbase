@@ -367,7 +367,7 @@ void NnopbaseExecutorClearUnContiguousTensors(NnopbaseTensors* tensors)
 void NnopbaseGetRealIndex(const NnopbaseParamDesc& paramDescs, size_t* realIndex)
 {
     for (size_t i = 0U; i < paramDescs.count; i++) {
-        if ((paramDescs.instances[i].isDisable) && (i <= *realIndex)) {
+        if ((paramDescs.instances[i].isDisable) && (paramDescs.instances[i].startIndex <= *realIndex)) {
             (*realIndex)++;
         }
     }

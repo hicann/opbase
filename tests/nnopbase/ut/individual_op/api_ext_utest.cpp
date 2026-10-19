@@ -1426,6 +1426,8 @@ TEST_F(NnopbaseExtUnitTest, TestRepeat02)
     ASSERT_EQ(((NnopbaseExecutor*)executor)->args->outputs.extTensors[0].rt2Tensor.GetAddr(), addr);
     ASSERT_EQ(AclSetDynamicOutputTensorAddr((aclOpExecutor*)executor, 0, 0, aclTensorTestList, nullptr), OK);
     ASSERT_EQ(((NnopbaseExecutor*)executor)->args->outputs.extTensors[0].rt2Tensor.GetAddr(), nullptr);
+    ASSERT_EQ(aclSetInputTensorAddr((aclOpExecutor*)executor, 1, tensor2, addr), OK);
+    ASSERT_EQ(((NnopbaseExecutor*)executor)->args->inputs.extTensors[1].rt2Tensor.GetAddr(), addr);
     ASSERT_EQ(AclSetInputTensorAddr((aclOpExecutor*)executor, 2, tensor1, addr), OK);
     ASSERT_EQ(AclSetOutputTensorAddr((aclOpExecutor*)executor, 2, tensor1, addr), OK);
     ASSERT_EQ(((NnopbaseExecutor*)executor)->args->inputs.extTensors[3].rt2Tensor.GetAddr(), addr);
@@ -1434,6 +1436,8 @@ TEST_F(NnopbaseExtUnitTest, TestRepeat02)
 
     int* ptr1 = new int;
     void* addr1 = reinterpret_cast<void*>(ptr1);
+    ASSERT_EQ(aclSetTensorAddr((aclOpExecutor*)executor, 1, tensor2, addr1), OK);
+    ASSERT_EQ(((NnopbaseExecutor*)executor)->args->inputs.extTensors[1].rt2Tensor.GetAddr(), addr1);
     ASSERT_EQ(AclSetTensorAddr((aclOpExecutor*)executor, 3, tensor1, addr1), OK);
     ASSERT_EQ(((NnopbaseExecutor*)executor)->args->inputs.extTensors[4].rt2Tensor.GetAddr(), addr1);
     ASSERT_EQ(AclSetTensorAddr((aclOpExecutor*)executor, 5, tensor1, addr1), OK);
