@@ -11,7 +11,7 @@ Parameters %s of %s have invalid tensor nums %s. Reason: %s.
 报错示例如下：
 
 ```text
-Parameters lse and go of AttentionUpdate have invalid tensor nums 4 and 4. Reason: The number of tensors in input lse and go should be twice the attr sp, where sp is 2.
+Parameters lse and go of AttentionUpdate have invalid tensor nums 3 and 5. Reason: The number of tensors in input lse and go should be twice the attr sp, where sp is 2.
 ```
 
 ## 解决方法
