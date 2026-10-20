@@ -56,6 +56,7 @@ HPTG2@ops-base:
         - ops-base/tests/nnopbase/common/depends/
         - ops-base/tests/nnopbase/ut/composite_op/
         - ops-base/tests/nnopbase/st/composite_op/
+        - ops-base/docs/
       non_delivery: null
       open_source: null
 
