@@ -174,7 +174,10 @@ public:
         // set workspace
         size_t* workspaces = context_->GetWorkspaceSizes(1);
         OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
-        workspaces[0] = DEFAULT_TILING_WORKSPACE_SIZE;
+        auto platformInfo = context_->GetPlatformInfo();
+        OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
+        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+        workspaces[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
 
         return ge::GRAPH_SUCCESS;
     }

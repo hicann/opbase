@@ -44,7 +44,6 @@ constexpr int32_t HIGH_PERF_RANK = 4;
 constexpr int32_t DEFAULT_ADD_VALUE = 9;
 constexpr int64_t VALUE_TWO = 2;
 constexpr int64_t MAX_IN_OUT_ARGS_NUMBER = 4;
-constexpr uint64_t DEFAULT_TILING_WORKSPACE_SIZE = 16 * 1024 * 1024;
 constexpr int64_t PER_CORE_MIN_UB_BYTE = 8 * 1024;
 constexpr uint64_t HALF_CORE_NUM_DIVIDE = 2;
 constexpr int64_t CACHE_LINE = 128;
