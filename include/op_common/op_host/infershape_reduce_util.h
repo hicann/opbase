@@ -12,8 +12,8 @@
  * \file runtime_util.h
  * \brief
  */
-#ifndef OP_COMMON_OP_HOST_INFERSHAPE_ELEWISE_UTIL_H
-#define OP_COMMON_OP_HOST_INFERSHAPE_ELEWISE_UTIL_H
+#ifndef OP_COMMON_OP_HOST_INFERSHAPE_REDUCE_UTIL_H
+#define OP_COMMON_OP_HOST_INFERSHAPE_REDUCE_UTIL_H
 
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "util/shape_util.h"
@@ -94,4 +94,4 @@ OPBASE_API ge::graphStatus InferShape4Reduce(gert::InferShapeContext* context);
 } // namespace Base
 } // namespace Ops
 
-#endif // OP_COMMON_OP_HOST_INFERSHAPE_ELEWISE_UTIL_H
+#endif // OP_COMMON_OP_HOST_INFERSHAPE_REDUCE_UTIL_H
