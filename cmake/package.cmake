@@ -97,14 +97,11 @@ install(DIRECTORY ${pkg_inc_src}/
 )
 # aicpu_common 头文件源码已拆为两处：开源算子仓使用的在 include/op_common/aicpu_common 下，
 # 仅 opbase 内部使用的在 aicpu_common/ 下。装包时合并回同一目标路径，对下游保持不变。
+# 其中 7 个公共头已扁平安装到 include/aicpu/，旧嵌套路径进入弃用过渡期
+# （安装"源内容+弃用告警横幅"生成副本；机制、文件清单与安装规则见 cmake/legacy_header_deprecation.cmake）。
 set(aicpu_common_public ${CMAKE_CURRENT_SOURCE_DIR}/include/op_common/aicpu_common)
-install(DIRECTORY ${aicpu_common_public}/
-    DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc/aicpu_common
-    COMPONENT opbase
-    FILE_PERMISSIONS
-    OWNER_READ OWNER_EXECUTE
-    GROUP_READ GROUP_EXECUTE
-)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/legacy_header_deprecation.cmake)
+install_aicpu_common_legacy_compat(${aicpu_common_public} "2026-10-12" "2027-10-12")
 # 私有头逐个列举，不能整目录安装：aicpu_common/ 下还有 .cc/.cpp/.proto/CMakeLists.txt，
 # 以及不属于对外交付集、原本就不打包的 cust_op/cust_dlog_record.h。
 set(aicpu_private_common_headers
