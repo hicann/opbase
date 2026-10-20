@@ -83,6 +83,10 @@ target_include_directories(stub_nnopbase PRIVATE
 
 target_compile_options(stub_nnopbase PRIVATE -O2 -fno-common -Wno-extra -Wfloat-equal -Wno-unused-parameter -D_FORTIFY_SOURCE=2)
 
+if(DEFINED PRODUCT_SIDE AND "${PRODUCT_SIDE}" STREQUAL "device")
+    target_compile_definitions(stub_nnopbase PRIVATE PRODUCT_SIDE_IS_DEVICE=1)
+endif()
+
 target_link_libraries(stub_nnopbase
     PRIVATE
         $<BUILD_INTERFACE:intf_pub>
