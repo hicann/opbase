@@ -94,7 +94,7 @@ const char KERNEL_MODULE[] = "AICPU";
     }
 
 #define KERNEL_CHECK_ASSIGN_64S_MULTI(A, B, result, errorCode)                                       \
-    if ((A) != 0 && (B) != 0 && ((INT64_MAX) / (A)) <= (B)) {                                        \
+    if ((A) != 0 && (B) != 0 && ((INT64_MAX) / (A)) < (B)) {                                         \
         KERNEL_LOG_ERROR("Integer overflow in multiplication: multiA[%ld] * multiB[%ld]", (A), (B)); \
         return errorCode;                                                                            \
     }                                                                                                \

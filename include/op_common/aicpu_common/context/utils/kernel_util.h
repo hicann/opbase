@@ -207,6 +207,10 @@ inline bool MulWithoutOverflow(const int64_t x, const int64_t y, int64_t& xy)
         }
     }
 
+    if (uxy > static_cast<uint64_t>(INT64_MAX)) {
+        return false;
+    }
+
     // Cast back to signed.  Any negative value will signal an error.
     xy = static_cast<int64_t>(uxy);
     return true;
