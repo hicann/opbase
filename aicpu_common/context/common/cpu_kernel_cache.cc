@@ -532,6 +532,7 @@ std::shared_ptr<CpuKernelContext> CpuKernelCache::GetCpuKernelContext(
             }
             KERNEL_LOG_DEBUG(
                 "get cache success, workspace addr=%ld.", ext_info_msg->workspace_addr, ext_info_msg->workspace_size);
+            nodedef_proto = cache->proto;
             return cache->context;
         }
     }
@@ -611,18 +612,23 @@ int32_t CpuKernelCache::ParseRunKernelParam(
 /*
  * dispatch cpu kernel: V2 优先, V1 兜底.
  */
-uint32_t CpuKernelCache::DispatchCpuKernel(CpuKernelContext& ctx, ExtInfoMsg& ext_info_msg) const
+uint32_t CpuKernelCache::DispatchCpuKernel(const std::shared_ptr<CpuKernelContext>& ctx,
+                                           const std::shared_ptr<ExtInfoMsg>& ext_info_msg,
+                                           const std::shared_ptr<NodeDef>& nodedef_proto) const
 {
-    const std::string& op_type = ctx.GetOpType();
+    const std::string& op_type = ctx->GetOpType();
     const bool hit_v2 = CpuKernelRegister::Instance().IsRegisteredV2(op_type);
-    if (ext_info_msg.async_flag) {
-        auto cb = [this, &ctx, &ext_info_msg]() { return UpdateFWKOutputShape(ext_info_msg, ctx); };
+    if (ext_info_msg->async_flag) {
+        auto cb = [this, ctx, ext_info_msg, nodedef_proto]() {
+            (void)nodedef_proto;
+            return UpdateFWKOutputShape(*ext_info_msg, *ctx);
+        };
         return hit_v2 ? CpuKernelRegister::Instance().RunCpuKernelAsyncV2(
-                            ctx, ext_info_msg.wait_type, ext_info_msg.wait_id, cb) :
+                            *ctx, ext_info_msg->wait_type, ext_info_msg->wait_id, cb) :
                         CpuKernelRegister::Instance().RunCpuKernelAsync(
-                            ctx, ext_info_msg.wait_type, ext_info_msg.wait_id, cb);
+                            *ctx, ext_info_msg->wait_type, ext_info_msg->wait_id, cb);
     }
-    return hit_v2 ? CpuKernelRegister::Instance().RunCpuKernelV2(ctx) : CpuKernelRegister::Instance().RunCpuKernel(ctx);
+    return hit_v2 ? CpuKernelRegister::Instance().RunCpuKernelV2(*ctx) : CpuKernelRegister::Instance().RunCpuKernel(*ctx);
 }
 
 int32_t CpuKernelCache::RunKernel(void* param)
@@ -646,7 +652,7 @@ int32_t CpuKernelCache::RunKernel(void* param)
         return -1;
     }
 
-    ret = DispatchCpuKernel(*ctx, *ext_info_msg);
+    ret = DispatchCpuKernel(ctx, ext_info_msg, node_def_proto);
     if (!ext_info_msg->async_flag) {
         if (ret != KERNEL_STATUS_OK) {
             if ((ret == KERNEL_STATUS_SILENT_FAULT) || (ret == KERNEL_STATUS_DETECT_FAULT) ||
@@ -691,7 +697,7 @@ int32_t CpuKernelCache::RunCpuKernelWithBlock(void* param, struct BlkDimInfo* bl
         return -1;
     }
 
-    ret = DispatchCpuKernel(*ctx, *ext_info_msg);
+    ret = DispatchCpuKernel(ctx, ext_info_msg, node_def_proto);
     if (!ext_info_msg->async_flag) {
         if (ret != KERNEL_STATUS_OK) {
             return -1;
@@ -717,6 +723,7 @@ std::shared_ptr<CpuKernelContext> CpuKernelCache::GetCpuKernelContextWithBlock(
         auto cache = GetCache(kernel_id);
         if (cache != nullptr) {
             KERNEL_LOG_INFO("Get kernel from cache success.");
+            nodedef_proto = cache->proto;
             return cache->context;
         }
     }

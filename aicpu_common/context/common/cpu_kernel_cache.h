@@ -224,7 +224,9 @@ private:
      * dispatch cpu kernel based on V2/V1 registry.
      * @return uint32_t: raw kernel status code
      */
-    uint32_t DispatchCpuKernel(CpuKernelContext& ctx, ExtInfoMsg& ext_info_msg) const;
+    uint32_t DispatchCpuKernel(const std::shared_ptr<CpuKernelContext>& ctx,
+                               const std::shared_ptr<ExtInfoMsg>& ext_info_msg,
+                               const std::shared_ptr<NodeDef>& nodedef_proto) const;
 };
 } // namespace aicpu
 #endif // AICPU_CPU_KERNEL_CACHE_H_
