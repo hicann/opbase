@@ -40,7 +40,6 @@ static ProfilingCacheUtProfiler prof;
 namespace op {
 namespace internal {
 void CacheTensorInfo(const FVector<const aclTensor*>& inTensors, const FVector<const aclTensor*>& outTensors);
-void CacheDfxInfo(uint32_t numBlocks, const op::internal::ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet);
 aclnnStatus DoReportAdditionInfo(void* infoLists, const TaskInfo& taskInfo,
                                  const op::internal::ProfilingInfoId& profilingInfoId);
 } // namespace internal
@@ -120,7 +119,12 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_has_op_cache)
     TaskInfo info;
     info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
     info.ration = 0;
-    CacheDfxInfo(32, id, info, false);
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+    CacheDfxInfo(32, id, info, false, opType);
+
+    // opType 应被写入缓存 dfx,供缓存回放路径取用
+    EXPECT_EQ(opExecCache->opExecCacheDfx_->GetOpType(0), opType);
 
     // release resource
     aclDestroyTensor(tensorIn);
@@ -162,7 +166,12 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     TaskInfo info;
     info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
     info.ration = 0;
-    CacheDfxInfo(32, id, info, false);
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+    CacheDfxInfo(32, id, info, false, opType);
+
+    // opType 应被写入缓存 dfx,供缓存回放路径取用
+    EXPECT_EQ(opExecCache->opExecCacheDfx_->GetOpType(0), opType);
 
     // test restore/report
     EXPECT_EQ(DoReportAdditionInfo(opExecCache->GetCacheTensorInfo(0), info, id), OK);
@@ -172,4 +181,29 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     aclDestroyTensor(tensorHost);
     aclDestroyTensor(tensorOut);
     delete opExecCache;
+}
+
+TEST_F(ProfilingCacheUt, dfx_getters_out_of_range_return_default)
+{
+    // 未写入任何 DFX 数据时,各 getter 应返回确定的默认值,而不是越界访问
+    OpExecCacheDfx dfx;
+    EXPECT_EQ(dfx.GetOpType(0), 0U);
+    EXPECT_EQ(dfx.GetTaskType(0), MSPROF_GE_TASK_TYPE_INVALID);
+    EXPECT_EQ(dfx.GetTaskInfo(0).type, MSPROF_GE_TASK_TYPE_INVALID);
+    EXPECT_EQ(dfx.GetTaskInfo(0).ration, 0U);
+    EXPECT_EQ(dfx.GetProfilingInfoId(0).summaryItemId_, 0U);
+    EXPECT_EQ(dfx.GetExceptionDumpInfo(0).rtsArgsSize_, 0U);
+
+    // 负下标同样按越界处理
+    EXPECT_EQ(dfx.GetOpType(-1), 0U);
+    EXPECT_EQ(dfx.GetTaskType(-1), MSPROF_GE_TASK_TYPE_INVALID);
+
+    // 写入后按 index 正常返回,越界下标仍返回默认值
+    TaskInfo validTaskInfo{};
+    validTaskInfo.type = MSPROF_GE_TASK_TYPE_AI_CORE;
+    dfx.SetOpType(42U);
+    dfx.SetTaskInfo(validTaskInfo);
+    EXPECT_EQ(dfx.GetOpType(0), 42U);
+    EXPECT_EQ(dfx.GetTaskType(0), MSPROF_GE_TASK_TYPE_AI_CORE);
+    EXPECT_EQ(dfx.GetOpType(1), 0U);
 }

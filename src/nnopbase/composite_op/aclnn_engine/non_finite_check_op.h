@@ -22,6 +22,7 @@
 #include "kernel_arg.h"
 #include "kernel_mgr.h"
 #include "op_kernel.h"
+#include "op_dfx_internal.h"
 #include "bridge_pool.h"
 #include "opdev/op_def.h"
 #include "opdev/op_dfx.h"
@@ -108,9 +109,11 @@ public:
         const TilingCtxOutput* res = nullptr;
         ret = InitTilingParseCtx();
         OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("InitTilingParseCtx failed, return %d", ret), return ret);
+        const bool isTilingProfilingEnabled = op::internal::IsTilingProfilingEnabled(opType_);
+        const bool isL0ProfilingEnabled = op::internal::IsL0ProfilingEnabled(opType_);
         {
-            uint32_t tilingProfilingId = 0;
-            if (op::internal::opProfilingSwitch.reportFlag) {
+            uint32_t tilingProfilingId = kInvalidProfilingId;
+            if (isTilingProfilingEnabled) {
                 std::string tilingFuncName = std::string(op::OpTypeDict::ToString(opType_).GetString()) + "_Tiling";
                 tilingProfilingId = CollectProfilingStr(tilingFuncName.c_str());
             }
@@ -131,8 +134,8 @@ public:
             OP_CHECK(res != nullptr, OP_LOGW("Tiling Failed."), return ACLNN_ERR_INNER_NULLPTR);
         }
 
-        uint64_t summaryId = 0;
-        if (opProfilingSwitch.kernelLaunchFlag) {
+        uint64_t summaryId = kInvalidProfilingId;
+        if (isL0ProfilingEnabled) {
             summaryId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
                                          GetThreadLocalContext().logInfo_.l0Name,
                                          op::OpTypeDict::ToString(opType_).GetString());
@@ -147,7 +150,7 @@ public:
             DumpWorkspaceData(stream, args);
         }
         static uint64_t kernelLaunchId = GenKernelLauncherId("NonFiniteCheck");
-        if (opProfilingSwitch.kernelLaunchFlag && opProfilingSwitch.additionInfoFlag) {
+        if (isL0ProfilingEnabled && opProfilingSwitch.additionInfoFlag) {
             ReportAdditionInfo(GetTaskInfo(*(res->tilingKey_)), kernelLaunchId, summaryId);
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {

@@ -235,6 +235,7 @@ public:
             launchCfg.blockDimOffset = 0;
             launchCfg.engineType = isVectorCoreEnableScenario_ ? LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC :
                                                                  LaunchKernelEngineType::NO_VECTOR_CORE;
+            launchCfg.opType = opType_;
 
             rtsArg.ReportExceptionDumpInfo();
             aclnnStatus ret = DoLaunchKernel(rtsArg, stream, launchCfg);
@@ -266,13 +267,13 @@ public:
                         op::OpTypeDict::ToString(opType_).GetString());
                     TaskInfo tskInfo = GetTaskInfo(tilingkey, args);
                     tskInfo.attrId = GetAttrId(args);
-                    CacheDfxInfo(numBlocks, GetThreadLocalContext().profilingInfoId_, tskInfo, false);
+                    CacheDfxInfo(numBlocks, GetThreadLocalContext().profilingInfoId_, tskInfo, false, opType_);
                 } else {
                     GetThreadLocalContext().memSetProfilingInfoId_.summaryItemId_ = GenSummaryItemId(
                         GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
                         op::OpTypeDict::ToString(opType_).GetString());
                     CacheDfxInfo(numBlocks, GetThreadLocalContext().memSetProfilingInfoId_,
-                                 GetTaskInfo(tilingkey, args), true);
+                                 GetTaskInfo(tilingkey, args), true, opType_);
                 }
             }
 
@@ -291,9 +292,12 @@ public:
     aclnnStatus DoLaunchWithDfx(const TilingCtxOutput* res, aclrtStream stream, OpArgContext* args)
     {
         aclnnStatus rc = ACLNN_ERR_INNER;
-        if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
-            GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
-                GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
+        auto& opThreadLocalCtx = op::internal::GetThreadLocalContext();
+        const bool isL0ProfilingEnabled = op::internal::IsL0ProfilingEnabled(opType_);
+        opThreadLocalCtx.profilingInfoId_.summaryItemId_ = kInvalidProfilingId;
+        if (isL0ProfilingEnabled) {
+            opThreadLocalCtx.profilingInfoId_.summaryItemId_ = GenSummaryItemId(
+                opThreadLocalCtx.logInfo_.l2ApiName, opThreadLocalCtx.logInfo_.l0Name,
                 op::OpTypeDict::ToString(opType_).GetString());
         }
         // disabling the Cache
@@ -303,32 +307,31 @@ public:
         }
         std::vector<int32_t> tensorOffset;
         {
-            OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
-                                         DfxProfilingKernelLaunch);
+            OpDfxGuard kernelLaunchGuard(opThreadLocalCtx.profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
             rc = DoLaunch(res, stream, false, args, tensorOffset);
         }
         if (IsPrintFEnable()) {
             DumpWorkspaceData(stream, args);
         }
         if (op::internal::IsExceptionDumpEnable()) {
-            op::internal::PrepareExceptionDumpInfo(args, GetThreadLocalContext().logInfo_, genPlaceholder_,
-                                                   hasDevPtrArg_, interCoreSync_, tensorOffset, stream);
+            op::internal::PrepareExceptionDumpInfo(args, opThreadLocalCtx.logInfo_, genPlaceholder_, hasDevPtrArg_,
+                                                   interCoreSync_, tensorOffset, stream);
         }
-        if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
+        if (isL0ProfilingEnabled) {
             auto taskInfo = GetTaskInfo(*(res->tilingKey_), args);
             if (taskInfo.type == MSPROF_GE_TASK_TYPE_MIX_AIV || taskInfo.type == MSPROF_GE_TASK_TYPE_MIX_AIC) {
-                op::internal::ReportNodeContextIdInfo(GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                op::internal::ReportNodeContextIdInfo(opThreadLocalCtx.profilingInfoId_.summaryItemId_);
             }
             // only level1 profiling need to report addition info
-            op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
+            opThreadLocalCtx.profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
                 op::OpTypeDict::ToString(opType_).GetString());
             if (op::internal::opProfilingSwitch.additionInfoFlag) {
                 op::internal::ReportAdditionInfo(*args->GetOpArg(op::OP_INPUT_ARG), *args->GetOpArg(op::OP_OUTPUT_ARG),
-                                                 taskInfo, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                                                 taskInfo, opThreadLocalCtx.profilingInfoId_.summaryItemId_);
             }
-            ReportOpAttrInfo(args, GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+            ReportOpAttrInfo(args, opThreadLocalCtx.profilingInfoId_.summaryItemId_);
         }
-        if (GetThreadLocalContext().cacheOpInfoSwitch_) {
+        if (opThreadLocalCtx.cacheOpInfoSwitch_) {
             TaskInfo taskInfo = GetTaskInfo(*(res->tilingKey_), args);
             uint64_t attrId = GetAttrId(args);
             ReportCacheOpInfo(taskInfo, args, opType_, attrId);
@@ -521,6 +524,7 @@ public:
                 launchCfg.blockDimOffset = 0;
                 launchCfg.dynUBufSize = 0;
                 launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIC;
+                launchCfg.opType = opType_;
 
                 rtsArg.ReportExceptionDumpInfo();
                 ret = DoLaunchKernel(rtsArg, stream, launchCfg);
@@ -569,6 +573,7 @@ public:
                 launchCfg.blockDimOffset = blockdimAic;
                 launchCfg.dynUBufSize = 0;
                 launchCfg.engineType = LaunchKernelEngineType::VECTOR_CORE_ENGINE_AIV;
+                launchCfg.opType = opType_;
 
                 rtsArg.ReportExceptionDumpInfo();
                 ret = DoLaunchKernel(rtsArg, secondStream, launchCfg);
@@ -625,7 +630,8 @@ public:
         if (binType_ == BinType::DYNAMIC_BIN) {
             CHECK_RET_CODE(InitTilingParseCtx(), "InitTilingParseCtx failed");
             {
-                if (op::internal::opProfilingSwitch.reportFlag) {
+                GetThreadLocalContext().profilingInfoId_.tilingProfilingId_ = kInvalidProfilingId;
+                if (op::internal::IsTilingProfilingEnabled(opType_)) {
                     std::string tilingFuncName = op::OpTypeDict::ToString(opType_).GetString() + std::string("_Tiling");
                     GetThreadLocalContext().profilingInfoId_.tilingProfilingId_ = CollectProfilingStr(
                         tilingFuncName.c_str());
@@ -717,8 +723,9 @@ public:
         auto workspace = OP_WORKSPACE(std::move(tensor));
         static uint64_t kernelLaunchId = GenKernelLauncherId("MemSet");
         GetThreadLocalContext().memSetProfilingInfoId_.kernelLauncherId_ = kernelLaunchId;
-        uint64_t summaryId = 0;
-        if (opProfilingSwitch.kernelLaunchFlag) {
+        const bool isL0ProfilingEnabled = op::internal::IsL0ProfilingEnabled(opType_);
+        uint64_t summaryId = kInvalidProfilingId;
+        if (isL0ProfilingEnabled) {
             summaryId = GenSummaryItemId(GetThreadLocalContext().logInfo_.l2ApiName,
                                          GetThreadLocalContext().logInfo_.l0Name, "MemSet");
         }
@@ -732,7 +739,7 @@ public:
             OpDfxGuard kernelLaunchGuard(summaryId, DfxProfilingKernelLaunch);
             rc = DoLaunch(res, stream, true, &tempCtx, tensorOffset);
         }
-        if (opProfilingSwitch.kernelLaunchFlag && opProfilingSwitch.additionInfoFlag) {
+        if (isL0ProfilingEnabled && opProfilingSwitch.additionInfoFlag) {
             ReportAdditionInfo(GetTaskInfo(*(res->tilingKey_)), kernelLaunchId, summaryId);
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
@@ -753,8 +760,11 @@ public:
         OP_CHECK(!(rc == ACLNN_SUCCESS && memsetV2OpArgCtx == nullptr), OP_LOGW("There is no tensor to memset"),
                  return ACLNN_SUCCESS);
         auto& opTlsCtx = GetThreadLocalContext();
+        const bool isTilingProfilingEnabled = op::internal::IsTilingProfilingEnabled(opType_);
+        const bool isL0ProfilingEnabled = op::internal::IsL0ProfilingEnabled(opType_);
         // tiling
-        if (op::internal::opProfilingSwitch.reportFlag) {
+        opTlsCtx.profilingInfoId_.tilingProfilingId_ = kInvalidProfilingId;
+        if (isTilingProfilingEnabled) {
             std::string tilingFuncName = op::OpTypeDict::ToString(opType_).GetString() + std::string("_Tiling");
             opTlsCtx.profilingInfoId_.tilingProfilingId_ = CollectProfilingStr(tilingFuncName.c_str());
         }
@@ -775,8 +785,8 @@ public:
         // kernel launch
         static uint64_t kernelLaunchId = GenKernelLauncherId(MEMSET_V2_NAME.c_str());
         opTlsCtx.memSetProfilingInfoId_.kernelLauncherId_ = kernelLaunchId;
-        uint64_t summaryId = 0;
-        if (opProfilingSwitch.kernelLaunchFlag) {
+        uint64_t summaryId = kInvalidProfilingId;
+        if (isL0ProfilingEnabled) {
             summaryId = GenSummaryItemId(opTlsCtx.logInfo_.l2ApiName, opTlsCtx.logInfo_.l0Name, MEMSET_V2_NAME.c_str());
         }
         std::vector<int32_t> tensorOffset;
@@ -784,7 +794,7 @@ public:
             OpDfxGuard kernelLaunchGuard(summaryId, DfxProfilingKernelLaunch);
             rc = DoLaunch(res, stream, true, memsetV2OpArgCtx, tensorOffset);
         }
-        if (opProfilingSwitch.kernelLaunchFlag && opProfilingSwitch.additionInfoFlag) {
+        if (isL0ProfilingEnabled && opProfilingSwitch.additionInfoFlag) {
             ReportAdditionInfo(GetTaskInfo(*(res->tilingKey_)), kernelLaunchId, summaryId);
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {
@@ -807,7 +817,8 @@ public:
             return ACLNN_SUCCESS;
         }
         CHECK_RET_CODE(InitTilingParseCtx(), "InitTilingParseCtx failed");
-        if (op::internal::opProfilingSwitch.reportFlag) {
+        GetThreadLocalContext().profilingInfoId_.tilingProfilingId_ = kInvalidProfilingId;
+        if (op::internal::IsTilingProfilingEnabled(opType_)) {
             std::string tilingFuncName = op::OpTypeDict::ToString(opType_).GetString() + std::string("_Tiling");
             GetThreadLocalContext().profilingInfoId_.tilingProfilingId_ = CollectProfilingStr(tilingFuncName.c_str());
         }

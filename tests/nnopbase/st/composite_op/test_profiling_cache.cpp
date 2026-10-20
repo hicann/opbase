@@ -17,6 +17,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "op_cache_internal.h"
+#include "op_dfx_internal.h"
 #include "depends/profiler/profiler_stub.h"
 #include "thread_local_context.h"
 
@@ -38,7 +39,6 @@ static ProfilingCacheUtProfiler prof;
 namespace op {
 namespace internal {
 void CacheTensorInfo(const FVector<const aclTensor*>& inTensors, const FVector<const aclTensor*>& outTensors);
-void CacheDfxInfo(uint32_t blockDim, const ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet);
 aclnnStatus DoReportAdditionInfo(void* infoLists, const TaskInfo& taskInfo,
                                  const op::internal::ProfilingInfoId& profilingInfoId);
 } // namespace internal
@@ -118,7 +118,7 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_has_op_cache)
     TaskInfo info;
     info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
     info.ration = 0;
-    CacheDfxInfo(32, id, info, false);
+    CacheDfxInfo(32, id, info, false, 0);
 
     // release resource
     aclDestroyTensor(tensorIn);
@@ -158,7 +158,7 @@ TEST_F(ProfilingCacheUt, test_cache_tensor_restore_and_report)
     TaskInfo info;
     info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
     info.ration = 0;
-    CacheDfxInfo(32, id, info, false);
+    CacheDfxInfo(32, id, info, false, 0);
 
     // test restore/report
     EXPECT_EQ(DoReportAdditionInfo(opExecCache->GetCacheTensorInfo(0), info, id), OK);

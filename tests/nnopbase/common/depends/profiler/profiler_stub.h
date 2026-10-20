@@ -36,6 +36,9 @@ public:
 
     virtual int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char* typeName) { return 0; }
 
+    // 算子级 profiling:是否对指定算子使能(默认不使能)
+    virtual bool MsprofCheckOpSwitch(uint32_t type, const char* op, size_t len) { return false; }
+
     void Install(ProfilerStub* instance) { fake_instance_ = instance; }
 
     void UnInstall() { fake_instance_ = nullptr; }

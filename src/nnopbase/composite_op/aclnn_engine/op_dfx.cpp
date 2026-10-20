@@ -135,9 +135,44 @@ __attribute__((constructor)) void InitAclnnDebugSwitch()
         OP_LOGI("Aclnn debug mode is enabled by log level.");
     }
 }
+
+// 算子级 profiling 开关，由 ProfilingCallBack 依据 PROF_OP_MASK 更新
+std::atomic<bool> g_enableSpecifiedOpProfiling{false};
+
+// 与 MsprofOpSwitchType::MSPROF_OPTYPE 对齐，本地定义以避免依赖旧版本头文件的枚举
+constexpr uint32_t NNOPBASE_MSPROF_OPTYPE_QUERY = 0;
+
+// 弱符号：新版本 msprof 才导出该接口，旧版本下解析为 nullptr
+extern "C" {
+__attribute__((weak)) bool MsprofCheckOpSwitch(uint32_t type, const char* op, size_t len);
+}
+
+void SetSpecifiedOpProfilingSwitch(uint64_t profSwitch)
+{
+#if defined(PROF_OP_MASK)
+    g_enableSpecifiedOpProfiling.store((profSwitch & PROF_OP_MASK) != 0, std::memory_order_relaxed);
+#else
+    // 编译时头文件未定义 PROF_OP_MASK，不支持算子级 profiling，保持默认关闭
+    OP_LOGI("Op profiling is not supported when compiling nnopbase, so this feature is disabled.");
+#endif
+}
 } // namespace
 
 bool IsAclnnDebugEnabled() { return g_aclnnDebugEnabled.load(std::memory_order_relaxed); }
+
+bool IsSpecifiedOpProfilingEnabled() { return g_enableSpecifiedOpProfiling.load(std::memory_order_relaxed); }
+
+bool CheckSpecifiedOpProfiling(uint32_t opType)
+{
+    if (MsprofCheckOpSwitch == nullptr) {
+        OP_LOGI("MsprofCheckOpSwitch symbol is not found, specified op profiling is disabled.");
+        return false;
+    }
+    ge::AscendString opName = op::OpTypeDict::ToString(opType);
+    bool enabled = MsprofCheckOpSwitch(NNOPBASE_MSPROF_OPTYPE_QUERY, opName.GetString(), opName.GetLength());
+    OP_LOGI("opType = %u, opName = %s, enabled = %d", opType, opName.GetString(), static_cast<int32_t>(enabled));
+    return enabled;
+}
 
 OpThreadLocalContext& GetThreadLocalContext()
 {
@@ -295,18 +330,20 @@ int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len)
         opProfilingSwitch.additionInfoFlag = false;
         opProfilingSwitch.level2ProfilingFlag = false;
         opProfilingSwitch.timeStampFlag = false;
+        g_enableSpecifiedOpProfiling.store(false, std::memory_order_relaxed);
         OP_LOGI("After ProfilingCallBack Stop, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
-                "level2ProfilingFlag=%d, timeStampFlag=%d",
+                "level2ProfilingFlag=%d, timeStampFlag=%d, specifiedOpProfilingEnabled=%d",
                 opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
-                opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag);
+                opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag,
+                IsSpecifiedOpProfilingEnabled());
         return 0;
     }
     OP_LOGI("ProfilingCallBack, profSwitch = %lu", handle->profSwitch);
 
     OP_LOGI("Before ProfilingCallBack Update, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
-            "level2ProfilingFlag=%d",
+            "level2ProfilingFlag=%d, specifiedOpProfilingEnabled=%d",
             opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
-            opProfilingSwitch.level2ProfilingFlag);
+            opProfilingSwitch.level2ProfilingFlag, IsSpecifiedOpProfilingEnabled());
 
     opProfilingSwitch.reportFlag = (handle->profSwitch & PROF_ACL_API_MASK) != 0;
     opProfilingSwitch.kernelLaunchFlag = (handle->profSwitch & PROF_TASK_TIME_MASK) != 0;
@@ -314,11 +351,12 @@ int32_t ProfilingCallBack(uint32_t type, VOID_PTR data, uint32_t len)
     opProfilingSwitch.level2ProfilingFlag = ((handle->profSwitch & PROF_TASK_TIME_L2_MASK) != 0 ||
                                              (handle->profSwitch & PROF_OP_ATTR_MASK) != 0);
     opProfilingSwitch.timeStampFlag = handle->profSwitch & PROF_OP_TIMESTAMP_MASK;
+    SetSpecifiedOpProfilingSwitch(handle->profSwitch);
 
     OP_LOGI("After ProfilingCallBack Update, reportFlag=%d, kernelLaunchFlag=%d, additionInfoFlag=%d, "
-            "level2ProfilingFlag=%d, timeStampFlag=%d",
+            "level2ProfilingFlag=%d, timeStampFlag=%d, specifiedOpProfilingEnabled=%d",
             opProfilingSwitch.reportFlag, opProfilingSwitch.kernelLaunchFlag, opProfilingSwitch.additionInfoFlag,
-            opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag);
+            opProfilingSwitch.level2ProfilingFlag, opProfilingSwitch.timeStampFlag, IsSpecifiedOpProfilingEnabled());
 
     if ((opProfilingSwitch.reportFlag || opProfilingSwitch.kernelLaunchFlag || opProfilingSwitch.timeStampFlag) &&
         opProfilingSwitch.additionInfoFlag) {

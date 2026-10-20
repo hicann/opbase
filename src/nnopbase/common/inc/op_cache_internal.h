@@ -14,12 +14,14 @@
 #include <stdint.h>
 #include <type_traits>
 #include <mutex>
+#include <vector>
 
 #include "acl/acl_base_rt.h"
 #include "profiling/aprof_pub.h"
 
 #include "aclnn/acl_meta.h"
 #include "opdev/op_cache.h"
+#include "opdev/op_log.h"
 #include "thread_local_context.h"
 
 namespace op {
@@ -27,25 +29,63 @@ namespace internal {
 
 struct TaskInfo {
     uint64_t attrId{0};
-    MsprofGeTaskType type;
-    uint32_t ration;
+    MsprofGeTaskType type{MSPROF_GE_TASK_TYPE_INVALID};
+    uint32_t ration{0};
     OpExecMode execMode{OpExecMode::OP_EXEC_MODE_DEFAULT};
 };
 
 class OpExecCacheDfx {
 public:
     void SetExceptionDumpInfo(const ExceptionDumpInfo& info) { exceptionDumpInfo_.push_back(info); }
-    ExceptionDumpInfo GetExceptionDumpInfo(int32_t index) const { return exceptionDumpInfo_[index]; }
+
+    ExceptionDumpInfo GetExceptionDumpInfo(int32_t index) const
+    {
+        return IsValidIndex(index, exceptionDumpInfo_.size(), "exceptionDumpInfo") ? exceptionDumpInfo_[index] :
+                                                                                     ExceptionDumpInfo{};
+    }
+
     void SetProfilingInfoId(const op::internal::ProfilingInfoId& id) { profilingInfoId_.push_back(id); }
-    op::internal::ProfilingInfoId GetProfilingInfoId(int32_t index) const { return profilingInfoId_[index]; }
-    void SetTaskInfo(const TaskInfo& taskInfo);
-    MsprofGeTaskType GetTaskType(int32_t index) const { return taskInfo_[index].type; }
-    TaskInfo GetTaskInfo(int32_t index) const { return taskInfo_[index]; }
+
+    op::internal::ProfilingInfoId GetProfilingInfoId(int32_t index) const
+    {
+        return IsValidIndex(index, profilingInfoId_.size(), "profilingInfoId") ? profilingInfoId_[index] :
+                                                                                 op::internal::ProfilingInfoId{};
+    }
+
+    void SetTaskInfo(const TaskInfo& taskInfo) { taskInfo_.push_back(taskInfo); }
+
+    TaskInfo GetTaskInfo(int32_t index) const
+    {
+        return IsValidIndex(index, taskInfo_.size(), "taskInfo") ? taskInfo_[index] : TaskInfo{};
+    }
+
+    MsprofGeTaskType GetTaskType(int32_t index) const
+    {
+        return IsValidIndex(index, taskInfo_.size(), "taskInfo") ? taskInfo_[index].type : MSPROF_GE_TASK_TYPE_INVALID;
+    }
+
+    void SetOpType(uint32_t opType) { opTypes_.push_back(opType); }
+
+    uint32_t GetOpType(int32_t index) const
+    {
+        return IsValidIndex(index, opTypes_.size(), "opTypes") ? opTypes_[index] : 0U;
+    }
 
 private:
+    static bool IsValidIndex(int32_t index, size_t size, const char* fieldName)
+    {
+        if (index >= 0 && static_cast<size_t>(index) < size) {
+            return true;
+        }
+        OP_LOGW("OpExecCacheDfx field %s: index %d is out of range, current size is %zu, return the default value.",
+                fieldName, static_cast<int32_t>(index), size);
+        return false;
+    }
+
     std::vector<TaskInfo> taskInfo_;
     std::vector<op::internal::ProfilingInfoId> profilingInfoId_;
     std::vector<ExceptionDumpInfo> exceptionDumpInfo_;
+    std::vector<uint32_t> opTypes_;
 };
 
 class OpExecCacheWrap {

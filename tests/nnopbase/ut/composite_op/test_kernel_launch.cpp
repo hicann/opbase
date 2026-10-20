@@ -37,6 +37,8 @@
 #include "depends/platform/platform_stub.h"
 #include "kernel_launcher.h"
 #include "depends/acl/aclrt_stub.h"
+#include "op_dfx_internal.h"
+#include "depends/profiler/profiler_stub.h"
 #include "test_comp_op_common.h"
 
 using namespace op;
@@ -926,4 +928,185 @@ TEST_F(KernelLaunchUT, KernelLaunch_CaptureGetInfoFail_NormalOverflow)
 {
     CaptureGetInfoFailStub failStub;
     TestLaunchWithCaptureStub(&failStub);
+}
+
+// ---- 算子级 profiling attr 测试用 stub ----
+
+// 捕获 aclrtLaunchKernelWithHostArgs 收到的 kernel attrs
+class CaptureLaunchAttrStub : public AclrtStub {
+public:
+    aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+                                           aclrtLaunchKernelCfg* cfg, void* hostArgs, size_t argsSize,
+                                           aclrtPlaceHolderInfo* placeHolderArray, size_t placeHolderNum) override
+    {
+        capturedAttrs_.assign(cfg->attrs, cfg->attrs + cfg->numAttrs);
+        return ACL_SUCCESS;
+    }
+
+    bool HasEnableProfilingAttr() const
+    {
+        for (const auto& attr : capturedAttrs_) {
+            if (attr.id == ACL_RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING && attr.value.enableProfiling == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::vector<aclrtLaunchKernelAttr> capturedAttrs_;
+};
+
+// 可控制算子级查询返回值的 profiler 桩
+class OpProfilingUtProfiler : public ProfilerStub {
+public:
+    bool MsprofCheckOpSwitch(uint32_t type, const char* op, size_t len) override { return checkOpSwitchRet_; }
+
+    bool checkOpSwitchRet_ = false;
+};
+
+// 构造一个最小可用的 launch 配置;opType 决定算子级 profiling 是否命中该算子
+static op::internal::KernelLaunchConfig MakeLaunchCfg(uint32_t opType)
+{
+    op::internal::KernelLaunchConfig launchCfg{};
+    launchCfg.funcHandle = (void*)0x12345678;
+    launchCfg.numBlocks = 32;
+    launchCfg.schemMode = 1;
+    launchCfg.engineType = op::internal::LaunchKernelEngineType::NO_VECTOR_CORE;
+    launchCfg.opType = opType;
+    return launchCfg;
+}
+
+// 成对安装/卸载两个 fake,避免用例中途 return 导致泄漏
+class OpProfilingAttrGuard {
+public:
+    OpProfilingAttrGuard(CaptureLaunchAttrStub& aclrtStub, OpProfilingUtProfiler& profilerStub)
+        : aclrtStub_(aclrtStub), profilerStub_(profilerStub)
+    {
+        AclrtStub::GetInstance()->Install(&aclrtStub_);
+        ProfilerStub::GetInstance()->Install(&profilerStub_);
+    }
+
+    ~OpProfilingAttrGuard()
+    {
+        ProfilerStub::GetInstance()->UnInstall();
+        AclrtStub::GetInstance()->UnInstall();
+    }
+
+    // 按 profSwitch 位启动 profiling(START 分支会重设四个上报旗标与算子级总闸)
+    static int32_t StartProfiling(uint64_t profSwitch)
+    {
+        MsprofCommandHandle handle;
+        handle.profSwitch = profSwitch;
+        handle.type = PROF_COMMANDHANDLE_TYPE_START;
+        return op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle));
+    }
+
+    // 关闭总闸并复位全部上报旗标
+    static int32_t StopProfiling()
+    {
+        MsprofCommandHandle handle;
+        handle.type = PROF_COMMANDHANDLE_TYPE_STOP;
+        return op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle));
+    }
+
+    // 开启算子级总闸与 L0 上报旗标
+    static int32_t EnableSpecifiedOpProfiling() { return StartProfiling(PROF_TASK_TIME_MASK | PROF_OP_MASK); }
+
+private:
+    CaptureLaunchAttrStub& aclrtStub_;
+    OpProfilingUtProfiler& profilerStub_;
+};
+
+TEST_F(KernelLaunchUT, op_profiling_attr_non_cache)
+{
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+
+    CaptureLaunchAttrStub aclrtStub;
+    OpProfilingUtProfiler profilerStub;
+    OpProfilingAttrGuard guard(aclrtStub, profilerStub);
+    profilerStub.checkOpSwitchRet_ = true;
+    OpProfilingAttrGuard::EnableSpecifiedOpProfiling();
+
+    op::Shape selfShape{100};
+    op::Shape outShape{100};
+    aclOpExecutor exe;
+    int64_t inputData[100];
+    auto self = exe.AllocIntArray(inputData, 100);
+    auto out = exe.AllocTensor(outShape, op::DataType::DT_INT32);
+    auto inputTensor = exe.ConvertToTensor(self, op::DataType::DT_INT32);
+    auto ctx = op::MakeOpArgContext(OP_INPUT(inputTensor), OP_OUTPUT(out));
+
+    op::internal::ExpandableRtsArgBuffer buffer;
+    buffer.Init(TEST_LAUNCH_ARG_INIT_CAP, TEST_TILING_HOST_DATA_INIT_CAP);
+    op::internal::TilingData* tilingData = buffer.GetTilingDataPtr();
+    tilingData->data_size_ = 60;
+
+    op::internal::LaunchArgInfo argInfo(false, false, ctx);
+    op::internal::RtsArg arg(true, argInfo, &buffer);
+    arg.FillArgs();
+
+    op::internal::KernelLaunchConfig launchCfg = MakeLaunchCfg(opType);
+
+    EXPECT_EQ(arg.LaunchKernel(nullptr, launchCfg), ACLNN_SUCCESS);
+    EXPECT_TRUE(aclrtStub.HasEnableProfilingAttr());
+
+    OpProfilingAttrGuard::StopProfiling();
+}
+
+TEST_F(KernelLaunchUT, op_profiling_attr_from_cache)
+{
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+
+    CaptureLaunchAttrStub aclrtStub;
+    OpProfilingUtProfiler profilerStub;
+    OpProfilingAttrGuard guard(aclrtStub, profilerStub);
+    profilerStub.checkOpSwitchRet_ = true;
+    OpProfilingAttrGuard::EnableSpecifiedOpProfiling();
+
+    op::internal::rtArgs_t rtArg{};
+    op::internal::KernelLaunchConfig launchCfg = MakeLaunchCfg(opType);
+
+    EXPECT_EQ(op::internal::LaunchArgCache::LaunchKernelFromCache(nullptr, rtArg, launchCfg), ACLNN_SUCCESS);
+    EXPECT_TRUE(aclrtStub.HasEnableProfilingAttr());
+
+    OpProfilingAttrGuard::StopProfiling();
+}
+
+TEST_F(KernelLaunchUT, op_profiling_attr_skip_when_switch_off)
+{
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+
+    CaptureLaunchAttrStub aclrtStub;
+    OpProfilingUtProfiler profilerStub;
+    OpProfilingAttrGuard guard(aclrtStub, profilerStub);
+
+    op::internal::rtArgs_t rtArg{};
+    op::internal::KernelLaunchConfig launchCfg = MakeLaunchCfg(opType);
+
+    // 场景一:算子级总闸开启,但三个上报旗标全关 -> 不下发
+    // (仅带 PROF_OP_MASK 的 START 只会点亮总闸,四个上报旗标均为 false)
+    profilerStub.checkOpSwitchRet_ = true;
+    EXPECT_EQ(OpProfilingAttrGuard::StartProfiling(PROF_OP_MASK), 0);
+    EXPECT_TRUE(op::internal::IsSpecifiedOpProfilingEnabled());
+    EXPECT_EQ(op::internal::LaunchArgCache::LaunchKernelFromCache(nullptr, rtArg, launchCfg), ACLNN_SUCCESS);
+    EXPECT_FALSE(aclrtStub.HasEnableProfilingAttr());
+
+    // 场景二:L0 上报旗标开启,但算子级总闸关闭 -> 不下发
+    // (只带 PROF_TASK_TIME_MASK 的 START 点亮 kernelLaunchFlag 而不点亮总闸)
+    EXPECT_EQ(OpProfilingAttrGuard::StartProfiling(PROF_TASK_TIME_MASK), 0);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
+    profilerStub.checkOpSwitchRet_ = true;
+    EXPECT_EQ(op::internal::LaunchArgCache::LaunchKernelFromCache(nullptr, rtArg, launchCfg), ACLNN_SUCCESS);
+    EXPECT_FALSE(aclrtStub.HasEnableProfilingAttr());
+
+    // 场景三:总闸开启、旗标开启,但该算子未命中配置 -> 不下发
+    OpProfilingAttrGuard::EnableSpecifiedOpProfiling();
+    profilerStub.checkOpSwitchRet_ = false;
+    EXPECT_EQ(op::internal::LaunchArgCache::LaunchKernelFromCache(nullptr, rtArg, launchCfg), ACLNN_SUCCESS);
+    EXPECT_FALSE(aclrtStub.HasEnableProfilingAttr());
+
+    OpProfilingAttrGuard::StopProfiling();
 }

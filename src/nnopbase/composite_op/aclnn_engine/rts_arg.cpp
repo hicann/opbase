@@ -24,6 +24,7 @@
 #include "opdev/op_log.h"
 #include "opdev/op_cache.h"
 #include "op_dfx_internal.h"
+#include "op_feature_internal.h"
 #include "op_cache_internal.h"
 #include "kernel_utils.h"
 #include "bridge_dfx.h"
@@ -142,7 +143,7 @@ int PrintRtArg(const rtArgs_t& rtArg)
     }
     uint32_t hostDataNum = (rtArg.hasTiling != 0 && rtArg.placeHolderInfoNum > 0) ? rtArg.placeHolderInfoNum - 1 :
                                                                                     rtArg.placeHolderInfoNum;
-    OP_LOGD("opType: %s, argsSize: %u, placeHolderInfoNum: %u, hostDataNum: %u, hasTiling %d, tilingAddrOffset: %u, "
+    OP_LOGD("l0Name: %s, argsSize: %u, placeHolderInfoNum: %u, hostDataNum: %u, hasTiling %d, tilingAddrOffset: %u, "
             "tilingDataOffset: %u",
             op::internal::GetThreadLocalContext().logInfo_.l0Name, rtArg.argsSize, rtArg.placeHolderInfoNum,
             hostDataNum, rtArg.hasTiling, rtArg.tilingAddrOffset, rtArg.tilingDataOffset);
@@ -213,6 +214,38 @@ int PrintAICErrorDFXInfo(const void* dfxInfoAddr, const size_t argNum, const siz
     SplitDataAndPrint("PrintAICErrorDFXInfo", ss.str());
     return 0;
 }
+
+namespace {
+void AddOpProfilingLaunchKernelAttr(uint32_t opType, [[maybe_unused]] std::vector<aclrtLaunchKernelAttr>& kernelAttrs)
+{
+    // 任一 profiling 上报类型开启时才需要该 attr
+    if (!(op::internal::opProfilingSwitch.kernelLaunchFlag || op::internal::opProfilingSwitch.additionInfoFlag ||
+          op::internal::opProfilingSwitch.level2ProfilingFlag)) {
+        return;
+    }
+    // 算子级开关未使能、或该算子未在配置中时,不下发
+    if (!op::internal::IsSpecifiedOpProfilingEnabled() || !op::internal::CheckSpecifiedOpProfiling(opType)) {
+        return;
+    }
+#if defined(NNOPBASE_RUNTIME_VERSION_SUPPORT_OP_PROFILING)
+    static int32_t runtimeVerNum = -1;
+    static const aclError runtimeVerRet = aclsysGetVersionNum("runtime", &runtimeVerNum);
+    if (runtimeVerRet != ACL_SUCCESS || runtimeVerNum < PKG_VERSION_NUM_9_2_0) {
+        OP_LOGW("[AddOpProfilingLaunchKernelAttr] ACL_RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING attr is not "
+                "supported, get runtime version return %d, runtime version num is %d, required is %d, "
+                "skip adding attr.",
+                runtimeVerRet, runtimeVerNum, PKG_VERSION_NUM_9_2_0);
+        return;
+    }
+    kernelAttrs.emplace_back();
+    kernelAttrs.back().id = ACL_RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING;
+    kernelAttrs.back().value.enableProfiling = 1;
+#else
+    OP_LOGW("[AddOpProfilingLaunchKernelAttr] ACL_RT_LAUNCH_KERNEL_ATTR_ENABLE_PROFILING attr is not supported, "
+            "because the runtime package version is lower than 9.2.0 when compiling nnopbase, skip adding attr.");
+#endif
+}
+} // namespace
 
 constexpr size_t TILING_AND_OVERFLOW = 2;
 constexpr size_t ONLY_OVERFLOW = 1;
@@ -312,6 +345,8 @@ aclnnStatus RtsArg::LaunchKernel(aclrtStream stream, const KernelLaunchConfig& l
                                                   ACL_RT_ENGINE_TYPE_AIC :
                                                   ACL_RT_ENGINE_TYPE_AIV;
     }
+
+    AddOpProfilingLaunchKernelAttr(launchCfg.opType, kernelAttrs);
 
     aclrtLaunchKernelCfg aclrtLaunchCfg;
     aclrtLaunchCfg.attrs = kernelAttrs.data();
@@ -777,7 +812,7 @@ LaunchArgCache* RtsArg::DumpToCache()
     launchCache->SetExceptionArgNum(0);
     launchCache->SetDFXInfoCacheElemCount(0);
     launchCache->SetRtsApiType(LaunchArgCache::RTS_OLD);
-    launchCache->SetOpType(op::internal::GetThreadLocalContext().logInfo_.l0Name);
+    launchCache->SetL0Name(op::internal::GetThreadLocalContext().logInfo_.l0Name);
     LaunchArgCache::ArgInfo* argInfo = launchCache->GetArgInfo();
     AddArgInfoToCache(cache, argInfo, argInfo_, hasFftsAddr_, rtsArgBuffer_);
     AddExceptionDumpDataToCache(argInfo_, cache, launchCache);
@@ -878,6 +913,8 @@ aclnnStatus LaunchArgCache::LaunchKernelFromCache(aclrtStream stream, rtArgs_t& 
         kernelAttrs.back().value.engineType = ACL_RT_ENGINE_TYPE_AIC;
     }
 
+    AddOpProfilingLaunchKernelAttr(launchCfg.opType, kernelAttrs);
+
     aclrtLaunchKernelCfg aclrtLaunchCfg;
     aclrtLaunchCfg.attrs = kernelAttrs.data();
     aclrtLaunchCfg.numAttrs = kernelAttrs.size();
@@ -906,7 +943,8 @@ aclnnStatus LaunchArgCache::RunFromCache(aclrtStream stream, void* cache)
     }
 
     LaunchArgCache* launchCache = PtrCastTo<LaunchArgCache>(cache);
-    op::internal::GetThreadLocalContext().logInfo_.l0Name = launchCache->GetOpType();
+    auto& opThreadLocalCtx = op::internal::GetThreadLocalContext();
+    opThreadLocalCtx.logInfo_.l0Name = launchCache->GetL0Name();
 
     LaunchArgCache::ArgInfo* argInfo = launchCache->GetArgInfo();
     void* rawArg = launchCache->GetRawRtsArg();
@@ -925,8 +963,8 @@ aclnnStatus LaunchArgCache::RunFromCache(aclrtStream stream, void* cache)
     rtArg.argsSize = launchCache->GetRawArgSize();
 
     if (IsExceptionDumpEnable()) {
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgs_ = rtArg.args;
-        op::internal::GetThreadLocalContext().exceptionDumpInfo_.rtsArgsSize_ = rtArg.argsSize;
+        opThreadLocalCtx.exceptionDumpInfo_.rtsArgs_ = rtArg.args;
+        opThreadLocalCtx.exceptionDumpInfo_.rtsArgsSize_ = rtArg.argsSize;
     }
 
     for (size_t i = 0; i < argNum; i++) {

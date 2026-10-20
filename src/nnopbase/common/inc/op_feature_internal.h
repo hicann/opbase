@@ -11,7 +11,22 @@
 #ifndef OP_API_OP_API_COMMON_INC_OP_FEATURE_INTERNAL_H_
 #define OP_API_OP_API_COMMON_INC_OP_FEATURE_INTERNAL_H_
 
+#ifndef PRODUCT_SIDE_IS_DEVICE
+#include "version/runtime_version.h"
+#endif
+
 #include "aclnn/acl_meta.h"
+
+#define PKG_VERSION_NUM_9_2_0 90200000
+
+#if !defined(PRODUCT_SIDE_IS_DEVICE)
+#if defined(RUNTIME_VERSION_NUM)
+#if (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+#define NNOPBASE_RUNTIME_VERSION_SUPPORT_PCIE_THROUGH 1
+#define NNOPBASE_RUNTIME_VERSION_SUPPORT_OP_PROFILING 1
+#endif
+#endif
+#endif
 
 namespace op {
 namespace internal {

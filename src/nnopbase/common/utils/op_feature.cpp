@@ -29,13 +29,11 @@
 #include "opdev/op_errno.h"
 #include "op_common/op_host/util/op_const_def.h"
 
-#define PKG_VERSION_NUM_9_2_0 90200000
-
 namespace op {
 namespace internal {
 
 namespace {
-#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+#if defined(NNOPBASE_RUNTIME_VERSION_SUPPORT_PCIE_THROUGH)
 using PcieAddrRange = aclrtAddrRange;
 #else
 struct PcieAddrRange {
@@ -63,7 +61,7 @@ bool IsPcieThroughEnvEnabled()
 
 bool IsHostDeviceConnectWithPcie([[maybe_unused]] uint32_t deviceId)
 {
-#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+#if defined(NNOPBASE_RUNTIME_VERSION_SUPPORT_PCIE_THROUGH)
     int64_t hdConnectType = ACL_HOST_DEVICE_CONNECT_TYPE_UB;
     auto ret = aclrtGetDeviceInfo(deviceId, ACL_DEV_ATTR_HD_CONNECT_TYPE, &hdConnectType);
     if (ret != ACL_SUCCESS) {
@@ -85,7 +83,7 @@ bool IsHostDeviceConnectWithPcie([[maybe_unused]] uint32_t deviceId)
 
 aclnnStatus GetPcieAddrRange([[maybe_unused]] std::vector<PcieAddrRange>& addrRanges)
 {
-#if !defined(PRODUCT_SIDE_IS_DEVICE) && defined(RUNTIME_VERSION_NUM) && (RUNTIME_VERSION_NUM >= PKG_VERSION_NUM_9_2_0)
+#if defined(NNOPBASE_RUNTIME_VERSION_SUPPORT_PCIE_THROUGH)
     addrRanges.clear();
     if (aclrtHostGetDevicePointerAddrRange == nullptr) {
         OP_LOGW("aclrtHostGetDevicePointerAddrRange symbol is not found");

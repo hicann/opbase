@@ -1013,10 +1013,7 @@ void* OpExecCache::AddLaunchAddress(const AddrRule& rule)
     return slot;
 }
 
-void OpExecCache::KeepResource(std::shared_ptr<void> resource)
-{
-    resources_.push_back(std::move(resource));
-}
+void OpExecCache::KeepResource(std::shared_ptr<void> resource) { resources_.push_back(std::move(resource)); }
 
 void OpExecCache::SetCacheBuf(void* buf) { cacheBuf_ = buf; }
 
@@ -1095,8 +1092,6 @@ void OpExecCache::SetWorkspaceSize(uint64_t val) { workspaceSize_ = val; }
 
 uint64_t OpExecCache::GetWorkspaceSize() const { return workspaceSize_; }
 
-void OpExecCacheDfx::SetTaskInfo(const TaskInfo& taskInfo) { taskInfo_.push_back(taskInfo); }
-
 uint64_t OpExecCache::GetHash() const { return hashKey_; }
 
 OpCacheKey OpExecCache::GetOpCacheKey() const { return key_; }
@@ -1118,8 +1113,8 @@ bool OpExecCache::IsOpCacheValid()
 
 aclnnStatus OpExecCache::DoSummaryProfiling(int index)
 {
-    if (opExecCacheDfx_->GetTaskType(index) == MSPROF_GE_TASK_TYPE_MIX_AIV ||
-        opExecCacheDfx_->GetTaskType(index) == MSPROF_GE_TASK_TYPE_MIX_AIC) {
+    const MsprofGeTaskType taskType = opExecCacheDfx_->GetTaskType(index);
+    if (taskType == MSPROF_GE_TASK_TYPE_MIX_AIV || taskType == MSPROF_GE_TASK_TYPE_MIX_AIC) {
         op::internal::ReportNodeContextIdInfo(opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_);
     }
     // only level2 profiling need to report addition info
@@ -1149,9 +1144,11 @@ aclnnStatus OpExecCache::Run(void* workspaceAddr, const aclrtStream stream, cons
             continue;
         }
         RestoreThreadLocal(index);
+        bool isL0ProfilingEnabled = op::internal::IsL0ProfilingEnabled(opExecCacheDfx_->GetOpType(index));
         {
-            OpDfxGuard kernelLaunchGuard(opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_,
-                                         DfxProfilingType::DfxProfilingKernelLaunch);
+            uint64_t summaryItemId = isL0ProfilingEnabled ? opExecCacheDfx_->GetProfilingInfoId(index).summaryItemId_ :
+                                                            kInvalidProfilingId;
+            OpDfxGuard kernelLaunchGuard(summaryItemId, DfxProfilingType::DfxProfilingKernelLaunch);
             aclnnStatus result = t.runner(stream, op::internal::PtrShift(cacheBuf_, t.cacheOffset));
             OP_CHECK(result == ACLNN_SUCCESS, OP_LOGE(result, "OpExecCache run fail."), return result);
         }
@@ -1159,7 +1156,7 @@ aclnnStatus OpExecCache::Run(void* workspaceAddr, const aclrtStream stream, cons
             DoExceptionDump(cacheTensorInfoLists_[index], workspaceAddr, tensors,
                             opExecCacheDfx_->GetExceptionDumpInfo(index), stream);
         }
-        if (op::internal::opProfilingSwitch.kernelLaunchFlag) {
+        if (isL0ProfilingEnabled) {
             DoSummaryProfiling(index);
         }
         if (GetThreadLocalContext().cacheOpInfoSwitch_) {

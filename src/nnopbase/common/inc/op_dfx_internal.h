@@ -75,7 +75,8 @@ void DumpL2(const std::vector<const aclTensor*>& tensors, const OpLogInfo& opLog
 
 void CacheTensorInfo(const FVector<const aclTensor*>& inTensors, const FVector<const aclTensor*>& outTensors);
 
-void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet);
+void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet,
+                  uint32_t opType);
 
 int32_t RestoreTensorInfo(void* cacheTensorInfoLists, FVector<const aclTensor*>& inTensors,
                           FVector<const aclTensor*>& outTensors);
@@ -167,6 +168,20 @@ bool GetOpProfilingRecordArgFlag();
 void SetOpProfilingRecordArgFlag(bool value);
 
 bool IsAclnnDebugEnabled();
+
+bool IsSpecifiedOpProfilingEnabled();
+bool CheckSpecifiedOpProfiling(uint32_t opType);
+
+inline bool IsTilingProfilingEnabled(uint32_t opType)
+{
+    return opProfilingSwitch.reportFlag && (!IsSpecifiedOpProfilingEnabled() || CheckSpecifiedOpProfiling(opType));
+}
+
+inline bool IsL0ProfilingEnabled(uint32_t opType)
+{
+    return opProfilingSwitch.kernelLaunchFlag &&
+           (!IsSpecifiedOpProfilingEnabled() || CheckSpecifiedOpProfiling(opType));
+}
 
 #ifdef __cplusplus
 extern "C" {

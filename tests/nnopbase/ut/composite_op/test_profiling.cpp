@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include <array>
 #include <memory>
+#include <string>
 
 #include "acl/acl.h"
 #include "opdev/make_op_executor.h"
@@ -30,6 +31,19 @@ public:
         profiling_called = true;
         return 0;
     }
+
+    bool MsprofCheckOpSwitch(uint32_t type, const char* op, size_t len) override
+    {
+        checkOpSwitchCalled_ = true;
+        queriedType_ = type;
+        queriedOpName_.assign(op, len);
+        return checkOpSwitchRet_;
+    }
+
+    bool checkOpSwitchRet_ = false;
+    bool checkOpSwitchCalled_ = false;
+    uint32_t queriedType_ = 0;
+    std::string queriedOpName_;
 };
 static ProfilingUtProfiler prof;
 
@@ -145,7 +159,7 @@ TEST_F(ProfilingUt, l0_api_profiling)
 
 TEST_F(ProfilingUt, kernel_launch_profiling)
 {
-    MsprofCommandHandle handle;
+    MsprofCommandHandle handle{};
 
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_INVALID, nullptr, 0), -1);
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, 0), -1);
@@ -154,10 +168,13 @@ TEST_F(ProfilingUt, kernel_launch_profiling)
     op::internal::CollectProfilingStr("aaaaa");
 
     profiling_called = false;
-    op::internal::opProfilingSwitch.reportFlag = true;
-    op::internal::opProfilingSwitch.kernelLaunchFlag = true;
-    op::internal::opProfilingSwitch.additionInfoFlag = true;
-    op::internal::opProfilingSwitch.level2ProfilingFlag = true;
+    // 以真实 START 回调点亮四个上报旗标与算子级总闸,供随后验证 STOP 会把它们一并复位
+    MsprofCommandHandle handleStart;
+    handleStart.profSwitch = PROF_ACL_API_MASK | PROF_TASK_TIME_MASK | PROF_TASK_TIME_L1_MASK | PROF_TASK_TIME_L2_MASK |
+                             PROF_OP_MASK;
+    handleStart.type = PROF_COMMANDHANDLE_TYPE_START;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handleStart, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_TRUE(op::internal::IsSpecifiedOpProfilingEnabled());
 
     vector<int64_t> shapeA = {2, 1, 32, 16};
     aclDataType dtype1 = aclDataType::ACL_FLOAT16;
@@ -193,6 +210,7 @@ TEST_F(ProfilingUt, kernel_launch_profiling)
     EXPECT_EQ(op::internal::opProfilingSwitch.kernelLaunchFlag, false);
     EXPECT_EQ(op::internal::opProfilingSwitch.additionInfoFlag, false);
     EXPECT_EQ(op::internal::opProfilingSwitch.level2ProfilingFlag, false);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
     handleStop.type = PROF_COMMANDHANDLE_TYPE_INIT;
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handleStop, sizeof(MsprofCommandHandle)), 0);
     EXPECT_EQ(op::internal::opProfilingSwitch.reportFlag, false);
@@ -261,4 +279,96 @@ TEST_F(ProfilingUt, GetTimeStampFlag)
     handle.profSwitch = 0x00001ULL;
     EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
     EXPECT_EQ(op::internal::opProfilingSwitch.timeStampFlag, false);
+}
+
+TEST_F(ProfilingUt, specified_op_profiling_switch)
+{
+    // STOP 复位后为关闭
+    MsprofCommandHandle handleStop;
+    handleStop.type = PROF_COMMANDHANDLE_TYPE_STOP;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handleStop, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
+
+    // START 携带 PROF_OP_MASK 位时使能
+    MsprofCommandHandle handle;
+    handle.profSwitch = PROF_OP_MASK;
+    handle.type = PROF_COMMANDHANDLE_TYPE_START;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_TRUE(op::internal::IsSpecifiedOpProfilingEnabled());
+
+    // START 不带 PROF_OP_MASK 位时保持关闭
+    handle.profSwitch = PROF_ACL_API_MASK;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
+
+    // STOP 再次复位
+    handle.type = PROF_COMMANDHANDLE_TYPE_STOP;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
+}
+
+TEST_F(ProfilingUt, check_specified_op_profiling)
+{
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+
+    // 桩返回 true:查询结果透传为 true,且查询参数正确
+    prof.checkOpSwitchRet_ = true;
+    prof.checkOpSwitchCalled_ = false;
+    prof.queriedOpName_.clear();
+    EXPECT_TRUE(op::internal::CheckSpecifiedOpProfiling(opType));
+    EXPECT_TRUE(prof.checkOpSwitchCalled_);
+    EXPECT_EQ(prof.queriedType_, static_cast<uint32_t>(MSPROF_OPTYPE));
+    EXPECT_EQ(prof.queriedOpName_, "Axpy");
+
+    // 桩返回 false:查询结果透传为 false
+    prof.checkOpSwitchRet_ = false;
+    EXPECT_FALSE(op::internal::CheckSpecifiedOpProfiling(opType));
+    EXPECT_EQ(prof.queriedOpName_, "Axpy");
+}
+
+TEST_F(ProfilingUt, is_l0_and_tiling_profiling_enabled)
+{
+    const uint32_t opType = op::GenOpTypeId("Axpy");
+    ASSERT_NE(opType, 0U);
+    MsprofCommandHandle handle;
+
+    // 总闸关闭:保持原有上报行为,与桩返回值无关
+    handle.profSwitch = PROF_ACL_API_MASK | PROF_TASK_TIME_MASK;
+    handle.type = PROF_COMMANDHANDLE_TYPE_START;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
+    prof.checkOpSwitchRet_ = true;
+    EXPECT_TRUE(op::internal::IsTilingProfilingEnabled(opType));
+    EXPECT_TRUE(op::internal::IsL0ProfilingEnabled(opType));
+    prof.checkOpSwitchRet_ = false;
+    EXPECT_TRUE(op::internal::IsTilingProfilingEnabled(opType));
+    EXPECT_TRUE(op::internal::IsL0ProfilingEnabled(opType));
+
+    // 总闸开启且算子命中:上报
+    handle.profSwitch = PROF_ACL_API_MASK | PROF_TASK_TIME_MASK | PROF_OP_MASK;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_TRUE(op::internal::IsSpecifiedOpProfilingEnabled());
+    prof.checkOpSwitchRet_ = true;
+    EXPECT_TRUE(op::internal::IsTilingProfilingEnabled(opType));
+    EXPECT_TRUE(op::internal::IsL0ProfilingEnabled(opType));
+
+    // 总闸开启但算子未命中:不上报
+    prof.checkOpSwitchRet_ = false;
+    EXPECT_FALSE(op::internal::IsTilingProfilingEnabled(opType));
+    EXPECT_FALSE(op::internal::IsL0ProfilingEnabled(opType));
+
+    // 上报旗标关闭:即使总闸开启且算子命中也不上报
+    handle.profSwitch = PROF_OP_MASK;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_TRUE(op::internal::IsSpecifiedOpProfilingEnabled());
+    prof.checkOpSwitchRet_ = true;
+    EXPECT_FALSE(op::internal::IsTilingProfilingEnabled(opType));
+    EXPECT_FALSE(op::internal::IsL0ProfilingEnabled(opType));
+
+    // 复位全局状态与桩状态,避免污染同一 fixture 内的后续用例
+    prof.checkOpSwitchRet_ = false;
+    handle.type = PROF_COMMANDHANDLE_TYPE_STOP;
+    EXPECT_EQ(op::internal::ProfilingCallBack(PROF_CTRL_SWITCH, &handle, sizeof(MsprofCommandHandle)), 0);
+    EXPECT_FALSE(op::internal::IsSpecifiedOpProfilingEnabled());
 }

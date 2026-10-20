@@ -28,6 +28,7 @@
 namespace op::internal {
 
 constexpr size_t KERNEL_NAME_MAX_SIZE = 160;
+constexpr size_t L0_NAME_MAX_SIZE = 48;
 constexpr int32_t LAUNCH_KERNEL_ATTR_DYN_UBUF_SIZE = 2;
 
 enum class LaunchKernelEngineType : uint8_t { NO_VECTOR_CORE = 0, VECTOR_CORE_ENGINE_AIC, VECTOR_CORE_ENGINE_AIV };
@@ -43,6 +44,7 @@ struct KernelLaunchConfig {
     uint32_t dynUBufSize;
     uint32_t blockDimOffset;
     LaunchKernelEngineType engineType;
+    uint32_t opType{0};
 };
 
 // rts args struct
@@ -154,6 +156,8 @@ public:
 
     uint64_t GetTilingKey() const { return tilingKey_; }
 
+    uint32_t GetOpType() const { return launchCfg_.opType; }
+
     KernelLaunchConfig& GetKernelLaunchConfig()
     {
         launchCfg_.kernelNameOfNoFatBin = kernelNameOfNoFatBin_;
@@ -173,9 +177,16 @@ public:
         return sizeof(void*) * argNum_ + hostLen;
     }
 
-    void SetOpType(const char* opType) { strcpy_s(opType_, sizeof(opType_), opType); }
+    void SetL0Name(const char* l0Name)
+    {
+        auto rc = strcpy_s(l0Name_, sizeof(l0Name_), l0Name);
+        OP_CHECK(rc == EOK,
+                 OP_LOGW("Copy l0Name failed, return %d, the maximum length is %zu, l0Name: %s.", rc,
+                         sizeof(l0Name_) - 1, l0Name == nullptr ? "(null)" : l0Name),
+                 return);
+    }
 
-    const char* GetOpType() { return opType_; }
+    const char* GetL0Name() const { return l0Name_; }
 
     void SetHostArgInfo(size_t size, size_t num)
     {
@@ -192,7 +203,7 @@ public:
     static aclnnStatus RunFromCache(aclrtStream stream, void* cache);
 
 private:
-    char opType_[16] = {0};
+    char l0Name_[L0_NAME_MAX_SIZE] = {0};
     char kernelNameOfNoFatBin_[KERNEL_NAME_MAX_SIZE] = {0};
     void* handle_{nullptr};
     KernelLaunchConfig launchCfg_;

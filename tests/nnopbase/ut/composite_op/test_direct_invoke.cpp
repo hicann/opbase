@@ -877,7 +877,9 @@ TEST(DirectInvokeTaskTest, StatelessCallbacksRequireNoDestroy)
 
 TEST(DirectInvokeTaskTest, RepeatReusesPreparationAndAlwaysLaunchesWithCurrentAddresses)
 {
-    struct ResetMocks { ~ResetMocks() { GlobalMockObject::verify(); } } resetMocks;
+    struct ResetMocks {
+        ~ResetMocks() { GlobalMockObject::verify(); }
+    } resetMocks;
     MOCKER(op::internal::CheckCacheable).stubs().will(returnValue(true));
     auto& tls = op::internal::GetThreadLocalContext();
     struct Restore {
@@ -886,7 +888,8 @@ TEST(DirectInvokeTaskTest, RepeatReusesPreparationAndAlwaysLaunchesWithCurrentAd
         uint64_t hash;
         std::vector<const aclStorage*> storages;
         size_t storageCount;
-        ~Restore() {
+        ~Restore()
+        {
             tls.cacheHasFull_ = cacheHasFull;
             tls.hashKey_ = hash;
             tls.cachedStorageList_ = std::move(storages);
@@ -909,8 +912,8 @@ TEST(DirectInvokeTaskTest, RepeatReusesPreparationAndAlwaysLaunchesWithCurrentAd
         ASSERT_TRUE(executor->GetOpExecCache()->IsOpCacheValid());
         auto* args = op::GetOpArgContext(OP_INPUT(tensors.input.get()), OP_OUTPUT(tensors.output.get()),
                                          FIXTURE_ATTR(config), OP_WORKSPACE());
-        ASSERT_EQ(op::AddDirectInvokeTask("DirectInvokeFixture", DirectInvokeFixtureOpTypeId(),
-                                         PrepareFixture, LaunchFixture, DestroyFixture, executor.get(), args),
+        ASSERT_EQ(op::AddDirectInvokeTask("DirectInvokeFixture", DirectInvokeFixtureOpTypeId(), PrepareFixture,
+                                          LaunchFixture, DestroyFixture, executor.get(), args),
                   ACLNN_SUCCESS);
         // This must hold independently of DFX switches that can also reject cache.
         EXPECT_TRUE(executor->GetOpExecCache()->IsOpCacheValid());
@@ -953,7 +956,10 @@ TEST(DirectInvokeTaskTest, CacheSnapshotOwnsArgumentsAndRebindsOffsetsAndWorkspa
     using namespace op;
     using namespace op::internal;
     int destroyed = 0;
-    struct State { int* destroyed; int calls{0}; };
+    struct State {
+        int* destroyed;
+        int calls{0};
+    };
     auto state = std::shared_ptr<void>(new State{&destroyed}, [](void* p) {
         auto* s = static_cast<State*>(p);
         ++*s->destroyed;
@@ -989,7 +995,8 @@ TEST(DirectInvokeTaskTest, CacheSnapshotOwnsArgumentsAndRebindsOffsetsAndWorkspa
         DestroyOpArgContext(args);
         aclDestroyIntArray(array);
         aclDestroyScalar(scalar);
-        for (size_t i = 0; i < list->Size(); ++i) (*list)[i] = nullptr;
+        for (size_t i = 0; i < list->Size(); ++i)
+            (*list)[i] = nullptr;
         aclDestroyTensorList(list);
         aclDestroyTensorList(workspaceList);
         aclDestroyTensor(input);
@@ -997,15 +1004,19 @@ TEST(DirectInvokeTaskTest, CacheSnapshotOwnsArgumentsAndRebindsOffsetsAndWorkspa
         DirectInvokeLaunchFn launch = [](void* p, const OpArgContext* current, aclrtStream stream) noexcept {
             auto* s = static_cast<State*>(p);
             ++s->calls;
-            const auto* list = static_cast<const aclTensorList*>(current->GetOpArg(OP_INPUT_ARG)->args[0].value.data.pointer);
+            const auto* list = static_cast<const aclTensorList*>(
+                current->GetOpArg(OP_INPUT_ARG)->args[0].value.data.pointer);
             EXPECT_EQ((*list)[0], nullptr);
             EXPECT_EQ((*list)[1], (*list)[2]);
             EXPECT_EQ((*list)[1]->GetData(), static_cast<char*>(reinterpret_cast<void*>(stream)) + 5 * sizeof(float));
             const auto* attrs = current->GetOpArg(OP_ATTR_ARG);
             EXPECT_EQ((*static_cast<const aclIntArray*>(attrs->args[0].value.data.pointer))[1], 9);
-            EXPECT_FLOAT_EQ(*static_cast<const float*>(static_cast<const aclScalar*>(attrs->args[1].value.data.pointer)->GetData()), 0.5F);
+            EXPECT_FLOAT_EQ(
+                *static_cast<const float*>(static_cast<const aclScalar*>(attrs->args[1].value.data.pointer)->GetData()),
+                0.5F);
             EXPECT_STREQ(static_cast<const char*>(attrs->args[2].value.data.pointer), "snapshot");
-            const auto* work = static_cast<const aclTensorList*>(current->GetOpArg(OP_WORKSPACE_ARG)->args[0].value.data.pointer);
+            const auto* work = static_cast<const aclTensorList*>(
+                current->GetOpArg(OP_WORKSPACE_ARG)->args[0].value.data.pointer);
             EXPECT_EQ(static_cast<char*>((*work)[0]->GetData()) - static_cast<char*>((*work)[0]->GetStorageAddr()), 18);
             return ACLNN_SUCCESS;
         };
@@ -1027,7 +1038,9 @@ TEST(DirectInvokeTaskTest, CacheSnapshotOwnsArgumentsAndRebindsOffsetsAndWorkspa
 
 TEST(DirectInvokeTaskTest, CacheAssociatesDfxWithMixedTasksAndStopsOnError)
 {
-    struct ResetMocks { ~ResetMocks() { GlobalMockObject::verify(); } } resetMocks;
+    struct ResetMocks {
+        ~ResetMocks() { GlobalMockObject::verify(); }
+    } resetMocks;
     using namespace op::internal;
     MOCKER(IsExceptionDumpEnable).stubs().will(returnValue(true));
     MOCKER(DoExceptionDump).expects(exactly(2));
@@ -1038,7 +1051,11 @@ TEST(DirectInvokeTaskTest, CacheAssociatesDfxWithMixedTasksAndStopsOnError)
     struct RestoreDfx {
         decltype(opProfilingSwitch) profiling;
         decltype(oldTls) tls;
-        ~RestoreDfx() { opProfilingSwitch = profiling; GetThreadLocalContext() = tls; }
+        ~RestoreDfx()
+        {
+            opProfilingSwitch = profiling;
+            GetThreadLocalContext() = tls;
+        }
     } restore{oldProfiling, oldTls};
     opProfilingSwitch = {};
     opProfilingSwitch.kernelLaunchFlag = true;
@@ -1048,7 +1065,12 @@ TEST(DirectInvokeTaskTest, CacheAssociatesDfxWithMixedTasksAndStopsOnError)
     alignas(64) char buffer[512]{};
     cache.SetCacheBuf(buffer);
     std::vector<int> order;
-    struct Record { std::vector<int>* order; int id; uint32_t blocks; aclnnStatus result; };
+    struct Record {
+        std::vector<int>* order;
+        int id;
+        uint32_t blocks;
+        aclnnStatus result;
+    };
     auto runner = [](aclrtStream, void* data) -> aclnnStatus {
         Record record;
         std::memcpy(&record, data, sizeof(record));
@@ -1061,13 +1083,13 @@ TEST(DirectInvokeTaskTest, CacheAssociatesDfxWithMixedTasksAndStopsOnError)
     };
     auto add = [&](int id, bool hasDfx, aclnnStatus result) {
         size_t offset = 0, capacity = 0;
-        cache.NewLaunchCache(&offset, &capacity, runner,
-            hasDfx ? op::AI_CORE : op::DIRECT_INVOKE);
+        cache.NewLaunchCache(&offset, &capacity, runner, hasDfx ? op::AI_CORE : op::DIRECT_INVOKE);
         const Record record{&order, id, hasDfx ? static_cast<uint32_t>(id * 10) : 0U, result};
         std::memcpy(cache.AddLaunchData(sizeof(record)), &record, sizeof(record));
         if (hasDfx) {
             cache.SetBlockDim(record.blocks);
             cache.opExecCacheDfx_->SetProfilingInfoId(ProfilingInfoId(0, 0, id));
+            cache.opExecCacheDfx_->SetOpType(static_cast<uint32_t>(id));
             TaskInfo info{};
             info.type = MSPROF_GE_TASK_TYPE_AI_CORE;
             cache.opExecCacheDfx_->SetTaskInfo(info);
@@ -1116,17 +1138,19 @@ TEST(DirectInvokeTaskTest, FrameworkDfxClosesProfilingOnRunnerFailure)
     char buffer[32]{};
     cache.SetCacheBuf(buffer);
     size_t offset = 0, capacity = 0;
-    cache.NewLaunchCache(&offset, &capacity,
-        [](aclrtStream, void*) -> aclnnStatus { return ACLNN_ERR_INNER; });
+    cache.NewLaunchCache(&offset, &capacity, [](aclrtStream, void*) -> aclnnStatus { return ACLNN_ERR_INNER; });
     cache.SetBlockDim(32);
     cache.opExecCacheDfx_->SetProfilingInfoId(ProfilingInfoId(0, 0, 42));
     bool submitted = false;
-    cache.NewLaunchCache(&offset, &capacity, [](aclrtStream, void* data) -> aclnnStatus {
-        bool* flag = nullptr;
-        std::memcpy(&flag, data, sizeof(flag));
-        *flag = true;
-        return ACLNN_SUCCESS;
-    }, op::DIRECT_INVOKE);
+    cache.NewLaunchCache(
+        &offset, &capacity,
+        [](aclrtStream, void* data) -> aclnnStatus {
+            bool* flag = nullptr;
+            std::memcpy(&flag, data, sizeof(flag));
+            *flag = true;
+            return ACLNN_SUCCESS;
+        },
+        op::DIRECT_INVOKE);
     bool* flag = &submitted;
     std::memcpy(cache.AddLaunchData(sizeof(flag)), &flag, sizeof(flag));
     EXPECT_EQ(cache.Run(nullptr, nullptr, {}), ACLNN_ERR_INNER);
@@ -1147,7 +1171,10 @@ TEST(DirectInvokeTaskTest, CacheRecordCapacityFailureReleasesPreparedState)
         cache.SetCacheBuf(buffer);
         cache.cacheCap_ = capacity;
         cache.hashKey_ = 1;
-        auto state = std::shared_ptr<void>(new int(1), [&](void* p) { ++destroyed; delete static_cast<int*>(p); });
+        auto state = std::shared_ptr<void>(new int(1), [&](void* p) {
+            ++destroyed;
+            delete static_cast<int*>(p);
+        });
         auto replay = std::make_shared<DirectInvokeReplay>(state);
         const int64_t dims[] = {4}, strides[] = {1};
         auto* scratch = aclCreateTensor(dims, 1, ACL_UINT8, strides, 0, ACL_FORMAT_ND, dims, 1, nullptr);
@@ -1158,8 +1185,8 @@ TEST(DirectInvokeTaskTest, CacheRecordCapacityFailureReleasesPreparedState)
         ASSERT_TRUE(replay->Init(*args, cache));
         DestroyOpArgContext(args);
         aclDestroyTensorList(workspace);
-        EXPECT_FALSE(DirectInvokeReplay::SaveToCache(cache, replay,
-            [](void*, const OpArgContext*, aclrtStream) noexcept { return ACLNN_SUCCESS; }));
+        EXPECT_FALSE(DirectInvokeReplay::SaveToCache(
+            cache, replay, [](void*, const OpArgContext*, aclrtStream) noexcept { return ACLNN_SUCCESS; }));
         EXPECT_FALSE(cache.IsOpCacheValid());
     }
     EXPECT_EQ(destroyed, 2);
@@ -1195,8 +1222,10 @@ protected:
         tensors.input->SetFromWorkspace(false);
         tensors.output->SetFromWorkspace(false);
         // Include every prepare input, just as an L2 API does for AI Core.
-        return op::internal::GetFromCache(executor, bytes, api_,
-            std::make_tuple(tensors.input.get(), static_cast<uint64_t>(config_.prepareStatus),
+        return op::internal::GetFromCache(
+            executor, bytes, api_,
+            std::make_tuple(
+                tensors.input.get(), static_cast<uint64_t>(config_.prepareStatus),
                 static_cast<uint64_t>(config_.launchStatus), static_cast<uint64_t>(config_.workspaceSizes.size()),
                 config_.workspaceSizes.empty() ? uint64_t{0} : config_.workspaceSizes[0],
                 config_.workspaceSizes.size() < 2 ? uint64_t{0} : config_.workspaceSizes[1], config_.requestNullSizes),
@@ -1208,9 +1237,10 @@ protected:
         auto owner = CREATE_EXECUTOR();
         auto* args = op::GetOpArgContext(OP_INPUT(tensors.input.get()), OP_OUTPUT(tensors.output.get()),
                                          FIXTURE_ATTR(config_), OP_WORKSPACE());
-        auto status = op::AddDirectInvokeTask("DirectInvokeFixture", DirectInvokeFixtureOpTypeId(),
-            PrepareFixture, LaunchFixture, DestroyFixture, owner.get(), args);
-        if (status != ACLNN_SUCCESS) return status;
+        auto status = op::AddDirectInvokeTask("DirectInvokeFixture", DirectInvokeFixtureOpTypeId(), PrepareFixture,
+                                              LaunchFixture, DestroyFixture, owner.get(), args);
+        if (status != ACLNN_SUCCESS)
+            return status;
         *bytes = owner->GetWorkspaceSize();
         owner.ReleaseTo(executor);
         return ACLNN_SUCCESS;
@@ -1234,8 +1264,8 @@ TEST_F(DirectInvokeL2CacheTest, HitAfterExecutorDestructionReusesStateAndCurrent
         ASSERT_FALSE(Lookup(first, &executor, &bytes));
         ASSERT_EQ(Register(first, &executor, &bytes), ACLNN_SUCCESS);
         firstWorkspace.resize(bytes);
-        ASSERT_EQ(CommonOpExecutorRun(firstWorkspace.data(), bytes, executor,
-                                     reinterpret_cast<aclrtStream>(0x2468)), ACLNN_SUCCESS);
+        ASSERT_EQ(CommonOpExecutorRun(firstWorkspace.data(), bytes, executor, reinterpret_cast<aclrtStream>(0x2468)),
+                  ACLNN_SUCCESS);
         preparedState = config_.observedState;
         EXPECT_EQ(config_.prepareCount, 1U);
         EXPECT_EQ(config_.destroyCount, 0U);

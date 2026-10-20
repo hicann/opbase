@@ -14,6 +14,7 @@
 
 #include "acl/acl_rt.h"
 #include "kernel_launcher.h"
+#include "op_dfx_internal.h"
 #include "opdev/op_arg_def.h"
 
 namespace op {
@@ -58,14 +59,18 @@ protected:
 
     aclnnStatus ParamMemCpy(const aclrtStream stream) const;
 
-    aclnnStatus Distribute(const aclrtStream stream, OpArgList& inputList, OpArgList& outputList)
+    aclnnStatus Distribute(const aclrtStream stream, uint32_t opType, OpArgList& inputList, OpArgList& outputList)
     {
+        auto& opThreadLocalCtx = op::internal::GetThreadLocalContext();
+        const bool isL0ProfilingEnabled = op::internal::IsL0ProfilingEnabled(opType);
         {
-            GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
-                GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
-                GetThreadLocalContext().logInfo_.l0Name);
-            OpDfxGuard kernelLaunchGuard(GetThreadLocalContext().profilingInfoId_.summaryItemId_,
-                                         DfxProfilingKernelLaunch);
+            opThreadLocalCtx.profilingInfoId_.summaryItemId_ = kInvalidProfilingId;
+            if (isL0ProfilingEnabled) {
+                opThreadLocalCtx.profilingInfoId_.summaryItemId_ = GenSummaryItemId(opThreadLocalCtx.logInfo_.l2ApiName,
+                                                                                    opThreadLocalCtx.logInfo_.l0Name,
+                                                                                    opThreadLocalCtx.logInfo_.l0Name);
+            }
+            OpDfxGuard kernelLaunchGuard(opThreadLocalCtx.profilingInfoId_.summaryItemId_, DfxProfilingKernelLaunch);
             OP_LOGI("funcType is %d.", randomNumTaskInfo_.randomNumFuncParaInfo.funcType);
             auto ret = aclrtRandomNumAsync(&randomNumTaskInfo_, stream, nullptr);
             if (ret != ACL_SUCCESS) {
@@ -73,17 +78,16 @@ protected:
                 return ACLNN_ERR_RUNTIME_ERROR;
             }
         }
-        if (op::internal::opProfilingSwitch.kernelLaunchFlag && op::internal::opProfilingSwitch.additionInfoFlag) {
-            op::internal::GetThreadLocalContext().profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(
-                op::internal::GetThreadLocalContext().logInfo_.l0Name);
-            GetThreadLocalContext().profilingInfoId_.summaryItemId_ = GenSummaryItemId(
-                GetThreadLocalContext().logInfo_.l2ApiName, GetThreadLocalContext().logInfo_.l0Name,
-                GetThreadLocalContext().logInfo_.l0Name);
+        if (isL0ProfilingEnabled && op::internal::opProfilingSwitch.additionInfoFlag) {
+            opThreadLocalCtx.profilingInfoId_.kernelLauncherId_ = GenKernelLauncherId(opThreadLocalCtx.logInfo_.l0Name);
+            opThreadLocalCtx.profilingInfoId_.summaryItemId_ = GenSummaryItemId(opThreadLocalCtx.logInfo_.l2ApiName,
+                                                                                opThreadLocalCtx.logInfo_.l0Name,
+                                                                                opThreadLocalCtx.logInfo_.l0Name);
             op::internal::ReportAdditionInfo(inputList, outputList, MSPROF_GE_TASK_TYPE_DSA,
-                                             GetThreadLocalContext().profilingInfoId_.summaryItemId_);
+                                             opThreadLocalCtx.profilingInfoId_.summaryItemId_);
         }
         GetCacheOpInfoSwitch(stream);
-        if (GetThreadLocalContext().cacheOpInfoSwitch_) {
+        if (opThreadLocalCtx.cacheOpInfoSwitch_) {
             ReportCacheOpInfoDSA(inputList, outputList, MSPROF_GE_TASK_TYPE_DSA);
         }
         return ACLNN_SUCCESS;
@@ -101,14 +105,14 @@ public:
         randomNumTaskInfo_.randomNumFuncParaInfo.funcType = ACL_RT_RANDOM_NUM_FUNC_TYPE_NORMAL_DIS;
     }
 
-    aclnnStatus Run(aclrtStream stream, OpArgContext* opArgCtx)
+    aclnnStatus Run(aclrtStream stream, uint32_t opType, OpArgContext* opArgCtx)
     {
         VisitWorkspaceArg(*opArgCtx->GetOpArg(op::OP_WORKSPACE_ARG));
         CHECK_RET_CODE(VisitOutputArgs(*opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)), "VisitOutputArgs failed");
         CHECK_RET_CODE(VisitInputArgs(*opArgCtx->GetOpArg(op::OP_INPUT_ARG)), "VisitInputArgs failed");
         CHECK_RET_CODE(ParamMemCpy(stream), "ParamMemCpy failed");
         CHECK_RET_CODE(
-            Distribute(stream, *opArgCtx->GetOpArg(op::OP_INPUT_ARG), *opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)),
+            Distribute(stream, opType, *opArgCtx->GetOpArg(op::OP_INPUT_ARG), *opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)),
             "Distribute failed");
 
         return ACLNN_SUCCESS;
@@ -238,14 +242,14 @@ public:
         randomNumTaskInfo_.randomNumFuncParaInfo.funcType = ACL_RT_RANDOM_NUM_FUNC_TYPE_UNIFORM_DIS;
     }
 
-    aclnnStatus Run(aclrtStream stream, OpArgContext* opArgCtx)
+    aclnnStatus Run(aclrtStream stream, uint32_t opType, OpArgContext* opArgCtx)
     {
         VisitWorkspaceArg(*opArgCtx->GetOpArg(op::OP_WORKSPACE_ARG));
         CHECK_RET_CODE(VisitOutputArgs(*opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)), "VisitOutputArgs failed");
         CHECK_RET_CODE(VisitInputArgs(*opArgCtx->GetOpArg(op::OP_INPUT_ARG)), "VisitInputArgs failed");
         CHECK_RET_CODE(ParamMemCpy(stream), "ParamMemCpy failed");
         CHECK_RET_CODE(
-            Distribute(stream, *opArgCtx->GetOpArg(op::OP_INPUT_ARG), *opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)),
+            Distribute(stream, opType, *opArgCtx->GetOpArg(op::OP_INPUT_ARG), *opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)),
             "Distribute failed");
 
         return ACLNN_SUCCESS;
@@ -368,14 +372,14 @@ public:
         randomNumTaskInfo_.randomNumFuncParaInfo.funcType = ACL_RT_RANDOM_NUM_FUNC_TYPE_DROPOUT_BITMASK;
     }
 
-    aclnnStatus Run(aclrtStream stream, OpArgContext* opArgCtx)
+    aclnnStatus Run(aclrtStream stream, uint32_t opType, OpArgContext* opArgCtx)
     {
         VisitWorkspaceArg(*opArgCtx->GetOpArg(op::OP_WORKSPACE_ARG));
         CHECK_RET_CODE(VisitOutputArgs(*opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)), "VisitOutputArgs failed");
         CHECK_RET_CODE(VisitInputArgs(*opArgCtx->GetOpArg(op::OP_INPUT_ARG)), "VisitInputArgs failed");
         CHECK_RET_CODE(ParamMemCpy(stream), "ParamMemCpy failed");
         CHECK_RET_CODE(
-            Distribute(stream, *opArgCtx->GetOpArg(op::OP_INPUT_ARG), *opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)),
+            Distribute(stream, opType, *opArgCtx->GetOpArg(op::OP_INPUT_ARG), *opArgCtx->GetOpArg(op::OP_OUTPUT_ARG)),
             "Distribute failed");
 
         return ACLNN_SUCCESS;
@@ -508,7 +512,7 @@ public:
         op::internal::GetThreadLocalContext().logInfo_.l0Name = opLogInfo_.l0Name;
         op::internal::GetThreadLocalContext().profilingInfoId_ = profilingInfoId_;
 
-        const auto ret = task_.Run(executor_->GetStream(), args_);
+        const auto ret = task_.Run(executor_->GetStream(), opType_, args_);
         if (ret != ACLNN_SUCCESS) {
             OP_LOGE(ACLNN_ERR_INNER, "DSA task distribute error.");
             return ACLNN_ERR_INNER;

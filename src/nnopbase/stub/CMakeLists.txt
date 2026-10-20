@@ -87,6 +87,7 @@ target_link_libraries(stub_nnopbase
     PRIVATE
         $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:error_manager_headers>
+        $<BUILD_INTERFACE:cann_version_headers>
         metadef_headers
         runtime_headers
         opbase_headers

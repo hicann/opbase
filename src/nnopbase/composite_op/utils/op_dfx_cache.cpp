@@ -130,7 +130,8 @@ void CacheTensorInfo(const FVector<const aclTensor*>& inTensors, const FVector<c
     cache->SetCacheTensorInfo(cacheTensorInfoLists);
 }
 
-void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet)
+void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo& taskInfo, bool isMemSet,
+                  uint32_t opType)
 {
     OP_LOGD("CacheDfxInfo numBlocks = %u", numBlocks);
     OpExecCache* cache = GetOpCacheContext().GetOpCache();
@@ -139,6 +140,7 @@ void CacheDfxInfo(uint32_t numBlocks, const ProfilingInfoId& id, const TaskInfo&
     }
     cache->SetBlockDim(numBlocks);
     cache->opExecCacheDfx_->SetProfilingInfoId(id);
+    cache->opExecCacheDfx_->SetOpType(opType);
 
     cache->opExecCacheDfx_->SetTaskInfo(taskInfo);
     if (!IsExceptionDumpEnable()) {

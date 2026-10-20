@@ -31,3 +31,8 @@ int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char* typeName)
 {
     return ProfilerStub::GetInstance()->MsprofRegTypeInfo(level, typeId, typeName);
 }
+
+bool MsprofCheckOpSwitch(uint32_t type, const char* op, size_t len)
+{
+    return ProfilerStub::GetInstance()->MsprofCheckOpSwitch(type, op, len);
+}
