@@ -4,7 +4,7 @@
 
 Creates an aclIntArray object as the input parameter for single-operator API execution.
 
-aclCreateIntArray is a framework-defined array structure used to manage and store integer data. You can use it without learning about its internal implementation.
+aclIntArray is a framework-defined array structure used to manage and store integer data. You can use it without learning about its internal implementation.
 
 ## Prototype
 
