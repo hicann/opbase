@@ -78,7 +78,8 @@ bool ArgsPool::IsArgsMatch(NnopbaseExecutorArgs* const args, NnopbaseExecutor* e
     }
     if (memcmp(args->inputKey.data(), executor->ownArgs.inputKey.data(), args->keyLen) == 0) {
         executor->args = args;
-        executor->hasTiling = (!args->binInfo->isStaticShape);
+        executor->isOutEmpty = args->isOutEmpty;
+        executor->hasTiling = args->binInfo->isStaticShape ? false : args->hasTiling;
         executor->isCachedArgs = true;
         args->isVisit = true;
         Get(executor->args);

@@ -525,14 +525,11 @@ aclnnStatus NnopbaseAddOutput(void* executor, const aclTensor* tensor, const uin
 aclnnStatus NnopbaseAddOutputShapeDependTensor(void* executor, aclTensor* tensor, const uint32_t index)
 {
     NNOPBASE_ASSERT_NOTNULL_RETVAL(executor);
+    NNOPBASE_ASSERT_NOTNULL_RETVAL(tensor);
     NnopbaseTensors* tensors = &(((NnopbaseExecutor*)executor)->ownArgs.outputs);
     tensors->outPutShapeSize += sizeof(uint64_t) * 9U; // 9 表示1个count和8个dim
     tensors->outPutShapeMap[index] = tensor;           // 覆盖刷新tensor地址
-    if (tensor == nullptr) {
-        OP_LOGI("[DFX] AddShapeDependOutputTensor[%u] addr=nullptr.", index);
-    } else {
-        OP_LOGI("[DFX] AddShapeDependOutputTensor[%u] %s.", index, tensor->ToString().GetString());
-    }
+    OP_LOGI("[DFX] AddShapeDependOutputTensor[%u] %s.", index, tensor->ToString().GetString());
     return NnopbaseAddOutput(executor, tensor, index);
 }
 

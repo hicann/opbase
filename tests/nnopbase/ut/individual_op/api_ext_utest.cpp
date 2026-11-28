@@ -1033,6 +1033,63 @@ TEST_F(NnopbaseExtUnitTest, TestStaticBin05) // 不支持场景
                             false, false, false, "");
 }
 
+TEST_F(NnopbaseExtUnitTest, NnopBaseStaticShapeCacheHitKeepsHasTilingFalse)
+{
+    op::internal::opProfilingSwitch.recordOpArgFlag = false;
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    void* executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+    static constexpr uint32_t runCount = 2U;
+    size_t workspaceLen = 0U;
+    void* workspace = nullptr;
+    void* stream = nullptr;
+
+    for (uint32_t i = 0U; i < runCount; i++) {
+        const char* opType = "Flash";
+        char inputDesc[] = {1, 1, 1};
+        char outputDesc[] = {1};
+        char attrDesc[] = {};
+        void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char),
+                                             outputDesc, sizeof(outputDesc) / sizeof(char), attrDesc,
+                                             sizeof(attrDesc) / sizeof(char));
+        ASSERT_NE(executor, nullptr);
+        NnopbaseSetMatchArgsFlag(executor);
+        ASSERT_EQ(NnopbaseAddInput(executor, tensor, 0), OK);
+        ASSERT_EQ(NnopbaseAddInput(executor, tensor, 1), OK);
+        ASSERT_EQ(NnopbaseAddInput(executor, tensor, 2), OK);
+        ASSERT_EQ(NnopbaseAddOutput(executor, tensor, 0), OK);
+
+        const bool matchArgs = NnopbaseMatchArgs(executor, &workspaceLen);
+        if (i == 0U) {
+            ASSERT_FALSE(matchArgs);
+            ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
+            ASSERT_TRUE(((NnopbaseExecutor*)executor)->args->binInfo->isStaticShape);
+            ASSERT_FALSE(((NnopbaseExecutor*)executor)->hasTiling);
+            ((NnopbaseExecutor*)executor)->args->hasTiling = true;
+            if ((workspace == nullptr) && (workspaceLen > 0U)) {
+                workspace = malloc(workspaceLen);
+            }
+            ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
+        } else {
+            ASSERT_TRUE(matchArgs);
+            ASSERT_TRUE(((NnopbaseExecutor*)executor)->args->binInfo->isStaticShape);
+            ASSERT_FALSE(((NnopbaseExecutor*)executor)->hasTiling);
+        }
+    }
+
+    if (workspaceLen > 0U) {
+        free(workspace);
+    }
+    NnopbaseExecutorGcSpace(executorSpace);
+    aclDestroyTensor(tensor);
+    NnopbaseUnsetEnvAndClearFolder();
+    op::internal::opProfilingSwitch.recordOpArgFlag = true;
+}
+
 class MmpaNormalStub;
 extern MmpaNormalStub mmpaNormallStub;
 
@@ -1870,6 +1927,34 @@ TEST_F(NnopbaseExtUnitTest, TestAddOutputShapeTensorSuccess)
     ASSERT_EQ(NnopbaseAddInput(executor, tensor, 1), OK);
     ASSERT_EQ(NnopbaseAddInput(executor, tensor, 2), OK);
     ASSERT_EQ(NnopbaseAddOutputShapeDependTensor(executor, tensor, 0), OK);
+    NnopbaseExecutorGcSpace(executorSpace);
+    aclDestroyTensor(tensor);
+    NnopbaseUnsetEnvAndClearFolder();
+}
+
+TEST_F(NnopbaseExtUnitTest, TestAddOutputShapeTensorNullFailed)
+{
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+
+    void* executorSpace = nullptr;
+    ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+
+    const char* opType = "bninference_d_kernel";
+    char inputDesc[] = {1, 1, 1};
+    char outputDesc[] = {1};
+    char attrDesc[] = {};
+    void* executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                         sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+    ASSERT_NE(executor, nullptr);
+
+    std::vector<int64_t> shape = {1, 1, 1, 1, 1};
+    aclTensor* tensor = aclCreateTensor(shape.data(), shape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                        aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(), nullptr);
+    ASSERT_EQ(NnopbaseAddInput(executor, tensor, 0), OK);
+    ASSERT_EQ(NnopbaseAddInput(executor, tensor, 1), OK);
+    ASSERT_EQ(NnopbaseAddInput(executor, tensor, 2), OK);
+    ASSERT_EQ(NnopbaseAddOutputShapeDependTensor(executor, nullptr, 0), ACLNN_ERR_PARAM_NULLPTR);
+
     NnopbaseExecutorGcSpace(executorSpace);
     aclDestroyTensor(tensor);
     NnopbaseUnsetEnvAndClearFolder();
@@ -3060,6 +3145,69 @@ TEST_F(NnopbaseExtUnitTest, NnopBaseRunNewCacheSuccess)
     aclDestroyFloatArray(floatArray);
     aclDestroyIntArray(intArray);
     aclDestroyBoolArray(boolArray);
+    NnopbaseExecutorGcSpace(executorSpace);
+    NnopbaseUnsetEnvAndClearFolder();
+    op::internal::opProfilingSwitch.recordOpArgFlag = true;
+}
+
+TEST_F(NnopbaseExtUnitTest, NnopBaseAllOutputEmptyTensorCacheHitSuccess)
+{
+    op::internal::opProfilingSwitch.recordOpArgFlag = false;
+    NnopbaseSetStubFiles(OP_API_COMMON_UT_SRC_DIR);
+
+    std::vector<int64_t> inputShape = {1, 1, 1, 1, 1};
+    std::vector<int64_t> outputShape = {0};
+    aclTensor* inputTensor = aclCreateTensor(inputShape.data(), inputShape.size(), aclDataType::ACL_FLOAT, nullptr, 0,
+                                             aclFormat::ACL_FORMAT_ND, inputShape.data(), inputShape.size(), nullptr);
+    aclTensor* outputTensor = aclCreateTensor(outputShape.data(), outputShape.size(), aclDataType::ACL_FLOAT, nullptr,
+                                              0, aclFormat::ACL_FORMAT_ND, outputShape.data(), outputShape.size(),
+                                              nullptr);
+
+    size_t workspaceLen = 0U;
+    void* stream = nullptr;
+    void* workspace = nullptr;
+    void* executorSpace = nullptr;
+    void* executor = nullptr;
+
+    for (size_t i = 0; i < 2; i++) {
+        ASSERT_EQ(NnopbaseCreateExecutorSpace(&executorSpace), OK);
+        const char* opType = "bninference_d_kernel";
+        char inputDesc[] = {1, 1, 1};
+        char outputDesc[] = {1, 0};
+        char attrDesc[] = {};
+        executor = NnopbaseGetExecutor(executorSpace, opType, inputDesc, sizeof(inputDesc) / sizeof(char), outputDesc,
+                                       sizeof(outputDesc) / sizeof(char), attrDesc, sizeof(attrDesc) / sizeof(char));
+        ASSERT_NE(executor, nullptr);
+        NnopbaseSetMatchArgsFlag(executor);
+        ASSERT_EQ(NnopbaseAddInput(executor, inputTensor, 0), OK);
+        ASSERT_EQ(NnopbaseAddInput(executor, inputTensor, 1), OK);
+        ASSERT_EQ(NnopbaseAddInput(executor, inputTensor, 2), OK);
+        ASSERT_EQ(NnopbaseAddOutput(executor, outputTensor, 0), OK);
+        ASSERT_EQ(NnopbaseAddOutput(executor, outputTensor, 1), OK);
+
+        const bool matchArgs = NnopbaseMatchArgs(executor, &workspaceLen);
+        if (i == 0U) {
+            ASSERT_FALSE(matchArgs);
+            ASSERT_EQ(NnopbaseRunForWorkspace(executor, &workspaceLen), OK);
+            ASSERT_TRUE(((NnopbaseExecutor*)executor)->isOutEmpty);
+            ASSERT_FALSE(((NnopbaseExecutor*)executor)->hasTiling);
+        } else {
+            ASSERT_TRUE(matchArgs);
+            ASSERT_TRUE(((NnopbaseExecutor*)executor)->isOutEmpty);
+            ASSERT_FALSE(((NnopbaseExecutor*)executor)->hasTiling);
+        }
+
+        if ((workspace == nullptr) && (workspaceLen > 0U)) {
+            workspace = malloc(workspaceLen);
+        }
+        ASSERT_EQ(NnopbaseRunWithWorkspace(executor, stream, workspace, workspaceLen), OK);
+    }
+
+    if (workspaceLen > 0U) {
+        free(workspace);
+    }
+    aclDestroyTensor(inputTensor);
+    aclDestroyTensor(outputTensor);
     NnopbaseExecutorGcSpace(executorSpace);
     NnopbaseUnsetEnvAndClearFolder();
     op::internal::opProfilingSwitch.recordOpArgFlag = true;
